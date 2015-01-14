@@ -31,4 +31,5 @@ class sale_order(orm.Model):
         order.fiscal_category_id.id
         result['fiscal_position'] = order.fiscal_position and \
         order.fiscal_position.id
+        result['incoterm'] = order.incoterm
         return result
