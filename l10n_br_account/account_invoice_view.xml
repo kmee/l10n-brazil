@@ -16,7 +16,23 @@
 				</field>
 				<page string="Payments" position="before">
 					<page string="Vencimentos">
-						<field colspan="4" nolabel="1" name="move_line_receivable_id" />
+						<field colspan="4" nolabel="1" name="move_line_receivable_id">
+                            <tree string="Vencimentos">
+                                <field name="journal_id"/>
+                                <field name="period_id"/>
+                                <field name="date"/>
+                                <field name="date_maturity"/>
+                                <field name="name"/>
+                                <field name="name"/>
+                                <field name="ref"/>
+                                <field name="partner_id"/>
+                                <field name="analytics_id"/>
+                                <field name="move_id"/>
+                                <field name="debit"/>
+                                <field name="credit"/>
+                                <field name="reconcile"/>
+                            </tree>
+                        </field>
 					</page>
 				</page>
 				<field position="attributes" name="journal_id">
@@ -95,7 +111,23 @@
 			<field name="arch" type="xml">
 				<page string="Payments" position="before">
 					<page string="Vencimentos">
-						<field colspan="4" nolabel="1" name="move_line_receivable_id" />
+						<field colspan="4" nolabel="1" name="move_line_receivable_id">
+                            <tree string="Vencimentos">
+                                <field name="journal_id"/>
+                                <field name="period_id"/>
+                                <field name="date"/>
+                                <field name="date_maturity"/>
+                                <field name="name"/>
+                                <field name="name"/>
+                                <field name="ref"/>
+                                <field name="partner_id"/>
+                                <field name="analytics_id"/>
+                                <field name="move_id"/>
+                                <field name="debit"/>
+                                <field name="credit"/>
+                                <field name="reconcile"/>
+                            </tree>
+                        </field>
 					</page>
 				</page>
 				<field position="attributes" name="journal_id">
