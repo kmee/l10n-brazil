@@ -18,12 +18,10 @@
 ###############################################################################
 
 import time
-import datetime
-from openerp import SUPERUSER_ID
-
+from datetime import datetime
+from openerp import tools
 from openerp.osv import orm, fields
 from openerp.addons import decimal_precision as dp
-
 from .l10n_br_account_product import (
     PRODUCT_FISCAL_TYPE,
     PRODUCT_FISCAL_TYPE_DEFAULT)
@@ -540,44 +538,36 @@ class AccountInvoice(orm.Model):
         result = txt.validate(cr, uid, ids, context)
         return result
 
-    def action_move_create(self, cr, uid, ids, *args):
-        result = super(AccountInvoice, self).action_move_create(
-            cr, uid, ids, *args)
-
-        user = self.pool.get('res.users').browse(cr, uid, uid)
-        obj_company = self.pool.get('res.company')
-        company_id = obj_company.browse(cr, uid, user.company_id.id).id
-
-        for invoice in self.browse(cr, uid, ids):
-            date_time_now = fields.datetime.now()
-
-            if not invoice.date_hour_invoice:
-                self.write(cr, uid, [invoice.id], {'date_hour_invoice': date_time_now})
-
-            if not invoice.date_in_out:
-                self.write(cr, uid, [invoice.id], {'date_in_out': date_time_now})
-
-        return result
-
     def action_date_assign(self, cr, uid, ids, *args):
 
         for inv in self.browse(cr, uid, ids):
-            date_time_now = fields.datetime.now()
-            date_hour_invoice = inv.date_hour_invoice or date_time_now
-            date_in_out =  inv.date_in_out or date_time_now
-
-            if date_hour_invoice:
-                aux = datetime.datetime.strptime(date_hour_invoice, '%Y-%m-%d %H:%M:%S').date()
-                date_invoice = str(aux)
-
+            if not inv.date_hour_invoice:
+                date_hour_invoice = fields.datetime.context_timestamp(
+                    cr, uid, datetime.now())
+            else:
+                if inv.issuer == '1':
+                    date_move = inv.date_in_out
+                else:
+                    date_move = inv.date_hour_invoice
+                date_hour_invoice = fields.datetime.context_timestamp(
+                    cr, uid, datetime.strptime(
+                        date_move,
+                        tools.DEFAULT_SERVER_DATETIME_FORMAT
+                    )
+                )
+            date_invoice = date_hour_invoice.strftime(
+                tools.DEFAULT_SERVER_DATE_FORMAT)
             res = self.onchange_payment_term_date_invoice(
                 cr, uid, inv.id, inv.payment_term.id, date_invoice)
-
-            res['value']['date_invoice'] = date_invoice
-            res['value']['date_hour_invoice'] = date_hour_invoice
-            res['value']['date_in_out'] = date_in_out
-
             if res and res['value']:
+                res['value'].update({
+                    'date_invoice': date_invoice
+                })
+                date_time_now = fields.datetime.now()
+                if not inv.date_hour_invoice:
+                    res['value'].update({'date_hour_invoice': date_time_now})
+                if not inv.date_in_out:
+                    res['value'].update({'date_in_out': date_time_now})
                 self.write(cr, uid, [inv.id], res['value'])
         return True
 
