@@ -20,7 +20,7 @@
 from datetime import datetime
 
 from openerp import pooler
-from openerp.exceptions import Warning
+from openerp.exceptions import Warning as UserError
 from openerp.tools.translate import _
 
 from openerp.addons.l10n_br_account.sped.document import FiscalDocument
@@ -131,7 +131,7 @@ class NFe200(FiscalDocument):
         self.nfe.infNFe.ide.tpAmb.valor = nfe_environment
         self.nfe.infNFe.ide.finNFe.valor = invoice.nfe_purpose
         self.nfe.infNFe.ide.procEmi.valor = 0
-        self.nfe.infNFe.ide.verProc.valor = 'OpenERP Brasil v8'
+        self.nfe.infNFe.ide.verProc.valor = 'Odoo Brasil v8'
 
         if invoice.cfop_ids[0].type in ("input"):
             self.nfe.infNFe.ide.tpNF.valor = 0
@@ -239,7 +239,7 @@ class NFe200(FiscalDocument):
         self.nfe.infNFe.emit.CNPJ.valor = punctuation_rm(
             invoice.company_id.partner_id.cnpj_cpf)
         self.nfe.infNFe.emit.xNome.valor = (
-            invoice.company_id.partner_id.legal_name)
+            invoice.company_id.partner_id.legal_name[:60])
         self.nfe.infNFe.emit.xFant.valor = invoice.company_id.partner_id.name
         self.nfe.infNFe.emit.enderEmit.xLgr.valor = company.street or ''
         self.nfe.infNFe.emit.enderEmit.nro.valor = company.number or ''
@@ -301,7 +301,7 @@ class NFe200(FiscalDocument):
                 'NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL')
         else:
             self.nfe.infNFe.dest.xNome.valor = (
-                invoice.partner_id.legal_name or '')
+                invoice.partner_id.legal_name[:60] or '')
 
             if invoice.partner_id.is_company:
                 self.nfe.infNFe.dest.CNPJ.valor = punctuation_rm(
@@ -337,10 +337,11 @@ class NFe200(FiscalDocument):
         self.det.nItem.valor = index
         self.det.prod.cProd.valor = invoice_line.product_id.code or ''
         self.det.prod.cEAN.valor = invoice_line.product_id.ean13 or ''
-        self.det.prod.xProd.valor = invoice_line.product_id.name or ''
+        self.det.prod.xProd.valor = invoice_line.product_id.name[:120] or ''
         self.det.prod.NCM.valor = punctuation_rm(
-            invoice_line.fiscal_classification_id.name or '')
-        self.det.prod.EXTIPI.valor = ''
+            invoice_line.fiscal_classification_id.code or '')[:8]
+        self.det.prod.EXTIPI.valor = punctuation_rm(
+            invoice_line.fiscal_classification_id.code or '')[8:]
         self.det.prod.nFCI.valor = invoice_line.fci or ''
         self.det.prod.CFOP.valor = invoice_line.cfop_id.code
         self.det.prod.uCom.valor = invoice_line.uos_id.name or ''
@@ -384,6 +385,8 @@ class NFe200(FiscalDocument):
                 "%.2f" % invoice_line.icms_percent)
             self.det.imposto.ICMS.vICMS.valor = str(
                 "%.2f" % invoice_line.icms_value)
+            self.det.imposto.ICMS.motDesICMS.valor = (
+                invoice_line.icms_relief_id.code or '')
 
             # ICMS ST
             self.det.imposto.ICMS.modBCST.valor = (
@@ -416,6 +419,8 @@ class NFe200(FiscalDocument):
                         "%.2f" % invoice_line.ipi_percent)
             self.det.imposto.IPI.vIPI.valor = str(
                 "%.2f" % invoice_line.ipi_value)
+            self.det.imposto.IPI.cEnq.valor = str(
+                invoice_line.ipi_guideline_id.code or '999').zfill(3)
 
         else:
             # ISSQN
@@ -510,11 +515,11 @@ class NFe200(FiscalDocument):
     def _carrier_data(self, invoice):
         """Dados da Transportadora e veiculo"""
 
-        if invoice.carrier_id:
+        self.nfe.infNFe.transp.modFrete.valor = (
+            invoice.incoterm and
+            invoice.incoterm.freight_responsibility or '9')
 
-            self.nfe.infNFe.transp.modFrete.valor = (
-                invoice.incoterm and
-                invoice.incoterm.freight_responsibility or '9')
+        if invoice.carrier_id:
 
             if invoice.carrier_id.partner_id.is_company:
                 self.nfe.infNFe.transp.transporta.CNPJ.valor = \
@@ -526,7 +531,7 @@ class NFe200(FiscalDocument):
                         invoice.carrier_id.partner_id.cnpj_cpf or '')
 
             self.nfe.infNFe.transp.transporta.xNome.valor = (
-                invoice.carrier_id.partner_id.legal_name or '')
+                invoice.carrier_id.partner_id.legal_name[:60] or '')
             self.nfe.infNFe.transp.transporta.IE.valor = punctuation_rm(
                 invoice.carrier_id.partner_id.inscr_est)
             self.nfe.infNFe.transp.transporta.xEnder.valor = (
@@ -606,7 +611,7 @@ class NFe200(FiscalDocument):
         try:
             from pysped.nfe.leiaute import NFe_200
         except ImportError:
-            raise Warning(
+            raise UserError(
                 _(u'Erro!'), _(u"Biblioteca PySPED não instalada!"))
 
         return NFe_200()
@@ -615,7 +620,7 @@ class NFe200(FiscalDocument):
         try:
             from pysped.nfe.leiaute import NFRef_200
         except ImportError:
-            raise Warning(
+            raise UserError(
                 _(u'Erro!'), _(u"Biblioteca PySPED não instalada!"))
 
         return NFRef_200()
@@ -624,7 +629,7 @@ class NFe200(FiscalDocument):
         try:
             from pysped.nfe.leiaute import Det_200
         except ImportError:
-            raise Warning(
+            raise UserError(
                 _(u'Erro!'), _(u"Biblioteca PySPED não instalada!"))
 
         return Det_200()
@@ -633,7 +638,7 @@ class NFe200(FiscalDocument):
         try:
             from pysped.nfe.leiaute import DI_200
         except ImportError:
-            raise Warning(
+            raise UserError(
                 _(u'Erro!'), _(u"Biblioteca PySPED não instalada!"))
         return DI_200()
 
@@ -641,7 +646,7 @@ class NFe200(FiscalDocument):
         try:
             from pysped.nfe.leiaute import Adi_200
         except ImportError:
-            raise Warning(
+            raise UserError(
                 _(u'Erro!'), _(u"Biblioteca PySPED não instalada!"))
         return Adi_200()
 
@@ -649,7 +654,7 @@ class NFe200(FiscalDocument):
         try:
             from pysped.nfe.leiaute import Vol_200
         except ImportError:
-            raise Warning(
+            raise UserError(
                 _(u'Erro!'), _(u"Biblioteca PySPED não instalada!"))
         return Vol_200()
 
@@ -658,7 +663,7 @@ class NFe200(FiscalDocument):
         try:
             from pysped.nfe.leiaute import Dup_200
         except ImportError:
-            raise Warning(
+            raise UserError(
                 _(u'Erro!'), _(u"Biblioteca PySPED não instalada!"))
 
         return Dup_200()
@@ -694,6 +699,10 @@ class NFe310(NFe200):
             invoice.date_hour_invoice, '%Y-%m-%d %H:%M:%S')
         self.nfe.infNFe.ide.dhSaiEnt.valor = datetime.strptime(
             invoice.date_in_out, '%Y-%m-%d %H:%M:%S')
+        self.aut_xml = self._get_AutXML()
+        self.aut_xml.CNPJ.valor = punctuation_rm(
+            invoice.company_id.accountant_cnpj_cpf)
+        self.nfe.infNFe.autXML.append(self.aut_xml)
 
     def _receiver(self, invoice, company, nfe_environment):
         super(NFe310, self)._receiver(
@@ -728,7 +737,7 @@ class NFe310(NFe200):
         try:
             from pysped.nfe.leiaute import NFe_310
         except ImportError:
-            raise Warning(
+            raise UserError(
                 _(u'Erro!'), _(u"Biblioteca PySPED não instalada!"))
 
         return NFe_310()
@@ -737,7 +746,7 @@ class NFe310(NFe200):
         try:
             from pysped.nfe.leiaute import NFRef_310
         except ImportError:
-            raise Warning(
+            raise UserError(
                 _(u'Erro!'), _(u"Biblioteca PySPED não instalada!"))
 
         return NFRef_310()
@@ -746,7 +755,7 @@ class NFe310(NFe200):
         try:
             from pysped.nfe.leiaute import Det_310
         except ImportError:
-            raise Warning(
+            raise UserError(
                 _(u'Erro!'), _(u"Biblioteca PySPED não instalada!"))
 
         return Det_310()
@@ -755,7 +764,7 @@ class NFe310(NFe200):
         try:
             from pysped.nfe.leiaute import Dup_310
         except ImportError:
-            raise Warning(
+            raise UserError(
                 _(u'Erro!'), _(u"Biblioteca PySPED não instalada!"))
 
         return Dup_310()
@@ -764,6 +773,14 @@ class NFe310(NFe200):
         try:
             from pysped.nfe.leiaute import DI_310
         except ImportError:
-            raise Warning(
+            raise UserError(
                 _(u'Erro!'), _(u"Biblioteca PySPED não instalada!"))
         return DI_310()
+
+    def _get_AutXML(self):
+        try:
+            from pysped.nfe.leiaute import AutXML_310
+        except ImportError:
+            raise UserError(
+                _(u'Erro!'), _(u"Biblioteca PySPED não instalada!"))
+        return AutXML_310()

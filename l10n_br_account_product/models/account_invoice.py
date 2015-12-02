@@ -248,7 +248,7 @@ class AccountInvoice(models.Model):
         string='Untaxed',
         store=True,
         digits=dp.get_precision('Account'),
-        compapply_fiscal_mappingute='_compute_amount')
+        compute='_compute_amount')
     amount_tax = fields.Float(
         string='Tax',
         store=True,
@@ -456,28 +456,24 @@ class AccountInvoice(models.Model):
                 invoice.write({'date_in_out': date_time_now})
         return result
 
-    @api.multi
-    def onchange_fiscal_document_id(self, fiscal_document_id,
-                                    company_id, issuer, fiscal_type):
-        result = {'value': {'document_serie_id': False}}
-        company = self.env['res.company'].browse(company_id)
+    @api.onchange('fiscal_document_id')
+    def onchange_fiscal_document_id(self):
+        if self.fiscal_type == 'product':
+            if self.issuer == '0':
+                series = [doc_serie for doc_serie in
+                          self.company_id.document_serie_product_ids if
+                          doc_serie.fiscal_document_id.id ==
+                          self.fiscal_document_id.id and doc_serie.active]
 
-        if issuer == '0':
-            series = [doc_serie for doc_serie in
-                      company.document_serie_product_ids if
-                      doc_serie.fiscal_document_id.id ==
-                      fiscal_document_id and doc_serie.active]
-
-            # TODO Alerta se nao tiver serie
-            if not series:
-                action = self.env.ref('l10n_br_account.\
-                    action_l10n_br_account_document_serie_form')
-                msg = _(u'Você deve ser uma série de documento fiscal'
-                        u'para este documento fiscal.')
-                raise RedirectWarning(
-                    msg, action.id, _(u'Criar uma nova série'))
-            result['value']['document_serie_id'] = series[0].id
-        return result
+                if not series:
+                    action = self.env.ref(
+                        'l10n_br_account.'
+                        'action_l10n_br_account_document_serie_form')
+                    msg = _(u'Você deve ser uma série de documento fiscal'
+                            u'para este documento fiscal.')
+                    raise RedirectWarning(
+                        msg, action.id, _(u'Criar uma nova série'))
+                self.document_serie_id = series[0]
 
     @api.multi
     def action_date_assign(self):
@@ -574,6 +570,9 @@ class AccountInvoiceLine(models.Model):
     cfop_id = fields.Many2one('l10n_br_account_product.cfop', 'CFOP')
     fiscal_classification_id = fields.Many2one(
         'account.product.fiscal.classification', 'Classificação Fiscal')
+    cest = fields.Char(
+        string="CEST",
+        related='fiscal_classification_id.cest')
     fci = fields.Char('FCI do Produto', size=36)
     import_declaration_ids = fields.One2many(
         'l10n_br_account_product.import.declaration',
@@ -644,6 +643,9 @@ class AccountInvoiceLine(models.Model):
         digits=dp.get_precision('Account'), default=0.00)
     icms_cst_id = fields.Many2one(
         'account.tax.code', 'CST ICMS', domain=[('domain', '=', 'icms')])
+    icms_relief_id = fields.Many2one(
+        'l10n_br_account_product.icms_relief',
+        string=u'Desoneração ICMS')
     issqn_manual = fields.Boolean('ISSQN Manual?', default=False)
     issqn_type = fields.Selection(
         [('N', 'Normal'), ('R', 'Retida'),
@@ -678,6 +680,9 @@ class AccountInvoiceLine(models.Model):
         default=0.00)
     ipi_cst_id = fields.Many2one(
         'account.tax.code', 'CST IPI', domain=[('domain', '=', 'ipi')])
+    ipi_guideline_id = fields.Many2one(
+        'l10n_br_account_product.ipi_guideline',
+        string=u'Enquadramento Legal IPI')
     pis_manual = fields.Boolean('PIS Manual?', default=False)
     pis_type = fields.Selection(
         [('percent', 'Percentual'), ('quantity', 'Em Valor')],
@@ -888,6 +893,8 @@ class AccountInvoiceLine(models.Model):
         result['ipi_cst_id'] = tax_codes.get('ipi')
         result['pis_cst_id'] = tax_codes.get('pis')
         result['cofins_cst_id'] = tax_codes.get('cofins')
+        result['icms_relief_id'] = tax_codes.get('icms_relief')
+        result['ipi_guideline_id'] = tax_codes.get('ipi_guideline')
         return result
 
     # TODO
@@ -1010,7 +1017,7 @@ class AccountInvoiceLine(models.Model):
                         account_id = kwargs['account_id']
                         taxes = account_obj.browse(account_id).tax_ids
                     else:
-                        taxes = False
+                        taxes = [(6, 0, [])]
                 else:
                     ctx['type_tax_use'] = 'purchase'
                     if product.supplier_taxes_id:
@@ -1019,7 +1026,7 @@ class AccountInvoiceLine(models.Model):
                         account_id = kwargs['account_id']
                         taxes = account_obj.browse(account_id).tax_ids
                     else:
-                        taxes = False
+                        taxes = [(6, 0, [])]
                 tax_ids = fp.with_context(ctx).map_tax(taxes)
                 result_rule['value']['invoice_line_tax_id'] = tax_ids.ids
                 result['value'].update(self._get_tax_codes(

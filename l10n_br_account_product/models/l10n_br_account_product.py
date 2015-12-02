@@ -20,7 +20,7 @@
 import re
 
 from openerp import models, fields, api, _
-from openerp.exceptions import Warning
+from openerp.exceptions import Warning as UserError
 from openerp.addons import decimal_precision as dp
 
 from openerp.addons.l10n_br_base.tools import fiscal
@@ -150,7 +150,8 @@ class L10nbrAccountDocumentRelated(models.Model):
             elif not fiscal.validate_cpf(self.cnpj_cpf):
                 check_cnpj_cpf = False
         if not check_cnpj_cpf:
-            raise Warning(_(u'CNPJ/CPF do documento relacionado é invalido!'))
+            raise UserError(_(u'CNPJ/CPF do documento relacionado'
+                              u' é invalido!'))
 
     @api.one
     @api.constrains('inscr_est')
@@ -181,7 +182,7 @@ class L10nbrAccountDocumentRelated(models.Model):
                     check_ie = False
 
         if not check_ie:
-            raise Warning(
+            raise UserError(
                 _(u'Inscrição Estadual do documento fiscal inválida!'))
 
     @api.multi
@@ -334,3 +335,32 @@ class ImportDeclarationLine(models.Model):
     amount_discount = fields.Float(u'Valor',
                                    digits=dp.get_precision('Account'),
                                    default=0.00)
+
+
+class L10nBrIcmsRelief(models.Model):
+
+    _name = 'l10n_br_account_product.icms_relief'
+    _description = 'Icms Relief'
+
+    code = fields.Char(u'Código', size=2, required=True)
+    name = fields.Char('Nome', size=256, required=True)
+    active = fields.Boolean('Ativo', default=True)
+
+
+class L10nBrIPIGuideline(models.Model):
+
+    _name = 'l10n_br_account_product.ipi_guideline'
+    _description = 'IPI Guidelines'
+
+    code = fields.Char(u'Código', size=3, required=True)
+    name = fields.Text(u'Descrição Enquadramento Legal do IPI', required=True)
+    cst_group = fields.Selection([('imunidade', u'Imunidade'),
+                                  ('suspensao', u'Suspensão'),
+                                  ('isencao', u'Isenção'),
+                                  ('reducao', u'Redução'),
+                                  ('outros', u'Outros'),
+                                  ], string='Grupo CST', required=True)
+    tax_code_in_id = fields.Many2one(
+        'account.tax.code.template', string=u'CST Entrada')
+    tax_code_out_id = fields.Many2one(
+        'account.tax.code.template', string=u'CST Saída')
