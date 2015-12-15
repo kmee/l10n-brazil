@@ -977,7 +977,7 @@ class AccountInvoiceLine(models.Model):
                         account_id = kwargs['account_id']
                         taxes = account_obj.browse(account_id).tax_ids
                     else:
-                        taxes = [(6, 0, [])]
+                        taxes = self.env['account.tax'].browse([])
                 else:
                     ctx['type_tax_use'] = 'purchase'
                     if product.supplier_taxes_id:
@@ -986,7 +986,7 @@ class AccountInvoiceLine(models.Model):
                         account_id = kwargs['account_id']
                         taxes = account_obj.browse(account_id).tax_ids
                     else:
-                        taxes = [(6, 0, [])]
+                        taxes = self.env['account.tax'].browse([])
                 tax_ids = fp.with_context(ctx).map_tax(taxes)
                 result_rule['value']['invoice_line_tax_id'] = tax_ids.ids
                 result['value'].update(self._get_tax_codes(
