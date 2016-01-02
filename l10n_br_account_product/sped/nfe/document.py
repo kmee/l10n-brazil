@@ -755,6 +755,14 @@ class NFe310(NFe200):
         self.di.UFTerceiro.valor = (
             invoice_line_di.thirdparty_state_id.code or '')
 
+    def _export(self, invoice):
+        "Informações de exportação"
+        self.nfe.infNFe.exporta.UFSaidaPais.valor = (
+            invoice.shipping_state_id.code or '')
+        self.nfe.infNFe.exporta.xLocExporta.valor = (
+            invoice.shipping_location or '')
+        self.nfe.infNFe.exporta.xLocDespacho.valor = ''  # TODO
+
     def get_NFe(self):
         try:
             from pysped.nfe.leiaute import NFe_310
