@@ -301,12 +301,15 @@ class AccountTax(models.Model):
                 calculed_taxes += result_icmsst['taxes']
 
         # Estimate Taxes
-        if fiscal_position and fiscal_position.asset_operation:
+        if fiscal_position and fiscal_position.asset_operation and product:
             obj_tax_estimate = self.pool.get('l10n_br_tax.estimate')
+            obj_product = self.pool.get('product.product').browse(cr, uid,
+                                                                  product)
+
             date = datetime.now().strftime('%Y-%m-%d')
             tax_estimate_ids = obj_tax_estimate.search(
                 cr, uid, [('fiscal_classification_id', '=',
-                           product.fiscal_classification_id.id),
+                           obj_product.fiscal_classification_id.id),
                           '|', ('date_start', '=', False),
                           ('date_start', '<=', date),
                           '|', ('date_end', '=', False),
@@ -317,7 +320,7 @@ class AccountTax(models.Model):
                 tax_estimate = obj_tax_estimate.browse(
                     cr, uid, tax_estimate_ids)[0]
                 tax_estimate_percent = 0.00
-                if product.origin in ('1', '2', '6', '7'):
+                if obj_product.origin in ('1', '2', '6', '7'):
                     tax_estimate_percent += tax_estimate.federal_taxes_import
                 else:
                     tax_estimate_percent += tax_estimate.federal_taxes_national
