@@ -74,10 +74,8 @@ class SaleOrder(models.Model):
         qty = line._calc_line_quantity()
         for computed in line.tax_id.compute_all(
                 price,
-                qty,
-                line.product_id.id,
-                line.order_id.partner_invoice_id.id,
-                line.order_id.partner_id,
+                qty, line.order_id.partner_invoice_id.id,
+                line.product_id.id, line.order_id.partner_id,
                 fiscal_position=line.fiscal_position,
                 insurance_value=line.insurance_value,
                 freight_value=line.freight_value,
