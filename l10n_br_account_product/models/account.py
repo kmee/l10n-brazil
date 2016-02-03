@@ -339,7 +339,7 @@ class AccountTax(models.Model):
             result_icmsst['taxes'][0][
                 'icms_st_base_other'] = icms_st_base_other
 
-            if result_icmsst['taxes'][0]['percent'] and not \
+            if result_icmsst['taxes'][0]['percent'] and fiscal_position and not \
                     fiscal_position.icms_st_extract:
                 calculed_taxes += result_icmsst['taxes']
             elif result_icmsst['taxes'][0]['percent']:
