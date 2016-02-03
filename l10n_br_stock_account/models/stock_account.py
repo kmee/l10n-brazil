@@ -66,16 +66,18 @@ class StockPicking(models.Model):
     def _create_invoice_from_picking(self, picking, vals):
         result = {}
 
-        comment = ''
+        fiscal_comment = ''
         if picking.fiscal_position.inv_copy_note:
-            comment += picking.fiscal_position.note or ''
+            fiscal_comment += picking.fiscal_position.note or ''
 
-        if picking.note:
-            comment += ' - ' + picking.note
+        # if picking.note:
+        #     fiscal_comment += ' - ' + picking.note
+        # TODO: Verificar se existe algum caso de se ter
+        # que adicionar alguma nota do picking. Se tiver, criar campo?
 
         result['partner_shipping_id'] = picking.partner_id.id
 
-        result['comment'] = comment
+        result['fiscal_comment'] = fiscal_comment
         result['fiscal_category_id'] = picking.fiscal_category_id.id
         result['fiscal_position'] = picking.fiscal_position.id
         result['aux_internal_number'] = picking.invoice_reserved_number
