@@ -46,6 +46,10 @@ class AccountFiscalPositionTemplate(models.Model):
         states={'draft': [('readonly', False)]},
         default=True
     )
+    difal = fields.Boolean(
+        string=u'Difal',
+        default=False,
+    )
 
 class AccountFiscalPositionTaxTemplate(models.Model):
     _inherit = 'account.fiscal.position.tax.template'
@@ -79,6 +83,10 @@ class AccountFiscalPosition(models.Model):
         string=u'Calcular total dos tributos',
         states={'draft': [('readonly', False)]},
         default=True
+    )
+    difal = fields.Boolean(
+        string=u'Difal',
+        default=False,
     )
 
     @api.v7

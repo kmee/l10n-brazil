@@ -233,7 +233,8 @@ class AccountTax(models.Model):
             # Para operações fora do estado e aquisição de ativo
             # TODO: Verificar se existem outras condições que
             # devem passar por este trecho
-            if fiscal_position and fiscal_position.cfop_id.id_dest == '2':
+            if (fiscal_position and fiscal_position.cfop_id.id_dest == '2' and
+                    fiscal_position.difal):
                 specific_icms_inter = [tx for tx in result['taxes']
                                  if tx['domain'] == 'icmsinter']
                 try:
