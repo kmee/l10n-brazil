@@ -309,7 +309,8 @@ class NFe200(FiscalDocument):
                 if invoice.partner_id.inscr_est != 'ISENTO':
                     self.nfe.infNFe.dest.IE.valor = punctuation_rm(
                         invoice.partner_id.inscr_est)
-                if invoice.partner_id.inscr_est:
+                if (invoice.partner_id.inscr_est
+                        and invoice.partner_id.inscr_est != 'ISENTO'):
                     self.nfe.infNFe.dest.indIEDest.valor = '1'
                 else:
                     self.nfe.infNFe.dest.indIEDest.valor = '2'
