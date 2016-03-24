@@ -335,3 +335,18 @@ class ImportDeclarationLine(models.Model):
     amount_discount = fields.Float(u'Valor',
                                    digits=dp.get_precision('Account'),
                                    default=0.00)
+
+
+class L10nBrTaxIcmsPartition(models.Model):
+
+    _name = 'l10n_br_tax.icms_partition'
+    _description = 'Icms Partition'
+
+    date = fields.Date(
+        string=u'Ano',
+        required=True
+    )
+    rate_percentual = fields.Float(
+        string=u'Percentual Interestadual de Rateio',
+        required=True
+    )
