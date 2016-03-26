@@ -19,12 +19,11 @@
 
 {
     'name': 'Brazilian Localization Account',
-    'description': 'Brazilian Localization Account',
     'category': 'Localisation',
     'license': 'AGPL-3',
     'author': 'Akretion, Odoo Community Association (OCA)',
     'website': 'http://odoobrasil.org',
-    'version': '8.0.1.0.0',
+    'version': '8.0.1.0.1',
     'depends': [
         'l10n_br',
         'l10n_br_base',
@@ -46,6 +45,7 @@
         'views/res_company_view.xml',
         'security/ir.model.access.csv',
         'security/l10n_br_account_security.xml',
+        'report/account_invoice_report_view.xml',
     ],
     'demo': [
         'demo/account.account.csv',
