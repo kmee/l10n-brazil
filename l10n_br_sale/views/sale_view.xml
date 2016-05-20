@@ -2,6 +2,21 @@
 <openerp>
 	<data>
 
+		<record id="view_order_tree_custom_2" model="ir.ui.view">
+            <field name="name">sale.order.tree.custom.2</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_order_tree" />
+            <field name="arch" type="xml">
+                <tree position="attributes">
+                    <attribute name="colors">blue:tipo_pagamento=='Pagamento Imediato';red:em_atraso==True</attribute>
+                </tree>
+                <tree string="Sales Orders">
+					<field name="tipo_pagamento" invisible="1" />
+					<field name="em_atraso" invisible="1" />
+				</tree>
+            </field>
+        </record>
+
 		<record id="l10n_br_sale_order_form" model="ir.ui.view">
 			<field name="name">l10n_br_sale.order.form</field>
 			<field name="model">sale.order</field>
