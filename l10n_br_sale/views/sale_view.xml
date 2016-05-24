@@ -7,13 +7,13 @@
             <field name="model">sale.order</field>
             <field name="inherit_id" ref="sale.view_order_tree" />
             <field name="arch" type="xml">
-                <tree position="attributes">
-                    <attribute name="colors">blue:tipo_pagamento=='Pagamento Imediato';red:em_atraso==True</attribute>
-                </tree>
-                <tree string="Sales Orders">
+				<tree string="Sales Orders">
 					<field name="tipo_pagamento" invisible="1" />
 					<field name="em_atraso" invisible="1" />
 				</tree>
+				<tree position="attributes">
+                    <attribute name="colors">#27ae60:tipo_pagamento=='Pagamento Antecipado';#e74c3c:em_atraso==True</attribute>
+                </tree>
             </field>
         </record>
 

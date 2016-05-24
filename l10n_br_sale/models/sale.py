@@ -154,13 +154,14 @@ class SaleOrder(models.Model):
         vencidas = []
         dt = datetime.today().date()
         # percorre os vencimentos da fatura do pedido
-        for ml in self.invoice_ids.move_line_receivable_id:
-            # se a data de vencimento for menor que a data de hoje
-            if ml.date_maturity < str(dt):
-                # se nao existir uma reconciliacao esta atrasado
-                if not ml.reconcile_id.id:
-                    self.em_atraso = True
-                    return
+        for fatura in self.invoice_ids:
+            for ml in fatura.move_line_receivable_id:
+                # se a data de vencimento for menor que a data de hoje
+                if ml.date_maturity < str(dt):
+                    # se nao existir uma reconciliacao esta atrasado
+                    if not ml.reconcile_id.id:
+                        self.em_atraso = True
+                        return
         self.em_atraso = False
     @api.model
     def _fiscal_position_map(self, result, **kwargs):
