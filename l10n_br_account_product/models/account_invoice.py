@@ -42,6 +42,7 @@ from openerp.addons.l10n_br_account_product.models.l10n_br_account_product\
 
 class AccountInvoice(models.Model):
     _inherit = 'account.invoice'
+    _order = "internal_number desc, date_hour_invoice desc"
 
     @api.multi
     def onchange_partner_id(self, type, partner_id, date_invoice=False,
