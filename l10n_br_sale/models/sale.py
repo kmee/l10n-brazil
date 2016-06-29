@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###############################################################################
-
+from datetime import datetime
 from openerp import models, fields, api
 from openerp.addons import decimal_precision as dp
 
@@ -149,6 +149,32 @@ class SaleOrder(models.Model):
         related='partner_id.inscr_est',
     )
 
+    tipo_pagamento = fields.Char(
+        string = 'Tipo de pagamento',
+        related='payment_term.name',
+    )
+
+    em_atraso = fields.Boolean(
+        string = 'Pagamento atrasado',
+        default = False,
+        compute = '_verify_payment'
+    )
+
+    @api.one
+    @api.depends('tipo_pagamento')
+    def _verify_payment(self):
+        vencidas = []
+        dt = datetime.today().date()
+        # percorre os vencimentos da fatura do pedido
+        for fatura in self.invoice_ids:
+            for ml in fatura.move_line_receivable_id:
+                # se a data de vencimento for menor que a data de hoje
+                if ml.date_maturity < str(dt):
+                    # se nao existir uma reconciliacao esta atrasado
+                    if not ml.reconcile_id.id:
+                        self.em_atraso = True
+                        return
+        self.em_atraso = False
     @api.model
     def _fiscal_position_map(self, result, **kwargs):
         ctx = dict(self.env.context)
