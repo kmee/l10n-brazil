@@ -392,20 +392,29 @@ def validate_ie_sp(inscr_est):
 
 
 def validate_ie_to(inscr_est):
-    #ref: http://www.sintegra.gov.br/Cad_Estados/cad_TO.html
+    #ref 11digits: http://www.sintegra.gov.br/Cad_Estados/cad_TO.html
+    #ref 9digits: http://www.sefaz.to.gov.br/calculodv2.php
+
     inscr_est = re.sub('[^0-9]', '', inscr_est)
 
     # verificando o tamanho da inscrição estadual
-    if len(inscr_est) != 11:
+
+    if len(inscr_est) == 11:
+        # verificando os dígitos 3 e 4
+        if not inscr_est[2:4] in ['01', '02', '03', '99']:
+            return False
+
+        # Pega apenas os dígitos que entram no cálculo
+        inscr_est = list(map(int, inscr_est))
+        nova_ie = inscr_est[:2] + inscr_est[4:10]
+
+    elif len(inscr_est) == 9:
+        inscr_est = list(map(int, inscr_est))
+        nova_ie = inscr_est[:-1]
+
+    else:
         return False
 
-    # verificando os dígitos 3 e 4
-    if not inscr_est[2:4] in ['01', '02', '03', '99']:
-        return False
-
-    # Pega apenas os dígitos que entram no cálculo
-    inscr_est = list(map(int, inscr_est))
-    nova_ie = inscr_est[:2] + inscr_est[4:10]
 
     prod = [9, 8, 7, 6, 5, 4, 3, 2]
     r = sum([x * y for (x, y) in zip(nova_ie, prod)]) % 11
