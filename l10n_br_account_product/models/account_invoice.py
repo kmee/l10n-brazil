@@ -1006,6 +1006,8 @@ class AccountInvoiceLine(models.Model):
         com os impostos do Odoo"""
         context = self.env.context
 
+        if len(self) > 1:
+            return values
         price_unit = values.get('price_unit', 0.0) or self.price_unit
         discount = values.get('discount', 0.0) or self.discount
         insurance_value = values.get(
