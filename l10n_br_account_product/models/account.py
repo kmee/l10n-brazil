@@ -350,14 +350,14 @@ class AccountTax(models.Model):
             if fiscal_position.asset_operation \
                     or fiscal_position.ind_final == '1':
 
-                    tax_estimate_percent = self.env[
-                        'l10n_br_tax.estimate'].compute_tax_estimate(product)
+                    tax_estimate_percent = self.pool.get(
+                        'l10n_br_tax.estimate').compute_tax_estimate(cr, uid,
+                                                                     product)
 
                     total_taxes = (
                         (result['total_included'] - totaldc) *
                         tax_estimate_percent)
                     result['total_taxes'] = round(total_taxes, precision)
-
 
         costs, costs_values = self._compute_costs(
             cr, uid, insurance_value, freight_value, other_costs_value)
