@@ -51,7 +51,7 @@ class ProductTemplate(models.Model):
             else:
                 tax_estimate_percent += last_estimated.federal_taxes_national
             tax_estimate_percent += last_estimated.state_taxes
-            template.product_estimated_taxes_percent = tax_estimate_percent
+            template.estimated_taxes = tax_estimate_percent
 
     fiscal_type = fields.Selection(
         selection_add=PRODUCT_FISCAL_TYPE,
@@ -64,7 +64,7 @@ class ProductTemplate(models.Model):
     service_type_id = fields.Many2one(
         'l10n_br_account.service.type', u'Tipo de Serviço')
 
-    product_estimated_taxes_percent = fields.Float(
+    estimated_taxes = fields.Float(
         string=u'Estimated Taxes(%)',
         compute='_compute_product_estimated_taxes_percent',
     )
