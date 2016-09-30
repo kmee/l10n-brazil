@@ -32,7 +32,7 @@ class StockPicking(models.Model):
     invoice_reserved_number = fields.Char('Numero reservado da fatura',
                                           size=32)
     fiscal_document_access_key = fields.Char(
-        u'Chave de acesso do Documento',
+        u'Chave de acesso do Documento', compute_sudo=True,
         compute=_get_fiscal_document_access_key, store=True)
 
     def _fiscal_position_map(self, result, **kwargs):
