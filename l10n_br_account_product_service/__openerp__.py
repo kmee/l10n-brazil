@@ -13,7 +13,9 @@
         'l10n_br_account_product',
         'l10n_br_account_service',
     ],
-    'data': [],
+    'data': [
+        'views/account_invoice_nfse_view.xml'
+    ],
     'demo': [],
     'test': [],
     'installable': True,

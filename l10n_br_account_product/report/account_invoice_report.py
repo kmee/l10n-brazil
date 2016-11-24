@@ -80,6 +80,8 @@ class AccountInvoiceReport(models.Model):
     def _sub_select(self):
         return super(
             AccountInvoiceReport, self)._sub_select() + (
+                ", ai.issuer as issuer"
+                ", ai.fiscal_type as fiscal_type"
                 ", ail.cfop_id as cfop_id"
                 ", SUM(ail.icms_value) as icms_value"
                 ", SUM(ail.icms_st_value) as icms_st_value"
