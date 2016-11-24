@@ -2,7 +2,7 @@
 # Copyright (C) 2009 - TODAY Renato Lima - Akretion
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
-from openerp import models, fields, api
+from openerp import models, fields, api, _
 from openerp.addons import decimal_precision as dp
 
 OPERATION_TYPE = {
@@ -94,42 +94,6 @@ class AccountInvoice(models.Model):
         string='Gera Financeiro'
     )
 
-    @api.multi
-    def name_get(self):
-        lista = []
-        for obj in self:
-            name = obj.internal_number if obj.internal_number else ''
-            lista.append((obj.id, name))
-        return lista
-
-    @api.one
-    @api.constrains('number')
-    def _check_invoice_number(self):
-        domain = []
-        if self.number:
-            fiscal_document = self.fiscal_document_id and\
-                self.fiscal_document_id.id or False
-            domain.extend([('internal_number', '=', self.number),
-                           ('fiscal_type', '=', self.fiscal_type),
-                           ('fiscal_document_id', '=', fiscal_document)
-                           ])
-            if self.issuer == '0':
-                domain.extend([
-                    ('company_id', '=', self.company_id.id),
-                    ('internal_number', '=', self.number),
-                    ('fiscal_document_id', '=', self.fiscal_document_id.id),
-                    ('issuer', '=', '0')])
-            else:
-                domain.extend([
-                    ('partner_id', '=', self.partner_id.id),
-                    ('vendor_serie', '=', self.vendor_serie),
-                    ('issuer', '=', '1')])
-
-            invoices = self.env['account.invoice'].search(domain)
-            if len(invoices) > 1:
-                raise UserError(u'Não é possível registrar documentos\
-                              fiscais com números repetidos.')
-
     _sql_constraints = [
         ('number_uniq', 'unique(number, company_id, journal_id,\
          type, partner_id)', 'Invoice Number must be unique per Company!'),
@@ -162,6 +126,24 @@ class AccountInvoice(models.Model):
                     count += 1
                 result.append(move_line)
         return result
+
+    @api.multi
+    def open_fiscal_document(self):
+        ctx = self.env.context.copy()
+        ctx.update({
+            'fiscal_document_code': self.fiscal_document_code,
+            'type': self.type
+        })
+        return {
+            'name': _('Documento Fiscal'),
+            'view_type': 'form',
+            'view_mode': 'form',
+            'res_model': 'account.invoice',
+            'context': ctx,
+            'type': 'ir.actions.act_window',
+            'nodestroy': True,
+            'res_id': self.id
+        }
 
 
 class AccountInvoiceLine(models.Model):

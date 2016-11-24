@@ -631,6 +631,13 @@ class AccountInvoice(models.Model):
                     ait.create(vals)
         return result
 
+    @api.multi
+    def open_fiscal_document(self):
+        """return action to open NFe form"""
+        result = super(AccountInvoice, self).open_fiscal_document()
+        result['name'] = _('NF-e')
+        return result
+
 
 class AccountInvoiceLine(models.Model):
     _inherit = 'account.invoice.line'
@@ -1144,6 +1151,14 @@ class AccountInvoiceLine(models.Model):
         for key in taxes_dict:
             result[key] = values.get(key) or taxes_dict[key]
 
+        return result
+
+    # TODO não foi migrado por causa do bug github.com/odoo/odoo/issues/1711
+    def fields_view_get(self, cr, uid, view_id=None, view_type=False,
+                        context=None, toolbar=False, submenu=False):
+        result = super(AccountInvoiceLine, self).fields_view_get(
+            cr, uid, view_id=view_id, view_type=view_type, context=context,
+            toolbar=toolbar, submenu=submenu)
         return result
 
     # TODO não foi migrado por causa do bug github.com/odoo/odoo/issues/1711
