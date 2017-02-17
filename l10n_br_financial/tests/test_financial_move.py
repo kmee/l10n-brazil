@@ -15,16 +15,11 @@ class TestFinancialMove(TransactionCase):
         self.currency_euro = self.env.ref('base.EUR')
 
         self.financial_move = self.env['financial.move']
-        self.financial_move = self.env['financial.paid']
         self.financial_pay_receive = self.env['financial.pay_revieve']
         self.financial_edit = self.env['financial.edit']
 
-
         self.partner_agrolait = self.env.ref("base.res_partner_2")
         self.partner_axelor = self.env.ref("base.res_partner_2")
-
-
-
 
     # """ US1 # Como um operador de cobrança, eu gostaria de cadastrar uma conta
     #  a receber/pagar para manter controle sobre o fluxo de caixa.
@@ -47,34 +42,34 @@ class TestFinancialMove(TransactionCase):
     #
     #     return cr_1
 
-    # def test_us_1_ac_2(self):
-    #     """DADO uma conta a pagar ou receber
-    #     QUANDO o valor for igual a zero
-    #     ENTÃO apresentar uma mensagem solicitando preenchimento de valor
-    #         maior que zero
-    #     E impedir lançamento"""
-    #     with self.assertRaises(ValidationError):
-    #         self.financial_move.create(dict(
-    #             due_date='2017-02-27',
-    #             company_id=self.main_company.id,
-    #             currency_id=self.currency_euro.id,
-    #             amount_document=0.00,
-    #             partner_id=self.partner_agrolait.id,
-    #             document_date=time.strftime('%Y') + '-01-02',
-    #             document_number='2222',
-    #             move_type='r',
-    #         ))
-    #
-    #         self.financial_move.create(dict(
-    #             due_date='2017-02-27',
-    #             company_id=self.main_company.id,
-    #             currency_id=self.currency_euro.id,
-    #             amount_document=-10.00,
-    #             partner_id=self.partner_agrolait.id,
-    #             document_date=time.strftime('%Y') + '-01-03',
-    #             document_number='3333',
-    #             move_type='r',
-    #         ))
+    def test_us_1_ac_2(self):
+        """DADO uma conta a pagar ou receber
+        QUANDO o valor for igual a zero
+        ENTÃO apresentar uma mensagem solicitando preenchimento de valor
+            maior que zero
+        E impedir lançamento"""
+        with self.assertRaises(ValidationError):
+            self.financial_move.create(dict(
+                due_date='2017-02-27',
+                company_id=self.main_company.id,
+                currency_id=self.currency_euro.id,
+                amount_document=0.00,
+                partner_id=self.partner_agrolait.id,
+                document_date=time.strftime('%Y') + '-01-02',
+                document_number='2222',
+                move_type='r',
+            ))
+
+            self.financial_move.create(dict(
+                due_date='2017-02-27',
+                company_id=self.main_company.id,
+                currency_id=self.currency_euro.id,
+                amount_document=-10.00,
+                partner_id=self.partner_agrolait.id,
+                document_date=time.strftime('%Y') + '-01-03',
+                document_number='3333',
+                move_type='r',
+            ))
 
     # def test_us1_ac_3(self):
     #     """ DADO a criação de uma nova parcela
