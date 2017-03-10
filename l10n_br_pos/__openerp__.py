@@ -14,7 +14,7 @@
         'l10n_br_sale_stock',
         'point_of_sale',
         'pos_pricelist',
-        'pos_payment_term',
+        'pos_payment_terminal',
         'nfe_attach',
         'pos_order_picking_link',
         'stock_picking_invoice_link',
