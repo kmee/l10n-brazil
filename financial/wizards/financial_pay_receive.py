@@ -3,9 +3,6 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import api, fields, models
-from ..models.financial_move import (
-    FINANCIAL_IN_OUT,
-)
 
 
 class FinancialPayreceive(models.TransientModel):
@@ -13,21 +10,11 @@ class FinancialPayreceive(models.TransientModel):
     _name = 'financial.pay_receive'
     _inherit = ['account.abstract.payment']
 
-    @api.multi
-    @api.depends('financial_type')
-    def _compute_payment_type(self):
-        for record in self:
-            if record.financial_type in ('r', 'rr'):
-                record.payment_type = 'inbound'
-            elif record.financial_type in ('p', 'pp'):
-                record.payment_type = 'outbound'
-
-    financial_type = fields.Selection(
-        selection=FINANCIAL_IN_OUT,
-        required=True,
+    payment_type = fields.Selection(
+        required=False,
     )
-    amount_paid = fields.Monetary(
-        required=True
+    payment_method_id = fields.Many2one(
+        required=False,
     )
     ref = fields.Char()
     date_payment = fields.Date(
@@ -54,7 +41,7 @@ class FinancialPayreceive(models.TransientModel):
                 active_id):
             fm = self.env['financial.move'].browse(active_id)
             res['currency_id'] = fm.currency_id.id
-            res['ammount_paid'] = fm.amount_residual
+            res['amount'] = fm.amount
             res['company_id'] = fm.company_id.id
         return res
 
@@ -66,30 +53,23 @@ class FinancialPayreceive(models.TransientModel):
 
             financial_to_pay = account_financial.browse(active_id)
 
-            if financial_to_pay.move_type == 'p':
-                payment_type = 'pp'
+            if financial_to_pay.financial_type == 'p':
+                financial_type = 'pp'
             else:
-                payment_type = 'rr'
+                financial_type = 'rr'
 
-            account_financial.create({
-                'journal_id': wizard.journal_id.id,
-                'company_id': wizard.company_id.id,
-                'amount_document': wizard.ammount_paid,
-                'ref': financial_to_pay.ref,
-                'ref_item': financial_to_pay.ref_item,
-                'date_credit_debit': wizard.date_credit_debit,
-                'payment_method_id': wizard.payment_method_id.id,
-                'amount_discount': wizard.amount_discount,
-                'amount_interest': wizard.amount_interest,
-                'currency_id': wizard.currency_id.id,
-                'date_payment': wizard.date_payment,
-                'payment_id': active_id,
-                'move_type': payment_type,
-                'partner_id': financial_to_pay.partner_id.id,
-                'document_number': financial_to_pay.document_number,
-                'date_maturity': financial_to_pay.date_maturity,
-            })
-        return {
-            'type': 'ir.actions.client',
-            'tag': 'reload',
-        }
+            vals = account_financial._prepare_payment(
+                journal_id=wizard.journal_id.id,
+                company_id=wizard.company_id.id,
+                currency_id=wizard.currency_id.id,
+                financial_type=financial_type,
+                partner_id=financial_to_pay.partner_id.id,
+                document_number=financial_to_pay.document_number,
+                date_issue=wizard.date_payment,
+                document_item=financial_to_pay.document_item,
+                date_maturity=financial_to_pay.date_maturity,
+                amount=wizard.amount,
+            )
+
+            vals['financial_payment_id'] = active_id
+            account_financial.create(vals)

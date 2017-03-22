@@ -3,6 +3,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import api, fields, models
+
 from ..models.financial_move import (
     FINANCIAL_MOVE,
 )
@@ -13,20 +14,17 @@ class FinancialMoveCreate(models.TransientModel):
     _name = 'financial.move.create'
     _inherit = ['account.abstract.payment']
 
-    @api.multi
-    @api.depends('financial_type')
-    def _compute_payment_type(self):
-        for record in self:
-            if record.financial_type in ('r', 'rr'):
-                record.payment_type = 'inbound'
-            elif record.financial_type in ('p', 'pp'):
-                record.payment_type = 'outbound'
-
     @api.depends('amount', 'amount_discount')
     def _compute_totals(self):
         for record in self:
             record.amount_total = record.amount - record.amount_discount
 
+    payment_type = fields.Selection(
+        required=False,
+    )
+    payment_method_id = fields.Many2one(
+        required=False,
+    )
     line_ids = fields.One2many(
         comodel_name='financial.move.line.create',
         inverse_name='financial_move_id',
@@ -36,8 +34,9 @@ class FinancialMoveCreate(models.TransientModel):
         selection=FINANCIAL_MOVE,
         required=True,
     )
-    payment_type = fields.Selection(
-        compute='_compute_payment_type',
+    payment_mode_id = fields.Many2one(
+        comodel_name='account.payment.mode', string="Payment Mode",
+        ondelete='restrict',
     )
     payment_term_id = fields.Many2one(
         string='Payment Term',
@@ -51,7 +50,7 @@ class FinancialMoveCreate(models.TransientModel):
         comodel_name='account.account',
         string=u'Account',
         required=True,
-        domain=[('internal_type', 'in', ('receivable', 'payable'))],
+        domain=[('internal_type', '=', 'other')],
         help="The partner account used for this invoice."
     )
     document_number = fields.Char(
@@ -98,10 +97,10 @@ class FinancialMoveCreate(models.TransientModel):
     @api.multi
     def compute(self):
         financial_move = self.env['financial.move']
+        financial_type = False
         for record in self:
-            res = []
             for move in record.line_ids:
-                financial = financial_move.create(dict(
+                vals = financial_move._prepare_payment(
                     journal_id=self.journal_id.id,
                     company_id=self.company_id.id,
                     currency_id=self.currency_id.id,
@@ -109,33 +108,20 @@ class FinancialMoveCreate(models.TransientModel):
                     partner_id=self.partner_id.id,
                     document_number=self.document_number,
                     date_issue=self.date_issue,
-                    payment_method_id=self.payment_method_id.id,
+                    payment_mode_id=self.payment_mode_id.id,
                     payment_term_id=self.payment_term_id.id,
                     account_analytic_id=self.account_analytic_id.id,
                     account_id=self.account_id.id,
                     document_item=move.document_item,
                     date_maturity=move.date_maturity,
                     amount=move.amount,
-                ))
+                )
+                financial = financial_move.create(vals)
                 financial.action_confirm()
-                res.append(financial.id)
+                financial_move |= financial
+                financial_type = record.financial_type
 
-        if record.financial_type == 'r':
-            name = 'Receivable'
-        else:
-            name = 'Payable'
-        action = {
-            'name': name,
-            'type': 'ir.actions.act_window',
-            'res_model': 'financial.move',
-            'domain': [('id', 'in', res)],
-            'views': [(self.env.ref(
-                'financial.financial_move_tree_view').id, 'list')],
-            'view_type': 'list',
-            'view_mode': 'form,tree',
-            'target': 'current'
-        }
-        return action
+        return financial_move.action_view_financial(financial_type)
 
 
 class FinancialMoveLineCreate(models.TransientModel):
