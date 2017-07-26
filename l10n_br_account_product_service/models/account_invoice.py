@@ -5,7 +5,8 @@
 from openerp import models, fields, api, _
 from openerp.exceptions import RedirectWarning
 
-from .l10n_br_account_product_service import PRODUCT_FISCAL_TYPE
+from .l10n_br_account_product_service import PRODUCT_FISCAL_TYPE, \
+    PRODUCT_FISCAL_TYPE_DEFAULT, PRODUCT_ACCOUNT_TYPE
 
 
 class AccountInvoice(models.Model):
@@ -148,3 +149,21 @@ class AccountInvoice(models.Model):
         'l10n_br_account.fiscal.document', string='Documento', readonly=True,
         states={'draft': [('readonly', False)]},
         default=_default_fiscal_document)
+
+
+class AccountInvoiceLine(models.Model):
+   _inherit = 'account.invoice.line'
+
+   account_type = fields.Selection(PRODUCT_ACCOUNT_TYPE,
+                                   u'Tipo Contábil',
+                                   required=True,
+                                   default=PRODUCT_FISCAL_TYPE_DEFAULT)
+
+   @api.model
+   def _validate_taxes(self, values):
+       result = super(AccountInvoiceLine, self)._validate_taxes(values)
+       product_id = values.get('product_id') or self.product_id.id
+       product = self.env['product.template'].browse(product_id)
+       if product.account_type:
+           result['account_type'] = product.account_type
+       return result

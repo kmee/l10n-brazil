@@ -33,9 +33,9 @@ PRODUCT_ORIGIN = [
 class ProductTemplate(models.Model):
     _inherit = 'product.template'
 
-    fiscal_type = fields.Selection(
-        selection_add=PRODUCT_FISCAL_TYPE,
-        default=PRODUCT_FISCAL_TYPE_DEFAULT)
+    # fiscal_type = fields.Selection(
+    #     selection_add=PRODUCT_FISCAL_TYPE,
+    #     default=PRODUCT_FISCAL_TYPE_DEFAULT)
 
     origin = fields.Selection(PRODUCT_ORIGIN, 'Origem', default='0')
 

@@ -591,326 +591,326 @@
         <!-- Product Templates -->
         <!-- On Site Monitoring -->
         <record id="product.product_product_1_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <!--<field name="fiscal_classification_id" ref=""/> -->
         </record>
 
         <!-- On Site Assistance -->
         <record id="product.product_product_2_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <!--<field name="fiscal_classification_id" ref=""/> -->
         </record>
 
         <!-- PC Assemble SC234 -->
         <record id="product.product_product_3_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_pc"/>
         </record>
 
         <!-- iPad Retina Display -->
         <record id="product.product_product_4_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">acabado</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_pc"/>
         </record>
 
         <!-- iPad Retina Display -->
         <record id="product.product_product_4b_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">acabado</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_pc"/>
         </record>
 
         <!-- iPad Retina Display -->
         <record id="product.product_product_4c_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">acabado</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_pc"/>
         </record>
 
         <!-- iPad Retina Display -->
         <record id="product.product_product_4d_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_pc"/>
         </record>
 
         <!-- PC Assemble + Custom (PC on Demand) -->
         <record id="product.product_product_5_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_pc"/>
         </record>
 
         <!-- Bose Mini Bluetooth Speaker -->
         <record id="product.product_product_5b_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <!--<field name="fiscal_classification_id" ref=""/> -->
         </record>
 
         <!-- iPad Mini -->
         <record id="product.product_product_6_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_pc"/>
         </record>
 
         <!-- Apple In-Ear Headphones -->
         <record id="product.product_product_7_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <!--<field name="fiscal_classification_id" ref=""/> -->
         </record>
 
         <!-- iMac -->
         <record id="product.product_product_8_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_pc"/>
         </record>
 
         <!-- Apple Wireless Keyboard -->
         <record id="product.product_product_9_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_keyboard"/>
         </record>
 
         <!-- Mouse, Optical -->
         <record id="product.product_product_10_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_mouse"/>
         </record>
 
         <!-- iPod -->
         <record id="product.product_product_11_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_pc"/>
         </record>
 
         <!-- iPod -->
         <record id="product.product_product_11b_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_pc"/>
         </record>
 
         <!-- Mouse, Wireless -->
         <record id="product.product_product_12_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_mouse"/>
         </record>
 
         <!-- RAM SR5 -->
         <record id="product.product_product_13_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_memory"/>
         </record>
 
         <!-- RAM SR2 -->
         <record id="product.product_product_14_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_memory"/>
         </record>
 
         <!-- RAM SR3 -->
         <record id="product.product_product_15_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_memory"/>
         </record>
 
         <!-- Computer Case -->
         <record id="product.product_product_16_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_cabinet"/>
         </record>
 
         <!-- HDD SH-1 -->
         <record id="product.product_product_17_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_hd"/>
         </record>
 
         <!-- HDD SH-2 -->
         <record id="product.product_product_18_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_hd"/>
             <field name="fci">EEAEEDF6-8244-8244-8244-3A14AB21D3B3</field>
         </record>
 
         <!-- HDD on Demand -->
         <record id="product.product_product_19_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_hd"/>
         </record>
 
         <!-- Motherboard I9P57 -->
         <record id="product.product_product_20_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_motherboard"/>
         </record>
 
         <!-- Motherboard A20Z7 -->
         <record id="product.product_product_21_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_motherboard"/>
         </record>
 
         <!-- Processor Core i5 2.70 Ghz -->
         <record id="product.product_product_22_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_processor"/>
         </record>
 
         <!-- Processor AMD 8-Core -->
         <record id="product.product_product_23_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_processor"/>
         </record>
 
         <!-- Graphics Card -->
         <record id="product.product_product_24_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_processor"/>
         </record>
 
         <!-- Laptop E5023 -->
         <record id="product.product_product_25_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_pc"/>
         </record>
 
         <!-- Laptop S3450 -->
         <record id="product.product_product_26_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_pc"/>
         </record>
 
         <!-- Laptop Customized -->
         <record id="product.product_product_27_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_pc"/>
         </record>
 
         <!-- External Hard disk -->
         <record id="product.product_product_28_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_hd"/>
         </record>
 
         <!-- Pen drive, SP-2 -->
         <record id="product.product_product_29_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_hd"/>
         </record>
 
         <!-- Pen drive, SP-4 -->
         <record id="product.product_product_30_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_hd"/>
         </record>
 
         <!-- Multimedia Speakers -->
         <record id="product.product_product_31_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <!--<field name="fiscal_classification_id" ref=""/> -->
         </record>
 
         <!-- Headset standard -->
         <record id="product.product_product_32_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <!--<field name="fiscal_classification_id" ref=""/> -->
         </record>
 
         <!-- Headset USB -->
         <record id="product.product_product_33_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <!--<field name="fiscal_classification_id" ref=""/> -->
         </record>
 
         <!-- Webcam -->
         <record id="product.product_product_34_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <!--<field name="fiscal_classification_id" ref=""/> -->
         </record>
 
         <!-- Blank CD -->
         <record id="product.product_product_35_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_hd"/>
         </record>
 
         <!-- Blank DVD-RW -->
         <record id="product.product_product_36_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <field name="fiscal_classification_id" ref="l10n_br_account_product.demo_fiscal_classification_hd"/>
         </record>
 
         <!-- Printer, All-in-one -->
         <record id="product.product_product_37_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <!--<field name="fiscal_classification_id" ref=""/> -->
         </record>
 
         <!-- Ink Cartridge -->
         <record id="product.product_product_38_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <!--<field name="fiscal_classification_id" ref=""/> -->
         </record>
 
         <!-- Toner Cartridge -->
         <record id="product.product_product_39_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <!--<field name="fiscal_classification_id" ref=""/> -->
         </record>
 
         <!-- Windows 7 Professional -->
         <record id="product.product_product_40_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <!--<field name="fiscal_classification_id" ref=""/> -->
         </record>
 
         <!-- Windows Home Server 2011 -->
         <record id="product.product_product_41_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <!--<field name="fiscal_classification_id" ref=""/> -->
         </record>
 
         <!-- Office Suite -->
         <record id="product.product_product_42_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <!--<field name="fiscal_classification_id" ref=""/> -->
         </record>
 
         <!-- Zed+ Antivirus -->
         <record id="product.product_product_43_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <!--<field name="fiscal_classification_id" ref=""/> -->
         </record>
 
         <!-- GrapWorks Software -->
         <record id="product.product_product_44_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <!--<field name="fiscal_classification_id" ref=""/> -->
         </record>
 
         <!-- Router R430 -->
         <record id="product.product_product_45_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <!--<field name="fiscal_classification_id" ref=""/> -->
         </record>
 
         <!-- Datacard -->
         <record id="product.product_product_46_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <!--<field name="fiscal_classification_id" ref=""/> -->
         </record>
 
         <!-- Switch, 24 ports -->
         <record id="product.product_product_47_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <!--<field name="fiscal_classification_id" ref=""/> -->
         </record>
 
         <!-- USB Adapter -->
         <record id="product.product_product_48_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">revenda</field>
             <!--<field name="fiscal_classification_id" ref=""/> -->
         </record>
 
         <!-- Service -->
         <record id="product.product_product_consultant_product_template" model="product.template">
-            <field name="fiscal_type">product</field>
+            <field name="account_type">service</field>
             <!--<field name="fiscal_classification_id" ref=""/> -->
         </record>
 

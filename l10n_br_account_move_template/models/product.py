@@ -4,11 +4,10 @@
 
 from openerp import models, fields, api
 
-from .l10n_br_account_product_service import (
-    PRODUCT_FISCAL_TYPE,
+from openerp.addons.l10n_br_account_product_service.models\
+    .l10n_br_account_product_service import (
     PRODUCT_FISCAL_TYPE_DEFAULT,
-    PRODUCT_ACCOUNT_TYPE )
-
+    PRODUCT_ACCOUNT_TYPE)
 
 class ProductTemplate(models.Model):
     """Inherit class to change default value of fiscal_type field"""
@@ -26,4 +25,3 @@ class ProductTemplate(models.Model):
                 record.fiscal_type = 'service'
             else:
                 record.fiscal_type = 'product'
-

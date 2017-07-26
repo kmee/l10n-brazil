@@ -1583,6 +1583,7 @@ class AccountInvoiceLine(models.Model):
                 'partner_invoice_id': self.invoice_id.partner_id.id,
                 'product_id': self.product_id.id,
                 'fiscal_category_id': self.fiscal_category_id.id,
+                'account_type':self.account_type,
                 'context': ctx
             }
             result = self.with_context(ctx)._fiscal_position_map(
