@@ -202,7 +202,7 @@ class SpedEmpresa(models.Model):
         string='Último lote de RPS'
     )
 
-    default_ind_pres = fields.Selection(
+    ind_pres = fields.Selection(
         selection=[
             ('0', 'Não se aplica'),
             ('1', 'Operação presencial'),
