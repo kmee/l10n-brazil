@@ -363,7 +363,7 @@ class SpedCalculoImposto(SpedBase):
         help='Indicador de presença do comprador no estabelecimento '
              'comercial no momento da operação.',
         default=lambda
-            self: self.env.user.company_id.sped_empresa_id.default_ind_pres,
+            self: self.env.user.company_id.sped_empresa_id.ind_pres,
     )
 
     @api.depends('company_id', 'partner_id')
