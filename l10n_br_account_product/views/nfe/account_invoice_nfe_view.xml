@@ -469,6 +469,7 @@
                             </group>
                         </page>
                         <page string="Financial" name="financial_page">
+                            <field name="financial_paid" invisible="0"/>
                             <field name="financial_ids"/>
                         </page>
                     </notebook>

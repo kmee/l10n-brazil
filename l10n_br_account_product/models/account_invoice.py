@@ -186,9 +186,56 @@ class AccountInvoice(models.Model):
     def _compute_financial_ids(self):
         for record in self:
             document_id = record._name + ',' + str(record.id)
-            record.financial_ids = record.env['financial.move'].search(
-                [['doc_source_id', '=', document_id]]
-            )
+
+            financials = record.env['financial.move'].search(
+                [['doc_source_id', '=', document_id]])
+            record.financial_ids = financials
+            #
+            # paid = all(finan.state == 'paid' for finan in financials)
+            # if paid:
+            #     record.financial_paid = paid
+
+    @api.multi
+    @api.depends('financial_ids.state')
+    def _compute_financial_paid(self):
+        for record in self.sudo():
+            paid = False
+            if record.financial_ids:
+                paid = all(finan.state == 'paid' for
+                           finan in record.financial_ids)
+            record.financial_paid = paid
+
+    @api.one
+    @api.depends('financial_paid', 'account_id',
+                 'move_id.line_id.account_id',
+                 'move_id.line_id.reconcile_id')
+    def _compute_reconciled(self):
+        self.sudo()
+        reconciled = self.test_paid() or self.financial_paid
+        print ('%s: %s\n' % (self.id, reconciled))
+        self.reconciled = reconciled
+
+                # @api.multi
+                # def financial_line_id_payment_get(self):
+                #     if not self.id:
+                #         return []
+                #     query = """SELECT fm.id
+                #                FROM financial_move fm
+                #                WHERE fm.doc_source_id = %s
+                #                AND fm.company_id = %s
+                #     """
+                #     document_id = self._name + ',' + str(self.id)
+                #     self._cr.execute(query, (document_id, self.company_id.id))
+                #     return [row[0] for row in self._cr.fetchall()]
+
+                # @api.multi
+                # def test_paid_financial(self):
+                #     line_ids = self.financial_line_id_payment_get()
+                #     if line_ids:
+                #         lines = self.sudo().env['financial.move'].browse(line_ids)
+                #         return all(line.state == 'paid' for line in lines)
+                #     else:
+                #         return False
 
     @api.multi
     @api.depends('invoice_line', 'tax_line.amount', 'issqn_wh', 'irrf_wh',
@@ -720,6 +767,12 @@ class AccountInvoice(models.Model):
         inverse_name='invoice_id',
         string=u'Duplicatas',
     )
+    financial_paid = fields.Boolean(
+        string='Duplicatas pagas',
+        compute='_compute_financial_paid',
+        store=True,
+        copy=False,
+    )
 
     @api.one
     @api.constrains('number')
@@ -845,7 +898,8 @@ class AccountInvoice(models.Model):
                      'serie_nfe': invoice.document_serie_id.code,
                      'number': seq_number,
                      'date_hour_invoice': date_time_invoice,
-                     'date_in_out': date_in_out
+                     'date_in_out': date_in_out,
+                     'ref': seq_number,
                      }
                 )
         return True
@@ -1065,10 +1119,21 @@ class AccountInvoice(models.Model):
             elif template_item.account_automatico_debito == ACCOUNT_AUTOMATICO_PARTICIPANTE:
                 partner = self.partner_id
                 if self.type in ('out_invoice', 'out_refund'):
-                    account_debito = \
-                        partner.property_account_receivable
+                    if partner.property_account_receivable:
+                        account_debito = \
+                            partner.property_account_receivable
+                    else:
+                        raise UserError(
+                            u'Conta de Recebimento não '
+                            u'selecionada no parceiro.'
+                        )
                 elif self.type in ('in_invoice', 'in_refund'):
-                    account_debito = partner.property_account_payable
+                    if partner.property_account_payable:
+                        account_debito = partner.property_account_payable
+                    else:
+                        raise UserError(
+                            u'Conta de Pagamento não selecionada no parceiro.'
+                        )
 
             if account_debito is not None:
                 dados = {
@@ -1088,10 +1153,20 @@ class AccountInvoice(models.Model):
             elif template_item.account_automatico_credito == ACCOUNT_AUTOMATICO_PARTICIPANTE:
                 partner = self.partner_id
                 if self.type in ('out_invoice', 'out_refund'):
-                    account_credito = \
-                        partner.property_account_receivable
+                    if partner.property_account_receivable:
+                        account_credito = \
+                            partner.property_account_receivable
+                    else:
+                        raise UserError(
+                            u'Conta de Pagamento não selecionada no parceiro.'
+                        )
                 elif self.type in ('in_invoice', 'in_refund'):
-                    account_credito = partner.property_account_payable
+                    if partner.property_account_payable:
+                        account_credito = partner.property_account_payable
+                    else:
+                        raise UserError(
+                            u'Conta de Pagamento não selecionada no parceiro.'
+                        )
 
             if account_credito is not None:
                 dados = {
@@ -1185,7 +1260,7 @@ class AccountInvoice(models.Model):
             line_id = []
 
             move_vals = {
-                'ref': inv.reference or inv.supplier_invoice_number or inv.name,
+                'ref': inv.internal_number or inv.name,
                 'line_id': line_id,
                 'journal_id': inv.journal_id.id,
                 'partner_id': inv.partner_id.id,
@@ -1193,8 +1268,7 @@ class AccountInvoice(models.Model):
                 # 'date': inv.date_in_out,
                 'company_id': inv.company_id.id,
                 'narration': inv.comment,
-                'company_id': inv.company_id.id,
-
+                'name': inv.internal_number,
             }
 
             template_nao_contabilizados = set()
@@ -1256,7 +1330,7 @@ class AccountInvoice(models.Model):
             # get the same
             # account move reference when creating the same invoice after
             #  a cancelled one:
-            move.post()
+            # move.post()
 
         #
         # Chamamos o action_move_create para manter a chamadas de outros
@@ -1410,17 +1484,12 @@ class AccountInvoice(models.Model):
             payment_ids.append(payment)
         self.duplicata_ids = payment_ids
 
-    @api.one
-    @api.depends('financial_ids.state')
-    def _compute_reconciled(self):
-        self.reconciled = self.test_paid()
-
-    @api.multi
-    def test_paid(self):
-        line_ids = self.financial_ids
-        if not line_ids:
-            return False
-        return all(line.state == 'paid' for line in line_ids)
+    @api.model
+    def create(self, vals):
+        res = super(AccountInvoice, self).create(vals)
+        if res.payment_term and not res.duplicata_ids:
+            res.onchange_duplicatas()
+        return res
 
 
 class AccountInvoiceLine(models.Model):
@@ -2476,10 +2545,19 @@ class AccountInvoiceLine(models.Model):
             elif template_item.account_automatico_debito == ACCOUNT_AUTOMATICO_PRODUTO:
                 product = self.product_id
                 if self.invoice_id.type in ('out_invoice', 'out_refund'):
-                    account_debito = product.property_account_income
+                    if product.property_account_income:
+                        account_debito = product.property_account_income
+                    else:
+                        raise UserError(
+                            u'Conta de receita não selecionada no produto.'
+                        )
                 elif self.invoice_id.type in ('in_invoice', 'in_refund'):
-                    account_debito = product.property_account_expense
-
+                    if product.property_account_expense:
+                        account_debito = product.property_account_expense
+                    else:
+                        raise UserError(
+                            u'Conta de Despesas não selecionada no produto.'
+                        )
             elif template_item.account_automatico_debito == ACCOUNT_AUTOMATICO_PARTICIPANTE:
                 partner = self.invoice_id.partner_id
                 if self.invoice_id.type in ('out_invoice', 'out_refund'):
@@ -2508,17 +2586,38 @@ class AccountInvoiceLine(models.Model):
             elif template_item.account_automatico_credito == ACCOUNT_AUTOMATICO_PRODUTO:
                 product = self.product_id
                 if self.invoice_id.type in ('out_invoice', 'out_refund'):
-                    account_credito = product.property_account_income
+                    if product.property_account_income:
+                        account_credito = product.property_account_income
+                    else:
+                        raise UserError(
+                            u'Conta de Recebimento não selecionada no produto.'
+                        )
                 elif self.invoice_id.type in ('in_invoice', 'in_refund'):
-                    account_credito = product.property_account_expense
+                    if product.property_account_expense:
+                        account_credito = product.property_account_expense
+                    else:
+                        raise UserError(
+                            u'Conta de Despesas não selecionada no produto.'
+                        )
 
             elif template_item.account_automatico_credito == ACCOUNT_AUTOMATICO_PARTICIPANTE:
                 partner = self.invoice_id.partner_id
                 if self.invoice_id.type in ('out_invoice', 'out_refund'):
-                    account_credito = \
-                        partner.property_account_receivable
+                    if partner.property_account_receivable:
+                        account_credito = \
+                            partner.property_account_receivable
+                    else:
+                        raise UserError(
+                            u'Conta de Recebimento'
+                            u' não selecionada no parceiro.'
+                        )
                 elif self.invoice_id.type in ('in_invoice', 'in_refund'):
-                    account_credito = partner.property_account_payable
+                    if partner.property_account_payable:
+                        account_credito = partner.property_account_payable
+                    else:
+                        raise UserError(
+                            u'Conta de Pagamento não selecionada no parceiro.'
+                        )
 
             if account_credito is not None:
                 dados = {

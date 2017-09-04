@@ -130,7 +130,7 @@ class FinancialMove(models.Model):
 
             if not move.account_move_template_id:
                 error += _("- Move template not found\n")
-            if not move.journal_id:
+            if not move.account_id.journal_id:
                 if move.type in DEBT_2RECEIVE_2PAY:
                     error += _("- Financial account without journal\n")
                 else:
@@ -156,7 +156,7 @@ class FinancialMove(models.Model):
                 'company_id': move.company_id.id,
                 'date': move.date_document,
                 'line_id': line_id,
-                'journal_id': move.journal_id.id,
+                'journal_id': move.account_id.journal_id.id,
             }
 
             self.account_move_id = account_move.create(vals)

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<openerp>
+    <data>
+
+        <record model="ir.ui.view" id="account_payment_term_tree">
+            <field name="name">account.payment.term.tree</field>
+            <field name="model">account.payment.term</field>
+            <field name="priority">1</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name" />
+                    <field name="indPag" />
+                    <field name="sped_forma_pagamento_id" />
+                    <field name="note" />
+                    <field name="active" />
+                </tree>
+            </field>
+        </record>
+
+    </data>
+</openerp>
