@@ -4,7 +4,7 @@
 
 from __future__ import division, print_function, unicode_literals
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 from openerp import api, fields, models, _
 from openerp.exceptions import ValidationError
@@ -608,7 +608,7 @@ class FinancialMove(models.Model):
                 date_diference = date_value(record.date_payment) - \
                                  date_value(record.date_business_maturity)
             elif record.debt_status == 'overdue':
-                date_diference = date_value(record.company_id.today_date) - \
+                date_diference = date_value(date.today().strftime('%Y-%m-%d')) - \
                                  date_value(record.date_business_maturity)
             arrears = date_diference and date_diference.days or 0
             record.arrears_days = arrears
