@@ -17,6 +17,7 @@
         'sales_team',
         'sale',
         'sale_stock',
+        'sped_stock',
     ],
     'data': [
         'views/inherited_sale_order_line_base_view.xml',
@@ -40,4 +41,5 @@
         'views/inherited_sale_menu_product_view.xml',
     ],
     'installable': True,
+    'auto_install': True,
 }
