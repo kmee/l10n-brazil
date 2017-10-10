@@ -5,7 +5,7 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-from __future__ import division, print_function, unicode_literals
+
 
 import logging
 
@@ -1194,7 +1194,7 @@ class SpedDocumento(SpedBase, models.Model):
 
             if campos_proibidos:
                 mensagem += '\nCampos proibidos: '
-                mensagem += unicode(campos_proibidos)
+                mensagem += str(campos_proibidos)
 
             raise ValidationError(_(mensagem))
 

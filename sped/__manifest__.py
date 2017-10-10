@@ -6,11 +6,11 @@
 #
 
 {
-    'name': u'SPED',
+    'name': 'SPED',
     'category': 'Fiscal',
     'version': '11.0.1.0.0',
-    'author': u'Odoo Community Association (OCA), Ari Caldeira',
-    'category': u'Base',
+    'author': 'Odoo Community Association (OCA), Ari Caldeira',
+    'category': 'Base',
     'license': 'AGPL-3',
     'depends': [
         'l10n_br_base',
