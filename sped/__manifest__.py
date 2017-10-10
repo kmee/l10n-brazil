@@ -8,7 +8,7 @@
 {
     'name': u'SPED',
     'category': 'Fiscal',
-    'version': '10.0.1.0.0',
+    'version': '11.0.1.0.0',
     'author': u'Odoo Community Association (OCA), Ari Caldeira',
     'category': u'Base',
     'license': 'AGPL-3',
