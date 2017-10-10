@@ -12,7 +12,7 @@ from odoo import api, fields, models
 
 
 class SpedDocumentoDuplicata(SpedBase, models.Model):
-    _name = b'sped.documento.duplicata'
+    _name = 'sped.documento.duplicata'
     _description = 'Duplicatas do Documento Fiscal'
     _order = 'documento_id, data_vencimento'
     # _rec_name = 'numero'

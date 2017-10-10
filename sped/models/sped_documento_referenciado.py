@@ -15,7 +15,7 @@ from odoo.addons.l10n_br_base.constante_tributaria import (
 
 
 class SpedDocumentoReferenciado(models.Model):
-    _name = b'sped.documento.referenciado'
+    _name = 'sped.documento.referenciado'
     _description = 'Documentos Referenciados no Documento Fiscal'
 
     documento_id = fields.Many2one(

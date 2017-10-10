@@ -12,7 +12,7 @@ from odoo.exceptions import ValidationError
 
 
 class SpedVeiculo(models.Model):
-    _name = b'sped.veiculo'
+    _name = 'sped.veiculo'
     _description = 'Veículos'
     _order = 'placa'
     _rec_name = 'placa'

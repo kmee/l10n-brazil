@@ -12,7 +12,7 @@ from odoo import fields, models
 
 
 class SpedDocumentoItemDeclaracaoImportacaoAdicao(SpedBase, models.Model):
-    _name = b'sped.documento.item.declacarao.importacao.adicao'
+    _name = 'sped.documento.item.declacarao.importacao.adicao'
     _description = 'Adições da Declaração de Importação do Item do ' \
                    'Documento Fiscal'
 

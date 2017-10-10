@@ -27,7 +27,7 @@ except (ImportError, IOError) as err:
 
 
 class SpedDocumento(SpedBase, models.Model):
-    _name = b'sped.documento'
+    _name = 'sped.documento'
     _description = 'Documentos Fiscais'
     _inherit = ['mail.thread']
     _order = 'emissao, modelo, data_emissao desc, serie, numero desc'

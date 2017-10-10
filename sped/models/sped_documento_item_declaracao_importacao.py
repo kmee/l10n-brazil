@@ -16,7 +16,7 @@ from odoo.addons.l10n_br_base.constante_tributaria import (
 
 
 class SpedDocumentoItemDeclaracaoImportacao(SpedBase, models.Model):
-    _name = b'sped.documento.item.declaracao.importacao'
+    _name = 'sped.documento.item.declaracao.importacao'
     _description = 'Declarações de Importação do Item do Documento Fiscal'
 
     item_id = fields.Many2one(

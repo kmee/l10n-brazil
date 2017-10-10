@@ -13,7 +13,7 @@ import odoo.addons.decimal_precision as dp
 
 
 class SpedDocumentoVolume(SpedBase, models.Model):
-    _name = b'sped.documento.volume'
+    _name = 'sped.documento.volume'
     _description = 'Volumes do Documento Fiscal'
     # _order = 'emissao, modelo, data_emissao desc, serie, numero'
     # _rec_name = 'numero'

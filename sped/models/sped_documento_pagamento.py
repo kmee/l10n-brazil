@@ -28,7 +28,7 @@ except (ImportError, IOError) as err:
 
 
 class SpedDocumentoPagamento(SpedBase, models.Model):
-    _name = b'sped.documento.pagamento'
+    _name = 'sped.documento.pagamento'
     _description = 'Pagamentos do Documento Fiscal'
     _order = 'documento_id, sequence, condicao_pagamento_id'
     # _rec_name = 'numero'
