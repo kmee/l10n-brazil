@@ -129,7 +129,7 @@ class TestResourceCalendar(test_common.SingleTransactionCase):
         proximo_dia_util = self.municipal_calendar_id.proximo_dia_util(
             anterior_ao_fds)
         self.assertEqual(proximo_dia_util,
-                         fields.Datetime.from_string('2016-12-19 00:00:01'),
+                         fields.Datetime.from_string('2016-12-16 00:00:01'),
                          'Partindo de um fds, próximo dia util inválido')
 
     def test_07_get_dias_base(self):
