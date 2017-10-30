@@ -99,6 +99,12 @@ class PosOrder(models.Model):
     @api.model
     def create(self, vals):
         order = super(PosOrder, self).create(vals)
+        numero_pedido = "%s%s/%s" % (
+            order.session_id.config_id.sequence_id.prefix,
+            vals['chave_cfe'][25:34],
+            vals['chave_cfe'][34:40]
+        )
+        order.name = numero_pedido
         order.simplified_limit_check()
         return order
 
