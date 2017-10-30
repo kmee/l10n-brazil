@@ -36,7 +36,7 @@
 
         'data/sped_pais_data.xml',
         'data/sped_estado_data.xml',
-        'data/sped_municipio_data.xml',
+        #'data/sped_municipio_data.xml',
         'data/sped_municipio_exterior_data.xml',
 
         'data/inherited_product_uom_category_data.xml',
@@ -90,10 +90,16 @@
         #
         'security/inherited_res_groups_data.xml',
         'security/ir.model.access.csv',
+
+        #
+        # Dados dos participantes
+        #
+        #'data/sped_participante_data.xml',
     ],
     'demo': [
-        'demo/sped_empresa_demo.xml',
-        'demo/l10n_br_base_demo.xml',
+        'demo/sped_produto_demo.xml',
+        #'demo/sped_empresa_demo.xml',
+        #'demo/l10n_br_base_demo.xml',
     ],
     'test': [
         'test/sped_participante_test.yml',
