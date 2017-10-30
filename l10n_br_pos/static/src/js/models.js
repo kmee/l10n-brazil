@@ -87,6 +87,14 @@ function l10n_br_pos_models(instance, module) {
                     if (self.config.company_id[0] !== self.user.company_id[0]) {
                         throw new Error(_t("Error: The Point of Sale User must belong to the same company as the Point of Sale. You are probably trying to load the point of sale as an administrator in a multi-company setup, with the administrator account set to the wrong company."));
                     }
+                    self.models.push({
+                        model:  'ir.sequence',
+                        fields: ['name', 'prefix'],
+                        domain: [['id', '=', configs[0].sequence_id[0]]],
+                        loaded: function(self, ir_sequence) {
+                            self.config.sequence_id = ir_sequence[0];
+                        }
+                    });
                 }
             });
             this.models.push({
@@ -123,7 +131,6 @@ function l10n_br_pos_models(instance, module) {
                     self.company = companies[0];
                 },
             });
-
         },
 
         /**
