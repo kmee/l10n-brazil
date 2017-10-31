@@ -92,6 +92,8 @@
         'security/ir.model.access.csv',
     ],
     'demo': [
+        'demo/sped_produto_demo.xml',
+        'demo/sped_participante_demo.xml',
         'demo/sped_empresa_demo.xml',
         'demo/l10n_br_base_demo.xml',
     ],

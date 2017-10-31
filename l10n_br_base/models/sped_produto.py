@@ -5,8 +5,6 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
 import logging
 
 from odoo import api, fields, models
@@ -220,7 +218,7 @@ class SpedProduto(SpedBase, models.Model):
         for produto in self:
             codigo_unico = produto.codigo or ''
             codigo_unico = codigo_unico.lower().strip()
-            codigo_unico = codigo_unico.replace(' ', ' ')
+            codigo_unico = codigo_unico.replace(' ', ' ')
             codigo_unico = codigo_unico.replace('²', '2')
             codigo_unico = codigo_unico.replace('³', '3')
             codigo_unico = tira_acentos(codigo_unico)
@@ -231,7 +229,7 @@ class SpedProduto(SpedBase, models.Model):
         for produto in self:
             nome_unico = produto.nome or ''
             nome_unico = nome_unico.lower().strip()
-            nome_unico = nome_unico.replace(' ', ' ')
+            nome_unico = nome_unico.replace(' ', ' ')
             nome_unico = nome_unico.replace('²', '2')
             nome_unico = nome_unico.replace('³', '3')
             nome_unico = tira_acentos(nome_unico)
