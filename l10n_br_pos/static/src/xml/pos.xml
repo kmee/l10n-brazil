@@ -162,12 +162,6 @@
         </t>
     </t>
 
-    <t t-extend="NumpadWidget">
-        <t t-jquery='button[data-mode="price"]' t-operation="replace">
-           <button class="mode-button" data-mode='price' disabled="disabled">Price</button>
-        </t>
-    </t>
-
     <t t-name="PosOrderListWidget">
         <div class="paypad touch-scrollable">
         </div>
