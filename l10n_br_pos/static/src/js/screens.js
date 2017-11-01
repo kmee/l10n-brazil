@@ -608,6 +608,7 @@ function l10n_br_pos_screens(instance, module) {
             var posOrderModel = new instance.web.Model('pos.order');
             var posOrder = posOrderModel.call('retornar_order_by_id', {'order_id': order_id})
             .then(function (result) {
+                result['nome_loja'] = self.pos.config.sequence_id.prefix;
                 self.pos.proxy.reprint_cfe(result);
             });
         },
