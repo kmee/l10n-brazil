@@ -6,7 +6,6 @@
 #
 
 
-
 import logging
 import os
 
@@ -41,42 +40,42 @@ class SpedEmpresa(models.Model):
     mail_template_nfe_autorizada_id = fields.Many2one(
         comodel_name='mail.template',
         string='Modelo de email para NF-e autorizada',
-        #domain=[('model_id', '=', ref('sped.model_sped_documento'))],
+        # domain=[('model_id', '=', ref('sped.model_sped_documento'))],
     )
     mail_template_nfe_cancelada_id = fields.Many2one(
         comodel_name='mail.template',
         string='Modelo de email para NF-e cancelada',
-        #domain=[('model_id', '=', ref('sped.model_sped_documento'))],
+        # domain=[('model_id', '=', ref('sped.model_sped_documento'))],
     )
     mail_template_nfe_denegada_id = fields.Many2one(
         comodel_name='mail.template',
         string='Modelo de email para NF-e denegada',
-        #domain=[('model_id', '=', ref('sped.model_sped_documento'))],
+        # domain=[('model_id', '=', ref('sped.model_sped_documento'))],
     )
     mail_template_nfe_cce_id = fields.Many2one(
         comodel_name='mail.template',
         string='Modelo de email para CC-e',
-        #domain=[('model_id', '=', ref('sped.model_sped_documento'))],
+        # domain=[('model_id', '=', ref('sped.model_sped_documento'))],
     )
     mail_template_nfce_autorizada_id = fields.Many2one(
         comodel_name='mail.template',
         string='Modelo de email para NFC-e autorizada',
-        #domain=[('model_id', '=', ref('sped.model_sped_documento'))],
+        # domain=[('model_id', '=', ref('sped.model_sped_documento'))],
     )
     mail_template_nfce_cancelada_id = fields.Many2one(
         comodel_name='mail.template',
         string='Modelo de email para NFC-e cancelada',
-        #domain=[('model_id', '=', ref('sped.model_sped_documento'))],
+        # domain=[('model_id', '=', ref('sped.model_sped_documento'))],
     )
     mail_template_nfce_denegada_id = fields.Many2one(
         comodel_name='mail.template',
         string='Modelo de email para NFC-e denegada',
-        #domain=[('model_id', '=', ref('sped.model_sped_documento'))],
+        # domain=[('model_id', '=', ref('sped.model_sped_documento'))],
     )
     mail_template_nfce_cce_id = fields.Many2one(
         comodel_name='mail.template',
         string='Modelo de email para CC-e',
-        #domain=[('model_id', '=', ref('sped.model_sped_documento'))],
+        # domain=[('model_id', '=', ref('sped.model_sped_documento'))],
     )
 
     @property

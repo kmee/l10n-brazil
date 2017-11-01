@@ -3,9 +3,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 
-
-
-from odoo import api, fields, models, _
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.addons.sped_imposto.models.sped_calculo_imposto import (
     SpedCalculoImposto
@@ -37,7 +35,8 @@ class StockPicking(SpedCalculoImposto, models.Model):
         comodel_name='sped.operacao',
         string='Operação Fiscal',
         ondelete='cascade',
-        domain=[('emissao', '=', '0'), ('modelo', 'in', ['55', '65', '59', '2D'])]
+        domain=[('emissao', '=', '0'),
+                ('modelo', 'in', ['55', '65', '59', '2D'])]
     )
     documento_ids = fields.One2many(
         comodel_name='sped.documento',
@@ -91,18 +90,19 @@ class StockPicking(SpedCalculoImposto, models.Model):
         for picking in self:
             data, hora = self._separa_data_hora(picking.date)
             picking.data = data
-            #picking.hora = hora
+            # picking.hora = hora
 
             data, hora = self._separa_data_hora(picking.date_done)
             picking.data_conclusao = data
-            #picking.hora_conclusao = hora
+            # picking.hora_conclusao = hora
 
     @api.depends('documento_ids.situacao_fiscal')
     def _compute_quantidade_documentos_fiscais(self):
         for picking in self:
             documento_ids = picking.documento_ids.search(
-                [('stock_picking_id', '=', picking.id), ('situacao_fiscal', 'in',
-                  SITUACAO_FISCAL_SPED_CONSIDERA_ATIVO)])
+                            [('stock_picking_id', '=', picking.id),
+                             ('situacao_fiscal', 'in',
+                             SITUACAO_FISCAL_SPED_CONSIDERA_ATIVO)])
 
             picking.quantidade_documentos = len(documento_ids)
 
@@ -163,7 +163,7 @@ class StockPicking(SpedCalculoImposto, models.Model):
         return super(StockPicking, self).unlink()
 
     def action_cancel(self):
-        res = super(StockPicking, self).action_cancel()
+        super(StockPicking, self).action_cancel()
 
         for picking in self:
             if not picking.group_id:

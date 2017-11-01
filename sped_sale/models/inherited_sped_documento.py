@@ -3,9 +3,13 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 
-
-from odoo import api, fields, models, _
-from odoo.addons.l10n_br_base.constante_tributaria import *
+from odoo import api, fields, models
+from odoo.addons.l10n_br_base.constante_tributaria import (
+    MODELO_FISCAL_NFE,
+    MODELO_FISCAL_NFCE,
+    TIPO_EMISSAO_PROPRIA,
+    SITUACAO_NFE_AUTORIZADA,
+)
 
 
 class SpedDocumento(models.Model):

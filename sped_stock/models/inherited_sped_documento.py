@@ -3,8 +3,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 
-
-from odoo import api, fields, models, _
+from odoo import api, fields, models
 
 
 class SpedDocumento(models.Model):
@@ -32,10 +31,11 @@ class SpedDocumento(models.Model):
 
     def _confirma_estoque(self):
         self.ensure_one()
-        sql_confirma_estoque = '''
+        '''
         update stock_picking set state = 'done' where id = %(picking_id)s;
         update stock_move set state = 'done' where picking_id = %(picking_id)s;
-        update stock_pack_operation set qty_done = product_qty where picking_id = %(picking_id)s;
+        update stock_pack_operation set qty_done = \
+        product_qty where picking_id = %(picking_id)s;
         '''
         #
         # Vamos concluir a entrega
@@ -69,13 +69,14 @@ class SpedDocumento(models.Model):
                     pack.unlink()
 
             self.stock_picking_id.action_done()
-            #self.stock_picking_id.state = 'done'
+            # self.stock_picking_id.state = 'done'
 
     def _cancela_estoque(self):
         sql_cancela_estoque = '''
         -- update stock_picking set state = 'cancel' where id = %(picking_id)s;
         delete from stock_pack_operation where picking_id = %(picking_id)s;
-        update stock_move set state = 'cancel' where picking_id = %(picking_id)s;
+        update stock_move set state = \
+        'cancel' where picking_id = %(picking_id)s;
         '''
         sql_cancela_quant = '''
         --

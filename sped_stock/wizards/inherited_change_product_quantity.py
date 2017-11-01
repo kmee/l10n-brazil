@@ -6,8 +6,7 @@
 #
 
 
-
-from odoo import api, fields, models, _
+from odoo import api, fields, models
 from odoo.addons.l10n_br_base.models.sped_base import SpedBase
 
 
@@ -53,13 +52,13 @@ class ChangeProductQuantity(SpedBase, models.TransientModel):
         res = super(ChangeProductQuantity, self).default_get(fields)
 
         if self.env.context.get('active_id') and \
-            self.env.context.get('active_model') == 'sped.produto':
-            produto = self.env['sped.produto'].browse(
-                self.env.context['active_id'])
+           self.env.context.get('active_model') == 'sped.produto':
+                produto = self.env['sped.produto'].browse(
+                          self.env.context['active_id'])
 
-            res['produto_id'] = produto.id
-            res['product_id'] = produto.product_id.id
-            res['product_tmpl_id'] = produto.product_id.product_tmpl_id.id
-            res['unidade_id'] = produto.unidade_id.id
+                res['produto_id'] = produto.id
+                res['product_id'] = produto.product_id.id
+                res['product_tmpl_id'] = produto.product_id.product_tmpl_id.id
+                res['unidade_id'] = produto.unidade_id.id
 
         return res

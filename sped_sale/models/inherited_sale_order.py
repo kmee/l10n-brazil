@@ -3,12 +3,13 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 
-
-
-from odoo import api, fields, models, _
+from odoo import api, fields, models
 from odoo.addons.sped_imposto.models.sped_calculo_imposto_produto_servico \
     import SpedCalculoImpostoProdutoServico
-from odoo.addons.l10n_br_base.constante_tributaria import *
+from odoo.addons.l10n_br_base.constante_tributaria import (
+    SITUACAO_FISCAL_SPED_CONSIDERA_ATIVO,
+    TIPO_PESSOA_FISICA,
+)
 
 
 class SaleOrder(SpedCalculoImpostoProdutoServico, models.Model):
@@ -51,7 +52,7 @@ class SaleOrder(SpedCalculoImpostoProdutoServico, models.Model):
         inverse_name='order_id',
         string='Produto',
         copy=False,
-        domain=[('tipo_item','=','P')],
+        domain=[('tipo_item', '=', 'P')],
         readonly=True,
         states={'draft': [('readonly', False)]},
     )
@@ -60,7 +61,7 @@ class SaleOrder(SpedCalculoImpostoProdutoServico, models.Model):
         inverse_name='order_id',
         string='Serviços',
         copy=False,
-        domain=[('tipo_item','=','S')],
+        domain=[('tipo_item', '=', 'S')],
         readonly=True,
         states={'draft': [('readonly', False)]},
     )
@@ -104,13 +105,14 @@ class SaleOrder(SpedCalculoImpostoProdutoServico, models.Model):
         for sale in self:
             data, hora = self._separa_data_hora(sale.date_order)
             sale.data_pedido = data
-            #sale.hora_pedido = hora
+            # sale.hora_pedido = hora
 
     @api.depends('documento_ids.situacao_fiscal')
     def _compute_quantidade_documentos_fiscais(self):
         for sale in self:
             documento_ids = self.env['sped.documento'].search(
-                [('sale_order_id', '=', sale.id), ('situacao_fiscal', 'in',
+                [('sale_order_id', '=', sale.id),
+                 ('situacao_fiscal', 'in',
                   SITUACAO_FISCAL_SPED_CONSIDERA_ATIVO)])
 
             sale.quantidade_documentos = len(documento_ids)
@@ -173,7 +175,8 @@ class SaleOrder(SpedCalculoImpostoProdutoServico, models.Model):
                 continue
 
             documento_ids = self.env['sped.documento'].search(
-                [('sale_order_id', '=', sale.id), ('situacao_fiscal', 'in',
+                [('sale_order_id', '=', sale.id),
+                 ('situacao_fiscal', 'in',
                   SITUACAO_FISCAL_SPED_CONSIDERA_ATIVO)])
 
             invoice_count = len(documento_ids)
@@ -183,15 +186,15 @@ class SaleOrder(SpedCalculoImpostoProdutoServico, models.Model):
 
             if sale.state not in ('sale', 'done'):
                 invoice_status = 'no'
-            elif any(invoice_status == 'to invoice' \
-                for invoice_status in line_invoice_status):
-                invoice_status = 'to invoice'
-            elif all(invoice_status == 'invoiced' \
-                for invoice_status in line_invoice_status):
-                invoice_status = 'invoiced'
-            elif all(invoice_status in ['invoiced', 'upselling'] \
-                for invoice_status in line_invoice_status):
-                invoice_status = 'upselling'
+            elif any(invoice_status == 'to invoice'
+                     for invoice_status in line_invoice_status):
+                    invoice_status = 'to invoice'
+            elif all(invoice_status == 'invoiced'
+                     for invoice_status in line_invoice_status):
+                    invoice_status = 'invoiced'
+            elif all(invoice_status in ['invoiced', 'upselling']
+                     for invoice_status in line_invoice_status):
+                    invoice_status = 'upselling'
             else:
                 invoice_status = 'no'
 
@@ -260,8 +263,8 @@ class SaleOrder(SpedCalculoImpostoProdutoServico, models.Model):
                 if documento_produto.operacao_id.enviar_pela_venda:
                     documento_produto.envia_nfe()
 
-        #if documento_servico is not None:
-            #if documento_servico.operacao_id.enviar_pela_venda:
-                #documento_servico.envia_nfse()
+        # if documento_servico is not None:
+            # if documento_servico.operacao_id.enviar_pela_venda:
+                # documento_servico.envia_nfse()
 
         return documento_produto, documento_servico

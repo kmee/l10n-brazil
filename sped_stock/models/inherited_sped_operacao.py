@@ -3,8 +3,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 
-
-from odoo import api, fields, models, _
+from odoo import fields, models
 
 
 class SpedOperacao(models.Model):
@@ -13,7 +12,7 @@ class SpedOperacao(models.Model):
     stock_picking_type_id = fields.Many2one(
         comodel_name='stock.picking.type',
         string='Operação de Estoque',
-        domain="[('default_location_src_id', '!=', False)," + \
+        domain="[('default_location_src_id', '!=', False)," +
                " ('default_location_dest_id', '!=', False)]"
     )
     enviar_pelo_estoque = fields.Boolean(

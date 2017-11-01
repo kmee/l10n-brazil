@@ -6,7 +6,7 @@
 
 from __future__ import division, print_function, unicode_literals
 
-from odoo import api, fields, models, _
+from odoo import fields, models
 from odoo.addons.l10n_br_base.constante_tributaria import TIPO_EMISSAO_PROPRIA
 from odoo.addons.financial.constants import FINANCIAL_DEBT_2RECEIVE, \
     FINANCIAL_DEBT_2PAY
@@ -33,7 +33,7 @@ class SpedDocumentoDuplicata(models.Model):
             'currency_id': self.documento_id.currency_id.id,
             'documento_id': self.documento_id.id,
             'documento_duplicata_id': self.id,
-            'document_type_id': \
+            'document_type_id':
                 self.documento_id.financial_document_type_id.id,
             'account_id': self.documento_id.financial_account_id.id,
             'date_maturity': self.data_vencimento,

@@ -3,9 +3,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 
-
-
-from odoo import api, fields, models, _
+from odoo import api, fields, models
 from odoo.addons.sped_imposto.models.sped_calculo_imposto import (
     SpedCalculoImposto
 )
@@ -59,12 +57,11 @@ class SpedStockPicking(SpedCalculoImposto, models.Model):
         for picking in self:
             data, hora = self._separa_data_hora(picking.date)
             picking.data = data
-            #picking.hora = hora
+            # picking.hora = hora
 
             data, hora = self._separa_data_hora(picking.date_done)
             picking.data_conclusao = data
-            #picking.hora_conclusao = hora
-
+            # picking.hora_conclusao = hora
 
     # documento_fiscal_criado = fields.Boolean(
     #     copy=False
@@ -99,7 +96,8 @@ class SpedStockPicking(SpedCalculoImposto, models.Model):
     #         vals = record._prepare_sped(record.operacao_id)
     #         documento = self.env['sped.documento'].create(vals)
     #
-    #         itens_ids = self._criar_documento_itens(self.move_lines, documento)
+    #         itens_ids = self.
+    # _criar_documento_itens(self.move_lines, documento)
     #         documento.item_ids = itens_ids
     #
     #         for item in documento.item_ids:

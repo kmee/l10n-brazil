@@ -6,7 +6,7 @@
 
 from __future__ import division, print_function, unicode_literals
 
-from odoo import api, fields, models, _
+from odoo import api, fields, models
 from openerp.addons.l10n_br_base.models.sped_base import SpedBase
 
 
@@ -39,8 +39,8 @@ class FinancialMove(SpedBase, models.Model):
     def _compute_date_business_maturity(self):
         for move in self:
             if (not move.date_maturity) or \
-                (not move.company_id.country_id) or \
-                (move.company_id.country_id.id != self.env.ref('base.br').id):
+               (not move.company_id.country_id) or \
+               (move.company_id.country_id.id != self.env.ref('base.br').id):
                 super(FinancialMove, move)._compute_date_business_maturity()
                 continue
 

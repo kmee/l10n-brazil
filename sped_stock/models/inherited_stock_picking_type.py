@@ -3,7 +3,6 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 
-
 from odoo import models, fields
 
 
@@ -14,5 +13,6 @@ class StockPickingType(models.Model):
         comodel_name='sped.operacao',
         string='Operação Fiscal',
         ondelete='cascade',
-        domain=[('emissao', '=', '0'), ('modelo', 'in', ['55', '65', '59', '2D'])]
+        domain=[('emissao', '=', '0'),
+                ('modelo', 'in', ['55', '65', '59', '2D'])]
     )

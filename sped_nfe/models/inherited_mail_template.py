@@ -6,8 +6,7 @@
 #
 
 
-
-from odoo import api, fields, models
+from odoo import models
 
 
 class MailTemplate(models.Model):
@@ -24,8 +23,8 @@ class MailTemplate(models.Model):
         res = super(MailTemplate, self).generate_email(res_ids, fields=fields)
 
         if self.model not in \
-            ('sped.documento', 'sped.documento.carta.correcao'):
-            return multi_mode and res or res[res_ids[0]]
+                ('sped.documento', 'sped.documento.carta.correcao'):
+                    return multi_mode and res or res[res_ids[0]]
 
         for res_id in res:
             busca = [
@@ -36,7 +35,7 @@ class MailTemplate(models.Model):
             attachments = self.env['ir.attachment'].search(busca)
 
             if len(attachments) > 0:
-                if not 'attachment_ids' in res[res_id]:
+                if 'attachment_ids' not in res[res_id]:
                     res[res_id]['attachment_ids'] = []
 
                 for attachment in attachments:

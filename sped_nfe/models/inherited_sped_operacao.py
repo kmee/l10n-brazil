@@ -6,7 +6,6 @@
 #
 
 
-
 from odoo import fields, models
 
 
@@ -16,5 +15,5 @@ class SpedOperacaoFiscal(models.Model):
     mail_template_id = fields.Many2one(
         comodel_name='mail.template',
         string='Modelo de email',
-        #domain=[('model_id', '=', ref('sped.model_sped_documento'))],
+        # domain=[('model_id', '=', ref('sped.model_sped_documento'))],
     )

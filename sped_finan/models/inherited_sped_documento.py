@@ -4,9 +4,12 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 #
 
-from odoo import api, fields, models, _
-from odoo.addons.l10n_br_base.constante_tributaria import *
-from odoo.addons.finan.constantes import FINAN_DIVIDA_A_RECEBER
+from __future__ import division, print_function, unicode_literals
+from odoo import api, fields, models
+from odoo.addons.l10n_br_base.constante_tributaria import (
+    SITUACAO_FISCAL_SPED_CONSIDERA_ATIVO,
+    TIPO_EMISSAO_PROPRIA,
+    ENTRADA_SAIDA_ENTRADA)
 
 
 class SpedDocumento(models.Model):
@@ -71,7 +74,7 @@ class SpedDocumento(models.Model):
                 continue
 
             if documento.emissao == TIPO_EMISSAO_PROPRIA and \
-                documento.entrada_saida == ENTRADA_SAIDA_ENTRADA:
+               documento.entrada_saida == ENTRADA_SAIDA_ENTRADA:
                 continue
 
             documento.duplicata_ids.gera_lancamento_financeiro()

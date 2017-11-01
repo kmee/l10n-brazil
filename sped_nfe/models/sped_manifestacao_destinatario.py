@@ -6,22 +6,11 @@
 #
 
 
-
 import logging
 
-from odoo import api, fields, models
+from odoo import fields, models
 
 _logger = logging.getLogger(__name__)
-
-try:
-    from pysped.nfe.leiaute import *
-    from pybrasil.inscricao import limpa_formatacao
-    from pybrasil.data import (parse_datetime, UTC, data_hora_horario_brasilia,
-                               agora)
-    from pybrasil.valor import formata_valor
-
-except (ImportError, IOError) as err:
-    _logger.debug(err)
 
 
 class SpedManifestacaoDestinatario(models.Model):

@@ -6,9 +6,8 @@
 #
 
 
-
 import logging
-from odoo import api, models
+from odoo import models
 from odoo.addons.l10n_br_base.constante_tributaria import (
     MODELO_FISCAL_NFCE,
     MODELO_FISCAL_NFE,
@@ -22,7 +21,6 @@ try:
         DI_310,
     )
     from pybrasil.inscricao import limpa_formatacao
-    from pybrasil.data import parse_datetime, UTC
     from pybrasil.valor.decimal import Decimal as D
 
 except (ImportError, IOError) as err:

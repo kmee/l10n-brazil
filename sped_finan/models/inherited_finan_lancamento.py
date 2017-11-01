@@ -4,7 +4,8 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 #
 
-from odoo import api, fields, models, _
+from __future__ import division, print_function, unicode_literals
+from odoo import fields, models
 from openerp.addons.l10n_br_base.models.sped_base import SpedBase
 
 

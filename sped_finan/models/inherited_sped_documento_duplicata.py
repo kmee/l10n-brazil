@@ -4,7 +4,8 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 #
 
-from odoo import api, fields, models, _
+from __future__ import division, print_function, unicode_literals
+from odoo import fields, models
 from odoo.addons.l10n_br_base.constante_tributaria import TIPO_EMISSAO_PROPRIA
 from odoo.addons.finan.constantes import FINAN_DIVIDA_A_RECEBER, \
     FINAN_DIVIDA_A_PAGAR
@@ -28,7 +29,7 @@ class SpedDocumentoDuplicata(models.Model):
             'referencia_id': 'sped.documento,' + str(self.documento_id.id),
             'sped_documento_id': self.documento_id.id,
             'sped_documento_duplicata_id': self.id,
-            'documento_id': \
+            'documento_id':
                 self.documento_id.finan_documento_id.id,
             'conta_id': self.documento_id.finan_conta_id.id,
             'data_vencimento': self.data_vencimento,
@@ -49,5 +50,4 @@ class SpedDocumentoDuplicata(models.Model):
     def gera_lancamento_financeiro(self):
         for duplicata in self:
             dados = duplicata.prepara_finan_lancamento()
-            finan_lancamento = \
-                self.env['finan.lancamento'].create(dados)
+            self.env['finan.lancamento'].create(dados)

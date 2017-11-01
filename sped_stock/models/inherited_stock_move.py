@@ -3,10 +3,9 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 
-
 import logging
 
-from odoo import api, fields, models, _
+from odoo import api, fields, models
 import odoo.addons.decimal_precision as dp
 from odoo.addons.sped_imposto.models.sped_calculo_imposto_item import (
     SpedCalculoImpostoItem
@@ -102,7 +101,7 @@ class StockMove(SpedCalculoImpostoItem, models.Model):
         for move in self:
             data, hora = self._separa_data_hora(move.date)
             move.data = data
-            #move.hora = hora
+            # move.hora = hora
 
     def _onchange_produto_id_emissao_propria(self):
         self.ensure_one()
@@ -128,7 +127,7 @@ class StockMove(SpedCalculoImpostoItem, models.Model):
             produto = self.env['sped.produto'].browse(dados['produto_id'])
             dados['product_id'] = produto.product_id.id
 
-        if 'product_id' in dados and not 'produto_id' in dados:
+        if 'product_id' in dados and 'produto_id' not in dados:
             product = self.env['product.product'].browse(dados['product_id'])
             if product.sped_produto_id:
                 dados['produto_id'] = product.sped_produto_id.id
@@ -142,7 +141,7 @@ class StockMove(SpedCalculoImpostoItem, models.Model):
             produto = self.env['sped.produto'].browse(dados['produto_id'])
             dados['product_id'] = produto.product_id.id
 
-        if 'product_id' in dados and not 'produto_id' in dados:
+        if 'product_id' in dados and 'produto_id' not in dados:
             product = self.env['product.product'].browse(dados['product_id'])
             if product.sped_produto_id:
                 dados['produto_id'] = product.sped_produto_id.id

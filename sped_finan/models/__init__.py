@@ -5,8 +5,6 @@
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 #
 
-
-
 from . import inherited_finan_lancamento
 from . import inherited_sped_operacao
 from . import inherited_sped_documento

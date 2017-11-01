@@ -6,9 +6,12 @@
 
 from __future__ import division, print_function, unicode_literals
 
-from odoo import api, fields, models, _
-from odoo.addons.l10n_br_base.constante_tributaria import *
-from odoo.addons.financial.constants import FINANCIAL_DEBT_2RECEIVE
+from odoo import api, fields, models
+from odoo.addons.l10n_br_base.constante_tributaria import (
+    SITUACAO_FISCAL_SPED_CONSIDERA_ATIVO,
+    TIPO_EMISSAO_PROPRIA,
+    ENTRADA_SAIDA_ENTRADA
+)
 
 
 class SpedDocumento(models.Model):
@@ -60,7 +63,7 @@ class SpedDocumento(models.Model):
                 continue
 
             if documento.emissao == TIPO_EMISSAO_PROPRIA and \
-                documento.entrada_saida == ENTRADA_SAIDA_ENTRADA:
+               documento.entrada_saida == ENTRADA_SAIDA_ENTRADA:
                 continue
 
             #
