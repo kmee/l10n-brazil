@@ -5,9 +5,6 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
-from odoo import fields, models
 from odoo.addons.l10n_br_base.constante_tributaria import (
     MODELO_FISCAL,
     MODELO_FISCAL_NFE,
@@ -31,6 +28,8 @@ from odoo.addons.l10n_br_base.constante_tributaria import (
     ST_ISS,
     MODALIDADE_FRETE_DESTINATARIO_FOB,
 )
+
+from odoo import fields, models
 
 
 class SpedOperacaoFiscal(models.Model):

@@ -6,23 +6,15 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
+import logging
 
+from odoo.exceptions import ValidationError
 
 from odoo import api, fields, models, _
-from odoo.exceptions import ValidationError
 from .sped_base import SpedBase
 from ..constante_tributaria import (
-    AMBIENTE_NFE,
     INDICADOR_IE_DESTINATARIO_CONTRIBUINTE,
-    REGIME_TRIBUTARIO_LUCRO_PRESUMIDO,
-    REGIME_TRIBUTARIO_LUCRO_REAL,
-    REGIME_TRIBUTARIO_SIMPLES,
-    REGIME_TRIBUTARIO_SIMPLES_EXCESSO,
-    TIPO_EMISSAO_NFE,
 )
-
-
-import logging
 
 _logger = logging.getLogger(__name__)
 
@@ -30,7 +22,7 @@ _logger = logging.getLogger(__name__)
 try:
     from email_validator import validate_email
 
-    from pybrasil.base import mascara, primeira_maiuscula
+    from pybrasil.base import mascara  # primeira_maiuscula
     from pybrasil.data import parse_datetime, dia_util_pagamento, \
         data_hora_horario_brasilia
     from pybrasil.inscricao import (
@@ -50,7 +42,8 @@ except (ImportError, IOError) as err:
 class SpedEmpresa(SpedBase, models.Model):
     _name = 'sped.empresa'
     _description = 'Empresas e filiais'
-    _inherits = {'sped.participante': 'participante_id'} # , 'res.company': 'company_id'}
+    _inherits = {'sped.participante': 'participante_id'}
+    # , 'res.company': 'company_id'}
     _rec_name = 'nome'
     _order = 'nome, cnpj_cpf'
 
@@ -79,7 +72,7 @@ class SpedEmpresa(SpedBase, models.Model):
 
             if empresa.razao_social:
                 if empresa.nome.strip().upper() != \
-                    empresa.razao_social.strip().upper():
+                   empresa.razao_social.strip().upper():
                     nome += ' - '
                     nome += empresa.razao_social
 

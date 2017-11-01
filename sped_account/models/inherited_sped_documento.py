@@ -49,8 +49,8 @@ class SpedDocumento(models.Model):
             res['value']['account_journal_id'] = self.operacao_id.journal_id.id
 
         if self.operacao_id.account_move_template_ids:
-            res['value']['account_move_template_id'] = \
-                self.operacao_id.account_move_template_ids[0].id
+                res['value']['account_move_template_id'] = self.\
+                    operacao_id.account_move_template_ids[0].id
 
         return res
 
@@ -83,8 +83,10 @@ class SpedDocumento(models.Model):
 
             line_ids = [(5, 0, {})]
 
-            documento.item_ids.gera_account_move_line(account_move,
-                documento.account_move_template_id, line_ids)
+            documento.item_ids.\
+                gera_account_move_line(account_move,
+                                       documento.account_move_template_id,
+                                       line_ids)
 
             account_move.write({'line_ids': line_ids})
 
@@ -120,4 +122,3 @@ class SpedDocumento(models.Model):
         self.write(self.onchange_operacao_id()['value'])
         self.write(self.onchange_serie()['value'])
         self.write(self.onchange_participante_id()['value'])
-

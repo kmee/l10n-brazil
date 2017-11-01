@@ -8,7 +8,6 @@
 from __future__ import division, print_function, unicode_literals
 
 from odoo import api, fields, models
-from ..constantes import *
 
 REPORT_TYPE = [
     ('sum', 'View'),
@@ -55,8 +54,8 @@ class AccountFinancialReport(models.Model):
     @api.depends('name')
     def _compute_redutor(self):
         for report in self:
-            if report.name and (report.name.startswith('(-)')
-                                or report.name.startswith('( - )')):
+            if report.name and (report.name.startswith('(-)') or
+                                report.name.startswith('( - )')):
                 report.redutor = True
             else:
                 report.redutor = False

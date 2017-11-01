@@ -47,8 +47,9 @@ class SpedDocumentoItem(models.Model):
                     elif template_item.campo == 'vr_ipi' and \
                             not item.credita_ipi:
                         continue
-                    elif template_item.campo in ('vr_pis_proprio',
-                        'vr_cofins_proprio') and not item.credita_pis_cofins:
+                    elif template_item.campo in \
+                            ('vr_pis_proprio', 'vr_cofins_proprio') and not\
+                            item.credita_pis_cofins:
                         continue
 
                 valor = getattr(item, template_item.campo, 0)
@@ -125,8 +126,10 @@ class SpedDocumentoItem(models.Model):
                 campos_jah_contabilizados.append(template_item.campo)
 
         if move_template.parent_id:
-            self.gera_account_move_line(account_move, move_template.parent_id,
-                                        line_ids, campos_jah_contabilizados=campos_jah_contabilizados)
+            self.gera_account_move_line(
+                 account_move, move_template.parent_id,
+                 line_ids,
+                 campos_jah_contabilizados=campos_jah_contabilizados)
 
     @api.depends('modelo', 'emissao')
     def _compute_permite_alteracao(self):

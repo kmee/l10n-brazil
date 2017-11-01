@@ -5,12 +5,11 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
 import logging
 
-from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
+
+from odoo import api, fields, models, _
 
 _logger = logging.getLogger(__name__)
 

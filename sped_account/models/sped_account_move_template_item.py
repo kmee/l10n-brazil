@@ -8,8 +8,7 @@
 
 from __future__ import division, print_function, unicode_literals
 
-from odoo import api, fields, models
-from odoo.exceptions import UserError
+from odoo import fields, models
 from ..constantes import CAMPO_DOCUMENTO_FISCAL
 
 

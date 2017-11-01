@@ -4,41 +4,46 @@
 #   Aristides Caldeira <aristides.caldeira@tauga.com.br>
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
-
-
-
-
 import logging
+from odoo.exceptions import UserError
 
 from odoo import api, fields, models, tools, _
-from odoo.exceptions import UserError, ValidationError
 from odoo.addons.mail.models.mail_template import (
     mako_safe_template_env,
     mako_template_env,
     format_date,
     format_tz,
 )
-from ..constante_tributaria import *
+# from ..constante_tributaria import *
 
 _logger = logging.getLogger(__name__)
 
 try:
     from pybrasil.base import (tira_acentos, primeira_maiuscula)
     from pybrasil.data import (DIA_DA_SEMANA,
-       DIA_DA_SEMANA_ABREVIADO, MES, MES_ABREVIADO,
-       data_por_extenso, dia_da_semana_por_extenso,
-       dia_da_semana_por_extenso_abreviado, mes_por_extenso,
-       mes_por_extenso_abreviado, seculo, seculo_por_extenso,
-       hora_por_extenso, hora_por_extenso_aproximada, formata_data,
-       ParserInfoBrasil, parse_datetime, UTC, HB,
-       fuso_horario_sistema, data_hora_horario_brasilia, agora,
-       hoje, ontem, amanha, mes_passado, mes_que_vem, ano_passado,
-       ano_que_vem, semana_passada, semana_que_vem,
-       primeiro_dia_mes, ultimo_dia_mes, idade)
+                               DIA_DA_SEMANA_ABREVIADO, MES, MES_ABREVIADO,
+                               data_por_extenso, dia_da_semana_por_extenso,
+                               dia_da_semana_por_extenso_abreviado,
+                               mes_por_extenso,
+                               mes_por_extenso_abreviado, seculo,
+                               seculo_por_extenso,
+                               hora_por_extenso,
+                               hora_por_extenso_aproximada,
+                               formata_data,
+                               ParserInfoBrasil, parse_datetime,
+                               UTC, HB,
+                               fuso_horario_sistema,
+                               data_hora_horario_brasilia, agora,
+                               hoje, ontem, amanha, mes_passado,
+                               mes_que_vem, ano_passado,
+                               ano_que_vem, semana_passada,
+                               semana_que_vem,
+                               primeiro_dia_mes, ultimo_dia_mes, idade)
     from pybrasil.valor import (numero_por_extenso,
-       numero_por_extenso_ordinal, numero_por_extenso_unidade,
-       valor_por_extenso, valor_por_extenso_ordinal,
-       valor_por_extenso_unidade, formata_valor)
+                                numero_por_extenso_ordinal,
+                                numero_por_extenso_unidade,
+                                valor_por_extenso, valor_por_extenso_ordinal,
+                                valor_por_extenso_unidade, formata_valor)
     from pybrasil.valor.decimal import Decimal as D
     from pybrasil.valor.decimal import Decimal
 
@@ -92,11 +97,11 @@ class MailTemplate(models.Model):
             res_to_rec[record.id] = record
 
         variables = {
-            'format_date': \
-                lambda date, format=False, context=self._context: \
+            'format_date':
+                lambda date, format=False, context=self._context:
                     format_date(self.env, date, format),
-            'format_tz': \
-                lambda dt, tz=False, format=False, context=self._context: \
+            'format_tz':
+                lambda dt, tz=False, format=False, context=self._context:
                     format_tz(self.env, dt, tz, format),
             'user': self.env.user,
             'ctx': self._context,  # context kw would clash with mako internals
@@ -172,7 +177,7 @@ class MailTemplate(models.Model):
             except Exception:
                 _logger.info(
                     'Failed to render template %r using values %r'
-                        % (template, variables),
+                    % (template, variables),
                     exc_info=True
                 )
                 raise UserError(

@@ -5,8 +5,6 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
 from odoo import fields, models, api
 
 
@@ -42,7 +40,7 @@ class ResCurrency(models.Model):
     def _compute_is_currency(self):
         for currency in self:
             currency.is_currency = not (
-                currency.is_symbol
-                or currency.is_index
-                or currency.is_uom
+                currency.is_symbol or
+                currency.is_index or
+                currency.is_uom
             )

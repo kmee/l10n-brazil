@@ -7,7 +7,8 @@
 
 from __future__ import division, print_function, unicode_literals
 
-from odoo import api, fields, models
+from odoo import api, fields, models, _
+from odoo.odoo.exceptions import UserError
 
 
 class AccountConfigSettings(models.TransientModel):
@@ -39,9 +40,11 @@ class AccountConfigSettings(models.TransientModel):
         if self.chart_template_id and not self.has_chart_of_accounts and \
                 self.expects_chart_of_accounts:
             if self.company_id.chart_template_id and \
-                    self.chart_template_id != self.company_id.chart_template_id:
+                    self.chart_template_id != self.company_id.\
+                    chart_template_id:
                 raise UserError(
-                    _('You can not change a company chart of account once it has been installed'))
+                    _('You can not change a company chart of '
+                      'account once it has been installed'))
 
             wizard = self.env['wizard.multi.charts.accounts'].create({
                 'company_id': self.company_id.id,
@@ -54,8 +57,10 @@ class AccountConfigSettings(models.TransientModel):
                 'purchase_tax_rate': self.purchase_tax_rate,
                 'complete_tax_set': self.complete_tax_set,
                 'currency_id': self.currency_id.id,
-                'bank_account_code_prefix': self.bank_account_code_prefix or self.chart_template_id.bank_account_code_prefix,
-                'cash_account_code_prefix': self.cash_account_code_prefix or self.chart_template_id.cash_account_code_prefix,
+                'bank_account_code_prefix': self.bank_account_code_prefix or
+                self.chart_template_id.bank_account_code_prefix,
+                'cash_account_code_prefix': self.cash_account_code_prefix or
+                self.chart_template_id.cash_account_code_prefix,
                 'is_brazilian': self.is_brazilian,
             })
             wizard.execute()

@@ -8,7 +8,12 @@
 from __future__ import division, print_function, unicode_literals
 
 from odoo import api, fields, models
-from ..constantes import *
+from ..constantes import (
+    TIPO_CONTA_CONTABIL,
+    NATUREZA_CONTA_CONTABIL,
+    TIPO_SPED_CONTA_CONTABIL,
+    TIPO_CONTA_CONTABIL_NATUREZA,
+)
 
 
 class AccountAccount(models.Model):
@@ -138,8 +143,8 @@ class AccountAccount(models.Model):
         for conta in self:
             conta.nivel = conta._calcula_nivel()
 
-            if conta.name and (conta.name.startswith('(-)')
-                               or conta.name.startswith('( - )')):
+            if conta.name and (conta.name.startswith('(-)') or
+                               conta.name.startswith('( - )')):
                 conta.redutora = True
             else:
                 conta.redutora = False

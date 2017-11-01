@@ -5,10 +5,9 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
+from odoo.exceptions import ValidationError
 
 from odoo import api, fields, models, _
-from odoo.exceptions import ValidationError
 
 
 class SpedCNAE(models.Model):
@@ -55,13 +54,13 @@ class SpedCNAE(models.Model):
 
             args += ['|',
                      ('codigo', '=ilike', codigo + '%'),
-                     ('descricao', 'ilike', name),
-            ]
+                     ('descricao', 'ilike', name), ]
             cnaes = self.search(args, limit=limit)
             return cnaes.name_get()
 
         return super(SpedCNAE, self).name_search(name=name, args=args,
-                                             operator=operator, limit=limit)
+                                                 operator=operator,
+                                                 limit=limit)
 
     @api.depends('codigo')
     def _check_codigo(self):

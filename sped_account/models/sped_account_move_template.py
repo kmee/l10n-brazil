@@ -4,8 +4,7 @@
 
 from __future__ import division, print_function, unicode_literals
 
-from odoo import api, fields, models
-from odoo.exceptions import UserError
+from odoo import fields, models
 
 
 class SpedAccountMoveTemplate(models.Model):
@@ -39,9 +38,9 @@ class SpedAccountMoveTemplate(models.Model):
         inverse_name='template_id',
         string='Itens',
     )
-
     # @api.constrains('operacao_ids')
     # def _constraints_operacao_ids(self):
-    #     for operacao in self.operacao_ids:
-    #         if len(operacao.account_move_template_ids) > 1:
-    #             raise UserError(u'A operação fiscal %s já tem um modelo de partidas dobradas vinculado!' % operacao.nome)
+    # for operacao in self.operacao_ids:
+    # if len(operacao.account_move_template_ids) > 1:
+    # raise UserError(u'A operação fiscal %s já tem um modelo de partidas \
+    # dobradas vinculado!' % operacao.nome)

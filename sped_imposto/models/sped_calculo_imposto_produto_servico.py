@@ -2,36 +2,23 @@
 # Copyright 2017 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-
-
 import logging
 
-from odoo import api, fields, models, _
-from openerp.addons.l10n_br_base.tools.misc import calc_price_ratio
 from odoo.addons.l10n_br_base.constante_tributaria import (
     MODELO_FISCAL_EMISSAO_PRODUTO,
     MODELO_FISCAL_EMISSAO_SERVICO,
-    TIPO_PESSOA_FISICA,
     REGIME_TRIBUTARIO,
     REGIME_TRIBUTARIO_SIMPLES,
 )
-from openerp.addons.l10n_br_base.models.sped_base import (
-    SpedBase
-)
+
+from odoo import api, fields
+from .sped_calculo_imposto import SpedCalculoImposto
 
 _logger = logging.getLogger(__name__)
 
-try:
-    from pybrasil.valor.decimal import Decimal as D
-
-except (ImportError, IOError) as err:
-    _logger.debug(err)
-
-from .sped_calculo_imposto import SpedCalculoImposto
 
 class SpedCalculoImpostoProdutoServico(SpedCalculoImposto):
     _abstract = False
-
     #
     # As 2 operações fiscais abaixo servem para que se calcule ao mesmo tempo,
     # numa venda ou compra, os impostos de acordo com o documento correto
@@ -80,14 +67,14 @@ class SpedCalculoImpostoProdutoServico(SpedCalculoImposto):
         store=True,
         inverse='_inverse_rateio_produtos_vr_seguro',
     )
-    #produtos_al_desconto = fields.Monetary(
-        #string='Alíquota do desconto',
-        #currency_field='currency_aliquota_rateio_id',
-        #digits=(18, 11),
-        #compute='_compute_soma_itens',
-        #store=True,
-        #inverse='_inverse_rateio_produtos_al_desconto',
-    #)
+    # produtos_al_desconto = fields.Monetary(
+    # string='Alíquota do desconto',
+    # currency_field='currency_aliquota_rateio_id',
+    # digits=(18, 11),
+    # compute='_compute_soma_itens',
+    # store=True,
+    # inverse='_inverse_rateio_produtos_al_desconto',
+    # )
     produtos_vr_desconto = fields.Monetary(
         string='Valor do desconto',
         compute='_compute_soma_itens',
@@ -301,14 +288,14 @@ class SpedCalculoImpostoProdutoServico(SpedCalculoImposto):
     #     store=True,
     #     inverse='_inverse_rateio_servicos_vr_seguro',
     # )
-    #servicos_al_desconto = fields.Monetary(
-        #string='Alíquota do desconto',
-        #currency_field='currency_aliquota_rateio_id',
-        #digits=(18, 11),
-        #compute='_compute_soma_itens',
-        #store=True,
-        #inverse='_inverse_rateio_servicos_al_desconto',
-    #)
+    # servicos_al_desconto = fields.Monetary(
+    # string='Alíquota do desconto',
+    # currency_field='currency_aliquota_rateio_id',
+    # digits=(18, 11),
+    # compute='_compute_soma_itens',
+    # store=True,
+    # inverse='_inverse_rateio_servicos_al_desconto',
+    # )
     servicos_vr_desconto = fields.Monetary(
         string='Valor do desconto',
         compute='_compute_soma_itens',
@@ -497,7 +484,6 @@ class SpedCalculoImpostoProdutoServico(SpedCalculoImposto):
     #     store=True,
     # )
 
-
     def _inverse_rateio_produtos_vr_frete(self):
         self.ensure_one()
         self._inverse_rateio_campo_total('vr_frete', tipo_item='P')
@@ -514,10 +500,9 @@ class SpedCalculoImpostoProdutoServico(SpedCalculoImposto):
         self.ensure_one()
         self._inverse_rateio_campo_total('vr_desconto', tipo_item='P')
 
-    #def _inverse_rateio_produtos_al_desconto(self):
-        #self.ensure_one()
-        #self._inverse_rateio_campo_al_desconto(tipo_item='P')
-
+    # def _inverse_rateio_produtos_al_desconto(self):
+    # self.ensure_one()
+    # self._inverse_rateio_campo_al_desconto(tipo_item='P')
     # def _inverse_rateio_servicos_vr_frete(self):
     #     self.ensure_one()
     #     self._inverse_rateio_campo_total('vr_frete', tipo_item='S')
@@ -534,15 +519,15 @@ class SpedCalculoImpostoProdutoServico(SpedCalculoImposto):
         self.ensure_one()
         self._inverse_rateio_campo_total('vr_desconto', tipo_item='S')
 
-    #def _inverse_rateio_servicos_al_desconto(self):
-        #self.ensure_one()
-        #self._inverse_rateio_campo_al_desconto(tipo_item='S')
+    # def _inverse_rateio_servicos_al_desconto(self):
+    # self.ensure_one()
+    # self._inverse_rateio_campo_al_desconto(tipo_item='S')
 
     def gera_documento(self, soh_produtos=False, soh_servicos=False):
         self.ensure_one()
 
         if not (self.operacao_produto_id or
-                    self.operacao_servico_id):
+                self.operacao_servico_id):
             return None, None  # documento_produto, documento_servico
 
         item_produto_ids = []
@@ -561,7 +546,7 @@ class SpedCalculoImpostoProdutoServico(SpedCalculoImposto):
         # Trata o caso de nota conjugada
         #
         if self.operacao_produto_id and self.operacao_servico_id and \
-            self.operacao_produto_id.id == self.operacao_servico_id.id:
+           self.operacao_produto_id.id == self.operacao_servico_id.id:
             item_produto_ids += item_servico_ids
             item_servico_ids = []
 

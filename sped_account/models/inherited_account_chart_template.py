@@ -84,7 +84,8 @@ class AccountChartTemplate(models.Model):
                 'company_id': self.env.user.company_id.id,
                 'chart_template_id': self.id,
                 'code_digits': self.code_digits,
-                'transfer_account_id': self.transfer_account_id.id if self.transfer_account_id else False,
+                'transfer_account_id': self.transfer_account_id.id
+                if self.transfer_account_id else False,
                 'currency_id': self.currency_id.id,
                 'bank_account_code_prefix': self.bank_account_code_prefix,
                 'cash_account_code_prefix': self.cash_account_code_prefix,
@@ -94,14 +95,16 @@ class AccountChartTemplate(models.Model):
 
     @api.multi
     def _load_template(self, company, code_digits=None,
-                       transfer_account_id=None, account_ref=None, taxes_ref=None):
+                       transfer_account_id=None,
+                       account_ref=None, taxes_ref=None):
         self.ensure_one()
 
         if not self.is_brazilian:
-            return super(AccountChartTemplate, self)._load_template(company,
-                                                                    code_digits=code_digits,
-                                                                    transfer_account_id=transfer_account_id,
-                                                                    account_ref=account_ref, taxes_ref=taxes_ref)
+            return super(AccountChartTemplate, self).\
+                _load_template(company,
+                               code_digits=code_digits,
+                               transfer_account_id=transfer_account_id,
+                               account_ref=account_ref, taxes_ref=taxes_ref)
 
         if account_ref is None:
             account_ref = {}
@@ -114,7 +117,7 @@ class AccountChartTemplate(models.Model):
 
         # AccountTaxObj = self.env['account.tax']
         #
-        # # Generate taxes from templates.
+        # Generate taxes from templates.
         # generated_tax_res = self.tax_template_ids._generate_tax(company)
         # taxes_ref.update(generated_tax_res['tax_template_to_tax'])
 
@@ -123,14 +126,17 @@ class AccountChartTemplate(models.Model):
                                                      code_digits, company)
         account_ref.update(account_template_ref)
 
-        # # writing account values after creation of accounts
+        # writing account values after creation of accounts
         # if transfer_account_id:
-        #     company.transfer_account_id = account_template_ref[transfer_account_id.id]
+        #     company.transfer_account_id = \
+        #       account_template_ref[transfer_account_id.id]
         # for key, value in generated_tax_res['account_dict'].items():
         #     if value['refund_account_id'] or value['account_id']:
         #         AccountTaxObj.browse(key).write({
-        #             'refund_account_id': account_ref.get(value['refund_account_id'], False),
-        #             'account_id': account_ref.get(value['account_id'], False),
+        #             'refund_account_id': account_ref.
+        #               get(value['refund_account_id'], False),
+        #             'account_id': account_ref.
+        #             get(value['account_id'], False),
         #         })
 
         # # Create Journals - Only done for root chart template
@@ -140,17 +146,19 @@ class AccountChartTemplate(models.Model):
         # generate properties function
         self.generate_properties(account_ref, company)
 
-        # # Generate Fiscal Position , Fiscal Position Accounts and Fiscal Position Taxes from templates
+        # Generate Fiscal Position , Fiscal Position Accounts
+        # and Fiscal Position Taxes from templates
         # self.generate_fiscal_position(taxes_ref, account_ref, company)
 
         # # Generate account operation template templates
-        # self.generate_account_reconcile_model(taxes_ref, account_ref, company)
+        # self.generate_account_reconcile_model(taxes_ref,
+        # account_ref, company)
 
         return account_ref, taxes_ref
 
     @api.multi
-    def generate_account(self, tax_template_ref, acc_template_ref, code_digits,
-                         company):
+    def generate_account(self, tax_template_ref, acc_template_ref,
+                         code_digits, company):
         self.ensure_one()
 
         if not self.is_brazilian:

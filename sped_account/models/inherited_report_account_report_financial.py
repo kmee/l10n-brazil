@@ -7,9 +7,9 @@
 
 from __future__ import division, print_function, unicode_literals
 
-from odoo import api, fields, models
+from odoo import models
 from .inherited_account_financial_report import (
-    REPORT_TYPE, REPORT_TYPE_ACCOUNT_TYPE, REPORT_TYPE_ACCOUNTS,
+    REPORT_TYPE_ACCOUNT_TYPE, REPORT_TYPE_ACCOUNTS,
     REPORT_TYPE_REPORT_VALUE, REPORT_TYPE_SUMMARY, REPORT_TYPE_VIEW,
 )
 
@@ -27,16 +27,20 @@ class ReportAccountReportFinancial(models.AbstractModel):
 
         lines = []
         child_reports = account_report._get_children_by_order()
-        res = self.with_context(data.get('used_context'))._compute_report_balance(
+        res = self.with_context(data.get('used_context')).\
+            _compute_report_balance(
             child_reports, is_brazilian=True)
         if data['enable_filter']:
-            comparison_res = self.with_context(data.get('comparison_context'))._compute_report_balance(
-                child_reports, is_brazilian=True)
+            comparison_res = self.\
+                with_context(data.get('comparison_context')).\
+                _compute_report_balance(
+                                        child_reports, is_brazilian=True)
             for report_id, value in comparison_res.items():
                 res[report_id]['comp_bal'] = value['balance']
                 report_acc = res[report_id].get('account')
                 if report_acc:
-                    for account_id, val in comparison_res[report_id].get('account').items():
+                    for account_id, val in comparison_res[report_id].\
+                            get('account').items():
                         report_acc[account_id]['comp_bal'] = val['balance']
 
         for report in child_reports:
@@ -44,7 +48,8 @@ class ReportAccountReportFinancial(models.AbstractModel):
                 'name': report.name,
                 'balance': res[report.id]['balance'],
                 'type': 'report',
-                'level': bool(report.style_overwrite) and report.style_overwrite or report.level,
+                'level': bool(report.style_overwrite) and report.
+                        style_overwrite or report.level,
                 # used to underline the financial report balances
                 'account_type': report.type or False,
             }
@@ -64,8 +69,10 @@ class ReportAccountReportFinancial(models.AbstractModel):
             if res[report.id].get('account'):
                 sub_lines = []
                 for account_id, value in res[report.id]['account'].items():
-                    # if there are accounts to display, we add them to the lines with a level equals to their level in
-                    # the COA + 1 (to avoid having them with a too low level that would conflicts with the level of data
+                    # if there are accounts to display, we add them to
+                    # the lines with a level equals to their level in
+                    # the COA + 1 (to avoid having them with a too low
+                    # level that would conflicts with the level of data
                     # financial reports for Assets, liabilities...)
                     flag = False
                     account = self.env['account.account'].browse(account_id)
@@ -73,19 +80,25 @@ class ReportAccountReportFinancial(models.AbstractModel):
                         'name': account.code + ' ' + account.name,
                         'balance': value['balance'],
                         'type': 'account',
-                        'level': report.display_detail == 'detail_with_hierarchy' and 4,
+                        'level': report.display_detail ==
+                                'detail_with_hierarchy' and 4,
                         'account_type': account.internal_type,
                     }
                     if data['debit_credit']:
                         vals['debit'] = value['debit']
                         vals['credit'] = value['credit']
-                        if not account.company_id.currency_id.is_zero(vals['debit']) or not account.company_id.currency_id.is_zero(vals['credit']):
+                        if not account.company_id.\
+                                currency_id.is_zero(vals['debit']) or not \
+                                account.company_id.currency_id.\
+                                is_zero(vals['credit']):
                             flag = True
-                    if not account.company_id.currency_id.is_zero(vals['balance']):
+                    if not account.company_id.currency_id.\
+                            is_zero(vals['balance']):
                         flag = True
                     if data['enable_filter']:
                         vals['balance_cmp'] = value['comp_bal'] * report.sign
-                        if not account.company_id.currency_id.is_zero(vals['balance_cmp']):
+                        if not account.company_id.currency_id.\
+                                is_zero(vals['balance_cmp']):
                             flag = True
                     if flag:
                         sub_lines.append(vals)
@@ -100,7 +113,8 @@ class ReportAccountReportFinancial(models.AbstractModel):
                          self)._compute_account_balance(accounts)
 
         mapping = {
-            'balance': "COALESCE(SUM(debit),0) - COALESCE(SUM(credit), 0) as balance",
+            'balance': "COALESCE(SUM(debit),0) - COALESCE(SUM(credit), 0) as "
+                       "balance",
             'debit': "COALESCE(SUM(debit), 0) as debit",
             'credit': "COALESCE(SUM(credit), 0) as credit",
         }
@@ -203,7 +217,8 @@ class ReportAccountReportFinancial(models.AbstractModel):
                     for field in fields:
                         res[report.id][field] += value.get(field)
 
-            elif report.type == REPORT_TYPE_REPORT_VALUE and report.account_report_id:
+            elif report.type == \
+                    REPORT_TYPE_REPORT_VALUE and report.account_report_id:
                 res2 = self._compute_report_balance(
                     report.account_report_id, is_brazilian=True)
 

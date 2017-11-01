@@ -7,16 +7,18 @@
 #
 
 from __future__ import division, print_function, unicode_literals
-
-from odoo import api, fields, models, _
-from odoo.exceptions import UserError
-from odoo.addons.sped_imposto.models.sped_calculo_imposto_produto_servico \
-    import SpedCalculoImpostoProdutoServico
 from odoo.addons.l10n_br_base.constante_tributaria import (
     MODELO_FISCAL_EMISSAO_PRODUTO,
     MODELO_FISCAL_EMISSAO_SERVICO,
     SITUACAO_FISCAL_SPED_CONSIDERA_ATIVO,
+    TIPO_PESSOA_FISICA,
+    SaleOrder,
 )
+from odoo.addons.sped_imposto.models.sped_calculo_imposto_produto_servico \
+    import SpedCalculoImpostoProdutoServico
+
+from odoo import api, fields, models
+
 
 class AccountInvoice(SpedCalculoImpostoProdutoServico, models.Model):
     _inherit = 'account.invoice'
@@ -75,14 +77,14 @@ class AccountInvoice(SpedCalculoImpostoProdutoServico, models.Model):
         inverse_name='invoice_id',
         string='Produto',
         copy=True,
-        domain=[('tipo_item','=','P')],
+        domain=[('tipo_item', '=', 'P')],
     )
     sale_order_line_servico_ids = fields.One2many(
         comodel_name='account.invoice.line',
         inverse_name='invoice_id',
         string='Serviços',
         copy=True,
-        domain=[('tipo_item','=','S')],
+        domain=[('tipo_item', '=', 'S')],
     )
 
     #
@@ -101,14 +103,15 @@ class AccountInvoice(SpedCalculoImpostoProdutoServico, models.Model):
         for invoice in self:
             data, hora = self._separa_data_hora(invoice.date_invoice)
             invoice.data_fatura = data
-            #invoice.hora_pedido = hora
+            # invoice.hora_pedido = hora
 
     @api.depends('documento_ids.situacao_fiscal')
     def _compute_quantidade_documentos_fiscais(self):
         for invoice in self:
             documento_ids = self.documento_ids.search(
-                [('account_invoice_id', '=', invoice.id), ('situacao_fiscal', 'in',
-                  SITUACAO_FISCAL_SPED_CONSIDERA_ATIVO)])
+                [('account_invoice_id', '=', invoice.id),
+                 ('situacao_fiscal', 'in',
+                 SITUACAO_FISCAL_SPED_CONSIDERA_ATIVO)])
 
             invoice.quantidade_documentos = len(documento_ids)
 
@@ -210,11 +213,11 @@ class AccountInvoice(SpedCalculoImpostoProdutoServico, models.Model):
             super(AccountInvoice, self).action_move_create()
         return True
 
-    #@api.multi
-    #def invoice_validate(self):
-        #brazil = self.filtered(lambda inv: inv.is_brazilian)
-        #brazil.action_sped_create()
+    # @api.multi
+    # def invoice_validate(self):
+        # brazil = self.filtered(lambda inv: inv.is_brazilian)
+        # brazil.action_sped_create()
 
-        #not_brazil = self - brazil
+        # not_brazil = self - brazil
 
-        #return super(AccountInvoice, not_brazil | brazil).invoice_validate()
+        # return super(AccountInvoice, not_brazil | brazil).invoice_validate()

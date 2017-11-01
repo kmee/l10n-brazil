@@ -5,20 +5,57 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
 import logging
 
-from odoo import api, fields, models, _
-from odoo.exceptions import ValidationError
+from odoo.addons.l10n_br_base.constante_tributaria import (
+    TIPO_EMISSAO,
+    MODELO_FISCAL,
+    ENTRADA_SAIDA,
+    ENTRADA_SAIDA_SAIDA,
+    SITUACAO_FISCAL,
+    SITUACAO_FISCAL_REGULAR,
+    AMBIENTE_NFE,
+    AMBIENTE_NFE_HOMOLOGACAO,
+    TIPO_EMISSAO_NFE,
+    TIPO_EMISSAO_NFE_NORMAL,
+    REGIME_TRIBUTARIO,
+    REGIME_TRIBUTARIO_SIMPLES,
+    IND_FORMA_PAGAMENTO,
+    IND_FORMA_PAGAMENTO_A_VISTA,
+    FINALIDADE_NFE,
+    FINALIDADE_NFE_NORMAL,
+    TIPO_CONSUMIDOR_FINAL,
+    TIPO_CONSUMIDOR_FINAL_NORMAL,
+    INDICADOR_PRESENCA_COMPRADOR,
+    INDICADOR_PRESENCA_COMPRADOR_NAO_SE_APLICA,
+    MODALIDADE_FRETE,
+    MODALIDADE_FRETE_DESTINATARIO_FOB,
+    LIMITE_RETENCAO_PIS_COFINS_CSLL,
+    NATUREZA_TRIBUTACAO_NFSE,
+    ST_ISS,
+    IE_DESTINATARIO,
+    TIPO_EMISSAO_DICT,
+    TIPO_EMISSAO_PROPRIA,
+    ENTRADA_SAIDA_DICT,
+    ENTRADA_SAIDA_ENTRADA,
+    MODELO_FISCAL_NFE,
+    AMBIENTE_NFE_PRODUCAO,
+    MODELO_FISCAL_NFCE,
+    MODELO_FISCAL_NFSE,
+    INDICADOR_IE_DESTINATARIO_CONTRIBUINTE,
+    TIPO_CONSUMIDOR_FINAL_CONSUMIDOR_FINAL,
+    SITUACAO_NFE_AUTORIZADA,
+)
 from odoo.addons.l10n_br_base.models.sped_base import SpedBase
-from odoo.addons.l10n_br_base.constante_tributaria import *
+from odoo.exceptions import ValidationError
+
+from odoo import api, fields, models, _
 
 _logger = logging.getLogger(__name__)
 
 try:
-    from pybrasil.data import parse_datetime, data_hora_horario_brasilia, \
-        formata_data
+    from pybrasil.data import formata_data
+    # parse_datetime, data_hora_horario_brasilia, \
     from pybrasil.valor.decimal import Decimal as D
     from pybrasil.valor import formata_valor
 
@@ -856,26 +893,26 @@ class SpedDocumento(SpedBase, models.Model):
             documento.hora_entrada_saida = hora
 
     @api.depends('item_ids.vr_produtos', 'item_ids.vr_produtos_tributacao',
-                'item_ids.vr_frete', 'item_ids.vr_seguro',
-                'item_ids.vr_desconto', 'item_ids.vr_outras',
-                'item_ids.vr_operacao', 'item_ids.vr_operacao_tributacao',
-                'item_ids.bc_icms_proprio', 'item_ids.vr_icms_proprio',
-                'item_ids.vr_difal', 'item_ids.vr_icms_estado_origem',
-                'item_ids.vr_icms_estado_destino',
-                'item_ids.vr_fcp',
-                'item_ids.vr_icms_sn', 'item_ids.vr_simples',
-                'item_ids.bc_icms_st', 'item_ids.vr_icms_st',
-                'item_ids.bc_icms_st_retido', 'item_ids.vr_icms_st_retido',
-                'item_ids.bc_ipi', 'item_ids.vr_ipi',
-                'item_ids.bc_ii', 'item_ids.vr_ii',
-                'item_ids.vr_despesas_aduaneiras', 'item_ids.vr_iof',
-                'item_ids.bc_pis_proprio', 'item_ids.vr_pis_proprio',
-                'item_ids.bc_cofins_proprio', 'item_ids.vr_cofins_proprio',
-                'item_ids.bc_iss', 'item_ids.vr_iss',
-                'item_ids.vr_nf', 'item_ids.vr_fatura',
-                'item_ids.vr_ibpt',
-                'item_ids.vr_custo_comercial',
-                'item_ids.peso_bruto', 'item_ids.peso_liquido')
+                 'item_ids.vr_frete', 'item_ids.vr_seguro',
+                 'item_ids.vr_desconto', 'item_ids.vr_outras',
+                 'item_ids.vr_operacao', 'item_ids.vr_operacao_tributacao',
+                 'item_ids.bc_icms_proprio', 'item_ids.vr_icms_proprio',
+                 'item_ids.vr_difal', 'item_ids.vr_icms_estado_origem',
+                 'item_ids.vr_icms_estado_destino',
+                 'item_ids.vr_fcp',
+                 'item_ids.vr_icms_sn', 'item_ids.vr_simples',
+                 'item_ids.bc_icms_st', 'item_ids.vr_icms_st',
+                 'item_ids.bc_icms_st_retido', 'item_ids.vr_icms_st_retido',
+                 'item_ids.bc_ipi', 'item_ids.vr_ipi',
+                 'item_ids.bc_ii', 'item_ids.vr_ii',
+                 'item_ids.vr_despesas_aduaneiras', 'item_ids.vr_iof',
+                 'item_ids.bc_pis_proprio', 'item_ids.vr_pis_proprio',
+                 'item_ids.bc_cofins_proprio', 'item_ids.vr_cofins_proprio',
+                 'item_ids.bc_iss', 'item_ids.vr_iss',
+                 'item_ids.vr_nf', 'item_ids.vr_fatura',
+                 'item_ids.vr_ibpt',
+                 'item_ids.vr_custo_comercial',
+                 'item_ids.peso_bruto', 'item_ids.peso_liquido')
     def _compute_soma_itens(self):
         CAMPOS_SOMA_ITENS = [
             'vr_produtos', 'vr_produtos_tributacao',
@@ -1136,14 +1173,15 @@ class SpedDocumento(SpedBase, models.Model):
 
         return res
 
-    @api.onchange('condicao_pagamento_id', 'vr_fatura', 'vr_nf', 'data_emissao',
-                  'duplicata_ids')
+    @api.onchange('condicao_pagamento_id', 'vr_fatura', 'vr_nf',
+                  'data_emissao', 'duplicata_ids')
     def _onchange_condicao_pagamento_id(self):
         res = {}
         valores = {}
         res['value'] = valores
 
-        if not (self.condicao_pagamento_id and (self.vr_fatura or self.vr_nf) and
+        if not (self.condicao_pagamento_id and
+                (self.vr_fatura or self.vr_nf) and
                 self.data_emissao):
             return res
 
@@ -1151,8 +1189,8 @@ class SpedDocumento(SpedBase, models.Model):
         if not valor:
             valor = D(self.vr_nf or 0)
 
-        duplicata_ids = self.condicao_pagamento_id.gera_parcela_ids(valor,
-                                                         self.data_emissao)
+        duplicata_ids = self.condicao_pagamento_id.\
+            gera_parcela_ids(valor, self.data_emissao)
         valores['duplicata_ids'] = duplicata_ids
 
         return res

@@ -5,9 +5,6 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
-
 import logging
 _logger = logging.getLogger(__name__)
 
@@ -1980,7 +1977,7 @@ CFOPS_COMPRA = CFOPS_COMPRA_INDUSTRIALIZACAO + CFOPS_COMPRA_COMERCIALIZACAO + \
     CFOPS_COMPRA_ATIVO + CFOPS_USO_CONSUMO + CFOPS_COMPRA_SERVICO
 CFOPS_COMPRA_CUSTO_VENDA = CFOPS_COMPRA_INDUSTRIALIZACAO + \
     CFOPS_COMPRA_COMERCIALIZACAO
-    #CFOPS_COMPRA_COMERCIALIZACAO + CFOPS_COMPRA_SERVICO
+# CFOPS_COMPRA_COMERCIALIZACAO + CFOPS_COMPRA_SERVICO
 
 
 CFOPS_VENDA_MERCADORIA = [
@@ -2115,7 +2112,7 @@ CFOPS_DEVOLUCAO_VENDA = [
 CFOPS_CUSTO_ESTOQUE_VENDA_DEVOLUCAO = CFOPS_VENDA_MERCADORIA + \
     CFOPS_VENDA_ATIVO + CFOPS_DEVOLUCAO_VENDA
 # CFOPS_CUSTO_ESTOQUE_VENDA_DEVOLUCAO =
-#  CFOPS_VENDA_MERCADORIA + CFOPS_DEVOLUCAO_VENDA
+# CFOPS_VENDA_MERCADORIA + CFOPS_DEVOLUCAO_VENDA
 
 CFOPS_DEVOLUCAO_COMPRA = [
     '5201',
@@ -2246,11 +2243,11 @@ SIMPLES_NACIONAL_ANEXOS = (
     ('5_ate_35', 'Anexo 5 - Serviços - Folha < 35% (até 31/12/2017)'),
     ('5_ate_40', 'Anexo 5 - Serviços - Folha < 40% (até 31/12/2017)'),
     ('5_mais_40', 'Anexo 5 - Serviços - Folha >= 40% (até 31/12/2017)'),
-    #('1_2018', 'Anexo 1 - Comércio (a partir de 01/01/2018)'),
-    #('2_2018', 'Anexo 2 - Indústria (a partir de 01/01/2018)'),
-    #('3_2018', 'Anexo 3 - Serviços (a partir de 01/01/2018)'),
-    #('4_2018', 'Anexo 4 - Serviços (a partir de 01/01/2018)'),
-    #('5_2018', 'Anexo 5 - Serviços (a partir de 01/01/2018)'),
+    # ('1_2018', 'Anexo 1 - Comércio (a partir de 01/01/2018)'),
+    # ('2_2018', 'Anexo 2 - Indústria (a partir de 01/01/2018)'),
+    # ('3_2018', 'Anexo 3 - Serviços (a partir de 01/01/2018)'),
+    # ('4_2018', 'Anexo 4 - Serviços (a partir de 01/01/2018)'),
+    # ('5_2018', 'Anexo 5 - Serviços (a partir de 01/01/2018)'),
 )
 
 SIMPLES_NACIONAL_TETO_01 = '180000'
@@ -4840,7 +4837,7 @@ FORMA_PAGAMENTO = (
     ('13', 'Vale combustível'),
     ('14', 'Duplicata mercantil'),
     ('15', 'Boleto bancário'),
-    #('90', 'Sem pagamento'),
+    # ('90', 'Sem pagamento'),
     ('99', 'Outros'),
 )
 FORMA_PAGAMENTO_DICT = dict(FORMA_PAGAMENTO)

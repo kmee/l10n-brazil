@@ -5,12 +5,11 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
 import logging
 
-from odoo import api, fields, models
 from odoo.exceptions import ValidationError
+
+from odoo import api, fields, models
 
 _logger = logging.getLogger(__name__)
 
@@ -109,7 +108,8 @@ class SpedNCM(models.Model):
                 '|',
                 ('codigo', '=ilike', codigo + '%'),
                 '|',
-                ('codigo_formatado', '=ilike', mascara(codigo, '  .  .  .  ') + '%'),
+                ('codigo_formatado', '=ilike',
+                 mascara(codigo, '  .  .  .  ') + '%'),
                 ('descricao', 'ilike', name),
             ] + args
 

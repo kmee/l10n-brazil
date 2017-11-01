@@ -7,9 +7,14 @@
 
 from __future__ import division, print_function, unicode_literals
 
-from odoo import api, fields, models
 from openerp.addons.l10n_br_base.models.sped_base import SpedBase
-from ..constantes import *
+
+from odoo import api, fields, models
+from ..constantes import (
+    TIPO_CONTA_CONTABIL,
+    SaleOrder,
+
+)
 
 
 class AccountAccountTemplate(SpedBase, models.Model):

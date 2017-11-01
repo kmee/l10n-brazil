@@ -5,8 +5,8 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
 from odoo.addons.l10n_br_base.models.sped_base import SpedBase
+
 from odoo import fields, models
 
 

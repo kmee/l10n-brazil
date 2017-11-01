@@ -4,10 +4,9 @@
 
 from __future__ import division, print_function, unicode_literals
 
-
-from odoo import api, fields, models, _
 from odoo.tools.sql import drop_view_if_exists
 
+from odoo import api, fields, models
 
 SQL_ACCOUNT_TREE_ANALYSIS_VIEW = '''
 create or replace view account_account_tree_analysis_view as
@@ -17,7 +16,6 @@ select
     1 as level
 from
     account_account a1
-    
 union all
 
 select
