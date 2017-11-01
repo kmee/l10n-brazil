@@ -9,7 +9,7 @@ from odoo.tools.translate import _
 
 try:
     from suds import WebFault
-    from suds.client import Client, TransportError
+    from suds.client import Client
 except ImportError:
     raise UserError(_(u'Erro!'), _(u"Biblioteca Suds não instalada!"))
 

@@ -5,21 +5,14 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
-from odoo import fields, models
 from odoo.addons.l10n_br_base.constante_tributaria import (
-    FORMA_PAGAMENTO,
     BANDEIRA_CARTAO,
     INTEGRACAO_CARTAO,
     INTEGRACAO_CARTAO_NAO_INTEGRADO,
-    FORMA_PAGAMENTO_CARTOES,
-    FORMA_PAGAMENTO_CARTAO_CREDITO,
-    FORMA_PAGAMENTO_CARTAO_DEBITO,
     FORMA_PAGAMENTO_OUTROS,
-    FORMA_PAGAMENTO_DICT,
-    BANDEIRA_CARTAO_DICT,
+    FORMA_PAGAMENTO,
 )
+from odoo import fields, models
 
 
 class FinanFormaPagamento(models.Model):
@@ -39,7 +32,8 @@ class FinanFormaPagamento(models.Model):
                'data de crédito/débito?'
     )
     exige_numero = fields.Boolean(
-        string='Exige número de documento no lançamento dos recebimentos/pagamentos?',
+        string='Exige número de documento no lançamento '
+               'dos recebimentos/pagamentos?',
         default=True,
     )
     #

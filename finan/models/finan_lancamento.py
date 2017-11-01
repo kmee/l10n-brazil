@@ -2,20 +2,45 @@
 # Copyright 2017 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-
-
 import logging
 
-from odoo import api, fields, models, _
+from odoo.addons.l10n_br_base.models.sped_base import SpedBase
 from odoo.exceptions import ValidationError
 from odoo.exceptions import Warning as UserError
-from odoo.addons.l10n_br_base.models.sped_base import SpedBase
-from ..constantes import *
+
+from odoo import api, fields, models
+from ..constantes import (
+    FINAN_SITUACAO_DIVIDA_SIMPLES_BAIXADO,
+    FINAN_SITUACAO_DIVIDA_SIMPLES_ABERTO,
+    FINAN_SITUACAO_DIVIDA_SIMPLES_QUITADO,
+    FINAN_TIPO_PAGAMENTO,
+    FINAN_TIPO_DIVIDA,
+    FINAN_STATE_OPEN,
+    FINAN_STATE_DRAFT,
+    FINAN_STATE_CANCELLED,
+    FINAN_STATE_PAID,
+
+    FINAN_SITUACAO_DIVIDA_CONSIDERA_BAIXADO,
+    FINAN_SITUACAO_DIVIDA_CONSIDERA_ABERTO,
+    FINAN_SITUACAO_DIVIDA_QUITADO,
+    FINAN_SITUACAO_DIVIDA_VENCIDO,
+    FINAN_SITUACAO_DIVIDA_A_VENCER,
+    FINAN_SITUACAO_DIVIDA_VENCE_HOJE,
+    FINAN_SITUACAO_DIVIDA_QUITADO_PARCIALMENTE,
+    FINAN_TIPO,
+    FINAN_SITUACAO_DIVIDA,
+    FINAN_SITUACAO_DIVIDA_SIMPLES,
+    FINAN_STATE,
+    FINAN_TIPO_ENTRADA,
+    FINAN_SITUACAO_DIVIDA_BAIXADO_PARCIALMENTE,
+    FINAN_SITUACAO_DIVIDA_BAIXADO,
+    FINAN_SITUACAO_DIVIDA_CONSIDERA_QUITADO
+)
 
 _logger = logging.getLogger(__name__)
 
 try:
-    from pybrasil.data import parse_datetime, hoje
+    from pybrasil.data import parse_datetime, hoje, lancamento_id
 
 except (ImportError, IOError) as err:
     _logger.debug(err)
@@ -47,7 +72,8 @@ class FinanLancamento(SpedBase, models.Model):
         string='Empresa',
         required=True,
         ondelete='restrict',
-        default=lambda self: self.env['sped.empresa']._empresa_ativa('sped.empresa'),
+        default=lambda self:
+            self.env['sped.empresa']._empresa_ativa('sped.empresa'),
         index=True,
     )
     company_id = fields.Many2one(
@@ -113,11 +139,14 @@ class FinanLancamento(SpedBase, models.Model):
 
     #
     # Move dates; there are those five date fields, controlling, respectively:
-    # data_documento - when de document to which the lancamento refers was created
+    # data_documento - when de document to which the lancamento refers
+    # was created
     # data_vencimento - up to when the debt must be paid
-    # data_vencimento_util - if data_vencimento is a weekend, when banks don't
+    # data_vencimento_util - if data_vencimento is a weekend, when banks
+    # don't
     #    regularly open, or is on a weekday, that happens to be a holiday,
-    #    lancamento.s the *real* data_vencimento to the next business day; when
+    #    lancamento.s the *real* data_vencimento to the next business day;
+    # when
     #    controlling customers' payments' regularity, if the customer pays
     #    his/her debt on the data_vencimento_util, it must still be
     #    considered a regular paying customer
@@ -150,8 +179,9 @@ class FinanLancamento(SpedBase, models.Model):
     data_pagamento = fields.Date(
         string='Data de pagamento',
         copy=False,
-        default=lambda lancamento: False if lancamento.tipo not in
-            FINAN_TIPO_PAGAMENTO else fields.Date.context_today
+        default=lambda lancamento: False if lancamento.tipo
+        not in FINAN_TIPO_PAGAMENTO
+        else fields.Date.context_today
     )
     data_credito_debito = fields.Date(
         string='Data de crédito/débito',
@@ -360,22 +390,21 @@ class FinanLancamento(SpedBase, models.Model):
     #
     # Controle de parcelamentos
     #
-    #parcelamento_simulacao_id = fields.Many2one(
-        #comodel_name='finan.installment.simulation',
-        #string='Installment simulation',
-        #index=True,
-        #ondelete='restrict',
-    #)
-    #parcelamento_id = fields.Many2one(
-        #comodel_name='finan.installment',
-        #string='Installment',
-        #related='parcelamento_simulacao_id.parcelamento_id',
-        #readonly=True,
-        #store=True,
-        #index=True,
-        #ondelete='restrict',
-    #)
-
+#   parcelamento_simulacao_id = fields.Many2one(
+#        comodel_name='finan.installment.simulation',
+#        string='Installment simulation',
+#        index=True,
+#        ondelete='restrict',
+#    )
+#    parcelamento_id = fields.Many2one(
+#        comodel_name='finan.installment',
+#        string='Installment',
+#        related='parcelamento_simulacao_id.parcelamento_id',
+#        readonly=True,
+#        store=True,
+#        index=True,
+#        ondelete='restrict',
+#     )
     #
     # Controle de dívidas em outras moedas
     #
@@ -424,12 +453,12 @@ class FinanLancamento(SpedBase, models.Model):
     #
     permite_baixa = fields.Boolean(
         string='Permite baixa?',
-        #compute='_compute_permite_baixa',
+        # compute='_compute_permite_baixa',
     )
-    #motivo_baixa_id = fields.Many2one(
-        #comodel_name='finan.motivo.baixa',
-        #string="Motivo da baixa",
-    #)
+#    motivo_baixa_id = fields.Many2one(
+#        comodel_name='finan.motivo.baixa',
+#        string="Motivo da baixa",
+#    )
 
     @api.depends('tipo')
     def _compute_sinal(self):
@@ -450,9 +479,9 @@ class FinanLancamento(SpedBase, models.Model):
         for lancamento in self:
             nome = ''
 
-            #if self._context.get('com_tipo'):
-                #nome += FINAN_TIPO_CODIGO[lancamento.tipo]
-                #nome += ' / '
+#             if self._context.get('com_tipo'):
+#                 nome += FINAN_TIPO_CODIGO[lancamento.tipo]
+#                 nome += ' / '
 
             if lancamento.tipo in FINAN_TIPO_PAGAMENTO:
                 if lancamento.forma_pagamento_id:
@@ -525,7 +554,7 @@ class FinanLancamento(SpedBase, models.Model):
                     # da crédito/débito exigido pela forma de pagamento
                     #
                     if pagamento.situacao_divida != \
-                        FINAN_SITUACAO_DIVIDA_QUITADO:
+                            FINAN_SITUACAO_DIVIDA_QUITADO:
                         continue
 
                     vr_quitado_documento += pagamento.vr_documento
@@ -623,7 +652,8 @@ class FinanLancamento(SpedBase, models.Model):
             # informação da data de crédito/débito (caso dos cheques)
             #
             elif lancamento.tipo in FINAN_TIPO_PAGAMENTO:
-                if lancamento.forma_pagamento_id.quitado_somente_com_data_credito_debito:
+                if lancamento.forma_pagamento_id.\
+                        quitado_somente_com_data_credito_debito:
                     if lancamento.data_credito_debito:
                         lancamento.situacao_divida = \
                             FINAN_SITUACAO_DIVIDA_QUITADO
@@ -631,29 +661,30 @@ class FinanLancamento(SpedBase, models.Model):
                         lancamento.situacao_divida = \
                             FINAN_SITUACAO_DIVIDA_VENCIDO
                 else:
-                    lancamento.situacao_divida = FINAN_SITUACAO_DIVIDA_QUITADO
+                    lancamento.situacao_divida = \
+                        FINAN_SITUACAO_DIVIDA_QUITADO
 
             if lancamento.situacao_divida in \
-                FINAN_SITUACAO_DIVIDA_CONSIDERA_ABERTO:
+                    FINAN_SITUACAO_DIVIDA_CONSIDERA_ABERTO:
                 lancamento.situacao_divida_simples = \
                     FINAN_SITUACAO_DIVIDA_SIMPLES_ABERTO
 
             elif lancamento.situacao_divida in \
-                FINAN_SITUACAO_DIVIDA_CONSIDERA_QUITADO:
+                    FINAN_SITUACAO_DIVIDA_CONSIDERA_QUITADO:
                 lancamento.situacao_divida_simples = \
                     FINAN_SITUACAO_DIVIDA_SIMPLES_QUITADO
 
             elif lancamento.situacao_divida in \
-                FINAN_SITUACAO_DIVIDA_CONSIDERA_BAIXADO:
+                    FINAN_SITUACAO_DIVIDA_CONSIDERA_BAIXADO:
                 lancamento.situacao_divida_simples = \
                     FINAN_SITUACAO_DIVIDA_SIMPLES_BAIXADO
 
             if lancamento.situacao_divida == \
-                FINAN_SITUACAO_DIVIDA_QUITADO:
+                    FINAN_SITUACAO_DIVIDA_QUITADO:
                 lancamento.state = FINAN_STATE_PAID
 
             elif lancamento.situacao_divida_simples == \
-                FINAN_SITUACAO_DIVIDA_SIMPLES_BAIXADO:
+                    FINAN_SITUACAO_DIVIDA_SIMPLES_BAIXADO:
                 lancamento.state = FINAN_STATE_CANCELLED
 
             elif lancamento.provisorio:
@@ -708,39 +739,39 @@ class FinanLancamento(SpedBase, models.Model):
     def _check_amount(self):
         for lancamento in self:
             if lancamento.vr_documento < 0:
-                raise ValidationError('O valor do documento precisa ser maior'
-                    ' do que zero!')
+                raise ValidationError('O valor do documento precisa ser'
+                                      ' maior do que zero!')
             elif lancamento.vr_documento == 0:
                 raise ValidationError('O valor do documento não pode ser'
-                    ' zero!')
+                                      ' zero!')
 
             if lancamento.vr_juros < 0:
                 raise ValidationError('O valor dos juros precisa ser maior'
-                    ' do que zero!')
+                                      ' do que zero!')
 
             if lancamento.vr_multa < 0:
                 raise ValidationError('O valor da multa precisa ser maior'
-                    ' do que zero!')
+                                      ' do que zero!')
 
             if lancamento.vr_outros_creditos < 0:
-                raise ValidationError('O valor de outros créditos precisa ser '
-                    'maior do que zero!')
+                raise ValidationError('O valor de outros créditos precisa ser'
+                                      ' maior do que zero!')
 
             if lancamento.vr_desconto < 0:
                 raise ValidationError('O valor do desconto precisa ser maior'
-                    ' do que zero!')
+                                      ' do que zero!')
 
             if lancamento.vr_outros_debitos < 0:
-                raise ValidationError('O valor de outros débitos precisa ser '
-                    'maior do que zero!')
+                raise ValidationError('O valor de outros débitos precisa ser'
+                                      ' maior do que zero!')
 
             if lancamento.vr_tarifas < 0:
                 raise ValidationError('O valor das tarifas precisa ser maior'
-                    ' do que zero!')
+                                      ' do que zero!')
 
             if lancamento.vr_total < 0:
                 raise ValidationError('O valor total precisa ser maior'
-                    ' do que zero!')
+                                      ' do que zero!')
 
             #
             # Quando houver o consumo do adiantamento, esse não pode ser maior
@@ -749,19 +780,20 @@ class FinanLancamento(SpedBase, models.Model):
             if lancamento.vr_adiantado < 0:
                 if (lancamento.vr_adiantado * -1) > lancamento.vr_documento:
                     raise ValidationError('O valor utilizado do saldo de '
-                        'adiantamento não pode ser maior do que o valor '
-                        'do documento!')
+                                          'adiantamento não pode ser maior '
+                                          'do que o valor '
+                                          'do documento!')
 
 
-    #@api.model
-    #def _avaliable_transition(self, old_state, new_state):
-        #allowed = [
-            #('draft', 'open'),
-            #('open', 'paid'),
-            #('open', 'cancelled'),
-            #('paid', 'open'),
-        #]
-        #return (old_state, new_state) in allowed
+#    # @api.model
+#    # def _avaliable_transition(self, old_state, new_state):
+#        # allowed = [
+#            # ('draft', 'open'),
+#            # ('open', 'paid'),
+#            # ('open', 'cancelled'),
+#            # ('paid', 'open'),
+#        # ]
+#        # return (old_state, new_state) in allowed
 
     def executa_antes_create(self, dados):
         return dados
@@ -790,8 +822,9 @@ class FinanLancamento(SpedBase, models.Model):
         for lancamento in self:
             if lancamento.referencia_id:
                 raise UserError('Você não pode excuir um lançamento '
-                    'relacionado a outro documento; verifique se é possível '
-                    'cancelar o documento relacionado.')
+                                'relacionado a outro documento; '
+                                'verifique se é possível '
+                                'cancelar o documento relacionado.')
 
             if lancamento.provisorio:
                 continue
@@ -804,15 +837,15 @@ class FinanLancamento(SpedBase, models.Model):
                 continue
 
             if lancamento.situacao_divida_simples == \
-                FINAN_SITUACAO_DIVIDA_SIMPLES_ABERTO:
+                    FINAN_SITUACAO_DIVIDA_SIMPLES_ABERTO:
                 continue
 
             if lancamento.situacao_divida_simples == \
-                FINAN_SITUACAO_DIVIDA_SIMPLES_BAIXADO:
+                    FINAN_SITUACAO_DIVIDA_SIMPLES_BAIXADO:
                 raise UserError('Você não pode excuir um lançamento baixado!')
 
             if lancamento.situacao_divida_simples == \
-                FINAN_SITUACAO_DIVIDA_SIMPLES_QUITADO:
+                    FINAN_SITUACAO_DIVIDA_SIMPLES_QUITADO:
                 raise UserError('Você não pode excuir um lançamento com '
                                 'pagamentos!')
 
@@ -833,11 +866,11 @@ class FinanLancamento(SpedBase, models.Model):
         for lancamento in self:
             if not lancamento.provisorio:
                 if lancamento.situacao_divida_simples == \
-                    FINAN_SITUACAO_DIVIDA_SIMPLES_ABERTO:
+                        FINAN_SITUACAO_DIVIDA_SIMPLES_ABERTO:
                     lancamento.provisorio = True
                 else:
                     if lancamento.situacao_divida_simples == \
-                        FINAN_SITUACAO_DIVIDA_SIMPLES_BAIXADO:
+                            FINAN_SITUACAO_DIVIDA_SIMPLES_BAIXADO:
                         mensagem = 'Você não pode reabrir um lançamento ' + \
                                    'já baixado!'
                     else:
@@ -872,179 +905,182 @@ class FinanLancamento(SpedBase, models.Model):
             **kwargs
         )
 
-    #def action_view_financial(self, type):
-        #if type == '2receive':
-            #action = self.env.ref(
-                #'finan.financial_lancamento._debt_2receive_form_action').read()[0]
-        #elif type == '2pay':
-            #action = self.env.ref(
-                #'finan.financial_lancamento._debt_2pay_form_action').read()[0]
-        #if len(self) > 1:
-            #action['domain'] = [('id', 'in', self.ids)]
-        #elif len(self) == 1:
-            ## action['views'] = \
-            ##     [(
-            ##         self.env.ref('finan.financial_lancamento._form_view').id,
-            ##         'form',
-            ##     )]
-            #action['res_id'] = self.ids[0]
-        #else:
-            #action = {'type': 'ir.actions.act_window_close'}
-        #return action
-
-
-    # def _create_from_dict(self, lancamento._dict):
-    #     '''How to use:
-    #
-    # def _prepare_lancamento_item(self, item):
-    #      return {
-    #          'numero':
-    #              '{0.serie}-{0.numero:0.0f}-{1.numero}/{2}'.format(
-    #                  self, item, len(self.duplicata_ids)),
-    #          'data_vencimento': item.data_vencimento,
-    #          'amount': item.valor
-    #      }
-    #
-    #  def _prepare_lancamento_financeiro(self):
-    #      return {
-    #          'date': self.data_emissao,
-    #          'type': '2receive',
-    #          'partner_id':
-    #              self.participante_id and self.participante_id.partner_id.id,
-    #          'referencia_id': self._name + ',' + str(self.id),
-    #          'bank_id': 1,
-    #          'empresa_id': self.empresa_id and self.empresa_id.empresa_id.id,
-    #          'currency_id': self.currency_id.id,
-    #          'payment_term_id':
-    #              self.payment_term_id and self.payment_term_id.id or False,
-    #          # 'account_type_id':
-    #          # 'analytic_conta_id':
-    #          # 'condicao_pagamento_id:
-    #          'lines': [self._prepara_lancamento_item(parcela)
-    #                    for parcela in self.duplicata_ids],
-    #      }
-    #
-    #  def action_financial_create(self):
-    #
-    #      p = self._prepare_lancamento_financeiro()
-    #      financial_lancamento._ids = self.env['finan.lancamento']._create_from_dict(p)
-    #      financial_lancamento._ids.action_confirm()
-    #
-    #      :param lancamento._dict:
-    #      :return: a lancamento set of finan.lancamento
-    #      '''
-    #      lines = lancamento._dict.pop('lines')
-    #
-    #      financial_lancamento._ids = self.env['finan.lancamento']
-    #
-    #      for item in lines:
-    #          data_vencimento = item.pop('data_vencimento')
-    #          vr_documento = item.pop('vr_documento')
-    #          numero = item.pop('numero')
-    #          #
-    #          # Override lancamento._dict with item data!
-    #          #
-    #          kwargs = lancamento._dict.copy()
-    #          kwargs.update(item)
-    #
-    #          values = self._prepare_financial_lancamento(
-    #              data_vencimento=data_vencimento,
-    #              vr_documento=vr_documento,
-    #              numero=numero,
-    #              **kwargs
-    #          )
-    #          financial = self.create(values)
-    #          financial_lancamento._ids |= financial
-    #      return financial_lancamento._ids
-
-    #def _readonly_state(self):
-        #return {'draft': [('readonly', False)]}
-
-    #def _required_fields(self):
-        #return True
-
-    #def _track_visibility_onchange(self):
-        #return 'onchange'
-
-    #def cron_interest(self):
-        #if self.env['resource.calendar'].data_eh_dia_util_bancario(
-                #datetime.data_hoje()):
-            #lancamento = self.search([
-                #('state', '=', 'open'),
-                #('data_vencimento_util', '<', datetime.data_hoje())])
-            ## lancamento._compute_interest()
-            #lancamento._compute_situacao_divida()
-
-    #@api.depends('condicao_pagamento_id', 'vr_documento',
-                 #'data_vencimento_util')
-    #def _compute_interest(self):
-        #for lancamento in self:
-            #if self.env['resource.calendar']. \
-                    #data_eh_dia_util_bancario(datetime.data_hoje()) and lancamento. \
-                    #state == 'open' and \
-                    #(datetime.data_hoje() > datetime.strptime
-                        #(lancamento.data_vencimento_util, '%Y-%m-%d')):
-                #day = (
-                    #datetime.data_hoje() - datetime.strptime(
-                        #lancamento.data_vencimento,
-                        #'%Y-%m-%d'))
-                #interest = lancamento.vr_documento * \
-                    #(lancamento.condicao_pagamento_id.interest_percent * day.days) / 100
-
-                #delay_fee = (lancamento.condicao_pagamento_id.
-                             #delay_fee_percent / 100) * lancamento.vr_documento
-                #lancamento.vr_juros = interest + delay_fee
-
-    #def change_state(self, new_state):
-        #for lancamento in self:
-            #if lancamento._avaliable_transition(lancamento.state, new_state):
-                #lancamento.state = new_state
-            #elif lancamento.state == new_state:
-                #return True
-            #else:
-                #raise UserError(_('This state transition is not allowed'))
-
-    #def action_confirm(self):
-        #for lancamento in self:
-            #lancamento.change_state('open')
-
-    #def action_budget(self):
-        #for lancamento in self:
-            #lancamento.change_state('budget')
-
-    #def action_paid(self):
-        #for lancamento in self:
-            #lancamento.change_state('paid')
-            #if lancamento.state == 'paid':
-                #data_pagamento = \
-                    #max([x.data_pagamento for x in lancamento.pagamento_ids])
-                #lancamento.data_pagamento = data_pagamento
-
-    #def action_estorno(self):
-        #for lancamento in self:
-            #lancamento.change_state('open')
-
-    #def action_cancel(self, motivo_id, obs):
-        #for lancamento in self:
-            #lancamento.change_state('cancelled')
-            #if lancamento.note:
-                #new_note = lancamento.note + '\n' + obs
-            #else:
-                #new_note = obs
-            #lancamento.write({
-                #'motivo_baixa_id': motivo_id,
-                #'vr_baixado': lancamento.vr_documento,
-                #'note': new_note,
-                #'vr_saldo': 0,
-            #})
-            #lancamento.with_context(no_email=True).message_post(body=new_note)
-
-
-#class FinanLancamentoMotivoCancelamento(models.Model):
-    #_name = 'finan.lancamento.motivo.cancelamento'
-    #_rec_name = 'motivo_cancelamento'
-
-    #motivo_cancelamento = fields.Char(
-        #string="Motivo do Cancelamento",
-        #required=True,
-    #)
+#    def action_view_financial(self, type):
+#        if type == '2receive':
+#            action = self.env.ref(
+#                'finan.financial_lancamento._debt_2receive_form_action').read()[0]
+#        elif type == '2pay':
+#            action = self.env.ref(
+#                'finan.financial_lancamento._debt_2pay_form_action').read()[0]
+#        if len(self) > 1:
+#            action['domain'] = [('id', 'in', self.ids)]
+#        elif len(self) == 1:
+#            # action['views'] = \
+#            #     [(
+#            #         self.env.ref('finan.financial_lancamento.
+#                           _form_view').id,
+#            #         'form',
+#            #     )]
+#            action['res_id'] = self.ids[0]
+#        else:
+#            action = {'type': 'ir.actions.act_window_close'}
+#        return action
+#
+#
+#    def _create_from_dict(self, lancamento._dict):
+#        '''How to use:
+#
+#    def _prepare_lancamento_item(self, item):
+#         return {
+#             'numero':
+#                 '{0.serie}-{0.numero:0.0f}-{1.numero}/{2}'.format(
+#                     self, item, len(self.duplicata_ids)),
+#             'data_vencimento': item.data_vencimento,
+#             'amount': item.valor
+#         }
+#
+#     def _prepare_lancamento_financeiro(self):
+#         return {
+#             'date': self.data_emissao,
+#             'type': '2receive',
+#             'partner_id':
+#                 self.participante_id and self.participante_id.partner_id.id,
+#             'referencia_id': self._name + ',' + str(self.id),
+#             'bank_id': 1,
+#             'empresa_id': self.empresa_id and self.empresa_id.empresa_id.id,
+#             'currency_id': self.currency_id.id,
+#             'payment_term_id':
+#                 self.payment_term_id and self.payment_term_id.id or False,
+#             # 'account_type_id':
+#             # 'analytic_conta_id':
+#             # 'condicao_pagamento_id:
+#             'lines': [self._prepara_lancamento_item(parcela)
+#                       for parcela in self.duplicata_ids],
+#         }
+#
+#     def action_financial_create(self):
+#
+#         p = self._prepare_lancamento_financeiro()
+#         financial_lancamento._ids = self.env['finan.lancamento'].
+#           _create_from_dict(p)
+#         financial_lancamento._ids.action_confirm()
+#
+#         :param lancamento._dict:
+#         :return: a lancamento set of finan.lancamento
+#         '''
+#         lines = lancamento._dict.pop('lines')
+#
+#         financial_lancamento._ids = self.env['finan.lancamento']
+#
+#         for item in lines:
+#             data_vencimento = item.pop('data_vencimento')
+#             vr_documento = item.pop('vr_documento')
+#             numero = item.pop('numero')
+#             #
+#             # Override lancamento._dict with item data!
+#             #
+#             kwargs = lancamento._dict.copy()
+#             kwargs.update(item)
+#
+#             values = self._prepare_financial_lancamento(
+#                 data_vencimento=data_vencimento,
+#                 vr_documento=vr_documento,
+#                 numero=numero,
+#                 **kwargs
+#             )
+#             financial = self.create(values)
+#             financial_lancamento._ids |= financial
+#         return financial_lancamento._ids
+#
+#    def _readonly_state(self):
+#        return {'draft': [('readonly', False)]}
+#
+#    def _required_fields(self):
+#        return True
+#
+#    def _track_visibility_onchange(self):
+#        return 'onchange'
+#
+#    def cron_interest(self):
+#        if self.env['resource.calendar'].data_eh_dia_util_bancario(
+#                datetime.data_hoje()):
+#            lancamento = self.search([
+#                ('state', '=', 'open'),
+#                ('data_vencimento_util', '<', datetime.data_hoje())])
+#            # lancamento._compute_interest()
+#            lancamento._compute_situacao_divida()
+#
+#    @api.depends('condicao_pagamento_id', 'vr_documento',
+#                 'data_vencimento_util')
+#    def _compute_interest(self):
+#        for lancamento in self:
+#            if self.env['resource.calendar']. \
+#                    data_eh_dia_util_bancario(datetime.data_hoje()) and
+#                       lancamento. \
+#                    state == 'open' and \
+#                    (datetime.data_hoje() > datetime.strptime
+#                        (lancamento.data_vencimento_util, '%Y-%m-%d')):
+#                day = (
+#                    datetime.data_hoje() - datetime.strptime(
+#                        lancamento.data_vencimento,
+#                        '%Y-%m-%d'))
+#                interest = lancamento.vr_documento * \
+#                    (lancamento.condicao_pagamento_id.interest_percent *
+#                     day.days) / 100
+#
+#                delay_fee = (lancamento.condicao_pagamento_id.
+#                             delay_fee_percent / 100) *
+#                               lancamento.vr_documento
+#                lancamento.vr_juros = interest + delay_fee
+#
+#    def change_state(self, new_state):
+#        for lancamento in self:
+#            if lancamento._avaliable_transition(lancamento.state, new_state):
+#                lancamento.state = new_state
+#            elif lancamento.state == new_state:
+#                return True
+#            else:
+#                raise UserError(_('This state transition is not allowed'))
+#
+#    def action_confirm(self):
+#        for lancamento in self:
+#            lancamento.change_state('open')
+#
+#    def action_budget(self):
+#        for lancamento in self:
+#            lancamento.change_state('budget')
+#
+#    def action_paid(self):
+#        for lancamento in self:
+#            lancamento.change_state('paid')
+#            if lancamento.state == 'paid':
+#                data_pagamento = \
+#                    max([x.data_pagamento for x in lancamento.pagamento_ids])
+#                lancamento.data_pagamento = data_pagamento
+#
+#    def action_estorno(self):
+#        for lancamento in self:
+#            lancamento.change_state('open')
+#
+#    def action_cancel(self, motivo_id, obs):
+#        for lancamento in self:
+#            lancamento.change_state('cancelled')
+#            if lancamento.note:
+#                new_note = lancamento.note + '\n' + obs
+#            else:
+#                new_note = obs
+#            lancamento.write({
+#                'motivo_baixa_id': motivo_id,
+#                'vr_baixado': lancamento.vr_documento,
+#                'note': new_note,
+#                'vr_saldo': 0,
+#             })
+#             lancamento.with_context(no_email=True).message_post(body=new_note)
+# class FinanLancamentoMotivoCancelamento(models.Model):
+#    _name = 'finan.lancamento.motivo.cancelamento'
+#    _rec_name = 'motivo_cancelamento'
+#
+#    motivo_cancelamento = fields.Char(
+#        string="Motivo do Cancelamento",
+#        required=True,
+#    )

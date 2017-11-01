@@ -5,11 +5,16 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
 from odoo import api, fields, models
 from odoo.addons.l10n_br_base.models.sped_base import SpedBase
-from ..constantes import *
+from ..constantes import (
+    FINAN_BANCO,
+    FINAN_TIPO_CONTA_BANCARIA,
+    FINAN_TIPO_CONTA_BANCARIA_CAIXA,
+    FINAN_BANCO_DICT,
+    FINAN_TIPO_CONTA_BANCARIA_DICT,
+    FINAN_BANCO_INTERNO,
+)
 
 
 class FinanBanco(SpedBase, models.Model):
@@ -159,5 +164,5 @@ class FinanBanco(SpedBase, models.Model):
             return bancos.name_get()
 
         return super(FinanBanco, self).name_search(name=name, args=args,
-                                                         operator=operator,
-                                                         limit=limit)
+                                                   operator=operator,
+                                                   limit=limit)

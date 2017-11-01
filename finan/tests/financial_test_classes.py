@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timedelta
-import time
 
 from odoo.tests.common import SingleTransactionCase
 

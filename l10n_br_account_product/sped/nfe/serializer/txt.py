@@ -5,6 +5,7 @@
 from datetime import datetime
 from unicodedata import normalize
 import pytz
+import unicode
 from openerp import SUPERUSER_ID
 from openerp import pooler
 from openerp.addons.l10n_br_base.tools.misc import punctuation_rm

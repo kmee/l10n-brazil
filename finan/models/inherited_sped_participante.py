@@ -2,10 +2,15 @@
 # Copyright 2017 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-
-
 from odoo import api, fields, models
-from ..constantes import *
+from ..constantes import (
+    FINAN_PAGAMENTO,
+    FINAN_RECEBIMENTO,
+    FINAN_DIVIDA_A_PAGAR,
+    FINAN_DIVIDA_A_RECEBER,
+    FINAN_TIPO_PAGAMENTO,
+    FINAN_TIPO_DIVIDA,
+)
 
 
 class SpedParticipante(models.Model):
@@ -53,11 +58,11 @@ class SpedParticipante(models.Model):
     )
 
     @api.depends('limite_credito',
-                  'divida_ids.vr_saldo',
-                  'divida_ids.provisorio',
-                  'divida_ids.situacao_divida_simples',
-                  'pagamento_ids.vr_adiantado',
-                  'pagamento_ids.situacao_divida_simples')
+                 'divida_ids.vr_saldo',
+                 'divida_ids.provisorio',
+                 'divida_ids.situacao_divida_simples',
+                 'pagamento_ids.vr_adiantado',
+                 'pagamento_ids.situacao_divida_simples')
     def _compute_limite_credito(self):
         for participante in self:
             if not participante.id:

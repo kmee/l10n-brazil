@@ -20,11 +20,11 @@ class AccountMoveLine(orm.Model):
     def _payment_mode_search(self, cr, uid, obj, name, args, context):
         if not len(args):
             return []
-        operator = args[0][1]
+        # operator = args[0][1]
         value = args[0][2]
         if not value:
             return []
-        if isinstance(value, int) or isinstance(value, long):
+        if isinstance(value, int) or isinstance(value, int):
             ids = [value]
         elif isinstance(value, list):
             ids = value

@@ -5,15 +5,16 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
 import logging
 
 from collections import OrderedDict
 from psycopg2.extensions import AsIs
 
-from odoo import models, fields
-from ..constantes import *
+from odoo import fields, models
+from odoo.odoo import exceptions
+from ..constantes import (
+    FINAN_SITUACAO_DIVIDA_SIMPLES_DICT
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -105,7 +106,8 @@ class FinanRelatorioDivida(models.AbstractModel):
             fl.provisorio != True
             and fl.tipo = %(tipo)s
             and fl.empresa_id = %(empresa_id)s
-            and fl.data_vencimento_util between %(data_inicial)s and %(data_final)s
+            and fl.data_vencimento_util between %(data_inicial)s
+            and %(data_final)s
             and fl.situacao_divida_simples = %(situacao_divida_simples)s
         '''
 
@@ -162,10 +164,14 @@ class FinanRelatorioDivida(models.AbstractModel):
             coalesce(p.nome, '') as participante_nome,
             coalesce(p.cnpj_cpf, '') as participante_cnpj_cpf,
             coalesce(sum(coalesce(fl.vr_documento, 0)), 0) as vr_documento,
-            coalesce(sum(coalesce(fl.vr_quitado_juros, 0)), 0) as vr_quitado_juros,
-            coalesce(sum(coalesce(fl.vr_quitado_multa, 0)), 0) as vr_quitado_multa,
-            coalesce(sum(coalesce(fl.vr_quitado_desconto, 0)), 0) as vr_quitado_desconto,
-            coalesce(sum(coalesce(fl.vr_quitado_total, 0)), 0) as vr_quitado_total
+            coalesce(sum(coalesce(fl.vr_quitado_juros, 0)), 0) as
+            vr_quitado_juros,
+            coalesce(sum(coalesce(fl.vr_quitado_multa, 0)), 0) as
+            vr_quitado_multa,
+            coalesce(sum(coalesce(fl.vr_quitado_desconto, 0)), 0) as
+            vr_quitado_desconto,
+            coalesce(sum(coalesce(fl.vr_quitado_total, 0)), 0) as
+            vr_quitado_total
 
         from
             finan_lancamento fl
@@ -176,7 +182,8 @@ class FinanRelatorioDivida(models.AbstractModel):
             fl.provisorio != True
             and fl.tipo = %(tipo)s
             and fl.empresa_id = %(empresa_id)s
-            and fl.data_vencimento_util between %(data_inicial)s and %(data_final)s
+            and fl.data_vencimento_util between %(data_inicial)s and %
+            (data_final)s
             and fl.situacao_divida_simples = %(situacao_divida_simples)s
         '''
 
@@ -215,10 +222,14 @@ class FinanRelatorioDivida(models.AbstractModel):
         select
             fl.data_vencimento_util,
             coalesce(sum(coalesce(fl.vr_documento, 0)), 0) as vr_documento,
-            coalesce(sum(coalesce(fl.vr_quitado_juros, 0)), 0) as vr_quitado_juros,
-            coalesce(sum(coalesce(fl.vr_quitado_multa, 0)), 0) as vr_quitado_multa,
-            coalesce(sum(coalesce(fl.vr_quitado_desconto, 0)), 0) as vr_quitado_desconto,
-            coalesce(sum(coalesce(fl.vr_quitado_total, 0)), 0) as vr_quitado_total
+            coalesce(sum(coalesce(fl.vr_quitado_juros, 0)), 0) as
+            vr_quitado_juros,
+            coalesce(sum(coalesce(fl.vr_quitado_multa, 0)), 0) as
+            vr_quitado_multa,
+            coalesce(sum(coalesce(fl.vr_quitado_desconto, 0)), 0) as
+            vr_quitado_desconto,
+            coalesce(sum(coalesce(fl.vr_quitado_total, 0)), 0) as
+            vr_quitado_total
 
         from
             finan_lancamento fl
@@ -229,7 +240,8 @@ class FinanRelatorioDivida(models.AbstractModel):
             fl.provisorio != True
             and fl.tipo = %(tipo)s
             and fl.empresa_id = %(empresa_id)s
-            and fl.data_vencimento_util between %(data_inicial)s and %(data_final)s
+            and fl.data_vencimento_util between %(data_inicial)s and
+            %(data_final)s
             and fl.situacao_divida_simples = %(situacao_divida_simples)s
         '''
 
@@ -356,9 +368,9 @@ class FinanRelatorioDivida(models.AbstractModel):
 
         if self.report_wizard.group_by == 'data_vencimento_util':
             result[0] = {
-                'header': 'Cliente' if \
-                    self.report_wizard.tipo_divida == 'a_receber' \
-                    else 'Fornecedor',
+                'header': 'Cliente' if
+                self.report_wizard.tipo_divida == 'a_receber'
+                else 'Fornecedor',
                 'field': 'parceiro',
                 'width': 60,
             }
@@ -415,9 +427,9 @@ class FinanRelatorioDivida(models.AbstractModel):
 
         if self.report_wizard.group_by == 'data_vencimento_util':
             result[0] = {
-                'header': 'Cliente' if \
-                    self.report_wizard.tipo_divida == 'a_receber' \
-                    else 'Fornecedor',
+                'header': 'Cliente' if
+                self.report_wizard.tipo_divida == 'a_receber' else
+                'Fornecedor',
                 'field': 'titulo_total',
                 'width': 60,
             }
@@ -516,8 +528,6 @@ class FinanRelatorioDivida(models.AbstractModel):
         )
         self.current_row += 1
         self.write_header()
-
-
         total_columns = self.define_columns_summary_total()
         linha_total_geral = {
             'vr_documento': 0.00,

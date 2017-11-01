@@ -2,12 +2,10 @@
 # Copyright (C) 2014  Renato Lima - Akretion                                  #
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
-from openerp import models, fields, api
 from openerp import _
-from openerp.exceptions import ValidationError
-
+from openerp import models, fields, api
 from openerp.addons import decimal_precision as dp
-from openerp.addons.l10n_br_base.tools.misc import calc_price_ratio
+from openerp.exceptions import ValidationError
 
 
 class SaleOrder(models.Model):
@@ -86,7 +84,22 @@ class SaleOrder(models.Model):
         company = self.env['res.company'].browse(self.env.user.company_id.id)
         return company.default_ind_pres
 
+    @api.depends('amount_insurance', 'amount_costs', 'amount_freight')
+    def _get_costs_value(self):
+        pass
+        # does nothing
 
+    def _set_amount_costs(self):
+        pass
+        # does nothing
+
+    def _set_amount_freight(self):
+        pass
+        # does nothing
+
+    def _set_amount_insurance(self):
+        pass
+        # does nothing
 
     ind_pres = fields.Selection([
         ('0', u'Não se aplica'),
