@@ -6,11 +6,7 @@
 #
 
 
-
-import os
-
-from odoo import api, fields, models
-from odoo.exceptions import ValidationError
+from odoo import api, models
 from odoo.addons.l10n_br_base.constante_tributaria import (
     MODELO_FISCAL_NFE,
     MODELO_FISCAL_NFCE,
@@ -78,36 +74,36 @@ class MailComposeMessage(models.TransientModel):
 
                 else:
                     if documento.modelo == MODELO_FISCAL_NFE and \
-                        empresa.mail_template_nfe_autorizada_id:
-                        mail_template = \
-                            empresa.mail_template_nfe_autorizada_id
+                            empresa.mail_template_nfe_autorizada_id:
+                            mail_template = \
+                                empresa.mail_template_nfe_autorizada_id
 
                     elif documento.modelo == MODELO_FISCAL_NFCE and \
-                        empresa.mail_template_nfce_autorizada_id:
-                        mail_template = \
-                            empresa.mail_template_nfce_autorizada_id
+                            empresa.mail_template_nfce_autorizada_id:
+                            mail_template = \
+                                empresa.mail_template_nfce_autorizada_id
 
             elif documento.situacao_nfe == SITUACAO_NFE_CANCELADA:
                 if documento.modelo == MODELO_FISCAL_NFE and \
-                    empresa.mail_template_nfe_cancelada_id:
-                    mail_template = \
-                        empresa.mail_template_nfe_cancelada_id
+                        empresa.mail_template_nfe_cancelada_id:
+                        mail_template = \
+                            empresa.mail_template_nfe_cancelada_id
 
                 elif documento.modelo == MODELO_FISCAL_NFCE and \
-                    empresa.mail_template_nfce_cancelada_id:
-                    mail_template = \
-                        empresa.mail_template_nfce_cancelada_id
+                        empresa.mail_template_nfce_cancelada_id:
+                        mail_template = \
+                            empresa.mail_template_nfce_cancelada_id
 
             elif documento.situacao_nfe == SITUACAO_NFE_DENEGADA:
                 if documento.modelo == MODELO_FISCAL_NFE and \
-                    empresa.mail_template_nfe_denegada_id:
-                    mail_template = \
-                        empresa.mail_template_nfe_denegada_id
+                   empresa.mail_template_nfe_denegada_id:
+                        mail_template = \
+                            empresa.mail_template_nfe_denegada_id
 
                 elif documento.modelo == MODELO_FISCAL_NFCE and \
-                    empresa.mail_template_nfce_denegada_id:
-                    mail_template = \
-                        empresa.mail_template_nfce_denegada_id
+                        empresa.mail_template_nfce_denegada_id:
+                            mail_template = \
+                                empresa.mail_template_nfce_denegada_id
 
         elif model == 'sped.documento.carta.correcao':
             if documento.modelo == MODELO_FISCAL_NFE:

@@ -6,12 +6,11 @@
 #
 
 
-
 import logging
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
-from odoo.addons.l10n_br_base.constante_tributaria import *
+
 
 _logger = logging.getLogger(__name__)
 
@@ -194,7 +193,8 @@ class SpedCartaCorrecao(models.Model):
 
         processador = self.documento_id.processador_nfe()
 
-        xml = self.documento_id.arquivo_xml_autorizacao_id.datas.decode('base64')
+        xml = self.documento_id.arquivo_xml_autorizacao_id.\
+            datas.decode('base64')
         xml = xml.decode('utf-8')
 
         procNFe = ProcNFe_310()
@@ -209,12 +209,12 @@ class SpedCartaCorrecao(models.Model):
         evento.infEvento.chNFe.valor = procNFe.NFe.chave
         evento.infEvento.dhEvento.valor = agora()
 
-        #self.correcao =
+        # self.correcao =
         ##
-        ## Correção ASP - Cláudia copiou e colou e veio esse caracter esquisito
+        # Correção ASP - Cláudia copiou e colou e veio esse caracter esquisito
         ##
-        #if self.correcao:
-            #self.correcao = self.correcao.replace('\u200b', ' ')
+        # if self.correcao:
+        # self.correcao = self.correcao.replace('\u200b', ' ')
 
         evento.infEvento.detEvento.xCorrecao.valor = self.correcao or ''
         evento.infEvento.nSeqEvento.valor = self.sequencia or 1
@@ -263,11 +263,11 @@ class SpedCartaCorrecao(models.Model):
 
     def unlink(self):
         self._check_permite_alteracao(operacao='unlink')
-        return super(CartaCorrecao, self).unlink()
+        return super(SpedCartaCorrecao, self).unlink()
 
     def write(self, dados):
         self._check_permite_alteracao(operacao='write', dados=dados)
-        return super(CartaCorrecao, self).write(dados)
+        return super(SpedCartaCorrecao, self).write(dados)
 
     @api.onchange('documento_id')
     def _onchange_documento_id(self):

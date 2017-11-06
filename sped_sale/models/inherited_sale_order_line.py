@@ -3,12 +3,14 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 
-
 import logging
 
 from odoo import api, fields, models, _
 import odoo.addons.decimal_precision as dp
-from odoo.addons.l10n_br_base.constante_tributaria import *
+from odoo.addons.l10n_br_base.constante_tributaria import (
+    SITUACAO_FISCAL_SPED_CONSIDERA_ATIVO,
+    TIPO_PRODUTO_SERVICO_SERVICOS,
+)
 from odoo.addons.sped_imposto.models.sped_calculo_imposto_item import (
     SpedCalculoImpostoItem
 )
@@ -20,7 +22,6 @@ try:
 
 except (ImportError, IOError) as err:
     _logger.debug(err)
-
 
 
 class SaleOrderLine(SpedCalculoImpostoItem, models.Model):
@@ -204,7 +205,7 @@ class SaleOrderLine(SpedCalculoImpostoItem, models.Model):
         for record in self:
             ir_values = self.env['ir.values']
             dias_definidos = ir_values.get_default('res.config.settings',
-                                            'dias_vencimento_cotacao')
+                                                   'dias_vencimento_cotacao')
             record.customer_lead = dias_definidos
 
     customer_lead = fields.Float(
@@ -350,9 +351,9 @@ class SaleOrderLine(SpedCalculoImpostoItem, models.Model):
 
     @api.model
     def create(self, dados):
-        #dados = self._mantem_sincronia_cadastros(dados)
+        # dados = self._mantem_sincronia_cadastros(dados)
         return super(SaleOrderLine, self).create(dados)
 
     def write(self, dados):
-        #dados = self._mantem_sincronia_cadastros(dados)
+        # dados = self._mantem_sincronia_cadastros(dados)
         return super(SaleOrderLine, self).write(dados)

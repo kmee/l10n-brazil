@@ -6,8 +6,7 @@
 #
 
 
-
-from odoo import api, fields, models, _
+from odoo import api, fields, models
 
 
 SQL_STOCK_MOVE_ENTRADA_SAIDA = '''
@@ -82,13 +81,20 @@ from
 where
     m.state = 'done';
 
--- create index stock_move_entrada_saida_sinal_index on stock_move_entrada_saida (sinal);
--- create index stock_move_entrada_saida_empresa_index on stock_move_entrada_saida (empresa_id);
--- create index stock_move_entrada_saida_documento_index on stock_move_entrada_saida (documento_id);
--- create index stock_move_entrada_saida_picking_index on stock_move_entrada_saida (picking_id);
--- create index stock_move_entrada_saida_location_index on stock_move_entrada_saida (location_id);
--- create index stock_move_entrada_saida_produto_index on stock_move_entrada_saida (produto_id);
--- create index stock_move_entrada_saida_cfop_index on stock_move_entrada_saida (cfop_id);
+-- create index stock_move_entrada_saida_sinal_index \
+on stock_move_entrada_saida (sinal);
+-- create index stock_move_entrada_saida_empresa_index \
+on stock_move_entrada_saida (empresa_id);
+-- create index stock_move_entrada_saida_documento_index \
+on stock_move_entrada_saida (documento_id);
+-- create index stock_move_entrada_saida_picking_index \
+on stock_move_entrada_saida (picking_id);
+-- create index stock_move_entrada_saida_location_index \
+on stock_move_entrada_saida (location_id);
+-- create index stock_move_entrada_saida_produto_index \
+on stock_move_entrada_saida (produto_id);
+-- create index stock_move_entrada_saida_cfop_index \
+on stock_move_entrada_saida (cfop_id);
 '''
 
 

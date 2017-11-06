@@ -6,8 +6,7 @@
 #
 
 
-
-from odoo import api, fields, models
+from odoo import models
 
 
 class StockQuant(models.Model):

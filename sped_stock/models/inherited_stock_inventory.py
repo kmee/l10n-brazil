@@ -6,8 +6,7 @@
 #
 
 
-
-from odoo import api, fields, models, _
+from odoo import api, fields, models
 from odoo.addons.l10n_br_base.models.sped_base import SpedBase
 
 
@@ -18,7 +17,8 @@ class StockInventory(SpedBase, models.Model):
         comodel_name='sped.empresa',
         string='Empresa',
         ondelete='restrict',
-        default=lambda self: self.env['sped.empresa']._empresa_ativa('sped.empresa')
+        default=lambda self:
+            self.env['sped.empresa']._empresa_ativa('sped.empresa')
     )
     participante_id = fields.Many2one(
         comodel_name='sped.participante',
@@ -53,16 +53,17 @@ class StockInventory(SpedBase, models.Model):
     def _selection_filter(self):
         res_filter = [
             ('none', 'Todos os produtos'),
-            #('category', _('One product category')),
+            # ('category', _('One product category')),
             ('product', 'Somente 1 produto'),
             ('partial', 'Escolher produtos manualmente')
         ]
 
-        #if self.user_has_groups('stock.group_tracking_owner'):
-            #res_filter += [('owner', _('One owner only')), ('product_owner', _('One product for a specific owner'))]
-        #if self.user_has_groups('stock.group_production_lot'):
-            #res_filter.append(('lot', _('One Lot/Serial Number')))
-        #if self.user_has_groups('stock.group_tracking_lot'):
-            #res_filter.append(('pack', _('A Pack')))
+        # if self.user_has_groups('stock.group_tracking_owner'):
+        # res_filter += [('owner', _('One owner only')),
+        # ('product_owner', _('One product for a specific owner'))]
+        # if self.user_has_groups('stock.group_production_lot'):
+        # res_filter.append(('lot', _('One Lot/Serial Number')))
+        # if self.user_has_groups('stock.group_tracking_lot'):
+        # res_filter.append(('pack', _('A Pack')))
 
         return res_filter

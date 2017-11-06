@@ -6,10 +6,9 @@
 #
 
 
-
 import logging
 
-from odoo import api, fields, models
+from odoo import models
 from odoo.addons.l10n_br_base.constante_tributaria import (
     MODELO_FISCAL_NFE,
     MODELO_FISCAL_NFCE,
@@ -21,8 +20,6 @@ _logger = logging.getLogger(__name__)
 
 try:
     from pysped.nfe.leiaute import NFRef_310
-    from pybrasil.inscricao import limpa_formatacao
-    from pybrasil.data import parse_datetime, UTC
 
 except (ImportError, IOError) as err:
     _logger.debug(err)

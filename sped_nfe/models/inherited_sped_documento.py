@@ -6,20 +6,63 @@
 #
 
 
-
 import os
 import logging
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
-from odoo.addons.l10n_br_base.constante_tributaria import *
+from odoo.addons.l10n_br_base.constante_tributaria import (
+    SITUACAO_NFE,
+    SITUACAO_NFE_EM_DIGITACAO,
+    MODELO_FISCAL_NFE,
+    MODELO_FISCAL_NFCE,
+    SITUACAO_NFE_REJEITADA,
+    SITUACAO_NFE_AUTORIZADA,
+    TIPO_EMISSAO_PROPRIA,
+)
 
 _logger = logging.getLogger(__name__)
 
 try:
-    from pysped.nfe.webservices_flags import *
-    from pysped.nfe.leiaute import *
+    from pysped.nfe.webservices_flags import (
+        AMBIENTE_NFE_HOMOLOGACAO,
+        NFe_310,
+        NFCe_310,
+        docref,
+    )
+    from pysped.nfe.leiaute import (
+        UF_CODIGO,
+        nfe,
+        IDENTIFICACAO_DESTINO_INTERNO,
+        TIPO_CONSUMIDOR_FINAL_CONSUMIDOR_FINAL,
+        IDENTIFICACAO_DESTINO_EXTERIOR,
+        IDENTIFICACAO_DESTINO_INTERESTADUAL,
+        INDICADOR_IE_DESTINATARIO_NAO_CONTRIBUINTE,
+        INDICADOR_IE_DESTINATARIO_CONTRIBUINTE,
+        MODALIDADE_FRETE_REMETENTE_PROPRIO,
+        MODALIDADE_FRETE_REMETENTE_CIF,
+        MODALIDADE_FRETE_DESTINATARIO_PROPRIO,
+        MODALIDADE_FRETE_DESTINATARIO_FOB,
+        MODALIDADE_FRETE_SEM_FRETE,
+        Reboque_310,
+        IND_FORMA_PAGAMENTO_A_VISTA,
+        IND_FORMA_PAGAMENTO_A_PRAZO,
+        REGIME_TRIBUTARIO_SIMPLES,
+        WS_NFE_SITUACAO,
+        WS_NFE_CONSULTA,
+        SITUACAO_FISCAL_DENEGADO,
+        SITUACAO_NFE_DENEGADA,
+        WS_NFE_ENVIO_LOTE,
+        WS_NFE_CONSULTA_RECIBO,
+        SITUACAO_NFE_ENVIADA,
+        ProcNFe_310,
+        EventoCancNFe_100,
+        SITUACAO_FISCAL_CANCELADO_EXTEMPORANEO,
+        SITUACAO_NFE_CANCELADA,
+        SITUACAO_FISCAL_CANCELADO,
+        ProcEventoCancNFe_100,
+    )
     from pybrasil.inscricao import limpa_formatacao
     from pybrasil.data import (parse_datetime, UTC, data_hora_horario_brasilia,
                                agora)
@@ -150,7 +193,7 @@ class SpedDocumento(models.Model):
             #
             documento.permite_alteracao = \
                 documento.situacao_nfe in (SITUACAO_NFE_EM_DIGITACAO,
-                                        SITUACAO_NFE_REJEITADA)
+                                           SITUACAO_NFE_REJEITADA)
 
     def _check_permite_alteracao(self, operacao='create', dados={},
                                  campos_proibidos=[]):
@@ -1221,7 +1264,7 @@ class SpedDocumento(models.Model):
     def envia_email(self, mail_template):
         self.ensure_one()
 
-        #super(SpedDocumento, self).envia_email(mail_template)
+        # super(SpedDocumento, self).envia_email(mail_template)
 
         self.ensure_one()
         mail_template.send_mail(self.id)
@@ -1239,29 +1282,34 @@ class SpedDocumento(models.Model):
 
         if self.situacao_nfe == SITUACAO_NFE_CANCELADA:
             if self.modelo == MODELO_FISCAL_NFE and \
-                self.empresa_id.mail_template_nfe_cancelada_id:
-                mail_template = self.empresa_id.mail_template_nfe_cancelada_id
+                    self.empresa_id.mail_template_nfe_cancelada_id:
+                        mail_template = self.empresa_id.\
+                            mail_template_nfe_cancelada_id
             elif self.modelo == MODELO_FISCAL_NFCE and \
-                self.empresa_id.mail_template_nfce_cancelada_id:
-                mail_template = self.empresa_id.mail_template_nfce_cancelada_id
+                    self.empresa_id.mail_template_nfce_cancelada_id:
+                                mail_template = self.empresa_id.\
+                                    mail_template_nfce_cancelada_id
 
         elif self.situacao_nfe == SITUACAO_NFE_DENEGADA:
             if self.modelo == MODELO_FISCAL_NFE and \
-                self.empresa_id.mail_template_nfe_denegada_id:
-                mail_template = self.empresa_id.mail_template_nfe_denegada_id
+                    self.empresa_id.mail_template_nfe_denegada_id:
+                        mail_template = self.empresa_id.\
+                            mail_template_nfe_denegada_id
             elif self.modelo == MODELO_FISCAL_NFCE and \
-                self.empresa_id.mail_template_nfce_denegada_id:
-                mail_template = self.empresa_id.mail_template_nfce_denegada_id
+                    self.empresa_id.mail_template_nfce_denegada_id:
+                        mail_template = self.empresa_id.\
+                            mail_template_nfce_denegada_id
         else:
             if self.operacao_id.mail_template_id:
-                mail_template_id = self.operacao_id.mail_template_id
+                    self.operacao_id.mail_template_id
             elif self.modelo == MODELO_FISCAL_NFE and \
-                self.empresa_id.mail_template_nfe_autorizada_id:
-                mail_template = self.empresa_id.mail_template_nfe_autorizada_id
+                    self.empresa_id.mail_template_nfe_autorizada_id:
+                        mail_template = self.empresa_id.\
+                            mail_template_nfe_autorizada_id
             elif self.modelo == MODELO_FISCAL_NFCE and \
-                self.empresa_id.mail_template_nfce_autorizada_id:
-                mail_template = \
-                    self.empresa_id.mail_template_nfce_autorizada_id
+                    self.empresa_id.mail_template_nfce_autorizada_id:
+                        mail_template = \
+                            self.empresa_id.mail_template_nfce_autorizada_id
 
         if mail_template is None:
             raise UserError('Não foi possível determinar o modelo de email '

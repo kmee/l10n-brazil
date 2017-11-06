@@ -3,9 +3,8 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 
-
 from psycopg2.extensions import AsIs
-from odoo import api, fields, models, _
+from odoo import fields, models
 
 
 class SpedProduto(models.Model):
@@ -114,9 +113,9 @@ class SpedProduto(models.Model):
             #
             if len(local_ids) > 0:
                 self.env.cr.execute(sql_soma_move,
-                    {'produto_id': produto.id,
-                    'local_ids': AsIs(str(tuple(local_ids)).replace(',)', ')'))
-                    })
+                                    {'produto_id': produto.id,
+                                     'local_ids': AsIs(str(tuple(local_ids)).
+                                                       replace(',)', ')'))})
 
                 produto.estoque_em_maos = \
                     self.env.cr.dictfetchall()[0]['estoque_em_maos']

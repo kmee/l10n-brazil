@@ -3,12 +3,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 
-
-
-from odoo import api, fields, models, _
-from odoo.addons.sped_imposto.models.sped_calculo_imposto_produto_servico \
-    import SpedCalculoImpostoProdutoServico
-from odoo.addons.l10n_br_base.constante_tributaria import *
+from odoo import api, fields, models
 
 
 class StockPicking(models.Model):
@@ -93,8 +88,8 @@ class StockPicking(models.Model):
             return super(StockPicking, self).gera_documento()
 
         documento, nfse = \
-                self.sale_order_id.gera_documento(soh_produtos=True,
-                                                  stock_picking=self)
+            self.sale_order_id.gera_documento(soh_produtos=True,
+                                              stock_picking=self)
 
         if documento is None:
             return documento
@@ -117,7 +112,7 @@ class StockPicking(models.Model):
         return documento
 
     def action_cancel(self):
-        res = super(StockPicking, self).action_cancel()
+        super(StockPicking, self).action_cancel()
         #
         # Reabre o pedido de venda
         #

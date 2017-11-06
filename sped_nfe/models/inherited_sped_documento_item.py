@@ -6,11 +6,22 @@
 #
 
 
-
 import logging
 
 from odoo import models
-from odoo.addons.l10n_br_base.constante_tributaria import *
+from odoo.addons.l10n_br_base.constante_tributaria import (
+    REGIME_TRIBUTARIO_SIMPLES,
+    ST_ICMS_CODIGO_CEST,
+    MODELO_FISCAL_NFE,
+    AMBIENTE_NFE_HOMOLOGACAO,
+    MODELO_FISCAL_NFCE,
+    ST_ICMS_CALCULA_PROPRIO,
+    ST_ICMS_SN_CALCULA_PROPRIO,
+    ST_ICMS_SN_CALCULA_CREDITO,
+    IDENTIFICACAO_DESTINO_INTERESTADUAL,
+    TIPO_CONSUMIDOR_FINAL_CONSUMIDOR_FINAL,
+    INDICADOR_IE_DESTINATARIO_NAO_CONTRIBUINTE,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -157,8 +168,9 @@ class SpedDocumentoItem(models.Model):
         #
         # IPI
         #
-        if ((self.documento_id.regime_tributario != REGIME_TRIBUTARIO_SIMPLES)
-                and self.cst_ipi):
+        if ((self.documento_id.
+            regime_tributario != REGIME_TRIBUTARIO_SIMPLES) and
+                self.cst_ipi):
             det.imposto.IPI.cEnq.valor = self.enquadramento_ipi or '999'
             det.imposto.IPI.CST.valor = self.cst_ipi or ''
             det.imposto.IPI.vBC.valor = str(D(self.bc_ipi))
@@ -203,14 +215,14 @@ class SpedDocumentoItem(models.Model):
         # Crédito de ICMS do SIMPLES
         #
         if self.documento_id.regime_tributario == REGIME_TRIBUTARIO_SIMPLES \
-            and self.cst_icms_sn in ST_ICMS_SN_CALCULA_CREDITO:
+           and self.cst_icms_sn in ST_ICMS_SN_CALCULA_CREDITO:
             if len(infcomplementar) > 0:
                 infcomplementar += '\n'
 
             infcomplementar += 'Permite o aproveitamento de crédito de ' + \
                 'ICMS no valor de R$ ${formata_valor(item.vr_icms_sn)},' + \
                 ' correspondente à alíquota de ' + \
-                '${formata_valor(item.al_icms_sn)}%, nos termos do art. 23'+ \
+                '${formata_valor(item.al_icms_sn)}%, nos termos do art. 23' + \
                 ' da LC 123/2006;'
 
         #
@@ -228,11 +240,11 @@ class SpedDocumentoItem(models.Model):
         # ICMS para UF de destino
         #
         if nfe.infNFe.ide.idDest.valor == \
-            IDENTIFICACAO_DESTINO_INTERESTADUAL and \
-            nfe.infNFe.ide.indFinal.valor == \
-            TIPO_CONSUMIDOR_FINAL_CONSUMIDOR_FINAL and \
-            nfe.infNFe.dest.indIEDest.valor == \
-            INDICADOR_IE_DESTINATARIO_NAO_CONTRIBUINTE:
+           IDENTIFICACAO_DESTINO_INTERESTADUAL and \
+           nfe.infNFe.ide.indFinal.valor == \
+           TIPO_CONSUMIDOR_FINAL_CONSUMIDOR_FINAL and \
+           nfe.infNFe.dest.indIEDest.valor == \
+           INDICADOR_IE_DESTINATARIO_NAO_CONTRIBUINTE:
 
             det.imposto.ICMSUFDest.vBCUFDest.valor = \
                 det.imposto.ICMS.vBC.valor
