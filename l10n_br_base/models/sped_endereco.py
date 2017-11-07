@@ -5,19 +5,12 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
 import logging
-from odoo import api, fields, models, _
+
 from odoo.exceptions import ValidationError
-from .sped_base import SpedBase
+
+from odoo import api, fields, models, _
 from ..constante_tributaria import (
-    INDICADOR_IE_DESTINATARIO,
-    INDICADOR_IE_DESTINATARIO_ISENTO,
-    INDICADOR_IE_DESTINATARIO_NAO_CONTRIBUINTE,
-    REGIME_TRIBUTARIO,
-    REGIME_TRIBUTARIO_LUCRO_PRESUMIDO,
-    REGIME_TRIBUTARIO_SIMPLES,
     TIPO_PESSOA_JURIDICA,
     TIPO_PESSOA_FISICA,
     TIPO_PESSOA_ESTRANGEIRO,
@@ -26,13 +19,15 @@ from ..constante_tributaria import (
 _logger = logging.getLogger(__name__)
 
 try:
-    from email_validator import validate_email
+    # from email_validator import validate_email
 
     from pybrasil.base import mascara
     from pybrasil.inscricao import (formata_cnpj, formata_cpf,
                                     limpa_formatacao,
-                                    formata_inscricao_estadual, valida_cnpj,
-                                    valida_cpf, valida_inscricao_estadual)
+                                    # formata_inscricao_estadual,
+                                    valida_cnpj,
+                                    valida_cpf)
+# valida_inscricao_estadual)
     from pybrasil.telefone import (formata_fone, valida_fone_fixo,
                                    valida_fone_celular,
                                    valida_fone_internacional)

@@ -5,14 +5,10 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
 import logging
 
 from dateutil.relativedelta import relativedelta
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
-from odoo.addons.l10n_br_base.models.sped_base import SpedBase
 from ..constante_tributaria import (
     FORMA_PAGAMENTO,
     BANDEIRA_CARTAO,
@@ -25,7 +21,6 @@ from ..constante_tributaria import (
     FORMA_PAGAMENTO_DICT,
     BANDEIRA_CARTAO_DICT,
 )
-from .sped_base import SpedBase
 
 _logger = logging.getLogger(__name__)
 
@@ -35,12 +30,11 @@ try:
     from pybrasil.data import (
         dia_util_pagamento, hoje,
         DIA_SEGUNDA, DIA_TERCA, DIA_QUARTA, DIA_QUINTA, DIA_SEXTA,
-        primeiro_dia_mes, ultimo_dia_mes, dias_uteis,
+        primeiro_dia_mes, ultimo_dia_mes, dias_uteis, meses
     )
 
 except (ImportError, IOError) as err:
     _logger.debug(err)
-
 
 
 class FinanCondicaoPagamento(models.Model):
@@ -216,10 +210,10 @@ class FinanCondicaoPagamento(models.Model):
             nome_comercial = ''
             if condicao.forma_pagamento in FORMA_PAGAMENTO_CARTOES:
                 if condicao.forma_pagamento == \
-                    FORMA_PAGAMENTO_CARTAO_CREDITO:
+                        FORMA_PAGAMENTO_CARTAO_CREDITO:
                     nome_comercial += '[Crédito '
                 elif condicao.forma_pagamento == \
-                    FORMA_PAGAMENTO_CARTAO_DEBITO:
+                        FORMA_PAGAMENTO_CARTAO_DEBITO:
                     nome_comercial += '[Débito '
 
                 nome_comercial += \
@@ -392,15 +386,15 @@ class FinanCondicaoPagamento(models.Model):
             valor_parcela = valor_parcela.quantize(D('0.01'))
             diferenca = valor - (valor_parcela * meses)
 
-
         return valor_parcela, diferenca
 
     def calcular_parcelas(self, valor, data_base=False, entrada=0):
         self.ensure_one()
 
-        #if not self.em_parcelas_mensais:
-            #return super(AccountPaymentTerm, self).calcular_parcelas(valor,
-                                                           #date_ref=data_base)
+#        if not self.em_parcelas_mensais:
+#            return super(AccountPaymentTerm, self).
+#                   calcular_parcelas(valor,
+#                                     date_ref=data_base)
 
         data_referencia = data_base or hoje()
         valor = D(valor)

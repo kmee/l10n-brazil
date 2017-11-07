@@ -5,13 +5,12 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
-from odoo import api, fields, models, _
-from odoo.exceptions import ValidationError
 from odoo.addons.l10n_br_base.constante_tributaria import (
     ALIQUOTAS_ICMS,
 )
+from odoo.exceptions import ValidationError
+
+from odoo import api, fields, models, _
 
 
 class SpedProtocoloICMS(models.Model):
@@ -265,14 +264,14 @@ class SpedProtocoloICMS(models.Model):
                 a.descricao = %s
             """
             params.append(self.descricao)
-            #sql = sql.format(descricao=self.descricao)
+            # sql = sql.format(descricao=self.descricao)
 
             if self.id or self._origin.id:
                 sql += """
                     and a.id != %s
                 """
                 params.append(self.id or self._origin.id)
-                #sql = sql.format(id=self.id or self._origin.id)
+                # sql = sql.format(id=self.id or self._origin.id)
 
             self.env.cr.execute(sql, params)
             jah_existe = self.env.cr.fetchall()

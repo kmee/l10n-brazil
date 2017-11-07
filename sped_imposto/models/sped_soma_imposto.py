@@ -5,15 +5,81 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
 import logging
 
-from odoo import api, fields, models, _
-import odoo.addons.decimal_precision as dp
-from odoo.exceptions import ValidationError
+from odoo.addons.l10n_br_base.constante_tributaria import (
+    REGIME_TRIBUTARIO,
+    REGIME_TRIBUTARIO_SIMPLES,
+    MODELO_FISCAL,
+    IE_DESTINATARIO,
+    TIPO_EMISSAO,
+    ENTRADA_SAIDA,
+    TIPO_CONSUMIDOR_FINAL,
+    POSICAO_CFOP,
+    ORIGEM_MERCADORIA,
+    ORIGEM_MERCADORIA_NACIONAL,
+    ST_ICMS,
+    MODALIDADE_BASE_ICMS_PROPRIO,
+    MODALIDADE_BASE_ICMS_PROPRIO_VALOR_OPERACAO,
+    ST_ICMS_SN,
+    MODALIDADE_BASE_ICMS_ST,
+    MODALIDADE_BASE_ICMS_ST_MARGEM_VALOR_AGREGADO,
+    APURACAO_IPI,
+    APURACAO_IPI_MENSAL,
+    ST_IPI,
+    ST_IPI_ENTRADA,
+    ST_IPI_SAIDA,
+    MODALIDADE_BASE_IPI,
+    MODALIDADE_BASE_IPI_ALIQUOTA,
+    ST_PIS,
+    ST_PIS_ENTRADA,
+    ST_PIS_SAIDA,
+    MODALIDADE_BASE_PIS,
+    MODALIDADE_BASE_PIS_ALIQUOTA,
+    ST_COFINS,
+    ST_COFINS_ENTRADA,
+    ST_COFINS_SAIDA,
+    MODALIDADE_BASE_COFINS,
+    MODALIDADE_BASE_COFINS_ALIQUOTA,
+    MODELO_FISCAL_CONSUMIDOR_FINAL,
+    ENTRADA_SAIDA_SAIDA,
+    TIPO_EMISSAO_PROPRIA,
+    TIPO_EMISSAO_TERCEIROS,
+    POSICAO_CFOP_ESTADUAL,
+    POSICAO_CFOP_ESTRANGEIRO,
+    POSICAO_CFOP_INTERESTADUAL,
+    ENTRADA_SAIDA_ENTRADA,
+    ST_ICMS_SN_OUTRAS,
+    ST_PIS_CALCULA_ALIQUOTA,
+    ST_PIS_CALCULA_QUANTIDADE,
+    TIPO_CONSUMIDOR_FINAL_CONSUMIDOR_FINAL,
+    ST_IPI_CALCULA,
+    ST_ICMS_SN_CALCULA_CREDITO,
+    ORIGEM_MERCADORIA_ALIQUOTA_4,
+    ST_ICMS_CALCULA_ST,
+    ST_ICMS_SN_CALCULA_ST,
+    TIPO_PRODUTO_SERVICO_SERVICOS,
+    MODALIDADE_BASE_IPI_QUANTIDADE,
+    ST_PIS_CALCULA,
+    ST_PIS_CALCULA_CREDITO,
+    ST_PIS_AQUIS_SEM_CREDITO,
+    MODALIDADE_BASE_PIS_QUANTIDADE,
+    MODALIDADE_BASE_COFINS_QUANTIDADE,
+    ST_ICMS_SN_CALCULA_PROPRIO,
+    ST_ICMS_SN_ANTERIOR,
+    ST_ICMS_CALCULA_PROPRIO,
+    MODALIDADE_BASE_ICMS_PROPRIO_PAUTA,
+    MODALIDADE_BASE_ICMS_PROPRIO_PRECO_TABELADO_MAXIMO,
+    MODALIDADE_BASE_ICMS_PROPRIO_MARGEM_VALOR_AGREGADO,
+    ST_ICMS_COM_REDUCAO,
+    ST_ICMS_ZERA_ICMS_PROPRIO,
+
+)
 from odoo.addons.l10n_br_base.models.sped_base import SpedBase
-from odoo.addons.l10n_br_base.constante_tributaria import *
+from odoo.exceptions import ValidationError
+
+import odoo.addons.decimal_precision as dp
+from odoo import api, fields, models, _
 
 _logger = logging.getLogger(__name__)
 
@@ -34,8 +100,8 @@ class SpedSomaImposto(SpedBase, models.Model):
     operacao_id = fields.Many2one(
         comodel_name='sped.operacao',
         string='Operação Fiscal',
-        #related='documento_id.operacao_id',
-        #readonly=True,
+        # related='documento_id.operacao_id',
+        # readonly=True,
     )
     regime_tributario = fields.Selection(
         selection=REGIME_TRIBUTARIO,
@@ -52,14 +118,14 @@ class SpedSomaImposto(SpedBase, models.Model):
     empresa_id = fields.Many2one(
         comodel_name='sped.empresa',
         string='Empresa',
-        #related='documento_id.empresa_id',
-        #readonly=True,
+        # related='documento_id.empresa_id',
+        # readonly=True,
     )
     participante_id = fields.Many2one(
         comodel_name='sped.participante',
         string='Destinatário/Remetente',
-        #related='documento_id.participante_id',
-        #readonly=True,
+        # related='documento_id.participante_id',
+        # readonly=True,
     )
     contribuinte = fields.Selection(
         selection=IE_DESTINATARIO,
@@ -75,8 +141,8 @@ class SpedSomaImposto(SpedBase, models.Model):
     )
     data_emissao = fields.Date(
         string='Data de emissão',
-        #related='documento_id.data_emissao',
-        #readonly=True,
+        # related='documento_id.data_emissao',
+        # readonly=True,
         default=fields.Date.today,
     )
     entrada_saida = fields.Selection(
@@ -145,11 +211,11 @@ class SpedSomaImposto(SpedBase, models.Model):
         string='Item da operação fiscal',
         ondelete='restrict',
     )
-    #quantidade = fields.Float(
-        #string='Quantidade',
-        #default=1,
-        #digits=dp.get_precision('SPED - Quantidade'),
-    #)
+    # quantidade = fields.Float(
+    # string='Quantidade',
+    # default=1,
+    # digits=dp.get_precision('SPED - Quantidade'),
+    # )
     unidade_id = fields.Many2one(
         comodel_name='sped.unidade',
         string='Unidade',
@@ -2132,12 +2198,13 @@ class SpedSomaImposto(SpedBase, models.Model):
     def _seta_valores(self, res):
         self.ensure_one()
 
-        if not 'value' in res:
+        if 'value' not in res:
             return
 
         valores = res['value']
         valores.pop('id', None)
-        self.update({campo: valor for campo, valor in valores.items() if campo in self._fields})
+        self.update({campo: valor for campo, valor in
+                     valores.items() if campo in self._fields})
 
     def calcula_impostos(self):
         self.ensure_one()

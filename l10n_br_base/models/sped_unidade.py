@@ -5,13 +5,12 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
+import logging
 
+from odoo.exceptions import ValidationError
 
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
 from ..constante_tributaria import TIPO_UNIDADE
-
-import logging
 
 _logger = logging.getLogger(__name__)
 
@@ -357,7 +356,8 @@ class SpedUnidade(models.Model):
             return unidades.name_get()
 
         return super(SpedUnidade, self).name_search(name=name, args=args,
-                                                operator=operator, limit=limit)
+                                                    operator=operator,
+                                                    limit=limit)
 
     def prepare_sync_to_uom(self):
         self.ensure_one()

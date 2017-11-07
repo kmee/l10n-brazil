@@ -5,13 +5,8 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
 import logging
 
-from odoo import api, fields, models, _
-from odoo.exceptions import ValidationError
-from odoo.addons.l10n_br_base.models.sped_base import SpedBase
 from odoo.addons.l10n_br_base.constante_tributaria import (
     MODALIDADE_BASE_ICMS_PROPRIO,
     MODALIDADE_BASE_ICMS_PROPRIO_MARGEM_VALOR_AGREGADO,
@@ -19,6 +14,10 @@ from odoo.addons.l10n_br_base.constante_tributaria import (
     MODALIDADE_BASE_ICMS_PROPRIO_PRECO_TABELADO_MAXIMO,
     MODALIDADE_BASE_ICMS_PROPRIO_VALOR_OPERACAO,
 )
+from odoo.addons.l10n_br_base.models.sped_base import SpedBase
+from odoo.exceptions import ValidationError
+
+from odoo import api, fields, models, _
 
 _logger = logging.getLogger(__name__)
 

@@ -5,10 +5,16 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
 from datetime import datetime
 from odoo import fields, models, api
-from ..constantes import *
+from ..constantes import (
+    FINAN_DIVIDA,
+    FINAN_DIVIDA_A_RECEBER,
+    FINAN_SITUACAO_DIVIDA,
+    FINAN_SITUACAO_DIVIDA_VENCIDO,
+    FINAN_SITUACAO_DIVIDA_SIMPLES,
+    FINAN_SITUACAO_DIVIDA_SIMPLES_ABERTO,
+)
 
 
 class FinanRelatorioWizard(models.TransientModel):
@@ -18,14 +24,15 @@ class FinanRelatorioWizard(models.TransientModel):
     empresa_id = fields.Many2one(
         comodel_name='sped.empresa',
         string='Empresa',
-        default=lambda self: self.env['sped.empresa']._empresa_ativa('sped.empresa'),
+        default=lambda self:
+            self.env['sped.empresa']._empresa_ativa('sped.empresa'),
     )
     periodo = fields.Selection(
         string='Período em',
         default='meses',
         selection=[
             ('meses', 'Meses'),
-            #('semanas', 'Semanas'),
+            # ('semanas', 'Semanas'),
             ('dias', 'Dias'),
         ],
     )

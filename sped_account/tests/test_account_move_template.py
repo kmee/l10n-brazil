@@ -41,4 +41,4 @@ class TestAccountMoveTemplate(TransactionCase):
             'account_move_type': 'receita'
         }
         debit, credit = self.amt.map_account(**kwargs)
-        print (debit, credit)
+        print(debit, credit)

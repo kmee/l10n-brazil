@@ -9,21 +9,17 @@ from __future__ import division, print_function, unicode_literals
 
 import logging
 
-from odoo import api, fields, models, _
-import odoo.addons.decimal_precision as dp
-from odoo.addons.l10n_br_base.constante_tributaria import *
+from odoo.addons.l10n_br_base.constante_tributaria import (
+    TIPO_PRODUTO_SERVICO_SERVICOS,
+)
 from odoo.addons.sped_imposto.models.sped_calculo_imposto_item import (
     SpedCalculoImpostoItem
 )
 
+import odoo.addons.decimal_precision as dp
+from odoo import api, fields, models, _
+
 _logger = logging.getLogger(__name__)
-
-try:
-    from pybrasil.valor.decimal import Decimal as D
-
-except (ImportError, IOError) as err:
-    _logger.debug(err)
-
 
 
 class AccountInvoiceLine(SpedCalculoImpostoItem, models.Model):
@@ -248,25 +244,25 @@ class AccountInvoiceLine(SpedCalculoImpostoItem, models.Model):
         dados = self._mantem_sincronia_cadastros(dados)
         return super(AccountInvoiceLine, self).write(dados)
 
-    #@api.one
-    #@api.depends(
-        #'price_unit', 'discount', 'invoice_line_tax_ids', 'quantity',
-        #'product_id', 'invoice_id.partner_id', 'invoice_id.currency_id',
-        #'invoice_id.company_id', 'invoice_id.date_invoice',
-        ##
-        ## Campos brasileiros
-        ##
-        #'produto_id',
-        #'quantidade',
-        #'vr_unitario',
-        #'vr_desconto',
-        #'unidade',
-        #'operacao_id',
-        #'operacao_item_id',
-        #'protocolo_id',
-        ## TODO: Outros campos que precisamos monitorar
-    #)
-    #def _compute_price(self):
-        #super(AccountInvoiceLine, self)._compute_price()
-        #if self.is_brazilian:
-             #self._amount_price_brazil()
+    # @api.one
+    # @api.depends(
+        # 'price_unit', 'discount', 'invoice_line_tax_ids', 'quantity',
+        # 'product_id', 'invoice_id.partner_id', 'invoice_id.currency_id',
+        # 'invoice_id.company_id', 'invoice_id.date_invoice',
+        #
+        # Campos brasileiros
+        #
+        # 'produto_id',
+        # 'quantidade',
+        # 'vr_unitario',
+        # 'vr_desconto',
+        # 'unidade',
+        # 'operacao_id',
+        # 'operacao_item_id',
+        # 'protocolo_id',
+        # TODO: Outros campos que precisamos monitorar
+    # )
+    # def _compute_price(self):
+    # super(AccountInvoiceLine, self)._compute_price()
+    # if self.is_brazilian:
+    # self._amount_price_brazil()

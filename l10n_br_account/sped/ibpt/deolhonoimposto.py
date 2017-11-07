@@ -35,7 +35,7 @@ def _request(req):
         data = _response_to_dict(response.read())
         return _convert(data)
 
-    except urllib2.HTTPError, e:
+    except urllib2.HTTPError as e:
         from odoo import _
         from odoo.exceptions import Warning as UserError
         raise UserError(_('Error in the request: {0}'.format(e)))

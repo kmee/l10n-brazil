@@ -5,9 +5,6 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
-from odoo import api, fields, models
 from odoo.addons.l10n_br_base.constante_tributaria import (
     ENTRADA_SAIDA,
     IE_DESTINATARIO,
@@ -23,6 +20,8 @@ from odoo.addons.l10n_br_base.constante_tributaria import (
     TIPO_PRODUTO_SERVICO
 )
 from odoo.exceptions import ValidationError
+
+from odoo import api, fields, models
 
 
 class SpedOperacaoFiscalItem(models.Model):

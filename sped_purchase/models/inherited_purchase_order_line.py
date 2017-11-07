@@ -2,15 +2,12 @@
 # Copyright 2017 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-
-
-import logging
-
-from odoo import api, fields, models, _
-import odoo.addons.decimal_precision as dp
 from odoo.addons.sped_imposto.models.sped_calculo_imposto_item import (
     SpedCalculoImpostoItem
 )
+
+import odoo.addons.decimal_precision as dp
+from odoo import api, fields, models, _
 
 
 class PurchaseOrderLine(SpedCalculoImpostoItem, models.Model):
@@ -114,7 +111,6 @@ class PurchaseOrderLine(SpedCalculoImpostoItem, models.Model):
 
     @api.onchange('produto_id')
     def onchange_product_id_date(self):
-        domain = {}
         if not self.order_id:
             return
 

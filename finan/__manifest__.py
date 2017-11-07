@@ -44,7 +44,7 @@
         'views/finan_lancamento_divida_a_receber_view.xml',
         'views/finan_lancamento_divida_a_pagar_view.xml',
 
-        #'views/finan_lancamento_pagamento_base_view.xml',
+        # 'views/finan_lancamento_pagamento_base_view.xml',
 
         #
         # Relatórios
@@ -55,26 +55,26 @@
         'reports/finan_relatorio_divida_data.xml',
         'wizards/finan_relatorio_divida_wizard.xml',
 
-        ##'data/financial_document_type_data.xml',
-        ##'data/interest_data.xml',
+        # 'data/financial_document_type_data.xml',
+        # 'data/interest_data.xml',
 
-        #'wizards/financial_cancel.xml',
-        ## 'wizards/financial_edit.xml',
+        # 'wizards/financial_cancel.xml',
+        # 'wizards/financial_edit.xml',
 
-        #'wizards/report_xlsx_financial_moves_states_wizard.xml',
-        #'wizards/report_xlsx_financial_defaults_wizard.xml',
-        #'wizards/report_xlsx_financial_partner_statement_wizard.xml',
+        # 'wizards/report_xlsx_financial_moves_states_wizard.xml',
+        # 'wizards/report_xlsx_financial_defaults_wizard.xml',
+        # 'wizards/report_xlsx_financial_partner_statement_wizard.xml',
 
-        #'views/financial_installment_base_view.xml',
-        #'views/financial_installment_2receive_view.xml',
-        #'views/financial_installment_2pay_view.xml',
+        # 'views/financial_installment_base_view.xml',
+        # 'views/financial_installment_2receive_view.xml',
+        # 'views/financial_installment_2pay_view.xml',
 
-        #'reports/report_xlsx_financial_moves_states_data.xml',
+        # 'reports/report_xlsx_financial_moves_states_data.xml',
 
-        #'reports/report_xlsx_financial_defaults_data.xml',
-        #'reports/report_xlsx_financial_partner_statement_data.xml',
+        # 'reports/report_xlsx_financial_defaults_data.xml',
+        # 'reports/report_xlsx_financial_partner_statement_data.xml',
 
-        #'security/ir.model.access.csv',
+        # 'security/ir.model.access.csv',
     ],
     'demo': [
         # 'demo/financial_move.xml',
@@ -82,6 +82,6 @@
         # 'demo/financial_demo.yml'
     ],
     'test': [
-        #'test/financial_move_test.yml',
+        # 'test/financial_move_test.yml',
     ]
 }

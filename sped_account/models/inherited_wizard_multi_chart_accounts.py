@@ -9,10 +9,11 @@ from __future__ import division, print_function, unicode_literals
 
 import logging
 
-_logger = logging.getLogger(__name__)
-
 from odoo.exceptions import AccessError
+
 from odoo import api, fields, models, _
+
+_logger = logging.getLogger(__name__)
 
 
 class WizardMultiChartsAccounts(models.TransientModel):
@@ -87,29 +88,39 @@ class WizardMultiChartsAccounts(models.TransientModel):
                 except ValueError:
                     pass
 
-        # # If the floats for sale/purchase rates have been filled, create templates from them
+        # If the floats for sale/purchase rates have been filled,
+        # create templates from them
         # self._create_tax_templates_from_rates(company.id)
 
         # Install all the templates objects and generate the real objects
         acc_template_ref, taxes_ref = \
-            self.chart_template_id._install_template(company,
-                                                     code_digits=self.code_digits,
-                                                     transfer_account_id=self.transfer_account_id)
+            self.chart_template_id.\
+            _install_template(company, code_digits=self.code_digits,
+                              transfer_account_id=self.transfer_account_id)
 
         # # write values of default taxes for product as super user
         # ir_values_pool = self.env['ir.values']
         # if self.sale_tax_id and taxes_ref:
-        #     ir_values_pool.sudo().set_default('product.template', "taxes_id", [taxes_ref[self.sale_tax_id.id]], for_all_users=True, company_id=company.id)
+        #     ir_values_pool.sudo().set_default('product.template',
+        # "taxes_id", [taxes_ref[self.sale_tax_id.id]], for_all_users=True,
+        # company_id=company.id)
         # if self.purchase_tax_id and taxes_ref:
-        #     ir_values_pool.sudo().set_default('product.template', "supplier_taxes_id", [taxes_ref[self.purchase_tax_id.id]], for_all_users=True, company_id=company.id)
+        #     ir_values_pool.sudo().
+        #     set_default('product.template', "supplier_taxes_id",
+        #     [taxes_ref[self.purchase_tax_id.id]], for_all_users=True,
+        #       company_id=company.id)
 
         # # Create Bank journals
         # self._create_bank_journals_from_o2m(company, acc_template_ref)
         #
-        # # Create the current year earning account if it wasn't present in the CoA
+        # Create the current year earning account if it wasn't present in
+        # the CoA
         # account_obj = self.env['account.account']
-        # unaffected_earnings_xml = self.env.ref("account.data_unaffected_earnings")
-        # if unaffected_earnings_xml and not account_obj.search([('company_id', '=', company.id), ('user_type_id', '=', unaffected_earnings_xml.id)]):
+        # unaffected_earnings_xml = self.env.ref("account.\
+        # data_unaffected_earnings")
+        # if unaffected_earnings_xml and not account_obj.search \
+        # ([('company_id', '=', company.id), ('user_type_id', '=', \
+        # unaffected_earnings_xml.id)]):
         #     account_obj.create({
         #         'code': '999999',
         #         'name': _('Undistributed Profits/Losses'),

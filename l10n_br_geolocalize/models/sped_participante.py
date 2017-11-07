@@ -34,7 +34,7 @@ def geo_find(addr):
 def geo_query_address(
         street=None, zip=None, city=None, state=None, country=None):
     if country and ',' in country and (country.endswith(' of') or
-                                           country.endswith(' of the')):
+                                       country.endswith(' of the')):
         # put country qualifier in front, otherwise GMap gives wrong results,
         # e.g. 'Congo, Democratic Republic of the' =>
         # 'Democratic Republic of the Congo'

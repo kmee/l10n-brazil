@@ -5,9 +5,6 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
-from odoo import api, fields, models
 from odoo.addons.l10n_br_base.constante_tributaria import (
     CFOPS_CALCULA_SIMPLES_CSLL_IRPJ,
     CFOPS_COMPRA,
@@ -28,6 +25,8 @@ from odoo.addons.l10n_br_base.constante_tributaria import (
     ENTRADA_SAIDA_SAIDA,
     POSICAO_CFOP,
 )
+
+from odoo import api, fields, models
 
 
 class SpedCFOP(models.Model):

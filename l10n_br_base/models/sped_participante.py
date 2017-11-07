@@ -5,8 +5,6 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
 import logging
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
@@ -311,12 +309,12 @@ class SpedParticipante(SpedBase, models.Model):
     #
     # Para o faturamento
     #
-    #representante_id = fields.Many2one(
-        #comodel_name='sped.participante',
-        #string='Representante',
-        #ondelete='restrict',
-        #domain=[('eh_vendedor', '=', True)],
-    #)
+    # representante_id = fields.Many2one(
+    # comodel_name='sped.participante',
+    # string='Representante',
+    # ondelete='restrict',
+    # domain=[('eh_vendedor', '=', True)],
+    # )
     transportadora_id = fields.Many2one(
         comodel_name='sped.participante',
         string='Transportadora',
@@ -379,7 +377,8 @@ class SpedParticipante(SpedBase, models.Model):
 
             if (participante.endereco or participante.numero or
                 participante.complemento or
-                participante.bairro or participante.cep):
+                participante.bairro or
+                    participante.cep):
                 participante.exige_endereco = True
             else:
                 participante.exige_endereco = False
@@ -876,18 +875,13 @@ class SpedParticipante(SpedBase, models.Model):
             valores['eh_usuario'] = True
         else:
             valores['eh_usuario'] = False
-
-    #@api.depends('representante_id')
-    #def onchange_representante_id(self):
-        #res = {}
-        #valores = {}
-        #res['value'] = valores
-
-        #if self.representante_id:
-            #valores['user_id'] = self.representante_id.partner_id.id
-        #else:
-            #valores['user_id'] = False
-
-        #return res
-
-
+    # @api.depends('representante_id')
+    # def onchange_representante_id(self):
+    # res = {}
+    # valores = {}
+    # res['value'] = valores
+    # if self.representante_id:
+    # valores['user_id'] = self.representante_id.partner_id.id
+    # else:
+    # valores['user_id'] = False
+    # return res

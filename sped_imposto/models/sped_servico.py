@@ -5,10 +5,9 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
+from odoo.exceptions import ValidationError
 
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
 
 
 class SpedServico(models.Model):

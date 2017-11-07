@@ -5,13 +5,8 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
 import logging
 
-from odoo import api, fields, models, _
-import odoo.addons.decimal_precision as dp
-from odoo.exceptions import ValidationError
 from odoo.addons.l10n_br_base.constante_tributaria import (
     REGIME_TRIBUTARIO,
     MODELO_FISCAL,
@@ -23,14 +18,10 @@ from odoo.addons.l10n_br_base.constante_tributaria import (
 from odoo.addons.sped_imposto.models.sped_calculo_imposto_item import \
     SpedCalculoImpostoItem
 
+import odoo.addons.decimal_precision as dp
+from odoo import api, fields, models
 
 _logger = logging.getLogger(__name__)
-
-try:
-    from pybrasil.valor.decimal import Decimal as D
-
-except (ImportError, IOError) as err:
-    _logger.debug(err)
 
 
 class SpedDocumentoItem(SpedCalculoImpostoItem, models.Model):

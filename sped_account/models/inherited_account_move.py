@@ -7,8 +7,12 @@
 
 from __future__ import division, print_function, unicode_literals
 
+from openerp.addons.l10n_br_base.models.sped_base import (
+    SpedBase,
+    SaleOrder,
+)
+
 from odoo import api, fields, models
-from openerp.addons.l10n_br_base.models.sped_base import SpedBase
 
 
 class AccountMove(SpedBase, models.Model):

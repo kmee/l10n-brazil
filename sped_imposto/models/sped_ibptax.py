@@ -5,11 +5,11 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
 import logging
+
 import os
 from odoo.addons.l10n_br_base.models.sped_base import SpedBase
+
 from odoo import api, fields, models
 
 _logger = logging.getLogger(__name__)

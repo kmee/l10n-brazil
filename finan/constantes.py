@@ -2,15 +2,12 @@
 # Copyright 2017 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-
-
 FINAN_DIVIDA = [
     ('a_receber', 'Contas a receber'),
     ('a_pagar', 'Contas a pagar'),
 ]
-FINAN_DIVIDA_A_RECEBER= 'a_receber'
+FINAN_DIVIDA_A_RECEBER = 'a_receber'
 FINAN_DIVIDA_A_PAGAR = 'a_pagar'
-
 FINAN_ENTRADA_SAIDA_CAIXA = [
     ('recebimento', 'Recebimentos'),
     ('pagamento', 'Pagamentos'),
@@ -168,13 +165,13 @@ FINAN_BANCO_SICOOB = '756'
 
 
 FINAN_TIPO_CONTA_BANCARIA = (
-    #('adiantamento', 'Adiantamento'),
+    # ('adiantamento', 'Adiantamento'),
     ('aplicacao', 'Aplicação'),
     ('caixa', 'Caixa'),
     ('capital', 'Capital'),
     ('cobranca', 'Cobrança'),
     ('corrente', 'Corrente'),
-    #('devolucao', 'Devolução'),
+    # ('devolucao', 'Devolução'),
     ('poupanca', 'Poupança'),
     ('provisao', 'Provisão'),
 )

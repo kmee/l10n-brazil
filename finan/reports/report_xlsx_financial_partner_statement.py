@@ -5,8 +5,6 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
 from odoo import _
 from odoo import exceptions, fields
 from odoo.report import report_sxw
@@ -192,7 +190,7 @@ class ReportXslxFinancialPartnerStatement(ReportXlsxFinancialBase):
             'type': self.report_wizard.type,
             'date_to': self.report_wizard.date_to,
             'date_from': self.report_wizard.date_from,
-            'move_ids': AsIs(str(tuple(move_ids)).replace(',)',')')),
+            'move_ids': AsIs(str(tuple(move_ids)).replace(',)', ')')),
         }
         self.env.cr.execute(SQL_MOVE_LINE_VALUE, filters)
         data_move_lines = self.env.cr.fetchall()

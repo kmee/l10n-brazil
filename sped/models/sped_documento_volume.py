@@ -5,11 +5,9 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
 from odoo.addons.l10n_br_base.models.sped_base import SpedBase
+
 from odoo import fields, models
-import odoo.addons.decimal_precision as dp
 
 
 class SpedDocumentoVolume(SpedBase, models.Model):

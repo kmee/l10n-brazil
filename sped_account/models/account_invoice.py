@@ -2,8 +2,8 @@
 # Copyright (C) 2017 - Daniel Sadamo - KMEE INFORMATICA
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 from datetime import datetime
-from dateutil.relativedelta import relativedelta
 
+from dateutil.relativedelta import relativedelta
 from openerp import api, models, fields
 
 
@@ -97,8 +97,8 @@ class AccountInvoice(models.Model):
             prod = invl.product_id
             value = prod.standard_price
             if amt.purchase_installed:
-                print 'purchase installed'
-                print value
+                print('purchase installed')
+                print(value)
                 if prod.cost_method == 'real':
                     sm = self.env['stock.move'].search([(
                         'product_id', '=', prod.id)], limit=1, order='id')
@@ -155,8 +155,8 @@ class AccountInvoice(models.Model):
         # senão fica com a conta padrão
         if account_id:
             move_line['account_id'] = account_id.id
-            print 'Conta encontrada'
-            print account_id
+            print('Conta encontrada')
+            print(account_id)
 
         if line_type == 'receipt' and amt.use_cost:
             return True

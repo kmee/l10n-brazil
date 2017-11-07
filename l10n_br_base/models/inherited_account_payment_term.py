@@ -5,14 +5,12 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
 import logging
 
 from dateutil.relativedelta import relativedelta
+
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
-from odoo.addons.l10n_br_base.models.sped_base import SpedBase
+from .sped_base import SpedBase
 from ..constante_tributaria import (
     FORMA_PAGAMENTO,
     BANDEIRA_CARTAO,
@@ -25,7 +23,6 @@ from ..constante_tributaria import (
     FORMA_PAGAMENTO_DICT,
     BANDEIRA_CARTAO_DICT,
 )
-from .sped_base import SpedBase
 
 _logger = logging.getLogger(__name__)
 
@@ -34,7 +31,7 @@ try:
     from pybrasil.data import (
         dia_util_pagamento,
         DIA_SEGUNDA, DIA_TERCA, DIA_QUARTA, DIA_QUINTA, DIA_SEXTA,
-        primeiro_dia_mes, ultimo_dia_mes, dias_uteis,
+        primeiro_dia_mes, ultimo_dia_mes, dias_uteis, meses
     )
 
 except (ImportError, IOError) as err:
@@ -199,17 +196,17 @@ class AccountPaymentTerm(SpedBase, models.Model):
     @api.multi
     def _compute_nome_comercial(self):
         currency = self.env.ref('base.BRL')
-        #if self.env.context.get('currency_id'):
-            #currency = self.env['res.currency'].browse(
-                #self.env.context['currency_id'])
-        #else:
-            #currency = self.env.user.company_id.currency_id
+        # if self.env.context.get('currency_id'):
+        # currency = self.env['res.currency'].browse(
+        # self.env.context['currency_id'])
+        # else:
+        # currency = self.env.user.company_id.currency_id
 
         lang = self.env['res.lang']._lang_get('pt_BR')
-        #if self.env.context.get('lang'):
-            #lang = self.env['res.lang']._lang_get(self.env.context.get('lang'))
-        #else:
-            #lang = self.env['res.lang']._lang_get('pt_BR')
+        # if self.env.context.get('lang'):
+        # lang = self.env['res.lang']._lang_get(self.env.context.get('lang'))
+        # else:
+        # lang = self.env['res.lang']._lang_get('pt_BR')
 
         valor = D(self.env.context.get('valor') or 0)
 
@@ -217,10 +214,10 @@ class AccountPaymentTerm(SpedBase, models.Model):
             nome_comercial = ''
             if payment_term.forma_pagamento in FORMA_PAGAMENTO_CARTOES:
                 if payment_term.forma_pagamento == \
-                    FORMA_PAGAMENTO_CARTAO_CREDITO:
+                        FORMA_PAGAMENTO_CARTAO_CREDITO:
                     nome_comercial += '[Crédito '
                 elif payment_term.forma_pagamento == \
-                    FORMA_PAGAMENTO_CARTAO_DEBITO:
+                        FORMA_PAGAMENTO_CARTAO_DEBITO:
                     nome_comercial += '[Débito '
 
                 nome_comercial += \
@@ -243,8 +240,8 @@ class AccountPaymentTerm(SpedBase, models.Model):
                     if payment_term.com_juros and payment_term.al_juros:
                         nome_comercial += ', com juros de '
                         nome_comercial += lang.format('%.2f',
-                                                    payment_term.al_juros,
-                                                    True, True)
+                                                      payment_term.al_juros,
+                                                      True, True)
                         nome_comercial += '%'
 
                 payment_term.nome_comercial = nome_comercial
@@ -395,11 +392,11 @@ class AccountPaymentTerm(SpedBase, models.Model):
         meses = D(self.meses or 1)
         res = []
 
-        if self.env.context.get('currency_id'):
-            currency = self.env['res.currency'].browse(
-                self.env.context['currency_id'])
-        else:
-            currency = self.env.user.company_id.currency_id
+        # if self.env.context.get('currency_id'):
+        #     currency = self.env['res.currency'].browse(
+        #         self.env.context['currency_id'])
+        # else:
+        #     currency = self.env.user.company_id.currency_id
 
         #
         # Tratamento do valor de entrada

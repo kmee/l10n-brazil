@@ -8,7 +8,6 @@
 from __future__ import division, print_function, unicode_literals
 
 from odoo import api, fields, models
-from ..constantes import *
 
 
 class AccountAccountType(models.Model):
@@ -26,8 +25,8 @@ class AccountAccountType(models.Model):
     @api.depends('name')
     def _compute_redutor(self):
         for account_type in self:
-            if account_type.name and (account_type.name.startswith('(-)')
-                                      or account_type.name.startswith('( - )')):
+            if account_type.name and (account_type.name.startswith('(-)') or
+                                      account_type.name.startswith('( - )')):
                 account_type.redutor = True
             else:
                 account_type.redutor = False

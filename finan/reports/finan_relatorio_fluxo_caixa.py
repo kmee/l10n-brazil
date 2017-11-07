@@ -5,15 +5,14 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
 import logging
 
 from psycopg2.extensions import AsIs
 from dateutil.relativedelta import relativedelta
 
-from odoo import models, exceptions
-from odoo import fields
+from odoo import fields, models
+
+from odoo.odoo import exceptions
 
 _logger = logging.getLogger(__name__)
 
@@ -92,9 +91,11 @@ class FinanRelatorioFluxoCaixa(models.AbstractModel):
             'resumos_acumulados': {},
         }
 
-        data_inicial = fields.Datetime.from_string(self.report_wizard.data_inicial)
+        data_inicial = fields.Datetime.from_string(
+            self.report_wizard.data_inicial)
         data_inicial = data_inicial.date()
-        data_final = fields.Datetime.from_string(self.report_wizard.data_final)
+        data_final = fields.Datetime.from_string(
+            self.report_wizard.data_final)
         data_final = data_final.date()
 
         if self.report_wizard.periodo == 'dias':
@@ -130,7 +131,8 @@ class FinanRelatorioFluxoCaixa(models.AbstractModel):
                 'valor_final': 0,
             }
 
-            for data_periodo in list(report_data['titulo_data_periodo'].keys()):
+            for data_periodo in list(
+                    report_data['titulo_data_periodo'].keys()):
                 linha[data_periodo] = 0
 
             report_data['linhas'][conta.codigo] = linha
@@ -206,10 +208,10 @@ class FinanRelatorioFluxoCaixa(models.AbstractModel):
         SQL_VALOR_INICIAL = '''
         select
             fc.codigo,
-            coalesce(sum(coalesce(fl.vr_total, 0) * coalesce(fl.sinal, 1)), 0)
+            coalesce(sum(coalesce(fl.vr_total, 0)*coalesce(fl.sinal, 1)), 0)
         from
             finan_lancamento fl
-            join finan_conta_arvore fca on fca.conta_relacionada_id = fl.conta_id
+            join finan_conta_arvore fca on fca.conta_relacionada_id=fl.conta_id
             join finan_conta fc on fc.id = fca.conta_superior_id
         where
             fl.provisorio != True
@@ -252,10 +254,12 @@ class FinanRelatorioFluxoCaixa(models.AbstractModel):
         select
             fc.codigo,
             %(data_periodo)s as data_periodo,
-            coalesce(sum(coalesce(fl.vr_total, 0) * coalesce(fl.sinal, 1)), 0)
+            coalesce(sum(coalesce(fl.vr_total, 0) *
+            coalesce(fl.sinal, 1)), 0)
         from
             finan_lancamento fl
-            join finan_conta_arvore fca on fca.conta_relacionada_id = fl.conta_id
+            join finan_conta_arvore fca on fca.conta_relacionada_id =
+            fl.conta_id
             join finan_conta fc on fc.id = fca.conta_superior_id
         where
             fl.provisorio != True
@@ -572,8 +576,7 @@ class FinanRelatorioFluxoCaixa(models.AbstractModel):
             'CONTAS SINTÉTICAS', self.style.header.align_center
         )
         self.current_row += 2
-        #self.write_header()
-
+        # self.write_header()dd
         primeira_linha_dados = self.current_row + 1
         for conta_codigo in sorted(self.report_data['resumos'].keys()):
             self.write_detail(self.report_data['resumos'][conta_codigo])
@@ -601,16 +604,17 @@ class FinanRelatorioFluxoCaixa(models.AbstractModel):
             'CONTAS ANALÍTICAS', self.style.header.align_center
         )
         self.current_row += 2
-        #self.write_header()
-
+        # self.write_header()
         primeira_linha_dados = self.current_row
         for conta_codigo in sorted(self.report_data['linhas'].keys()):
             self.write_detail(self.report_data['linhas'][conta_codigo])
 
         self.write_detail(self.report_data['resumos_total'], colunas_totais,
-                          primeira_linha_dados, formula_changes=formula_changes)
+                          primeira_linha_dados,
+                          formula_changes=formula_changes)
         self.write_detail(self.report_data['resumos_acumulados'],
-                          colunas_acumuladas, formula_changes=formula_changes)
+                          colunas_acumuladas,
+                          formula_changes=formula_changes)
 
     def generate_xlsx_report(self, workbook, data, report_wizard):
         super(FinanRelatorioFluxoCaixa, self).generate_xlsx_report(

@@ -5,18 +5,17 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
-
-
 import logging
 
-from odoo import api, fields, models
-from odoo.addons.l10n_br_base.models.sped_base import SpedBase
 from odoo.addons.l10n_br_base.constante_tributaria import (
     FORMA_PAGAMENTO,
     BANDEIRA_CARTAO,
     INTEGRACAO_CARTAO,
     INTEGRACAO_CARTAO_NAO_INTEGRADO,
 )
+from odoo.addons.l10n_br_base.models.sped_base import SpedBase
+
+from odoo import api, fields, models
 
 _logger = logging.getLogger(__name__)
 
@@ -99,8 +98,8 @@ class SpedDocumentoPagamento(SpedBase, models.Model):
 
         valor = D(self.valor or 0)
 
-        duplicata_ids = self.condicao_pagamento_id.gera_parcela_ids(valor,
-            self.documento_id.data_emissao)
+        duplicata_ids = self.condicao_pagamento_id.\
+            gera_parcela_ids(valor, self.documento_id.data_emissao)
         valores['duplicata_ids'] = duplicata_ids
         valores['forma_pagamento'] = self.condicao_pagamento_id.forma_pagamento
         valores['bandeira_cartao'] = self.condicao_pagamento_id.bandeira_cartao
