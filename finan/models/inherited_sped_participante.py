@@ -63,50 +63,90 @@ class SpedParticipante(models.Model):
             if not participante.id:
                 continue
 
+            # sql_dividas = '''
+            # select
+            #     coalesce(sum(coalesce(fl.vr_saldo, 0)), 0) as saldo
+            # from
+            #     finan_lancamento fl
+            # where
+            #     fl.tipo = '{tipo}'
+            #     and fl.participante_id = {participante_id}
+            #     and fl.provisorio != True
+            #     and fl.situacao_divida_simples = 'aberto';
+            # '''
+            # sql = sql_dividas.format(
+            #     tipo=FINAN_DIVIDA_A_RECEBER,
+            #     participante_id=participante.id)
+            # self.env.cr.execute(sql)
             sql_dividas = '''
             select
                 coalesce(sum(coalesce(fl.vr_saldo, 0)), 0) as saldo
             from
                 finan_lancamento fl
             where
-                fl.tipo = '{tipo}'
-                and fl.participante_id = {participante_id}
+                fl.tipo = %(tipo)s
+                and fl.participante_id = %(participante_id)s
                 and fl.provisorio != True
                 and fl.situacao_divida_simples = 'aberto';
             '''
-            sql = sql_dividas.format(tipo=FINAN_DIVIDA_A_RECEBER,
-                                     participante_id=participante.id)
-            self.env.cr.execute(sql)
+            self.env.cr.execute(sql_dividas, {
+                'tipo': FINAN_DIVIDA_A_RECEBER,
+                'participante_id': participante.id
+            })
             saldo_a_receber = self.env.cr.fetchall()[0][0]
 
-            sql = sql_dividas.format(tipo=FINAN_DIVIDA_A_PAGAR,
-                                     participante_id=participante.id)
-            self.env.cr.execute(sql)
+            # sql = sql_dividas.format(
+            #     tipo=FINAN_DIVIDA_A_PAGAR,
+            #     participante_id=participante.id)
+            # self.env.cr.execute(sql)
+            self.env.cr.execute(sql_dividas, {
+                'tipo': FINAN_DIVIDA_A_PAGAR,
+                'participante_id': participante.id
+            })
             saldo_a_pagar = self.env.cr.fetchall()[0][0]
 
+            # sql_adiantamento = '''
+            # select
+            #     coalesce(sum(coalesce(fl.vr_adiantado, 0)), 0) as vr_adiantado
+            # from
+            #     finan_lancamento fl
+            # where
+            #     fl.tipo = '{tipo}'
+            #     and fl.participante_id = {participante_id}
+            #     and fl.situacao_divida_simples = 'quitado';
+            # '''
+            #
+            # sql = sql_adiantamento.format(
+            #     tipo=FINAN_RECEBIMENTO,
+            #     participante_id=participante.id
+            # )
+            # self.env.cr.execute(sql)
             sql_adiantamento = '''
             select
                 coalesce(sum(coalesce(fl.vr_adiantado, 0)), 0) as vr_adiantado
             from
                 finan_lancamento fl
             where
-                fl.tipo = '{tipo}'
-                and fl.participante_id = {participante_id}
+                fl.tipo = %(tipo)s
+                and fl.participante_id = %(participante)s
                 and fl.situacao_divida_simples = 'quitado';
             '''
+            self.env.cr.execute(sql_adiantamento, {
+                'tipo': FINAN_RECEBIMENTO,
+                'participante_id': participante.id
+            })
 
-            sql = sql_adiantamento.format(
-                tipo=FINAN_RECEBIMENTO,
-                participante_id=participante.id
-            )
-            self.env.cr.execute(sql)
             adiantamento_a_pagar = self.env.cr.fetchall()[0][0]
 
-            sql = sql_adiantamento.format(
-                tipo=FINAN_PAGAMENTO,
-                participante_id=participante.id
-            )
-            self.env.cr.execute(sql)
+            # sql = sql_adiantamento.format(
+            #     tipo=FINAN_PAGAMENTO,
+            #     participante_id=participante.id
+            # )
+            # self.env.cr.execute(sql)
+            self.env.cr.execute(sql_adiantamento, {
+                'tipo': FINAN_PAGAMENTO,
+                'participante_id': participante.id
+            })
             adiantamento_a_receber = self.env.cr.fetchall()[0][0]
 
             if participante.limite_credito:
