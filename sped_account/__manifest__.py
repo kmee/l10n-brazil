@@ -39,4 +39,5 @@
         #'views/inherited_sped_documento_base_view.xml',
         #'views/inherited_sped_operacao_base_view.xml',
     #],
+    'installable': False,
 }
