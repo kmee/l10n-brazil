@@ -27,6 +27,7 @@ from . import inherited_sped_documento
 #from . import inherited_sped_documento_volume
 
 from . import sped_documento_carta_correcao
+from . import sped_manifestacao_destinatario
 
 from . import sped_consulta_dfe
 
