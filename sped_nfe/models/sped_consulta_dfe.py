@@ -24,6 +24,8 @@ from odoo.addons.l10n_br_base.constante_tributaria import *
 
 _logger = logging.getLogger(__name__)
 
+AMBIENTE_NFE_PRODUCAO = '1'
+
 try:
     from pysped.nfe import ProcessadorNFe
     from pysped.nfe.webservices_flags import (AMBIENTE_NFE_PRODUCAO,

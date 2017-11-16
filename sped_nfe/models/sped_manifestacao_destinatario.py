@@ -12,6 +12,7 @@ import logging
 from odoo import _, api, fields, models
 import base64
 
+from odoo.osv import orm
 
 _logger = logging.getLogger(__name__)
 
