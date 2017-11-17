@@ -56,6 +56,7 @@
         'views/finan_lancamento_transacao_saida_view.xml',
 
         'views/finan_remessa_boleto_view.xml',
+        'views/finan_retorno_boleto_view.xml',
 
         #
         # Relatórios
@@ -65,7 +66,7 @@
 
         'reports/finan_relatorio_divida_data.xml',
         'wizards/finan_relatorio_divida_wizard.xml',
-        'wizards/wizard_finan_lancamento.xml',
+        'wizards/finan_lancamento_novo_pagamento_wizard.xml',
 
         ##'data/financial_document_type_data.xml',
         ##'data/interest_data.xml',
