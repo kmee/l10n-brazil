@@ -12,6 +12,7 @@
     'website': 'www.kmee.com.br',
     'depends': [
         'sped_imposto',
+        'sped',
         'purchase',
     ],
     'data': [
@@ -19,6 +20,8 @@
         # 'security/purchase_order.xml',
         'views/purchase_order_line.xml',
         'views/purchase_order.xml',
+        'views/sped_documento_emissao_nfe_view.xml',
+        'views/sped_documento_item.xml',
     ],
     'demo': [
         # 'demo/purchase_order_line.xml',
