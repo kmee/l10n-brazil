@@ -207,6 +207,12 @@ class SpedManifestacaoDestinatario(models.Model):
         readonly=True,
     )
 
+    nfe_ids = fields.One2many(
+        comodel_name='sped.manifestacao.destinatario.nfe',
+        inverse_name='manifestacao_id',
+        string='Lista de NFEs',
+    )
+
     @api.multi
     def action_ciencia_emissao(self):
         for record in self:
@@ -311,4 +317,21 @@ class SpedManifestacaoDestinatario(models.Model):
                 raise models.ValidationError(
                     nfe_result['code'] + ' - ' + nfe_result['message'])
 
+
         return result
+
+class SpedManifestacaoDestinatarioNFe(models.Model):
+    _name = b'sped.manifestacao.destinatario.nfe'
+    _description = 'Importação de NFe'
+
+    manifestacao_id = fields.Many2one(
+        comodel_name='sped.manifestacao.destinatario',
+        string='Manifestação',
+    )
+
+    nfe_id = fields.Many2one(
+        comodel_name='sped.documento',
+        string='NF-e',
+    )
+
+
