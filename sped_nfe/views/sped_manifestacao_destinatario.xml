@@ -24,7 +24,7 @@
                                 type="object"
                                 attrs="{'invisible':[['state','not in',['ciente']]]}"/>
                         <button name="action_download_xml"
-                                string="Download da NF-e"
+                                string="Buscar NF-e"
                                 type="object"
                                 attrs="{'invisible':[['state','not in',['ciente','cofirmado','desconhecido','nao_realizado']]]}"/>
                         <field name="state" statusbar_visible="pendente,ciente,confirmado"
@@ -50,6 +50,7 @@
                             <field name="data_hora_inclusao"/>
                             <field name="data_hora_emissao"/>
                         </group>
+                        <field name="nfe_ids"/>
                     </group>
                 </form>
             </field>
@@ -119,4 +120,17 @@
         action="act_sped_manifestacao_destinatario"
         />
 
+    <record model="ir.ui.view"
+        id="view_sped_manifestacao_destinatario_nfe_tree">
+        <field name="name">sped_manifestacao_destinatario_nfe.tree</field>
+        <field name="model">sped.manifestacao.destinatario.nfe</field>
+        <field name="type">tree</field>
+        <field name="arch" type="xml">
+            <tree string="NFEs" create="false">
+                <!--<field name="tipo_xml"/>-->
+                <!--<field name="xml"/>-->
+                <field name="nfe_id"/>
+            </tree>
+        </field>
+    </record>
 </odoo>
