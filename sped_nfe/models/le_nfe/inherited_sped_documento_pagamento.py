@@ -24,7 +24,7 @@ try:
 except (ImportError, IOError) as err:
     _logger.debug(err)
 
-from .versao_nfe_padrao import ClassePag
+# from .versao_nfe_padrao import ClassePag
 
 
 class SpedDocumentoPagamento(models.Model):
@@ -37,15 +37,15 @@ class SpedDocumentoPagamento(models.Model):
                 self.documento_id.modelo != MODELO_FISCAL_NFCE:
             return
 
-        pag = ClassePag()
-        pag.tPag.valor = self.forma_pagamento
-        pag.vPag.valor = str(D(self.valor))
-        # Troco somente na NF-e 4.00
-        pag.vTroco.valor = str(D(self.troco))
-
-        if self.forma_pagamento in FORMA_PAGAMENTO_CARTOES:
-            pag.card.CNPJ.valor = limpa_formatacao(self.cnpj_cpf or '')
-            pag.card.tBand.valor = self.bandeira_cartao
-            pag.card.cAut.valor = self.integracao_cartao
-
-        return pag
+        # pag = ClassePag()
+        # pag.tPag.valor = self.forma_pagamento
+        # pag.vPag.valor = str(D(self.valor))
+        # # Troco somente na NF-e 4.00
+        # pag.vTroco.valor = str(D(self.troco))
+        #
+        # if self.forma_pagamento in FORMA_PAGAMENTO_CARTOES:
+        #     pag.card.CNPJ.valor = limpa_formatacao(self.cnpj_cpf or '')
+        #     pag.card.tBand.valor = self.bandeira_cartao
+        #     pag.card.cAut.valor = self.integracao_cartao
+        #
+        # return pag

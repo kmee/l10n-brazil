@@ -18,34 +18,35 @@ except (ImportError, IOError) as err:
     _logger.debug(err)
 
 
-ClasseProcNFe = ProcNFe_400
+ClasseProcNFe = ProcNFe_310
 #
 # Cabeçalho
 #
-ClasseNFe = NFe_400
-ClasseNFCe = NFCe_400
+ClasseNFe = NFe_310
+ClasseNFCe = NFCe_310
 
 #
 # Itens
 #
-ClasseDet = Det_400
-ClasseRastro = Rastro_400
-ClasseDI = DI_400
-ClasseAdi = Adi_400
+
+ClasseDet = Det_310
+# ClasseRastro = Rastro_310
+ClasseDI = DI_310
+ClasseAdi = Adi_310
 
 #
 # Transporte
 #
-ClasseReboque = Reboque_400
-ClasseVol = Vol_400
+ClasseReboque = Reboque_310
+ClasseVol = Vol_310
 
 #
 # Documentos referenciados
 #
-ClasseNFRef = NFRef_400
+ClasseNFRef = NFRef_310
 
 #
 # Parcelamento e pagamento
 #
-ClasseDup = Dup_400
-ClassePag = Pag_400
+ClasseDup = Dup_310
+#   ClassePag = Pag_310
