@@ -327,13 +327,17 @@ class SpedManifestacaoDestinatario(models.Model):
 
         for nfe in nfes:
 
-            self.env['sped.manifestacao.destinatario.nfe'].create(
-                {
-                    'manifestacao_id': self.id,
-                    'nfe_id': nfe.id,
-                    'tipo_nfe': nfe.tipo_emissao_nfe,
-                }
-            )
+            destinatario_nfe = self.env[
+                'sped.manifestacao.destinatario.nfe']
+
+            if not(destinatario_nfe.search([('nfe_id','=',nfe.id)])):
+                destinatario_nfe.create(
+                    {
+                        'manifestacao_id': self.id,
+                        'nfe_id': nfe.id,
+                        'tipo_nfe': nfe.tipo_emissao_nfe,
+                    }
+                )
 
 
         return result
