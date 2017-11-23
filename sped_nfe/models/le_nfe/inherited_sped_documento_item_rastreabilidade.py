@@ -22,7 +22,7 @@ try:
 except (ImportError, IOError) as err:
     _logger.debug(err)
 
-from .versao_nfe_padrao import ClasseRastro
+# from .versao_nfe_padrao import ClasseRastro
 
 
 class SpedDocumentoItemRastreabilidade(models.Model):
@@ -34,13 +34,13 @@ class SpedDocumentoItemRastreabilidade(models.Model):
         if self.documento_id.modelo != MODELO_FISCAL_NFE:
             return
 
-        rastro = Rastro_400()
-
-        rastro.nLote.valor = self.numero
-        rastro.qLote.valor = D(self.quantidade)
-        rastro.xLocDesemb.valor = self.local_desembaraco
-        rastro.dFab.valor = self.data_fabricacao[:10]
-        rastro.dVal.valor = self.data_validade[:10]
-        rastro.cAgreg.valor = self.codigo_agregacao or ''
-
-        return rastro
+        # rastro = Rastro_310()
+        #
+        # rastro.nLote.valor = self.numero
+        # rastro.qLote.valor = D(self.quantidade)
+        # rastro.xLocDesemb.valor = self.local_desembaraco
+        # rastro.dFab.valor = self.data_fabricacao[:10]
+        # rastro.dVal.valor = self.data_validade[:10]
+        # rastro.cAgreg.valor = self.codigo_agregacao or ''
+        #
+        # return rastro

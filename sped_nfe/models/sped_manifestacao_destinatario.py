@@ -16,6 +16,8 @@ from odoo.osv import orm
 
 _logger = logging.getLogger(__name__)
 
+from odoo.addons.l10n_br_base.constante_tributaria import *
+
 try:
     from pysped.nfe.leiaute import *
     from pybrasil.inscricao import limpa_formatacao
@@ -297,6 +299,8 @@ class SpedManifestacaoDestinatario(models.Model):
 
     @api.multi
     def action_download_xml(self):
+        self.ensure_one()
+
         result = True
         for record in self:
             record.sped_consulta_dfe_id.\
@@ -323,6 +327,20 @@ class SpedManifestacaoDestinatario(models.Model):
                 raise models.ValidationError(
                     nfe_result['code'] + ' - ' + nfe_result['message'])
 
+        documento = self.env['sped.documento'].new()
+        documento.modelo = MODELO_FISCAL_NFE
+        nfes = documento.le_nfe(xml=nfe_result['nfe'])
+
+        for nfe in nfes:
+
+            self.env['sped.manifestacao.destinatario.nfe'].create(
+                {
+                    'manifestacao_id': self.id,
+                    'nfe_id': nfe.id,
+                    'tipo_nfe': nfe.tipo_emissao_nfe,
+                }
+            )
+
 
         return result
 
@@ -338,6 +356,13 @@ class SpedManifestacaoDestinatarioNFe(models.Model):
     nfe_id = fields.Many2one(
         comodel_name='sped.documento',
         string='NF-e',
+        ondelete='cascade',
+    )
+
+    tipo_nfe = fields.Selection([
+        ('0', 'Emissão'),
+        ('1', 'Recebimento')],
+        string='Tipo de NF-e',
     )
 
 

@@ -17,7 +17,7 @@ from odoo.addons.l10n_br_base.constante_tributaria import (
 _logger = logging.getLogger(__name__)
 
 try:
-    from pysped.nfe.leiaute import Rastro_400
+    # from pysped.nfe.leiaute import Rastro_310
     from pybrasil.valor.decimal import Decimal as D
 
 except (ImportError, IOError) as err:
@@ -33,13 +33,13 @@ class SpedDocumentoItemRastreabilidade(models.Model):
         if self.documento_id.modelo != MODELO_FISCAL_NFE:
             return
 
-        rastro = Rastro_400()
-
-        rastro.nLote.valor = self.numero
-        rastro.qLote.valor = D(self.quantidade)
-        rastro.xLocDesemb.valor = self.local_desembaraco
-        rastro.dFab.valor = self.data_fabricacao[:10]
-        rastro.dVal.valor = self.data_validade[:10]
-        rastro.cAgreg.valor = self.codigo_agregacao or ''
-
-        return rastro
+        # rastro = Rastro_310()
+        #
+        # rastro.nLote.valor = self.numero
+        # rastro.qLote.valor = D(self.quantidade)
+        # rastro.xLocDesemb.valor = self.local_desembaraco
+        # rastro.dFab.valor = self.data_fabricacao[:10]
+        # rastro.dVal.valor = self.data_validade[:10]
+        # rastro.cAgreg.valor = self.codigo_agregacao or ''
+        #
+        # return rastro
