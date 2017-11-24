@@ -35,22 +35,22 @@ class SpedEmpresa(models.Model):
     mail_template_cfe_autorizada_id = fields.Many2one(
         comodel_name='mail.template',
         string='Modelo de email para cfe autorizada',
-        #domain=[('model_id', '=', ref('sped.model_sped_documento'))],
+        # domain=[('model_id', '=', ref('sped.model_sped_documento'))],
     )
     mail_template_cfe_cancelada_id = fields.Many2one(
         comodel_name='mail.template',
         string='Modelo de email para cfe cancelada',
-        #domain=[('model_id', '=', ref('sped.model_sped_documento'))],
+        # domain=[('model_id', '=', ref('sped.model_sped_documento'))],
     )
     mail_template_cfe_denegada_id = fields.Many2one(
         comodel_name='mail.template',
         string='Modelo de email para cfe denegada',
-        #domain=[('model_id', '=', ref('sped.model_sped_documento'))],
+        # domain=[('model_id', '=', ref('sped.model_sped_documento'))],
     )
     mail_template_cfe_cce_id = fields.Many2one(
         comodel_name='mail.template',
         string='Modelo de email para CC-e',
-        #domain=[('model_id', '=', ref('sped.model_sped_documento'))],
+        # domain=[('model_id', '=', ref('sped.model_sped_documento'))],
     )
     tipo_processador_cfe = fields.Selection(
         string="Tipo instalação SAT",
@@ -69,12 +69,14 @@ class SpedEmpresa(models.Model):
 
     def processador_cfe(self):
         """
-        Busca classe do processador do cadastro da empresa, onde podemos ter três tipos de processamento dependendo
+        Busca classe do processador do cadastro da empresa, onde podemos
+        ter três tipos de processamento dependendo
         de onde o equipamento esta instalado:
 
         - Instalado no mesmo servidor que o Odoo;
         - Instalado na mesma rede local do servidor do Odoo;
-        - Instalado em um local remoto onde o browser vai ser responsável por se comunicar com o equipamento
+        - Instalado em um local remoto onde o browser vai ser responsável
+        por se comunicar com o equipamento
 
         :return:
         """

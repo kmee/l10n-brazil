@@ -7,13 +7,11 @@
 
 from __future__ import division, print_function, unicode_literals
 
-import os
 import logging
 
 from odoo import api, fields, models
-from odoo.exceptions import UserError
-
 from odoo.addons.l10n_br_base.constante_tributaria import *
+from odoo.exceptions import UserError
 
 _logger = logging.getLogger(__name__)
 
@@ -261,12 +259,11 @@ class SpedDocumento(models.Model):
         return cnpj_software_house, assinatura, numero_caixa
 
     def _monta_cfe_emitente(self):
-        empresa = self.empresa_id
         configuracoes = self._buscar_configuracoes_pdv()
         emitente = Emitente(
                 # FIXME:
-                CNPJ=configuracoes.cnpjsh,  # limpa_formatacao(empresa.cnpj_cpf),
-                IE=configuracoes.ie,  # limpa_formatacao(empresa.ie or ''),
+                CNPJ=configuracoes.cnpjsh,
+                IE=configuracoes.ie,
                 # CNPJ=limpa_formatacao(empresa.cnpj_cpf),
                 # IE=limpa_formatacao(empresa.ie or ''),
                 indRatISSQN='N')
@@ -407,16 +404,19 @@ class SpedDocumento(models.Model):
 
     def resposta_cfe(self, resposta):
         from mfecfe.resposta.enviardadosvenda import RespostaEnviarDadosVenda
-        resposta_sefaz = RespostaEnviarDadosVenda.analisar(resposta.get('retorno'))
+        resposta_sefaz = RespostaEnviarDadosVenda.analisar(
+            resposta.get('retorno')
+        )
 
         if resposta_sefaz.EEEEE in '06000':
             self.executa_antes_autorizar()
             self.situacao_nfe = SITUACAO_NFE_AUTORIZADA
             self.executa_depois_autorizar()
             # self.data_hora_autorizacao = fields.Datetime.now()
-        elif resposta_sefaz.EEEEE in ('06001', '06002', '06003', '06004', '06005',
-                                '06006', '06007', '06008', '06009', '06010',
-                                '06098', '06099'):
+        elif resposta_sefaz.EEEEE in (
+                '06001', '06002', '06003', '06004', '06005',
+                '06006', '06007', '06008', '06009', '06010',
+                '06098', '06099'):
             self.executa_antes_denegar()
             self.situacao_fiscal = SITUACAO_FISCAL_DENEGADO
             self.situacao_nfe = SITUACAO_NFE_DENEGADA
@@ -459,7 +459,8 @@ class SpedDocumento(models.Model):
         return venda.resposta_cfe(resposta)
 
     def envia_nfe(self):
-        #FIXME: Este super deveria ser chamado mas retornar para manter a compatibilidade entre os módulos
+        #FIXME: Este super deveria ser chamado mas retornar para manter a c
+        # ompatibilidade entre os módulos
         # super(SpedDocumento, self).envia_nfe()
 
         self.ensure_one()
