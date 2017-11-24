@@ -10,3 +10,4 @@ from . import inherited_sped_documento_item
 from . import inherited_sped_documento_pagamento
 from . import pdv_config
 from . import pdv_impressora_config
+from . import inherited_res_users
