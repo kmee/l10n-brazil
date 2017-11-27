@@ -1048,9 +1048,8 @@ class SpedCalculoImpostoItem(SpedBase):
                         busca_item)
 
                     if operacao_item_ids:
-                        break
-
-        return operacao_item_ids
+                        return operacao_item_ids
+        return False
 
     def _onchange_produto_id_emissao_propria(self):
         self.ensure_one()
