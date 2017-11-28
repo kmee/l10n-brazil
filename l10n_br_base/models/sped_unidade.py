@@ -63,6 +63,9 @@ class SpedUnidade(models.Model):
         compute='_compute_codigo_unico',
         store=True
     )
+    codigos_alternativos = fields.Text(
+        string='Outros códigos alternativos',
+    )
     nome = fields.Char(
         string='Nome',
         size=60,

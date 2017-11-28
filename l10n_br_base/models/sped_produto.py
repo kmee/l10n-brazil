@@ -70,6 +70,11 @@ class SpedProduto(SpedBase, models.Model):
         compute='_compute_codigo_unico',
         store=True
     )
+    codigo_cliente = fields.Char(
+        string='Código do cliente',
+        size=60,
+        index=True,
+    )
     codigo_barras = fields.Char(
         string='Código de barras',
         size=14,
