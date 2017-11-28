@@ -19,6 +19,8 @@ from odoo.addons.l10n_br_base.constante_tributaria import *
 
 _logger = logging.getLogger(__name__)
 
+PAIS_BRASIL = '1058'
+
 try:
     from pysped.nfe.webservices_flags import *
     from pysped.nfe.leiaute import *
@@ -271,7 +273,19 @@ class SpedDocumento(models.Model):
             # É nota própria
             #
             else:
-                dados['empresa_id'] = emitente.empresa_ids[0].id
+                cnpj = dados_emitente['cnpj_cpf']
+
+                cnpj = cnpj [:2] + '.' + \
+                       cnpj[2:5] + '.' + \
+                       cnpj[5:8] + '/' + \
+                       cnpj[8:12] + '-' + \
+                       cnpj[12:14]
+
+                dados['empresa_id'] = \
+                    self.env['sped.empresa'].\
+                        search([('cnpj_cpf','=',cnpj)])
+
+                # dados['empresa_id'] = emitente.empresa_ids[0].id
                 dados['participante_id'] = destinatario.id
                 dados['regime_tributario'] = emitente.regime_tributario
 
@@ -284,7 +298,19 @@ class SpedDocumento(models.Model):
         # É nota de terceiros
         #
         else:
-            dados['empresa_id'] = destinatario.empresa_ids[0].id
+            cnpj = dados_emitente['cnpj_cpf']
+
+            cnpj = cnpj[:2] + '.' + \
+                   cnpj[2:5] + '.' + \
+                   cnpj[5:8] + '/' + \
+                   cnpj[8:12] + '-' + \
+                   cnpj[12:14]
+
+            dados['empresa_id'] = \
+                self.env['sped.empresa']. \
+                    search([('cnpj_cpf', '=', cnpj)])
+
+            # dados['empresa_id'] = destinatario.empresa_ids[0].id
             dados['participante_id'] = emitente.id
             dados['emissao'] = TIPO_EMISSAO_TERCEIROS
 
