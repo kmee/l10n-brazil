@@ -85,5 +85,6 @@
     ],
     'test': [
         'test/financial_move_test.yml',
-    ]
+    ],
+    'installable': False,
 }
