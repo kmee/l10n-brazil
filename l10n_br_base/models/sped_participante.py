@@ -228,7 +228,7 @@ class SpedParticipante(SpedBase, models.Model):
     contribuinte = fields.Selection(
         selection=INDICADOR_IE_DESTINATARIO,
         string='Contribuinte',
-        required = True ,
+        required=True,
     )
     ie = fields.Char(
         string='Inscrição estadual',
@@ -318,12 +318,12 @@ class SpedParticipante(SpedBase, models.Model):
     #
     # Para o faturamento
     #
-    #representante_id = fields.Many2one(
-        #comodel_name='sped.participante',
-        #string='Representante',
-        #ondelete='restrict',
-        #domain=[('eh_vendedor', '=', True)],
-    #)
+    # representante_id = fields.Many2one(
+    #     comodel_name='sped.participante',
+    #     string='Representante',
+    #     ondelete='restrict',
+    #     domain=[('eh_vendedor', '=', True)],
+    # )
     transportadora_id = fields.Many2one(
         comodel_name='sped.participante',
         string='Transportadora',
@@ -388,8 +388,9 @@ class SpedParticipante(SpedBase, models.Model):
             participante.exige_cnpj_cpf = False
 
             if (participante.endereco or participante.numero or
-                participante.complemento or
-                participante.bairro or participante.cep):
+                    participante.complemento or
+                    participante.bairro or
+                    participante.cep):
                 participante.exige_endereco = True
             else:
                 participante.exige_endereco = False
@@ -888,17 +889,15 @@ class SpedParticipante(SpedBase, models.Model):
         else:
             valores['eh_usuario'] = False
 
-    #@api.depends('representante_id')
-    #def onchange_representante_id(self):
-        #res = {}
-        #valores = {}
-        #res['value'] = valores
+    # @api.depends('representante_id')
+    # def onchange_representante_id(self):
+    #     res = {}
+    #     valores = {}
+    #     res['value'] = valores
+    #
+    #     if self.representante_id:
+    #         valores['user_id'] = self.representante_id.partner_id.id
+    #     else:
+    #         valores['user_id'] = False
 
-        #if self.representante_id:
-            #valores['user_id'] = self.representante_id.partner_id.id
-        #else:
-            #valores['user_id'] = False
-
-        #return res
-
-
+        # return res

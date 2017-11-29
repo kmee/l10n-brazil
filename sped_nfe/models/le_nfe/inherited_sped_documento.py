@@ -9,11 +9,8 @@ from __future__ import division, print_function, unicode_literals
 
 import os
 import logging
-import base64
-from io import BytesIO
 
-from odoo import api, fields, models
-from odoo.exceptions import UserError
+from odoo import models
 
 from odoo.addons.l10n_br_base.constante_tributaria import *
 
@@ -24,21 +21,13 @@ PAIS_BRASIL = '1058'
 try:
     from pysped.nfe.webservices_flags import *
     from pysped.nfe.leiaute import *
-    from pybrasil.base import mascara
     from pybrasil.inscricao import limpa_formatacao
-    from pybrasil.data import (parse_datetime, UTC, data_hora_horario_brasilia,
-                               agora)
+    from pybrasil.data import (UTC)
     from email_validator import validate_email
     from pybrasil.telefone import valida_fone_fixo, valida_fone_celular
-    from pybrasil.valor import formata_valor
-    from pybrasil.valor.decimal import Decimal as D
-    from pybrasil.template import TemplateBrasil
 
 except (ImportError, IOError) as err:
     _logger.debug(err)
-
-from .versao_nfe_padrao import ClasseNFe, ClasseNFCe, ClasseProcNFe, \
-    ClasseReboque
 
 
 class SpedDocumento(models.Model):
@@ -66,7 +55,7 @@ class SpedDocumento(models.Model):
         documento = self.search([('chave', '=', chave)])
 
         if len(documento) > 0:
-            #documento.unlink()
+            # documento.unlink()
             return documento
 
         dados = {
@@ -79,7 +68,7 @@ class SpedDocumento(models.Model):
         procNFe.xml = xml
 
         nfe = procNFe.NFe
-        #chave = nfe.infNFe.Id.valor[3:]
+        # chave = nfe.infNFe.Id.valor[3:]
 
         #
         # Identificação da NF-e
@@ -95,8 +84,8 @@ class SpedDocumento(models.Model):
         self._le_nfe_emitente(nfe.infNFe.emit, dados_emitente)
         self._le_nfe_destinatario(nfe.infNFe.dest, dados_destinatario)
 
-        if not self._pode_importar_nfe(nfe.infNFe.ide, dados, dados_emitente,
-                                   dados_destinatario):
+        if not self._pode_importar_nfe(nfe.infNFe.ide, dados,
+                                       dados_emitente, dados_destinatario):
             return
 
         '''
@@ -141,10 +130,10 @@ class SpedDocumento(models.Model):
         #
         dados['infcomplementar'] = \
             nfe.infNFe.infAdic.infCpl.valor.replace('| ', '\n').\
-                replace('|', '\n')
+            replace('|', '\n')
         dados['infadfisco'] = \
             nfe.infNFe.infAdic.infAdFisco.valor.replace('| ', '\n').\
-                replace('|', '\n')
+            replace('|', '\n')
 
         if not self.id:
             self = self.create(dados)
@@ -153,23 +142,23 @@ class SpedDocumento(models.Model):
 
         #
         # Se certifica de que todos os campos foram totalizados
-        #
+
         self._compute_soma_itens()
 
         #
         # Informações sobre a autorização
-        #
+
         protNFe = procNFe.protNFe
         if protNFe.infProt.cStat.valor in ('100', '150', '110', '301',
                                            '302'):
-            #self.grava_xml(procNFe.NFe)
+            # self.grava_xml(procNFe.NFe)
             procNFe.NFe.chave = chave
             self.grava_xml_autorizacao(procNFe)
 
-            #if self.modelo == MODELO_FISCAL_NFE:
-                #res = self.grava_pdf(nfe, procNFe.danfe_pdf)
-            #elif self.modelo == MODELO_FISCAL_NFCE:
-                #res = self.grava_pdf(nfe, procNFe.danfce_pdf)
+            # if self.modelo == MODELO_FISCAL_NFE:
+            #     res = self.grava_pdf(nfe, procNFe.danfe_pdf)
+            # elif self.modelo == MODELO_FISCAL_NFCE:
+            #     res = self.grava_pdf(nfe, procNFe.danfce_pdf)
 
             data_autorizacao = protNFe.infProt.dhRecbto.valor
             data_autorizacao = UTC.normalize(data_autorizacao)
@@ -179,18 +168,19 @@ class SpedDocumento(models.Model):
             self.chave = protNFe.infProt.chNFe.valor
 
             if protNFe.infProt.cStat.valor in ('100', '150'):
-                #self.executa_antes_autorizar()
+                # self.executa_antes_autorizar()
                 self.situacao_nfe = SITUACAO_NFE_AUTORIZADA
-                #self.executa_depois_autorizar()
+                # self.executa_depois_autorizar()
             else:
-                #self.executa_antes_denegar()
+                # self.executa_antes_denegar()
                 self.situacao_fiscal = SITUACAO_FISCAL_DENEGADO
                 self.situacao_nfe = SITUACAO_NFE_DENEGADA
-                #self.executa_depois_denegar()
+                # self.executa_depois_denegar()
 
         return self
 
-    def _pode_importar_nfe(self, ide, dados, dados_emitente, dados_destinatario):
+    def _pode_importar_nfe(self, ide, dados,
+                           dados_emitente, dados_destinatario):
         self.ensure_one()
 
         pode_importar = False
@@ -256,7 +246,7 @@ class SpedDocumento(models.Model):
             # que está importando a NF
             #
             if destinatario.eh_empresa and \
-                emitente.cnpj_cpf != self.empresa_id.cnpj_cpf:
+                    emitente.cnpj_cpf != self.empresa_id.cnpj_cpf:
                 dados['empresa_id'] = self.empresa_id.id
                 dados['participante_id'] = emitente.id
                 dados['emissao'] = TIPO_EMISSAO_TERCEIROS
@@ -266,7 +256,7 @@ class SpedDocumento(models.Model):
                 else:
                     dados['entrada_saida'] = ENTRADA_SAIDA_ENTRADA
 
-                #dados['data_hora_entrada_saida'] = False
+                # dados['data_hora_entrada_saida'] = False
                 emitente.eh_fornecedor = True
 
             #
@@ -275,15 +265,14 @@ class SpedDocumento(models.Model):
             else:
                 cnpj = dados_emitente['cnpj_cpf']
 
-                cnpj = cnpj [:2] + '.' + \
-                       cnpj[2:5] + '.' + \
-                       cnpj[5:8] + '/' + \
-                       cnpj[8:12] + '-' + \
-                       cnpj[12:14]
+                cnpj = cnpj[:2] + '.' + \
+                    cnpj[2:5] + '.' + \
+                    cnpj[5:8] + '/' + \
+                    cnpj[8:12] + '-' + \
+                    cnpj[12:14]
 
-                dados['empresa_id'] = \
-                    self.env['sped.empresa'].\
-                        search([('cnpj_cpf','=',cnpj)])
+                dados['empresa_id'] = self.env['sped.empresa'].\
+                    search([('cnpj_cpf', '=', cnpj)])
 
                 # dados['empresa_id'] = emitente.empresa_ids[0].id
                 dados['participante_id'] = destinatario.id
@@ -300,15 +289,14 @@ class SpedDocumento(models.Model):
         else:
             cnpj = dados_emitente['cnpj_cpf']
 
-            cnpj = cnpj[:2] + '.' + \
-                   cnpj[2:5] + '.' + \
-                   cnpj[5:8] + '/' + \
-                   cnpj[8:12] + '-' + \
-                   cnpj[12:14]
+            cnpj = cnpj[:2] + '.' +\
+                cnpj[2:5] + '.' + \
+                cnpj[5:8] + '/' + \
+                cnpj[8:12] + '-' + \
+                cnpj[12:14]
 
             dados['empresa_id'] = \
-                self.env['sped.empresa']. \
-                    search([('cnpj_cpf', '=', cnpj)])
+                self.env['sped.empresa'].search([('cnpj_cpf', '=', cnpj)])
 
             # dados['empresa_id'] = destinatario.empresa_ids[0].id
             dados['participante_id'] = emitente.id
@@ -319,7 +307,7 @@ class SpedDocumento(models.Model):
             else:
                 dados['entrada_saida'] = ENTRADA_SAIDA_ENTRADA
 
-            #dados['data_hora_entrada_saida'] = False
+            # dados['data_hora_entrada_saida'] = False
             emitente.eh_fornecedor = True
 
         #
@@ -330,7 +318,8 @@ class SpedDocumento(models.Model):
                 self._busca_natureza_operacao(ide.natOp.valor)
 
             if not natureza:
-                naturezas = self.search([(1, '=', 1)], order='id desc', limit=1)
+                naturezas = self.\
+                    search([(1, '=', 1)], order='id desc', limit=1)
 
                 if naturezas:
                     ultima_natureza = naturezas[0].id
@@ -408,10 +397,10 @@ class SpedDocumento(models.Model):
         # Trata o problema da emissão vir sem horário (meia-noite), mas a
         # saída ser no meio da tarde do próprio dia
         #
-        if '00:00:00' in dados['data_hora_emissao'] and \
-            '00:00:00' not in dados['data_hora_entrada_saida']:
+        if '00:00:00' in dados['data_hora_emissao'] and '00:00:00' not in \
+                dados['data_hora_entrada_saida']:
             if dados['data_hora_emissao'][:10] == \
-                dados['data_hora_entrada_saida'][:10]:
+                    dados['data_hora_entrada_saida'][:10]:
                 dados['data_hora_emissao'] = dados['data_hora_entrada_saida']
 
     def _le_nfe_emitente(self, emit, dados):
@@ -472,7 +461,7 @@ class SpedDocumento(models.Model):
 
         if dest.email.valor:
             try:
-                valido = validate_email(dest.email.valor)
+                validate_email(dest.email.valor)
                 dados['email'] = dest.email.valor.lower()
                 dados['email_nfe'] = dest.email.valor.lower()
             except:
@@ -498,8 +487,8 @@ class SpedDocumento(models.Model):
             dados['cnpj_cpf'] = dest.CPF.valor
 
         codigo_ibge = ''
-        if dest.enderDest.cMun.valor == '9999999' or \
-            str(dest.enderDest.cPais.valor) != PAIS_BRASIL:
+        if dest.enderDest.cMun.valor == '9999999' or str(
+                dest.enderDest.cPais.valor) != PAIS_BRASIL:
             codigo_ibge = '9999999' + str(dest.enderDest.cPais.valor)
             dados['cep'] = '99999999'
             dados['contribuinte'] = INDICADOR_IE_DESTINATARIO_NAO_CONTRIBUINTE
@@ -577,7 +566,7 @@ class SpedDocumento(models.Model):
         else:
             dados['modalidade_frete'] = str(transp.modFrete.valor)
 
-        dados_transportadora = {}
+        # dados_transportadora = {}
 
         #
         # Como a transportadora da NF-e não é um cadastro de participante
@@ -720,11 +709,11 @@ class SpedDocumento(models.Model):
         })
 
     def testa_importacao(self):
-        #processador = self.processador_nfe()
-
-        #caminho_a_processar = '/home/ari/diso/novembro/'
-        #caminho_processado = '/home/ari/diso/importado/'
-        #caminho_rejeitado = '/home/ari/diso/rejeitado/'
+        # processador = self.processador_nfe()
+        #
+        # caminho_a_processar = '/home/ari/diso/novembro/'
+        # caminho_processado = '/home/ari/diso/importado/'
+        # caminho_rejeitado = '/home/ari/diso/rejeitado/'
 
         caminho_a_processar = '/home/ari/zenir/'
 
@@ -745,7 +734,8 @@ class SpedDocumento(models.Model):
             # Codificação incorreta, arquivo não é UTF-8
             #
             try:
-                xml = open(caminho_a_processar + nome_arq, 'r').read().decode('utf-8')
+                xml = open(caminho_a_processar + nome_arq, 'r').\
+                    read().decode('utf-8')
             except:
                 print('erro codificacao', nome_arq)
                 continue
@@ -753,40 +743,40 @@ class SpedDocumento(models.Model):
             #
             # Não é do ambiente de produção
             #
-            if not '<tpAmb>1</tpAmb>' in xml:
+            if '<tpAmb>1</tpAmb>' not in xml:
                 print('erro ambiente', nome_arq)
                 continue
 
             #
             # Não é versão 3.10 ou 4.00
-            #
-            if not 'versao="3.10"' in xml and not 'versao="4.00"' in xml:
+
+            if 'versao="3.10"' not in xml and 'versao="4.00"' not in xml:
                 print('erro versao', nome_arq)
                 continue
 
             #
             # Não é uma NF-e nem CT-e
-            #
-            if (not '</NFe>' in xml) and \
-                (not '</cancNFe>' in xml) and \
-                (not '<descEvento>Cancelamento</descEvento>' in xml) and \
-                (not '</CTe>' in xml) and \
-                (not '</cancCTe>' in xml):
+
+            if ('</NFe>' not in xml) and \
+                    ('</cancNFe>' not in xml) and \
+                    ('<descEvento>Cancelamento</descEvento>' not in xml) and \
+                    ('</CTe>' not in xml) and \
+                    ('</cancCTe>' not in xml):
                 print('erro tipo', nome_arq)
                 continue
 
-            ##
-            ## A assinatura é válida?
-            ##
-            #if '</NFe>' in xml or '</CTe>' in xml:
-                #try:
-                    #processador.certificado.verifica_assinatura_xml(xml)
-                #except:
-                    #continue
-
+            # #
+            # # A assinatura é válida?
+            # #
+            # if '</NFe>' in xml or '</CTe>' in xml:
+            #     try:
+            #         processador.certificado.verifica_assinatura_xml(xml)
+            #     except:
+            #         continue
+            #
             #
             # É NF-e?
-            #
+
             if '</nfeProc>' in xml:
 
                 if ' Id="NFe' not in xml:
@@ -807,7 +797,7 @@ class SpedDocumento(models.Model):
                 documento.modelo = '55'
                 documento.empresa_id = \
                     self.env.user.company_id.sped_empresa_id.id
-                d = documento.le_nfe(xml=xml)
+                documento.le_nfe(xml=xml)
                 self.env.cr.commit()
 
             else:

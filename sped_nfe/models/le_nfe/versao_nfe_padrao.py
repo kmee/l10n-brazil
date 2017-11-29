@@ -13,32 +13,32 @@ _logger = logging.getLogger(__name__)
 
 try:
     # from pysped.nfe.leiaute import *
-    from pysped.nfe.leiaute import ( ProcNFe_400,
-                                     NFe_400,
-                                     NFCe_400,
-                                     Det_400,
-                                     DI_400,
-                                     Adi_400,
-                                     Reboque_400,
-                                     Vol_400,
-                                     NFRef_400,
-                                     Dup_400,
-                                     Pag_400,
-                                     Rastro_400
-                                     )
+    from pysped.nfe.leiaute import (ProcNFe_400,
+                                    NFe_400,
+                                    NFCe_400,
+                                    Det_400,
+                                    DI_400,
+                                    Adi_400,
+                                    Reboque_400,
+                                    Vol_400,
+                                    NFRef_400,
+                                    Dup_400,
+                                    Pag_400,
+                                    Rastro_400
+                                    )
 
 except ImportError:
-    from pysped.nfe.leiaute import ( ProcNFe_310 as ProcNFe_400,
-                                     NFe_310 as NFe_400,
-                                     NFCe_310 as NFCe_400,
-                                     Det_310 as Det_400,
-                                     DI_310 as DI_400,
-                                     Adi_310 as Adi_400,
-                                     Reboque_310 as Reboque_400,
-                                     Vol_310 as Vol_400,
-                                     NFRef_310 as NFRef_400,
-                                     Dup_310 as Dup_400
-                                     )
+    from pysped.nfe.leiaute import (ProcNFe_310 as ProcNFe_400,
+                                    NFe_310 as NFe_400,
+                                    NFCe_310 as NFCe_400,
+                                    Det_310 as Det_400,
+                                    DI_310 as DI_400,
+                                    Adi_310 as Adi_400,
+                                    Reboque_310 as Reboque_400,
+                                    Vol_310 as Vol_400,
+                                    NFRef_310 as NFRef_400,
+                                    Dup_310 as Dup_400
+                                    )
 
 except (IOError) as err:
     _logger.debug(err)

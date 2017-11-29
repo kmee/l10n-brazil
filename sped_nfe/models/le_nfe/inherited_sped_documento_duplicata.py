@@ -7,8 +7,10 @@
 
 from __future__ import division, print_function, unicode_literals
 
+from .versao_nfe_padrao import ClasseDup
+
 import logging
-from odoo import api, models
+from odoo import models
 from odoo.addons.l10n_br_base.constante_tributaria import (
     MODELO_FISCAL_NFE,
     MODELO_FISCAL_NFCE,
@@ -21,8 +23,6 @@ try:
 
 except (ImportError, IOError) as err:
     _logger.debug(err)
-
-from .versao_nfe_padrao import ClasseDup
 
 
 class SpedDocumentoDuplicata(models.Model):

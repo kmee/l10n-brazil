@@ -7,9 +7,11 @@
 
 from __future__ import division, print_function, unicode_literals
 
+from .versao_nfe_padrao import ClasseNFRef
+
 import logging
 
-from odoo import api, fields, models
+from odoo import models
 from odoo.addons.l10n_br_base.constante_tributaria import (
     MODELO_FISCAL_NFE,
     MODELO_FISCAL_NFCE,
@@ -18,15 +20,6 @@ from odoo.addons.l10n_br_base.constante_tributaria import (
 )
 
 _logger = logging.getLogger(__name__)
-
-try:
-    from pybrasil.inscricao import limpa_formatacao
-    from pybrasil.data import parse_datetime, UTC
-
-except (ImportError, IOError) as err:
-    _logger.debug(err)
-
-from .versao_nfe_padrao import ClasseNFRef
 
 
 class SpedDocumentoReferenciado(models.Model):

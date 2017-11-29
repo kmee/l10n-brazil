@@ -7,8 +7,10 @@
 
 from __future__ import division, print_function, unicode_literals
 
+from .versao_nfe_padrao import ClasseDI, ClasseAdi
+
 import logging
-from odoo import api, models
+from odoo import models
 from odoo.addons.l10n_br_base.constante_tributaria import (
     MODELO_FISCAL_NFCE,
     MODELO_FISCAL_NFE,
@@ -18,13 +20,10 @@ _logger = logging.getLogger(__name__)
 
 try:
     from pybrasil.inscricao import limpa_formatacao
-    from pybrasil.data import parse_datetime, UTC
     from pybrasil.valor.decimal import Decimal as D
 
 except (ImportError, IOError) as err:
     _logger.debug(err)
-
-from .versao_nfe_padrao import ClasseDI, ClasseAdi
 
 
 class SpedDocumentoItemDeclaracaoImportacao(models.Model):

@@ -359,8 +359,8 @@ class SpedUnidade(models.Model):
             unidades = self.search(args, limit=limit)
             return unidades.name_get()
 
-        return super(SpedUnidade, self).name_search(name=name, args=args,
-                                                operator=operator, limit=limit)
+        return super(SpedUnidade, self).\
+            name_search(name=name, args=args, operator=operator, limit=limit)
 
     def prepare_sync_to_uom(self):
         self.ensure_one()
