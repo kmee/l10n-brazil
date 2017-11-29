@@ -7,9 +7,3 @@
 
 from . import inherited_sped_documento
 from . import inherited_sped_documento_item
-#from . import inherited_sped_documento_item_rastreabilidade
-#from . import inherited_sped_documento_item_declaracao_importacao
-#from . import inherited_sped_documento_referenciado
-#from . import inherited_sped_documento_duplicata
-#from . import inherited_sped_documento_pagamento
-#from . import inherited_sped_documento_volume
