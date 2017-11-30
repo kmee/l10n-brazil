@@ -156,7 +156,7 @@ class SpedDocumento(models.Model):
             from mfecfe.clientelocal import ClienteSATLocal
             from mfecfe import BibliotecaSAT
             cliente = ClienteSATLocal(
-                BibliotecaSAT('/opt/Integrador'),  # FIXME: Caminho do integrador nas configurações
+                BibliotecaSAT(self.configuracoes_pdv.caminho_integrador),  # FIXME: Caminho do integrador nas configurações
                 codigo_ativacao=self.configuracoes_pdv.codigo_ativacao
             )
         elif self.configuracoes_pdv.tipo_sat == 'rede_interna':
@@ -541,7 +541,7 @@ class SpedDocumento(models.Model):
             from mfecfe import BibliotecaSAT
             from mfecfe import ClienteVfpeLocal
             cliente = ClienteVfpeLocal(
-                BibliotecaSAT('/opt/Integrador'),
+                BibliotecaSAT(self.configuracoes_pdv.caminho_integrador),
                 chave_acesso_validador=config.chave_acesso_validador
             )
 
