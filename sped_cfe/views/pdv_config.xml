@@ -22,6 +22,7 @@
                     attrs="{'invisible': [('tipo', '!=', 'SAT') ] }">
                         <field name="tipo_sat"/>
                         <field name="ip"/>
+                        <field name="caminho_integrador"/>
                         <field name="ambiente"/>
                         <field name="codigo_ativacao"/>
                         <field name="cnpjsh"/>
