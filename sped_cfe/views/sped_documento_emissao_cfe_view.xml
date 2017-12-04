@@ -12,6 +12,9 @@
         <field name="mode">primary</field>
         <field name="inherit_id" ref="sped.sped_documento_base_form" />
         <field name="arch" type="xml">
+            <!--<field name="empresa_id" position="after">-->
+                <!--<field name="numero_identificador" invisible="1"/>-->
+            <!--</field>-->
             <field name="empresa_id" position="after">
                 <field name="pagamento_autorizado_cfe" />
                 <field name="configuracoes_pdv" invisible="1" />

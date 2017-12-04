@@ -57,6 +57,7 @@ class ConfiguracaoPDV(models.Model):
     chave_acesso_validador = fields.Char(
         string=u"Codigo de Ativação",
     )
+    caminho_integrador = fields.Char(string=u'Caminho do Integrador')
     chave_requisicao = fields.Char(string=u'Chave de Requisição')
     estabelecimento = fields.Char(string=u'Estabelecimento')
     serial_pos = fields.Char(string=u'Serial POS')
