@@ -22,6 +22,7 @@ class StockPicking(models.Model):
                 or pos_order_access_key[0] or '')
 
     fiscal_document_access_key = fields.Char(
-        u'Chave de acesso do Documento', compute_sudo=True,
+        u'Chave de acesso do Documento',
+        compute_sudo=True,
         compute=_get_fiscal_document_access_key,
-        store=True)
+    )

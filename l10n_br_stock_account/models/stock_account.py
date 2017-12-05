@@ -30,7 +30,8 @@ class StockPicking(models.Model):
         readonly=True, states={'draft': [('readonly', False)]})
     fiscal_document_access_key = fields.Char(
         u'Chave de acesso do Documento',
-        compute=_get_fiscal_document_access_key, store=True)
+        # compute=_get_fiscal_document_access_key
+    )
 
     def _fiscal_position_map(self, result, **kwargs):
         ctx = dict(self.env.context)
