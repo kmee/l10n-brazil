@@ -71,7 +71,7 @@ class SpedDocumento(models.Model):
         self.ensure_one()
         result = super(SpedDocumento, self).envia_nfe()
         if self.modelo not in (MODELO_FISCAL_NFSE) or\
-                self.empresa_id.provedor_nfse != 'ginfes':
+                self.empresa_id.provedor_nfse != 'sped_validador':
             return result
 
         self.envia_rps()
