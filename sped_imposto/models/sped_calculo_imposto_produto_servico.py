@@ -120,6 +120,11 @@ class SpedCalculoImpostoProdutoServico(SpedCalculoImposto):
         compute='_compute_soma_itens',
         store=True
     )
+    produtos_vr_icms_desonerado = fields.Monetary(
+        string='Valor do ICMS desonerado',
+        compute='_compute_soma_itens',
+        store=True
+    )
     # ICMS SIMPLES
     produtos_vr_icms_sn = fields.Monetary(
         string='Valor do crédito de ICMS - SIMPLES Nacional',
@@ -338,6 +343,11 @@ class SpedCalculoImpostoProdutoServico(SpedCalculoImposto):
     # )
     # servicos_vr_icms_proprio = fields.Monetary(
     #     string='Valor do ICMS próprio',
+    #     compute='_compute_soma_itens',
+    #     store=True
+    # )
+    # servicos_vr_icms_desonerado = fields.Monetary(
+    #     string='Valor do ICMS desonerado',
     #     compute='_compute_soma_itens',
     #     store=True
     # )

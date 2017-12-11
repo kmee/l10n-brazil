@@ -31,7 +31,15 @@ class ConfiguracaoPDV(models.Model):
         ('remoto', 'Remoto'),
     ], string=u'Tipo SAT')
 
+    path_integrador = fields.Char(
+        string=u'Caminho do Integrador'
+    )
+
     ip = fields.Char(string=u'IP')
+
+    porta = fields.Char(
+        string=u'Porta'
+    )
 
     ambiente = fields.Selection([
         ('producao', 'Produção'),

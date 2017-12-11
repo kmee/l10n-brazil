@@ -54,7 +54,7 @@ odoo.define('sped_cfe.cfe_sat', function (require) {
 
             if(!this.keptalive){
                 this.keptalive = true;
-                status();
+                // status();
             }
         },
         chamada_api_cfe_sat: function (params, url){

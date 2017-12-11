@@ -34,16 +34,29 @@
             <xpath expr="//separator[@name='vencimentos']" position="attributes">
                 <attribute name="attrs">{'invisible': [('condicao_pagamento_id', '!=', False)]}</attribute>
             </xpath>
-            <xpath expr="//field[@name='pagamento_ids']" position="attributes">
-                <attribute name="attrs">{'invisible': [('condicao_pagamento_id', '!=', False)]}</attribute>
+            <xpath expr="//field[@name='condicao_pagamento_id']" position="attributes">
+                <attribute name="attrs">{'invisible': [('modelo', '=', '59')]}</attribute>
             </xpath>
+            <xpath expr="//field[@name='duplicata_ids']" position="attributes">
+                <attribute name="attrs">{'invisible': [('modelo', '=', '59')]}</attribute>
+            </xpath>
+            <xpath expr="//field[@name='pagamento_ids']" position="attributes">
+                <attribute name="attrs">{'invisible': [('condicao_pagamento_id', '!=', False), ('modelo', '!=', '59')]}</attribute>
+            </xpath>
+            <field name="vr_fatura" position="after">
+                <field name="vr_total_residual" invisible="1" />
+            </field>
+            <field name="pagamento_ids" position="attributes">
+                <attribute name="context">{'default_valor': vr_total_residual}</attribute>
+            </field>
             <header position="inside">
                 <!--<button string="Enviar CF-e" class="btn-primary" custom="enviar_dados_venda"-->
                     <!--attrs="{'invisible': [('situacao_nfe', 'not in', ['em_digitacao', 'rejeitada'])]}" />-->
-                <button name="envia_nfe" string="Envia CF-e" type="object" class="btn-primary" />
+                <button name="envia_nfe" string="Envia CF-e" type="object" class="btn-primary"
+                        attrs="{'invisible': [('situacao_nfe', 'not in', ['em_digitacao', 'rejeitada'])]}" />
                 <button name="envia_email_nfe" string="Enviar email" type="object" class="btn-primary" />
                 <button name="gera_pdf" string="Gerar PDF" type="object" class="btn-primary" />
-                <button name="envia_pagamento" string="Enviar Pagamento" type="object" class="btn-primary"/>
+                <button name="envia_pagamento" string="Enviar Pagamento" type="object" class="btn-primary" invisible="1"/>
             </header>
             <xpath expr="//field[@name='empresa_id']" position="before">
                 <field name="situacao_nfe" readonly="1" colspan="4" string="Situação"
