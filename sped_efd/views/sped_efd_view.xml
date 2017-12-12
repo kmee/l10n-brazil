@@ -12,6 +12,7 @@
                    <field name="company_id"/>
                    <field name="fci_file_sent"/>
                    <field name="dt_ini"/>
+                   <field name="dt_fim"/>
                 </group>
             </sheet>
             </form>
@@ -27,6 +28,7 @@
                     <field name="company_id"/>
                     <field name="fci_file_sent"/>
                     <field name="dt_ini"/>
+                    <field name="dt_fim"/>
             </tree>
         </field>
     </record>

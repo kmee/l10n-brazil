@@ -25,11 +25,12 @@ class SpedEFD(models.Model):
         default=fields.Datetime.now,
         required=True,
     )
-    # dt_fim =  fields.Datetime(
-    #     string='Data final',
-    #     index=True,
-    #     required=True,
-    # )
+    dt_fim =  fields.Datetime(
+        string='Data final',
+        index=True,
+        required=True,
+    )
+
     @property
     def versao(self):
         if fields.Datetime.from_string(self.dt_ini) >= datetime.datetime(2016, 1, 1):
@@ -37,17 +38,15 @@ class SpedEFD(models.Model):
 
         return '009'
 
-    def limpa_formatacao_data(self, data):
-        data = data[8:] + data[5:7] + data[:4]
-        data = data.replace('-','')
-        data = data.replace(' ', '')
-        return data.replace('/', '')
+    def transforma_data(self, data): # aaaammdd
+        data = self.limpa_formatacao(data)
+        return data[6:] + data[4:6] + data[:4]
 
     def limpa_formatacao(self, data):
-        data = data.replace('-','')
-        data = data.replace(' ', '')
-        data = data.replace('.', '')
-        return data.replace('/', '')
+        replace = ['-',' ','(',')','/','.']
+        for i in replace:
+            data = data.replace(i,'')
+        return data
 
     def query_registro0000(self):
         query = """
@@ -61,13 +60,18 @@ class SpedEFD(models.Model):
         """
         self._cr.execute(query)
         query_resposta = self._cr.fetchall()
+
         registro_0000 = registros.Registro0000()
         registro_0000.COD_VER = str(self.versao)
         registro_0000.COD_FIN = '0' # finalidade
-        registro_0000.DT_INI = self.limpa_formatacao_data(self.dt_ini[:11]) # data_inicio
-        registro_0000.DT_FIN = self.limpa_formatacao_data(self.dt_ini[:11]) # data_final
+        registro_0000.DT_INI = self.transforma_data(self.dt_ini[:10]) # data_inicio
+        registro_0000.DT_FIN = self.transforma_data(self.dt_fim[:10]) # data_final
         registro_0000.NOME = query_resposta[0][0] # filial.razao_social (?)
-        registro_0000.CNPJ = self.limpa_formatacao(query_resposta[0][1]) # filial.cnpj_cpf
+        cpnj_cpf = self.limpa_formatacao(query_resposta[0][1])
+        if cpnj_cpf == 11:
+            registro_0000.CPF = cpnj_cpf
+        else:
+            registro_0000.CNPJ = cpnj_cpf
         registro_0000.UF = query_resposta[0][2] # filial.estado
         registro_0000.IE = query_resposta[0][3] # filial.ie
         registro_0000.COD_MUN = query_resposta[0][4] # filial.municipio_id.codigo_ibge[:7]
@@ -78,17 +82,52 @@ class SpedEFD(models.Model):
 
         return registro_0000
 
-
-
-
     def query_registro0100(self):
-        quert = """
-            select rp.name, rp.street, rp.street2, rp.zip, rp.city
-            from res_partner as rp,
+        query = """
+            select distinct 
+            p.nome, p.cnpj_cpf, p.cep, p.endereco, p.numero, p.complemento,
+            p.bairro, p.fone, p.email, m.codigo_anp, p.crc
+            from 
+            sped_participante as p 
+            join sped_municipio as m on p.municipio_id=m.id
         """
+        self._cr.execute(query)
+        query_resposta = self._cr.fetchall()
 
+        registro_0100 = registros.Registro0100()
+        registro_0100.NOME = query_resposta[0][0]
+        cpnj_cpf = self.limpa_formatacao(query_resposta[0][1])
+        if cpnj_cpf == 11:
+            registro_0100.CPF = cpnj_cpf
+        else:
+            registro_0100.CNPJ = cpnj_cpf
+        registro_0100.CRC = query_resposta[0][10]
+        registro_0100.CEP = self.limpa_formatacao(query_resposta[0][2])
+        registro_0100.END = query_resposta[0][3]
+        registro_0100.NUM = query_resposta[0][4]
+        registro_0100.COMPL = query_resposta[0][5]
+        registro_0100.BAIRRO = query_resposta[0][6]
+        registro_0100.FONE = self.limpa_formatacao(query_resposta[0][7])
+        registro_0100.EMAIL = query_resposta[0][8]
+        registro_0100.COD_MUN = query_resposta[0][9]
 
-    def cria_registro(self, registro):
+        return registro_0100
+
+    def query_registro1010(self):
+        registro1010 = registros.Registro1010()
+        registro1010.IND_EXP = 'S'
+        registro1010.IND_CCRF = 'S'
+        registro1010.IND_COMB = 'S'
+        registro1010.IND_USINA = 'S'
+        registro1010.IND_VA = 'S'
+        registro1010.IND_EE = 'S'
+        registro1010.IND_CART = 'S'
+        registro1010.IND_FORM = 'S'
+        registro1010.IND_AER = 'S'
+
+        return registro1010
+
+    def junta_pipe(self, registro):
         junta = ''
         for i in range(1, len(registro._valores)):
             junta = junta + '|' + registro._valores[i]
@@ -100,27 +139,12 @@ class SpedEFD(models.Model):
         arq.read_registro('|9900|9999|1|')
         cont_9900 = 2
 
-        arq.read_registro(self.cria_registro(self.query_registro0000()))
+        # bloco 0
+        arq.read_registro(self.junta_pipe(self.query_registro0000()))
+        arq.read_registro(self.junta_pipe(self.query_registro0100()))
 
-        registro_0100 = registros.Registro0100()
-        registro_0100.NOME = 'Daniel Sadamo' # contador.nome.strip()
-        registro_0100.CPF = '12334532212' # contador.cnpj_cpf.strip() / contador.cnpj_cpf.strip()
-        registro_0100.CRC = '123456789012345' # contador.crc.strip()
-        """
-            contador.cep.strip()
-            contador.endereco.strip()
-            contador.numero.strip()
-            contador.complemento.strip()
-            contador.bairro.strip()
-            contador.fone.strip()
-            contador.fax.strip()
-            contador.emeio.strip()
-            contador.municipio.ibge()
-        """
-        registro_0100.END = 'Rua dos ferroviario' #
-        registro_0100.NUM = '123'
-        registro_0100.COMPL = 'Agonia'
-        arq.read_registro(self.cria_registro(registro_0100))
+        # bloco 1
+        arq.read_registro(self.junta_pipe(self.query_registro1010()))
 
         for bloco in arq._blocos.items():
                 for registros_bloco in bloco[1].registros:
@@ -128,14 +152,14 @@ class SpedEFD(models.Model):
                         registro_9900 = registros.Registro9900()
                         registro_9900.REG_BLC = registros_bloco._valores[1]
                         registro_9900.QTD_REG_BLC = '1'
-                        arq.read_registro(self.cria_registro(registro_9900))
+                        arq.read_registro(self.junta_pipe(registro_9900))
                     else:
                         cont_9900 = cont_9900 + 1
 
         registro_9900 = registros.Registro9900()
         registro_9900.REG_BLC = '9900'
         registro_9900.QTD_REG_BLC = str(cont_9900+1)
-        arq.read_registro(self.cria_registro(registro_9900))
+        arq.read_registro(self.junta_pipe(registro_9900))
 
         arquivo = self.env['ir.attachment']
 
