@@ -48,10 +48,14 @@ class SpedEFD(models.Model):
             data = data.replace(i,'')
         return data
 
+
+    def formata_cod_municipio(self, data):
+        return data[:7]
+
     def query_registro0000(self):
         query = """
             select DISTINCT 
-                p.nome, p.cnpj_cpf, m.estado, p.ie, m.codigo_anp, p.im, p.suframa
+                p.nome, p.cnpj_cpf, m.estado, p.ie, m.codigo_ibge, p.im, p.suframa
             from 
                 sped_documento as d 
                 join sped_empresa as e on d.empresa_id=e.id
@@ -73,8 +77,8 @@ class SpedEFD(models.Model):
         else:
             registro_0000.CNPJ = cpnj_cpf
         registro_0000.UF = query_resposta[0][2] # filial.estado
-        registro_0000.IE = query_resposta[0][3] # filial.ie
-        registro_0000.COD_MUN = query_resposta[0][4] # filial.municipio_id.codigo_ibge[:7]
+        registro_0000.IE = '11111111111111' # Todo: query_resposta[0][3] nao possui valor IE
+        registro_0000.COD_MUN = self.formata_cod_municipio(query_resposta[0][4]) # filial.municipio_id.codigo_ibge[:7]
         registro_0000.IM = query_resposta[0][5] # filial.im
         registro_0000.SUFRAMA = query_resposta[0][6] # filial.suframa
         registro_0000.IND_PERFIL = 'A' # perfil
@@ -86,7 +90,7 @@ class SpedEFD(models.Model):
         query = """
             select distinct 
             p.nome, p.cnpj_cpf, p.cep, p.endereco, p.numero, p.complemento,
-            p.bairro, p.fone, p.email, m.codigo_anp, p.crc
+            p.bairro, p.fone, p.email, m.codigo_ibge, p.crc
             from 
             sped_participante as p 
             join sped_municipio as m on p.municipio_id=m.id
@@ -109,7 +113,7 @@ class SpedEFD(models.Model):
         registro_0100.BAIRRO = query_resposta[0][6]
         registro_0100.FONE = self.limpa_formatacao(query_resposta[0][7])
         registro_0100.EMAIL = query_resposta[0][8]
-        registro_0100.COD_MUN = query_resposta[0][9]
+        registro_0100.COD_MUN = self.formata_cod_municipio(query_resposta[0][9])
 
         return registro_0100
 
