@@ -12,57 +12,14 @@ import logging
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
-from odoo.addons.l10n_br_base.constante_tributaria import (
-    SITUACAO_NFE,
-    SITUACAO_NFE_EM_DIGITACAO,
-    MODELO_FISCAL_NFE,
-    MODELO_FISCAL_NFCE,
-    SITUACAO_NFE_REJEITADA,
-    SITUACAO_NFE_AUTORIZADA,
-    TIPO_EMISSAO_PROPRIA,
-)
+from odoo.addons.l10n_br_base.constante_tributaria import *
 
 _logger = logging.getLogger(__name__)
 
 try:
-    from pysped.nfe.webservices_flags import (
-        AMBIENTE_NFE_HOMOLOGACAO,
-        NFe_310,
-        NFCe_310,
-        docref,
-    )
-    from pysped.nfe.leiaute import (
-        UF_CODIGO,
-        nfe,
-        IDENTIFICACAO_DESTINO_INTERNO,
-        TIPO_CONSUMIDOR_FINAL_CONSUMIDOR_FINAL,
-        IDENTIFICACAO_DESTINO_EXTERIOR,
-        IDENTIFICACAO_DESTINO_INTERESTADUAL,
-        INDICADOR_IE_DESTINATARIO_NAO_CONTRIBUINTE,
-        INDICADOR_IE_DESTINATARIO_CONTRIBUINTE,
-        MODALIDADE_FRETE_REMETENTE_PROPRIO,
-        MODALIDADE_FRETE_REMETENTE_CIF,
-        MODALIDADE_FRETE_DESTINATARIO_PROPRIO,
-        MODALIDADE_FRETE_DESTINATARIO_FOB,
-        MODALIDADE_FRETE_SEM_FRETE,
-        Reboque_310,
-        IND_FORMA_PAGAMENTO_A_VISTA,
-        IND_FORMA_PAGAMENTO_A_PRAZO,
-        REGIME_TRIBUTARIO_SIMPLES,
-        WS_NFE_SITUACAO,
-        WS_NFE_CONSULTA,
-        SITUACAO_FISCAL_DENEGADO,
-        SITUACAO_NFE_DENEGADA,
-        WS_NFE_ENVIO_LOTE,
-        WS_NFE_CONSULTA_RECIBO,
-        SITUACAO_NFE_ENVIADA,
-        ProcNFe_310,
-        EventoCancNFe_100,
-        SITUACAO_FISCAL_CANCELADO_EXTEMPORANEO,
-        SITUACAO_NFE_CANCELADA,
-        SITUACAO_FISCAL_CANCELADO,
-        ProcEventoCancNFe_100,
-    )
+    from pysped.nfe.webservices_flags import *
+    from pysped.nfe.leiaute import *
+
     from pybrasil.inscricao import limpa_formatacao
     from pybrasil.data import (parse_datetime, UTC, data_hora_horario_brasilia,
                                agora)
@@ -889,8 +846,10 @@ class SpedDocumento(models.Model):
         nfe.infNFe.infAdic.infAdFisco.valor = infadfisco.decode('utf-8')
 
     def envia_nfe(self):
-        super(SpedDocumento, self).envia_nfe()
         self.ensure_one()
+        result = super(SpedDocumento, self).envia_nfe()
+        if self.modelo not in (MODELO_FISCAL_NFCE, MODELO_FISCAL_NFE):
+            return result
 
         processador = self.processador_nfe()
 

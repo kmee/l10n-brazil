@@ -9,6 +9,7 @@
 import logging
 import tempfile
 from datetime import datetime
+import base64
 
 from odoo import api, fields, models
 from odoo.addons.l10n_br_base.constante_tributaria import (
@@ -20,7 +21,7 @@ _logger = logging.getLogger(__name__)
 
 try:
     import pysped
-
+    import pybrasil.certificado as Cert
     from pybrasil.data import formata_data
     from pybrasil.inscricao import (formata_cnpj, formata_cpf, valida_cnpj,
                                     valida_cpf)
@@ -143,10 +144,10 @@ class SpedCertificado(models.Model):
 
         arq = tempfile.NamedTemporaryFile(delete=False)
         arq.seek(0)
-        arq.write(self.arquivo.decode('base64'))
+        arq.write(base64.decodebytes(self.arquivo))
         arq.flush()
 
-        cert = pysped.xml_sped.certificado.Certificado()
+        cert = Cert.Certificado()
         cert.arquivo = arq.name
         cert.senha = self.senha
 

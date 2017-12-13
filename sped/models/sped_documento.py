@@ -1035,17 +1035,6 @@ class SpedDocumento(SpedBase, models.Model):
                         self.empresa_id.serie_nfce_contingencia_homologacao
                     )
 
-        elif self.modelo == MODELO_FISCAL_NFSE:
-            valores['ambiente_nfe'] = self.empresa_id.ambiente_nfse
-            valores['tipo_emissao_nfe'] = TIPO_EMISSAO_NFE_NORMAL
-
-            if self.empresa_id.ambiente_nfse == AMBIENTE_NFE_PRODUCAO:
-                valores['serie_rps'] = self.empresa_id.serie_rps_producao
-            else:
-                valores['serie_rps'] = self.empresa_id.serie_rps_homologacao
-
-        return res
-
     @api.onchange('operacao_id', 'emissao', 'natureza_operacao_id')
     def _onchange_operacao_id(self):
         res = {}

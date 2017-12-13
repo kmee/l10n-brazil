@@ -15,6 +15,9 @@
             <xpath expr="//form[1]" position="attributes">
                 <attribute name="string">Operação Fiscal para Emissão de NFS-e</attribute>
             </xpath>
+            <xpath expr="//field[@name='empresa_id']" position="attributes">
+                <attribute name="domain">()</attribute>
+            </xpath>
         </field>
     </record>
 

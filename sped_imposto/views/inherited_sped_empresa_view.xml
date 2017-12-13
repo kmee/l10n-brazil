@@ -85,7 +85,7 @@
                     <group col="4">
                         <separator string="Ambiente" colspan="4" />
                         <field name="ambiente_nfse" string="Ambiente" />
-<!--                                     <field name="provedor_nfse" /> -->
+                        <field name="provedor_nfse" />
                         <newline />
                         <separator string="Emissão normal" colspan="4" />
                         <separator string="Produção" colspan="2" />
