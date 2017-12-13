@@ -50,8 +50,6 @@ class SpedEFD(models.Model):
 
         return data
 
-
-
     def formata_cod_municipio(self, data):
         return data[:7]
 
@@ -241,9 +239,12 @@ class SpedEFD(models.Model):
 
     def envia_efd(self):
         arq = arquivos.ArquivoDigital()
-        arq.read_registro('|9900|0000|1|')
-        arq.read_registro('|9900|9999|1|')
-        cont_9900 = 2
+        hash = {}
+        hash['0000'] = 1
+        hash['9999'] = 1
+        # arq.read_registro('|9900|0000|1|')
+        # arq.read_registro('|9900|9999|1|')
+        # cont_9900 = 2
 
         # bloco 0
         arq.read_registro(self.junta_pipe(self.query_registro0000()))
@@ -259,20 +260,22 @@ class SpedEFD(models.Model):
 
         # bloco 1
         # arq.read_registro(self.junta_pipe(self.query_registro1010()))
-
         for bloco in arq._blocos.items():
                 for registros_bloco in bloco[1].registros:
-                    if not registros_bloco._valores[1] == '9900':
-                        registro_9900 = registros.Registro9900()
-                        registro_9900.REG_BLC = registros_bloco._valores[1]
-                        registro_9900.QTD_REG_BLC = '1'
-                        arq.read_registro(self.junta_pipe(registro_9900))
+                    if registros_bloco._valores[1] in hash:
+                        hash[registros_bloco._valores[1]] = int(hash[registros_bloco._valores[1]]) + 1
                     else:
-                        cont_9900 = cont_9900 + 1
+                        hash[registros_bloco._valores[1]] = 1
+
+        for key, value in hash.items():
+            registro_9900 = registros.Registro9900()
+            registro_9900.REG_BLC = key
+            registro_9900.QTD_REG_BLC = str(value)
+            arq.read_registro(self.junta_pipe(registro_9900))
 
         registro_9900 = registros.Registro9900()
         registro_9900.REG_BLC = '9900'
-        registro_9900.QTD_REG_BLC = str(cont_9900+1)
+        registro_9900.QTD_REG_BLC = str(len(hash)+1)
         arq.read_registro(self.junta_pipe(registro_9900))
 
         arquivo = self.env['ir.attachment']
