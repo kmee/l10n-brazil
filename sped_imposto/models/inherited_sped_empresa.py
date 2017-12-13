@@ -15,6 +15,7 @@ from odoo.addons.l10n_br_base.constante_tributaria import (
     REGIME_TRIBUTARIO_SIMPLES_EXCESSO,
     TIPO_EMISSAO_NFE,
     INDICADOR_PRESENCA_COMPRADOR,
+    PROVEDOR_NFSE
 )
 
 from odoo import api, fields, models
@@ -168,7 +169,7 @@ class SpedEmpresa(models.Model):
         selection=AMBIENTE_NFE,
         string='Ambiente NFS-e'
     )
-    # provedor_nfse = fields.Selection(PROVEDOR_NFSE, 'Provedor NFS-e')
+    provedor_nfse = fields.Selection(PROVEDOR_NFSE, 'Provedor NFS-e')
     serie_rps_producao = fields.Char(
         string='Série em produção',
         size=3,
@@ -179,10 +180,14 @@ class SpedEmpresa(models.Model):
         size=3,
         default='100'
     )
-    ultimo_rps = fields.Integer(
-        string='Último RPS'
+    ultimo_rps = fields.Many2one(
+        comodel_name='ir.sequence',
+        string='Último RPS',
+        copy=False,
     )
-    ultimo_lote_rps = fields.Integer(
+    ultimo_lote_rps = fields.Many2one(
+        comodel_name='ir.sequence',
+        copy=False,
         string='Último lote de RPS'
     )
     presenca_comprador = fields.Selection(

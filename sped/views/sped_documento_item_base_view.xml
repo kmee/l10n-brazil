@@ -242,6 +242,8 @@
                                 </page>
                                 <page string="ISS" attrs="{'invisible': ['!',('modelo', 'in', ('SE', 'RL'))]}">
                                     <group string="ISS" colspan="2">
+                                        <field name="cst_iss" />
+                                        <newline />
                                         <field name="bc_iss" />
                                         <newline />
                                         <field name="al_iss" />

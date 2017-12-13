@@ -75,7 +75,7 @@ from odoo.addons.l10n_br_base.constante_tributaria import (
     MODALIDADE_BASE_ICMS_PROPRIO_MARGEM_VALOR_AGREGADO,
     ST_ICMS_COM_REDUCAO,
     ST_ICMS_ZERA_ICMS_PROPRIO,
-
+    ST_ISS
 )
 from odoo.addons.l10n_br_base.models.sped_base import SpedBase
 from odoo.exceptions import ValidationError
@@ -587,7 +587,7 @@ class SpedCalculoImpostoItem(SpedBase):
     #
 
     # ISS
-    # cst_iss = fields.Selection(ST_ISS, 'CST ISS', index=True)
+    cst_iss = fields.Selection(ST_ISS, 'CST ISS', index=True)
     bc_iss = fields.Monetary(
         string='Base do ISS',
     )
@@ -1110,9 +1110,9 @@ class SpedCalculoImpostoItem(SpedBase):
                         busca_item)
 
                     if operacao_item_ids:
-                        break
+                        return operacao_item_ids
 
-        return operacao_item_ids
+        return False
 
     def _onchange_produto_id_emissao_propria(self):
         self.ensure_one()
