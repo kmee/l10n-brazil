@@ -185,3 +185,9 @@ class SpedDocumento(models.Model):
                 documento._criar_picking()
 
         return result
+
+    def gera_operacao_entrada(self):
+        doc = super(SpedDocumento, self).gera_operacao_entrada()
+        doc._criar_picking()
+
+        return doc
