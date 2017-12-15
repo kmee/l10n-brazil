@@ -12,7 +12,7 @@ from dateutil.relativedelta import relativedelta
 
 from odoo import fields, models
 
-from odoo.odoo import exceptions
+from odoo import exceptions
 
 _logger = logging.getLogger(__name__)
 

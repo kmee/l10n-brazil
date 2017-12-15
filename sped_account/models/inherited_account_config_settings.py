@@ -8,7 +8,7 @@
 from __future__ import division, print_function, unicode_literals
 
 from odoo import api, fields, models, _
-from odoo.odoo.exceptions import UserError
+from odoo.exceptions import UserError
 
 
 class AccountConfigSettings(models.TransientModel):

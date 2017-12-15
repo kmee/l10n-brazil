@@ -11,7 +11,7 @@ from collections import OrderedDict
 from psycopg2.extensions import AsIs
 
 from odoo import fields, models
-from odoo.odoo import exceptions
+from odoo import exceptions
 from ..constantes import (
     FINAN_SITUACAO_DIVIDA_SIMPLES_DICT
 )
