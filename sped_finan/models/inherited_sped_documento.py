@@ -122,9 +122,6 @@ class SpedDocumento(models.Model):
         result = \
             super(SpedDocumento, self).executa_depois_create(result, dados)
 
-        # ativar onchange que cria duplicata
-        # O documento ainda nao esta pronto para gerar o financeiro,
-        # pois esta faltando uma série de informações
         for documento in result:
             documento.gera_finan_lancamento()
 
