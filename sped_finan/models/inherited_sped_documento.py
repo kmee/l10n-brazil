@@ -33,6 +33,16 @@ class SpedDocumento(models.Model):
         copy=False,
     )
 
+    @api.onchange('condicao_pagamento_id')
+    def _onchange_forma_pagamento(self):
+        self.forma_pagamento = self.condicao_pagamento_id.\
+            forma_pagamento_id.forma_pagamento
+        ids = []
+        for carteira in self.env.user.company_id.sped_empresa_id.carteira_ids:
+            ids.append(carteira.ids)
+        ids.append(self.env.user.company_id.sped_empresa_id.carteira_id.id)
+        return {'domain': {'carteira_id': [('id', 'in', ids)]}}
+
     carteira_id = fields.Many2one(
         string='Carteira Padrão',
         comodel_name='finan.carteira',
@@ -56,9 +66,7 @@ class SpedDocumento(models.Model):
        related = 'forma_pagamento_id.forma_pagamento',
     )
 
-    @api.onchange('condicao_pagamento_id')
-    def _onchange_forma_pagamento(self):
-        self.forma_pagamento = self.condicao_pagamento_id.forma_pagamento_id.forma_pagamento
+
 
     @api.onchange('operacao_id', 'emissao', 'natureza_operacao_id')
     def _onchange_operacao_id(self):
