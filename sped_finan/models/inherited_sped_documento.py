@@ -33,6 +33,16 @@ class SpedDocumento(models.Model):
         copy=False,
     )
 
+    @api.onchange('condicao_pagamento_id')
+    def _onchange_forma_pagamento(self):
+        self.forma_pagamento = self.condicao_pagamento_id.\
+            forma_pagamento_id.forma_pagamento
+        ids = []
+        for carteira in self.env.user.company_id.sped_empresa_id.carteira_ids:
+            ids.append(carteira.ids)
+        ids.append(self.env.user.company_id.sped_empresa_id.carteira_id.id)
+        return {'domain': {'carteira_id': [('id', 'in', ids)]}}
+
     carteira_id = fields.Many2one(
         string='Carteira Padrão',
         comodel_name='finan.carteira',
@@ -44,6 +54,23 @@ class SpedDocumento(models.Model):
         readonly=True,
     )
 
+<<<<<<< HEAD
+=======
+    forma_pagamento_id = fields.Many2one(
+       comodel_name = 'finan.forma.pagamento',
+       string = 'Forma de pagamento',
+       related = 'condicao_pagamento_id.forma_pagamento_id',
+       ondelete = 'restrict',
+    )
+    forma_pagamento = fields.Selection(
+       selection = FORMA_PAGAMENTO,
+       string = 'Forma de pagamento fiscal',
+       related = 'forma_pagamento_id.forma_pagamento',
+    )
+
+
+
+>>>>>>> 7902b50... [FIX] Aparecer apenas carteiras padrões e permitidas
     @api.onchange('operacao_id', 'emissao', 'natureza_operacao_id')
     def _onchange_operacao_id(self):
         res = super(SpedDocumento, self)._onchange_operacao_id()
