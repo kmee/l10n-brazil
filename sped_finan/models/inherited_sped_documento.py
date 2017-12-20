@@ -67,6 +67,17 @@ class SpedDocumento(models.Model):
             # Para excluir os lançamentos vinculados à nota, precisamos
             # primeiro quebrar o vínculo de segurança
             #
+
+            # Excluir anexos dos lancamentos
+            attachment = self.env['ir.attachment']
+            busca = [
+                ('res_model', '=', 'finan.lancamento'),
+                ('res_id', 'in', documento.finan_lancamento_ids._ids),
+            ]
+            attachment_ids = attachment.search(busca)
+            if attachment_ids:
+                attachment_ids.unlink()
+
             for lancamento in documento.finan_lancamento_ids:
                 lancamento.sped_documento_duplicata_id = False
                 lancamento.sped_documento_id = False
@@ -111,9 +122,6 @@ class SpedDocumento(models.Model):
         result = \
             super(SpedDocumento, self).executa_depois_create(result, dados)
 
-        # ativar onchange que cria duplicata
-        # O documento ainda nao esta pronto para gerar o financeiro,
-        # pois esta faltando uma série de informações
         for documento in result:
             documento.gera_finan_lancamento()
 
