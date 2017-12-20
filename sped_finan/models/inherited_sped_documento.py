@@ -44,6 +44,22 @@ class SpedDocumento(models.Model):
         readonly=True,
     )
 
+    forma_pagamento_id = fields.Many2one(
+       comodel_name = 'finan.forma.pagamento',
+       string = 'Forma de pagamento',
+       related = 'condicao_pagamento_id.forma_pagamento_id',
+       ondelete = 'restrict',
+    )
+    forma_pagamento = fields.Selection(
+       selection = FORMA_PAGAMENTO,
+       string = 'Forma de pagamento fiscal',
+       related = 'forma_pagamento_id.forma_pagamento',
+    )
+
+    @api.onchange('condicao_pagamento_id')
+    def _onchange_forma_pagamento(self):
+        self.forma_pagamento = self.condicao_pagamento_id.forma_pagamento_id.forma_pagamento
+
     @api.onchange('operacao_id', 'emissao', 'natureza_operacao_id')
     def _onchange_operacao_id(self):
         res = super(SpedDocumento, self)._onchange_operacao_id()
