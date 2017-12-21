@@ -54,8 +54,6 @@ class SpedDocumento(models.Model):
         readonly=True,
     )
 
-<<<<<<< HEAD
-=======
     forma_pagamento_id = fields.Many2one(
        comodel_name = 'finan.forma.pagamento',
        string = 'Forma de pagamento',
@@ -68,9 +66,6 @@ class SpedDocumento(models.Model):
        related = 'forma_pagamento_id.forma_pagamento',
     )
 
-
-
->>>>>>> 7902b50... [FIX] Aparecer apenas carteiras padrões e permitidas
     @api.onchange('operacao_id', 'emissao', 'natureza_operacao_id')
     def _onchange_operacao_id(self):
         res = super(SpedDocumento, self)._onchange_operacao_id()
