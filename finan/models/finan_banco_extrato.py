@@ -61,8 +61,7 @@ create or replace function finan_banco_extrato_function(_banco_id integer)
             order by
                 fbe.ordem
 
-            loop
-                ultima_data := data;
+            loop                
                 return next;
             end loop;
 
@@ -96,8 +95,9 @@ create or replace function finan_banco_extrato_function(_banco_id integer)
 
             where
                 fl.banco_id = _banco_id
-                and fl.tipo in ('recebimento', 'pagamento', 'entrada', 'saida')
-                and (fl.provisorio is null or fl.provisorio = False)
+                and ((fl.tipo in ('recebimento', 'pagamento')) 
+                or ((fl.tipo in ('entrada', 'saida'))
+                and (fl.provisorio is null or fl.provisorio = False)))
                 and fl.data_extrato > ultima_data
 
             order by
@@ -187,7 +187,7 @@ class FinanBancoExtrato(SpedBase, models.Model):
             fbef.ordem,
             fbef.lancamento_id,
             fbef.data,
-            fbef.entrada,
+            fbef.entrada,   
             fbef.saida,
             fbef.saldo
         from
