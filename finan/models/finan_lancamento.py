@@ -982,6 +982,8 @@ class FinanLancamento(SpedBase, models.Model):
     def write(self, dados):
         bancos = {}
         self.executa_antes_write(dados, bancos)
+        if self.tipo in ('recebimento','pagamento'):
+            dados.update({'provisorio': False})
         result = super(FinanLancamento, self).write(dados)
         return self.executa_depois_write(result, dados, bancos)
 
