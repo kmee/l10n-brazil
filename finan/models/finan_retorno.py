@@ -9,9 +9,10 @@ from StringIO import StringIO
 
 from odoo import api, fields, models
 from odoo.exceptions import Warning as UserError
-from pybrasil.data import parse_datetime
+from pybrasil.data import parse_datetime, formata_data
 from pybrasil.febraban import RetornoBoleto
 from pybrasil.valor.decimal import Decimal as D
+from datetime import datetime
 
 from ..constantes import *
 
@@ -203,6 +204,7 @@ class finan_retorno(models.Model):
         comandos_boletos =\
                 sorted(set(map(lambda x: (x.comando_retorno_descricao),
                                lista_boletos)))
+
 
         template.render({'boletos': lista_boletos,
                          'sequencia': arquivo_retorno.sequencia,
@@ -705,6 +707,25 @@ class finan_retorno(models.Model):
         # Processa os boletos do arquivo
         for boleto in arquivo_retorno.boletos:
 
+            # verifica se o boleto é duplicado
+            if boleto.pagamento_duplicado == True:
+                boleto.pagamento_duplicado = 'SIM'
+            elif boleto.pagamento_duplicado == False:
+                boleto.pagamento_duplicado = 'NÃO'
+
+
+        # verifica exixtencia de data de crédito e inverte se existir
+            if boleto.data_credito is not None:
+                boleto.data_credito_fmt = formata_data(boleto.data_credito)
+            if boleto.data_credito is None:
+                boleto.data_credito_fmt = ''
+
+        # verifica exixtencia de data de ocorrencia e inverte se existir
+            if boleto.data_ocorrencia is not None:
+                boleto.data_ocorrencia_fmt = formata_data(boleto.data_ocorrencia)
+            elif boleto.data_ocorrencia is None:
+                boleto.data_ocorrencia_fmt = ''
+
             # buscar lancamento correspondente (divida) do boleto
             divida_id = self.get_divida(boleto)
 
@@ -716,6 +737,8 @@ class finan_retorno(models.Model):
                 boleto.pagador.cnpj_cpf = divida_id.participante_id.cnpj_cpf
                 boleto.pagador.nome = divida_id.participante_id.name
                 boleto.documento.numero = divida_id.numero
+
+
                 #
                 # Cliente negativado não baixa automático o boleto
                 # if comando != 'B' and \
@@ -727,6 +750,8 @@ class finan_retorno(models.Model):
                 # Se o banco emitiu/mudou o nosso numero, atualizar na divida
                 if self.carteira_id.banco_emite and comando == 'R':
                     divida_id.nosso_numero = boleto.nosso_numero
+
+
 
             # Criar um item de retorno do CNAB
             if divida_id and comando:
