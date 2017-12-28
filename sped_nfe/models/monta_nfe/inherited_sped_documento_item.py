@@ -54,8 +54,10 @@ class SpedDocumentoItem(models.Model):
         else:
             if self.produto_nome:
                 descricao = self.produto_nome
-            else:
+            elif self.produto_id:
                 descricao = self.produto_id.nome
+            else:
+                descricao = 'NENHUMA DESCRICAO INFORMADA'
 
         descricao = descricao.replace('—', '-').replace('–', '-')
         descricao = descricao.replace('”', '"').replace('“', '"')

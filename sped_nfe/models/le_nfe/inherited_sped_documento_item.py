@@ -54,6 +54,10 @@ class SpedDocumentoItem(models.Model):
         return cest[0].id
 
     def _busca_unidade(self, codigo, pode_incluir=True):
+
+        if codigo == 'False':
+            codigo = 'unid'
+
         unidade = self.env['sped.unidade'].busca(codigo)
 
         #

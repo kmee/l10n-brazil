@@ -13,6 +13,7 @@ from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
 from odoo.addons.l10n_br_base.models.sped_base import SpedBase
 from odoo.addons.l10n_br_base.constante_tributaria import *
+import base64
 
 _logger = logging.getLogger(__name__)
 
@@ -1281,6 +1282,26 @@ class SpedDocumento(SpedBase, models.Model):
             raise ValidationError(_(mensagem))
 
     def envia_nfe(self):
+        self.ensure_one()
+
+    def gera_xml(self):
+        self.ensure_one()
+        documento = self.monta_nfe()
+
+        file_name = 'NFe%s.xml' % \
+                    (documento.chave if documento.chave else self.empresa_cnpj_cpf)
+        self.env['ir.attachment'].create(
+            {
+                'name': file_name,
+                'datas': base64.b64encode(documento.xml.encode('UTF-8')),
+                'datas_fname': file_name,
+                'description':
+                    u'XML NF-e - Emissao',
+                'res_model': 'sped.documento',
+                'res_id': self.id
+            })
+
+    def monta_nfe(self):
         self.ensure_one()
 
     def cancela_nfe(self):

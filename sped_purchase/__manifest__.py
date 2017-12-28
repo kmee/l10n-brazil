@@ -13,6 +13,8 @@
     'depends': [
         'sped_imposto',
         'purchase',
+        'sped_stock',
+        'sped_nfe',
     ],
     'data': [
         # 'security/purchase_order_line.xml',

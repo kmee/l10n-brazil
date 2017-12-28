@@ -51,6 +51,8 @@ class SpedDocumento(models.Model):
         if xml is None:
             return
 
+        xml = xml.decode('UTF-8')
+
         if ' Id="NFe' not in xml:
             return
 
@@ -271,7 +273,8 @@ class SpedDocumento(models.Model):
             # É nota própria
             #
             else:
-                dados['empresa_id'] = emitente.empresa_ids[0].id
+                dados['empresa_id'] = self.env['sped.empresa'].search([
+                    ('cnpj_cpf_numero', '=', emitente.cnpj_cpf_numero)]).id
                 dados['participante_id'] = destinatario.id
                 dados['regime_tributario'] = emitente.regime_tributario
 
@@ -284,7 +287,8 @@ class SpedDocumento(models.Model):
         # É nota de terceiros
         #
         else:
-            dados['empresa_id'] = destinatario.empresa_ids[0].id
+            dados['empresa_id'] = self.env['sped.empresa'].search([
+                ('cnpj_cpf_numero', '=', destinatario.cnpj_cpf_numero)]).id
             dados['participante_id'] = emitente.id
             dados['emissao'] = TIPO_EMISSAO_TERCEIROS
 
@@ -594,7 +598,7 @@ class SpedDocumento(models.Model):
             transp.transporta.xEnder.valor = ender.strip()
             transp.transporta.xMun.valor = self.transportadora_id.cidade or ''
             transp.transporta.UF.valor = self.transportadora_id.estado or ''
-
+'''
         if self.veiculo_id:
             transp.veicTransp.placa.valor = self.veiculo_id.placa or ''
             transp.veicTransp.UF.valor = self.veiculo_id.estado_id.uf or ''
@@ -638,7 +642,7 @@ class SpedDocumento(models.Model):
         transp.vol = []
         for volume in self.volume_ids:
             transp.vol.append(volume.monta_nfe())
-        '''
+
 
     def _le_nfe_cobranca(self, cobr, dados):
         if self.modelo != MODELO_FISCAL_NFE:
