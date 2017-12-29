@@ -25,4 +25,5 @@ class FinanLancamento(SpedBase, models.Model):
         comodel_name='sped.documento.duplicata',
         string='Duplicata do Documento Fiscal',
         ondelete='restrict',
+        copy=False
     )

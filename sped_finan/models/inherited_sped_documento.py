@@ -191,3 +191,18 @@ class SpedDocumento(models.Model):
                     boleto = lancamento_id.gera_boleto()
                     documento_id._grava_anexo(boleto.nome, boleto.pdf)
             # documento_id.anexos = True
+
+    def gera_operacao_entrada(self):
+        doc = super(SpedDocumento, self).gera_operacao_entrada()
+        num = 0
+        for duplicata in self.duplicata_ids:
+            vals_dup = {
+                'numero': str(num + 1),
+                'documento_id': doc.id,
+                'data_vencimento': duplicata.data_vencimento,
+                'valor': duplicata.valor,
+            }
+            self.env['sped.documento.duplicata'].create(vals_dup)
+
+        doc.gera_finan_lancamento()
+        return doc
