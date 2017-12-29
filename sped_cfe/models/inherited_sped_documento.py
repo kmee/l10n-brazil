@@ -597,7 +597,8 @@ class SpedDocumento(models.Model):
                         resposta.arquivoCFeSAT,
                         impressao.modelo,
                         impressao.conexao,
-                        self.configuracoes_pdv.site_consulta_qrcode
+                        self.configuracoes_pdv.site_consulta_qrcode.encode(
+                            "utf-8")
                     )
                 self.executa_antes_autorizar()
                 self.executa_depois_autorizar()
@@ -653,7 +654,7 @@ class SpedDocumento(models.Model):
                 resposta,
                 impressao.modelo,
                 impressao.conexao,
-                self.configuracoes_pdv.site_consulta_qrcode
+                self.configuracoes_pdv.site_consulta_qrcode.encode("utf-8")
             )
         else:
             raise Warning("Não existem configurações para impressão no PDV!")
