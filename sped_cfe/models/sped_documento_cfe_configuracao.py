@@ -58,7 +58,7 @@ class SpedDocumentoCfeConfiguracao(models.Model):
         string=u'SAT path'
     )
 
-    numero_caixa = fields.Integer(
+    numero_caixa = fields.Char(
         string=u'Número do Caixa',
         copy=False
     )
