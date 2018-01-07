@@ -14,7 +14,7 @@ class ResUsers(models.Model):
     _inherit = 'res.users'
 
     configuracoes_sat_cfe = fields.One2many(
-        string=u"Configurações Sat CFe",
+        string=u"Caixa Ponto de Venda",
         comodel_name="pdv.config",
         inverse_name="vendedor"
     )
