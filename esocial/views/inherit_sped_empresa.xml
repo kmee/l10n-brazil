@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright 2017 KMEE
+    Copyright 2017 KMEE - Wagner Pereira <wagner.pereira@kmee.com.br>
+    License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
+-->
+<odoo>
+
+    <record model="ir.ui.view" id="empresas_tree">
+        <field name="name">esocial_empresas_tree</field>
+        <field name="model">sped.empresa</field>
+        <field name="priority">1</field>
+        <field name="arch" type="xml">
+            <tree string="Empresas"
+                create="false" delete="false">
+                <field name="nome" />
+                <field name="cnpj_cpf" />
+                <field name="municipio_id" />
+            </tree>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="empresas_form">
+        <field name="name">esocial_empresas_form</field>
+        <field name="model">sped.empresa</field>
+        <field name="priority">1</field>
+        <field name="inherit_id" ref="l10n_br_base.sped_empresa_form" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <xpath expr='//form[@name="Empresa"]' position="attributes">
+                <attribute name="delete">false</attribute>
+                <attribute name="duplicate">false</attribute>
+                <attribute name="create">false</attribute>
+            </xpath>
+            <field name="image" position="attributes">
+                <attribute name="attrs">{'readonly': True}</attribute>
+            </field>
+            <field name="nome" position="attributes">
+                <attribute name="attrs">{'readonly': True}</attribute>
+            </field>
+            <field name="cnpj_cpf" position="attributes">
+                <attribute name="attrs">{'readonly': True}</attribute>
+            </field>
+            <field name="razao_social" position="attributes">
+                <attribute name="attrs">{'readonly': True}</attribute>
+            </field>
+            <field name="fantasia" position="attributes">
+                <attribute name="attrs">{'readonly': True}</attribute>
+            </field>
+            <field name="fone" position="attributes">
+                <attribute name="attrs">{'readonly': True}</attribute>
+            </field>
+            <field name="celular" position="attributes">
+                <attribute name="attrs">{'readonly': True}</attribute>
+            </field>
+            <field name="fone_comercial" position="attributes">
+                <attribute name="attrs">{'readonly': True}</attribute>
+            </field>
+            <field name="email" position="attributes">
+                <attribute name="attrs">{'readonly': True}</attribute>
+            </field>
+            <field name="site" position="attributes">
+                <attribute name="attrs">{'readonly': True}</attribute>
+            </field>
+            <field name="endereco" position="attributes">
+                <attribute name="attrs">{'readonly': True}</attribute>
+            </field>
+            <field name="numero" position="attributes">
+                <attribute name="attrs">{'readonly': True}</attribute>
+            </field>
+            <field name="complemento" position="attributes">
+                <attribute name="attrs">{'readonly': True}</attribute>
+            </field>
+            <field name="bairro" position="attributes">
+                <attribute name="attrs">{'readonly': True}</attribute>
+            </field>
+            <field name="municipio_id" position="attributes">
+                <attribute name="attrs">{'readonly': True}</attribute>
+            </field>
+            <field name="cep" position="attributes">
+                <attribute name="attrs">{'readonly': True}</attribute>
+            </field>
+            <page name="inscricoes" position="after">
+                <page name="esocial" string="e-Social">
+                    <group cols="6">
+                        <group>
+                            <field name="esocial_situacao" attrs="{'readonly': True}" />
+                            <field name="esocial_ambiente" attrs="{'readonly': [('esocial_situacao', '=', 'ativo')]}"/>
+                        </group>
+                        <group>
+                            <button string="Ativar e-Social"  class="oe_highlight" name="ativa_esocial" type="object" attrs="{'invisible': [('esocial_situacao', '=', 'ativo')]}" confirm="Confirma a ativação do e-Social para esta Empresa?" />
+                            <button string="Desativar e-Social"  class="oe_highlight" name="desativa_esocial" type="object" attrs="{'invisible': [('esocial_situacao', '!=', 'ativo')]}" confirm="Confirma a desativação do e-Social para esta Empresa?" />
+                        </group>
+                        <group attrs="{'invisible': [('esocial_situacao', '=', 'inativo')]}">
+                            <field name="lotes" />
+                        </group>
+                        <group attrs="{'invisible': [('esocial_situacao', '='   , 'inativo')]}">
+                            <field name="eventos" />
+                        </group>
+                    </group>
+                    <group name="informacoes_juridicas" string="Informações Jurídicas">
+                        <group>
+                            <field name="natureza_juridica_id" />
+                        </group>
+                    </group>
+                    <group name="lotes" attrs="{'invisible': [('esocial_situacao', '=', 'inativo')]}">
+                        <group colspan="4" string="Lotes de Transmissão para o e-Social">
+                            <field name="lote_ids" attrs="{'readonly': True}" nolabel="1">
+                                <tree model="esocial.lote">
+                                    <field name="lote" />
+                                    <field name="protocolo" />
+                                    <field name="data_hora_protocolo" />
+                                    <field name="recibo" />
+                                    <field name="data_hora_recibo" />
+                                    <field name="eventos" />
+                                    <field name="state" />
+                                </tree>
+                            </field>
+                        </group>
+                    </group>
+                </page>
+            </page>
+            <page name="inscricoes" position="replace" />
+            <page name="comercial" position="replace" />
+            <page name="fiscal" position="replace" />
+            <page name="multiempresas" position="replace" />
+        </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="empresas_action">
+        <field name="name">Empresas</field>
+        <field name="res_model">sped.empresa</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <record model="ir.actions.act_window.view" id="empresas_tree_action">
+        <field eval="1" name="sequence"/>
+        <field name="view_mode">tree</field>
+        <field name="view_id" ref="empresas_tree"/>
+        <field name="act_window_id" ref="empresas_action"/>
+    </record>
+
+    <record model="ir.actions.act_window.view" id="empresas_form_action">
+        <field eval="2" name="sequence"/>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="empresas_form"/>
+        <field name="act_window_id" ref="empresas_action"/>
+    </record>
+
+    <menuitem
+        id="menu_esocial_empresas"
+        action="esocial.empresas_action"
+        name="Empresas"
+        parent="menu_esocial_configuracoes"
+        sequence="10"
+    />
+
+</odoo>

@@ -47,3 +47,5 @@ access_esocial_user_23,Operador (Leitura),model_esocial_fatores_meio_ambiente,gr
 access_esocial_gerente_23,Gerente (Todas permissões),model_esocial_fatores_meio_ambiente,group_manager,1,1,1,1
 access_esocial_user_24,Operador (Leitura),model_esocial_tributaria_fpas,group_user,1,0,0,0
 access_esocial_gerente_24,Gerente (Todas permissões),model_esocial_tributaria_fpas,group_manager,1,1,1,1
+access_esocial_user_25,Operador (Todas permissões),model_esocial_lote,group_user,1,1,1,1
+access_esocial_user_26,Operador (Todas permissões),model_esocial_evento,group_user,1,1,1,1

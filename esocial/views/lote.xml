@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright 2017 KMEE
+    Copyright 2017 KMEE - Wagner Pereira <wagner.pereira@kmee.com.br>
+    License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
+-->
+<odoo>
+
+    <record model="ir.ui.view" id="esocial.lote_form">
+        <field name="name">esocial.lote_form</field>
+        <field name="model">esocial.lote</field>
+        <field name="priority">1</field>
+        <field name="arch" type="xml">
+            <form string="Lotes de Tramissão para o e-Social"
+            edit="false" create="false" delete="false">
+                <header>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group name="geral" colspan="2" col="2">
+                            <field name="lote"/>
+                            <field name="protocolo" />
+                            <field name="data_hora_protocolo" />
+                            <field name="tempo_estimado" />
+                            <field name="recibo" />
+                            <field name="data_hora_recibo" />
+                        </group>
+                        <group colspan="2" col="2">
+                            <field name="empresa_id" />
+                            <field name="eventos" />
+                            <field name="arquivo_envio" />
+                            <field name="arquivo_retorno" />
+                        </group>
+                        <newline />
+                    </group>
+                    <group cols="4" colspan="4" string="Eventos">
+                        <field name="evento_ids" nolabel="1" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="esocial.lote_tree">
+        <field name="name">esocial.lote_tree</field>
+        <field name="model">esocial.lote</field>
+        <field name="priority">1</field>
+        <field name="arch" type="xml">
+            <tree edit="false" create="false" delete="false">
+                <field name="lote" />
+                <field name="empresa_id" />
+                <field name="protocolo" />
+                <field name="data_hora_protocolo" />
+                <field name="recibo" />
+                <field name="data_hora_recibo" />
+                <field name="eventos" />
+                <field name="state" />
+            </tree>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="esocial.lote_search">
+        <field name="name">esocial.lote_search</field>
+        <field name="model">esocial.lote</field>
+        <field name="priority">1</field>
+        <field name="arch" type="xml">
+            <search string="Lotes de Trasmissão">
+                <field name="lote" />
+                <field name="empresa_id" />
+                <field name="protocolo" />
+                <field name="recibo" />
+                <group expand="0" string="Agrupar Por...">
+                    <filter name="empresa" string="Empresa" context="{'group_by': 'empresa_id'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="lote_action">
+        <field name="name">Lote</field>
+        <field name="res_model">esocial.lote</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_empresa': 1}</field>
+    </record>
+
+    <record model="ir.actions.act_window.view" id="lote_tree_action">
+        <field eval="1" name="sequence"/>
+        <field name="view_mode">tree</field>
+        <field name="view_id" ref="lote_tree"/>
+        <field name="act_window_id" ref="lote_action"/>
+    </record>
+
+    <record model="ir.actions.act_window.view" id="lote_form_action">
+        <field eval="2" name="sequence"/>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="lote_form"/>
+        <field name="act_window_id" ref="lote_action"/>
+    </record>
+
+    <menuitem
+        action="esocial.lote_action"
+        id="menu_esocial_lote"
+        name="Lotes"
+        parent="menu_esocial_transmissao"
+        sequence="01"
+    />
+
+</odoo>

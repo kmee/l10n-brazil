@@ -10,7 +10,7 @@
         <field name="model">sped.empresa</field>
         <field name="priority">1</field>
         <field name="arch" type="xml">
-            <form string="Empresa">
+            <form string="Empresa" name="Empresa">
             <sheet>
 <!--                    <div class="oe_button_box" name="button_box">
                     <button name="toggle_active" type="object"

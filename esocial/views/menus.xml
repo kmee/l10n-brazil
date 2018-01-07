@@ -1,25 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright 2016 KMEE - Luis Felipe Miléo <mileo@kmee.com.br>
+<!--
+     Copyright 2017 KMEE - Wagner Pereira <wagner.pereira@kmee.com.br>
      License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
 
 <odoo>
 
         <menuitem
                 id="menu_esocial"
-                name="eSocial"
-                sequence="20"/>
+                name="e-Social"
+                sequence="20"
+                groups="esocial.group_user"/>
+
+        <menuitem
+                id="menu_esocial_transmissao"
+                name="Transmissão"
+                parent="menu_esocial"
+                sequence="40"
+                groups="esocial.group_user"/>
 
         <menuitem
                 id="menu_esocial_configuracoes"
                 name="Configurações"
                 parent="menu_esocial"
-                sequence="50"/>
+                sequence="50"
+                groups="esocial.group_user"/>
 
         <menuitem
                 id="menu_esocial_tabelas"
                 name="Tabelas"
                 parent="menu_esocial_configuracoes"
-                sequence="50"/>
+                sequence="50"
+                groups="esocial.group_user"/>
 
 </odoo>
 

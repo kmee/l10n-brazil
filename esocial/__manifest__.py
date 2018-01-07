@@ -25,7 +25,18 @@
         ],
     },
     'data': [
+        # Segurança
+        'security/esocial_security.xml',
+        'security/ir.model.access.csv',
+
+        # Menu base
         'views/menus.xml',
+
+        # Cadastro de Empresas para e-Social
+        'views/inherit_sped_empresa.xml',
+        'views/lote.xml',
+
+        # Tabelas do e-Social
         'views/codigo_aliquota_FPAS.xml',
         'views/categoria_trabalhador.xml',
         'views/financiamento_aposentadoria.xml',
@@ -38,7 +49,6 @@
         'views/natureza_lesao.xml',
         'views/tipo_dependente.xml',
         'views/tipo_lotacao_tributaria.xml',
-        'views/classificacao_tributaria.xml',
         'views/motivo_afastamento.xml',
         'views/tipo_arquivo_esocial.xml',
         'views/motivo_desligamento.xml',
@@ -48,15 +58,14 @@
         'views/tipo_beneficio.xml',
         'views/codificacao_acidente_trabalho.xml',
         'views/fatores_meio_ambiente.xml',
+        'data/classificacao_tributaria.xml',
         'data/natureza_lesao.xml',
-        'data/codigo_aliquota_FPAS.xml',
         'data/tipo_arquivo_esocial.xml',
         'data/tipo_lotacao_tributaria.xml',
         'data/categoria_trabalhador.xml',
         'data/financiamento_aposentadoria.xml',
         'data/natureza_rubrica.xml',
         'data/tipo_dependente.xml',
-        'data/classificacao_tributaria.xml',
         'data/parte_corpo.xml',
         'data/tipo_inscricao.xml',
         'data/agente_causador.xml',
@@ -71,8 +80,7 @@
         'data/tipo_beneficio.xml',
         'data/codificacao_acidente_trabalho.xml',
         'data/fatores_meio_ambiente.xml',
-        'security/esocial_security.xml',
-        'security/ir.model.access.csv',
+        'data/codigo_aliquota_FPAS.xml',
     ],
     'application': True,
 }
