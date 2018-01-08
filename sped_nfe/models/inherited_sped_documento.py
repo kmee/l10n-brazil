@@ -145,6 +145,8 @@ class SpedDocumento(models.Model):
         size=60,
     )
 
+
+
     @api.depends('data_hora_emissao', 'data_hora_entrada_saida',
                  'data_hora_autorizacao', 'data_hora_cancelamento')
     def _compute_data_hora_separadas(self):
@@ -835,6 +837,32 @@ class SpedDocumento(models.Model):
         self.ensure_one()
         mail_template.send_mail(self.id)
 
+    @api.multi
+    def cron_envia_email_nfe(self):
+        """
+        Rotina automatizada pelo cron para enviar email dos documentos fiscais
+         que nao foram enviados ainda. 
+        """
+        # Pegar todos emails enviados ou cancelados do documento fiscal
+        mail_ids = self.env['mail.mail'].search([
+            ('model', '=','sped.documento'),
+            ('state','in',['sent','cancel']),
+        ])
+
+        # pegar o id dos documentos que tem email enviado
+        nfe_com_email_enviado_ids = mail_ids.mapped('res_id')
+
+        # pegar todos documentos fiscais
+        nfe_ids = self.env['sped.documento'].search([])
+
+        # filtrar so os documentos que nao tem email nem enviado e nem cancel
+        nfe_nao_enviadas_ids = \
+            [nfe for nfe in nfe_ids if nfe.id not in nfe_com_email_enviado_ids]
+
+        # Enviar email apenas para os documentos filtrados
+        for nfe_id in nfe_nao_enviadas_ids:
+                nfe_id.envia_email_nfe()
+
     def envia_email_nfe(self):
         self.ensure_one()
 
@@ -844,7 +872,7 @@ class SpedDocumento(models.Model):
         if self.emissao != TIPO_EMISSAO_PROPRIA:
             return
 
-        mail_template = None
+        mail_template = self.env.ref('sped_nfe.email_template_sped_documento')
 
         if self.situacao_nfe == SITUACAO_NFE_CANCELADA:
             if self.modelo == MODELO_FISCAL_NFE and \

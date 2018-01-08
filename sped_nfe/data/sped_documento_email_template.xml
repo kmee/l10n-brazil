@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!--Email template for sped.documento -->
+    <record id="email_template_sped_documento" model="mail.template">
+        <field name="name">Sped Documento - Send by Email</field>
+        <field name="email_from"><![CDATA[${object.empresa_id.razao_social} <${(object.empresa_id.email or user.email)|safe}>]]></field>
+        <field name="email_to"><![CDATA[${object.participante_id.nome} <${(object.participante_id.email or user.email)|safe}>]]></field>
+        <field name="subject">NF-e (Ref ${str(object.serie)}-${str(object.numero) or 'n/a'})</field>
+        <field name="model_id" ref="sped.model_sped_documento"/>
+        <field name="lang">${object.participante_id.lang}</field>
+        <field name="body_html"><![CDATA[
+<p>Dear ${object.participante_id.nome},</p>
+<p>Here is your NFE <strong>${object.numero}</strong>
+from ${object.empresa_id.razao_social}.
+</p>
+
+<p>Thank you,</p>
+% if object.user_id and object.user_id.signature:
+    ${object.user_id.signature | safe}
+% endif
+]]></field>
+    </record>
+
+</odoo>
