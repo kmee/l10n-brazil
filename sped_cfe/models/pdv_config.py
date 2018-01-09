@@ -132,7 +132,9 @@ class ConfiguracaoPDV(models.Model):
             cliente = ClienteSATHub(
                 self.ip,
                 self.porta,
-                numero_caixa=int(self.numero_caixa)
+                numero_caixa=int(self.numero_caixa),
+                codigo_ativacao=self.codigo_ativacao,
+                caminho_integrador=self.path_integrador,
             )
         elif self.tipo_sat == 'remoto':
             cliente = None
@@ -144,8 +146,8 @@ class ConfiguracaoPDV(models.Model):
             return cliente, cliente
         elif self.impressora.ip:
             impressora = ClienteSATHub(
-                self.impressora.ip,
-                self.impressora.porta,
+                host=self.impressora.ip,
+                port=self.impressora.porta,
                 numero_caixa=int(self.numero_caixa)
             )
             return cliente, impressora

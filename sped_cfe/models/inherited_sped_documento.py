@@ -446,24 +446,15 @@ class SpedDocumento(models.Model):
 
         try:
             cancelamento = self._monta_cancelamento()
-
-            if self.configuracoes_pdv.tipo_sat == 'local':
-                processo = processador.cancelar_ultima_venda(
-                    cancelamento.chCanc,
-                    cancelamento
-                )
-            elif self.configuracoes_pdv.tipo_sat == 'rede_interna':
-                processo = processador.cancelar_ultima_venda(
-                    cancelamento.chCanc,
-                    cancelamento,
-                    self.configuracoes_pdv.codigo_ativacao,
-                    self.configuracoes_pdv.path_integrador
-                )
+            processo = processador.cancelar_ultima_venda(
+                cancelamento.chCanc,
+                cancelamento
+            )
 
             #
             # O cancelamento foi aceito e vinculado à CF-E
             #
-            if processo.EEEEE in ('07000'):
+            if processo.EEEEE in ('07000',):
                 #
                 # Grava o protocolo de cancelamento
                 #
@@ -544,8 +535,9 @@ class SpedDocumento(models.Model):
                 resposta = cliente.enviar_dados_venda(cfe)
             elif self.configuracoes_pdv.tipo_sat == 'rede_interna':
                 resposta = cliente.enviar_dados_venda(
-                    cfe, self.configuracoes_pdv.codigo_ativacao,
-                    self.configuracoes_pdv.path_integrador
+                    dados_venda=cfe,
+                    codigo_ativacao=self.configuracoes_pdv.codigo_ativacao,
+                    caminho_integrador=self.configuracoes_pdv.path_integrador,
                 )
             if resposta.EEEEE in '06000':
                 if impressao and impressora:
