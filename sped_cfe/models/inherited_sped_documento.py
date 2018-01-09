@@ -47,7 +47,7 @@ class SpedDocumento(models.Model):
     @api.multi
     def _buscar_configuracoes_pdv(self):
         for record in self:
-            record.configuracoes_pdv = self.env.user.configuracoes_sat_cfe
+            record.configuracoes_pdv = record.env.user.configuracoes_sat_cfe
 
     configuracoes_pdv = fields.Many2one(
         string=u"Configurações para a venda",
@@ -174,39 +174,6 @@ class SpedDocumento(models.Model):
 
             if permite_alteracao:
                 continue
-
-    def processador_cfe(self):
-        """
-        Busca classe do processador do cadastro da empresa, onde podemos ter três tipos de processamento dependendo
-        de onde o equipamento esta instalado:
-
-        - Instalado no mesmo servidor que o Odoo;
-        - Instalado na mesma rede local do servidor do Odoo;
-        - Instalado em um local remoto onde o browser vai ser responsável por se comunicar com o equipamento
-
-        :return:
-        """
-        self.ensure_one()
-
-        if self.configuracoes_pdv.tipo_sat == 'local':
-            from mfecfe.clientelocal import ClienteSATLocal
-            from mfecfe import BibliotecaSAT
-            cliente = ClienteSATLocal(
-                BibliotecaSAT(self.configuracoes_pdv.path_integrador),
-                codigo_ativacao=self.configuracoes_pdv.codigo_ativacao
-            )
-        elif self.configuracoes_pdv.tipo_sat == 'rede_interna':
-            from mfecfe.clientesathub import ClienteSATHub
-            cliente = ClienteSATHub(
-                self.configuracoes_pdv.ip,
-                self.configuracoes_pdv.porta,
-                numero_caixa=int(self.configuracoes_pdv.numero_caixa)
-            )
-        elif self.configuracoes_pdv.tipo_sat == 'remoto':
-            cliente = None
-            # NotImplementedError
-
-        return cliente
 
     def processador_vfpe(self):
         """
@@ -475,38 +442,29 @@ class SpedDocumento(models.Model):
         if not self.modelo == MODELO_FISCAL_CFE:
             return result
 
-        processador = self.processador_cfe()
+        processador, impressora = self.configuracoes_pdv.processador_cfe()
 
         try:
             cancelamento = self._monta_cancelamento()
-
-            if self.configuracoes_pdv.tipo_sat == 'local':
-                processo = processador.cancelar_ultima_venda(
-                    cancelamento.chCanc,
-                    cancelamento
-                )
-            elif self.configuracoes_pdv.tipo_sat == 'rede_interna':
-                processo = processador.cancelar_ultima_venda(
-                    cancelamento.chCanc,
-                    cancelamento,
-                    self.configuracoes_pdv.codigo_ativacao,
-                    self.configuracoes_pdv.path_integrador
-                )
+            processo = processador.cancelar_ultima_venda(
+                cancelamento.chCanc,
+                cancelamento
+            )
 
             #
             # O cancelamento foi aceito e vinculado à CF-E
             #
-            if processo.EEEEE in ('07000'):
+            if processo.EEEEE in ('07000',):
                 #
                 # Grava o protocolo de cancelamento
                 #
                 self.grava_cfe_cancelamento(self.chave, cancelamento)
                 self.grava_cfe_autorizacao_cancelamento(self.chave, processo.xml())
                 self.chave_cancelamento = processo.chaveConsulta
-                impressao = self.configuracoes_pdv.impressora
 
-                if impressao:
-                    processador.imprimir_cupom_cancelamento(
+                impressao = self.configuracoes_pdv.impressora
+                if impressao and impressora:
+                    impressora.imprimir_cupom_cancelamento(
                         self.arquivo_xml_autorizacao_id.datas,
                         processo.arquivoCFeBase64,
                         impressao.modelo,
@@ -563,7 +521,7 @@ class SpedDocumento(models.Model):
             if not self.pagamento_autorizado_cfe:
                 raise Warning('Pagamento(s) não autorizado(s)!')
 
-        cliente = self.processador_cfe()
+        cliente, impressora = self.configuracoes_pdv.processador_cfe()
 
         cfe = self.monta_cfe()
         self.grava_cfe(cfe)
@@ -577,12 +535,13 @@ class SpedDocumento(models.Model):
                 resposta = cliente.enviar_dados_venda(cfe)
             elif self.configuracoes_pdv.tipo_sat == 'rede_interna':
                 resposta = cliente.enviar_dados_venda(
-                    cfe, self.configuracoes_pdv.codigo_ativacao,
-                    self.configuracoes_pdv.path_integrador
+                    dados_venda=cfe,
+                    codigo_ativacao=self.configuracoes_pdv.codigo_ativacao,
+                    caminho_integrador=self.configuracoes_pdv.path_integrador,
                 )
             if resposta.EEEEE in '06000':
-                if impressao:
-                    cliente.imprimir_cupom_venda(
+                if impressao and impressora:
+                    impressora.imprimir_cupom_venda(
                         resposta.arquivoCFeSAT,
                         impressao.modelo,
                         impressao.conexao,
@@ -641,13 +600,14 @@ class SpedDocumento(models.Model):
         self.ensure_one()
         impressao = self.configuracoes_pdv.impressora
         if impressao:
-            cliente = self.processador_cfe()
+            cliente, impressora = self.configuracoes_pdv.processador_cfe()
             resposta = self.arquivo_xml_autorizacao_id.datas
-            cliente.imprimir_cupom_venda(
+            impressora.imprimir_cupom_venda(
                 resposta,
                 impressao.modelo,
                 impressao.conexao,
-                self.configuracoes_pdv.site_consulta_qrcode.encode("utf-8")
+                self.configuracoes_pdv.site_consulta_qrcode and
+                self.configuracoes_pdv.site_consulta_qrcode.encode("utf-8") or ''
             )
         else:
             raise Warning("Não existem configurações para impressão no PDV!")
