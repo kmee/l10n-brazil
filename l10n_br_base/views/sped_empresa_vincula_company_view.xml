@@ -161,7 +161,7 @@
 
     <record model="ir.actions.act_window" id="sped_empresa_vincula_company_acao">
         <field name="name">Empresas</field>
-        <field name="domain">[('eh_empresa', '=', True)]</field>
+        <field name="domain">[('eh_empresa', '=', True), ('eh_autorizado', '=', True)]</field>
         <field name="context">{'default_eh_empresa': True}</field>
         <field name="res_model">sped.empresa</field>
         <field name="view_type">form</field>

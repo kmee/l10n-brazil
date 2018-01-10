@@ -62,6 +62,17 @@ class SpedEmpresa(SpedBase, models.Model):
     eh_empresa = fields.Boolean(
         default=True,
     )
+    usuario_ids = fields.Many2many(
+        string='Usuários Permitidos',
+        comodel_name='res.users',
+        inverse_name='empresa_ids',
+    )
+    eh_autorizado = fields.Boolean(
+        string='É Autorizado',
+        compute='_compute_eh_autorizado',
+        readonly=True,
+        search='_search_eh_autorizado',
+    )
 
     @api.multi
     def name_get(self):
@@ -110,6 +121,23 @@ class SpedEmpresa(SpedBase, models.Model):
 
         return super(SpedEmpresa, self).name_search(
             name=name, args=args, operator=operator, limit=limit)
+
+    def _compute_eh_autorizado(self):
+        for empresa in self:
+            if not self.env.user.empresa_ids:
+                empresa.eh_autorizado = True
+            else:
+                if empresa.id in self.env.user.empresa_ids.ids:
+                    empresa.eh_autorizado = True
+                else:
+                    empresa.eh_autorizado = False
+
+    def _search_eh_autorizado(self, operator, value):
+        if self.env.user.empresa_ids:
+            ret = [('id', 'in', self.env.user.empresa_ids.ids)]
+        else:
+            ret = [(1, '=', 1)]
+        return ret
 
     def _valida_cnpj_cpf(self):
         self.ensure_one()

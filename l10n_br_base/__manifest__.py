@@ -48,6 +48,7 @@
         # FIXME: v11
         # 'views/inherited_res_currency_view.xml',
         'views/inherited_res_company_view.xml',
+        'views/inherited_res_users_view.xml',
 
         #
         # Menus principais

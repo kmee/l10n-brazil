@@ -44,6 +44,7 @@
                     <field name="site" />
                 </group>
                 <separator string="Endereço" />
+                <field name="eh_autorizado" invisible="1" />
                 <group col="6">
                     <field name="endereco" colspan="6" required="1" />
                     <field name="numero" required="1" />
@@ -117,6 +118,18 @@
                             </page>
                         </notebook>
                     </page>
+                    <page name="multiempresas" group="l10n_br_base.GRUPO_CADASTRO_GERENTE" string="Multi-Empresas">
+                        <group name="usuarios" string="Usuários Permitidos (Manter vazio para todos os usuários)">
+                            <field name="usuario_ids" nolabel="1" options="{'no_create': True}" domain="[('is_brazilian', '=', True), ('share', '=', False)]">
+                                <tree model="res.users" edit="false">
+                                    <field name="name" />
+                                    <field name="email" />
+                                    <field name="lang" />
+                                    <field name="tz" />
+                                </tree>
+                            </field>
+                        </group>
+                    </page>
                 </notebook>
             </sheet>
 <!--            <div class="oe_chatter">
@@ -141,6 +154,7 @@
                 <field name="site" />
                 <field name="municipio_id" />
                 <field name="regime_tributario" />
+                <field name="eh_autorizado"/>
             </tree>
         </field>
     </record>
@@ -215,7 +229,7 @@
 
     <record model="ir.actions.act_window" id="sped_empresa_acao">
         <field name="name">Empresas</field>
-        <field name="domain">[('eh_empresa', '=', True)]</field>
+        <field name="domain">[('eh_empresa', '=', True), ('eh_autorizado', '=', True)]</field>
         <field name="context">{'default_eh_empresa': True}</field>
         <field name="res_model">sped.empresa</field>
         <field name="view_type">form</field>

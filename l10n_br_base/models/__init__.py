@@ -35,6 +35,7 @@ from . import sped_municipio
 from . import sped_participante
 from . import inherited_res_company
 from . import inherited_res_partner
+from . import inherited_res_users
 from . import sped_empresa
 from . import sped_endereco
 

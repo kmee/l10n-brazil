@@ -10,9 +10,7 @@ import logging
 from psycopg2.extensions import AsIs
 from dateutil.relativedelta import relativedelta
 
-from odoo import fields, models
-
-from odoo.odoo import exceptions
+from odoo import fields, models, exceptions
 
 _logger = logging.getLogger(__name__)
 
