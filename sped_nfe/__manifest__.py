@@ -27,6 +27,7 @@
         'views/sped_manifestacao_destinatario.xml',
         'views/sped_consulta_dfe_view.xml',
         'security/ir.model.access.csv',
+        'report/report_print_button_view.xml',
         'wizard/sped_consulta_status_documento.xml',
     ],
     'external_dependencies': {
