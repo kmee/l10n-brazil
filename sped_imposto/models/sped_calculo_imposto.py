@@ -748,6 +748,22 @@ class SpedCalculoImposto(SpedBase):
 
         return self._gera_documento(self.operacao_id, self.item_ids)
 
+    def _importa_documento(self, cabecalho, itens):
+        self.ensure_one()
+        documento = self.env['sped.documento'].create(cabecalho)
+        sped_documento_item = self.env['sped.documento.item']
+        for item in itens:
+            contexto = {
+                'forca_vr_unitario': item['vr_unitario']
+            }
+            item['documento_id'] = documento.id
+            documento_item = sped_documento_item.create(item)
+        return documento
+
+    def importa_documento(self, cabecalho, itens):
+        self.ensure_one()
+        return self._importa_documento(cabecalho, itens)
+
     def _mantem_sincronia_cadastros(self, dados):
         dados = \
             super(SpedCalculoImposto, self)._mantem_sincronia_cadastros(dados)
