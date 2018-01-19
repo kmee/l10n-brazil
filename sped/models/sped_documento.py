@@ -13,6 +13,7 @@ from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
 from odoo.addons.l10n_br_base.models.sped_base import SpedBase
 from odoo.addons.l10n_br_base.constante_tributaria import *
+from odoo.addons.l10n_br_base.constante_tributaria import FORMA_PAGAMENTO
 
 _logger = logging.getLogger(__name__)
 
@@ -402,6 +403,21 @@ class SpedDocumento(SpedBase, models.Model):
         ondelete='restrict',
         domain=[('forma_pagamento', '!=', False)],
     )
+
+    forma_pagamento_id = fields.Many2one(
+        comodel_name='finan.forma.pagamento',
+        string='Forma de pagamento',
+        related='condicao_pagamento_id.forma_pagamento_id',
+        ondelete='restrict',
+        # index=True,
+    )
+    forma_pagamento = fields.Selection(
+        selection=FORMA_PAGAMENTO,
+        string='Forma de pagamento fiscal',
+        related='forma_pagamento_id.forma_pagamento',
+        # readonly=True,
+    )
+
     duplicata_ids = fields.One2many(
         comodel_name='sped.documento.duplicata',
         inverse_name='documento_id',
@@ -982,7 +998,9 @@ class SpedDocumento(SpedBase, models.Model):
                 serie = empresa.serie_nfce_contingencia_homologacao
 
         return serie
-
+    @api.onchange('condicao_pagamento_id')
+    def _onchange_forma_pagamento(self):
+        self.forma_pagamento = self.condicao_pagamento_id.forma_pagamento_id.forma_pagamento
     @api.onchange('empresa_id', 'modelo', 'emissao')
     def _onchange_empresa_id(self):
         res = {}
@@ -1119,6 +1137,7 @@ class SpedDocumento(SpedBase, models.Model):
             if self.operacao_id.condicao_pagamento_id:
                 valores['condicao_pagamento_id'] = \
                     self.operacao_id.condicao_pagamento_id.id
+
             valores['finalidade_nfe'] = self.operacao_id.finalidade_nfe
             valores['modalidade_frete'] = self.operacao_id.modalidade_frete
             valores['infadfisco'] = self.operacao_id.infadfisco
