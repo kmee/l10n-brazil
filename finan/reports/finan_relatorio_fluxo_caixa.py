@@ -29,23 +29,29 @@ except (ImportError, IOError) as err:
 class FinanRelatorioFluxoCaixa(ReportXlsxBase):
 
     def define_title(self):
+        if self.report_wizard._context['default_dre'] in 'relatorio_dre':
+            title = 'DRE'
+        else:
+            title = 'Fluxo de Caixa'
+
         if self.report_wizard.periodo == 'dias':
             if self.report_wizard.data_periodo == 'data_vencimento_util':
-                title = 'Fluxo de Caixa - Diário - Previsto'
+                title += ' - Diário - Previsto'
             else:
-                title = 'Fluxo de Caixa - Diário - Realizado'
+                title += ' - Diário - Realizado'
 
         elif self.report_wizard.periodo == 'semanas':
             if self.report_wizard.data_periodo == 'data_vencimento_util':
-                title = 'Fluxo de Caixa - Semanal - Previsto'
+                title += ' - Semanal - Previsto'
             else:
-                title = 'Fluxo de Caixa - Semanal - Realizado'
+                title += ' - Semanal - Realizado'
 
         else:
             if self.report_wizard.data_periodo == 'data_vencimento_util':
-                title = 'Fluxo de Caixa - Mensal - Previsto'
+                title += ' - Mensal - Previsto'
             else:
-                title = 'Fluxo de Caixa - Mensal - Realizado'
+                title += ' - Mensal - Realizado'
+
 
         return title
 
@@ -249,26 +255,53 @@ class FinanRelatorioFluxoCaixa(ReportXlsxBase):
                 report_data['resumos_total']['valor_inicial'] += valor
                 report_data['resumos_total']['valor_final'] += valor
 
-        SQL_DADOS = '''
-        select
-            fc.codigo,
-            %(data_periodo)s as data_periodo,
-            coalesce(sum(coalesce(fl.vr_total, 0) * coalesce(fl.sinal, 1)), 0)
-        from
-            finan_lancamento fl
-            join finan_conta_arvore fca on fca.conta_relacionada_id = fl.conta_id
-            join finan_conta fc on fc.id = fca.conta_superior_id
-        where
-            fl.provisorio != True
-            and fl.empresa_id = %(empresa_id)s
-            and fl.tipo %(tipo)s ('a_receber', 'a_pagar')
-            and fl.%(periodo)s between %(data_inicial)s and %(data_final)s
+        if self.report_wizard._context['default_dre']:
+            SQL_DADOS = '''
+                select
+                    fc.codigo,
+                    %(data_periodo)s as data_periodo,
+                    coalesce(sum(coalesce(fl.vr_documento, 0) * coalesce(fl.sinal, 1)), 0)
+            '''
+        else:
+            SQL_DADOS = '''
+                select
+                    fc.codigo,
+                    %(data_periodo)s as data_periodo,
+                    coalesce(sum(coalesce(fl.vr_total, 0) * coalesce(fl.sinal, 1)), 0)
+            '''
 
-        group by
-            fc.id, fc.codigo, data_periodo
+        SQL_DADOS += '''
+            from
+                finan_lancamento fl
+                join finan_conta_arvore fca on fca.conta_relacionada_id = fl.conta_id
+                join finan_conta fc on fc.id = fca.conta_superior_id
+            
+        '''
 
-        order by
-            fc.codigo, data_periodo
+        if self.report_wizard._context['default_dre']:
+            SQL_DADOS += '''
+                where
+                    fl.provisorio != True
+                    and fl.empresa_id = %(empresa_id)s
+                    and fl.tipo %(tipo)s ('a_receber', 'a_pagar')
+                    and fl.data_documento between %(data_inicial)s and %(data_final)s
+            '''
+        else:
+            SQL_DADOS += '''
+                where
+                    fl.provisorio != True
+                    and fl.empresa_id = %(empresa_id)s
+                    and fl.tipo %(tipo)s ('a_receber', 'a_pagar')
+                    and fl.%(periodo)s between %(data_inicial)s and %(data_final)s
+                    
+            '''
+
+        SQL_DADOS += '''
+           group by
+                fc.id, fc.codigo, data_periodo
+    
+           order by
+                fc.codigo, data_periodo
         '''
 
         filtros = {

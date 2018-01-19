@@ -30,11 +30,35 @@
         </field>
     </record>
 
+    <record model="ir.actions.act_window" id="finan_relatorio_wizard_dre_action">
+        <field name="name">DRE</field>
+        <field name="res_model">finan.relatorio.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_dre': 'relatorio_dre'}</field>
+    </record>
+
+    <record model="ir.actions.act_window.view" id="finan_relatorio_wizard_dre_form_action">
+        <field eval="1" name="sequence"/>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="finan_relatorio_wizard_fluxo_caixa_form"/>
+        <field name="act_window_id" ref="finan_relatorio_wizard_dre_action"/>
+    </record>
+
+    <!-- cria a opcao no menu!-->
+    <record model="ir.ui.menu" id="menu_finan_relatorio_wizard_dre">
+        <field name="name">DRE</field>
+        <field name="parent_id" ref="finan.menu_finan_relatorio"/>
+        <field name="action" ref="finan_relatorio_wizard_dre_action"/>
+        <field name="sequence" eval="2"/>
+    </record>
+
     <record model="ir.actions.act_window" id="finan_relatorio_wizard_fluxo_caixa_action">
         <field name="name">Fluxo de caixa</field>
         <field name="res_model">finan.relatorio.wizard</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>
+        <field name="context">{'default_dre': 'fluxo_cx'}</field>
     </record>
 
     <record model="ir.actions.act_window.view" id="finan_relatorio_wizard_fluxo_caixa_form_action">
