@@ -20,7 +20,7 @@
                     <button name="gera_xml" string="Visualiza XML" type="object" class="btn-default" />
                     <button name="gera_operacoes_subsequentes" string="Gerar outras operações" type="object" class="btn-default"
                             attrs="{'invisible': ['|', ('documentos_subsequentes_gerados', '=', True), ('operacao_subsequente_ids', '=', [])]}" context="{'manual': '1'}"/>
-                    <button name="motivo_cancelamento_nfe" string="Cancelar NF-e" type="object" class="btn-primary"/>
+                    <button name="%(nfe_motivo_cancelamento_wizard_action)d" string="Cancelar NF-e" type="action" class="btn-primary"/>
                 </header>
 
             <xpath expr="//field[@name='empresa_id']" position="before">

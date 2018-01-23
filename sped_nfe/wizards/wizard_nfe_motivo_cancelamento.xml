@@ -33,11 +33,4 @@
         <field name="target">new</field>
     </record>
 
-   <record model="ir.actions.act_window.view" id="nfe_motivo_cancelamento_wizard_form_action">
-        <field eval="99" name="sequence"/>
-        <field name="view_mode">form</field>
-        <field name="view_id" ref="nfe_motivo_cancelamento_wizard_form"/>
-        <field name="act_window_id" ref="nfe_motivo_cancelamento_wizard_action"/>
-    </record>
-
 </odoo>
