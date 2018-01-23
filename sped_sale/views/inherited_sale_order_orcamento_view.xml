@@ -32,7 +32,6 @@
                     icon="fa-pencil-square-o"
                     attrs="{'invisible': [('quantidade_documentos', '=', 0)]}">
                     <field name="quantidade_documentos" widget="statinfo" string="NF-e"/>
-                    <field name="quantidade_documentos" widget="statinfo" string="NFe"/>
                 </button>
             </xpath>
 
