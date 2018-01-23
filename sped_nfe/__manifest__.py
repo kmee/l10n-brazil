@@ -28,6 +28,7 @@
         'views/sped_consulta_dfe_view.xml',
         'views/sped_importa_nfe_view.xml',
         'security/ir.model.access.csv',
+        'wizards/wizard_nfe_motivo_cancelamento.xml',
     ],
     'external_dependencies': {
         'python': ['pybrasil', 'pysped', 'mako'],

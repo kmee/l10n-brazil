@@ -143,6 +143,7 @@ class SpedDocumento(models.Model):
         size=60,
     )
 
+
     @api.depends('data_hora_emissao', 'data_hora_entrada_saida',
                  'data_hora_autorizacao', 'data_hora_cancelamento')
     def _compute_data_hora_separadas(self):
@@ -706,6 +707,28 @@ class SpedDocumento(models.Model):
                 self.situacao_nfe = SITUACAO_NFE_CANCELADA
 
             self.executa_depois_cancelar()
+
+    @api.multi
+    def motivo_cancelamento_nfe(self):
+        context = dict(self.env.context)
+        form = self.env.ref(
+                    'sped_nfe.nfe_motivo_cancelamento_wizard_form',
+                    True
+        )
+        dados = {}
+        wizard = self.env['nfe.cancelamento.wizard'].create(dados)
+
+        return {
+                    'view_type': 'form',
+                    'view_id': [form.id],
+                    'view_mode': 'form',
+                    'res_model': 'nfe.cancelamento.wizard',
+                    'res_id': wizard.id,
+                    'views': [(form.id, 'form')],
+                    'type': 'ir.actions.act_window',
+                    'target': 'new',
+                    'context': context,
+        }
 
     def inutiliza_nfe(self):
         super(SpedDocumento, self).inutiliza_nfe()
