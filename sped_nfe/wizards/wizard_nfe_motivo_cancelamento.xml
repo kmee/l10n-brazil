@@ -8,12 +8,12 @@
         <field name="name">nfe.cancelamento.wizard.form</field>
         <field name="model">nfe.cancelamento.wizard</field>
         <field name="arch" type="xml">
-            <form>
-                <group>
-                    <field name="motivo_cancelamento"/>
-                </group>
+            <form string="Motivo do Cancelamento da NF-e">
+                (Mínimo 10 caracteres)
+                <field name="motivo_cancelamento" nolabel="1" />
+
                 <footer>
-                   <button name="motivo_cancelamento_action"
+                   <button name="action_motivo_cancelamento"
                             string="Cancelar NF-e"
                             class='btn-primary oe_highlight'
                             type='object'/>
