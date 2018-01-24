@@ -498,115 +498,116 @@ class SpedDocumento(models.Model):
         # Envia a nota
         #
         processo = None
+
         for p in processador.processar_notas([nfe]):
             processo = p
 
-        #
-        # Se o último processo foi a consulta do status do serviço, significa
-        # que ele não está online...
-        #
-        if processo.webservice == WS_NFE_SITUACAO:
-            self.situacao_nfe = SITUACAO_NFE_EM_DIGITACAO
-        #
-        # Se o último processo foi a consulta da nota, significa que ela já
-        # está emitida
-        #
-        elif processo.webservice == WS_NFE_CONSULTA:
-            if processo.resposta.cStat.valor in ('100', '150'):
-                self.chave = processo.resposta.chNFe.valor
-                self.executa_antes_autorizar()
-                self.situacao_nfe = SITUACAO_NFE_AUTORIZADA
-                self.executa_depois_autorizar()
-            elif processo.resposta.cStat.valor in ('110', '301', '302'):
-                self.chave = processo.resposta.chNFe.valor
-                self.executa_antes_denegar()
-                self.situacao_fiscal = SITUACAO_FISCAL_DENEGADO
-                self.situacao_nfe = SITUACAO_NFE_DENEGADA
-                self.executa_depois_denegar()
-            else:
+            #
+            # Se o último processo foi a consulta do status do serviço,
+            # significa que ele não está online...
+            #
+            if processo.webservice == WS_NFE_SITUACAO:
                 self.situacao_nfe = SITUACAO_NFE_EM_DIGITACAO
+            #
+            # Se o último processo foi a consulta da nota, significa
+            # que ela já está emitida
+            #
+            elif processo.webservice == WS_NFE_CONSULTA:
+                if processo.resposta.cStat.valor in ('100', '150'):
+                    self.chave = processo.resposta.chNFe.valor
+                    self.executa_antes_autorizar()
+                    self.situacao_nfe = SITUACAO_NFE_AUTORIZADA
+                    self.executa_depois_autorizar()
+                elif processo.resposta.cStat.valor in ('110', '301', '302'):
+                    self.chave = processo.resposta.chNFe.valor
+                    self.executa_antes_denegar()
+                    self.situacao_fiscal = SITUACAO_FISCAL_DENEGADO
+                    self.situacao_nfe = SITUACAO_NFE_DENEGADA
+                    self.executa_depois_denegar()
+                else:
+                    self.situacao_nfe = SITUACAO_NFE_EM_DIGITACAO
 
-        #
-        # Se o último processo foi o envio do lote, significa que a consulta
-        # falhou, mas o envio não
-        #
-        elif processo.webservice == WS_NFE_ENVIO_LOTE:
             #
-            # Lote recebido, vamos guardar o recibo
+            # Se o último processo foi o envio do lote, significa que
+            # a consulta falhou, mas o envio não
             #
-            if processo.resposta.cStat.valor == '103':
-                self.recibo = processo.resposta.infRec.nRec.valor
-            else:
-                mensagem = 'Código de retorno: ' + \
-                           processo.resposta.cStat.valor
-                mensagem += '\nMensagem: ' + \
-                            processo.resposta.xMotivo.valor
-                self.mensagem_nfe = mensagem
-                self.situacao_nfe = SITUACAO_NFE_REJEITADA
-        #
-        # Se o último processo foi o retorno do recibo, a nota foi rejeitada,
-        # denegada, autorizada, ou ainda não tem resposta
-        #
-        elif processo.webservice == WS_NFE_CONSULTA_RECIBO:
-            #
-            # Consulta ainda sem resposta, a nota ainda não foi processada
-            #
-            if processo.resposta.cStat.valor == '105':
-                self.situacao_nfe = SITUACAO_NFE_ENVIADA
-            #
-            # Lote processado
-            #
-            elif processo.resposta.cStat.valor == '104':
-                protNFe = processo.resposta.protNFe[0]
-
+            elif processo.webservice == WS_NFE_ENVIO_LOTE:
                 #
-                # Autorizada ou denegada
+                # Lote recebido, vamos guardar o recibo
                 #
-                if protNFe.infProt.cStat.valor in ('100', '150', '110', '301',
-                                                   '302'):
-                    procNFe = processo.resposta.dic_procNFe[nfe.chave]
-                    self.grava_xml(procNFe.NFe)
-                    self.grava_xml_autorizacao(procNFe)
-
-                    if self.modelo == MODELO_FISCAL_NFE:
-                        res = self.grava_pdf(nfe, procNFe.danfe_pdf)
-                    elif self.modelo == MODELO_FISCAL_NFCE:
-                        res = self.grava_pdf(nfe, procNFe.danfce_pdf)
-
-                    data_autorizacao = protNFe.infProt.dhRecbto.valor
-                    data_autorizacao = UTC.normalize(data_autorizacao)
-
-                    self.data_hora_autorizacao = data_autorizacao
-                    self.protocolo_autorizacao = protNFe.infProt.nProt.valor
-                    self.chave = protNFe.infProt.chNFe.valor
-
-                    if protNFe.infProt.cStat.valor in ('100', '150'):
-                        self.executa_antes_autorizar()
-                        self.situacao_nfe = SITUACAO_NFE_AUTORIZADA
-                        self.executa_depois_autorizar()
-                    else:
-                        self.executa_antes_denegar()
-                        self.situacao_fiscal = SITUACAO_FISCAL_DENEGADO
-                        self.situacao_nfe = SITUACAO_NFE_DENEGADA
-                        self.executa_depois_denegar()
-
+                if processo.resposta.cStat.valor == '103':
+                    self.recibo = processo.resposta.infRec.nRec.valor
                 else:
                     mensagem = 'Código de retorno: ' + \
-                               protNFe.infProt.cStat.valor
+                               processo.resposta.cStat.valor
                     mensagem += '\nMensagem: ' + \
-                                protNFe.infProt.xMotivo.valor
+                                processo.resposta.xMotivo.valor
                     self.mensagem_nfe = mensagem
                     self.situacao_nfe = SITUACAO_NFE_REJEITADA
-            else:
+            #
+            # Se o último processo foi o retorno do recibo, a nota foi
+            # rejeitada, # denegada, autorizada, ou ainda não tem resposta
+            #
+            elif processo.webservice == WS_NFE_CONSULTA_RECIBO:
                 #
-                # Rejeitada por outros motivos, falha no schema etc. etc.
+                # Consulta ainda sem resposta, a nota ainda não foi processada
                 #
-                mensagem = 'Código de retorno: ' + \
-                           processo.resposta.cStat.valor
-                mensagem += '\nMensagem: ' + \
-                            processo.resposta.xMotivo.valor
-                self.mensagem_nfe = mensagem
-                self.situacao_nfe = SITUACAO_NFE_REJEITADA
+                if processo.resposta.cStat.valor == '105':
+                    self.situacao_nfe = SITUACAO_NFE_ENVIADA
+                #
+                # Lote processado
+                #
+                elif processo.resposta.cStat.valor == '104':
+                    protNFe = processo.resposta.protNFe[0]
+
+                    #
+                    # Autorizada ou denegada
+                    #
+                    if protNFe.infProt.cStat.valor in ('100', '150', '110', '301',
+                                                       '302'):
+                        procNFe = processo.resposta.dic_procNFe[nfe.chave]
+                        self.grava_xml(procNFe.NFe)
+                        self.grava_xml_autorizacao(procNFe)
+
+                        if self.modelo == MODELO_FISCAL_NFE:
+                            res = self.grava_pdf(nfe, procNFe.danfe_pdf)
+                        elif self.modelo == MODELO_FISCAL_NFCE:
+                            res = self.grava_pdf(nfe, procNFe.danfce_pdf)
+
+                        data_autorizacao = protNFe.infProt.dhRecbto.valor
+                        data_autorizacao = UTC.normalize(data_autorizacao)
+
+                        self.data_hora_autorizacao = data_autorizacao
+                        self.protocolo_autorizacao = protNFe.infProt.nProt.valor
+                        self.chave = protNFe.infProt.chNFe.valor
+
+                        if protNFe.infProt.cStat.valor in ('100', '150'):
+                            self.executa_antes_autorizar()
+                            self.situacao_nfe = SITUACAO_NFE_AUTORIZADA
+                            self.executa_depois_autorizar()
+                        else:
+                            self.executa_antes_denegar()
+                            self.situacao_fiscal = SITUACAO_FISCAL_DENEGADO
+                            self.situacao_nfe = SITUACAO_NFE_DENEGADA
+                            self.executa_depois_denegar()
+
+                    else:
+                        mensagem = 'Código de retorno: ' + \
+                                   protNFe.infProt.cStat.valor
+                        mensagem += '\nMensagem: ' + \
+                                    protNFe.infProt.xMotivo.valor
+                        self.mensagem_nfe = mensagem
+                        self.situacao_nfe = SITUACAO_NFE_REJEITADA
+                else:
+                    #
+                    # Rejeitada por outros motivos, falha no schema etc. etc.
+                    #
+                    mensagem = 'Código de retorno: ' + \
+                               processo.resposta.cStat.valor
+                    mensagem += '\nMensagem: ' + \
+                                processo.resposta.xMotivo.valor
+                    self.mensagem_nfe = mensagem
+                    self.situacao_nfe = SITUACAO_NFE_REJEITADA
 
     def cancela_nfe(self):
         self.ensure_one()
