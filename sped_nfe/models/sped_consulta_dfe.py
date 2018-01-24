@@ -34,7 +34,7 @@ class ConsultaDFe(models.Model):
         required=True,
     )
     ultimo_nsu = fields.Char(
-        string='Último NS',
+        string='Último NSU',
         size=25,
         default='0',
         required=True,
@@ -48,6 +48,39 @@ class ConsultaDFe(models.Model):
         inverse_name='consulta_id',
         string='Documentos XML',
     )
+
+    nfe_importada_ids = fields.One2many(
+        comodel_name='sped.documento',
+        inverse_name='consulta_dfe_id',
+        string='NF-e importadas',
+    )
+
+    dfe_importada_ids = fields.One2many(
+        comodel_name='sped.manifestacao.destinatario',
+        inverse_name='sped_consulta_dfe_id',
+        string='Manifestações do Destinatário Importadas',
+    )
+
+    cron = fields.Boolean(
+        default=False,
+        string='Baixar novos documentos a cada 1 hora',
+        help='Se ativo, permite que novas manifestações sejam buscadas '
+             'automaticamente de 1 em 1 hora',
+    )
+
+    @api.multi
+    def action_gerencia_manifestacoes(self):
+
+        return {
+            'name': self.empresa_id.razao_social,
+            'view_mode': 'tree,form',
+            'res_model': 'sped.manifestacao.destinatario',
+            'type': 'ir.actions.act_window',
+            'target': 'current',
+            'domain': [('empresa_id', '=', self.empresa_id.id)],
+            'limit':len(self.env['sped.manifestacao.destinatario'].search([(
+                'empresa_id','=',self.empresa_id.id)])),
+        }
 
     def _format_nsu(self, nsu):
         nsu = long(nsu)
@@ -104,6 +137,82 @@ class ConsultaDFe(models.Model):
         return cnpj
 
     @api.multi
+    def baixa_documentos(self, manifestos=None):
+        '''
+        - Declara Ciência da Emissão para todas as manifestações já recebidas,
+        - Realiza Download dos XMLs das NF-e
+        - Cria um sped_documento para cada XML importado
+        '''
+
+        # Coletando os erros para caso seja de importância no futuro
+        erros = []
+
+        nfe_ids = []
+        if not manifestos or isinstance(manifestos,dict):
+            manifestos = self.env['sped.manifestacao.destinatario'].\
+                search([('empresa_id', '=', self.empresa_id.id)])
+
+        for manifesto in manifestos:
+
+            if manifesto.state not in ['pendente', 'ciente']:
+                continue
+
+            elif manifesto.state == 'pendente':
+                '''
+                Aqui é importante tentar manifestar Ciência da
+                Emissão duas vezes pois existe a possibilidade de uma
+                manifestação ser importada com a Ciência de Emissão já
+                declarada, retornando uma mensagem de erro.
+                A segunda tentativa de chamar o método alterará o campo state
+                do mesmo para 'ciente', sincronizando com o estado real da
+                manifestação na receita federal.
+                '''
+                try:
+                    manifesto.action_ciencia_emissao()
+                except Exception as e:
+                    erros.append(('manifesto', manifesto.id, e))
+
+                    try:
+                        manifesto.action_ciencia_emissao()
+                    except:
+                        erros.append((manifesto.id, e))
+                        continue
+
+            self.validate_nfe_configuration(self.empresa_id)
+
+            nfe_result = self.download_nfe(self.empresa_id,
+                                           manifesto.chave)
+
+            if nfe_result['code'] == '138':
+                nfe = objectify.fromstring(nfe_result['nfe'])
+                documento = self.env['sped.documento'].new()
+                documento.modelo = nfe.NFe.infNFe.ide.mod.text
+                nfe = documento.le_nfe(xml=nfe_result['nfe'])
+
+                manifesto.documento_id = nfe
+
+                nfe_ids.append(nfe)
+
+            else:
+                erros.append(('nfe', False,
+                              nfe_result['code'] + ' - ' +
+                              nfe_result['message']))
+
+        dados = [nfe.id for nfe in nfe_ids] + self.nfe_importada_ids.ids
+
+        self.update({'nfe_importada_ids': [(6, False, dados)]})
+
+        return nfe_ids
+
+    def _cron_busca_documentos(self, context=None):
+
+        consulta_ids = self.env['sped.consulta.dfe'].search([])
+
+        for consulta_id in consulta_ids:
+            if consulta_id.cron:
+                consulta_id.busca_documentos()
+
+    @api.multi
     def busca_documentos(self, raise_error=False):
         nfe_mdes = []
         xml_ids = []
@@ -114,6 +223,7 @@ class ConsultaDFe(models.Model):
                 last_nsu = self.ultimo_nsu
                 nfe_result = self.distribuicao_nfe(
                     company, last_nsu)
+                self.ultima_consulta = fields.Datetime.now()
                 _logger.info('%s.query_nfe_batch(), lastNSU: %s',
                              company, last_nsu)
             except Exception:
@@ -220,6 +330,15 @@ class ConsultaDFe(models.Model):
                                             'xml': nfe['xml']
                                         }).id
                                 )
+                            else:
+                                manifesto = \
+                                    self.env['sped.manifestacao.destinatario']\
+                                    .browse(exists_chnfe)
+
+                                if not manifesto.sped_consulta_dfe_id:
+                                    manifesto.update({
+                                        'sped_consulta_dfe_id': consulta.id,
+                                    })
 
                         elif nfe['schema'] == 'resNFe_v1.01.xsd' and \
                                 not exists_nsu:
@@ -278,6 +397,17 @@ class ConsultaDFe(models.Model):
                                             'xml': nfe['xml']
                                         }).id
                                 )
+
+                            else:
+                                manifesto = \
+                                    self.env['sped.manifestacao.destinatario']\
+                                        .browse(exists_chnfe)
+
+                                if not manifesto.sped_consulta_dfe_id:
+                                    manifesto.update({
+                                        'sped_consulta_dfe_id': consulta.id,
+                                    })
+
 
                         nfe_mdes.append(nfe)
 

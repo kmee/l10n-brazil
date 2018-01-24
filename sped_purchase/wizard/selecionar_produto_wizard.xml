@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="selecionar_produto_wizard" model="ir.ui.view">
+        <field name="name">Selecionar Produto</field>
+        <field name="model">sped.documento.item.selecionar.produto</field>
+        <field name="arch" type="xml">
+            <form>
+                <h1>
+                    <field name="documento_item_id" invisible="True"/>
+                    <field name="produto_id"/>
+                </h1>
+            </form>
+        </field>
+    </record>
+</odoo>

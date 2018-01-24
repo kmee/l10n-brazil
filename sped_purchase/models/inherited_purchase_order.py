@@ -6,13 +6,8 @@ from __future__ import division, print_function, unicode_literals
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
-from odoo.addons.sped_imposto.models.sped_calculo_imposto import (
-    SpedCalculoImposto
-)
 from odoo.addons.sped_imposto.models.sped_calculo_imposto_produto_servico \
     import SpedCalculoImpostoProdutoServico
-from odoo.addons.l10n_br_base.constante_tributaria \
-    import SITUACAO_FISCAL_SPED_CONSIDERA_ATIVO
 
 
 class PurchaseOrder(SpedCalculoImpostoProdutoServico, models.Model):
@@ -38,7 +33,7 @@ class PurchaseOrder(SpedCalculoImpostoProdutoServico, models.Model):
     )
 
     quantidade_documentos = fields.Integer(
-        compute='_compute_invoice',
+        compute='_compute_quantidade_documentos_fiscais',
         string='# de documentos',
         copy=False,
         default=0,
@@ -47,23 +42,44 @@ class PurchaseOrder(SpedCalculoImpostoProdutoServico, models.Model):
 
     documento_ids = fields.Many2many(
         comodel_name='sped.documento',
-        compute='_compute_documento',
+        compute='_compute_invoice',
         string='Faturas de Fornecedor',
         relation='purchase_order_sped_documento_rel',
         copy=False,
         store=True
     )
 
-    state = fields.Selection(
-        selection_add=[('invoiced', 'Faturado pelo Fornecedor'),
-                       ('received', 'Recebido')],
+    kanban_state = fields.Selection(
+        selection=[('draft', 'Provisório'),
+                   ('purchase', 'Pedido de Compra'),
+                   ('invoiced', 'Faturado pelo Fornecedor'),
+                   ('received', 'Recebido'),
+                   ('cancel', 'Cancelado')],
         # group_expand='_read_group_stage_ids', FIXME: func. v11
+        compute='_compute_kanban_state',
         readonly=False,
+        store=True,
     )
 
     order_line_count = fields.Integer(
         compute='_compute_order_line_count'
     )
+
+    @api.depends('state',
+                 'order_line.qty_received',
+                 'invoice_status')
+    def _compute_kanban_state(self):
+        for order in self:
+            if order.invoice_status == 'invoiced':
+                order.kanban_state = 'invoiced'
+            if all(line.quantidade == line.qty_received
+                   for line in order.order_line) and order.documento_ids:
+                order.kanban_state = 'received'
+            if order.kanban_state not in ['invoiced', 'received']:
+                if order.state in ['draft', 'sent', 'to approve']:
+                    order.kanban_state = 'draft'
+                elif order.state in ['purchase', 'cancel']:
+                    order.kanban_state = order.state
 
     @api.depends('order_line')
     def _compute_order_line_count(self):
@@ -78,7 +94,6 @@ class PurchaseOrder(SpedCalculoImpostoProdutoServico, models.Model):
     def _prepare_picking(self):
         res = super(PurchaseOrder, self)._prepare_picking()
         res['operacao_id'] = self.operacao_produto_id.id
-        res['state'] = 'confirmed'
         return res
 
     def _get_date(self):
@@ -125,28 +140,19 @@ class PurchaseOrder(SpedCalculoImpostoProdutoServico, models.Model):
     @api.depends('documento_ids.situacao_fiscal')
     def _compute_quantidade_documentos_fiscais(self):
         for purchase in self:
-            documento_ids = self.env['sped.documento'].search(
-                [('purchase_id', '=', purchase.id),
-                 ('situacao_fiscal', 'in',
-                  SITUACAO_FISCAL_SPED_CONSIDERA_ATIVO)])
-
-            purchase.quantidade_documentos = len(documento_ids)
+            if not self.id:
+                continue
+            purchase.quantidade_documentos = len(self.documento_ids)
 
     @api.depends('order_line.documento_item_ids.documento_id')
-    def _compute_documento(self):
+    def _compute_invoice(self):
         for ordem in self:
-            documentos = self.env['sped.documento']
-            for linha in ordem.order_line:
-                documentos |= linha.documento_item_ids.mapped('documento_id')
-            ordem.documento_ids = documentos
+            documentos = ordem.order_line.mapped(
+                'documento_item_ids').mapped('documento_id')
+            ordem.documento_ids = [(6, 0, documentos.ids)]
 
     @api.multi
-    def visualizar_documentos(self):
-        '''
-        This function returns an action that display existing vendor
-        bills of given purchase order ids.
-        When only one found, show the vendor bill immediately.
-        '''
+    def action_view_invoice(self):
         action = self.env.ref('sped.sped_documento_emissao_nfe_acao')
         result = action.read()[0]
 
@@ -163,10 +169,16 @@ class PurchaseOrder(SpedCalculoImpostoProdutoServico, models.Model):
             result['domain'] = "[('id', 'in', " + \
                                str(self.documento_ids.ids) + ")]"
         elif len(self.documento_ids) == 1:
-            res = self.env.ref('sped_purchase.sped_documento_'
-                               'emissao_nfe_form_view', False)
-            result['views'] = [(res and res.id or False, 'form')]
-            result['res_id'] = self.documento_ids.id
+            return {
+                'view_mode': 'form',
+                'view_type': 'form',
+                'view_id': self.env.ref(
+                    'sped_nfe.sped_documento_ajuste_recebimento_form').id,
+                'res_id': self.documento_ids.id,
+                'res_model': 'sped.documento',
+                'type': 'ir.actions.act_window',
+                'target': 'current',
+            }
         return result
 
     @api.multi
@@ -176,37 +188,21 @@ class PurchaseOrder(SpedCalculoImpostoProdutoServico, models.Model):
                 ordem.invoice_status = 'to invoice'
             return True
         return False
-    
-    @api.onchange('state')
-    def _onchange_state(self):
-        self.ensure_one()
-        if self.state == 'draft' and self.state == 'purchase':
-            return self.button_approve()
-        elif self.state == 'purchase' and self.state == 'invoiced':
-            return self.button_invoiced()
-
-    @api.multi
-    def button_approve(self, force=False):
-        self.write({'state': 'purchase'})
-        self._create_picking()
-        if self.company_id.po_lock == 'lock':
-            self.write({'state': 'done'})
-        for picking in self.picking_ids:
-            if picking.state != 'cancel':
-                picking.write({'state': 'confirmed'})
-        return {}
 
     @api.multi
     def button_invoiced(self):
+        self.ensure_one()
         return {
             'name': 'Importar NF-e',
             'view_type': 'form',
             'view_mode': 'form',
             'res_model': 'sped_purchase.consulta_status_documento',
-            'view_id': self.env.ref('sped_purchase.sped_consulta_status_documento_form').id,
+            'view_id': self.env.ref('sped_purchase.sped_consulta'
+                                    '_status_documento_form').id,
             'type': 'ir.actions.act_window',
             'context': {
                 'default_empresa_id': self.empresa_id.id,
+                'default_purchase_order_id': self.id,
             },
             'target': 'new'
         }
@@ -225,10 +221,10 @@ class PurchaseOrder(SpedCalculoImpostoProdutoServico, models.Model):
 
     @api.multi
     def write(self, vals):
-        if vals.get('state', False):
+        if vals.get('kanban_state', False):
             self.ensure_one()
             if not PurchaseOrder._valid_state_change(
-                    self.state, vals['state']):
+                    self.kanban_state, vals['kanban_state']):
                 raise UserError('Transição não permitida')
         return super(PurchaseOrder, self).write(vals)
 
@@ -238,27 +234,3 @@ class PurchaseOrder(SpedCalculoImpostoProdutoServico, models.Model):
         if not (res.get('res_id') or res.get('domain')):
             res['domain'] = "[('purchase_id','=',%s)]" % self.id
         return res
-
-    @api.depends('order_line.move_ids.returned_move_ids',
-                 'order_line.move_ids.state',
-                 'order_line.move_ids.picking_id',
-                 'state')
-    def _compute_picking(self):
-        super(PurchaseOrder, self)._compute_picking()
-        for order in self:
-            if order.state == 'invoiced':
-                for picking in order.picking_ids:
-                    if picking.state != 'cancel':
-                        picking.write({'state': 'assigned'})
-
-    @api.depends('order_line.qty_invoiced',
-                 'order_line.qty_received',
-                 'order_line.product_qty')
-    def _get_invoiced(self):
-        super(PurchaseOrder, self)._get_invoiced()
-        for order in self:
-            if order.invoice_status == 'invoiced':
-                order.state = 'invoiced'
-            if all(line.quantidade == line.qty_received
-                   for line in order.order_line) and order.documento_ids:
-                order.state = 'received'

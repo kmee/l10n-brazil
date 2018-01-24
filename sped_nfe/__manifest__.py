@@ -27,6 +27,9 @@
         'views/sped_manifestacao_destinatario.xml',
         'views/sped_consulta_dfe_view.xml',
         'views/sped_importa_nfe_view.xml',
+        'views/sped_documento_ajuste_recebimento.xml',
+        'data/scheduler_busca_documentos.xml',
+        'wizard/wizard_confirma_acao.xml',
         'security/ir.model.access.csv',
     ],
     'external_dependencies': {

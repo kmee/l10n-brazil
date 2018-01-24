@@ -6,16 +6,54 @@
         <field name="inherit_id" ref="sped.sped_documento_recebimento_nfe_form" />
         <field name="arch" type="xml">
             <group position="before">
+                <div class="oe_button_box" name="button_box">
+                    <button name="receber_produtos" type="object" class="oe_stat_button" string="Receber produtos"
+                            icon="fa-check-circle" attrs="{'invisible': [('recebido', '=', True)]}"/>
+                    <field name="recebido" invisible="True"/>
+                </div>
                 <group colspan="4">
-                    <field name="purchase_order_ids" widget="many2many_tags"/>
+                    <field name="purchase_order_ids" widget="many2many_tags"
+                           domain="[('invoice_status', '=', 'to invoice'),
+                           '|', ('participante_id', '=', participante_id), ('participante_id', '=', False),
+                           '|', ('empresa_id', '=', empresa_id), ('empresa_id', '=', False)]"/>
                 </group>
             </group>
             <field name="item_ids" position="attributes">
                 <attribute name="context">{
-                    'cfop_tam_desc': 'curta',
-                    'form_view_ref' : 'sped_purchase.sped_documento_item_form',
-                    'tree_view_ref' : 'sped_purchase.sped_documento_item_tree',
-                    'manual': True}</attribute>
+                    'form_view_ref': 'sped_purchase.sped_documento_item_form',
+                    'tree_view_ref': 'sped_purchase.sped_documento_item_tree',
+                    'manual': True
+                    }
+                </attribute>
+            </field>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="sped_documento_ajuste_recebimento_form" >
+        <field name="name">sped.documento.ajuste.recebimento.form (in sped_purchase)</field>
+        <field name="model">sped.documento</field>
+        <field name="inherit_id" ref="sped_nfe.sped_documento_ajuste_recebimento_form" />
+        <field name="arch" type="xml">
+            <group position="before">
+                <div class="oe_button_box" name="button_box">
+                    <button name="receber_produtos" type="object" class="oe_stat_button" string="Receber produtos"
+                            icon="fa-check-circle" attrs="{'invisible': [('recebido', '=', True)]}"/>
+                    <field name="recebido" invisible="True"/>
+                </div>
+                <group colspan="4">
+                    <field name="purchase_order_ids" widget="many2many_tags"
+                           domain="[('invoice_status', '=', 'to invoice'),
+                           '|', ('participante_id', '=', participante_id), ('participante_id', '=', False),
+                           '|', ('empresa_id', '=', empresa_id), ('empresa_id', '=', False)]"/>
+                </group>
+            </group>
+            <field name="item_ids" position="attributes">
+                <attribute name="context">{
+                    'form_view_ref': 'sped_purchase.sped_documento_item_form',
+                    'tree_view_ref': 'sped_purchase.sped_documento_item_tree',
+                    'manual': True
+                    }
+                </attribute>
             </field>
         </field>
     </record>

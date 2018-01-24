@@ -4,8 +4,6 @@
 
 from __future__ import division, print_function, unicode_literals
 
-import logging
-
 from odoo import api, fields, models, _
 import odoo.addons.decimal_precision as dp
 from odoo.addons.sped_imposto.models.sped_calculo_imposto_item import (
@@ -152,23 +150,27 @@ class PurchaseOrderLine(SpedCalculoImpostoItem, models.Model):
         for item in self:
             item.permite_alteracao = True
 
-    @api.multi
-    def write(self, vals):
-        res = super(PurchaseOrderLine, self).write(vals)
-        if vals.get('qty_received'):
-            self.compute_received()
-        return res
-
-    @api.model
-    def create(self, vals):
-        lines = super(PurchaseOrderLine, self).create(vals)
-        if lines.qty_received == lines.quantidade:
-            lines.compute_received()
-        return lines
-
-    @api.multi
-    def compute_received(self):
-        for line in self:
-            if all(line.quantidade == line.qty_received
-                   for line in line.order_id.mapped('order_line')):
-                line.order_id.state = 'received'
+    @api.depends('documento_item_ids.quantidade',
+                 'documento_item_ids.seller_id',
+                 'documento_item_ids.documento_id.recebido')
+    def _compute_qty_invoiced(self):
+        for linha in self:
+            itens = linha.documento_item_ids.filtered(
+                lambda item: item.documento_id.recebido)
+            if len(itens) > 1:
+                total = 0.0
+                for item in itens:
+                    total += \
+                        item.seller_id.unidade_id.uom_id._compute_quantity(
+                            item.quantidade, item.unidade_id.uom_id
+                        )
+                linha.qty_invoiced = total
+            elif itens:
+                if len(itens.purchase_line_ids) > 1:
+                    for linha_item in itens.mapped('purchase_line_ids'):
+                        linha_item.qty_invoiced = linha_item.quantidade
+                elif itens.purchase_line_ids:
+                    linha.qty_invoiced = \
+                        itens.seller_id.unidade_id.uom_id._compute_quantity(
+                            itens.quantidade, itens.unidade_id.uom_id
+                        )

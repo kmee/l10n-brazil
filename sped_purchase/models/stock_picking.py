@@ -1,19 +1,19 @@
 # -*- coding: utf-8 -*-
 # Copyright 2017 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
-from odoo import api, fields, models, _
+from odoo import api, models
 
 
 class StockPicking(models.Model):
     _inherit = 'stock.picking'
 
-    def _compute_picking_type_code(self):
-        for picking in self:
-            picking.picking_type_code = picking.picking_type_id.code
-
-    picking_type_code = fields.Char(
-        compute='_compute_picking_type_code',
-    )
+    @api.multi
+    def write(self, vals):
+        res = super(StockPicking, self).write(vals)
+        for separacao in self:
+            if separacao.purchase_id:
+                separacao.purchase_id.order_line._compute_qty_received()
+        return res
 
     def action_view_purchase(self):
 
@@ -26,7 +26,7 @@ class StockPicking(models.Model):
             action['res_id'] = self.purchase_id.id
         else:
             action = {'type': 'ir.actions.act_window_close'}
-        
+
         return action
 
     def gera_documento(self):
@@ -54,9 +54,3 @@ class StockPicking(models.Model):
             documento.envia_documento()
 
         return documento
-
-    @api.onchange('state')
-    def _onchange_state(self):
-        self.ensure_one()
-        if self.state == 'done' and self.purchase_id:
-            self.purchase_id.state = 'received'

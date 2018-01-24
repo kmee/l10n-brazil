@@ -189,13 +189,14 @@ MODELO_DOCUMENTO_ARRECADACAO_GNRE = '1'
 
 
 MOTIVO_DESONERACAO_ICMS = (
-    #('00', '00 - Não desonerado'),
+    # ('00', '00 - Não desonerado'),
     ('01', '01 - Táxi'),
-    #('02', '02 - Deficiente físico'),
+    # ('02', '02 - Deficiente físico'),
     ('03', '03 - Produtor agropecuário'),
     ('04', '04 - Frotista/locadora'),
     ('05', '05 - Diplomático/consular'),
-    ('06', '06 - Util. e mot. da Amazônia Ocidental e Áreas de Livre Comércio'),
+    ('06', '06 - Util. e mot. da Amazônia Ocidental e '
+           'Áreas de Livre Comércio'),
     ('07', '07 - SUFRAMA'),
     ('09', '09 - Outros'),
     ('10', '10 - Deficiente condutor'),
@@ -204,7 +205,7 @@ MOTIVO_DESONERACAO_ICMS = (
 )
 MOTIVO_DESONERACAO_ICMS_DICT = dict(MOTIVO_DESONERACAO_ICMS)
 
-#MOTIVO_DESONERACAO_ICMS_NAO_DESONERADO = '00'
+# MOTIVO_DESONERACAO_ICMS_NAO_DESONERADO = '00'
 MOTIVO_DESONERACAO_ICMS_TAXI = '01'
 MOTIVO_DESONERACAO_ICMS_DEFICIENTE_FISICO = '02'
 MOTIVO_DESONERACAO_ICMS_PRODUTOR_AGROPECUARIO = '03'
@@ -2006,7 +2007,7 @@ CFOPS_COMPRA = CFOPS_COMPRA_INDUSTRIALIZACAO + CFOPS_COMPRA_COMERCIALIZACAO + \
     CFOPS_COMPRA_ATIVO + CFOPS_USO_CONSUMO + CFOPS_COMPRA_SERVICO
 CFOPS_COMPRA_CUSTO_VENDA = CFOPS_COMPRA_INDUSTRIALIZACAO + \
     CFOPS_COMPRA_COMERCIALIZACAO
-    #CFOPS_COMPRA_COMERCIALIZACAO + CFOPS_COMPRA_SERVICO
+# CFOPS_COMPRA_COMERCIALIZACAO + CFOPS_COMPRA_SERVICO
 
 
 CFOPS_VENDA_MERCADORIA = [
@@ -2272,11 +2273,11 @@ SIMPLES_NACIONAL_ANEXOS = (
     ('5_ate_35', 'Anexo 5 - Serviços - Folha < 35% (até 31/12/2017)'),
     ('5_ate_40', 'Anexo 5 - Serviços - Folha < 40% (até 31/12/2017)'),
     ('5_mais_40', 'Anexo 5 - Serviços - Folha >= 40% (até 31/12/2017)'),
-    #('1_2018', 'Anexo 1 - Comércio (a partir de 01/01/2018)'),
-    #('2_2018', 'Anexo 2 - Indústria (a partir de 01/01/2018)'),
-    #('3_2018', 'Anexo 3 - Serviços (a partir de 01/01/2018)'),
-    #('4_2018', 'Anexo 4 - Serviços (a partir de 01/01/2018)'),
-    #('5_2018', 'Anexo 5 - Serviços (a partir de 01/01/2018)'),
+    # ('1_2018', 'Anexo 1 - Comércio (a partir de 01/01/2018)'),
+    # ('2_2018', 'Anexo 2 - Indústria (a partir de 01/01/2018)'),
+    # ('3_2018', 'Anexo 3 - Serviços (a partir de 01/01/2018)'),
+    # ('4_2018', 'Anexo 4 - Serviços (a partir de 01/01/2018)'),
+    # ('5_2018', 'Anexo 5 - Serviços (a partir de 01/01/2018)'),
 )
 
 SIMPLES_NACIONAL_TETO_01 = '180000'
@@ -4867,7 +4868,7 @@ FORMA_PAGAMENTO = (
     ('13', 'Vale combustível'),
     ('14', 'Duplicata mercantil'),
     ('15', 'Boleto bancário'),
-    #('90', 'Sem pagamento'),
+    # ('90', 'Sem pagamento'),
     ('99', 'Outros'),
 )
 FORMA_PAGAMENTO_DICT = dict(FORMA_PAGAMENTO)

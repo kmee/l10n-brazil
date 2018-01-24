@@ -19,6 +19,8 @@ from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_base.constante_tributaria import *
 
+from .versao_nfe_padrao import *
+
 _logger = logging.getLogger(__name__)
 
 try:
@@ -27,15 +29,9 @@ try:
     from pybrasil.inscricao import limpa_formatacao
     from pybrasil.data import (parse_datetime, UTC, data_hora_horario_brasilia,
                                agora)
-    from pybrasil.valor import formata_valor
-    from pybrasil.valor.decimal import Decimal as D
-    from pybrasil.template import TemplateBrasil
 
 except (ImportError, IOError) as err:
     _logger.debug(err)
-
-
-from .versao_nfe_padrao import *
 
 
 class SpedDocumento(models.Model):
@@ -143,6 +139,29 @@ class SpedDocumento(models.Model):
         size=60,
     )
 
+    consulta_dfe_id = fields.Many2one(
+        comodel_name='sped.consulta.dfe',
+        string='Consulta-DFe',
+        ondelete='cascade',
+    )
+
+    @api.multi
+    def action_fluxo_compras(self):
+
+        return {
+            'name': "Associar Pedido de Compras",
+            'view_mode': 'form',
+            'view_type': 'form',
+            'view_id': self.env.ref(
+                'sped_nfe.sped_documento_ajuste_recebimento_form').id,
+            'res_id': self.id,
+            'res_model': 'sped.documento',
+            'type': 'ir.actions.act_window',
+            'target': 'current',
+            'flags': {'form': {'action_buttons': True,
+                               'options': {'mode': 'edit'}}},
+        }
+
     @api.depends('data_hora_emissao', 'data_hora_entrada_saida',
                  'data_hora_autorizacao', 'data_hora_cancelamento')
     def _compute_data_hora_separadas(self):
@@ -166,16 +185,12 @@ class SpedDocumento(models.Model):
 
     @api.depends('modelo', 'emissao', 'importado_xml', 'situacao_nfe')
     def _compute_permite_alteracao(self):
-        super(SpedDocumento, self)._compute_permite_alteracao()
-
+        result = super(SpedDocumento, self)._compute_permite_alteracao()
         for documento in self:
             if documento.modelo not in (MODELO_FISCAL_NFE,
                                         MODELO_FISCAL_NFCE):
-                super(SpedDocumento, documento)._compute_permite_alteracao()
                 continue
-
             if documento.emissao != TIPO_EMISSAO_PROPRIA:
-                super(SpedDocumento, documento)._compute_permite_alteracao()
                 continue
 
             #
@@ -184,7 +199,8 @@ class SpedDocumento(models.Model):
             #
             documento.permite_alteracao = documento.permite_alteracao or \
                 documento.situacao_nfe in (SITUACAO_NFE_EM_DIGITACAO,
-                                        SITUACAO_NFE_REJEITADA)
+                                           SITUACAO_NFE_REJEITADA)
+        return result
 
     def _check_permite_alteracao(self, operacao='create', dados={},
                                  campos_proibidos=[]):
@@ -433,7 +449,7 @@ class SpedDocumento(models.Model):
         conteudo = canc.xml.encode('utf-8')
         self.arquivo_xml_autorizacao_cancelamento_id = False
         self.arquivo_xml_autorizacao_cancelamento_id = \
-            self._grava_anexo(nome_arquivo, conteudo)
+            self._grava_anexo(nome_arquivo, conteudo).id
 
         return {
             'type': 'ir.actions.act_url',
@@ -906,6 +922,7 @@ class SpedDocumento(models.Model):
         self.envia_email(mail_template)
 
     def _envia_email(self, mail_template):
+	self.ensure_one()
         mail_template.send_mail(self.id)
 
     def envia_email(self, mail_template):
@@ -925,27 +942,27 @@ class SpedDocumento(models.Model):
 
         if self.situacao_nfe == SITUACAO_NFE_CANCELADA:
             if self.modelo == MODELO_FISCAL_NFE and \
-                self.empresa_id.mail_template_nfe_cancelada_id:
+                    self.empresa_id.mail_template_nfe_cancelada_id:
                 mail_template = self.empresa_id.mail_template_nfe_cancelada_id
             elif self.modelo == MODELO_FISCAL_NFCE and \
-                self.empresa_id.mail_template_nfce_cancelada_id:
+                    self.empresa_id.mail_template_nfce_cancelada_id:
                 mail_template = self.empresa_id.mail_template_nfce_cancelada_id
 
         elif self.situacao_nfe == SITUACAO_NFE_DENEGADA:
             if self.modelo == MODELO_FISCAL_NFE and \
-                self.empresa_id.mail_template_nfe_denegada_id:
+                    self.empresa_id.mail_template_nfe_denegada_id:
                 mail_template = self.empresa_id.mail_template_nfe_denegada_id
             elif self.modelo == MODELO_FISCAL_NFCE and \
-                self.empresa_id.mail_template_nfce_denegada_id:
+                    self.empresa_id.mail_template_nfce_denegada_id:
                 mail_template = self.empresa_id.mail_template_nfce_denegada_id
         else:
             if self.operacao_id.mail_template_id:
                 mail_template_id = self.operacao_id.mail_template_id
             elif self.modelo == MODELO_FISCAL_NFE and \
-                self.empresa_id.mail_template_nfe_autorizada_id:
+                    self.empresa_id.mail_template_nfe_autorizada_id:
                 mail_template = self.empresa_id.mail_template_nfe_autorizada_id
             elif self.modelo == MODELO_FISCAL_NFCE and \
-                self.empresa_id.mail_template_nfce_autorizada_id:
+                    self.empresa_id.mail_template_nfce_autorizada_id:
                 mail_template = \
                     self.empresa_id.mail_template_nfce_autorizada_id
 

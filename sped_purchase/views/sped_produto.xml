@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record model="ir.ui.view" id="sped_produto_parceiro_tree">
+        <field name="name">sped.produto.parceiro.tree</field>
+        <field name="model">product.supplierinfo</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="participante_id"/>
+                <field name="product_name"/>
+                <field name="product_code"/>
+                <field name="unidade_id"/>
+                <field name="cfop_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="sped_produto_produto_form" >
+        <field name="name">sped.produto.produto.form</field>
+        <field name="model">sped.produto</field>
+        <field name="inherit_id" ref="l10n_br_base.sped_produto_produto_form"/>
+        <field name="arch" type="xml">
+            <page name="estoque" position="after">
+                <page name="produtos_parceiros" string="Dados de fornecedores">
+                    <field name="seller_ids"
+                           context="{
+                           'tree_view_ref': 'sped_purchase.sped_produto_parceiro_tree'
+                           }"/>
+                </page>
+            </page>
+        </field>
+    </record>
+</odoo>

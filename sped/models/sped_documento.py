@@ -22,8 +22,7 @@ from openerp.addons.sped_imposto.models.sped_calculo_imposto import \
 _logger = logging.getLogger(__name__)
 
 try:
-    from pybrasil.data import parse_datetime, data_hora_horario_brasilia, \
-        formata_data
+    from pybrasil.data import formata_data
     from pybrasil.valor.decimal import Decimal as D
     from pybrasil.valor import formata_valor
 
@@ -984,27 +983,27 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
             documento.hora_entrada_saida = hora
 
     @api.depends('item_ids.vr_produtos', 'item_ids.vr_produtos_tributacao',
-                'item_ids.vr_frete', 'item_ids.vr_seguro',
-                'item_ids.vr_desconto', 'item_ids.vr_outras',
-                'item_ids.vr_operacao', 'item_ids.vr_operacao_tributacao',
-                'item_ids.bc_icms_proprio', 'item_ids.vr_icms_proprio',
-                'item_ids.vr_icms_desonerado',
-                'item_ids.vr_difal', 'item_ids.vr_icms_estado_origem',
-                'item_ids.vr_icms_estado_destino',
-                'item_ids.vr_fcp',
-                'item_ids.vr_icms_sn', 'item_ids.vr_simples',
-                'item_ids.bc_icms_st', 'item_ids.vr_icms_st',
-                'item_ids.bc_icms_st_retido', 'item_ids.vr_icms_st_retido',
-                'item_ids.bc_ipi', 'item_ids.vr_ipi',
-                'item_ids.bc_ii', 'item_ids.vr_ii',
-                'item_ids.vr_despesas_aduaneiras', 'item_ids.vr_iof',
-                'item_ids.bc_pis_proprio', 'item_ids.vr_pis_proprio',
-                'item_ids.bc_cofins_proprio', 'item_ids.vr_cofins_proprio',
-                'item_ids.bc_iss', 'item_ids.vr_iss',
-                'item_ids.vr_nf', 'item_ids.vr_fatura',
-                'item_ids.vr_ibpt',
-                'item_ids.vr_custo_comercial',
-                'item_ids.peso_bruto', 'item_ids.peso_liquido')
+                 'item_ids.vr_frete', 'item_ids.vr_seguro',
+                 'item_ids.vr_desconto', 'item_ids.vr_outras',
+                 'item_ids.vr_operacao', 'item_ids.vr_operacao_tributacao',
+                 'item_ids.bc_icms_proprio', 'item_ids.vr_icms_proprio',
+                 'item_ids.vr_icms_desonerado',
+                 'item_ids.vr_difal', 'item_ids.vr_icms_estado_origem',
+                 'item_ids.vr_icms_estado_destino',
+                 'item_ids.vr_fcp',
+                 'item_ids.vr_icms_sn', 'item_ids.vr_simples',
+                 'item_ids.bc_icms_st', 'item_ids.vr_icms_st',
+                 'item_ids.bc_icms_st_retido', 'item_ids.vr_icms_st_retido',
+                 'item_ids.bc_ipi', 'item_ids.vr_ipi',
+                 'item_ids.bc_ii', 'item_ids.vr_ii',
+                 'item_ids.vr_despesas_aduaneiras', 'item_ids.vr_iof',
+                 'item_ids.bc_pis_proprio', 'item_ids.vr_pis_proprio',
+                 'item_ids.bc_cofins_proprio', 'item_ids.vr_cofins_proprio',
+                 'item_ids.bc_iss', 'item_ids.vr_iss',
+                 'item_ids.vr_nf', 'item_ids.vr_fatura',
+                 'item_ids.vr_ibpt',
+                 'item_ids.vr_custo_comercial',
+                 'item_ids.peso_bruto', 'item_ids.peso_liquido')
     def _compute_soma_itens(self):
         CAMPOS_SOMA_ITENS = [
             'vr_produtos', 'vr_produtos_tributacao',
@@ -1126,21 +1125,21 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
                 self.empresa_id.ambiente_nfe,
                 self.empresa_id.tipo_emissao_nfe
             )
-            #if self.empresa_id.tipo_emissao_nfe == TIPO_EMISSAO_NFE_NORMAL:
-                #if self.empresa_id.ambiente_nfe == AMBIENTE_NFE_PRODUCAO:
-                    #valores['serie'] = self.empresa_id.serie_nfe_producao
-                #else:
-                    #valores['serie'] = self.empresa_id.serie_nfe_homologacao
+            # if self.empresa_id.tipo_emissao_nfe == TIPO_EMISSAO_NFE_NORMAL:
+            # if self.empresa_id.ambiente_nfe == AMBIENTE_NFE_PRODUCAO:
+            # valores['serie'] = self.empresa_id.serie_nfe_producao
+            # else:
+            # valores['serie'] = self.empresa_id.serie_nfe_homologacao
 
-            #else:
-                #if self.empresa_id.ambiente_nfe == AMBIENTE_NFE_PRODUCAO:
-                    #valores['serie'] = (
-                        #self.empresa_id.serie_nfe_contingencia_producao
-                    #)
-                #else:
-                    #valores['serie'] = (
-                        #self.empresa_id.serie_nfe_contingencia_homologacao
-                    #)
+            # else:
+            # if self.empresa_id.ambiente_nfe == AMBIENTE_NFE_PRODUCAO:
+            # valores['serie'] = (
+            # self.empresa_id.serie_nfe_contingencia_producao
+            # )
+            # else:
+            # valores['serie'] = (
+            # self.empresa_id.serie_nfe_contingencia_homologacao
+            # )
 
         elif self.modelo == MODELO_FISCAL_NFCE:
             valores['ambiente_nfe'] = self.empresa_id.ambiente_nfce
@@ -1151,21 +1150,21 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
                 self.empresa_id.tipo_emissao_nfce
             )
 
-            #if self.empresa_id.tipo_emissao_nfce == TIPO_EMISSAO_NFE_NORMAL:
-                #if self.empresa_id.ambiente_nfce == AMBIENTE_NFE_PRODUCAO:
-                    #valores['serie'] = self.empresa_id.serie_nfce_producao
-                #else:
-                    #valores['serie'] = self.empresa_id.serie_nfce_homologacao
+            # if self.empresa_id.tipo_emissao_nfce == TIPO_EMISSAO_NFE_NORMAL:
+            # if self.empresa_id.ambiente_nfce == AMBIENTE_NFE_PRODUCAO:
+            # valores['serie'] = self.empresa_id.serie_nfce_producao
+            # else:
+            # valores['serie'] = self.empresa_id.serie_nfce_homologacao
 
-            #else:
-                #if self.empresa_id.ambiente_nfce == AMBIENTE_NFE_PRODUCAO:
-                    #valores['serie'] = (
-                        #self.empresa_id.serie_nfce_contingencia_producao
-                    #)
-                #else:
-                    #valores['serie'] = (
-                        #self.empresa_id.serie_nfce_contingencia_homologacao
-                    #)
+            # else:
+            # if self.empresa_id.ambiente_nfce == AMBIENTE_NFE_PRODUCAO:
+            # valores['serie'] = (
+            # self.empresa_id.serie_nfce_contingencia_producao
+            # )
+            # else:
+            # valores['serie'] = (
+            # self.empresa_id.serie_nfce_contingencia_homologacao
+            # )
 
         elif self.modelo == MODELO_FISCAL_NFSE:
             valores['ambiente_nfe'] = self.empresa_id.ambiente_nfse
@@ -1217,20 +1216,20 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
                                 self.tipo_emissao_nfe
                             )
 
-            #else:
-                #if not self.operacao_id.serie:
-                    #if self.modelo == MODELO_FISCAL_NFE:
-                        #valores['serie'] = self._serie_padrao_nfe(
-                            #self.empresa_id,
-                            #self.empresa_id.ambiente_nfe,
-                            #self.empresa_id.tipo_emissao_nfe
-                        #)
-                    #elif self.modelo == MODELO_FISCAL_NFCE:
-                        #valores['serie'] = self._serie_padrao_nfce(
-                            #self.empresa_id,
-                            #self.empresa_id.ambiente_nfce,
-                            #self.empresa_id.tipo_emissao_nfce
-                        #)
+            # else:
+                # if not self.operacao_id.serie:
+                    # if self.modelo == MODELO_FISCAL_NFE:
+                        # valores['serie'] = self._serie_padrao_nfe(
+                            # self.empresa_id,
+                            # self.empresa_id.ambiente_nfe,
+                            # self.empresa_id.tipo_emissao_nfe
+                        # )
+                    # elif self.modelo == MODELO_FISCAL_NFCE:
+                        # valores['serie'] = self._serie_padrao_nfce(
+                            # self.empresa_id,
+                            # self.empresa_id.ambiente_nfce,
+                            # self.empresa_id.tipo_emissao_nfce
+                        # )
 
             valores['regime_tributario'] = self.operacao_id.regime_tributario
             valores['ind_forma_pagamento'] = \
@@ -1346,23 +1345,23 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
 
         return res
 
-    @api.onchange('condicao_pagamento_id', 'vr_fatura', 'vr_nf', 'data_emissao',
-                  'duplicata_ids')
+    @api.onchange('condicao_pagamento_id', 'vr_fatura',
+                  'vr_nf', 'data_emissao', 'duplicata_ids')
     def _onchange_condicao_pagamento_id(self):
         res = {}
         valores = {}
         res['value'] = valores
 
-        if not (self.condicao_pagamento_id and (self.vr_fatura or self.vr_nf) and
-                self.data_emissao):
+        if not (self.condicao_pagamento_id and
+                (self.vr_fatura or self.vr_nf) and self.data_emissao):
             return res
 
         valor = D(self.vr_fatura or 0)
         if not valor:
             valor = D(self.vr_nf or 0)
 
-        duplicata_ids = self.condicao_pagamento_id.gera_parcela_ids(valor,
-                                                         self.data_emissao)
+        duplicata_ids = self.condicao_pagamento_id.\
+            gera_parcela_ids(valor, self.data_emissao)
         valores['duplicata_ids'] = duplicata_ids
 
         return res
@@ -1533,7 +1532,8 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
     def create(self, dados):
         dados = self.executa_antes_create(dados)
         result = super(SpedDocumento, self).create(dados)
-        return self.executa_depois_create(result, dados)
+        # result.executa_depois_create()
+        return result
 
     def executa_antes_write(self, dados):
         self._check_permite_alteracao(operacao='write', dados=dados)
@@ -1568,7 +1568,10 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
                 order = self.env.context.get('order', False)
 
         return super(SpedDocumento, self).search_read(domain=domain,
-            fields=fields, offset=offset, limit=limit, order=order)
+                                                      fields=fields,
+                                                      offset=offset,
+                                                      limit=limit,
+                                                      order=order)
 
     def _prepare_subsequente_referenciado(self):
         vals = {
@@ -1674,3 +1677,4 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
                 subsequente_id.operacao_realizada
                 for subsequente_id in documento.documento_subsequente_ids
             )
+
