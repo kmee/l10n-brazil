@@ -9,7 +9,7 @@
         <field name="model">nfe.cancelamento.wizard</field>
         <field name="arch" type="xml">
             <form string="Motivo do Cancelamento da NF-e">
-                (Mínimo 10 caracteres)
+                Justificativa (10-255 caracteres)
                 <field name="motivo_cancelamento" nolabel="1" />
 
                 <footer>

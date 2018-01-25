@@ -7,9 +7,10 @@ from odoo.exceptions import Warning as UserError
 class NfeCancelamentoWizard(models.TransientModel):
     _name = b'nfe.cancelamento.wizard'
 
-    motivo_cancelamento = fields.Text(
+    motivo_cancelamento = fields.Char(
         string='Justificativa para Cancelamento de NF-e',
         required=True,
+        size=255,
     )
 
     @api.multi
