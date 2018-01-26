@@ -659,10 +659,10 @@ class SpedCalculoImposto(SpedBase):
         else:
             documento = self
 
-            # if self.pagamento_ids:
-            #     documento.pagamento_ids = self.pagamento_ids
-            # if self.duplicata_ids:
-            #     documento.duplicata_ids = self.duplicata_ids
+        if hasattr(self, 'pagamento_ids'):
+            documento.pagamento_ids = self.pagamento_ids
+        if hasattr(self, 'duplicata_ids'):
+            documento.duplicata_ids = self.duplicata_ids
 
         documento.update(documento._onchange_empresa_id()['value'])
         documento.update(documento._onchange_operacao_id()['value'])
