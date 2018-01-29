@@ -917,9 +917,10 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
         """
         documentos = []
 
-        for doc in self.env["ir.model"].search([]):
-            if doc.model in ('finan.lancamento', 'sale.order', 'purchase.order'):
-                documentos.append([doc.model, doc.name])
+        for doc in self.env["ir.model"].\
+                search([('model', 'in', ('finan.lancamento',
+                                         'sale.order', 'purchase.order'))]):
+            documentos.append([doc.model, doc.name])
 
         return documentos
 
