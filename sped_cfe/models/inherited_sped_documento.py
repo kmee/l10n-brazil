@@ -377,7 +377,7 @@ class SpedDocumento(models.Model):
         cfe_venda = CFeVenda(
             CNPJ=limpa_formatacao(cnpj_software_house),
             signAC=assinatura,
-            numeroCaixa=2,
+            numeroCaixa=int(self.configuracoes_pdv.numero_caixa),
             emitente=emitente,
             detalhamentos=detalhamentos,
             pagamentos=pagamentos,
