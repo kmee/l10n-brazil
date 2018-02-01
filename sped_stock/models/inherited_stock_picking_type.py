@@ -10,9 +10,8 @@ from odoo import models, fields
 class StockPickingType(models.Model):
     _inherit = 'stock.picking.type'
 
-    operacao_id = fields.Many2one(
+    operacao_ids = fields.Many2many(
         comodel_name='sped.operacao',
-        string='Operação Fiscal',
-        ondelete='cascade',
-        domain=[('emissao', '=', '0'), ('modelo', 'in', ['55', '65', '59', '2D'])]
+        relation='stock_picking_type_operacao_rel',
     )
+

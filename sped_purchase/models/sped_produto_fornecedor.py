@@ -4,7 +4,7 @@
 #   Gabriel Cardoso de Faria <gabriel.cardoso@kmee.com.br>
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
-from odoo import api, fields, models, _
+from odoo import fields, models
 
 
 class SpedProdutoFornecedor(models.Model):

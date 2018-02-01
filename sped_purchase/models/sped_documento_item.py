@@ -25,17 +25,18 @@ class SpedDocumentoItem(models.Model):
 
     pode_alterar_quantidade = fields.Boolean(
         string='Pode alterar a quantidade?',
+        compute='_compute_quantidade_alteravel',
         default=True,
     )
 
-    def faturar_linhas(self):
-        for linha in self.mapped('purchase_line_ids'):
-            total = 0.0
-            for qty in linha.documento_item_ids.mapped('quantidade'):
-                total += qty
-            linha.qty_invoiced = total
+    seller_id = fields.Many2one(
+        string='Dados do fornecedor',
+        comodel_name='product.supplierinfo',
+        compute='_compute_set_seller_id'
+    )
 
-    def executa_depois_create(self):
+    @api.multi
+    def find_lines(self):
         for item in self:
             data = {
                 'produto_id': item.produto_id,
@@ -53,18 +54,19 @@ class SpedDocumentoItem(models.Model):
 
     @api.onchange('purchase_ids', 'purchase_line_ids')
     def _onchange_purchase_line_ids(self):
-        result = {}
 
-        # A PO can be selected only if at least one PO line is not already in the invoice
-        purchase_line_ids = self.purchase_ids.mapped('order_line')
+        for purchase in self.mapped('purchase_ids'):
+            if purchase not in self.documento_id.mapped('purchase_order_ids'):
+                self.documento_id.purchase_order_ids += purchase
 
-        result['domain'] = {'purchase_line_ids': [
-            ('id', 'in', purchase_line_ids.ids),
-            ('id', 'not in', self.purchase_line_ids.ids),
-        ], 'purchase_ids': [
-            ('invoice_status', '=', 'to invoice'),
-            ('id', 'not in', self.purchase_ids.ids),
-        ]}
+        result = {'domain': {
+            'purchase_line_ids': [],
+            'purchase_ids': [('invoice_status', '=', 'to invoice')]}}
+
+        if self.purchase_ids:
+            result['domain']['purchase_line_ids'].append(
+                ('order_id', 'in', self.purchase_ids.ids)
+            )
 
         if self.participante_id:
             result['domain']['purchase_line_ids'].append(
@@ -92,25 +94,100 @@ class SpedDocumentoItem(models.Model):
                 ('vr_unitario', '=', self.vr_unitario)
             )
 
-        if len(self.purchase_line_ids) > 1:
-            self.pode_alterar_quantidade = False
-            quantidade = 0
-            for linha in self.purchase_line_ids:
-                quantidade += linha.quantidade
-            self.quantidade = quantidade
-        else:
-            self.pode_alterar_quantidade = True
-
         return result
 
-    @api.onchange('quantidade')
-    def constrains_quantidade(self):
+    @api.constrains('purchase_line_ids', 'quantidade')
+    def _check_m2m_quantity(self):
         for item in self:
-            if item.purchase_line_ids and len(item.purchase_line_ids) == 1:
-                disponivel = item.purchase_line_ids.quantidade - \
-                             item.purchase_line_ids.qty_invoiced
-                if not (item.quantidade > disponivel):
+            if len(item.purchase_line_ids) > 1:
+                for linha in item.mapped('purchase_line_ids'):
+                    if len(linha.documento_item_ids) > 1:
+                        raise ValidationError(_(
+                            'Impossível relacionar item de documento com '
+                            'linhas de pedido de compras que não tenham '
+                            'relação única com esse item.'
+                        ))
+            elif item.purchase_line_ids:
+                total = 0.0
+                for doc_item in item.purchase_line_ids.mapped(
+                        'documento_item_ids'):
+                    total += doc_item.quantidade
+                if total > item.purchase_line_ids.quantidade:
                     raise ValidationError(_(
-                        'Quantidade do item ' + item.produto_id.nome +
+                        'Quantidade do produto ' + item.produto_id.nome +
                         'ultrapassa o disponível na linha do pedido de compra.'
                     ))
+
+    @api.depends('purchase_line_ids')
+    def _compute_quantidade_alteravel(self):
+        for item in self:
+            if len(item.purchase_line_ids) > 1:
+                item.pode_alterar_quantidade = False
+                quantidade = 0.0
+                for linha in item.mapped('purchase_line_ids'):
+                    quantidade += linha.quantidade
+                item.quantidade = quantidade
+            else:
+                item.pode_alterar_quantidade = True
+
+    @api.multi
+    def selecionar_produto(self):
+        return {
+            'name': _("Selecionar Produto"),
+            'view_mode': 'form',
+            'view_type': 'form',
+            'view_id': self.env.ref(
+                'sped_purchase.selecionar_produto_wizard').id,
+            'res_model': 'sped.documento.item.selecionar.produto',
+            'type': 'ir.actions.act_window',
+            'target': 'new',
+            'context': {'default_documento_item_id': self.id},
+        }
+
+    @api.depends('produto_id')
+    def _compute_set_seller_id(self):
+        for item in self:
+            if not item.produto_id:
+                continue
+            documento = item.documento_id
+            partner = documento.participante_id.partner_id
+            currency = partner.property_purchase_currency_id or \
+                       self.env.user.company_id.currency_id
+            item.calcula_impostos()
+            item.seller_id = item.produto_id.product_id._select_seller(
+                partner_id=partner, quantity=item.quantidade,
+                uom_id=item.unidade_id.uom_id
+            )
+            dados = {
+                'produto_id': item.produto_id.id,
+                'name': partner.id,
+                'product_uom': item.unidade_id.uom_id.id,
+                'min_qty': 0.0,
+                'price': documento.currency_id.compute(
+                    item.vr_unitario, currency),
+                'currency_id': currency.id,
+                'delay': 0,
+                'participante_id': documento.participante_id.id,
+                'cest_id': item._busca_cest(item.produto_cest),
+                'product_name': item.produto_nome,
+                'product_code': item.produto_codigo,
+                'codigo_barras': item.produto_codigo_barras,
+                'codigo_barras_tributacao':
+                    item.produto_codigo_barras_tributacao,
+                'unidade_id': item._busca_unidade(
+                    item.produto_unidade, False),
+                'unidade_tributacao_id': item._busca_unidade(
+                    item.produto_unidade_tributacao, False),
+                'ncm_id': item._busca_ncm(item.produto_ncm,
+                                          item.produto_ncm_ex),
+                'cfop_id': item.cfop_original_id.id
+                if documento.emissao == '1' else item.cfop_id.id,
+            }
+            if not item.seller_id:
+                item.seller_id = \
+                    self.env['product.supplierinfo'].search([
+                        ('product_name', '=', dados['product_name']),
+                        ('codigo_barras', '=', dados['codigo_barras']),
+                        ('product_code', '=', dados['product_code']),
+                    ]) or self.env['product.supplierinfo'].create(dados)
+            item.seller_id.write(dados)

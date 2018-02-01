@@ -295,7 +295,7 @@
                                     <field name="entrada_saida" colspan="2" readonly="True"/>
                                     <field name="regime_tributario" colspan="2" readonly="True"/>
                                     <newline/>
-                                    <field name="natureza_operacao_id" colspan="4" required="1" options="{'no_create': True, 'no_open': True}" on_change="1" can_create="true" can_write="true" readonly="True"/>
+                                    <field name="natureza_operacao_id" colspan="4" required="1" options="{'no_create': True, 'no_open': True}" on_change="1" can_create="true" can_write="true"/>
                                     <newline/>
                                     <separator string="Informações complementares" colspan="4"/>
                                     <field name="infcomplementar" colspan="4" nolabel="1" readonly="True"/>
@@ -378,8 +378,7 @@
 
                 <group colspan="4" col="4">
                     <field name="produto_id" colspan="4"
-                           context="{'form_view_ref': (modelo != 'SE' and 'l10n_br_base.sped_produto_produto_form' or 'l10n_br_base.sped_produto_servico_form')}"
-                    attrs="{'readonly': [('produto_id', '!=', False)]}"/>
+                           context="{'form_view_ref': (modelo != 'SE' and 'l10n_br_base.sped_produto_produto_form' or 'l10n_br_base.sped_produto_servico_form')}"/>
                     <newline />
                     <field name="produto_nome" colspan="4" string="Descrição alternativa" readonly="True"/>
                     <newline />

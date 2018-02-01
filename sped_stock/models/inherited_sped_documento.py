@@ -5,6 +5,7 @@
 from __future__ import division, print_function, unicode_literals
 
 from odoo import api, fields, models, _
+from odoo.exceptions import UserError
 from odoo.addons.l10n_br_base.constante_tributaria import *
 
 
@@ -141,10 +142,47 @@ class SpedDocumento(models.Model):
         super(SpedDocumento, self).executa_depois_denegar()
         self._cancela_estoque()
 
+    def _busca_stock_picking_type(self):
+
+        stock_picking_type_ids = self.operacao_id.stock_picking_type_ids
+
+        stock_warehouse_id = self.env['stock.warehouse'].search(
+            ('company_id', '=', self.empresa_id.company_id.id),
+        )
+
+        if stock_warehouse_id:
+            stock_picking_type_ids = stock_picking_type_ids.filtered(
+                lambda spt: spt.warehouse_id == stock_warehouse_id
+            )
+
+        code = {
+            ENTRADA_SAIDA_ENTRADA: 'incoming',
+            ENTRADA_SAIDA_SAIDA: 'outgoing',
+            # 'internal': False, # Se for uma operação interna,
+            # não tem documento fiscal, então você esta no lugar errado.
+            # ou prove o contrário
+        }
+
+        stock_picking_type_ids = stock_picking_type_ids.filtered(
+            lambda spt: spt.code == code[self.entrada_saida]
+        )
+
+        if len(stock_picking_type_ids) > 1:
+            raise UserError(_("Mais de uma operação fiscal relacionada "
+                                "a este tipo de operação de estoque"))
+        elif stock_picking_type_ids:
+            return stock_picking_type_ids
+        else:
+            raise UserError(_("Nenhuma operação fiscal relacionada a"
+                                "este tipo de operação de estoque"))
+
+
     def _criar_picking(self):
         stock_obj = self.env['stock.picking']
         for documento in self:
-            doc_picking_type = documento.operacao_id.stock_picking_type_id
+
+            doc_picking_type = documento._busca_stock_picking_type()
+
             move_lines = []
             for line in documento.item_ids:
                 vals_produtos = [0, False, {
@@ -180,7 +218,7 @@ class SpedDocumento(models.Model):
         result = super(SpedDocumento, self).executa_depois_create(
             result, dados)
 
-        for documento in self:
+        for documento in result:
             if documento.entrada_saida == ENTRADA_SAIDA_ENTRADA:
                 documento._criar_picking()
 

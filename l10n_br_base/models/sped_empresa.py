@@ -13,7 +13,6 @@ from odoo.exceptions import ValidationError
 from .sped_base import SpedBase
 from ..constante_tributaria import *
 
-
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -22,7 +21,7 @@ _logger = logging.getLogger(__name__)
 try:
     from email_validator import validate_email
 
-    from pybrasil.base import mascara, primeira_maiuscula
+    from pybrasil.base import mascara
     from pybrasil.data import parse_datetime, dia_util_pagamento, \
         data_hora_horario_brasilia
     from pybrasil.inscricao import (
@@ -42,7 +41,8 @@ except (ImportError, IOError) as err:
 class SpedEmpresa(SpedBase, models.Model):
     _name = b'sped.empresa'
     _description = 'Empresas e filiais'
-    _inherits = {'sped.participante': 'participante_id'} # , 'res.company': 'company_id'}
+    # , 'res.company': 'company_id'}
+    _inherits = {'sped.participante': 'participante_id'}
     _rec_name = 'nome'
     _order = 'nome, cnpj_cpf'
 
@@ -71,7 +71,7 @@ class SpedEmpresa(SpedBase, models.Model):
 
             if empresa.razao_social:
                 if empresa.nome.strip().upper() != \
-                    empresa.razao_social.strip().upper():
+                        empresa.razao_social.strip().upper():
                     nome += ' - '
                     nome += empresa.razao_social
 
@@ -259,7 +259,7 @@ class SpedEmpresa(SpedBase, models.Model):
         self.ensure_one()
 
         if not valida_inscricao_estadual(self.ie,
-            self.municipio_id.estado_id.uf):
+                                         self.municipio_id.estado_id.uf):
             raise ValidationError(_('Inscrição estadual inválida!'))
 
         valores['ie'] = \
@@ -292,7 +292,7 @@ class SpedEmpresa(SpedBase, models.Model):
                     INDICADOR_IE_DESTINATARIO_NAO_CONTRIBUINTE
 
             elif self.ie.strip().upper()[:6] == 'ISENTO' or \
-                self.ie.strip().upper()[:6] == 'ISENTA':
+                    self.ie.strip().upper()[:6] == 'ISENTA':
                 valores['contribuinte'] = INDICADOR_IE_DESTINATARIO_ISENTO
 
             else:
@@ -317,7 +317,7 @@ class SpedEmpresa(SpedBase, models.Model):
                         informar o município!'''))
 
                 if self.ie.strip().upper()[:6] == 'ISENTO' or \
-                    self.ie.strip().upper()[:6] == 'ISENTA':
+                        self.ie.strip().upper()[:6] == 'ISENTA':
                     raise ValidationError(
                         _('Inscrição estadual inválida para contribuinte!'))
 
@@ -451,7 +451,7 @@ class SpedEmpresa(SpedBase, models.Model):
             dados.update(rml_paper_format='a4')
             dados.update(paperformat_id=self.env.ref(
                 'report.paperformat_euro').id
-                         )
+            )
         dados.update(currency_id=self.env.ref('base.BRL').id)
 
         return dados

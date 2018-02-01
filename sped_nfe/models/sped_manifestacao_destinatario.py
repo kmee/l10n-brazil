@@ -22,11 +22,11 @@ SITUACAO_NFE = [
 ]
 
 SITUACAO_MANIFESTACAO = [
-         ('pendente', 'Pendente'),
-         ('ciente', 'Ciente da operação'),
-         ('confirmado', 'Confirmada operação'),
-         ('desconhecido', 'Desconhecimento'),
-         ('nao_realizado', 'Não realizado'),
+    ('pendente', 'Pendente'),
+    ('ciente', 'Ciente da operação'),
+    ('confirmado', 'Confirmada operação'),
+    ('desconhecido', 'Desconhecimento'),
+    ('nao_realizado', 'Não realizado'),
 ]
 
 
@@ -161,6 +161,10 @@ class SpedManifestacaoDestinatario(models.Model):
         comodel_name='sped.consulta.dfe',
         readonly=True,
     )
+    operacao_id = fields.Many2one(
+        string='Operação',
+        comodel_name='sped.operacao',
+    )
 
     @api.multi
     def cria_wizard_gerenciamento(self, state=''):
@@ -197,7 +201,6 @@ class SpedManifestacaoDestinatario(models.Model):
             'type': 'ir.actions.act_window',
             'target': 'current',
         }
-
 
     @api.multi
     def action_salva_xml(self):
@@ -254,7 +257,7 @@ class SpedManifestacaoDestinatario(models.Model):
                 record.state = 'confirmado'
             else:
                 raise models.ValidationError(_(
-                        nfe_result['code'] + ' - ' + nfe_result['message'])
+                    nfe_result['code'] + ' - ' + nfe_result['message'])
                 )
                 return False
 
@@ -321,7 +324,6 @@ class SpedManifestacaoDestinatario(models.Model):
 
     @api.multi
     def action_download_xml(self):
-        result = True
         for record in self:
             record.sped_consulta_dfe_id.\
                 validate_nfe_configuration(record.empresa_id)
@@ -364,18 +366,21 @@ class SpedManifestacaoDestinatario(models.Model):
                 nfe = objectify.fromstring(nfe_result['nfe'])
                 documento = self.env['sped.documento'].new()
                 documento.modelo = nfe.NFe.infNFe.ide.mod.text
-                dados = documento.le_nfe(xml=nfe_result['nfe'])
+                dados = documento.le_nfe(xml=nfe_result['nfe'],
+                                         operacao_id=self.operacao_id)
                 record.documento_id = dados
                 return {
                     'name': _("Associar Pedido de Compras"),
                     'view_mode': 'form',
                     'view_type': 'form',
-                    'view_id': self.env.ref('sped_nfe.sped_documento_ajuste_recebimento_form').id,
+                    'view_id': self.env.ref('sped_nfe.sped_documento'
+                                            '_ajuste_recebimento_form').id,
                     'res_id': dados.id,
                     'res_model': 'sped.documento',
                     'type': 'ir.actions.act_window',
-                    'target': 'new',
-                    'flags': {'form': {'action_buttons': True, 'options': {'mode': 'edit'}}},
+                    'target': 'current',
+                    'flags': {'form': {'action_buttons': True,
+                                       'options': {'mode': 'edit'}}},
                 }
             else:
                 raise models.ValidationError(_(
