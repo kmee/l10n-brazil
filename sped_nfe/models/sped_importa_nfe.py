@@ -112,8 +112,14 @@ class ImportaNFe(models.Model):
 
         self.quantidade_diretorio = 0
         self.quantidade_importada = 0
+        notas_canceladas = []
+
         for filename in find_files(self.caminho, '*.xml'):
             try:
+                if 'proc-can' in filename:
+                    notas_canceladas.append(filename)
+                    continue
+
                 self.quantidade_diretorio += 1
                 tree = etree.parse(filename)
                 xml = etree.tostring(tree.getroot())
@@ -129,6 +135,19 @@ class ImportaNFe(models.Model):
                     print u"Não importado:  " + filename
                 if autocommit:
                     self.env.cr.commit()
+            except Exception as e:
+                print u"Exception:  " + filename
+
+        for filename in notas_canceladas:
+            try:
+                tree = etree.parse(filename)
+                xml = etree.tostring(tree.getroot())
+                nfe = objectify.fromstring(xml)
+
+                if (nfe.evento.infEvento.detEvento.
+                        descEvento == 'Cancelamento'):
+                    self.importa_nfe_cancelada(xml)
+
             except Exception as e:
                 print u"Exception:  " + filename
 
