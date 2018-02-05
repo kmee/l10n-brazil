@@ -16,8 +16,14 @@ import os
 import codecs
 import glob
 from lxml import objectify, etree
+from odoo.exceptions import UserError
 import logging
 import threading
+from pybrasil.data import UTC
+from odoo.addons.l10n_br_base.constante_tributaria import (
+    SITUACAO_FISCAL_CANCELADO,
+    SITUACAO_NFE_CANCELADA,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -51,6 +57,42 @@ class ImportaNFe(models.Model):
     caminho = fields.Char(
         string='Caminho',
     )
+
+    def importa_nfe_cancelada(self, xml):
+
+        nfe = objectify.fromstring(xml)
+        chave = str(nfe.evento.infEvento.chNFe)
+        documentos = self.env['sped.documento'].search([
+            ('chave', '=', chave),
+        ])
+
+        if not documentos:
+            raise UserError(
+                _("Nenhum documento encontrado para o "
+                  "protocolo de cancelamento fornecido")
+            )
+
+        for documento in documentos:
+            _logger.info(u'Importando NF-e cancelada')
+
+            nome_arquivo = chave + '-01-proc-can.xml'
+            conteudo = xml.encode('utf-8')
+            if not documento.arquivo_xml_autorizacao_cancelamento_id:
+                documento.arquivo_xml_autorizacao_cancelamento_id = \
+                    documento._grava_anexo(nome_arquivo, conteudo)
+
+
+            documento.justificativa = nfe.evento.infEvento.detEvento.xJust
+            self.protocolo_cancelamento = nfe.retEvento.infEvento.nProt
+
+            # TODO: data_hora_cancelamento
+            # self.data_hora_cancelamento = \
+            #     nfe.retEvento.infEvento.dhRegEvento
+
+            documento.situacao_fiscal = SITUACAO_FISCAL_CANCELADO
+            documento.situacao_nfe = SITUACAO_NFE_CANCELADA
+
+        return documentos
 
     @api.multi
     def importa_caminho(self, autocommit=True):
