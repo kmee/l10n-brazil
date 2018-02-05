@@ -83,7 +83,7 @@ class ImportaNFe(models.Model):
 
 
             documento.justificativa = nfe.evento.infEvento.detEvento.xJust
-            self.protocolo_cancelamento = nfe.retEvento.infEvento.nProt
+            documento.protocolo_cancelamento = nfe.retEvento.infEvento.nProt
 
             # TODO: data_hora_cancelamento
             # self.data_hora_cancelamento = \
