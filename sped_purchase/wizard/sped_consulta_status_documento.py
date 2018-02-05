@@ -117,7 +117,7 @@ class SpedConsultaStatusDocumento(models.TransientModel):
                 if(nfe.evento.infEvento.detEvento.
                         descEvento == 'Cancelamento'):
 
-                    documentos = self.env['sped.importa.nfe'].\
+                    documentos = self.env['sped.documento'].\
                         importa_nfe_cancelada(xml)
 
                     if documentos:

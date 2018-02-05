@@ -16,16 +16,8 @@ import os
 import codecs
 import glob
 from lxml import objectify, etree
-from odoo.exceptions import UserError
 import logging
 import threading
-from pybrasil.data import UTC
-import dateutil.parser
-
-from odoo.addons.l10n_br_base.constante_tributaria import (
-    SITUACAO_FISCAL_CANCELADO,
-    SITUACAO_NFE_CANCELADA,
-)
 
 _logger = logging.getLogger(__name__)
 
@@ -60,44 +52,6 @@ class ImportaNFe(models.Model):
         string='Caminho',
     )
 
-    def importa_nfe_cancelada(self, xml):
-
-        nfe = objectify.fromstring(xml)
-        chave = str(nfe.evento.infEvento.chNFe)
-        documentos = self.env['sped.documento'].search([
-            ('chave', '=', chave),
-        ])
-
-        if not documentos:
-            raise UserError(
-                _("Nenhum documento encontrado para o "
-                  "protocolo de cancelamento fornecido")
-            )
-
-        for documento in documentos:
-            _logger.info(u'Importando NF-e cancelada')
-
-            nome_arquivo = chave + '-01-proc-can.xml'
-            conteudo = xml.encode('utf-8')
-            if not documento.arquivo_xml_autorizacao_cancelamento_id:
-                documento.arquivo_xml_autorizacao_cancelamento_id = \
-                    documento._grava_anexo(nome_arquivo, conteudo)
-
-
-            documento.justificativa = nfe.evento.infEvento.detEvento.xJust
-            documento.protocolo_cancelamento = nfe.retEvento.infEvento.nProt
-
-            data_cancelamento = dateutil.parser.parse(
-                nfe.retEvento.infEvento.dhRegEvento.text)
-            data_cancelamento = UTC.normalize(data_cancelamento)
-
-            documento.data_hora_cancelamento = data_cancelamento
-
-            documento.situacao_fiscal = SITUACAO_FISCAL_CANCELADO
-            documento.situacao_nfe = SITUACAO_NFE_CANCELADA
-
-        return documentos
-
     @api.multi
     def importa_caminho(self, autocommit=True):
 
@@ -114,46 +68,44 @@ class ImportaNFe(models.Model):
                         filename = os.path.join(root, basename)
                         yield filename
 
+        def percorre_arquivos(loop=find_files(self.caminho, '*.xml')):
+            for filename in loop:
+                try:
+                    self.quantidade_diretorio += 1
+                    tree = etree.parse(filename)
+                    xml = etree.tostring(tree.getroot())
+                    nfe = objectify.fromstring(xml)
+
+                    documento = self.env['sped.documento'].new()
+                    documento.importado_xml = True
+                    if getattr(nfe, 'NFe', None):
+                        documento.modelo = nfe.NFe.infNFe.ide.mod.text
+                    resultado = documento.le_nfe(xml=xml)
+                    if resultado:
+                        print u"Importado:  " + filename
+                        self.quantidade_importada += 1
+                    else:
+                        print u"Não importado:  " + filename
+                    if autocommit:
+                        self.env.cr.commit()
+                except Exception as e:
+                    if 'Nenhum documento encontrado' in (e.message or e.name):
+                        arquivos_cancelamento.append(filename)
+                    print u"Exception:  " + filename
+
         self.quantidade_diretorio = 0
         self.quantidade_importada = 0
-        notas_canceladas = []
 
-        for filename in find_files(self.caminho, '*.xml'):
-            try:
-                if 'proc-can' in filename:
-                    notas_canceladas.append(filename)
-                    continue
+        arquivos_cancelamento = []
 
-                self.quantidade_diretorio += 1
-                tree = etree.parse(filename)
-                xml = etree.tostring(tree.getroot())
-                nfe = objectify.fromstring(xml)
-                documento = self.env['sped.documento'].new()
-                documento.importado_xml = True
-                documento.modelo = nfe.NFe.infNFe.ide.mod.text
-                resultado = documento.le_nfe(xml=xml)
-                if resultado:
-                    print u"Importado:  " + filename
-                    self.quantidade_importada += 1
-                else:
-                    print u"Não importado:  " + filename
-                if autocommit:
-                    self.env.cr.commit()
-            except Exception as e:
-                print u"Exception:  " + filename
+        percorre_arquivos()
 
-        for filename in notas_canceladas:
-            try:
-                tree = etree.parse(filename)
-                xml = etree.tostring(tree.getroot())
-                nfe = objectify.fromstring(xml)
+        '''Se existirem arquivos de cancelamento de NF-e, eles devem ser 
+        processados depois do processamento de todos os outros arquivos'''
+        if arquivos_cancelamento:
+            self.quantidade_diretorio -= len(arquivos_cancelamento)
+            percorre_arquivos(arquivos_cancelamento[:])
 
-                if (nfe.evento.infEvento.detEvento.
-                        descEvento == 'Cancelamento'):
-                    self.importa_nfe_cancelada(xml)
-
-            except Exception as e:
-                print u"Exception:  " + filename
 
     # def _importar_caminho(self, diretorio):
     #
