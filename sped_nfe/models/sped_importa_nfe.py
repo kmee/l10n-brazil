@@ -20,6 +20,8 @@ from odoo.exceptions import UserError
 import logging
 import threading
 from pybrasil.data import UTC
+import dateutil.parser
+
 from odoo.addons.l10n_br_base.constante_tributaria import (
     SITUACAO_FISCAL_CANCELADO,
     SITUACAO_NFE_CANCELADA,
@@ -85,9 +87,11 @@ class ImportaNFe(models.Model):
             documento.justificativa = nfe.evento.infEvento.detEvento.xJust
             documento.protocolo_cancelamento = nfe.retEvento.infEvento.nProt
 
-            # TODO: data_hora_cancelamento
-            # self.data_hora_cancelamento = \
-            #     nfe.retEvento.infEvento.dhRegEvento
+            data_cancelamento = dateutil.parser.parse(
+                nfe.retEvento.infEvento.dhRegEvento.text)
+            data_cancelamento = UTC.normalize(data_cancelamento)
+
+            documento.data_hora_cancelamento = data_cancelamento
 
             documento.situacao_fiscal = SITUACAO_FISCAL_CANCELADO
             documento.situacao_nfe = SITUACAO_NFE_CANCELADA
