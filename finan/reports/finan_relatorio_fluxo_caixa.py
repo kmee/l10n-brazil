@@ -1,11 +1,14 @@
-# -*- coding: utf-8 -*-
+# encoding=utf8
 #
 # Copyright 2017 KMEE INFORMATICA LTDA
 #    Aristides Caldeira <aristides.caldeira@kmee.com.br>
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
-
 from __future__ import division, print_function, unicode_literals
+import sys
+
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 import logging
 
