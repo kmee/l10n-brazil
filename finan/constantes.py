@@ -67,6 +67,7 @@ FINAN_SITUACAO_DIVIDA = [
     ('quitado_parcialmente', 'Quitado parcialmente'),
     ('baixado', 'Baixado'),
     ('baixado_parcialmente', 'Baixado parcialmente'),
+    ('a_confirmar_pgto', 'A confirmar pagamento'),
 ]
 
 FINAN_SITUACAO_DIVIDA_A_VENCER = 'a_vencer'
@@ -76,12 +77,14 @@ FINAN_SITUACAO_DIVIDA_QUITADO = 'quitado'
 FINAN_SITUACAO_DIVIDA_QUITADO_PARCIALMENTE = 'quitado_parcialmente'
 FINAN_SITUACAO_DIVIDA_BAIXADO = 'baixado'
 FINAN_SITUACAO_DIVIDA_BAIXADO_PARCIALMENTE = 'baixado_parcialmente'
+FINAN_SITUACAO_DIVIDA_A_CONFIRMAR_PGTO = 'a_confirmar_pgto'
 
 FINAN_SITUACAO_DIVIDA_CONSIDERA_ABERTO = [
     FINAN_SITUACAO_DIVIDA_A_VENCER,
     FINAN_SITUACAO_DIVIDA_VENCE_HOJE,
     FINAN_SITUACAO_DIVIDA_VENCIDO,
     FINAN_SITUACAO_DIVIDA_QUITADO_PARCIALMENTE,
+    FINAN_SITUACAO_DIVIDA_A_CONFIRMAR_PGTO,
 ]
 
 FINAN_SITUACAO_DIVIDA_CONSIDERA_QUITADO = [

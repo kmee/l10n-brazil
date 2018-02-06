@@ -709,6 +709,12 @@ class FinanLancamento(SpedBase, models.Model):
         """
         for lancamento in self:
 
+            for pagamento in lancamento.pagamento_ids:
+                if pagamento.situacao_divida == \
+                        FINAN_SITUACAO_DIVIDA_A_CONFIRMAR_PGTO:
+                    lancamento.situacao_divida = \
+                        FINAN_SITUACAO_DIVIDA_A_CONFIRMAR_PGTO
+                    return
             #
             # Se for do tipo dívida
             #
@@ -746,22 +752,29 @@ class FinanLancamento(SpedBase, models.Model):
                         lancamento.situacao_divida = \
                             FINAN_SITUACAO_DIVIDA_A_VENCER
 
+                elif lancamento.forma_pagamento_id.\
+                        quitado_somente_com_data_credito_debito:
+                    lancamento.situacao_divida = \
+                        FINAN_SITUACAO_DIVIDA_A_CONFIRMAR_PGTO
+
                 else:
                     lancamento.situacao_divida = \
                         FINAN_SITUACAO_DIVIDA_A_VENCER
+
 
             #
             # Controla a situação das formas de pagamento que exigem a
             # informação da data de crédito/débito (caso dos cheques)
             #
             elif lancamento.tipo in FINAN_TIPO_PAGAMENTO:
-                if lancamento.forma_pagamento_id.quitado_somente_com_data_credito_debito:
+                if lancamento.forma_pagamento_id.\
+                        quitado_somente_com_data_credito_debito:
                     if lancamento.data_credito_debito:
                         lancamento.situacao_divida = \
                             FINAN_SITUACAO_DIVIDA_QUITADO
                     else:
                         lancamento.situacao_divida = \
-                            FINAN_SITUACAO_DIVIDA_VENCIDO
+                            FINAN_SITUACAO_DIVIDA_A_CONFIRMAR_PGTO
                 else:
                     lancamento.situacao_divida = FINAN_SITUACAO_DIVIDA_QUITADO
 
