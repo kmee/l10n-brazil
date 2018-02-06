@@ -91,7 +91,7 @@ class ImportaNFe(models.Model):
                 except Exception as e:
                     if 'Nenhum documento encontrado' in (e.message or e.name):
                         arquivos_cancelamento.append(filename)
-                    print u"Exception:  " + filename
+                    _logger.error(u"Exception: " + filename)
 
         self.quantidade_diretorio = 0
         self.quantidade_importada = 0
