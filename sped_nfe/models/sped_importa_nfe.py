@@ -90,21 +90,21 @@ class ImportaNFe(models.Model):
                         self.env.cr.commit()
                 except Exception as e:
                     if 'Nenhum documento encontrado' in (e.message or e.name):
-                        arquivos_cancelamento.append(filename)
+                        arquivos_eventos.append(filename)
                     _logger.error(u"Exception: " + filename)
 
         self.quantidade_diretorio = 0
         self.quantidade_importada = 0
 
-        arquivos_cancelamento = []
+        arquivos_eventos = []
 
         percorre_arquivos()
 
         '''Se existirem arquivos de cancelamento de NF-e, eles devem ser 
         processados depois do processamento de todos os outros arquivos'''
-        if arquivos_cancelamento:
-            self.quantidade_diretorio -= len(arquivos_cancelamento)
-            percorre_arquivos(arquivos_cancelamento[:])
+        if arquivos_eventos:
+            self.quantidade_diretorio -= len(arquivos_eventos)
+            percorre_arquivos(arquivos_eventos[:])
 
 
     # def _importar_caminho(self, diretorio):
