@@ -676,6 +676,14 @@ class FinanLancamento(SpedBase, models.Model):
             lancamento.vr_quitado_baixado = vr_quitado_baixado
             lancamento.vr_quitado_total = vr_quitado_total
 
+    @api.onchange('forma_pagamento_id', 'cheque_id')
+    def _compute_valor_cheque(self):
+        for lancamento in self:
+            if lancamento.forma_pagamento_id.forma_pagamento == '02':
+                lancamento.vr_documento = lancamento.cheque_id.valor
+            else:
+                lancamento.vr_documento = lancamento.vr_movimentado
+
     @api.depends('data_vencimento', 'documento_id.antecipa_vencimento',
                  'empresa_id.municipio_id')
     def _compute_data_vencimento_util(self):
