@@ -44,6 +44,24 @@
                 <field name="bairro" colspan="6" placeholder="District" attrs="{'required': [('exige_endereco', '=', True)]}" />
                 <field name="municipio_id" placeholder="Municipio" options="{'no_open': True, 'no_create': True}" colspan="6" attrs="{'required': [('exige_endereco', '=', True)]}" />
             </field>
+
+
+            <xpath expr="//notebook/page" position="replace">
+                <page name="contatos" string="Contatos &amp; Endereços" autofocus="autofocus">
+                    <field name="child_ids" mode="tree" context="{'default_parent_id': active_id, 'default_street': street, 'default_street2': street2, 'default_city': city, 'default_state_id': state_id, 'default_zip': zip, 'default_country_id': country_id, 'default_supplier': supplier, 'default_customer': customer, 'default_lang': lang,}">
+                         <tree string="Cliente">
+                            <field name="name" />
+                            <field name="phone" />
+                            <field name="street" />
+                            <field name="street2" />
+                            <field name="city" />
+                            <field name="state_id" />
+                            <field name="zip" />
+                            <field name="country_id" />
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
             <xpath expr="//notebook/page" position="before">
                 <page name="inscricoes" string="Inscrições e registros" autofocus="autofocus" >
                     <group col="4">
