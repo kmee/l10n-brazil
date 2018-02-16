@@ -84,7 +84,7 @@
         <field name="arch" type="xml">
             <tree string="Condições de Pagamento" duplicate="false">
                 <field name="sequence" widget="handle"/>
-                <field name="nome_comercial" />
+                <field name="display_name" />
             </tree>
         </field>
     </record>

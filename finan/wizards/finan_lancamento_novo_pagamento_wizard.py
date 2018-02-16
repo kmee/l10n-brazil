@@ -39,5 +39,6 @@ class FinanLancamento(models.TransientModel):
             'vr_desconto': self.vr_desconto,
             'vr_tarifas': self.vr_tarifas,
         }
-        self.env['finan.lancamento'].create(vals)
-        return {'type': 'ir.actions.act_window_close'}
+
+        lancamento_id = self.env['finan.lancamento'].create(vals)
+        return lancamento_id
