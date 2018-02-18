@@ -470,7 +470,7 @@ class SpedDocumento(models.Model):
         nfe.infNFe.total.ICMSTot.vNF.valor = str(D(self.vr_nf))
         nfe.infNFe.total.ICMSTot.vTotTrib.valor = str(D(self.vr_ibpt))
 
-    def _monta_nfe_informacao_complementar(self, nfe):
+    def _monta_informacao_complementar(self):
         infcomplementar = self.infcomplementar or ''
 
         dados_infcomplementar = {
@@ -503,12 +503,19 @@ class SpedDocumento(models.Model):
         #
         # ICMS para UF de destino
         #
-        if nfe.infNFe.ide.idDest.valor == \
-                IDENTIFICACAO_DESTINO_INTERESTADUAL and \
-                nfe.infNFe.ide.indFinal.valor == \
-                TIPO_CONSUMIDOR_FINAL_CONSUMIDOR_FINAL and \
-                nfe.infNFe.dest.indIEDest.valor == \
-                INDICADOR_IE_DESTINATARIO_NAO_CONTRIBUINTE:
+        if self.participante_id.estado == 'EX':
+            cfop_posicao = IDENTIFICACAO_DESTINO_EXTERIOR
+        elif self.participante_id.estado == self.empresa_id.estado:
+            cfop_posicao = IDENTIFICACAO_DESTINO_INTERNO
+        else:
+            cfop_posicao = IDENTIFICACAO_DESTINO_INTERESTADUAL
+
+        if (cfop_posicao ==
+                IDENTIFICACAO_DESTINO_INTERESTADUAL and
+                self.consumidor_final ==
+                    TIPO_CONSUMIDOR_FINAL_CONSUMIDOR_FINAL and
+                self.documento_id.participante_contribuinte ==
+                    INDICADOR_IE_DESTINATARIO_NAO_CONTRIBUINTE):
 
             if len(infcomplementar) > 0:
                 infcomplementar += '\n'
@@ -531,11 +538,16 @@ class SpedDocumento(models.Model):
         #
         # Aplica um template na observação
         #
-        template = TemplateBrasil(infcomplementar.encode('utf-8'))
-        infcomplementar = template.render(**dados_infcomplementar)
-        nfe.infNFe.infAdic.infCpl.valor = infcomplementar.decode('utf-8')
+        try:
+            template = TemplateBrasil(infcomplementar.encode('utf-8'))
+            infcomplementar = template.render(**dados_infcomplementar)
+            return infcomplementar.decode('utf-8')
+        except Exception as e:
+            raise UserError(
+                """" Erro ao gerar informação adicional do cabeçalho""")
+        return ''
 
-    def _monta_nfe_informacao_fisco(self, nfe):
+    def _monta_nfe_informacao_fisco(self):
         infadfisco = self.infadfisco or ''
 
         dados_infadfisco = {
@@ -545,7 +557,17 @@ class SpedDocumento(models.Model):
         #
         # Aplica um template na observação
         #
-        template = TemplateBrasil(infadfisco.encode('utf-8'))
-        infadfisco = template.render(**dados_infadfisco)
-        nfe.infNFe.infAdic.infAdFisco.valor = infadfisco.decode('utf-8')
+        try:
+            template = TemplateBrasil(infadfisco.encode('utf-8'))
+            infadfisco = template.render(**dados_infadfisco)
+            return infadfisco.decode('utf-8')
+        except Exception as e:
+            raise UserError("""Erro ao gerar informação adicional do fisco""")
+        return ''
+
+    def _monta_nfe_informacao_complementar(self, nfe):
+        nfe.infNFe.infAdic.infCpl.valor = self._monta_informacao_complementar()
+
+    def _monta_nfe_informacao_fisco(self, nfe):
+        nfe.infNFe.infAdic.infAdFisco.valor = self._monta_informacao_fisco()
 

@@ -104,9 +104,9 @@ class SpedDocumentoItem(models.Model):
             infcomplementar = template.render(**dados_infcomplementar)
             return infcomplementar.decode('utf-8')
         except Exception as e:
-            raise UserError(_(""" Erro ao gerar informação adicional do item"""))
-
-        return det
+            raise UserError(
+                _(""" Erro ao gerar informação adicional do item"""))
+        return ''
 
     def monta_nfe(self, numero_item, nfe):
         self.ensure_one()
