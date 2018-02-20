@@ -528,12 +528,32 @@ class SpedDocumento(models.Model):
                 infcomplementar += ' Fundo de combate à pobreza: R$ ' + \
                                    '${formata_valor(nf.vr_fcp)}'
 
+        # Se for devolução, acrescenta nas informações adicionais
+        # a nota que esta como referencia na devolução
+        if self.eh_devolucao_venda or self.eh_devolucao_compra:
+
+            if self.documento_referenciado_ids:
+                if len(infcomplementar) > 0:
+                    infcomplementar += '\n'
+
+                infcomplementar += \
+                    ' Devolução referente a nota fiscal Nº ' \
+                    '${formata_valor(' \
+                    'nf.documento_referenciado_ids.numero, ' \
+                    'casas_decimais=0, separador_milhar=0)} ' \
+                    ' no valor de:  R$ ${formata_valor(' \
+                    'nf.documento_referenciado_ids[0].documento_id.vr_nf)} ;'
+
         #
         # Aplica um template na observação
         #
         template = TemplateBrasil(infcomplementar.encode('utf-8'))
         infcomplementar = template.render(**dados_infcomplementar)
         nfe.infNFe.infAdic.infCpl.valor = infcomplementar.decode('utf-8')
+
+        # Atualiza as informações complementares no Odoo
+        #
+        self.infcomplementar = infcomplementar
 
     def _monta_nfe_informacao_fisco(self, nfe):
         infadfisco = self.infadfisco or ''
