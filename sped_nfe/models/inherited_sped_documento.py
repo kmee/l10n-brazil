@@ -11,7 +11,6 @@ import os
 import logging
 import base64
 from StringIO import StringIO
-from io import BytesIO
 from pyPdf import PdfFileReader, PdfFileWriter
 
 from odoo import api, fields, models
