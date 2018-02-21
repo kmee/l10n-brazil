@@ -547,7 +547,7 @@ class SpedDocumento(models.Model):
                 """" Erro ao gerar informação adicional do cabeçalho""")
         return ''
 
-    def _monta_nfe_informacao_fisco(self):
+    def _monta_informacao_fisco(self):
         infadfisco = self.infadfisco or ''
 
         dados_infadfisco = {
