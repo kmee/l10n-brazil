@@ -11,7 +11,7 @@ from __future__ import division, print_function, unicode_literals
 
 import logging
 
-from odoo import api, fields, models, _
+from odoo import api, fields, models, tools, _
 from odoo.exceptions import ValidationError, UserError
 from odoo.addons.sped_imposto.models.sped_calculo_imposto import SpedCalculoImposto
 
@@ -1697,8 +1697,9 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
 
         try:
             template = TemplateBrasil(infcomplementar.encode('utf-8'))
-            informacao_complementar = template.render(**dados_infcomplementar)
+            infcomplementar = template.render(**dados_infcomplementar)
+
+            return infcomplementar
         except Exception as e:
             raise UserError(
                 _(""" Erro ao gerar informação adicional do item"""))
-        return informacao_complementar.decode('utf-8')
