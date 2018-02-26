@@ -104,7 +104,8 @@ class SpedDocumentoPagamento(SpedBase, models.Model):
             return res
 
         valor = D(self.valor or 0)
-        troco = valor - D(self.env.context.get('default_valor', 0))
+        troco = valor - self.documento_id.vr_fatura
+        # troco = valor - D(self.env.context.get('default_valor', 0))
         if troco < 0:
             troco = 0
 
