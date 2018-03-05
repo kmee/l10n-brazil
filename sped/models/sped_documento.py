@@ -168,8 +168,7 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
     # Campos da operação
     #
     regime_tributario = fields.Selection(
-        selection=REGIME_TRIBUTARIO,
-        string='Regime tributário',
+        related=False,
     )
     ind_forma_pagamento = fields.Selection(
         selection=IND_FORMA_PAGAMENTO,
@@ -1048,7 +1047,6 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
             'vr_ibpt',
             'vr_custo_comercial',
             'peso_bruto', 'peso_liquido'
-
         ]
 
         for documento in self:
@@ -1164,8 +1162,7 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
             return res
 
         if self.modelo not in (
-                MODELO_FISCAL_NFE, MODELO_FISCAL_NFCE, MODELO_FISCAL_NFSE,
-                MODELO_FISCAL_CFE):
+                MODELO_FISCAL_NFE, MODELO_FISCAL_NFCE, MODELO_FISCAL_NFSE):
             return res
 
         if self.modelo == MODELO_FISCAL_NFE:
@@ -1300,6 +1297,14 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
             valores['finalidade_nfe'] = self.operacao_id.finalidade_nfe
             valores['modalidade_frete'] = self.operacao_id.modalidade_frete
             valores['infadfisco'] = self.operacao_id.infadfisco
+
+            if not self.operacao_id.calcular_tributacao in (
+                    'somente_calcula', 'manual'):
+                if valores.get('infcomplementar'):
+                    valores['infcomplementar'] = \
+                        valores['infcomplementar'] + ' ' + self.operacao_id.infcomplementar
+                else:
+                    valores['infcomplementar'] = self.operacao_id.infcomplementar
 
         valores['deduz_retencao'] = self.operacao_id.deduz_retencao
         valores['pis_cofins_retido'] = self.operacao_id.pis_cofins_retido
@@ -1583,6 +1588,7 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
         # tarefas de integração necessárias depois de autorizar uma NF-e,
         # por exemplo, criar lançamentos financeiros, movimentações de
         # estoque etc.
+        #
         self.ensure_one()
         self.gera_operacoes_subsequentes()
 
@@ -1591,8 +1597,6 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
         # Este método deve ser alterado por módulos integrados, para realizar
         # tarefas de integração necessárias antes de denegar uma NF-e
         #
-        
-        
         self.ensure_one()
         self.gera_operacoes_subsequentes()
 
@@ -1670,8 +1674,8 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
     def _prepare_subsequente_referenciado(self):
         vals = {
                 'documento_id': self.id,
-                'partner_id': self.partner_id and
-                              self.partner_id.id,
+                'participante_id': self.participante_id and
+                                   self.participante_id.id,
                 'modelo': self.modelo,
                 'serie': self.serie,
                 'numero': self.numero,
@@ -1757,3 +1761,4 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
         except Exception as e:
             raise UserError(
                 _(""" Erro ao gerar informação adicional do documento"""))
+

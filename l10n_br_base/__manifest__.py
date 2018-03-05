@@ -80,11 +80,11 @@
         'views/sped_empresa_view.xml',
         'views/sped_empresa_vincula_company_view.xml',
 
-        'views/sped_produto_base_view.xml',
-        'views/sped_produto_produto_view.xml',
-        'views/sped_unidade_produto_view.xml',
-        'views/sped_produto_servico_view.xml',
-        'views/sped_unidade_servico_view.xml',
+        # 'views/sped_produto_base_view.xml',
+        # 'views/sped_produto_produto_view.xml',
+        # 'views/sped_unidade_produto_view.xml',
+        # 'views/sped_produto_servico_view.xml',
+        # 'views/sped_unidade_servico_view.xml',
 
         #
         # Parcelamentos e pagamentos; bancos e contas bancárias

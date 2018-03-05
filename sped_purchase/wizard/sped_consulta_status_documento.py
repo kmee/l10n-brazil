@@ -141,14 +141,14 @@ class SpedConsultaStatusDocumento(models.TransientModel):
                 'name': _("Associar Pedido de Compras"),
                 'view_mode': 'form',
                 'view_type': 'form',
-                'view_id': self.env.ref(
-                    'sped_nfe.sped_documento_ajuste_recebimento_form').id,
+                'view_id': self.env.ref('sped_nfe.sped_documento'
+                                        '_ajuste_recebimento_form').id,
                 'res_id': dados.id,
                 'res_model': 'sped.documento',
                 'type': 'ir.actions.act_window',
                 'target': 'current',
-                'context': {'default_purchase_order_ids': [
-                    (4, self.purchase_order_id.id)]},
+                'context': {'default_purchase_order_ids':
+                            [(4, self.purchase_order_id.id)]},
                 'flags': {'form': {'action_buttons': True,
                                    'options': {'mode': 'edit'}}},
             }
@@ -169,18 +169,22 @@ class SpedConsultaStatusDocumento(models.TransientModel):
                     'name': _("Associar Pedido de Compras"),
                     'view_mode': 'form',
                     'view_type': 'form',
-                    'view_id': self.env.ref(
-                        'sped_nfe.sped_documento_ajuste_recebimento_form').id,
+                    'view_id': self.env.ref('sped_nfe.sped_documento'
+                                            '_ajuste_recebimento_form').id,
                     'res_id': dados.id,
                     'res_model': 'sped.documento',
                     'type': 'ir.actions.act_window',
                     'target': 'current',
-                    'context': {'default_purchase_order_ids': [
-                        (4, self.purchase_order_id.id)]},
+                    'context': {'default_purchase_order_ids':
+                                [(4, self.purchase_order_id.id)]},
                     'flags': {'form': {'action_buttons': True,
                                        'options': {'mode': 'edit'}}},
                 }
 
+            else:
+                raise Warning(
+                    _(nfe_result['code'] + ' - ' + nfe_result['message']))
+
         except Exception as e:
             raise UserError(
-                _(u'Erro na consulta da chave!', e))
+                _(e))

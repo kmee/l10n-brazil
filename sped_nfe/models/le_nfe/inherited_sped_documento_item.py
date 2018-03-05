@@ -9,7 +9,7 @@ from __future__ import division, print_function, unicode_literals
 
 import logging
 
-from odoo import models, api
+from odoo import models
 from odoo.addons.l10n_br_base.constante_tributaria import *
 
 _logger = logging.getLogger(__name__)
@@ -20,8 +20,6 @@ try:
 
 except (ImportError, IOError) as err:
     _logger.debug(err)
-
-from ..versao_nfe_padrao import ClasseDet
 
 
 class SpedDocumentoItem(models.Model):
@@ -163,8 +161,8 @@ class SpedDocumentoItem(models.Model):
 
             'quantidade_tributacao': det.prod.qTrib.valor,
             'vr_unitario_tributacao': det.prod.vUnTrib.valor,
-            'vr_produtos_tributacao': \
-                det.prod.qTrib.valor * det.prod.vUnTrib.valor,
+            'vr_produtos_tributacao':
+            det.prod.qTrib.valor * det.prod.vUnTrib.valor,
             'exibe_tributacao': False,
             'fator_conversao_unidade_tributacao': 1,
 
@@ -206,7 +204,8 @@ class SpedDocumentoItem(models.Model):
             'vr_icms_st': det.imposto.ICMS.vICMSST.valor,
             # det.imposto.ICMS.motDesICMS.valor =
             # det.imposto.ICMS.vBCSTRet.valor = str(D(self.bc_icms_st_retido))
-            # det.imposto.ICMS.vICMSSTRet.valor = str(D(self.vr_icms_st_retido))
+            # det.imposto.ICMS.vICMSSTRet.valor =
+            # str(D(self.vr_icms_st_retido))
             # det.imposto.ICMS.vBCSTDest.valor =
             # det.imposto.ICMS.vICMSSTDest.valor =
             # det.imposto.ICMS.UFST.valor =
@@ -253,9 +252,10 @@ class SpedDocumentoItem(models.Model):
             #
             'al_fcp': det.imposto.ICMSUFDest.pFCPUFDest.valor,
             'al_interna_destino': det.imposto.ICMSUFDest.pICMSUFDest.valor,
-            #'al_icms_proprio': det.imposto.ICMSUFDest.pICMSInter.valor,
-            'al_partilha_estado_destino': det.imposto.ICMSUFDest.pICMSInterPart.valor,
-            'vr_fcp':det.imposto.ICMSUFDest.vFCPUFDest.valor,
+            # 'al_icms_proprio': det.imposto.ICMSUFDest.pICMSInter.valor,
+            'al_partilha_estado_destino':
+                det.imposto.ICMSUFDest.pICMSInterPart.valor,
+            'vr_fcp': det.imposto.ICMSUFDest.vFCPUFDest.valor,
             'vr_icms_estado_destino': det.imposto.ICMSUFDest.vICMSUFDest.valor,
             'vr_icms_estado_origem': det.imposto.ICMSUFDest.vICMSUFRemet.valor,
 
@@ -267,8 +267,10 @@ class SpedDocumentoItem(models.Model):
             #
             # CFOP
             #
-            'cfop_original_id': self.emissao == TIPO_EMISSAO_TERCEIROS and cfop or False,
-            'cfop_id': self.emissao != TIPO_EMISSAO_TERCEIROS and cfop or False,
+            'cfop_original_id':
+                dados_documento['emissao'] == TIPO_EMISSAO_TERCEIROS and cfop or False,
+            'cfop_id':
+                dados_documento['emissao'] != TIPO_EMISSAO_TERCEIROS and cfop or False,
         }
 
         #
@@ -403,32 +405,32 @@ class SpedDocumentoItem(models.Model):
                 if codigo.isdigit() and codigo == str(det.prod.cEANTrib.valor):
                     dados_produto['nome'] = '-'.join(partes[:-1]).strip()
 
-            #if 'EAN:' in dados_produto['nome'] and \
-                #dados_produto['codigo_barras'] in dados_produto['nome']:
-                #cb = dados_produto['codigo_barras']
-                #dados_produto['nome'] = \
-                    #dados_produto['nome'].replace(';EAN: ' + cb, '')
-                #dados_produto['nome'] = \
-                    #dados_produto['nome'].replace(';EAN:' + cb, '')
-                #dados_produto['nome'] = \
-                    #dados_produto['nome'].replace(' EAN: ' + cb, '')
-                #dados_produto['nome'] = \
-                    #dados_produto['nome'].replace(' EAN:' + cb, '')
-                #dados_produto['nome'] = dados_produto['nome'].strip()
+            # if 'EAN:' in dados_produto['nome'] and \
+                # dados_produto['codigo_barras'] in dados_produto['nome']:
+                # cb = dados_produto['codigo_barras']
+                # dados_produto['nome'] = \
+                    # dados_produto['nome'].replace(';EAN: ' + cb, '')
+                # dados_produto['nome'] = \
+                    # dados_produto['nome'].replace(';EAN:' + cb, '')
+                # dados_produto['nome'] = \
+                    # dados_produto['nome'].replace(' EAN: ' + cb, '')
+                # dados_produto['nome'] = \
+                    # dados_produto['nome'].replace(' EAN:' + cb, '')
+                # dados_produto['nome'] = dados_produto['nome'].strip()
 
             dados['produto_id'] = self._busca_produto(dados_produto).id
 
         ##
-        ## Declaração de Importação
+        # Declaração de Importação
         ##
-        #for declaracao in self.declaracao_ids:
-            #det.prod.DI.append(declaracao.monta_nfe())
+        # for declaracao in self.declaracao_ids:
+            # det.prod.DI.append(declaracao.monta_nfe())
 
         ##
-        ## Rastreabilidade
+        # Rastreabilidade
         ##
-        #for rastreabilidade in self.rastreabilidade_ids:
-            #det.prod.rastro.append(rastreabilidade.monta_nfe())
+        # for rastreabilidade in self.rastreabilidade_ids:
+            # det.prod.rastro.append(rastreabilidade.monta_nfe())
 
         item = self.new()
         item.update(dados)

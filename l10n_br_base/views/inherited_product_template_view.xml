@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright 2018 KMEE INFORMATICA LTDA
+    License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
+-->
+<odoo>
+
+    <record id="product_template_only_form_view" model="ir.ui.view">
+        <field name="name">product.template.form (in l10n_br_base)</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <field name="currency_id" invisible="1"/>
+                <field name="currency_aliquota_id" invisible="1"/>
+                <field name="currency_unitario_id" invisible="1"/>
+                <field name="currency_peso_id" invisible="1"/>
+            </xpath>
+            <field name="default_code" position="attributes">
+                <attribute name="required">1</attribute>
+            </field>
+            <field name="list_price" position="after">
+                <field name="preco_transferencia"/>
+            </field>
+            <field name="categ_id" position="after">
+                <field name="marca" attrs="{'invisible': [('type','=','service')]}"/>
+            </field>
+            <field name="uom_id" position="replace">
+                <field name="uom_id" options="{'no_create': True}"/>
+            </field>
+            <field name="uom_po_id" position="replace">
+                <field name="uom_po_id" invisible="1" options="{'no_create': True}"/>
+            </field>
+            <xpath expr="//div[@class='oe_title']" position="after">
+                <group name="grupo_produto_superior">
+
+                </group>
+            </xpath>
+            <xpath expr="//page[@name='sales']" position="after">
+                <page name="fiscal" string="Fiscal">
+                    <group col="4">
+                        <field name="tipo" required="1" />
+                        <field name="org_icms" required="1" />
+                    </group>
+                    <group name="fiscal_produtos" col="4" colspan="4" attrs="{'invisible': [('type','=','service')]}">
+                        <separator string="Unidade e Código de barras para tributação - comercial" colspan="4" />
+                        <field name="unidade_tributacao_id" string="Unidade" />
+                        <field name="fator_conversao_unidade_tributacao" string="Fator de conversão" attrs="{'required': [('unidade_tributacao_id', '!=', False)]}" />
+                        <field name="codigo_barras_tributacao" string="Código de barras" />
+                    </group>
+                </page>
+                <page name="estoque" string="Estoque"  attrs="{'invisible': [('type','=','service')]}">
+                    <group col="4">
+                        <field name="peso_bruto" />
+                        <field name="peso_liquido" />
+                        <field name="especie" />
+                        <field name="fator_quantidade_especie" />
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!--view_template_property_form-->
+
+    <!--<record id="res_partner_tree" model="ir.ui.view">-->
+        <!--<field name="name">res.partner.tree (in l10n_br_base)</field>-->
+        <!--<field name="model">res.partner</field>-->
+        <!--<field name="inherit_id" ref="base.view_partner_tree"/>-->
+        <!--<field name="arch" type="xml">-->
+            <!--<field name="phone" position="replace">-->
+                <!--<field name="cnpj_cpf" />-->
+                <!--<field name="phone" />-->
+                <!--<field name="mobile" />-->
+                <!--<field name="municipio_id" />-->
+            <!--</field>-->
+        <!--</field>-->
+    <!--</record>-->
+
+    <!--<record id="view_res_partner_filter" model="ir.ui.view">-->
+        <!--<field name="name">res.partner.select (in l10n_br_base)</field>-->
+        <!--<field name="model">res.partner</field>-->
+        <!--<field name="inherit_id" ref="base.view_res_partner_filter"/>-->
+        <!--<field name="arch" type="xml">-->
+               <!--<field name="name" position="replace">-->
+                   <!--<field name="name" filter_domain="['|','|','|','|',('display_name','ilike',self),('ref','=',self),('email','ilike',self),('cnpj_cpf_numero', 'ilike', self),('razao_social','ilike',self),('fantasia','ilike',self)]"/>-->
+               <!--</field>-->
+        <!--</field>-->
+    <!--</record>-->
+</odoo>

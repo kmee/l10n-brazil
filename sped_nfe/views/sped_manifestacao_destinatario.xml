@@ -56,6 +56,7 @@
                     </group>
                     <group>
                         <field name="tipo_operacao"/>
+                        <field name="operacao_id"/>
                         <field name="valor_documento" widget="monetary"/>
                         <field name="situacao_nfe"/>
                         <field name="forma_inclusao"/>

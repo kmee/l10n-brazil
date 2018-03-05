@@ -10,8 +10,8 @@ from __future__ import division, print_function, unicode_literals
 from odoo import api, fields, models
 
 
-class SpedProduto(models.Model):
-    _inherit = 'sped.produto'
+class ProductTemplate(models.Model):
+    _inherit = 'product.template'
 
     ncm_id = fields.Many2one(
         comodel_name='sped.ncm',

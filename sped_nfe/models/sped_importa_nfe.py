@@ -13,16 +13,11 @@ import gzip
 import io
 import fnmatch
 import os
-import codecs
-import glob
 from lxml import objectify, etree
 import logging
-import threading
-
-_logger = logging.getLogger(__name__)
 
 
-class ImportaNFe(models.Model):
+class ImportaNFe(models.TransientModel):
 
     _name = 'sped.importa.nfe'
     _description = 'Importa NFe'
@@ -30,18 +25,20 @@ class ImportaNFe(models.Model):
     chave = fields.Char(
         string='Chave',
         size=44,
-        # required=True,
+        required=True,
     )
+
     quantidade_diretorio = fields.Integer(
         string='Quantidade Diretório',
     )
     quantidade_importada = fields.Integer(
         string='Quantidade Importada',
     )
+
     empresa_id = fields.Many2one(
         comodel_name='sped.empresa',
         string='Empresa',
-        # required=True,
+        required=True,
     )
 
     purchase_id = fields.Many2one(
@@ -171,11 +168,14 @@ class ImportaNFe(models.Model):
     #
     #     lista_de_diretorios = [x[0] for x in os.walk(self.caminho)]
     #
-    #     # chunks = [lista_de_diretorios[x:x + 10] for x in xrange(0, len(lista_de_diretorios), 10)]
+    #     # chunks = [lista_de_diretorios[x:x + 10]
+    # for x in xrange(0, len(lista_de_diretorios), 10)]
     #
     #     for diretorio in lista_de_diretorios:
-    #         _logger.info(u'Criando novo thread de importação no diretório' + diretorio)
-    #         threaded_calculation = threading.Thread(target=self._importar_caminho(diretorio), args=())
+    #         _logger.info
+    # (u'Criando novo thread de importação no diretório' + diretorio)
+    #         threaded_calculation =
+    # threading.Thread(target=self._importar_caminho(diretorio), args=())
     #         threaded_calculation.start()
     #     return True
     #
@@ -223,7 +223,8 @@ class ImportaNFe(models.Model):
             'target': 'new',
             'res_id': documento.id,
             'context': {'active_id': documento.id},
-            'flags': {'form': {'action_buttons': True, 'options': {'mode': 'edit'}}},
+            'flags': {'form': {'action_buttons': True,
+                               'options': {'mode': 'edit'}}},
         }
 
     def download_nfe(self, empresa, chave):

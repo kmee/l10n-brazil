@@ -12,8 +12,11 @@
         <field name="mode">primary</field>
         <field name="inherit_id" ref="sped.sped_documento_base_form" />
         <field name="arch" type="xml">
+            <header position="inside">
+                <button name="action_confirmar_operacacao" string="Confirmar" type="object" class="btn-primary"/>
+            </header>
             <xpath expr="//form[1]" position="attributes">
-                <attribute name="string">Emissão de NF-e</attribute>
+                <attribute name="string">Recebimento de NF-e</attribute>
             </xpath>
             <xpath expr="//separator[@name='pagamentos']" position="replace" />
             <xpath expr="//field[@name='pagamento_ids']" position="replace" />
@@ -35,7 +38,7 @@
         <field name="inherit_id" ref="sped.sped_documento_base_tree" />
         <field name="arch" type="xml">
             <xpath expr="//tree[1]" position="attributes">
-                <attribute name="string">Emissão de NF-e</attribute>
+                <attribute name="string">Recebimento de NF-e</attribute>
             </xpath>
         </field>
     </record>
@@ -48,13 +51,13 @@
         <field name="inherit_id" ref="sped.sped_documento_base_search" />
         <field name="arch" type="xml">
             <xpath expr="//search[1]" position="attributes">
-                <attribute name="string">Emissão de NF-e</attribute>
+                <attribute name="string">Recebimento de NF-e</attribute>
             </xpath>
         </field>
     </record>
 
     <record model="ir.actions.act_window" id="sped_documento_recebimento_nfe_acao">
-        <field name="name">Emissão de NF-e</field>
+        <field name="name">Recebimento de NF-e</field>
         <field name="domain">[('emissao', '=', '1'), ('modelo', '=', '55'), ('entrada_saida', '=', '0')]</field>
         <field name="context">{'default_emissao': '1',  'default_entrada_saida': '0', 'default_modelo': '55', 'manual': True}</field>
         <field name="res_model">sped.documento</field>

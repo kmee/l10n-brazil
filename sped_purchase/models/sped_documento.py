@@ -17,6 +17,36 @@ class SpedDocumento(models.Model):
         copy=False,
     )
 
+    recebido = fields.Boolean(
+        string='Produtos recebidos?',
+        compute='_compute_recebido',
+        default=False,
+    )
+
+    @api.multi
+    def receber_produtos(self):
+        self.ensure_one()
+        pickings = self.purchase_order_ids.mapped('picking_ids').filtered(
+            lambda pick: pick.state not in ['cancel', 'done']
+        )
+        return {
+            'name': _("Receber Produtos"),
+            'view_mode': 'tree,form',
+            'view_type': 'form',
+            'res_model': 'stock.picking',
+            'type': 'ir.actions.act_window',
+            'target': 'new',
+            'domain': [('id', 'in', pickings.ids)]
+        }
+
+    @api.multi
+    def _compute_recebido(self):
+        for documento in self:
+            documento.recebido = all(
+                pick.state in ['cancel', 'done'] for pick in
+                self.purchase_order_ids.mapped('picking_ids')
+            )
+
     def _preparar_sped_documento_item(self, item):
         dados = {
             'documento_id': self.id,
@@ -30,63 +60,22 @@ class SpedDocumento(models.Model):
         }
         return dados
 
-    # Carregar linhas da Purchase Order
     @api.onchange('purchase_order_ids')
-    def purchase_order_change(self):
-        if not self.purchase_order_ids:
-            return {}
-        elif len(self.purchase_order_ids) == 1:
+    def _onchange_atualiza_po_itens(self):
+        """
+        Atualiza o campo purchase_ids dos itens do pedido de compra
+        de acordo com o campo purchase_order_ids do pedido de compra
+        """
+        for record in self:
+            if not record.purchase_order_ids or len(
+                    record.purchase_order_ids) > 1:
+                return {}
+
             dados = {
-                'empresa_id': self.purchase_order_ids.empresa_id.id,
-                'operacao_id': self.purchase_order_ids.operacao_id.id,
-                'modelo': self.purchase_order_ids.operacao_id.modelo,
-                'emissao': self.purchase_order_ids.operacao_id.emissao,
-                # 'participante_id': self.purchase_order_ids.participante_id.id,
-                'condicao_pagamento_id': self.purchase_order_ids.condicao_pagamento_id.id if \
-                    self.purchase_order_ids.condicao_pagamento_id else False,
-                'transportadora_id': self.purchase_order_ids.transportadora_id.id if \
-                    self.purchase_order_ids.transportadora_id else False,
-                'modalidade_frete': self.purchase_order_ids.modalidade_frete,
+                'purchase_ids': [(6, False, record.purchase_order_ids[0].ids)]
             }
-            dados.update(self.purchase_order_ids.prepara_dados_documento())
-            self.update(dados)
-            self.update(self._onchange_empresa_id()['value'])
-            self.update(self._onchange_operacao_id()['value'])
-    
-            if self.purchase_order_ids.presenca_comprador:
-                self.presenca_comprador = self.purchase_order_ids.presenca_comprador
-    
-            self.update(self._onchange_serie()['value'])
-            # self.update(self._onchange_participante_id()['value'])
-
-        for pedido in self.mapped('purchase_order_ids'):
-            for item in pedido.order_line - \
-                    self.item_ids.mapped('purchase_line_ids'):
-                dados = self._preparar_sped_documento_item(item)
-                contexto = {
-                    'forca_vr_unitario': dados['vr_unitario']
-                }
-                documento_item = self.item_ids.mesclar_linhas(
-                    dados, item, contexto
-                )
-                if documento_item:
-                    self.item_ids += documento_item
-                    self.item_ids[-1].update(
-                        item.prepara_dados_documento_item()
-                    )
-        return {}
-
-    @api.onchange('partner_id', 'item_ids')
-    def _onchange_allowed_purchase_ids(self):
-        result = {}
-
-    @api.multi
-    def write(self, vals):
-        res = super(SpedDocumento, self).write(vals)
-        purchase_order_ids = self.mapped('purchase_order_ids')
-        for pedido in purchase_order_ids:
-            pedido._get_invoiced()
-        return res
+            for item in record.item_ids:
+                item.write(dados)
 
     @api.onchange('purchase_order_ids')
     def purchase_order_change(self):
@@ -107,8 +96,3 @@ class SpedDocumento(models.Model):
         if not self.purchase_order_ids:
             super(SpedDocumento, self)._criar_picking_entrada()
 
-    def executa_depois_create(self, result, dados):
-        for documento in result:
-            for item in documento.item_ids:
-                item.calcula_impostos()
-        return result

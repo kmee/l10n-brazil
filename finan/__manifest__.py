@@ -76,7 +76,6 @@
         #
         # Data
         #
-        'data/finan.conta.csv',
         'data/finan_documento_data.xml',
         'data/finan_forma_pagamento.xml',
         'data/finan_condicao_pagamento.xml',

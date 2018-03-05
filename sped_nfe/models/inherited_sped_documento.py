@@ -19,6 +19,8 @@ from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_base.constante_tributaria import *
 
+from .versao_nfe_padrao import *
+
 _logger = logging.getLogger(__name__)
 
 try:
@@ -27,15 +29,9 @@ try:
     from pybrasil.inscricao import limpa_formatacao
     from pybrasil.data import (parse_datetime, UTC, data_hora_horario_brasilia,
                                agora)
-    from pybrasil.valor import formata_valor
-    from pybrasil.valor.decimal import Decimal as D
-    from pybrasil.template import TemplateBrasil
 
 except (ImportError, IOError) as err:
     _logger.debug(err)
-
-
-from .versao_nfe_padrao import *
 
 
 class SpedDocumento(models.Model):
@@ -148,6 +144,10 @@ class SpedDocumento(models.Model):
         string='Consulta-DFe',
         ondelete='cascade',
     )
+    manitestacao_id = fields.Many2one(
+        comodel_name='sped.manifestacao.destinatario',
+        string='Manifestação do Destinatário',
+    )
 
     xmls_exportados = fields.Boolean(
         string='XMLs exportados para a pasta da contabilidade',
@@ -208,7 +208,7 @@ class SpedDocumento(models.Model):
             #
             documento.permite_alteracao = documento.permite_alteracao or \
                 documento.situacao_nfe in (SITUACAO_NFE_EM_DIGITACAO,
-                                        SITUACAO_NFE_REJEITADA)
+                                           SITUACAO_NFE_REJEITADA)
         return result
 
     def _check_permite_alteracao(self, operacao='create', dados={},
@@ -428,7 +428,6 @@ class SpedDocumento(models.Model):
         self.arquivo_xml_autorizacao_id = False
         self.arquivo_xml_autorizacao_id = \
             self._grava_anexo(nome_arquivo, conteudo)
-        self.xmls_exportados = False
 
         return {
             'type' : 'ir.actions.act_url',
@@ -461,7 +460,6 @@ class SpedDocumento(models.Model):
         self.arquivo_xml_autorizacao_cancelamento_id = False
         self.arquivo_xml_autorizacao_cancelamento_id = \
             self._grava_anexo(nome_arquivo, conteudo)
-        self.xmls_exportados = False
 
         return {
             'type': 'ir.actions.act_url',
@@ -597,6 +595,7 @@ class SpedDocumento(models.Model):
                 self.executa_depois_denegar()
             else:
                 self.situacao_nfe = SITUACAO_NFE_EM_DIGITACAO
+
         #
         # Se o último processo foi o envio do lote, significa que a consulta
         # falhou, mas o envio não
@@ -977,6 +976,7 @@ class SpedDocumento(models.Model):
         self.envia_email(mail_template)
 
     def _envia_email(self, mail_template):
+        self.ensure_one()
         mail_template.send_mail(self.id)
 
     def envia_email(self, mail_template):
@@ -996,27 +996,27 @@ class SpedDocumento(models.Model):
 
         if self.situacao_nfe == SITUACAO_NFE_CANCELADA:
             if self.modelo == MODELO_FISCAL_NFE and \
-                self.empresa_id.mail_template_nfe_cancelada_id:
+                    self.empresa_id.mail_template_nfe_cancelada_id:
                 mail_template = self.empresa_id.mail_template_nfe_cancelada_id
             elif self.modelo == MODELO_FISCAL_NFCE and \
-                self.empresa_id.mail_template_nfce_cancelada_id:
+                    self.empresa_id.mail_template_nfce_cancelada_id:
                 mail_template = self.empresa_id.mail_template_nfce_cancelada_id
 
         elif self.situacao_nfe == SITUACAO_NFE_DENEGADA:
             if self.modelo == MODELO_FISCAL_NFE and \
-                self.empresa_id.mail_template_nfe_denegada_id:
+                    self.empresa_id.mail_template_nfe_denegada_id:
                 mail_template = self.empresa_id.mail_template_nfe_denegada_id
             elif self.modelo == MODELO_FISCAL_NFCE and \
-                self.empresa_id.mail_template_nfce_denegada_id:
+                    self.empresa_id.mail_template_nfce_denegada_id:
                 mail_template = self.empresa_id.mail_template_nfce_denegada_id
         else:
             if self.operacao_id.mail_template_id:
                 mail_template_id = self.operacao_id.mail_template_id
             elif self.modelo == MODELO_FISCAL_NFE and \
-                self.empresa_id.mail_template_nfe_autorizada_id:
+                    self.empresa_id.mail_template_nfe_autorizada_id:
                 mail_template = self.empresa_id.mail_template_nfe_autorizada_id
             elif self.modelo == MODELO_FISCAL_NFCE and \
-                self.empresa_id.mail_template_nfce_autorizada_id:
+                    self.empresa_id.mail_template_nfce_autorizada_id:
                 mail_template = \
                     self.empresa_id.mail_template_nfce_autorizada_id
 
@@ -1157,3 +1157,11 @@ class SpedDocumento(models.Model):
             res['value']['numero'] = faixa_inutilizada.fim_numeracao + 1
 
         return res
+
+    def action_confirmar_operacacao(self):
+        for record in self:
+            if record.manitestacao_id:
+                record.manitestacao_id.action_confirmar_operacacao()
+                _logger.info(
+                    "Confirmada a operação e manifestação do documento fiscal"
+                )

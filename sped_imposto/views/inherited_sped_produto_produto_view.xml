@@ -1,29 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
     Copyright 2016 Taŭga Tecnologia - Aristides Caldeira <aristides.caldeira@tauga.com.br>
+    Copyright 2018 KMEE INFORMATICA LTDA
     License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 -->
 <odoo>
 
-    <record model="ir.ui.view" id="sped_produto_produto_form" >
-        <field name="name">sped.produto.produto.form</field>
-        <field name="model">sped.produto</field>
-        <field name="inherit_id" ref="l10n_br_base.sped_produto_produto_form"/>
+    <record model="ir.ui.view" id="product_template_only_form_view" >
+        <field name="name">product.template.form in (sped_imposto)</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="l10n_br_base.product_template_only_form_view"/>
         <field name="priority">2</field>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='unidade_id']" position="before">
+            <group name="grupo_produto_superior" position="inside">
                 <field name="cest_ids" readonly="1" invisible="1" />
                 <field name="exige_cest" invisible="1" />
                 <field name="exige_fator_conversao_unidade_tributacao_ncm" invisible="1" />
                 <newline />
-            </xpath>
-            <xpath expr="//field[@name='unidade_id']" position="after">
                 <newline />
-                <field name="ncm_id" required="1" options="{'no_create': True, 'no_open': False}" colspan="4" />
-                <newline />
-                <field name="cest_id" domain="[('ncm_ids', 'in', ncm_id)]"  attrs="{'invisible': [('exige_cest', '=', False)], 'required': [('exige_cest', '=', True)]}" options="{'no_create': True, 'no_open': False}" colspan="4" />
-                <newline />
-            </xpath>
+                <group>
+                    <field name="ncm_id" required="1" options="{'no_create': True, 'no_open': False}" colspan="2"/>
+                    <field name="cest_id" domain="[('ncm_ids', 'in', ncm_id)]" attrs="{'invisible': [('exige_cest', '=', False)], 'required': [('exige_cest', '=', True)]}" options="{'no_create': True, 'no_open': False}" colspan="2"/>
+                </group>
+            </group>
             <xpath expr="//field[@name='org_icms']" position="after">
                 <newline />
                 <field name="protocolo_id" options="{'no_create': True, 'no_open': False}" colspan="4" />

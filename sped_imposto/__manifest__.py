@@ -58,7 +58,8 @@
         'views/inherited_sped_empresa_view.xml',
         'views/inherited_res_partner_view.xml',
         'views/inherited_sped_produto_produto_view.xml',
-        'views/inherited_sped_produto_servico_view.xml',
+        # FIXME:
+        # 'views/inherited_sped_produto_servico_view.xml',
 
         #
         # Tabelas principais
