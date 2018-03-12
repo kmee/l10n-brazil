@@ -2073,7 +2073,7 @@ class SpedCalculoImpostoItem(SpedBase):
         #
         # Calcula o valor dos produtos
         #
-        vr_produtos = D(self.quantidade) * D(self.vr_unitario)
+        vr_produtos = D(self.quantidade) * D(self.produto_id.preco_venda)
         vr_produtos = vr_produtos.quantize(D('0.01'))
 
         #if self.al_desconto:
