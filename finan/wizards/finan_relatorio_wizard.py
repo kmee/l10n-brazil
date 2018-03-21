@@ -49,15 +49,15 @@ class FinanRelatorioWizard(models.TransientModel):
         string='Agrupamento',
         selection=[
             ('data_vencimento_util', 'Vencimento'),
-            ('participante_id', 'Parceiro'),
+            ('partner_id', 'Parceiro'),
         ],
         default='data_vencimento_util',
     )
-    participante_ids = fields.Many2many(
-        comodel_name='sped.participante',
+    partner_ids = fields.Many2many(
+        comodel_name='res.partner',
         relation='finan_relatorio_participante',
         column1='wizard_id',
-        column2='participante_id',
+        column2='partner_id',
         string='Parceiros',
     )
     tipo_divida = fields.Selection(

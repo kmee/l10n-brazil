@@ -147,7 +147,7 @@ class ConsultaDFe(models.Model):
         # Coletando os erros para caso seja de importância no futuro
         erros = []
 
-        nfe_ids = []
+        nfe_ids = self.env['sped.documento']
         if not manifestos or isinstance(manifestos,dict):
             manifestos = self.env['sped.manifestacao.destinatario'].\
                 search([('empresa_id','=',self.empresa_id.id)])
@@ -191,14 +191,14 @@ class ConsultaDFe(models.Model):
 
                 manifesto.documento_id = nfe
 
-                nfe_ids.append(nfe)
+                nfe_ids += nfe
 
             else:
                 erros.append(('nfe', False,
                               nfe_result['code'] + ' - ' +
                               nfe_result['message']))
 
-        dados = [nfe.id for nfe in nfe_ids] + self.nfe_importada_ids.ids
+        dados = nfe_ids.ids + self.nfe_importada_ids.ids
 
         self.update({'nfe_importada_ids': [(6, False, dados)]})
 
@@ -293,7 +293,7 @@ class ConsultaDFe(models.Model):
                             if not exists_chnfe:
                                 cnpj_forn = self._mask_cnpj(
                                     ('%014d' % root.NFe.infNFe.emit.CNPJ))
-                                partner = self.env['sped.participante'].search(
+                                partner = self.env['res.partner'].search(
                                     [('cnpj_cpf', '=', cnpj_forn)])
 
                                 invoice_eletronic = {
@@ -309,7 +309,7 @@ class ConsultaDFe(models.Model):
                                     'data_hora_inclusao': datetime.now(),
                                     'cnpj_cpf': cnpj_forn,
                                     'ie': root.NFe.infNFe.emit.IE,
-                                    'participante_id': partner.id,
+                                    'partner_id': partner.id,
                                     'data_hora_emissao': datetime.strptime(
                                         str(root.NFe.infNFe.ide.dhEmi)[:19],
                                         '%Y-%m-%dT%H:%M:%S'),
@@ -358,7 +358,7 @@ class ConsultaDFe(models.Model):
                             if not exists_chnfe:
                                 cnpj_forn = self._mask_cnpj(
                                     ('%014d' % root.CNPJ))
-                                partner = self.env['sped.participante'].search(
+                                partner = self.env['res.partner'].search(
                                     [('cnpj_cpf', '=', cnpj_forn)])
 
                                 invoice_eletronic = {
@@ -373,7 +373,7 @@ class ConsultaDFe(models.Model):
                                     'data_hora_inclusao': datetime.now(),
                                     'cnpj_cpf': cnpj_forn,
                                     'ie': root.IE,
-                                    'participante_id': partner.id,
+                                    'partner_id': partner.id,
                                     'data_hora_emissao': datetime.strptime(
                                         str(root.dhEmi)[:19],
                                         '%Y-%m-%dT%H:%M:%S'),

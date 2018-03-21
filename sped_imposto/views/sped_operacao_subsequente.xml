@@ -11,7 +11,7 @@
             <tree editable="bottom">
                 <field name="sequence" widget="handle"/>
                 <field name="operacao_subsequente_id"/>
-                <field name="participante_id"/>
+                <field name="partner_id"/>
                 <field name="situacao_geracao"/>
                 <field name="referenciar_documento"/>
             </tree>

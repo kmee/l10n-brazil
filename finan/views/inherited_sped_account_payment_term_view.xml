@@ -23,7 +23,7 @@
                     <field name="bandeira_cartao" string="Bandeira" />
                     <field name="integracao_cartao" string="Integração" />
                     <newline />
-                    <field name="participante_id" domain="[('cnpj_cpf', '!=', False)]" string="Operadora" />
+                    <field name="partner_id" domain="[('cnpj_cpf', '!=', False)]" string="Operadora" />
                 </group>
             </group>-->
         </field>

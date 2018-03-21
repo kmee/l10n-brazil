@@ -15,11 +15,6 @@
                         '=', True)]}
                     </attribute>
                 </field>
-                <field name="partner_id" position="after">
-                    <field name="participante_id" string="Customer"
-                           domain="[('eh_cliente', '=', True)]"
-                           attrs="{'required': [('is_brazilian', '=', True)], 'invisible': [('is_brazilian', '!=', True)]}"/>
-                </field>
                 <xpath expr="//group/field[@name='company_id']"
                        position="after">
                     <field name="is_brazilian" groups="l10n_br_base.GRUPO_SUPORTE"/>
@@ -85,7 +80,7 @@
                 <kanban position="replace">
                     <kanban class="o_kanban_small_column" default_group_by="state">
                         <field name="name"/>
-                        <field name="participante_id"/>
+                        <field name="partner_id"/>
                         <field name="amount_total" widget="monetary"/>
                         <field name="state"/>
                         <field name="date_order"/>
@@ -106,7 +101,7 @@
                                         </a>
                                     </div>
                                     <div class="oe_kanban_content">
-                                        <div><strong class="o_kanban_record_title"><field name="participante_id"/></strong></div>
+                                        <div><strong class="o_kanban_record_title"><field name="partner_id"/></strong></div>
                                         <div class="text-muted o_kanban_record_subtitle">
                                             <t t-if="record.name.value"><field name="name"/></t>
                                         </div>

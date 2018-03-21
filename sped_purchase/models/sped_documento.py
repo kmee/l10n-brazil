@@ -41,7 +41,7 @@ class SpedDocumento(models.Model):
                 'operacao_id': self.purchase_order_ids.operacao_id.id,
                 'modelo': self.purchase_order_ids.operacao_id.modelo,
                 'emissao': self.purchase_order_ids.operacao_id.emissao,
-                'participante_id': self.purchase_order_ids.participante_id.id,
+                # 'participante_id': self.purchase_order_ids.participante_id.id,
                 'condicao_pagamento_id': self.purchase_order_ids.condicao_pagamento_id.id if \
                     self.purchase_order_ids.condicao_pagamento_id else False,
                 'transportadora_id': self.purchase_order_ids.transportadora_id.id if \
@@ -57,7 +57,7 @@ class SpedDocumento(models.Model):
                 self.presenca_comprador = self.purchase_order_ids.presenca_comprador
     
             self.update(self._onchange_serie()['value'])
-            self.update(self._onchange_participante_id()['value'])
+            # self.update(self._onchange_participante_id()['value'])
 
         for pedido in self.mapped('purchase_order_ids'):
             for item in pedido.order_line - \
@@ -76,7 +76,7 @@ class SpedDocumento(models.Model):
                     )
         return {}
 
-    @api.onchange('participante_id', 'item_ids')
+    @api.onchange('partner_id', 'item_ids')
     def _onchange_allowed_purchase_ids(self):
         result = {}
 

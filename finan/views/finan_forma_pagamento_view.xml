@@ -36,7 +36,7 @@
                             <field name="bandeira_cartao" attrs="{'required': [('forma_pagamento', 'in', ('03', '04'))]}" string="Bandeira" />
                             <field name="integracao_cartao" attrs="{'required': [('forma_pagamento', 'in', ('03', '04'))]}" string="Integração" />
                             <newline />
-                            <field name="participante_id" domain="[('cnpj_cpf', '!=', False)]" attrs="{'required': [('forma_pagamento', 'in', ('03', '04'))]}" string="Operadora" />
+                            <field name="partner_id" domain="[('cnpj_cpf', '!=', False)]" attrs="{'required': [('forma_pagamento', 'in', ('03', '04'))]}" string="Operadora" />
                         </group>-->
 
                     </group>

@@ -8,8 +8,8 @@ from odoo import api, fields, models
 from ..constantes import *
 
 
-class SpedParticipante(models.Model):
-    _inherit = 'sped.participante'
+class ResPartner(models.Model):
+    _inherit = 'res.partner'
 
     limite_credito = fields.Monetary(
         string='Limite de crédito',
@@ -41,13 +41,13 @@ class SpedParticipante(models.Model):
     )
     divida_ids = fields.One2many(
         comodel_name='finan.lancamento',
-        inverse_name='participante_id',
+        inverse_name='partner_id',
         string='Dívidas',
         domain=[('tipo', '=', FINAN_TIPO_DIVIDA)],
     )
     pagamento_ids = fields.One2many(
         comodel_name='finan.lancamento',
-        inverse_name='participante_id',
+        inverse_name='partner_id',
         string='Pagamentos',
         domain=[('tipo', '=', FINAN_TIPO_PAGAMENTO)],
     )
@@ -70,17 +70,17 @@ class SpedParticipante(models.Model):
                 finan_lancamento fl
             where
                 fl.tipo = '{tipo}'
-                and fl.participante_id = {participante_id}
+                and fl.partner_id = {partner_id}
                 and fl.provisorio != True
                 and fl.situacao_divida_simples = 'aberto';
             '''
             sql = sql_dividas.format(tipo=FINAN_DIVIDA_A_RECEBER,
-                                     participante_id=participante.id)
+                                     partner_id=participante.id)
             self.env.cr.execute(sql)
             saldo_a_receber = self.env.cr.fetchall()[0][0]
 
             sql = sql_dividas.format(tipo=FINAN_DIVIDA_A_PAGAR,
-                                     participante_id=participante.id)
+                                     partner_id=participante.id)
             self.env.cr.execute(sql)
             saldo_a_pagar = self.env.cr.fetchall()[0][0]
 
@@ -91,20 +91,20 @@ class SpedParticipante(models.Model):
                 finan_lancamento fl
             where
                 fl.tipo = '{tipo}'
-                and fl.participante_id = {participante_id}
+                and fl.partner_id = {partner_id}
                 and fl.situacao_divida_simples = 'quitado';
             '''
 
             sql = sql_adiantamento.format(
                 tipo=FINAN_RECEBIMENTO,
-                participante_id=participante.id
+                partner_id=participante.id
             )
             self.env.cr.execute(sql)
             adiantamento_a_pagar = self.env.cr.fetchall()[0][0]
 
             sql = sql_adiantamento.format(
                 tipo=FINAN_PAGAMENTO,
-                participante_id=participante.id
+                partner_id=participante.id
             )
             self.env.cr.execute(sql)
             adiantamento_a_receber = self.env.cr.fetchall()[0][0]

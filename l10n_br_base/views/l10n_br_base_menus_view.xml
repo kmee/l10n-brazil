@@ -7,11 +7,11 @@
 
     <menuitem id="menu_cadastro"
         name="Cadastro"
-        sequence="-100"
-        web_icon="l10n_br_base,static/description/icon.png"
+        sequence="3"
+        web_icon="sped,static/description/icon.png"
         />
 
-    <menuitem id="menu_cadastro_participante"
+    <menuitem id="menu_cadastro_partner"
         name="Pessoas e empresas"
         sequence="1"
         parent="menu_cadastro"
@@ -46,7 +46,7 @@
         />
 
     <menuitem
-        sequence="-99"
+        sequence="40"
         id="menu_fiscal"
         name="Fiscal"
         web_icon="sped,static/description/icon.png"

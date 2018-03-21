@@ -19,8 +19,8 @@
                 <button name="envia_email_nfe" string="Enviar email" type="object" class="btn-primary" />
                 <button name="imprimir_documento" string="Imprimir" type="object" class="btn-default"/>
                 <button name="gera_xml" string="Visualiza XML" type="object" class="btn-default"/>
-                <button name="%(nfe_motivo_cancelamento_wizard_action)d" string="Cancelar NF-e" type="action" attrs="{'invisible': ['|', ('permite_cancelamento', '=', 'False'), ('situacao_nfe', '=', 'cancelada')]}"/>
-                    <button name="inutiliza_nfe" string="Inutilizar NF-e" type="object" attrs="{'invisible': ['|', ('permite_inutilizacao', '=', 'False'), ('situacao_nfe',  'not in', ['em_digitacao', 'a_enviar'])]}"/>
+                <button name="%(nfe_motivo_cancelamento_wizard_action)d" string="Cancelar NFC-e" type="action" attrs="{'invisible': ['|', ('permite_cancelamento', '=', 'False'), ('situacao_nfe', '!=', 'autorizada'), ('situacao_nfe', '=', 'cancelada')]}"/>
+                <button name="inutiliza_nfe" string="Inutilizar NF-e" type="object" attrs="{'invisible': ['|', ('permite_inutilizacao', '=', 'False'), ('situacao_nfe',  'not in', ['em_digitacao', 'a_enviar'])]}"/>
             </header>
             <xpath expr="//field[@name='empresa_id']" position="before">
                 <field name="situacao_nfe" readonly="1" colspan="4" string="Situação"

@@ -111,9 +111,11 @@ class SpedDocumento(models.Model):
                     SITUACAO_FISCAL_SPED_CONSIDERA_ATIVO:
                 continue
 
-            if documento.emissao == TIPO_EMISSAO_PROPRIA and \
-                documento.entrada_saida == ENTRADA_SAIDA_ENTRADA:
-                continue
+            # Devolução é uma operação de entrada de emissão própria mas que
+            # deverá gerar o financeiro
+            # if documento.emissao == TIPO_EMISSAO_PROPRIA and \
+            #     documento.entrada_saida == ENTRADA_SAIDA_ENTRADA:
+            #     continue
 
             if not documento.finan_conta_id:
                 operacao_id = self._busca_operacao()
@@ -212,7 +214,7 @@ class SpedDocumento(models.Model):
         # relançado os movimentos financeiros
         campos_afetam_financeiro = [
             'duplicata_ids', 'vr_nf', 'vr_fatura', 'condicao_pagamento_id',
-            'carteira_id', 'item_ids', 'participante_id', 'ind_forma_pagamento',
+            'carteira_id', 'item_ids', 'parnter_id', 'ind_forma_pagamento',
         ]
 
         for campo in dados:

@@ -284,79 +284,79 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
     #
     # Destinatário/Remetente
     #
-    participante_id = fields.Many2one(
-        comodel_name='sped.participante',
+    partner_id = fields.Many2one(
+        comodel_name='res.partner',
         string='Destinatário/Remetente',
         ondelete='restrict',
     )
     participante_cnpj_cpf = fields.Char(
         string='CNPJ/CPF',
         size=18,
-        related='participante_id.cnpj_cpf',
+        related='partner_id.cnpj_cpf',
         readonly=True,
     )
     participante_tipo_pessoa = fields.Char(
         string='Tipo pessoa',
         size=1,
-        related='participante_id.tipo_pessoa',
+        related='partner_id.tipo_pessoa',
         readonly=True,
     )
     participante_razao_social = fields.Char(
         string='Razão Social',
         size=60,
-        related='participante_id.razao_social',
+        related='partner_id.razao_social',
         readonly=True,
     )
     participante_fantasia = fields.Char(
         string='Fantasia',
         size=60,
-        related='participante_id.fantasia',
+        related='partner_id.fantasia',
         readonly=True,
     )
     participante_endereco = fields.Char(
         string='Endereço',
         size=60,
-        related='participante_id.endereco',
+        related='partner_id.street',
         readonly=True,
     )
     participante_numero = fields.Char(
         string='Número',
         size=60,
-        related='participante_id.numero',
+        related='partner_id.numero',
         readonly=True,
     )
     participante_complemento = fields.Char(
         string='Complemento',
         size=60,
-        related='participante_id.complemento',
+        related='partner_id.street2',
         readonly=True,
     )
     participante_bairro = fields.Char(
         string='Bairro',
         size=60,
-        related='participante_id.bairro',
+        related='partner_id.bairro',
         readonly=True,
     )
     participante_municipio_id = fields.Many2one(
         comodel_name='sped.municipio',
         string='Município',
-        related='participante_id.municipio_id',
+        related='partner_id.municipio_id',
         readonly=True,
     )
     participante_cidade = fields.Char(
         string='Município',
-        related='participante_id.cidade',
+        related='partner_id.cidade',
         readonly=True,
     )
     participante_estado = fields.Char(
         string='Estado',
-        related='participante_id.estado',
+        related='partner_id.estado',
         readonly=True,
     )
     participante_cep = fields.Char(
         string='CEP',
         size=9,
-        related='participante_id.cep',
+        related='partner_id.zip',
         readonly=True,
     )
     #
@@ -365,25 +365,25 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
     participante_fone = fields.Char(
         string='Fone',
         size=18,
-        related='participante_id.fone',
+        related='partner_id.phone',
         readonly=True,
     )
     participante_fone_comercial = fields.Char(
         string='Fone Comercial',
         size=18,
-        related='participante_id.fone_comercial',
+        related='partner_id.fone_comercial',
         readonly=True,
     )
     participante_celular = fields.Char(
         string='Celular',
         size=18,
-        related='participante_id.celular',
+        related='partner_id.mobile',
         readonly=True,
     )
     participante_email = fields.Char(
         string='Email',
         size=60,
-        related='participante_id.email',
+        related='partner_id.email',
         readonly=True,
     )
     #
@@ -393,18 +393,18 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
         selection=IE_DESTINATARIO,
         string='Contribuinte',
         default='2',
-        related='participante_id.contribuinte',
+        related='partner_id.contribuinte',
         readonly=True,
     )
     participante_ie = fields.Char(
         string='Inscrição estadual',
         size=18,
-        related='participante_id.ie',
+        related='partner_id.ie',
         readonly=True,
     )
     participante_eh_orgao_publico = fields.Boolean(
         string='É órgão público?',
-        related='participante_id.eh_orgao_publico',
+        related='partner_id.eh_orgao_publico',
         readonly=True,
     )
 
@@ -454,7 +454,7 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
     # Transporte
     #
     transportadora_id = fields.Many2one(
-        comodel_name='sped.participante',
+        comodel_name='res.partner',
         string='Transportadora',
         ondelete='restrict',
     )
@@ -951,7 +951,7 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
         return res
 
     @api.depends('emissao', 'entrada_saida', 'modelo', 'serie', 'numero',
-                 'data_emissao', 'participante_id')
+                 'data_emissao', 'partner_id')
     def _compute_descricao(self):
         for documento in self:
             txt = TIPO_EMISSAO_DICT[documento.emissao]
@@ -964,15 +964,15 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
             txt += ' - ' + formata_valor(documento.numero, casas_decimais=0)
             txt += ' - ' + formata_data(documento.data_emissao)
 
-            if not documento.participante_id.cnpj_cpf:
+            if not documento.partner_id.cnpj_cpf:
                 txt += ' - Consumidor não identificado'
 
-            elif documento.participante_id.razao_social:
-                txt += ' - ' + documento.participante_id.razao_social
-                txt += ' - ' + documento.participante_id.cnpj_cpf
+            elif documento.partner_id.razao_social:
+                txt += ' - ' + documento.partner_id.razao_social
+                txt += ' - ' + documento.partner_id.cnpj_cpf
             else:
-                txt += ' - ' + documento.participante_id.nome
-                txt += ' - ' + documento.participante_id.cnpj_cpf
+                txt += ' - ' + documento.partner_id.nome
+                txt += ' - ' + documento.partner_id.cnpj_cpf
 
             documento.descricao = txt
 
@@ -1380,8 +1380,8 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
 
         return res
 
-    @api.onchange('participante_id')
-    def _onchange_participante_id(self):
+    @api.onchange('partner_id')
+    def _onchange_partner_id(self):
         res = {}
         valores = {}
         res['value'] = valores
@@ -1392,20 +1392,20 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
         # final, exceto em caso de operação com estrangeiros
         #
         if self.consumidor_final == TIPO_CONSUMIDOR_FINAL_NORMAL:
-            if self.participante_id.estado != 'EX':
-                if self.participante_id.contribuinte == \
+            if self.partner_id.estado != 'EX':
+                if self.partner_id.contribuinte == \
                         INDICADOR_IE_DESTINATARIO_CONTRIBUINTE:
                     valores['consumidor_final'] = \
                         TIPO_CONSUMIDOR_FINAL_CONSUMIDOR_FINAL
 
         if self.operacao_id and self.operacao_id.preco_automatico == 'V':
-            if self.participante_id.transportadora_id:
+            if self.partner_id.transportadora_id:
                 valores['transportadora_id'] = \
-                    self.participante_id.transportadora_id.id
+                    self.partner_id.transportadora_id.id
 
-            if self.participante_id.condicao_pagamento_id:
+            if self.partner_id.condicao_pagamento_id:
                 valores['condicao_pagamento_id'] = \
-                    self.participante_id.condicao_pagamento_id.id
+                    self.partner_id.condicao_pagamento_id.id
 
         return res
 
@@ -1670,7 +1670,8 @@ class SpedDocumento(SpedCalculoImposto, models.Model):
     def _prepare_subsequente_referenciado(self):
         vals = {
                 'documento_id': self.id,
-                'participante_id': self.participante_id.id,
+                'partner_id': self.partner_id and
+                              self.partner_id.id,
                 'modelo': self.modelo,
                 'serie': self.serie,
                 'numero': self.numero,

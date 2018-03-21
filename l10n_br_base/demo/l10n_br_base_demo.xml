@@ -6,12 +6,12 @@
     <data>
 
         <!--<record id="res_partner_title_pvt_ltd" model="res.partner.title">-->
-            <!--<field name="nome">Corp.</field>-->
+            <!--<field name="name">Corp.</field>-->
             <!--<field name="shortcut">Corp.</field>-->
         <!--</record>-->
         <!---->
-        <record id="res_partner_intel" model="sped.participante">
-            <field name="nome">Intel do Brasil</field>
+        <record id="res_partner_intel" model="res.partner">
+            <field name="name">Intel do Brasil</field>
             <field name="razao_social">Intel do Brasil</field>
             <field name="cnpj_cpf">86.144.802/0001-90</field>
             <field name="endereco">Avenida Doutor Chucri Zaidan</field>
@@ -23,16 +23,16 @@
             <field name="fone">(11) 3365-5500</field>
             <!--<field name="email">teste@example.com</field>-->
             <field name="ie">623.343.911.173</field>
-            <field name="eh_cliente" eval="0"/>
-            <field name="eh_fornecedor" eval="1"/>
+            <field name="customer" eval="0"/>
+            <field name="supplier" eval="1"/>
             <field name="eh_empresa" eval="1"/>
             <field name="active" eval="1"/>
             <field name="contribuinte">1</field>
             <field name="regime_tributario">3</field>
         </record>
 
-        <record id="res_partner_amd" model="sped.participante">
-            <field name="nome">AMD do Brasil</field>
+        <record id="res_partner_amd" model="res.partner">
+            <field name="name">AMD do Brasil</field>
             <field name="razao_social">AMD South America Ltda</field>
             <field name="cnpj_cpf">62.228.384/0001-51</field>
             <field name="endereco">Rua Samuel Morse</field>
@@ -46,16 +46,16 @@
             <field name="fone">(11) 3478-2150</field>
             <!--<field name="email">teste@example.com</field>-->
             <field name="ie">621.240.850.633</field>
-            <field name="eh_cliente" eval="0"/>
-            <field name="eh_fornecedor" eval="1"/>
+            <field name="customer" eval="0"/>
+            <field name="supplier" eval="1"/>
             <field name="eh_empresa" eval="1"/>
             <field name="active" eval="1"/>
              <field name="contribuinte">1</field> 
             <field name="regime_tributario">3</field>
         </record>
 
-        <record id="res_partner_lg" model="sped.participante">
-            <field name="nome">LG do Brasil</field>
+        <record id="res_partner_lg" model="res.partner">
+            <field name="name">LG do Brasil</field>
             <field name="razao_social">LG ELECTRONICS DA AMAZÔNIA LTDA</field>
             <field name="cnpj_cpf">92.737.124/0001-72</field>
             <field name="endereco">Avenida Javari</field>
@@ -69,16 +69,16 @@
             <field name="email">teste@example.com</field>
             <field name="ie">86.015.623-0</field>
             <!--<field name="suframa">550309012</field>-->
-            <field name="eh_cliente" eval="1"/>
-            <field name="eh_fornecedor" eval="1"/>
+            <field name="customer" eval="1"/>
+            <field name="supplier" eval="1"/>
             <field name="eh_empresa" eval="1"/>
             <field name="active" eval="1"/>
              <field name="contribuinte">1</field> 
             <field name="regime_tributario">3</field>
         </record>
 
-        <record id="res_partner_samsungpe" model="sped.participante">
-            <field name="nome">Samsung Recife</field>
+        <record id="res_partner_samsungpe" model="res.partner">
+            <field name="name">Samsung Recife</field>
             <field name="cnpj_cpf">21.717.475/0001-73</field>
             <field name="endereco">Av. República do Líbano</field>
             <field name="numero">251</field>
@@ -92,16 +92,16 @@
             <field name="email">teste@example.com</field>
             <field name="ie">4386525-92</field>
             <field name="suframa"></field>
-            <field name="eh_cliente" eval="1"/>
-            <field name="eh_fornecedor" eval="1"/>
+            <field name="customer" eval="1"/>
+            <field name="supplier" eval="1"/>
             <field name="eh_empresa" eval="1"/>
             <field name="active" eval="1"/>
              <field name="contribuinte">1</field> 
             <field name="regime_tributario">3</field>
         </record>
 
-        <record id="res_partner_positivo" model="sped.participante">
-            <field name="nome">Positivo Informatica</field>
+        <record id="res_partner_positivo" model="res.partner">
+            <field name="name">Positivo Informatica</field>
             <field name="razao_social">Positivo Informatica S/A</field>
             <field name="cnpj_cpf">77.256.611/0001-20</field>
             <field name="endereco">Rua Senador Accioly Filho</field>
@@ -115,16 +115,16 @@
             <field name="email">teste@example.com</field>
             <field name="ie">80320143-90</field>
             <field name="suframa"></field>
-            <field name="eh_cliente" eval="1"/>
-            <field name="eh_fornecedor" eval="1"/>
+            <field name="customer" eval="1"/>
+            <field name="supplier" eval="1"/>
             <field name="eh_empresa" eval="1"/>
             <field name="active" eval="1"/>
              <field name="contribuinte">1</field> 
             <field name="regime_tributario">3</field>
         </record>
 
-        <record id="res_partner_dell" model="sped.participante">
-            <field name="nome">Dell Computadores do Brasil</field>
+        <record id="res_partner_dell" model="res.partner">
+            <field name="name">Dell Computadores do Brasil</field>
             <field name="razao_social">Dell Computadores do Brasil LTDA</field>
             <field name="cnpj_cpf">73.623.891/0001-06</field>
             <field name="endereco">Avenida Ipiranga</field>
@@ -138,16 +138,16 @@
             <field name="email">teste@example.com</field>
             <field name="ie">074/2864251</field>
             <field name="suframa"></field>
-            <field name="eh_cliente" eval="1"/>
-            <field name="eh_fornecedor" eval="1"/>
+            <field name="customer" eval="1"/>
+            <field name="supplier" eval="1"/>
             <field name="eh_empresa" eval="1"/>
             <field name="active" eval="1"/>
              <field name="contribuinte">1</field> 
             <field name="regime_tributario">3</field>
         </record>
 
-        <record id="res_partner_infobahia" model="sped.participante">
-            <field name="nome">Info Bahia</field>
+        <record id="res_partner_infobahia" model="res.partner">
+            <field name="name">Info Bahia</field>
             <field name="razao_social">Informatica Bahia LTDA</field>
             <field name="cnpj_cpf">14.685.381/0001-02</field>
             <field name="endereco">Rua Francisco Muniz Barreto</field>
@@ -161,16 +161,16 @@
             <field name="email">teste@example.com</field>
             <field name="ie">2004915-45</field>
             <field name="suframa"></field>
-            <field name="eh_cliente" eval="1"/>
-            <field name="eh_fornecedor" eval="1"/>
+            <field name="customer" eval="1"/>
+            <field name="supplier" eval="1"/>
             <field name="eh_empresa" eval="1"/>
             <field name="active" eval="1"/>
              <field name="contribuinte">1</field> 
             <field name="regime_tributario">3</field>
         </record>
 
-        <record id="res_partner_infomanaus" model="sped.participante">
-            <field name="nome">Informatica Manaus</field>
+        <record id="res_partner_infomanaus" model="res.partner">
+            <field name="name">Informatica Manaus</field>
             <field name="razao_social">Informatica Manaus</field>
             <field name="cnpj_cpf">38.633.837/0001-40</field>
             <field name="endereco">Avenida Javari</field>
@@ -184,16 +184,16 @@
             <field name="email">teste@example.com</field>
             <field name="ie">78.002.376-5</field>
             <field name="suframa">101160100</field>
-            <field name="eh_cliente" eval="1"/>
-            <field name="eh_fornecedor" eval="1"/>
+            <field name="customer" eval="1"/>
+            <field name="supplier" eval="1"/>
             <field name="eh_empresa" eval="1"/>
             <field name="active" eval="1"/>
              <field name="contribuinte">1</field> 
             <field name="regime_tributario">3</field>
         </record>
 
-        <record id="res_partner_cliente1_sp" model="sped.participante">
-            <field name="nome">Cliente 1 SP Contribuinte</field>
+        <record id="res_partner_cliente1_sp" model="res.partner">
+            <field name="name">Cliente 1 SP Contribuinte</field>
             <field name="razao_social">Cliente 1 SP</field>
             <field name="cnpj_cpf">81.493.979/0001-89</field>
             <field name="endereco">Rua Samuel Morse</field>
@@ -207,16 +207,16 @@
             <field name="fone">(11) 3478-2150</field>
             <field name="email">cliente1@example.com</field>
             <field name="ie">460.429.771.334</field>
-            <field name="eh_cliente" eval="1"/>
-            <field name="eh_fornecedor" eval="0"/>
+            <field name="customer" eval="1"/>
+            <field name="supplier" eval="0"/>
             <field name="eh_empresa" eval="1"/>
             <field name="active" eval="1"/>
              <field name="contribuinte">1</field> 
             <field name="regime_tributario">3</field>
         </record>
 
-        <record id="res_partner_cliente2_sp" model="sped.participante">
-            <field name="nome">Cliente 2 -SP - Simples Nacional</field>
+        <record id="res_partner_cliente2_sp" model="res.partner">
+            <field name="name">Cliente 2 -SP - Simples Nacional</field>
             <field name="razao_social">Cliente 2 - SP</field>
             <field name="cnpj_cpf">12.046.835/0001-61</field>
             <field name="endereco">Avenida Doutor Chucri Zaidan</field>
@@ -230,16 +230,16 @@
             <field name="fone">(11) 3777-7777</field>
             <field name="email">cliente2@example.com</field>
             <field name="ie">887.273.429.152</field>
-            <field name="eh_cliente" eval="1"/>
-            <field name="eh_fornecedor" eval="0"/>
+            <field name="customer" eval="1"/>
+            <field name="supplier" eval="0"/>
             <field name="eh_empresa" eval="1"/>
             <field name="active" eval="1"/>
              <field name="contribuinte">1</field> 
             <field name="regime_tributario">1</field>
         </record>
 
-        <record id="res_partner_cliente3_am" model="sped.participante">
-            <field name="nome">Cliente 3 - Z/F Manaus - Contribuinte</field>
+        <record id="res_partner_cliente3_am" model="res.partner">
+            <field name="name">Cliente 3 - Z/F Manaus - Contribuinte</field>
             <field name="razao_social">Cliente 3 - Manaus</field>
             <field name="cnpj_cpf">46.081.676/0001-58</field>
             <field name="endereco">Avenida Javari</field>
@@ -254,16 +254,16 @@
             <field name="email">cliente3@example.com</field>
             <field name="ie">78.217.504-0</field>
             <field name="suframa">101362102</field>
-            <field name="eh_cliente" eval="1"/>
-            <field name="eh_fornecedor" eval="0"/>
+            <field name="customer" eval="1"/>
+            <field name="supplier" eval="0"/>
             <field name="eh_empresa" eval="1"/>
             <field name="active" eval="1"/>
              <field name="contribuinte">1</field> 
             <field name="regime_tributario">3</field>
         </record>
 
-        <record id="res_partner_cliente4_am" model="sped.participante">
-            <field name="nome">Cliente 4 - Z/F Manaus - Simples Nacional</field>
+        <record id="res_partner_cliente4_am" model="res.partner">
+            <field name="name">Cliente 4 - Z/F Manaus - Simples Nacional</field>
             <field name="razao_social">Cliente 4 - Manaus</field>
             <field name="cnpj_cpf">84.148.732/0001-13</field>
             <field name="endereco">Avenida Javari</field>
@@ -278,16 +278,16 @@
             <field name="email">cliente4@example.com</field>
             <field name="ie">09.569.321-1</field>
             <field name="suframa">100695108</field>
-            <field name="eh_cliente" eval="1"/>
-            <field name="eh_fornecedor" eval="0"/>
+            <field name="customer" eval="1"/>
+            <field name="supplier" eval="0"/>
             <field name="eh_empresa" eval="1"/>
             <field name="active" eval="1"/>
              <field name="contribuinte">1</field> 
             <field name="regime_tributario">1</field>
         </record>
 
-        <record id="res_partner_cliente5_pe" model="sped.participante">
-            <field name="nome">Cliente 5 - Contribuinte - PE</field>
+        <record id="res_partner_cliente5_pe" model="res.partner">
+            <field name="name">Cliente 5 - Contribuinte - PE</field>
             <field name="razao_social">Cliente 5 PE</field>
             <field name="cnpj_cpf">14.753.702/0001-50</field>
             <field name="endereco">Av. República do Líbano</field>
@@ -302,16 +302,16 @@
             <field name="email">cliente5@example.com</field>
             <field name="ie">8700737-10</field>
             <field name="suframa"></field>
-            <field name="eh_cliente" eval="1"/>
-            <field name="eh_fornecedor" eval="0"/>
+            <field name="customer" eval="1"/>
+            <field name="supplier" eval="0"/>
             <field name="eh_empresa" eval="1"/>
             <field name="active" eval="1"/>
             <field name="contribuinte">1</field>
             <field name="regime_tributario">3</field>
         </record>
 
-        <record id="res_partner_cliente6_pe" model="sped.participante">
-            <field name="nome">Cliente 6 - Simples Nacional- PE</field>
+        <record id="res_partner_cliente6_pe" model="res.partner">
+            <field name="name">Cliente 6 - Simples Nacional- PE</field>
             <field name="razao_social">Cliente 6 Recife LTDA</field>
             <field name="cnpj_cpf">97.449.840/0001-78</field>
             <field name="endereco">Av. República do Líbano</field>
@@ -327,16 +327,16 @@
             <field name="email">cliente6@example.com</field>
             <field name="ie">7055493-56</field>
             <field name="suframa"></field>
-            <field name="eh_cliente" eval="1"/>
-            <field name="eh_fornecedor" eval="0"/>
+            <field name="customer" eval="1"/>
+            <field name="supplier" eval="0"/>
             <field name="eh_empresa" eval="1"/>
             <field name="active" eval="1"/>
             <field name="contribuinte">1</field>
             <field name="regime_tributario">1</field>
         </record>
 
-        <record id="res_partner_cliente7_rs" model="sped.participante">
-            <field name="nome">Cliente 7 RS - Contribuinte</field>
+        <record id="res_partner_cliente7_rs" model="res.partner">
+            <field name="name">Cliente 7 RS - Contribuinte</field>
             <field name="razao_social">Cliente 7 - RS</field>
             <field name="cnpj_cpf">43.266.887/0001-77</field>
             <field name="endereco">Avenida Ipiranga</field>
@@ -352,16 +352,16 @@
             <field name="email">cliente7@example.com</field>
             <field name="ie">176/1256758</field>
             <field name="suframa"></field>
-            <field name="eh_cliente" eval="1"/>
-            <field name="eh_fornecedor" eval="0"/>
+            <field name="customer" eval="1"/>
+            <field name="supplier" eval="0"/>
             <field name="eh_empresa" eval="1"/>
             <field name="active" eval="1"/>
              <field name="contribuinte">1</field> 
             <field name="regime_tributario">3</field>
         </record>
 
-        <record id="res_partner_cliente8_rs" model="sped.participante">
-            <field name="nome">Cliente 7 RS - Simples Nacional</field>
+        <record id="res_partner_cliente8_rs" model="res.partner">
+            <field name="name">Cliente 7 RS - Simples Nacional</field>
             <field name="razao_social">Cliente 7 - RS</field>
             <field name="cnpj_cpf">32.406.080/0001-76</field>
             <field name="endereco">Avenida Ipiranga</field>
@@ -377,21 +377,21 @@
             <field name="email">cliente8@example.com</field>
             <field name="ie">383/4127240</field>
             <field name="suframa"></field>
-            <field name="eh_cliente" eval="1"/>
-            <field name="eh_fornecedor" eval="0"/>
+            <field name="customer" eval="1"/>
+            <field name="supplier" eval="0"/>
             <field name="eh_empresa" eval="1"/>
             <field name="active" eval="1"/>
             <field name="contribuinte">1</field>
             <field name="regime_tributario">1</field>
         </record>
 
-        <record id="res_partner_akretion" model="sped.participante">
+        <record id="res_partner_akretion" model="res.partner">
             <field name="razao_social">AKRETION LTDA</field>
-            <field name="nome">Akretion</field>
+            <field name="name">Akretion</field>
             <field name="cnpj_cpf">11.034.414/0001-58</field>
             <field eval="0" name="employee"/>
-            <field eval="1" name="eh_cliente"/>
-            <field eval="1" name="eh_fornecedor"/>
+            <field eval="1" name="customer"/>
+            <field eval="1" name="supplier"/>
             <field name="eh_empresa" eval="1"/>
             <field eval="1" name="active"/>
             <field name="bairro">Alumínio</field>
@@ -410,8 +410,8 @@
             <field name="regime_tributario">1</field>
         </record>
 
-        <record id="cliente9_mg" model="sped.participante">
-            <field name="nome">Cliente 9 MG - PJ Nao Contribuinte</field>
+        <record id="cliente9_mg" model="res.partner">
+            <field name="name">Cliente 9 MG - PJ Nao Contribuinte</field>
             <field name="razao_social">Cliente 9 MG</field>
             <field name="cnpj_cpf">26.355.289/0001-55</field>
             <field name="endereco">R PRESIDENTE ROOSEVELT</field>
@@ -423,15 +423,15 @@
             <field name="fone">(35) 3622-7085</field>
             <field name="email">cliente9@kmee.com.br</field>
             <field name="suframa"></field>
-            <field name="eh_cliente" eval="1"/>
-            <field name="eh_fornecedor" eval="0"/>
+            <field name="customer" eval="1"/>
+            <field name="supplier" eval="0"/>
             <field name="eh_empresa" eval="1"/>
             <field name="contribuinte">9</field>
             <field name="regime_tributario">1</field>
         </record>
 
-        <record id="res_partner_cliente10_mg" model="sped.participante">
-            <field name="nome">Cliente 10 MG - PF Não Contribuinte</field>
+        <record id="res_partner_cliente10_mg" model="res.partner">
+            <field name="name">Cliente 10 MG - PF Não Contribuinte</field>
             <field name="razao_social">Cliente 10 PF</field>
             <field name="cnpj_cpf">346.585.537-08</field>
             <field name="endereco">R PRESIDENTE ROOSEVELT</field>
@@ -443,15 +443,15 @@
             <field name="fone">(35) 3622-7085</field>
             <field name="email">cliente10@kmee.com.br</field>
             <field name="suframa"></field>
-            <field name="eh_cliente" eval="1"/>
-            <field name="eh_fornecedor" eval="0"/>
+            <field name="customer" eval="1"/>
+            <field name="supplier" eval="0"/>
             <field name="eh_empresa" eval="0"/>
             <field name="contribuinte">9</field>
             <field name="regime_tributario">1</field>
         </record>
 
-        <record id="res_partner_cliente11_sp" model="sped.participante">
-            <field name="nome">Cliente 11 -SP - PF Não Contribuinte</field>
+        <record id="res_partner_cliente11_sp" model="res.partner">
+            <field name="name">Cliente 11 -SP - PF Não Contribuinte</field>
             <field name="razao_social">Cliente 11 - SP</field>
             <field name="cnpj_cpf">321.690.262-58</field>
             <field name="endereco">Rua Batista Scavone</field>
@@ -463,15 +463,15 @@
             <field name="fone">(12) 3622-7085</field>
             <field name="email">cliente11@kmee.com.br</field>
             <field name="ie"></field>
-            <field name="eh_cliente" eval="1"/>
-            <field name="eh_fornecedor" eval="0"/>
+            <field name="customer" eval="1"/>
+            <field name="supplier" eval="0"/>
             <field name="eh_empresa" eval="0"/>
             <field name="contribuinte">9</field>
             <field name="regime_tributario">1</field>
         </record>
 
-        <record id="res_partner_cliente12_sp" model="sped.participante">
-            <field name="nome">Cliente 12 -SP - PJ Não Contribuinte</field>
+        <record id="res_partner_cliente12_sp" model="res.partner">
+            <field name="name">Cliente 12 -SP - PJ Não Contribuinte</field>
             <field name="razao_social">Cliente 12 - SP</field>
             <field name="cnpj_cpf">94.296.822/0001-05</field>
             <field name="endereco">Rua Batista Scavone</field>
@@ -483,15 +483,15 @@
             <field name="fone">(12) 3622-7085</field>
             <field name="email">cliente12@kmee.com.br</field>
             <field name="ie"></field>
-            <field name="eh_cliente" eval="1"/>
-            <field name="eh_fornecedor" eval="0"/>
+            <field name="customer" eval="1"/>
+            <field name="supplier" eval="0"/>
             <field name="eh_empresa" eval="0"/>
             <field name="contribuinte">9</field>
             <field name="regime_tributario">1</field>
         </record>
 
-        <record id="res_partner_kmee" model="sped.participante">
-            <field name="nome">KMEE</field>
+        <record id="res_partner_kmee" model="res.partner">
+            <field name="name">KMEE</field>
             <field name="razao_social">KMEE INFORMATICA LTDA</field>
             <field name="cnpj_cpf">23.130.935/0001-98</field>
             <field name="endereco">Rua Coronel Renno</field>
@@ -504,8 +504,8 @@
             <field name="email">atendimento@kmee.com.br</field>
             <field name="ie"></field>
             <field name="im">025585</field>
-            <field name="eh_cliente" eval="1"/>
-            <field name="eh_fornecedor" eval="1"/>
+            <field name="customer" eval="1"/>
+            <field name="supplier" eval="1"/>
             <field name="eh_empresa" eval="1"/>
             <field name="contribuinte">9</field>
             <field name="regime_tributario">1</field>

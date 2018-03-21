@@ -40,12 +40,12 @@
                         </group>
                     </group>
                     <notebook>
-                        <page name="participante" string="Destinatário/Remetente">
+                        <page name="partner" string="Destinatário/Remetente">
                             <group>
                                 <group colspan="6" col="6">
                                     <separator string="Destinatário" colspan="6" readonly="True"/>
                                     <separator string="Remetente" colspan="6" readonly="True"/>
-                                    <field name="participante_id" nolabel="1" colspan="6" required="1" options="{'no_open': True, 'no_create': True}" domain="[('cnpj_cpf', '!=', empresa_cnpj_cpf), ('cnpj_cpf', '!=', False)]" on_change="1" can_create="true" can_write="true" readonly="True"/>
+                                    <field name="partner_id" nolabel="1" colspan="6" required="1" options="{'no_open': True, 'no_create': True}" domain="[('cnpj_cpf', '!=', empresa_cnpj_cpf), ('cnpj_cpf', '!=', False)]" on_change="1" can_create="true" can_write="true" readonly="True"/>
                                     <newline/>
                                     <field name="participante_razao_social" string="Nome completo Razão Social" colspan="6" readonly="True"/>
                                     <newline/>
@@ -254,9 +254,9 @@
                                     <field name="reboque_4_id" options="{'no_create': True, 'no_open': True}" domain="['!', ('id', 'in', [veiculo_id, reboque_1_id, reboque_2_id, reboque_3_id])]" can_create="true" can_write="true" readonly="True"/>
                                     <field name="reboque_5_id" options="{'no_create': True, 'no_open': True}" domain="['!', ('id', 'in', [veiculo_id, reboque_1_id, reboque_2_id, reboque_3_id, reboque_4_id])]" can_create="true" can_write="true" readonly="True"/>
                                     <newline/>
-                                    <field name="endereco_retirada_id" colspan="4" domain="[('participante_id', '=', participante_id)]" options="{'no_create': True, 'no_open': True}" can_create="true" can_write="true" readonly="True"/>
+                                    <field name="endereco_retirada_id" colspan="4" domain="[('partner_id', '=', partner_id)]" options="{'no_create': True, 'no_open': True}" can_create="true" can_write="true" readonly="True"/>
                                     <newline/>
-                                    <field name="endereco_entrega_id" colspan="4" domain="[('participante_id', '=', participante_id)]" options="{'no_create': True, 'no_open': True}" can_create="true" can_write="true" readonly="True"/>
+                                    <field name="endereco_entrega_id" colspan="4" domain="[('partner_id', '=', partner_id)]" options="{'no_create': True, 'no_open': True}" can_create="true" can_write="true" readonly="True"/>
                                     <newline/>
                                     <separator string="Volumes"/>
                                     <newline/>

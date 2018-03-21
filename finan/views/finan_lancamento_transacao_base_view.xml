@@ -29,7 +29,7 @@
                 <field name="situacao_divida" string="Situação" invisible="1" />
 
                 <field name="empresa_id" />
-                <field name="participante_id" string="Parceiro" />
+                <field name="partner_id" string="Parceiro" />
                 <field name="banco_id" />
                 <field name="documento_id" string="Documento" />
                 <field name="numero" string="Número" />
@@ -80,7 +80,7 @@
                         <group name="dados_basicos" colspan="4">
                             <group name="documento" string="Documento">
                                 <field name="empresa_id" required="1" options="{'no_create': True, 'no_open': True}" attrs="{'readonly': [('state', '!=', 'draft')]}" />
-                                <field name="participante_id" string="Parceiro" default_focus="1" required="1" options="{'no_create': True, 'no_open': True}" attrs="{'readonly': [('state', '!=', 'draft')]}" />
+                                <field name="partner_id" string="Parceiro" default_focus="1" required="1" options="{'no_create': True, 'no_open': True}" attrs="{'readonly': [('state', '!=', 'draft')]}" />
                                 <field name="documento_id" string="Documento" required="1" options="{'no_create': True, 'no_open': True}" attrs="{'readonly': [('state', '!=', 'draft')]}" />
                                 <field name="numero" required="1" string="Número" attrs="{'readonly': [('state', '!=', 'draft')]}" />
                                 <field name="data_documento" required="1" string="Data" attrs="{'readonly': [('state', '!=', 'draft')]}" />
@@ -129,12 +129,12 @@
                 <separator string="" />
 
                 <field name="numero" />
-                <field name="participante_id" />
+                <field name="partner_id" />
                 <field name="banco_id" />
                 <field name="data_extrato" string="Data" />
 
                 <filter name="group_banco" string="Banco/Caixa" context="{'group_by': 'banco_id'}" />
-                <filter name="group_participante" string="Parceiro" context="{'group_by': 'participante_id'}"/>
+                <filter name="group_participante" string="Parceiro" context="{'group_by': 'partner_id'}"/>
                 <filter name="group_data_extrato" string="Data" context="{'group_by': 'data_extrato'}"/>
            </search>
         </field>

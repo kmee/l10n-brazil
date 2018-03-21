@@ -63,7 +63,7 @@ class FinanCarteira(SpedBase, models.Model):
         required=True,
     )
     sacador_id = fields.Many2one(
-        comodel_name='sped.participante',
+        comodel_name='res.partner',
         string='Sacador avalista',
         ondelete='restrict',
     )
@@ -221,7 +221,7 @@ class FinanCarteira(SpedBase, models.Model):
         #
         # Dados do pagador/cliente
         #
-        pagador = divida.participante_id
+        pagador = divida.partner_id
         boleto.pagador.nome = pagador.razao_social
         boleto.pagador.cnpj_cpf = pagador.cnpj_cpf
         boleto.pagador.endereco = pagador.endereco

@@ -64,8 +64,8 @@ class SpedDocumentoSubsequente(models.Model):
                 self.documento_origem_id.empresa_id)
 
     def _subsequente_participante(self):
-        return (self.operacao_subsequente_id.participante_id or
-                self.documento_origem_id.participante_id)
+        return (self.operacao_subsequente_id.partner_id or
+                self.documento_origem_id.partner_id)
 
     def _subsequente_referenciado(self):
         if self.operacao_subsequente_id.referenciar_documento:
@@ -84,7 +84,7 @@ class SpedDocumentoSubsequente(models.Model):
 
         novo_doc = self.documento_origem_id.copy()
 
-        novo_doc.participante_id = self._subsequente_participante()
+        novo_doc.partner_id = self._subsequente_participante()
         novo_doc.empresa_id = self._subsequente_empresa()
         novo_doc.operacao_id = self.sped_operacao_id
         novo_doc.condicao_pagamento_id = \

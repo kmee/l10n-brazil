@@ -45,9 +45,9 @@
                     <group colspan="4" col="4">
                         <field name="partner_id" invisible="1"/>
                         <newline />
-                        <field name="participante_id" string="Cliente"
+                        <field name="partner_id" string="Cliente"
                                colspan="4"
-                               domain="[('eh_cliente', '=', True)]"
+                               domain="[('customer', '=', True)]"
                                options='{"always_reload": True}'
                                required="1" attrs="{'readonly': [('state', 'not in', ['draft', 'sent'])]}" />
                         <newline />
@@ -72,8 +72,8 @@
                     <field name="sale_order_line_produto_ids"
                            context="{
                                'default_tipo_item': 'P',
-                               'default_participante_id': participante_id,
-                               'participante_id': participante_id,
+                               'default_partner_id': partner_id,
+                               'partner_id': partner_id,
                                'tree_view_ref': 'sped_sale.sale_order_line_produto_tree',
                                'form_view_ref': 'sped_sale.sale_order_line_produto_form'}"
                     />
@@ -126,8 +126,8 @@
                     <field name="sale_order_line_servico_ids"
                            context="{
                                'default_tipo_item': 'S',
-                               'default_participante_id': participante_id,
-                               'participante_id': participante_id,
+                               'default_partner_id': partner_id,
+                               'partner_id': partner_id,
                                'tree_view_ref': 'sped_sale.sale_order_line_servico_tree',
                                'form_view_ref': 'sped_sale.sale_order_line_servico_form'}"
                     />
@@ -166,9 +166,9 @@
                             <field name="reboque_4_id" colspan="2" attrs="{'invisible': [('reboque_3_id', '=', False)], 'readonly': [('state', 'not in', ['draft', 'sent'])]}" options="{'no_create': True, 'no_open': True}" domain="['!', ('id', 'in', [veiculo_id, reboque_1_id, reboque_2_id, reboque_3_id])]" />
                             <field name="reboque_5_id" colspan="2" attrs="{'invisible': [('reboque_4_id', '=', False)], 'readonly': [('state', 'not in', ['draft', 'sent'])]}" options="{'no_create': True, 'no_open': True}" domain="['!', ('id', 'in', [veiculo_id, reboque_1_id, reboque_2_id, reboque_3_id, reboque_4_id])]" />-->
 <!--                             <newline /> -->
-<!--                                    <field name="endereco_retirada_id" colspan="4" domain="[('participante_id', '=', participante_id)]" options="{'no_create': True, 'no_open': True}" attrs="{'invisible': ['!', ('modalidade_frete', 'in', ['0', '1', '2'])], 'readonly': [('state', 'not in', ['draft', 'sent'])]}" />
+<!--                                    <field name="endereco_retirada_id" colspan="4" domain="[('partner_id', '=', partner_id)]" options="{'no_create': True, 'no_open': True}" attrs="{'invisible': ['!', ('modalidade_frete', 'in', ['0', '1', '2'])], 'readonly': [('state', 'not in', ['draft', 'sent'])]}" />
                             <newline />-->
-<!--                            <field name="endereco_entrega_id" colspan="4" domain="[('participante_id', '=', participante_id)]" options="{'no_create': True, 'no_open': True}" attrs="{'invisible': ['!', ('modalidade_frete', 'in', ['0', '1', '2'])], 'readonly': [('state', 'not in', ['draft', 'sent'])]}" />
+<!--                            <field name="endereco_entrega_id" colspan="4" domain="[('partner_id', '=', partner_id)]" options="{'no_create': True, 'no_open': True}" attrs="{'invisible': ['!', ('modalidade_frete', 'in', ['0', '1', '2'])], 'readonly': [('state', 'not in', ['draft', 'sent'])]}" />
                             <newline />-->
 <!--                            <separator string="Volumes" colspan="4" />
                             <field name="volume_ids" colspan="4" nolabel="1" attrs="{'readonly': [('state', 'not in', ['draft', 'sent'])]}">
@@ -270,9 +270,6 @@
             <field name="partner_id" position="attributes">
                 <attribute name="invisible">1</attribute>
             </field>
-            <field name="partner_id" position="after">
-                <field name="participante_id" string="Cliente" />
-            </field>
             <field name="amount_total" position="attributes">
                 <attribute name="invisible">1</attribute>
             </field>
@@ -292,9 +289,6 @@
             <field name="partner_id" position="attributes">
                 <attribute name="attrs">{'invisible': True}</attribute>
             </field>
-            <field name="partner_id" position="after">
-                <field name="participante_id" string="Cliente" operator="child_of" />
-            </field>
             <field name="product_id" position="attributes">
                 <attribute name="attrs">{'invisible': True}</attribute>
             </field>
@@ -310,7 +304,7 @@
         <field name="priority">1</field>
         <field name="arch" type="xml">
             <calendar string="Pedidos" color="state" date_start="date_order">
-                <field name="participante_id"/>
+                <field name="partner_id"/>
                 <field name="vr_nf" widget="monetary"/>
             </calendar>
         </field>
@@ -322,7 +316,7 @@
         <field name="priority">1</field>
         <field name="arch" type="xml">
             <graph string="Pedidos">
-                <field name="participante_id"/>
+                <field name="partner_id"/>
                 <field name="vr_nf" type="measure"/>
             </graph>
         </field>
@@ -347,7 +341,7 @@
         <field name="arch" type="xml">
             <kanban class="o_kanban_mobile">
                 <field name="name"/>
-                <field name="participante_id"/>
+                <field name="partner_id"/>
                 <field name="vr_nf"/>
                 <field name="data_pedido"/>
                 <field name="state"/>
@@ -357,7 +351,7 @@
                         <div t-attf-class="oe_kanban_card oe_kanban_global_click">
                             <div class="row">
                                 <div class="col-xs-6">
-                                    <strong><span><t t-esc="record.participante_id.value"/></span></strong>
+                                    <strong><span><t t-esc="record.partner_id.value"/></span></strong>
                                 </div>
                                 <div class="col-xs-6 pull-right text-right">
                                     <strong><field name="vr_nf"/></strong>

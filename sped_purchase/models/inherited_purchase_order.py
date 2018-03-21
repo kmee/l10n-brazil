@@ -106,14 +106,6 @@ class PurchaseOrder(SpedCalculoImpostoProdutoServico, models.Model):
         }
         self.update(dados)
 
-    @api.depends('company_id', 'partner_id')
-    def _compute_is_brazilian(self):
-        for documento in self:
-            if not documento.company_id:
-                documento.is_brazilian = True
-            else:
-                super(PurchaseOrder, self)._compute_is_brazilian()
-
     def prepara_dados_documento(self):
         self.ensure_one()
 

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <act_window name="Devolucao" id="act_sped_documento_devolucao"
+        res_model="sped.documento.devolucao"
+        view_mode="form" target="new"/>
+
+    <record id="view_sped_documento_devolucao_form" model="ir.ui.view">
+        <field name="name">Devolução</field>
+        <field name="model">sped.documento.devolucao</field>
+        <field name="arch" type="xml">
+            <form>
+                <!--<field name="move_dest_exists" invisible="1"/>-->
+                <!--<group attrs="{'invisible': [('move_dest_exists', '=', False)]}">-->
+                    <!--<div class="oe_grey">-->
+                        <!--<p>This picking appears to be chained with another operation. Later, if you receive the goods you are returning now, make sure to <b>reverse</b> the returned picking in order to avoid logistic rules to be applied again (which would create duplicated operations)</p>-->
+                    <!--</div>-->
+                <!--</group>-->
+                <group>
+                    <group name="informacoes_devolucao">
+                        <field name="operacao_devolucao_id"/>
+                    </group>
+                    <field name="devolucao_item_ids" nolabel="1">
+                        <tree editable="top" create="0">
+                            <field name="product_id" readonly="1"/>
+                            <field name="quantity"/>
+                        </tree>
+                    </field>
+                </group>
+                <footer>
+                    <button name="criar_devolucao" string="Devolver" type="object" class="btn-primary"/>
+                    <button string="Cancelar" class="btn-default" special="cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

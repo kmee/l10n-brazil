@@ -32,7 +32,7 @@
                 <field name="cnpj_cpf" invisible="1" />
                 <field name="cnpj_cpf_raiz" invisible="1" />
                 <field name="empresa_id" invisible="1" />
-                <field name="participante_id" invisible="1" />
+                <field name="partner_id" invisible="1" />
 
                 <field name="forma_pagamento_id" />
                 <field name="exige_numero" invisible="1" />
@@ -69,7 +69,7 @@
                 <field name="cnpj_cpf" invisible="1" />
                 <field name="cnpj_cpf_raiz" invisible="1" />
                 <field name="empresa_id" invisible="1" />
-                <field name="participante_id" invisible="1" />
+                <field name="partner_id" invisible="1" />
                 <field name="divida_id" invisible="1" />
                 <sheet>
                     <group>

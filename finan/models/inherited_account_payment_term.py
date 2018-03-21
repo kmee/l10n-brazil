@@ -32,8 +32,8 @@ class AccountPaymentTerm(models.Model):
             condicao.bandeira_cartao = forma_pagamento.bandeira_cartao
             condicao.integracao_cartao = forma_pagamento.integracao_cartao
 
-            if forma_pagamento.participante_id:
-                condicao.participante_id = \
-                    forma_pagamento.participante_id
+            if forma_pagamento.partner_id:
+                condicao.partner_id = \
+                    forma_pagamento.partner_id
             else:
-                condicao.participante_id = False
+                condicao.partner_id = False

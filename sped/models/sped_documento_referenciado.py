@@ -40,8 +40,8 @@ class SpedDocumentoReferenciado(models.Model):
         ondelete='restrict',
         domain=[('modelo', 'in', MODELO_FISCAL_REFERENCIADO_FILTRO)],
     )
-    participante_id = fields.Many2one(
-        comodel_name='sped.participante',
+    partner_id = fields.Many2one(
+        comodel_name='res.partner',
         string='Participante',
         domain=[('cnpj_cpf', '!=', False)],
         ondelete='restrict',

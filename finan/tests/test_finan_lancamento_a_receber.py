@@ -20,7 +20,7 @@ class FinanLancamentoReceberManual(test_common.SingleTransactionCase):
 
         self.finan_lancamento_a_receber = self.finan_lancamento_obj.create({
             'empresa_id': empresa_id.id,
-            'participante_id': self.env.ref('l10n_br_base.cliente9_mg').id,
+            'partner_id': self.env.ref('l10n_br_base.cliente9_mg').id,
             'documento_id': documento_id.id,
             'numero': 3567,
             'data_documento': fields.Date.today(),

@@ -71,16 +71,15 @@ class FinanLancamento(SpedBase, models.Model):
         store=True,
         index=True,
     )
-    participante_id = fields.Many2one(
-        comodel_name='sped.participante',
+    partner_id = fields.Many2one(
+        comodel_name='res.partner',
         string='Participante',
         ondelete='restrict',
         index=True,
     )
     partner_id = fields.Many2one(
         comodel_name='res.partner',
-        string='Partner original',
-        related='participante_id.partner_id',
+        string='Partner',
         store=True,
         readonly=True,
     )
@@ -534,7 +533,7 @@ class FinanLancamento(SpedBase, models.Model):
             lancamento.cnpj_cpf = lancamento.empresa_id.cnpj_cpf
             lancamento.cnpj_cpf_raiz = lancamento.empresa_id.cnpj_cpf_raiz
 
-    @api.depends('tipo', 'documento_id', 'numero', 'participante_id')
+    @api.depends('tipo', 'documento_id', 'numero', 'partner_id')
     def _compute_nome(self):
         for lancamento in self:
             nome = ''
@@ -557,7 +556,7 @@ class FinanLancamento(SpedBase, models.Model):
 
             if self._context.get('com_participante'):
                 nome += ' - '
-                nome += lancamento_id.participante_id.name_get()[0][1]
+                nome += lancamento_id.partner_id.name_get()[0][1]
 
             lancamento.nome = nome
 
@@ -714,12 +713,43 @@ class FinanLancamento(SpedBase, models.Model):
                             FINAN_SITUACAO_DIVIDA_BAIXADO
 
                 elif lancamento.vr_quitado_documento > 0:
-                    if lancamento.vr_saldo > 0:
-                        lancamento.situacao_divida = \
-                            FINAN_SITUACAO_DIVIDA_QUITADO_PARCIALMENTE
-                    else:
-                        lancamento.situacao_divida = \
-                            FINAN_SITUACAO_DIVIDA_QUITADO
+                    if not lancamento.pagamento_ids.forma_pagamento_id.\
+                            quitado_somente_com_data_credito_debito:
+                        if lancamento.vr_saldo > 0:
+                            lancamento.situacao_divida = \
+                                FINAN_SITUACAO_DIVIDA_QUITADO_PARCIALMENTE
+                        else:
+                            lancamento.situacao_divida = \
+                                FINAN_SITUACAO_DIVIDA_QUITADO
+
+                    elif lancamento.pagamento_ids.forma_pagamento_id.\
+                            quitado_somente_com_data_credito_debito and \
+                            lancamento.pagamento_ids.data_credito_debito:
+                        if lancamento.vr_saldo > 0:
+                            lancamento.situacao_divida = \
+                                FINAN_SITUACAO_DIVIDA_QUITADO_PARCIALMENTE
+                        else:
+                            lancamento.situacao_divida = \
+                                FINAN_SITUACAO_DIVIDA_QUITADO
+
+                    elif lancamento.pagamento_ids.forma_pagamento_id.\
+                            quitado_somente_com_data_credito_debito and \
+                            not lancamento.pagamento_ids.data_credito_debito:
+                        data_hoje = hoje()
+                        data_vencimento = parse_datetime(
+                            lancamento.data_vencimento_util).date()
+
+                        if data_vencimento < data_hoje:
+                            lancamento.situacao_divida = \
+                                FINAN_SITUACAO_DIVIDA_VENCIDO
+
+                        elif data_vencimento == data_hoje:
+                            lancamento.situacao_divida = \
+                                FINAN_SITUACAO_DIVIDA_VENCE_HOJE
+
+                        else:
+                            lancamento.situacao_divida = \
+                                FINAN_SITUACAO_DIVIDA_A_VENCER
 
                 elif lancamento.data_vencimento_util:
                     data_hoje = hoje()
@@ -893,20 +923,20 @@ class FinanLancamento(SpedBase, models.Model):
 
             adiantamento = D(0)
             if lancamento.tipo == FINAN_RECEBIMENTO:
-                if self.participante_id.adiantamento_a_pagar:
-                    if self.participante_id.adiantamento_a_pagar <= \
+                if self.partner_id.adiantamento_a_pagar:
+                    if self.partner_id.adiantamento_a_pagar <= \
                             self.vr_documento:
                         adiantamento = \
-                            self.participante_id.adiantamento_a_pagar * -1
+                            self.partner_id.adiantamento_a_pagar * -1
                     else:
                         adiantamento = self.vr_documento * -1
 
             elif lancamento.tipo == FINAN_DIVIDA_A_PAGAR:
-                if self.participante_id.adiantamento_a_receber:
-                    if self.participante_id.adiantamento_a_receber <= \
+                if self.partner_id.adiantamento_a_receber:
+                    if self.partner_id.adiantamento_a_receber <= \
                             self.vr_documento:
                         adiantamento = \
-                            self.participante_id.adiantamento_a_receber * -1
+                            self.partner_id.adiantamento_a_receber * -1
                     else:
                         adiantamento = self.vr_documento * -1
 
@@ -1092,7 +1122,7 @@ class FinanLancamento(SpedBase, models.Model):
             data_vencimento,
             vr_documento,
             numero,
-            participante_id, type, data_documento,
+            partner_id, type, data_documento,
             bank_id, empresa_id, currency_id,
             analytic_conta_id=False, conta_id=False,
             payment_term_id=False,
@@ -1102,7 +1132,7 @@ class FinanLancamento(SpedBase, models.Model):
             empresa_id=empresa_id,
             currency_id=currency_id,
             type=type,
-            participante_id=participante_id,
+            partner_id=partner_id,
             numero=numero,
             data_documento=data_documento,
             payment_term_id=payment_term_id,
@@ -1122,7 +1152,7 @@ class FinanLancamento(SpedBase, models.Model):
         dados = {
             'conta_id': self.conta_id.id,
             'empresa_id': self.empresa_id.id,
-            'participante_id': self.participante_id.id,
+            'partner_id': self.partner_id.id,
             'vr_documento': self.vr_saldo,
             'vr_movimentado': self.vr_saldo,
             'data_pagamento': str(hoje()),
@@ -1135,11 +1165,11 @@ class FinanLancamento(SpedBase, models.Model):
                 True
             )
             dados['tipo'] = FINAN_RECEBIMENTO
-            if self.participante_id.adiantamento_a_pagar:
-                if self.participante_id.adiantamento_a_pagar <= \
+            if self.partner_id.adiantamento_a_pagar:
+                if self.partner_id.adiantamento_a_pagar <= \
                     self.vr_saldo:
                     dados['vr_adiantado'] = \
-                        self.participante_id.adiantamento_a_pagar * -1
+                        self.partner_id.adiantamento_a_pagar * -1
                 else:
                     dados['vr_adiantado'] = self.vr_saldo * -1
 
@@ -1149,11 +1179,11 @@ class FinanLancamento(SpedBase, models.Model):
                 True
             )
             dados['tipo'] = FINAN_PAGAMENTO
-            if self.participante_id.adiantamento_a_receber:
-                if self.participante_id.adiantamento_a_receber <= \
+            if self.partner_id.adiantamento_a_receber:
+                if self.partner_id.adiantamento_a_receber <= \
                     self.vr_saldo:
                     dados['vr_adiantado'] = \
-                        self.participante_id.adiantamento_a_receber * -1
+                        self.partner_id.adiantamento_a_receber * -1
                 else:
                     dados['vr_adiantado'] = self.vr_saldo * -1
 

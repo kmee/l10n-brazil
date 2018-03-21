@@ -8,7 +8,7 @@
     <!--Divida 01-->
     <record model="finan.lancamento" id="finan_lancamento_a_receber_01">
         <field name="empresa_id" ref="l10n_br_base.sped_empresa_regime_normal_sp"/>
-        <field name="participante_id" ref="l10n_br_base.cliente9_mg"/>
+        <field name="partner_id" ref="l10n_br_base.cliente9_mg"/>
         <field name="documento_id" ref="finan.DOCUMENTO_FINANCEIRO_BOLETO"/>
         <field name="numero">3567</field>
         <field name="data_documento" eval="DateTime.today().strftime('%Y-%m-%d %H:%M')" />
@@ -46,7 +46,7 @@
     <!--Divida 02-->
     <record model="finan.lancamento" id="finan_lancamento_a_receber_02">
         <field name="empresa_id" ref="l10n_br_base.sped_empresa_regime_normal_sp"/>
-        <field name="participante_id" ref="l10n_br_base.res_partner_cliente8_rs"/>
+        <field name="partner_id" ref="l10n_br_base.res_partner_cliente8_rs"/>
         <field name="documento_id" ref="finan.DOCUMENTO_FINANCEIRO_BOLETO"/>
         <field name="numero">0056</field>
         <field name="data_documento" eval="(DateTime.today() - timedelta(days=30)).strftime('%Y-%m-%d %H:%M')"/>
@@ -84,7 +84,7 @@
     <!--Divida 03-->
     <record model="finan.lancamento" id="finan_lancamento_a_receber_03">
         <field name="empresa_id" ref="l10n_br_base.sped_empresa_regime_normal_sp"/>
-        <field name="participante_id" ref="l10n_br_base.res_partner_cliente10_mg"/>
+        <field name="partner_id" ref="l10n_br_base.res_partner_cliente10_mg"/>
         <field name="documento_id" ref="finan.DOCUMENTO_FINANCEIRO_BOLETO"/>
         <field name="numero">6573</field>
         <field name="data_documento" eval="DateTime.today().strftime('%Y-%m-%d %H:%M')"/>
@@ -101,7 +101,7 @@
     <!--Divida 04-->
     <record model="finan.lancamento" id="finan_lancamento_a_receber_04">
         <field name="empresa_id" ref="l10n_br_base.sped_empresa_regime_normal_sp"/>
-        <field name="participante_id" ref="l10n_br_base.res_partner_kmee"/>
+        <field name="partner_id" ref="l10n_br_base.res_partner_kmee"/>
         <field name="documento_id" ref="finan.DOCUMENTO_FINANCEIRO_BOLETO"/>
         <field name="numero">8001</field>
         <field name="data_documento" eval="DateTime.today().strftime('%Y-%m-%d %H:%M')"/>
@@ -118,7 +118,7 @@
     <!--Divida 05-->
     <record model="finan.lancamento" id="finan_lancamento_a_receber_05">
         <field name="empresa_id" ref="l10n_br_base.sped_empresa_regime_normal_sp"/>
-        <field name="participante_id" ref="l10n_br_base.res_partner_cliente10_mg"/>
+        <field name="partner_id" ref="l10n_br_base.res_partner_cliente10_mg"/>
         <field name="documento_id" ref="finan.DOCUMENTO_FINANCEIRO_BOLETO"/>
         <field name="numero">6452</field>
         <field name="data_documento" eval="(DateTime.today() - timedelta(days=33)).strftime('%Y-%m-%d %H:%M')"/>
@@ -135,7 +135,7 @@
     <!--Divida 06-->
     <!--<record model="finan.lancamento" id="finan_lancamento_a_receber_06">-->
         <!--<field name="empresa_id" ref="l10n_br_base.sped_empresa_regime_normal_sp"/>-->
-        <!--<field name="participante_id" ref="l10n_br_base.res_partner_cliente8_rs"/>-->
+        <!--<field name="partner_id" ref="l10n_br_base.res_partner_cliente8_rs"/>-->
         <!--<field name="documento_id" ref="finan.DOCUMENTO_FINANCEIRO_BOLETO"/>-->
         <!--<field name="numero">3667</field>-->
         <!--<field name="data_documento">01/01/2018</field>-->
@@ -152,7 +152,7 @@
     <!--Lançamento financeiro baixado parcialmente-->
     <!--<record model="finan.lancamento" id="finan_lancamento_a_receber_07">-->
         <!--<field name="empresa_id" ref="l10n_br_base.sped_empresa_regime_normal_sp"/>-->
-        <!--<field name="participante_id" ref="l10n_br_base.res_partner_cliente12_sp"/>-->
+        <!--<field name="partner_id" ref="l10n_br_base.res_partner_cliente12_sp"/>-->
         <!--<field name="documento_id" ref="finan.DOCUMENTO_FINANCEIRO_BOLETO"/>-->
         <!--<field name="numero">1003</field>-->
         <!--<field name="data_documento">01/01/2018</field>-->

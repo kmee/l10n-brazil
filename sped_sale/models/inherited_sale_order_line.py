@@ -34,7 +34,7 @@ class SaleOrderLine(SpedCalculoImpostoItem, models.Model):
     #
     # O campo documento_id serve para que a classe SpedCalculoImpostoItem
     # saiba qual o cabeçalho do documento (venda, compra, NF etc.)
-    # tem as definições da empresa, participante, data de emissão etc.
+    # tem as definições da empresa, partner, data de emissão etc.
     # necessárias aos cálculos dos impostos;
     # Uma vez definido o documento, a operação pode variar entre produto e
     # serviço, por isso o compute no campo; a data de emissão também vem

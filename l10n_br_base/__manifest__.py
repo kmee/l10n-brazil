@@ -72,6 +72,7 @@
         #
         'views/sped_endereco_base_view.xml',
 
+        'views/inherited_res_partner_view.xml',
         'views/sped_participante_base_view.xml',
         'views/sped_participante_cliente_view.xml',
         'views/sped_participante_fornecedor_view.xml',

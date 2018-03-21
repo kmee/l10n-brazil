@@ -10,11 +10,9 @@
         <field name="priority">99999</field>
         <field name="inherit_id" ref="sped_imposto.sped_operacao_base_form"/>
         <field name="arch" type="xml">
-            <field name="preco_automatico" position="after">
-                <newline />
+            <group name="parametros" position="inside">
                 <field name="enviar_pela_venda" attrs="{'invisible': ['!', ('modelo', 'in', ['55', '65', '59', 'SE'])]}" />
-                <newline />
-            </field>
+            </group>
         </field>
     </record>
 

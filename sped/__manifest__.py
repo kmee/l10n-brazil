@@ -28,6 +28,10 @@
         'views/sped_view.xml',
 
         #
+        # Wizards
+        #
+        'wizard/sped_documento_devolucao_view.xml',
+        #
         # Fiscal
         #
         'views/sped_veiculo_view.xml',

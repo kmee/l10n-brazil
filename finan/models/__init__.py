@@ -11,9 +11,9 @@ from . import finan_forma_pagamento
 from . import inherited_account_payment_term
 from . import inherited_sped_empresa
 from . import finan_lancamento
-from . import inherited_sped_participante
 from . import finan_banco_extrato
 from . import finan_banco_saldo
 from . import finan_remessa
 from . import finan_retorno
 from . import finan_banco_fechamento
+from . import inherited_res_partner

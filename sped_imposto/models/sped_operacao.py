@@ -203,6 +203,10 @@ class SpedOperacaoFiscal(models.Model):
         comodel_name='sped.operacao',
         string='Operação de entrada equivalente',
     )
+    operacao_devolucao_id = fields.Many2one(
+        comodel_name='sped.operacao',
+        string='Operação de Devolução',
+    )
     consumidor_final = fields.Selection(
         selection=TIPO_CONSUMIDOR_FINAL,
         string='Tipo do consumidor',
@@ -246,13 +250,13 @@ class SpedOperacaoFiscal(models.Model):
     #     calculo = self.env['sped.calculo.imposto.item'].new()
     #     calculo.operacao_id = self.id
     #     # calculo.empresa_id = empresa_id
-    #     # calculo.participante_id = participante_id
+    #     # calculo.partner_id = partner_id
     #     # calculo.produto_id = produto_id
     #     # calculo.quantidade = quantidade
     #     # calculo.vr_unitario = vr_unitario
     #
     #     calculo.empresa_id = 1
-    #     calculo.participante_id = 1
+    #     calculo.partner_id = 1
     #     calculo.produto_id = 1
     #     calculo.quantidade = 10
     #     calculo.vr_unitario = 100

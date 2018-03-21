@@ -10,12 +10,6 @@ from odoo import api, fields, models
 class InventoryLine(models.Model):
     _inherit = b'stock.inventory.line'
 
-    produto_id = fields.Many2one(
-        comodel_name='sped.produto',
-        string='Produto',
-        ondelete='restrict',
-    )
-
     vr_unitario_custo = fields.Float(
         string='Valor Custo Unitário',
     )
@@ -23,12 +17,3 @@ class InventoryLine(models.Model):
     vr_total_custo = fields.Float(
         string='Valor Custo Total',
     )
-
-    @api.onchange('produto_id')
-    def _onchange_produto_id(self):
-        """
-        Sincronização do produto com product.product do core
-        """
-        for record in self:
-            if record.produto_id:
-                record.product_id = record.produto_id.product_id

@@ -5,6 +5,7 @@
 from __future__ import division, print_function, unicode_literals
 
 from odoo import api, fields, models, _
+from odoo.exceptions import UserError
 from odoo.addons.l10n_br_base.constante_tributaria import *
 
 
@@ -141,33 +142,78 @@ class SpedDocumento(models.Model):
         super(SpedDocumento, self).executa_depois_denegar()
         self._cancela_estoque()
 
+    def _busca_stock_picking_type(self):
+
+        stock_picking_type_ids = self.operacao_id.stock_picking_type_ids
+
+        stock_warehouse_id = self.env['stock.warehouse'].search([
+                ('company_id', '=', self.empresa_id.company_id.id),
+        ])
+
+        if stock_warehouse_id:
+            stock_picking_type_ids = stock_picking_type_ids.filtered(
+                lambda spt: spt.warehouse_id == stock_warehouse_id
+            )
+
+        code = {
+            ENTRADA_SAIDA_ENTRADA: 'incoming',
+            ENTRADA_SAIDA_SAIDA: 'outgoing',
+            # 'internal': False, # Se for uma operação interna,
+            # não tem documento fiscal, então você esta no lugar errado.
+            # ou prove o contrário
+        }
+
+        stock_picking_type_ids = stock_picking_type_ids.filtered(
+            lambda spt: spt.code == code[self.entrada_saida]
+        )
+
+        if len(stock_picking_type_ids) > 1:
+            raise UserError(_("Mais de uma operação fiscal relacionada "
+                                "a este tipo de operação de estoque"))
+        elif stock_picking_type_ids:
+            return stock_picking_type_ids
+        else:
+            raise UserError(_("Nenhuma operação fiscal relacionada a"
+                                "este tipo de operação de estoque"))
+
     def _criar_picking(self):
         stock_obj = self.env['stock.picking']
         for documento in self:
-            doc_picking_type = documento.operacao_id.stock_picking_type_id
+            doc_picking_type = documento._busca_stock_picking_type()
+            if not doc_picking_type:
+                continue
+
+            if documento.eh_devolucao_compra:
+                location_id = self.env.ref('stock.stock_location_suppliers')
+            elif documento.eh_devolucao_venda:
+                location_id = self.env.ref('stock.stock_location_customers')
+            elif documento.eh_venda:
+                location_id = self.env.ref('stock.stock_location_stock')
+            elif documento.eh_compra:
+                location_id = self.env.ref('stock.stock_location_suppliers')
+
             move_lines = []
             for line in documento.item_ids:
                 vals_produtos = [0, False, {
                     'produto_id': line.produto_id.id,
-                    'product_uom': 1,
+                    'product_uom': line.unidade_id.uom_id.id,
                     'product_uom_qty': line.quantidade,
                     'name': "[" + line.produto_id.codigo + "] " +
                             line.produto_id.nome,
                     'date_expected': documento.data_hora_entrada_saida,
-                    'location_id': doc_picking_type.default_location_src_id.id,
+                    'location_id': location_id.id,
                     'location_dest_id':
                         doc_picking_type.default_location_dest_id.id,
                 }]
                 move_lines.append(vals_produtos)
             vals = {
-                'partner_id': documento.participante_id.partner_id.id,
-                'participante_id': documento.participante_id.id,
+                'partner_id': documento.partner_id.id,
                 'min_date': documento.data_hora_entrada_saida,
                 'origin': 'NFe-' + str(documento.numero)[:-2],
                 'company_id': documento.empresa_id.company_id.id,
                 'empresa_id': documento.empresa_id.id,
                 'picking_type_id': doc_picking_type.id,
-                'location_id': doc_picking_type.default_location_src_id.id,
+                'location_id': location_id.id,
                 'location_dest_id':
                     doc_picking_type.default_location_dest_id.id,
                 'move_lines': move_lines,
@@ -176,12 +222,7 @@ class SpedDocumento(models.Model):
             documento.stock_picking_id = res.id
             documento._confirma_estoque()
 
-    def executa_depois_create(self, result, dados):
-        result = super(SpedDocumento, self).executa_depois_create(
-            result, dados)
-
+    def gera_estoque(self):
         for documento in self:
             if documento.entrada_saida == ENTRADA_SAIDA_ENTRADA:
                 documento._criar_picking()
-
-        return result

@@ -4,7 +4,7 @@
 <odoo>
     <record model="finan.lancamento" id="finan_lancamento_saida_00">
         <field name="empresa_id" ref="l10n_br_base.sped_empresa_regime_normal_sp"/>
-        <field name="participante_id" ref="l10n_br_base.res_partner_cliente10_mg"/>
+        <field name="partner_id" ref="l10n_br_base.res_partner_cliente10_mg"/>
         <field name="documento_id" ref="finan.DOCUMENTO_FINANCEIRO_CHEQUE"/>
         <field name="numero">2156</field>
         <field name="data_documento" eval="(DateTime.today() - timedelta(days=5)).strftime('%Y-%m-%d %H:%M')"/>
@@ -22,7 +22,7 @@
 
     <record model="finan.lancamento" id="finan_lancamento_saida_01">
         <field name="empresa_id" ref="l10n_br_base.sped_empresa_regime_normal_sp"/>
-        <field name="participante_id" ref="l10n_br_base.res_partner_cliente12_sp"/>
+        <field name="partner_id" ref="l10n_br_base.res_partner_cliente12_sp"/>
         <field name="documento_id" ref="finan.DOCUMENTO_FINANCEIRO_CHEQUE"/>
         <field name="numero">4530</field>
         <field name="data_documento" eval="DateTime.today().strftime('%Y-%m-%d %H:%M')"/>

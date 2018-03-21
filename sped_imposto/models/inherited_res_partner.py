@@ -10,8 +10,8 @@ from __future__ import division, print_function, unicode_literals
 from odoo import fields, models
 
 
-class SpedParticipante(models.Model):
-    _inherit = 'sped.participante'
+class ResPartner(models.Model):
+    _inherit = 'res.partner'
 
     cnae_id = fields.Many2one(
         comodel_name='sped.cnae',

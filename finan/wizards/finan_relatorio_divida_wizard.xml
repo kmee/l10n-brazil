@@ -23,7 +23,7 @@
                     <field name="data_inicial" required="1" />
                     <field name="data_final" required="1" />
                     <newline />
-                    <field name="participante_ids" widget="many2many_tags" options="{'no_create': True, 'no_open': True}" />
+                    <field name="partner_ids" widget="many2many_tags" options="{'no_create': True, 'no_open': True}" />
                 </group>
                 <footer>
                     <button name="gera_relatorio_divida" string="Gerar relatório" type="object"/>

@@ -54,8 +54,8 @@ class SpedDocumentoItemDeclaracaoImportacao(SpedBase, models.Model):
         selection=FORMA_IMPORTACAO,
         string='Forma de importação',
     )
-    participante_id = fields.Many2one(
-        comodel_name='sped.participante',
+    partner_id = fields.Many2one(
+        comodel_name='res.partner',
         string='Adquirente/encomendante',
     )
 

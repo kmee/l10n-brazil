@@ -8,7 +8,7 @@
     <!--Divida 01-->
     <record model="finan.lancamento" id="finan_lancamento_a_pagar_01">
         <field name="empresa_id" ref="l10n_br_base.sped_empresa_regime_normal_sp"/>
-        <field name="participante_id" ref="l10n_br_base.cliente9_mg"/>
+        <field name="partner_id" ref="l10n_br_base.cliente9_mg"/>
         <field name="documento_id" ref="finan.DOCUMENTO_FINANCEIRO_BOLETO"/>
         <field name="numero">3527</field>
         <field name="data_documento" eval="(DateTime.today() - timedelta(days=3)).strftime('%Y-%m-%d %H:%M')"/>
@@ -45,7 +45,7 @@
     <!--Divida 02-->
     <record model="finan.lancamento" id="finan_lancamento_a_pagar_02">
         <field name="empresa_id" ref="l10n_br_base.sped_empresa_regime_normal_sp"/>
-        <field name="participante_id" ref="l10n_br_base.res_partner_cliente8_rs"/>
+        <field name="partner_id" ref="l10n_br_base.res_partner_cliente8_rs"/>
         <field name="documento_id" ref="finan.DOCUMENTO_FINANCEIRO_BOLETO"/>
         <field name="numero">2121</field>
         <field name="data_documento" eval="DateTime.today().strftime('%Y-%m-%d %H:%M')"/>
@@ -82,7 +82,7 @@
     <!--Divida 03-->
     <record model="finan.lancamento" id="finan_lancamento_a_pagar_03">
         <field name="empresa_id" ref="l10n_br_base.sped_empresa_regime_normal_sp"/>
-        <field name="participante_id" ref="l10n_br_base.res_partner_cliente10_mg"/>
+        <field name="partner_id" ref="l10n_br_base.res_partner_cliente10_mg"/>
         <field name="documento_id" ref="finan.DOCUMENTO_FINANCEIRO_BOLETO"/>
         <field name="numero">6003</field>
         <field name="data_documento" eval="DateTime.today().strftime('%Y-%m-%d %H:%M')"/>
@@ -98,7 +98,7 @@
     <!--Divida 04-->
     <record model="finan.lancamento" id="finan_lancamento_a_pagar_04">
         <field name="empresa_id" ref="l10n_br_base.sped_empresa_regime_normal_sp"/>
-        <field name="participante_id" ref="l10n_br_base.res_partner_kmee"/>
+        <field name="partner_id" ref="l10n_br_base.res_partner_kmee"/>
         <field name="documento_id" ref="finan.DOCUMENTO_FINANCEIRO_BOLETO"/>
         <field name="numero">8033</field>
         <field name="data_documento" eval="DateTime.today().strftime('%Y-%m-%d %H:%M')" />
@@ -114,7 +114,7 @@
     <!--Divida 05-->
     <record model="finan.lancamento" id="finan_lancamento_a_pagar_09">
         <field name="empresa_id" ref="l10n_br_base.sped_empresa_regime_normal_sp"/>
-        <field name="participante_id" ref="l10n_br_base.res_partner_cliente10_mg"/>
+        <field name="partner_id" ref="l10n_br_base.res_partner_cliente10_mg"/>
         <field name="documento_id" ref="finan.DOCUMENTO_FINANCEIRO_BOLETO"/>
         <field name="numero">6001</field>
         <field name="data_documento" eval="(DateTime.today() - timedelta(days=35)).strftime('%Y-%m-%d %H:%M')" />
@@ -130,7 +130,7 @@
     <!--<record model="finan.lancamento" id="finan_lancamento_a_pagar_06">-->
         <!--<field name="situacao_divida">baixado</field>-->
         <!--<field name="empresa_id" ref="l10n_br_base.sped_empresa_regime_normal_sp"/>-->
-        <!--<field name="participante_id" ref="l10n_br_base.res_partner_cliente8_rs"/>-->
+        <!--<field name="partner_id" ref="l10n_br_base.res_partner_cliente8_rs"/>-->
         <!--<field name="documento_id" ref="finan.DOCUMENTO_FINANCEIRO_BOLETO"/>-->
         <!--<field name="numero">3669</field>-->
         <!--<field name="data_documento">01/01/2018</field>-->
@@ -147,7 +147,7 @@
     <!--<record model="finan.lancamento" id="finan_lancamento_a_pagar_07">-->
         <!--<field name="situacao_divida">baixado_parcialmente</field>-->
         <!--<field name="empresa_id" ref="l10n_br_base.sped_empresa_regime_normal_sp"/>-->
-        <!--<field name="participante_id" ref="l10n_br_base.res_partner_cliente12_sp"/>-->
+        <!--<field name="partner_id" ref="l10n_br_base.res_partner_cliente12_sp"/>-->
         <!--<field name="documento_id" ref="finan.DOCUMENTO_FINANCEIRO_BOLETO"/>-->
         <!--<field name="numero">1001</field>-->
         <!--<field name="data_documento">01/01/2018</field>-->

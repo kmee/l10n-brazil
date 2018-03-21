@@ -60,8 +60,8 @@ class FinanFormaPagamento(models.Model):
         string='Integração do cartão',
         default=INTEGRACAO_CARTAO_NAO_INTEGRADO,
     )
-    participante_id = fields.Many2one(
-        comodel_name='sped.participante',
+    partner_id = fields.Many2one(
+        comodel_name='res.partner',
         string='Operadora do cartão',
         ondelete='restrict',
     )

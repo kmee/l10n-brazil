@@ -35,7 +35,7 @@
                 <field name="divida_id" invisible="1" />
 
                 <field name="empresa_id" />
-                <field name="participante_id"/>
+                <field name="partner_id"/>
                 <field name="forma_pagamento_id" />
                 <field name="documento_id" />
                 <field name="numero" />
@@ -79,7 +79,7 @@
                         <group name="dados_basicos" colspan="4">
                             <group name="documento" string="Pagamento">
                                 <field name="empresa_id" options="{'no_create': True, 'no_open': True}" />
-                                <field name="participante_id" options="{'no_create': True}" />
+                                <field name="partner_id" options="{'no_create': True}" />
                                 <field name="forma_pagamento_id" options="{'no_create': True}" />
                                 <field name="documento_id" roptions="{'no_create': True}" />
                                 <field name="numero"/>
@@ -120,11 +120,11 @@
         <field name="arch" type="xml">
             <search string="Pagamento">
                 <field name="numero" />
-                <field name="participante_id" />
+                <field name="partner_id" />
                 <field name="data_pagamento" />
 
                 <filter name="group_banco" string="Banco" context="{'group_by': 'banco_id'}" />
-                <filter name="group_participante" string="Participante" context="{'group_by': 'participante_id'}"/>
+                <filter name="group_participante" string="Participante" context="{'group_by': 'partner_id'}"/>
                 <filter name="group_data_pagamento" string="Pagamento" context="{'group_by': 'data_pagamento'}"/>
            </search>
         </field>

@@ -13,9 +13,9 @@
             <form string="Documento Referenciado">
                 <group>
                     <field name="documento_referenciado_id" colspan="4"
-                           domain="[('empresa_id', '=', parent.empresa_id), ('data_emissao', '&lt;=', parent.data_emissao),('participante_id','=', parent.participante_id)]" />
+                           domain="[('empresa_id', '=', parent.empresa_id), ('data_emissao', '&lt;=', parent.data_emissao),('partner_id','=', parent.partner_id)]" />
                     <newline />
-                    <field name="participante_id" colspan="4" required="1" />
+                    <field name="partner_id" colspan="4" required="1" />
                     <field name="modelo" required="1" />
                     <newline />
                     <field name="serie" required="1" />
@@ -35,8 +35,8 @@
         <field name="priority">1</field>
         <field name="arch" type="xml">
             <tree string="Documento Referenciado">
-                <field name="documento_referenciado_id" domain="[('empresa_id', '=', parent.empresa_id), ('data_emissao', '&lt;=', parent.data_emissao),('participante_id','=', parent.participante_id)]" />
-                <field name="participante_id" />
+                <field name="documento_referenciado_id" domain="[('empresa_id', '=', parent.empresa_id), ('data_emissao', '&lt;=', parent.data_emissao),('partner_id','=', parent.partner_id)]" />
+                <field name="partner_id" />
                 <field name="modelo" />
                 <field name="serie" />
                 <field name="numero" />

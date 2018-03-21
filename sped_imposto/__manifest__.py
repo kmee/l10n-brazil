@@ -56,7 +56,7 @@
         # Cadastros
         #
         'views/inherited_sped_empresa_view.xml',
-        'views/inherited_sped_participante_base_view.xml',
+        'views/inherited_res_partner_view.xml',
         'views/inherited_sped_produto_produto_view.xml',
         'views/inherited_sped_produto_servico_view.xml',
 
@@ -81,6 +81,9 @@
         'views/sped_ibptax_view.xml',
         'views/sped_cnae_view.xml',
 
+        # retirando esse campo pois causa conflito com o novo res_partner
+        # 'demo/sped_empresa.xml',
+
         'views/sped_natureza_operacao_view.xml',
         'views/sped_operacao_subsequente.xml',
         'views/sped_operacao_item_view.xml',
@@ -98,6 +101,5 @@
         'demo/sped_natureza_operacao_data.xml',
         'demo/sped_operacao_simples_data.xml',
         'demo/sped_operacao_presumido_data.xml',
-        'demo/sped_empresa.xml',
     ],
 }

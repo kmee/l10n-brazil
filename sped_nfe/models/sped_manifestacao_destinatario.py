@@ -13,6 +13,8 @@ from odoo import _, api, fields, models
 import base64
 from lxml import objectify
 
+from odoo.exceptions import UserError
+
 _logger = logging.getLogger(__name__)
 
 SITUACAO_NFE = [
@@ -96,8 +98,8 @@ class SpedManifestacaoDestinatario(models.Model):
         string='Inscrição estadual',
         size=18,
     )
-    participante_id = fields.Many2one(
-        comodel_name='sped.participante',
+    partner_id = fields.Many2one(
+        comodel_name='res.partner',
         string='Fornecedor',
         invisible=True,
     )
@@ -177,27 +179,35 @@ class SpedManifestacaoDestinatario(models.Model):
         self.ensure_one()
         documento = self.sped_consulta_dfe_id.baixa_documentos(manifestos=self)
 
-        if len(documento) > 1:
-            view_id = self.env.ref(
-                'sped_nfe.sped_documento_ajuste_recebimento_tree').id
-            view_type = 'tree'
+        if not documento:
+            raise UserError(
+                _("Nenhum documento retornado")
+            )
 
-        else:
-            view_id = self.env.ref(
-                'sped_nfe.sped_documento_ajuste_recebimento_form').id
-            view_type = 'form'
-
-        return {
+        action = {
             'name': "Baixa documentos",
             'view_mode': 'form',
-            'view_type': view_type,
-            'view_id': view_id,
-            'res_id': documento.ids,
             'res_model': 'sped.documento',
             'type': 'ir.actions.act_window',
             'target': 'current',
         }
 
+        if len(documento) > 1:
+            view_id = self.env.ref(
+                'sped.sped_documento_recebimento_nfe_tree').id
+            view_type = 'tree'
+            action['domain'] = [('id', 'in', documento.ids)]
+
+        else:
+            view_id = self.env.ref(
+                'sped_nfe.sped_documento_ajuste_recebimento_form').id
+            view_type = 'form'
+            action['res_id'] = documento.id
+
+        action['view_type'] = view_type
+        action['view_id'] = view_id
+
+        return action
 
     @api.multi
     def action_salva_xml(self):

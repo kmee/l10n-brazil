@@ -89,15 +89,6 @@
                     <field name="quantidade_documentos" widget="statinfo" string="NFe"/>
                 </button>
             </div>
-
-            <field name="partner_id" position="replace">
-                <field name="participante_id" options="{'no_create': True}" attrs="{'readonly': [('state', 'in', ['cancel', 'done'])]}" />
-                <field name="partner_id" invisible="1"/>
-            </field>
-            <field name="company_id" position="replace">
-                <field name="empresa_id" options="{'no_create': True, 'no_open': True}" required="1" attrs="{'readonly': [('state', 'in', ['cancel', 'done'])]}"  />
-                <field name="company_id" invisible="1"/>
-            </field>
             <field name="move_type" position="replace">
                 <field name="move_type" attrs="{'invisible': True, 'readonly': [('state', 'in', ['cancel', 'done'])]}" />
             </field>

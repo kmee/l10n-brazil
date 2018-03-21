@@ -15,7 +15,7 @@
             <xpath expr="//button[@name='confirma_lancamento']" position="before">
                 <button name="cria_pagamento" string="Novo recebimento" class="btn-primary" type="object"
                     attrs="{'invisible': ['|', ('provisorio', '=', True), ('situacao_divida', 'in', ['quitado', 'baixado', 'baixado_parcialmente'])]}"
-                    context="{'default_divida_id': id, 'default_tipo': 'recebimento', 'default_conta_id': conta_id, 'default_empresa_id': empresa_id, 'default_participante_id': participante_id, 'default_vr_documento': vr_saldo}" />
+                    context="{'default_divida_id': id, 'default_tipo': 'recebimento', 'default_conta_id': conta_id, 'default_empresa_id': empresa_id, 'default_partner_id': partner_id, 'default_vr_documento': vr_saldo}" />
 
                 <button name="imprime_boleto" string="Imprime boleto" class="btn-primary" type="object"
                     attrs="{'invisible': ['|', ('carteira_id', '=', False), '|', ('provisorio', '=', True), ('situacao_divida', 'in', ['quitado', 'baixado', 'baixado_parcialmente'])]}" />
@@ -39,7 +39,7 @@
             <xpath expr="//form[1]" position="attributes">
                 <attribute name="string">Conta a receber</attribute>
             </xpath>
-            <field name="participante_id" position="attributes">
+            <field name="partner_id" position="attributes">
                 <attribute name="string">Cliente</attribute>
                 <attribute name="default_focus">1</attribute>
             </field>
@@ -57,7 +57,7 @@
             </page>
             <field name="pagamento_ids" position="attributes">
                 <attribute name="context">{
-                    'default_tipo': 'recebimento', 'default_conta_id': conta_id, 'default_empresa_id': empresa_id, 'default_participante_id': participante_id, 'default_vr_documento': vr_saldo, 'default_vr_movimentado': vr_saldo,
+                    'default_tipo': 'recebimento', 'default_conta_id': conta_id, 'default_empresa_id': empresa_id, 'default_partner_id': partner_id, 'default_vr_documento': vr_saldo, 'default_vr_movimentado': vr_saldo,
                     'form_view_ref': 'finan.finan_lancamento_pagamento_one2many_recebimento_form', 'tree_view_ref': 'finan.finan_lancamento_pagamento_one2many_recebimento_tree'
                 }</attribute>
             </field>
@@ -73,7 +73,7 @@
             <xpath expr="//tree[1]" position="attributes">
                 <attribute name="string">Contas a receber</attribute>
             </xpath>
-            <field name="participante_id" position="attributes">
+            <field name="partner_id" position="attributes">
                 <attribute name="string">Cliente</attribute>
             </field>
             <field name="vr_quitado_documento" position="attributes">
@@ -153,7 +153,7 @@
                 <field name="situacao_divida_simples" invisible="1" />
 
                 <field name="nosso_numero" />
-                <field name="participante_id" string="Cliente" />
+                <field name="partner_id" string="Cliente" />
                 <field name="documento_id" string="Documento" />
                 <field name="numero" string="Número" />
                 <field name="data_documento" string="Data" />

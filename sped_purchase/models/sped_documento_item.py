@@ -66,12 +66,12 @@ class SpedDocumentoItem(models.Model):
             ('id', 'not in', self.purchase_ids.ids),
         ]}
 
-        if self.participante_id:
+        if self.partner_id:
             result['domain']['purchase_line_ids'].append(
-                ('participante_id', '=', self.participante_id.id)
+                ('partner_id', '=', self.partner_id.id)
             )
             result['domain']['purchase_ids'].append(
-                ('participante_id', '=', self.participante_id.id)
+                ('partner_id', '=', self.partner_id.id)
             )
 
         if self.empresa_id:

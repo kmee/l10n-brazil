@@ -110,8 +110,8 @@ class StockPicking(SpedCalculoImposto, models.Model):
     def _onchange_picking_type_id(self):
         self.ensure_one()
 
-        if self.picking_type_id and self.picking_type_id.operacao_id:
-            self.operacao_id = self.picking_type_id.operacao_id
+        if self.picking_type_id and self.picking_type_id.operacao_ids:
+            self.operacao_id = self.picking_type_id.operacao_ids[0]
 
     def prepara_dados_documento(self):
         self.ensure_one()

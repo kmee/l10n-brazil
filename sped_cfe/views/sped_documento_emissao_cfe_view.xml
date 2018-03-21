@@ -25,7 +25,7 @@
             <xpath expr="//form[1]" position="attributes">
                 <attribute name="string">Emissão de CF-e</attribute>
             </xpath>
-            <page name="participante" position="attributes">
+            <page name="partner" position="attributes">
                 <attribute name="string">Consumidor</attribute>
             </page>
             <page name="empenho" position="replace" />
@@ -60,7 +60,7 @@
                 <button name="imprimir_documento" string="Imprimir" type="object" class="btn-default"
                     attrs="{'invisible': [('situacao_nfe', '!=', 'autorizada'), ('modelo', '!=', '59')]}"
                 />
-                <button name="%(sped_nfe.nfe_motivo_cancelamento_wizard_action)d" string="Cancelar CF-e" type="action" attrs="{'invisible': ['|', ('permite_cancelamento', '=', 'False'), ('situacao_nfe', '=', 'cancelada')]}"/>
+                <button name="%(sped_nfe.nfe_motivo_cancelamento_wizard_action)d" string="Cancelar CF-e" type="action" attrs="{'invisible': ['|', ('permite_inutilizacao', '=', 'False'), ('situacao_nfe',  'not in', ['em_digitacao', 'a_enviar'])]}"/>
                 <button name="gera_operacoes_subsequentes" string="Gerar NF-e de Cupom" type="object" class="btn-default"
                     context="{'nota_de_cumpom': '1', 'manual': '1'}"
                      attrs="{'invisible': ['|', ('documentos_subsequentes_gerados', '=', True), ('situacao_nfe','not in', ['autorizada'])]}"
@@ -129,7 +129,7 @@
                 <attribute name="decoration-primary">situacao_nfe == 'enviada'</attribute>
                 <attribute name="decoration-danger">situacao_nfe == 'rejeitada'</attribute>
             </xpath>
-            <field name="participante_id" position="attributes">
+            <field name="partner_id" position="attributes">
                 <attribute name="string">Consumidor</attribute>
             </field>
             <field name="data_entrada_saida" position="attributes">

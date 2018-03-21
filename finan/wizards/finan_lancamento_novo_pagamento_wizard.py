@@ -22,7 +22,7 @@ class FinanLancamento(models.TransientModel):
             'tipo': self.tipo,
             'conta_id': self.conta_id.id,
             'empresa_id': self.empresa_id.id,
-            'participante_id': self.participante_id.id,
+            'partner_id': self.partner_id.id,
             'divida_id': self.divida_id.id,
             'forma_pagamento_id': self.forma_pagamento_id.id or False,
             'exige_numero': self.exige_numero,
@@ -39,5 +39,6 @@ class FinanLancamento(models.TransientModel):
             'vr_desconto': self.vr_desconto,
             'vr_tarifas': self.vr_tarifas,
         }
-        self.env['finan.lancamento'].create(vals)
-        return {'type': 'ir.actions.act_window_close'}
+
+        lancamento_id = self.env['finan.lancamento'].create(vals)
+        return lancamento_id

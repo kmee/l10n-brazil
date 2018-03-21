@@ -33,12 +33,12 @@ class SpedVeiculo(models.Model):
         size=20,
     )
     transportadora_id = fields.Many2one(
-        comodel_name='sped.participante',
+        comodel_name='res.partner',
         string='Transportadora',
         domain=[['eh_transportadora', '=', True]],
     )
     motorista_id = fields.Many2one(
-        comodel_name='sped.participante',
+        comodel_name='res.partner',
         string='Motorista',
         domain=[['tipo_pessoa', '=', 'F']]
     )

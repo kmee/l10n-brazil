@@ -17,7 +17,7 @@ class FinanLancamentoPagarManual(test_common.SingleTransactionCase):
             'situacao_divida': 'a_vencer',
             'empresa_id':
                 self.env.ref('l10n_br_base.sped_empresa_regime_normal_sp').id,
-            'participante_id': self.env.ref('l10n_br_base.cliente9_mg').id,
+            'partner_id': self.env.ref('l10n_br_base.cliente9_mg').id,
             'documento_id':
                 self.env.ref('finan.DOCUMENTO_FINANCEIRO_BOLETO').id,
             'numero': 2345,

@@ -256,7 +256,7 @@ class SpedDocumento(models.Model):
         # Primeiro, localizamos o CNPJ ou CPF do emitente e do destinatário
         #
         cnpj_cpf = dados_emitente['cnpj_cpf']
-        emitente = self.env['sped.participante'].search(
+        emitente = self.env['res.partner'].search(
             [('cnpj_cpf_numero', '=', cnpj_cpf)])
 
         #
@@ -272,7 +272,7 @@ class SpedDocumento(models.Model):
         # Agora, buscamos o destinatário
         #
         cnpj_cpf = dados_destinatario['cnpj_cpf']
-        destinatario = self.env['sped.participante'].search(
+        destinatario = self.env['res.partner'].search(
             [('cnpj_cpf_numero', '=', cnpj_cpf)])
 
         if len(destinatario) > 0:
@@ -283,17 +283,17 @@ class SpedDocumento(models.Model):
         # Aqui já sabemos se ou o destinatário, ou o emitente, é uma empresa
         # do sistema, caso em que podemos importar a nota; nesse caso, se
         # o destinatário ou emitente não existirem no cadastro de
-        # participantes, já podemos criar o registro
+        # partners, já podemos criar o registro
         #
         if not pode_importar:
             return False
 
         if not emitente:
-            emitente = self.env['sped.participante'].create(dados_emitente)
+            emitente = self.env['res.partner'].create(dados_emitente)
 
         if not destinatario:
             destinatario = \
-                self.env['sped.participante'].create(dados_destinatario)
+                self.env['res.partner'].create(dados_destinatario)
 
         #
         # Aqui agora tratamos o caso de o emitente e o destinatário serem
@@ -313,7 +313,7 @@ class SpedDocumento(models.Model):
             if destinatario.eh_empresa and \
                 emitente.cnpj_cpf != self.empresa_id.cnpj_cpf:
                 dados['empresa_id'] = self.empresa_id.id
-                dados['participante_id'] = emitente.id
+                dados['partner_id'] = emitente.id
                 dados['emissao'] = TIPO_EMISSAO_TERCEIROS
 
                 if dados['entrada_saida'] == ENTRADA_SAIDA_ENTRADA:
@@ -331,13 +331,15 @@ class SpedDocumento(models.Model):
 
                 dados['empresa_id'] = self.env['sped.empresa'].search([
                     ('cnpj_cpf_numero', '=', emitente.cnpj_cpf_numero)]).id
-                dados['participante_id'] = destinatario.id
+                dados['partner_id'] = destinatario.id
                 dados['regime_tributario'] = emitente.regime_tributario
 
                 if dados['entrada_saida'] == ENTRADA_SAIDA_SAIDA:
                     destinatario.eh_cliente = True
+                    destinatario.customer = True
                 else:
                     destinatario.eh_fornecedor = True
+                    destinatario.supplier = True
 
         #
         # É nota de terceiros
@@ -345,7 +347,7 @@ class SpedDocumento(models.Model):
         else:
             dados['empresa_id'] = self.env['sped.empresa'].search([
                 ('cnpj_cpf_numero', '=', destinatario.cnpj_cpf_numero)]).id
-            dados['participante_id'] = emitente.id
+            dados['partner_id'] = emitente.id
             dados['emissao'] = TIPO_EMISSAO_TERCEIROS
 
             if dados['entrada_saida'] == ENTRADA_SAIDA_ENTRADA:
@@ -614,7 +616,7 @@ class SpedDocumento(models.Model):
         dados_transportadora = {}
 
         #
-        # Como a transportadora da NF-e não é um cadastro de participante
+        # Como a transportadora da NF-e não é um cadastro de partner
         # completo, evitamos fazer a importação caso ela já não esteja
         # cadastrada no sistema
         #
@@ -625,7 +627,7 @@ class SpedDocumento(models.Model):
             cnpj_cpf = transp.transporta.CNPJ.valor
 
         if cnpj_cpf is not None:
-            transportadora = self.env['sped.participante'].search(
+            transportadora = self.env['res.partner'].search(
                 [('cnpj_cpf_numero', '=', cnpj_cpf)])
             if len(transportadora) > 0:
                 dados['transportadora_id'] = transportadora[0].id

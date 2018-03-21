@@ -69,7 +69,7 @@ class FinanBanco(SpedBase, models.Model):
         #index=True,
     )
     titular_id = fields.Many2one(
-        comodel_name='sped.participante',
+        comodel_name='res.partner',
         string='Titular',
         domain=[('cnpj_cpf', '!=', False)],
         required=True,

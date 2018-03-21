@@ -29,7 +29,7 @@
                 <field name="provisorio" invisible="1" />
 
                 <field name="empresa_id" />
-                <field name="participante_id"/>
+                <field name="partner_id"/>
                 <field name="documento_id" string="Documento" />
                 <field name="numero" string="Número" />
                 <field name="data_documento" string="Data" />
@@ -92,7 +92,7 @@
                                     decoration-success="situacao_divida_simples == 'quitado'"
                                 />
                                 <field name="empresa_id" required="1" options="{'no_create': True, 'no_open': True}" attrs="{'readonly': [('state', '!=', 'draft')]}" />
-                                <field name="participante_id" default_focus="1" required="1" options="{'no_create': True, 'no_open': True}" domain="[('cnpj_cpf', '!=', cnpj_cpf)]" attrs="{'readonly': [('state', '!=', 'draft')]}" />
+                                <field name="partner_id" default_focus="1" required="1" options="{'no_create': True, 'no_open': True}" domain="[('cnpj_cpf', '!=', cnpj_cpf)]" attrs="{'readonly': [('state', '!=', 'draft')]}" />
                                 <field name="documento_id" string="Documento de origem" required="1" options="{'no_create': True, 'no_open': True}" attrs="{'readonly': [('state', '!=', 'draft')]}" />
                                 <field name="numero" required="1" string="Número" attrs="{'readonly': [('state', '!=', 'draft')]}" />
                                 <field name="data_documento" required="1" string="Data" attrs="{'readonly': [('state', '!=', 'draft')]}" />
@@ -122,7 +122,7 @@
                     </group>
                     <notebook>
                         <page string="Pagamentos" name="pagamentos">
-                            <field name="pagamento_ids" context="{'default_conta_id': conta_id, 'default_empresa_id': empresa_id, 'default_participante_id': participante_id, 'default_vr_movimentado': vr_saldo, 'default_vr_documento': vr_saldo,
+                            <field name="pagamento_ids" context="{'default_conta_id': conta_id, 'default_empresa_id': empresa_id, 'default_partner_id': partner_id, 'default_vr_movimentado': vr_saldo, 'default_vr_documento': vr_saldo,
  'form_view_ref': 'finan.finan_lancamento_pagamento_one2many_base_form', 'tree_view_ref': 'finan.finan_lancamento_pagamento_one2many_base_tree'}"
                             attrs="{'readonly': [('state', 'in', ['draft', 'cancelled'])]}" />
                         </page>
@@ -161,12 +161,12 @@
                 <separator string="" />
 
                 <field name="numero" />
-                <field name="participante_id" />
+                <field name="partner_id" />
                 <field name="data_documento" />
                 <field name="data_vencimento_util" string="Vencimento" />
 
                 <filter name="group_situacao_divida" string="Situação" context="{'group_by': 'situacao_divida'}" />
-                <filter name="group_participante" string="Participante" context="{'group_by': 'participante_id'}"/>
+                <filter name="group_participante" string="Participante" context="{'group_by': 'partner_id'}"/>
                 <filter name="group_data_vencimento_util" string="Vencimento" context="{'group_by': 'data_vencimento_util'}"/>
            </search>
         </field>

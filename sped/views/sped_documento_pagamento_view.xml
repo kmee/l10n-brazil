@@ -16,7 +16,7 @@
                 <field name="forma_pagamento" invisible="1"/>
                 <field name="bandeira_cartao" invisible="1"/>
                 <field name="integracao_cartao" invisible="1"/>
-                <field name="participante_id" invisible="1"/>
+                <field name="partner_id" invisible="1"/>
                 <field name="cnpj_cpf" invisible="1"/>
                 <group name="dados_pagamento">
                     <group>

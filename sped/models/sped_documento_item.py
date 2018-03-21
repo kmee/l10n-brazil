@@ -65,10 +65,10 @@ class SpedDocumentoItem(SpedCalculoImpostoItem, models.Model):
         related='documento_id.empresa_id',
         readonly=True,
     )
-    participante_id = fields.Many2one(
-        comodel_name='sped.participante',
+    partner_id = fields.Many2one(
+        comodel_name='res.partner',
         string='Destinatário/Remetente',
-        related='documento_id.participante_id',
+        related='documento_id.partner_id',
         readonly=True,
     )
     operacao_id = fields.Many2one(
@@ -80,7 +80,7 @@ class SpedDocumentoItem(SpedCalculoImpostoItem, models.Model):
     contribuinte = fields.Selection(
         selection=IE_DESTINATARIO,
         string='Contribuinte',
-        related='participante_id.contribuinte',
+        related='partner_id.contribuinte',
         readonly=True,
     )
     emissao = fields.Selection(

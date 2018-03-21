@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright 2018 KMEE INFORMATICA LTDA
+    License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
+-->
+<odoo>
+
+    <record id="res_partner_form" model="ir.ui.view">
+        <field name="name">res.partner.form (in l10n_br_base)</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <field name="exige_cnpj_cpf" invisible="1" />
+                <field name="exige_endereco" invisible="1" />
+                <field name="currency_id" invisible="1" />
+                <field name="currency_aliquota_id" invisible="1" />
+            </xpath>
+            <xpath expr="//h1" position="after">
+                 <h2>
+                    <field name="cnpj_cpf" placeholder="CNPJ ou CPF" attrs="{'required': [('exige_cnpj_cpf', '=', True)]}" />
+                    <field name="tipo_pessoa" invisible="1" />
+                </h2>
+            </xpath>
+            <xpath expr="//div[@class='oe_title']" position="after">
+                <group>
+                    <field name="razao_social" string="Nome completo Razão Social" attrs="{'required': [('exige_cnpj_cpf', '=', True)]}" />
+                    <field name="fantasia" attrs="{'invisible': [('tipo_pessoa', '=', 'F')]}" />
+                </group>
+            </xpath>
+            <field name="zip" position="replace" />
+            <field name="state_id" position="replace"/>
+            <field name="country_id" position="replace"/>
+            <field name="city" position="replace"/>
+            <field name="street2" position="replace"/>
+            <field name="street" position="replace">
+                <field name="city" invisible="1"/>
+                <field name="state_id" invisible="1"/>
+                <field name="country_id" invisible="1"/>
+                <field name="zip" placeholder="99999-999" attrs="{'required': [('exige_endereco', '=', True)]}"/>
+                <br/>
+                <field name="street" placeholder="Street..." class="o_address_street" attrs="{'required': [('exige_endereco', '=', True)]}"/>
+                <field name="numero" placeholder="Número ou S/N" attrs="{'required': [('exige_endereco', '=', True)]}" />
+                <br/>
+                <field name="street2" placeholder="Street 2..." class="o_address_street"/>
+                <field name="bairro" colspan="6" placeholder="District" attrs="{'required': [('exige_endereco', '=', True)]}" />
+                <br/>
+                <field name="municipio_id" placeholder="Municipio" options="{'no_open': True, 'no_create': True}" colspan="6" attrs="{'required': [('exige_endereco', '=', True)]}" />
+            </field>
+            <xpath expr="//notebook/page" position="before">
+                <page name="inscricoes" string="Inscrições e registros" autofocus="autofocus" >
+                    <group col="4">
+                        <group col="4" colspan="4">
+                            <separator string="Inscrição Estadual" colspan="4" />
+                            <field name="contribuinte" colspan="2" required="1"/>
+                            <field name="ie" attrs="{'invisible': [('contribuinte', '!=', '1')], 'required': [('contribuinte', '=', '1')]}" colspan="2" />
+                        </group>
+                        <newline />
+                        <group col="6" colspan="4" attrs="{'invisible': [('tipo_pessoa', '!=', 'F')]}">
+                            <separator string="RG" colspan="6"  />
+                            <field name="rg_numero" string="Número" colspan="2" />
+                            <field name="rg_orgao_emissor" string="Órgão emissor" colspan="2" />
+                            <field name="rg_data_expedicao" string="Data de emissão" colspan="2" />
+                        </group>
+                        <newline />
+                        <group col="4" colspan="4" attrs="{'invisible': [('tipo_pessoa', '=', 'F')]}" >
+                            <separator string="Outras inscrições" colspan="6" />
+                            <separator string="Inscrição Municipal" colspan="2" />
+                            <separator string="CEI" colspan="2" />
+                            <field name="im" colspan="2" nolabel="1" />
+                            <field name="cei" colspan="2" nolabel="1" />
+                            <separator string="SUFRAMA" colspan="2" />
+                            <separator string="RNTRC" colspan="2" />
+                            <field name="suframa" colspan="2" nolabel="1" />
+                            <field name="rntrc" colspan="2" nolabel="1" />
+                            <separator string="CRC" />
+                            <newline />
+                            <field name="crc" colspan="2" />
+                            <field name="crc_uf" colspan="2" options="{'no_open': True, 'no_create': True}" />
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+            <group name="container_row_2" position="inside">
+                <group string="Outras informações" colspan="4" col="4">
+                    <field name="transportadora_id" colspan="4" col="4" />
+                    <field name="condicao_pagamento_id" colspan="4" col="4" />
+                </group>
+            </group>
+            <xpath expr="//notebook" position="inside">
+                    <page name="fiscal" string="Fiscal">
+                        <group col="4">
+                            <field name="regime_tributario" />
+                            <newline />
+                            <field name="eh_consumidor_final" />
+                            <field name="eh_orgao_publico" />
+                            <field name="eh_transportadora" />
+                            <field name="eh_funcionario" />
+                        </group>
+                        <!--
+                        <field name="eh_cooperativa" />
+                        <field name="eh_convenio" />
+                        <field name="eh_sindicato" />
+                        -->
+                    </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="res_partner_tree" model="ir.ui.view">
+        <field name="name">res.partner.tree (in l10n_br_base)</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree"/>
+        <field name="arch" type="xml">
+            <field name="phone" position="replace">
+                <field name="cnpj_cpf" />
+                <field name="phone" />
+                <field name="mobile" />
+                <field name="municipio_id" />
+            </field>
+        </field>
+    </record>
+
+    <!--<record id="view_res_partner_filter" model="ir.ui.view">-->
+        <!--<field name="name">res.partner.select (in l10n_br_base)</field>-->
+        <!--<field name="model">res.partner</field>-->
+        <!--<field name="inherit_id" ref="base.view_res_partner_filter"/>-->
+        <!--<field name="arch" type="xml">-->
+               <!--<field name="name" position="replace">-->
+                   <!--<field name="name" filter_domain="['|','|','|','|',('display_name','ilike',self),('ref','=',self),('email','ilike',self),('cnpj_cpf_numero', 'ilike', self),('razao_social','ilike',self),('fantasia','ilike',self)]"/>-->
+               <!--</field>-->
+        <!--</field>-->
+    <!--</record>-->
+</odoo>

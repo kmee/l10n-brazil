@@ -19,8 +19,9 @@
                     <button name="envia_email_nfe" string="Enviar email" type="object" class="btn-primary" />
                     <button name="imprimir_documento" string="Imprimir" type="object" class="btn-default" />
                     <button name="gera_xml" string="Visualiza XML" type="object" class="btn-default" />
-                    <button name="%(nfe_motivo_cancelamento_wizard_action)d" string="Cancelar NF-e" type="action" attrs="{'invisible': ['|', ('permite_cancelamento', '=', 'False'), ('situacao_nfe', '=', 'cancelada')]}"/>
+                    <button name="%(nfe_motivo_cancelamento_wizard_action)d" string="Cancelar NF-e" type="action" attrs="{'invisible': ['|', ('permite_cancelamento', '=', 'False'), ('situacao_nfe', '!=', 'autorizada'), ('situacao_nfe', '=', 'cancelada')]}"/>
                     <button name="inutiliza_nfe" string="Inutilizar NF-e" type="object" attrs="{'invisible': ['|', ('permite_inutilizacao', '=', 'False'), ('situacao_nfe',  'not in', ['em_digitacao', 'a_enviar'])]}"/>
+                    <button name="%(sped.act_sped_documento_devolucao)d" string="Devolver" type="action" attrs="{'invisible': [('situacao_nfe', '!=', 'autorizada')]}"/>
                     <button name="gera_operacoes_subsequentes" string="Gerar outras operações" type="object" class="btn-default"
                             attrs="{'invisible': ['|', ('documentos_subsequentes_gerados', '=', True), ('operacao_subsequente_ids', '=', [])]}" context="{'manual': '1'}"/>
                 </header>

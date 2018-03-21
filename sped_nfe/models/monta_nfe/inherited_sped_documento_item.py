@@ -84,7 +84,7 @@ class SpedDocumentoItem(models.Model):
                 '${formata_valor(item.al_interna_destino)}% recolhida ' + \
                 'conf. EC 87/2015: ' + \
                 'R$ ${formata_valor(item.vr_icms_estado_destino)} para o ' + \
-                'estado de ${nf.participante_id.estado} e ' + \
+                'estado de ${nf.partner_id.estado} e ' + \
                 'R$ ${formata_valor(item.vr_icms_estado_origem)} para o ' + \
                 'estado de ${nf.empresa_id.estado}; Valor do diferencial ' + \
                 'de alíquota (${formata_valor(item.al_difal)}%): ' + \

@@ -24,10 +24,6 @@ class PurchaseOrderLine(SpedCalculoImpostoItem, models.Model):
         related='order_id.empresa_id',
         readonly=True,
     )
-    participante_id = fields.Many2one(
-        related='order_id.participante_id',
-        readonly=True,
-    )
     operacao_id = fields.Many2one(
         related='order_id.operacao_produto_id',
         readonly=True,

@@ -9,6 +9,9 @@ import ntpath
 import os
 import shutil
 import tarfile
+import io
+import zipfile
+import base64
 
 from odoo.exceptions import ValidationError, UserError
 from odoo import api, fields, models, _
@@ -106,9 +109,12 @@ class SpedMontaAnexo(models.TransientModel):
             active_model = 'ir.attachment'
             active_id = self.id
 
-            # tar_dir = attachment_dir + '/' + file_name
-            tar_dir = os.path.join(attachment_dir, file_name)
-            tFile = tarfile.open(tar_dir, 'w:gz')
+            # Trabalhando com formato .zip
+            order_file = io.BytesIO()
+            order_zip = zipfile.ZipFile(
+                order_file, mode="w", compression=zipfile.ZIP_DEFLATED
+            )
+
 
             if value and active_id and active_model:
                 # alterando o diretório de trabalho, caso contrário o arquivo
@@ -140,16 +146,20 @@ class SpedMontaAnexo(models.TransientModel):
                     # change working directory otherwise it tars all parent directory
                     os.chdir(head)
                     try:
-                        tFile.add(tail)
+                        order_zip.writestr(
+                            tail,
+                            base64.b64decode(attachment.datas)
+                        )
                     except:
                         _logger.error("No such file was found : %s" % tail)
 
-                tFile.close()
                 os.chdir(original_dir)
+                order_zip.close()
 
                 values = {
-                    'name': file_name + '.tar.gz',
-                    'datas_fname': file_name + '.tar.gz',
+                    'name': file_name + '.zip',
+                    'datas': base64.b64encode(order_file.getvalue()),
+                    'datas_fname': file_name + '.zip',
                     'res_model': 'sped.monta.anexo',
                     'res_id': self.id,
                     'type': 'binary',

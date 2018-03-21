@@ -77,8 +77,8 @@ class SpedDocumentoPagamento(SpedBase, models.Model):
         string='Integração do cartão',
         default=INTEGRACAO_CARTAO_NAO_INTEGRADO,
     )
-    participante_id = fields.Many2one(
-        comodel_name='sped.participante',
+    partner_id = fields.Many2one(
+        comodel_name='res.partner',
         string='Operadora do cartão',
         ondelete='restrict',
     )
@@ -115,13 +115,13 @@ class SpedDocumentoPagamento(SpedBase, models.Model):
         valores['integracao_cartao'] = \
             self.condicao_pagamento_id.integracao_cartao
 
-        if self.condicao_pagamento_id.participante_id:
-            valores['participante_id'] = \
-                self.condicao_pagamento_id.participante_id.id
+        if self.condicao_pagamento_id.partner_id:
+            valores['partner_id'] = \
+                self.condicao_pagamento_id.partner_id.id
             valores['cnpj_cpf'] = \
-                self.condicao_pagamento_id.participante_id.cnpj_cpf
+                self.condicao_pagamento_id.partner_id.cnpj_cpf
         else:
-            valores['participante_id'] = False
+            valores['partner_id'] = False
             valores['cnpj_cpf'] = False
 
         return res

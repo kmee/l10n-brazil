@@ -151,7 +151,7 @@ class SaleOrder(SpedCalculoImpostoProdutoServico, models.Model):
         vals = super(SaleOrder, self)._prepare_invoice()
 
         vals['empresa_id'] = self.empresa_id.id or False
-        vals['participante_id'] = self.participante_id.id or False
+        vals['partner_id'] = self.partner_id.id or False
         vals['operacao_produto_id'] = \
             self.operacao_produto_id.id or False
         vals['operacao_servico_id'] = \
@@ -207,7 +207,7 @@ class SaleOrder(SpedCalculoImpostoProdutoServico, models.Model):
             'infcomplementar': self.note,
         }
 
-    @api.onchange('empresa_id', 'participante_id')
+    @api.onchange('empresa_id', 'partner_id')
     def _onchange_empresa_operacao_padrao(self):
         self.ensure_one()
 
@@ -217,14 +217,14 @@ class SaleOrder(SpedCalculoImpostoProdutoServico, models.Model):
         if self.empresa_id.operacao_produto_id:
             self.operacao_produto_id = self.empresa_id.operacao_produto_id
 
-        if self.participante_id:
+        if self.partner_id:
             if self.empresa_id.operacao_produto_pessoa_fisica_id and \
-                (self.participante_id.eh_consumidor_final or
-                 self.participante_id.tipo_pessoa == TIPO_PESSOA_FISICA):
+                (self.partner_id.eh_consumidor_final or
+                 self.partner_id.tipo_pessoa == TIPO_PESSOA_FISICA):
                 self.operacao_produto_id = \
                  self.empresa_id.operacao_produto_pessoa_fisica_id
-            if self.participante_id.comment:
-                self.obs_estoque = self.participante_id.comment
+            if self.partner_id.comment:
+                self.obs_estoque = self.partner_id.comment
 
         if self.empresa_id.operacao_servico_id:
             self.operacao_servico_id = self.empresa_id.operacao_servico_id

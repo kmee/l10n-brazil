@@ -57,8 +57,8 @@ class SpedCalculoImposto(SpedBase):
             vals = super(SaleOrder, self)._prepare_invoice()
 
             vals['empresa_id'] = self.empresa_id.id or False
-            vals['participante_id'] = \
-                self.participante_id.id or False
+            vals['partner_id'] = \
+                self.partner_id.id or False
             vals['sped_operacao_produto_id'] = \
                 self.sped_operacao_produto_id.id or False
             vals['sped_operacao_servico_id'] = \
@@ -96,8 +96,8 @@ class SpedCalculoImposto(SpedBase):
     partner_id = fields.Many2one(
         comodel_name='res.partner',
     )
-    participante_id = fields.Many2one(
-        comodel_name='sped.participante',
+    partner_id = fields.Many2one(
+        comodel_name='res.partner',
         string='Destinatário/Remetente'
     )
     operacao_id = fields.Many2one(
@@ -373,7 +373,7 @@ class SpedCalculoImposto(SpedBase):
         string='Modalidade do frete',
     )
     transportadora_id = fields.Many2one(
-        comodel_name='sped.participante',
+        comodel_name='res.partner',
         string='Transportadora',
         ondelete='restrict',
     )
@@ -394,48 +394,10 @@ class SpedCalculoImposto(SpedBase):
     #     copy=True,
     # )
 
-
     @api.depends('company_id', 'partner_id')
     def _compute_is_brazilian(self):
         for documento in self:
-            if documento.company_id.country_id:
-                if documento.company_id.country_id.id == \
-                        self.env.ref('base.br').id:
-                    documento.is_brazilian = True
-
-                    if documento.partner_id.sped_participante_id:
-                        documento.participante_id = \
-                            documento.partner_id.sped_participante_id
-
-                    if documento.empresa_id:
-                        if 'operacao_produto_id' in documento._fields:
-                            if (documento.participante_id.tipo_pessoa ==
-                                    TIPO_PESSOA_FISICA):
-                                documento.operacao_produto_id = \
-                                    documento.empresa_id.\
-                                    operacao_produto_pessoa_fisica_id
-                            else:
-                                documento.operacao_produto_id = \
-                                    documento.empresa_id.operacao_produto_id
-
-                        if 'operacao_servico_id' in documento._fields:
-                            documento.operacao_servico_id = \
-                                documento.empresa_id.operacao_servico_id
-                    continue
-            documento.is_brazilian = False
-
-    def _sincroniza_empresa_company_participante_partner(self):
-        for documento in self:
-            documento.company_id = documento.empresa_id.company_id
-            documento.partner_id = documento.participante_id.partner_id
-
-    @api.onchange('empresa_id', 'participante_id')
-    def _onchange_empresa_participante(self):
-        self._sincroniza_empresa_company_participante_partner()
-
-    @api.depends('empresa_id', 'participante_id')
-    def _depends_empresa_participante(self):
-        self._sincroniza_empresa_company_participante_partner()
+            documento.is_brazilian = True
 
     @api.onchange('item_ids')
     def _onchange_soma_itens(self):
@@ -615,18 +577,17 @@ class SpedCalculoImposto(SpedBase):
         if 'payment_term_id' in self._fields:
             self.payment_term_id = self.condicao_pagamento_id
 
-    @api.onchange('participante_id')
-    def _onchange_participante_id(self):
+    @api.onchange('partner_id')
+    def _onchange_partner_id(self):
         self.ensure_one()
-        self.partner_id = self.participante_id.partner_id
 
-        if self.participante_id.condicao_pagamento_id:
+        if self.partner_id.condicao_pagamento_id:
             self.condicao_pagamento_id = \
-                self.participante_id.condicao_pagamento_id
-        if self.participante_id.operacao_produto_id:
-            self.operacao_id = self.participante_id.operacao_produto_id
-        if self.participante_id.transportadora_id:
-            self.transportadora_id = self.participante_id.transportadora_id
+                self.partner_id.condicao_pagamento_id
+        if self.partner_id.operacao_produto_id:
+            self.operacao_id = self.partner_id.operacao_produto_id
+        if self.partner_id.transportadora_id:
+            self.transportadora_id = self.partner_id.transportadora_id
 
     def prepara_dados_documento(self):
         self.ensure_one()
@@ -643,7 +604,7 @@ class SpedCalculoImposto(SpedBase):
             'operacao_id': operacao.id,
             'modelo': operacao.modelo,
             'emissao': operacao.emissao,
-            'participante_id': self.participante_id.id,
+            'partner_id': self.partner_id.id,
             'partner_id': self.partner_id.id,
             'condicao_pagamento_id': self.condicao_pagamento_id.id if \
                 self.condicao_pagamento_id else False,
@@ -668,7 +629,7 @@ class SpedCalculoImposto(SpedBase):
             documento.presenca_comprador = self.presenca_comprador
 
         documento.update(documento._onchange_serie()['value'])
-        documento.update(documento._onchange_participante_id()['value'])
+        documento.update(documento._onchange_partner_id()['value'])
 
         #
         # Criamos agora os itens do documento fiscal, e forçamos o recálculo
@@ -773,14 +734,15 @@ class SpedCalculoImposto(SpedBase):
     def action_view_documento(self):
         action = self.env.ref('sped.sped_documento_emissao_nfe_acao').read()[0]
 
-        if len(self.documento_ids) > 1:
-            action['domain'] = [('id', 'in', self.documento_ids.ids)]
+        if len(self) > 1:
+            action['domain'] = [('id', 'in', self.ids)]
 
-        elif len(self.documento_ids) == 1:
-            action['views'] = [
-                (self.env.ref('sped.sped_documento_emissao_nfe_form').id,
-                 'form')]
-            action['res_id'] = self.documento_ids.ids[0]
+        elif len(self) == 1:
+            action['views'] = [(
+                self.env.ref('sped.sped_documento_emissao_nfe_form').id,
+                'form'
+            )]
+            action['res_id'] = self.id
         else:
             action = {'type': 'ir.actions.act_window_close'}
 

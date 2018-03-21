@@ -47,11 +47,11 @@ class SpedDocumentoItemDeclaracaoImportacao(models.Model):
         di.vAFRMM.valor = D(self.vr_afrmm)
         di.tpIntermedio.valor = self.forma_importacao
 
-        if self.participante_id:
-            di.CNPJ.valor = limpa_formatacao(self.participante_id.cnpj_cpf)
-            di.UFTerceiro.valor = self.participante_id.estado
+        if self.partner_id:
+            di.CNPJ.valor = limpa_formatacao(self.partner_id.cnpj_cpf)
+            di.UFTerceiro.valor = self.partner_id.estado
             di.cExportador.valor = \
-                limpa_formatacao(self.participante_id.cnpj_cpf)
+                limpa_formatacao(self.partner_id.cnpj_cpf)
 
         #
         # Sempre existe pelo menos uma adição
@@ -61,9 +61,9 @@ class SpedDocumentoItemDeclaracaoImportacao(models.Model):
         adi.nAdicao.valor = self.numero_adicao
         adi.nSeqAdic.valor = self.sequencial
 
-        if self.participante_id:
+        if self.partner_id:
             adi.cFabricante.valor = \
-                limpa_formatacao(self.participante_id.cnpj_cpf)
+                limpa_formatacao(self.partner_id.cnpj_cpf)
 
         adi.vDescDI.valor = D(self.vr_desconto)
         adi.nDraw.valor = self.numero_drawback
@@ -79,9 +79,9 @@ class SpedDocumentoItemDeclaracaoImportacao(models.Model):
             adi.nAdicao.valor = adicao.numero_adicao
             adi.nSeqAdic.valor = adicao.sequencial
 
-            if self.participante_id:
+            if self.partner_id:
                 adi.cFabricante.valor = \
-                    limpa_formatacao(self.participante_id.cnpj_cpf)
+                    limpa_formatacao(self.partner_id.cnpj_cpf)
 
             adi.vDescDI.valor = D(adicao.vr_desconto)
             adi.nDraw.valor = adicao.numero_drawback

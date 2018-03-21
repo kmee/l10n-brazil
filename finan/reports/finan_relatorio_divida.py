@@ -91,14 +91,15 @@ class FinanRelatorioDivida(ReportXlsxBase):
             fl.vr_quitado_multa,
             fl.vr_quitado_desconto,
             fl.vr_quitado_total,
-            fl.participante_id,
+            fl.partner_id,
             coalesce(p.nome, '') as participante_nome,
             coalesce(p.cnpj_cpf, '') as participante_cnpj_cpf
 
         from
             finan_lancamento fl
             join finan_conta fc on fc.id = fl.conta_id
-            join sped_participante p on p.id = fl.participante_id
+            join res.partner sped_p on sped_p.id = fl.partner_id
+            join res_partner p on p.id=sped_p.partner_id
             join finan_documento d on d.id = fl.documento_id
 
         where
@@ -109,9 +110,9 @@ class FinanRelatorioDivida(ReportXlsxBase):
             and fl.situacao_divida_simples = %(situacao_divida_simples)s
         '''
 
-        if self.report_wizard.participante_ids:
+        if self.report_wizard.partner_ids:
             SQL_ANALITICO += '''
-            and fl.participante_id in %(participante_ids)s
+            and fl.partner_id in %(partner_ids)s
             '''
 
         if self.report_wizard.group_by == 'data_vencimento_util':
@@ -139,7 +140,7 @@ class FinanRelatorioDivida(ReportXlsxBase):
 
         for linha in dados:
             participante = \
-                self.env['sped.participante'].browse(linha['participante_id'])
+                self.env['res.partner'].browse(linha['partner_id'])
 
             parceiro = participante.name_get()[0][1]
             if participante.email:
@@ -158,7 +159,7 @@ class FinanRelatorioDivida(ReportXlsxBase):
     def _linhas_total_participante(self, report_data, filtros):
         SQL_RESUMO = '''
         select
-            fl.participante_id,
+            fl.partner_id,
             coalesce(p.nome, '') as participante_nome,
             coalesce(p.cnpj_cpf, '') as participante_cnpj_cpf,
             coalesce(sum(coalesce(fl.vr_documento, 0)), 0) as vr_documento,
@@ -170,7 +171,7 @@ class FinanRelatorioDivida(ReportXlsxBase):
         from
             finan_lancamento fl
             join finan_conta fc on fc.id = fl.conta_id
-            join sped_participante p on p.id = fl.participante_id
+            join res.partner p on p.id = fl.partner_id
 
         where
             fl.provisorio != True
@@ -180,14 +181,14 @@ class FinanRelatorioDivida(ReportXlsxBase):
             and fl.situacao_divida_simples = %(situacao_divida_simples)s
         '''
 
-        if self.report_wizard.participante_ids:
+        if self.report_wizard.partner_ids:
             SQL_RESUMO += '''
-            and fl.participante_id in %(participante_ids)s
+            and fl.partner_id in %(partner_ids)s
             '''
 
         SQL_RESUMO += '''
         group by
-            fl.participante_id,
+            fl.partner_id,
             coalesce(p.nome, ''),
             coalesce(p.cnpj_cpf, '')
 
@@ -200,15 +201,15 @@ class FinanRelatorioDivida(ReportXlsxBase):
         dados = self.env.cr.dictfetchall()
         for linha in dados:
             participante = \
-                self.env['sped.participante'].browse(
-                    linha['participante_id'])
+                self.env['res.partner'].browse(
+                    linha['partner_id'])
 
             parceiro = participante.name_get()[0][1]
             if participante.email:
                 parceiro += ' - ' + participante.email
             linha['titulo_total'] = parceiro
 
-            report_data['linhas_total'][linha['participante_id']] = linha
+            report_data['linhas_total'][linha['partner_id']] = linha
 
     def _linhas_total_data_vencimento_util(self, report_data, filtros):
         SQL_RESUMO = '''
@@ -223,7 +224,7 @@ class FinanRelatorioDivida(ReportXlsxBase):
         from
             finan_lancamento fl
             join finan_conta fc on fc.id = fl.conta_id
-            join sped_participante p on p.id = fl.participante_id
+            join res.partner p on p.id = fl.partner_id
 
         where
             fl.provisorio != True
@@ -233,9 +234,9 @@ class FinanRelatorioDivida(ReportXlsxBase):
             and fl.situacao_divida_simples = %(situacao_divida_simples)s
         '''
 
-        if self.report_wizard.participante_ids:
+        if self.report_wizard.partner_ids:
             SQL_RESUMO += '''
-            and fl.participante_id in %(participante_ids)s
+            and fl.partner_id in %(partner_ids)s
             '''
 
         SQL_RESUMO += '''
@@ -266,7 +267,7 @@ class FinanRelatorioDivida(ReportXlsxBase):
             'linhas_total': OrderedDict(),
         }
 
-        participante_ids = tuple(self.report_wizard.participante_ids.ids)
+        partner_ids = tuple(self.report_wizard.partner_ids.ids)
 
         filtros = {
             'tipo': self.report_wizard.tipo_divida,
@@ -275,7 +276,7 @@ class FinanRelatorioDivida(ReportXlsxBase):
             'empresa_id': self.report_wizard.empresa_id.id,
             'situacao_divida_simples':
                 self.report_wizard.situacao_divida_simples,
-            'participante_ids': AsIs(str(participante_ids).replace(',)', ')')),
+            'partner_ids': AsIs(str(partner_ids).replace(',)', ')')),
         }
 
         self._linhas_detalhe(report_data, filtros)
@@ -283,7 +284,7 @@ class FinanRelatorioDivida(ReportXlsxBase):
         #
         # Montamos agora os resumos por participande ou data
         #
-        if self.report_wizard.group_by == 'participante_id':
+        if self.report_wizard.group_by == 'partner_id':
             self._linhas_total_participante(report_data, filtros)
 
         elif self.report_wizard.group_by == 'data_vencimento_util':
@@ -458,9 +459,9 @@ class FinanRelatorioDivida(ReportXlsxBase):
                 self.current_row += 1
                 self.write_header()
 
-            elif self.report_wizard.group_by == 'participante_id':
+            elif self.report_wizard.group_by == 'partner_id':
                 participante = \
-                    self.env['sped.participante'].browse(chave_grupo)
+                    self.env['res.partner'].browse(chave_grupo)
 
                 parceiro = participante.name_get()[0][1]
                 if participante.email:

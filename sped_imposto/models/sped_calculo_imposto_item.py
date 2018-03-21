@@ -67,16 +67,16 @@ class SpedCalculoImpostoItem(SpedBase):
         related='documento_id.empresa_id',
         readonly=True,
     )
-    participante_id = fields.Many2one(
-        comodel_name='sped.participante',
+    partner_id = fields.Many2one(
+        comodel_name='res.partner',
         string='Destinatário/Remetente',
-        related='documento_id.participante_id',
+        related='documento_id.partner_id',
         readonly=True,
     )
     contribuinte = fields.Selection(
         selection=IE_DESTINATARIO,
         string='Contribuinte',
-        related='participante_id.contribuinte',
+        related='partner_id.contribuinte',
         readonly=True,
     )
     emissao = fields.Selection(
@@ -1010,26 +1010,26 @@ class SpedCalculoImpostoItem(SpedBase):
             #
             estado_origem = self.empresa_id.estado
             estado_destino = self.empresa_id.estado
-            destinatario = self.participante_id
+            destinatario = self.partner_id
 
         else:
             if self.entrada_saida == ENTRADA_SAIDA_SAIDA:
                 estado_origem = self.empresa_id.estado
-                estado_destino = self.participante_id.estado
+                estado_destino = self.partner_id.estado
 
                 if self.emissao == TIPO_EMISSAO_PROPRIA:
-                    destinatario = self.participante_id
+                    destinatario = self.partner_id
                 else:
                     destinatario = self.empresa_id
 
             else:
-                estado_origem = self.participante_id.estado
+                estado_origem = self.partner_id.estado
                 estado_destino = self.empresa_id.estado
 
                 if self.emissao == TIPO_EMISSAO_PROPRIA:
                     destinatario = self.empresa_id
                 else:
-                    destinatario = self.participante_id
+                    destinatario = self.partner_id
 
         return (estado_origem, estado_destino, destinatario)
 
@@ -1123,7 +1123,7 @@ class SpedCalculoImpostoItem(SpedBase):
                 _('A empresa ativa não foi definida!')
             )
 
-        if not self.participante_id:
+        if not self.partner_id:
             raise ValidationError(
                 _('O destinatário/remetente não foi informado!')
             )
@@ -1274,7 +1274,7 @@ class SpedCalculoImpostoItem(SpedBase):
             # Os 3 critérios abaixo serão alternados entre o valor realmente,
             # ou False, no método busca_operacao_item
             #
-            'contribuinte': self.participante_id.contribuinte,
+            'contribuinte': self.partner_id.contribuinte,
             'protocolo_id': protocolo.id,
             'tipo_produto_servico': self.produto_id.tipo,
         }
@@ -1350,7 +1350,7 @@ class SpedCalculoImpostoItem(SpedBase):
                 _('A empresa ativa não foi definida!')
             )
 
-        if not self.participante_id:
+        if not self.partner_id:
             raise ValidationError(
                 _('O destinatário/remetente não foi informado!')
             )
@@ -1518,7 +1518,7 @@ class SpedCalculoImpostoItem(SpedBase):
             # Os 3 critérios abaixo serão alternados entre o valor realmente,
             # ou False, no método busca_operacao_item
             #
-            'contribuinte': self.participante_id.contribuinte,
+            'contribuinte': self.partner_id.contribuinte,
             'protocolo_id': protocolo.id,
             'tipo_produto_servico': self.produto_id.tipo,
         }
@@ -1916,7 +1916,7 @@ class SpedCalculoImpostoItem(SpedBase):
         # Agora, buscamos as alíquotas necessárias
         #
         if (self.entrada_saida == ENTRADA_SAIDA_ENTRADA and
-                self.participante_id.estado == 'EX'):
+                self.partner_id.estado == 'EX'):
             mensagem, aliquota_origem_destino = \
                 self.protocolo_id.busca_aliquota(
                 estado_destino, estado_destino,

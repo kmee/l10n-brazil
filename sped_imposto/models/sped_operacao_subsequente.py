@@ -48,8 +48,8 @@ class SpedOperacaoSubsequente(models.Model):
         comodel_name='sped.operacao',
         string='Operação a ser realizada',
     )
-    participante_id = fields.Many2one(
-        comodel_name='sped.participante',
+    partner_id = fields.Many2one(
+        comodel_name='res.partner',
         string='Participante'
     )
     situacao_geracao = fields.Selection(

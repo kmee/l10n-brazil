@@ -203,7 +203,7 @@ class FinanCondicaoPagamento(models.Model):
         string='Integração do cartão',
         default=INTEGRACAO_CARTAO_NAO_INTEGRADO,
     )
-    participante_id = fields.Many2one(
+    partner_id = fields.Many2one(
         string='Operadora do cartão',
         ondelete='restrict',
     )
@@ -301,11 +301,11 @@ class FinanCondicaoPagamento(models.Model):
             condicao.bandeira_cartao = forma_pagamento.bandeira_cartao
             condicao.integracao_cartao = forma_pagamento.integracao_cartao
 
-            if forma_pagamento.participante_id:
-                condicao.participante_id = \
-                    forma_pagamento.participante_id
+            if forma_pagamento.partner_id:
+                condicao.partner_id = \
+                    forma_pagamento.partner_id
             else:
-                condicao.participante_id = False
+                condicao.partner_id = False
 
     def _verifica_dia_util(self, data):
         self.ensure_one()

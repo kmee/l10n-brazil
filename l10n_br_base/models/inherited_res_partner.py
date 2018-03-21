@@ -6,11 +6,11 @@
 #
 
 from __future__ import division, print_function, unicode_literals
-
+from .base_participante import Participante
 from odoo import api, fields, models
 
 
-class ResPartner(models.Model):
+class ResPartner(Participante, models.Model):
     _inherit = 'res.partner'
 
     sped_participante_id = fields.Many2one(
@@ -39,7 +39,22 @@ class ResPartner(models.Model):
         string='Original User',
         compute='_compute_original_user_id',
         store=True,
-        ondelete='cascade'
+        ondelete='cascade',
+    )
+
+    # campos do core do modo account override para nao ser required
+    property_account_payable_id = fields.Many2one(
+        comodel_name='account.account',
+        required=False,
+    )
+    property_account_receivable_id = fields.Many2one(
+        comodel_name='account.account',
+        required=False,
+    )
+
+    name = fields.Char(
+        string='Tag Name',
+        required=False,
     )
 
     @api.depends('sped_participante_id')
@@ -66,3 +81,20 @@ class ResPartner(models.Model):
                 partner.original_user_id = user_ids[0]
             else:
                 partner.original_user_id = False
+
+    @api.model
+    def create(self, vals):
+        partner = super(ResPartner, self).create(vals)
+        if "create_sped_participante" not in self._context:
+            partner.with_context(
+                create_from_partner=True).create_participante_id()
+        return partner
+    
+    @api.multi
+    def create_participante_id(self):
+        Participante = self.env["sped.participante"]
+        for partner_id in self.with_context(active_test=False):
+            new_participante = Participante.create({
+                'partner_id': partner_id.id,
+            })
+        return True

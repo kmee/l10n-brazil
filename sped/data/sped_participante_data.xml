@@ -2,10 +2,10 @@
 
 <odoo noupdate="False">
 
-    <record id="participante_anonimo" model="sped.participante">
+    <record id="participante_anonimo" model="res.partner">
         <field name="eh_consumidor_final">True</field>
         <field name="contribuinte">9</field>
-        <field name="nome">Consumidor Anonônimo</field>
+        <field name="name">Consumidor Anonônimo</field>
         <field name="eh_cliente">True</field>
     </record>
 

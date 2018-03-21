@@ -312,7 +312,7 @@ class finan_retorno(models.Model):
                 'retorno_item_id': finan_retorno_item_id.id,
                 'retorno_id': self.id,
                 'company_id': divida_id.company_id.id,
-                'participante_id': divida_id.participante_id.id,
+                'partner_id': divida_id.partner_id.id,
                 'data_vencimento':divida_id.data_vencimento,
                 'numero': divida_id.numero,
                 'vr_documento': divida_id.vr_documento,
@@ -757,8 +757,8 @@ class finan_retorno(models.Model):
 
             # Atualizar informações no boleto para francesinha
             if divida_id:
-                boleto.pagador.cnpj_cpf = divida_id.participante_id.cnpj_cpf
-                boleto.pagador.nome = divida_id.participante_id.name
+                boleto.pagador.cnpj_cpf = divida_id.partner_id.cnpj_cpf
+                boleto.pagador.nome = divida_id.partner_id.name
                 boleto.documento.numero = divida_id.numero
                 #
                 # Cliente negativado não baixa automático o boleto

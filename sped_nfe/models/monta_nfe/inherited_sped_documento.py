@@ -121,7 +121,7 @@ class SpedDocumento(models.Model):
 
     def _monta_nfe_identificacao(self, ide):
         empresa = self.empresa_id
-        participante = self.participante_id
+        partner = self.partner_id
 
         ide.tpAmb.valor = int(self.ambiente_nfe)
         ide.tpNF.valor = int(self.entrada_saida)
@@ -168,15 +168,15 @@ class SpedDocumento(models.Model):
             ide.indFinal.valor = TIPO_CONSUMIDOR_FINAL_CONSUMIDOR_FINAL
 
         else:
-            if participante.estado == 'EX':
+            if partner.estado == 'EX':
                 ide.idDest.valor = IDENTIFICACAO_DESTINO_EXTERIOR
-            elif participante.estado == empresa.estado:
+            elif partner.estado == empresa.estado:
                 ide.idDest.valor = IDENTIFICACAO_DESTINO_INTERNO
             else:
                 ide.idDest.valor = IDENTIFICACAO_DESTINO_INTERESTADUAL
 
             if (self.consumidor_final) or (
-                        participante.contribuinte ==
+                        partner.contribuinte ==
                         INDICADOR_IE_DESTINATARIO_NAO_CONTRIBUINTE):
                 ide.indFinal.valor = TIPO_CONSUMIDOR_FINAL_CONSUMIDOR_FINAL
 
@@ -210,7 +210,7 @@ class SpedDocumento(models.Model):
             # emit.csc.codigo = emit.csc.codigo.strip()
 
     def _monta_nfe_destinatario(self, dest):
-        participante = self.participante_id
+        partner = self.partner_id
 
         #
         # Para a NFC-e, o destinatário é sempre não contribuinte
@@ -219,69 +219,69 @@ class SpedDocumento(models.Model):
             dest.indIEDest.valor = INDICADOR_IE_DESTINATARIO_NAO_CONTRIBUINTE
 
         else:
-            dest.indIEDest.valor = participante.contribuinte
+            dest.indIEDest.valor = partner.contribuinte
 
-            if participante.contribuinte == \
+            if partner.contribuinte == \
                     INDICADOR_IE_DESTINATARIO_CONTRIBUINTE:
-                dest.IE.valor = limpa_formatacao(participante.ie or '')
+                dest.IE.valor = limpa_formatacao(partner.ie or '')
 
         #
         # Trata a possibilidade de ausência do destinatário na NFC-e
         #
-        if self.modelo == MODELO_FISCAL_NFCE and not participante.cnpj_cpf:
+        if self.modelo == MODELO_FISCAL_NFCE and not partner.cnpj_cpf:
             return
 
         #
-        # Participantes estrangeiros tem a ID de estrangeiro sempre começando
+        # partners estrangeiros tem a ID de estrangeiro sempre começando
         # com EX
         #
-        if participante.cnpj_cpf.startswith('EX'):
+        if partner.cnpj_cpf.startswith('EX'):
             dest.idEstrangeiro.valor = \
-                limpa_formatacao(participante.cnpj_cpf or '')
+                limpa_formatacao(partner.cnpj_cpf or '')
 
-        elif len(participante.cnpj_cpf or '') == 14:
-            dest.CPF.valor = limpa_formatacao(participante.cnpj_cpf)
+        elif len(partner.cnpj_cpf or '') == 14:
+            dest.CPF.valor = limpa_formatacao(partner.cnpj_cpf)
 
-        elif len(participante.cnpj_cpf or '') == 18:
-            dest.CNPJ.valor = limpa_formatacao(participante.cnpj_cpf)
+        elif len(partner.cnpj_cpf or '') == 18:
+            dest.CNPJ.valor = limpa_formatacao(partner.cnpj_cpf)
 
         #if self.ambiente_nfe == AMBIENTE_NFE_HOMOLOGACAO:
             #dest.xNome.valor = 'NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - ' \
                                #'SEM VALOR FISCAL'
         #else:
-        dest.xNome.valor = participante.razao_social or ''
+        dest.xNome.valor = partner.razao_social or ''
 
         #
-        # Para a NFC-e, o endereço do participante pode não ter sido
+        # Para a NFC-e, o endereço do partner pode não ter sido
         # preenchido
         #
-        dest.enderDest.xLgr.valor = participante.endereco or ''
-        dest.enderDest.nro.valor = participante.numero or ''
-        dest.enderDest.xCpl.valor = participante.complemento or ''
-        dest.enderDest.xBairro.valor = participante.bairro or ''
+        dest.enderDest.xLgr.valor = partner.street or ''
+        dest.enderDest.nro.valor = partner.numero or ''
+        dest.enderDest.xCpl.valor = partner.street2 or ''
+        dest.enderDest.xBairro.valor = partner.bairro or ''
 
-        if not participante.cnpj_cpf.startswith('EX'):
-            dest.enderDest.CEP.valor = limpa_formatacao(participante.cep)
+        if not partner.cnpj_cpf.startswith('EX'):
+            dest.enderDest.CEP.valor = limpa_formatacao(partner.zip)
         else:
             dest.enderDest.CEP.valor = '99999999'
 
         #
-        # Pode haver cadastro de participante sem município para NFC-e
+        # Pode haver cadastro de partner sem município para NFC-e
         #
-        if participante.municipio_id:
+        if partner.municipio_id:
             dest.enderDest.cMun.valor = \
-                participante.municipio_id.codigo_ibge[:7]
-            dest.enderDest.xMun.valor = participante.cidade
-            dest.enderDest.UF.valor = participante.estado
+                partner.municipio_id.codigo_ibge[:7]
+            dest.enderDest.xMun.valor = partner.cidade
+            dest.enderDest.UF.valor = partner.estado
 
-            if participante.cnpj_cpf.startswith('EX'):
+            if partner.cnpj_cpf.startswith('EX'):
                 dest.enderDest.cPais.valor = \
-                    participante.municipio_id.pais_id.codigo_bacen
+                    partner.municipio_id.pais_id.codigo_bacen
                 dest.enderDest.xPais.valor = \
-                    participante.municipio_id.pais_id.nome
+                    partner.municipio_id.pais_id.nome
 
-        dest.enderDest.fone.valor = limpa_formatacao(participante.fone or '')
-        email_dest = participante.email_nfe or ''
+        dest.enderDest.fone.valor = limpa_formatacao(partner.phone or '')
+        email_dest = partner.email_nfe or ''
         dest.email.valor = email_dest[:60]
 
     def _monta_nfe_endereco_retirada(self, retirada):
@@ -519,7 +519,7 @@ class SpedDocumento(models.Model):
                 '${formata_valor(nf.vr_icms_proprio)}% recolhida ' + \
                 'conf. EC 87/2015: ' + \
                 'R$ ${formata_valor(nf.vr_icms_estado_destino)} para o ' + \
-                'estado de ${nf.participante_id.estado} e ' + \
+                'estado de ${nf.partner_id.estado} e ' + \
                 'R$ ${formata_valor(nf.vr_icms_estado_origem)} para o ' + \
                 'estado de ${nf.empresa_id.estado}; Valor do diferencial ' + \
                 'de alíquota: ' + \

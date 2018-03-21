@@ -44,7 +44,7 @@
                             readonly="1">
                                 <tree  decoration-danger="sinal==-1" decoration-success="sinal==1">
                                     <field name="data_pagamento"/>
-                                    <field name="participante_id"/>
+                                    <field name="partner_id"/>
                                     <field name="tipo"/>
                                     <field name="sinal" invisible="1"/>
                                     <field name="vr_total_fmt"/>

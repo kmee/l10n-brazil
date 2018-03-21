@@ -2,6 +2,7 @@
 #
 # Copyright 2016 Taŭga Tecnologia
 #   Aristides Caldeira <aristides.caldeira@tauga.com.br>
+# Copyright 2018 KMEE INFORMATICA LTDA
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 #
 
@@ -55,16 +56,16 @@ class SpedSomaImposto(SpedBase, models.Model):
         #related='documento_id.empresa_id',
         #readonly=True,
     )
-    participante_id = fields.Many2one(
-        comodel_name='sped.participante',
+    partner_id = fields.Many2one(
+        comodel_name='res.partner',
         string='Destinatário/Remetente',
-        #related='documento_id.participante_id',
+        #related='documento_id.partner_id',
         #readonly=True,
     )
     contribuinte = fields.Selection(
         selection=IE_DESTINATARIO,
         string='Contribuinte',
-        related='participante_id.contribuinte',
+        related='partner_id.contribuinte',
         readonly=True,
     )
     emissao = fields.Selection(
@@ -827,26 +828,26 @@ class SpedSomaImposto(SpedBase, models.Model):
             #
             estado_origem = self.empresa_id.estado
             estado_destino = self.empresa_id.estado
-            destinatario = self.participante_id
+            destinatario = self.partner_id
 
         else:
             if self.entrada_saida == ENTRADA_SAIDA_SAIDA:
                 estado_origem = self.empresa_id.estado
-                estado_destino = self.participante_id.estado
+                estado_destino = self.partner_id.estado
 
                 if self.emissao == TIPO_EMISSAO_PROPRIA:
-                    destinatario = self.participante_id
+                    destinatario = self.partner_id
                 else:
                     destinatario = self.empresa_id
 
             else:
-                estado_origem = self.participante_id.estado
+                estado_origem = self.partner_id.estado
                 estado_destino = self.empresa_id.estado
 
                 if self.emissao == TIPO_EMISSAO_PROPRIA:
                     destinatario = self.empresa_id
                 else:
-                    destinatario = self.participante_id
+                    destinatario = self.partner_id
 
         return (estado_origem, estado_destino, destinatario)
 
@@ -887,7 +888,7 @@ class SpedSomaImposto(SpedBase, models.Model):
                 _('A empresa ativa não foi definida!')
             )
 
-        if not self.participante_id:
+        if not self.partner_id:
             raise ValidationError(
                 _('O destinatário/remetente não foi informado!')
             )
@@ -1017,7 +1018,7 @@ class SpedSomaImposto(SpedBase, models.Model):
             ('tipo_protocolo', '=', protocolo.tipo),
             ('protocolo_id', '=', protocolo.id),
             ('cfop_id.posicao', '=', posicao_cfop),
-            ('contribuinte', '=', self.participante_id.contribuinte),
+            ('contribuinte', '=', self.partner_id.contribuinte),
         ]
 
         operacao_item_ids = self.operacao_id.item_ids.search(busca_item)
@@ -1048,7 +1049,7 @@ class SpedSomaImposto(SpedBase, models.Model):
                 ('tipo_protocolo', '=', protocolo.tipo),
                 ('protocolo_id', '=', False),
                 ('cfop_id.posicao', '=', posicao_cfop),
-                ('contribuinte', '=', self.participante_id.contribuinte),
+                ('contribuinte', '=', self.partner_id.contribuinte),
             ]
 
             operacao_item_ids = self.operacao_id.item_ids.search(busca_item)
@@ -1446,7 +1447,7 @@ class SpedSomaImposto(SpedBase, models.Model):
         # Agora, buscamos as alíquotas necessárias
         #
         if (self.entrada_saida == ENTRADA_SAIDA_ENTRADA and
-                self.participante_id.estado == 'EX'):
+                self.partner_id.estado == 'EX'):
             aliquota_origem_destino = self.protocolo_id.busca_aliquota(
                 estado_destino, estado_destino,
                 self.data_emissao, self.empresa_id)

@@ -25,7 +25,7 @@
                 <field name="currency_peso_id" invisible="1"/>
                 <field name="currency_unidade_id" invisible="1"/>
                 <!--                <field name="empresa_id" invisible="0"/>
-                <field name="participante_id" invisible="0"/>
+                <field name="partner_id" invisible="0"/>
                 <field name="operacao_id" invisible="0"/> -->
 
                 <field name="compoe_total" invisible="1"/>
@@ -436,7 +436,7 @@
                 <field name="empresa_id" />
                 <field name="operacao_id" />
                 <field name="numero" />
-                <field name="participante_id" />
+                <field name="partner_id" />
             </search>
         </field>
     </record>

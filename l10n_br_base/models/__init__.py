@@ -35,6 +35,7 @@ from . import sped_municipio
 # Cadastros básicos
 #
 from . import sped_participante
+from . import base_participante
 from . import inherited_res_company
 from . import inherited_res_partner
 from . import sped_empresa
