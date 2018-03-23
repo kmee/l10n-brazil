@@ -4,8 +4,6 @@
 
 from __future__ import division, print_function, unicode_literals
 
-import logging
-
 from odoo import api, fields, models, _
 import odoo.addons.decimal_precision as dp
 from odoo.addons.sped_imposto.models.sped_calculo_imposto_item import (
@@ -166,24 +164,3 @@ class PurchaseOrderLine(SpedCalculoImpostoItem, models.Model):
     def _compute_permite_alteracao(self):
         for item in self:
             item.permite_alteracao = True
-
-    @api.multi
-    def write(self, vals):
-        res = super(PurchaseOrderLine, self).write(vals)
-        if vals.get('qty_received'):
-            self.compute_received()
-        return res
-
-    @api.model
-    def create(self, vals):
-        lines = super(PurchaseOrderLine, self).create(vals)
-        if lines.qty_received == lines.quantidade:
-            lines.compute_received()
-        return lines
-
-    @api.multi
-    def compute_received(self):
-        for line in self:
-            if all(line.quantidade == line.qty_received
-                   for line in line.order_id.mapped('order_line')):
-                line.order_id.state = 'received'
