@@ -11,21 +11,18 @@ from odoo.exceptions import ValidationError
 class SpedDocumentoItem(models.Model):
     _inherit = 'sped.documento.item'
 
-    purchase_line_ids = fields.Many2many(
+    purchase_line_id = fields.Many2one(
         string='Linha do pedido',
         comodel_name='purchase.order.line',
         copy=False,
     )
 
-    purchase_ids = fields.Many2many(
+    purchase_id = fields.Many2one(
         string='Pedido de compra',
         comodel_name='purchase.order',
-        copy=False,
-    )
-
-    pode_alterar_quantidade = fields.Boolean(
-        string='Pode alterar a quantidade?',
-        default=True,
+        related='purchase_line_id.order_id',
+        readonly=True,
+        store=False,
     )
 
     def faturar_linhas(self):

@@ -10,17 +10,16 @@ from odoo import api, fields, models, _
 class SpedDocumento(models.Model):
     _inherit = 'sped.documento'
 
-    purchase_order_ids = fields.Many2many(
+    purchase_id = fields.Many2one(
         comodel_name='purchase.order',
         string='Adicionar Pedido de Compra',
-        relation='purchase_order_sped_documento_rel',
         copy=False,
     )
 
     def _preparar_sped_documento_item(self, item):
         dados = {
+            'product_id': item.product_id.id,
             'documento_id': self.id,
-            'produto_id': item.produto_id.id,
             'quantidade': item.quantidade - item.qty_invoiced,
             'vr_unitario': item.vr_unitario,
             'vr_frete': item.vr_frete,
@@ -31,9 +30,9 @@ class SpedDocumento(models.Model):
         return dados
 
     # Carregar linhas da Purchase Order
-    @api.onchange('purchase_order_ids')
+    @api.onchange('purchase_id')
     def purchase_order_change(self):
-        if not self.purchase_order_ids:
+        if not self.purchase_id:
             return {}
         elif len(self.purchase_order_ids) == 1:
             dados = {

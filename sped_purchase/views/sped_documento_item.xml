@@ -9,13 +9,9 @@
         <field name="arch" type="xml">
             <field name="documento_id" position="before">
                 <group>
-                    <field name="purchase_line_ids" widget="many2many_tags"/>
-                    <field name="purchase_ids" widget="many2many_tags"/>
-                    <field name="pode_alterar_quantidade" invisible="True"/>
+                    <field name="purchase_line_id"/>
+                    <field name="purchase_id"/>
                 </group>
-            </field>
-            <field name="quantidade" position="attributes">
-                <attribute name="attrs">{'readonly': [('pode_alterar_quantidade', '=', False)]}</attribute>
             </field>
         </field>
     </record>
@@ -27,8 +23,8 @@
         <field name="inherit_id" ref="sped.sped_documento_item_emissao_tree"/>
         <field name="arch" type="xml">
             <tree position="inside">
-                <field name="purchase_line_ids" required="0" invisible="1"/>
-                <field name="purchase_ids" required="0" invisible="1"/>
+                <field name="purchase_line_id" required="0" invisible="1"/>
+                <field name="purchase_id" required="0" invisible="1"/>
             </tree>
         </field>
     </record>

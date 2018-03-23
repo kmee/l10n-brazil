@@ -55,8 +55,3 @@ class StockPicking(models.Model):
 
         return documento
 
-    @api.onchange('state')
-    def _onchange_state(self):
-        self.ensure_one()
-        if self.state == 'done' and self.purchase_id:
-            self.purchase_id.state = 'received'

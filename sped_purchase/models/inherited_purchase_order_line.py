@@ -16,6 +16,16 @@ from odoo.addons.sped_imposto.models.sped_calculo_imposto_item import (
 class PurchaseOrderLine(SpedCalculoImpostoItem, models.Model):
     _inherit = b'purchase.order.line'
 
+    @api.depends('invoice_lines.documento_id.situacao_nfe')
+    def _compute_qty_invoiced(self):
+        for line in self:
+            qty = 0.0
+            for inv_line in line.invoice_lines:
+                if inv_line.documento_id.situacao_nfe not in ['cancelada']:
+                    qty += inv_line.unidade_id.uom_id._compute_quantity(
+                        inv_line.quantidade, line.product_uom)
+            line.qty_invoiced = qty
+
     is_brazilian = fields.Boolean(
         string=u'Is a Brazilian Invoice?',
         related='order_id.is_brazilian',
@@ -107,23 +117,31 @@ class PurchaseOrderLine(SpedCalculoImpostoItem, models.Model):
         readonly=True,
     )
 
-    documento_item_ids = fields.Many2many(
+    invoice_lines = fields.One2many(
         comodel_name='sped.documento.item',
-        inverse_name='purchase_line_ids',
+        inverse_name='purchase_line_id',
+        string="Bill Lines",
+        readonly=True,
+        copy=False
     )
+
+    qty_invoiced = fields.Float(
+        compute=_compute_qty_invoiced,
+        digits=dp.get_precision('Product Unit of Measure'),
+        store=True)
 
     def prepara_dados_documento_item(self):
         self.ensure_one()
 
         return {
-            'purchase_line_ids': [(4, self.id)],
-            'purchase_ids': [(4, self.order_id.id)],
+            'purchase_line_id': self.id,
+            'purchase_id': self.order_id.id,
         }
 
-    @api.onchange('produto_id')
+    @api.onchange('product_id')
     def onchange_product_id_date(self):
         if not self.order_id:
-            return
+            return {}
 
         if not self.data_emissao:
             warning = {
@@ -140,8 +158,9 @@ class PurchaseOrderLine(SpedCalculoImpostoItem, models.Model):
                     'Por favor defina a operação'),
             }
             return {'warning': warning}
-        if self.produto_id:
-            self.name = self.produto_id.nome
+        if self.product_id:
+            self.name = self.product_id.display_name
+        return {}
 
     @api.depends('modelo', 'emissao')
     def _compute_permite_alteracao(self):

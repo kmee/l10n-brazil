@@ -18,6 +18,28 @@ from odoo.addons.l10n_br_base.constante_tributaria \
 class PurchaseOrder(SpedCalculoImpostoProdutoServico, models.Model):
     _inherit = 'purchase.order'
 
+    @api.depends('order_line.invoice_lines.documento_id.situacao_nfe')
+    def _compute_invoice(self):
+        for order in self:
+            invoices = self.env['sped.documento']
+            for line in order.order_line:
+                invoices |= line.invoice_lines.mapped('documento_id')
+            order.invoice_ids = invoices
+            order.invoice_count = len(invoices)
+
+    invoice_ids = fields.Many2many(
+        'sped.documento',
+        compute=_compute_invoice,
+        string='Bills',
+        copy=False
+    )
+    invoice_count = fields.Integer(
+        compute=_compute_invoice,
+        string='# of Bills',
+        copy=False,
+        default=0
+    )
+
     item_ids = fields.One2many(
         comodel_name='purchase.order.line',
         inverse_name='order_id',
@@ -35,30 +57,6 @@ class PurchaseOrder(SpedCalculoImpostoProdutoServico, models.Model):
 
     operacao_servico_id = fields.Many2one(
         comodel_name='sped.operacao'
-    )
-
-    quantidade_documentos = fields.Integer(
-        compute='_compute_quantidade_documentos_fiscais',
-        string='# de documentos',
-        copy=False,
-        default=0,
-        store=True
-    )
-
-    documento_ids = fields.Many2many(
-        comodel_name='sped.documento',
-        compute='_compute_invoice',
-        string='Faturas de Fornecedor',
-        relation='purchase_order_sped_documento_rel',
-        copy=False,
-        store=True
-    )
-
-    state = fields.Selection(
-        selection_add=[('invoiced', 'Faturado pelo Fornecedor'),
-                       ('received', 'Recebido')],
-        # group_expand='_read_group_stage_ids', FIXME: func. v11
-        readonly=False,
     )
 
     order_line_count = fields.Integer(
@@ -129,7 +127,7 @@ class PurchaseOrder(SpedCalculoImpostoProdutoServico, models.Model):
 
     @api.multi
     def action_view_invoice(self):
-        action = self.env.ref('sped.sped_documento_emissao_nfe_acao')
+        action = self.env.ref('sped.sped_documento_recebimento_nfe_acao')
         result = action.read()[0]
 
         # override the context to get rid of the default filtering
@@ -138,23 +136,15 @@ class PurchaseOrder(SpedCalculoImpostoProdutoServico, models.Model):
             'default_entrada_saida': '0',
             'default_modelo': '55',
             'manual': True,
-            'default_purchase_order_id': self.id,
+            'default_purchase_id': self.id,
         }
-
-        if len(self.documento_ids) > 1:
-            result['domain'] = "[('id', 'in', " + \
-                               str(self.documento_ids.ids) + ")]"
-        elif len(self.documento_ids) == 1:
-            return {
-                'view_mode': 'form',
-                'view_type': 'form',
-                'view_id': self.env.ref(
-                    'sped_nfe.sped_documento_ajuste_recebimento_form').id,
-                'res_id': self.documento_ids.id,
-                'res_model': 'sped.documento',
-                'type': 'ir.actions.act_window',
-                'target': 'current',
-            }
+        result['domain'] = \
+            "[('id', 'in', " + str(self.invoice_ids.ids) + ")]"
+        if self.invoice_count == 1:
+            res = self.env.ref(
+                'sped_purchase.sped_documento_recebimento_nfe_form', False)
+            result['views'] = [(res and res.id or False, 'form')]
+            result['res_id'] = self.invoice_ids.id
         return result
 
     @api.multi
@@ -181,27 +171,6 @@ class PurchaseOrder(SpedCalculoImpostoProdutoServico, models.Model):
             },
             'target': 'new'
         }
-
-    @staticmethod
-    def _valid_state_change(old, new):
-        return (old, new) in [
-            ('cancel', 'draft'),
-            ('draft', 'cancel'),
-            ('purchase', 'cancel'),
-            ('invoiced', 'cancel'),
-            ('draft', 'purchase'),
-            ('purchase', 'invoiced'),
-            ('invoiced', 'received'),
-        ]
-
-    @api.multi
-    def write(self, vals):
-        if vals.get('state', False):
-            self.ensure_one()
-            if not PurchaseOrder._valid_state_change(
-                    self.state, vals['state']):
-                raise UserError('Transição não permitida')
-        return super(PurchaseOrder, self).write(vals)
 
     @api.multi
     def action_view_picking(self):
