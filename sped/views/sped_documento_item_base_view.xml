@@ -406,7 +406,8 @@
                 <field name="currency_peso_id" invisible="1"/>
                 <field name="currency_unidade_id" invisible="1"/>
                 <field name="unidade_id" invisible="1"/>
-                <field name="produto_id"  />
+                <field name="produto_id" invisible="1" />
+                <field name="product_id"/>
                 <field name="cfop_id"/>
                 <field name="cst_icms_readonly" string="ICMS"/>
                 <field name="cst_pis_readonly" string="PIS"/>
