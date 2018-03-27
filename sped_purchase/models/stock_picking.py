@@ -7,13 +7,6 @@ from odoo import api, fields, models, _
 class StockPicking(models.Model):
     _inherit = 'stock.picking'
 
-    @api.multi
-    def write(self, vals):
-        res = super(StockPicking, self).write(vals)
-        for separacao in self:
-            if separacao.purchase_id:
-                separacao.purchase_id.order_line._compute_qty_received()
-        return res
 
     def action_view_purchase(self):
 
@@ -55,8 +48,3 @@ class StockPicking(models.Model):
 
         return documento
 
-    @api.onchange('state')
-    def _onchange_state(self):
-        self.ensure_one()
-        if self.state == 'done' and self.purchase_id:
-            self.purchase_id.state = 'received'

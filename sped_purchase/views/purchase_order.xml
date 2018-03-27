@@ -10,11 +10,6 @@
             <field name="model">purchase.order</field>
             <field name="inherit_id" ref="purchase.purchase_order_form"/>
             <field name="arch" type="xml">
-                <field name="partner_id" position="attributes">
-                    <attribute name="attrs">{'invisible': [('is_brazilian',
-                        '=', True)]}
-                    </attribute>
-                </field>
                 <xpath expr="//group/field[@name='company_id']"
                        position="after">
                     <field name="is_brazilian" groups="l10n_br_base.GRUPO_SUPORTE"/>
@@ -29,10 +24,14 @@
                 <field name="fiscal_position_id" position="after">
                     <field name="operacao_produto_id"
                            domain="[('emissao', '=', '1')]"
-                           attrs="{'required': [('operacao_servico_id', '=', False), ('is_brazilian', '=', True)], 'invisible': [('is_brazilian', '!=', True)]}"/>
+                           attrs="{'required': [('operacao_servico_id', '=', False),
+                                                ('is_brazilian', '=', True)],
+                                   'invisible': [('is_brazilian', '!=', True)]}"/>
                     <field name="operacao_servico_id"
                            domain="[('emissao', '=', '1')]"
-                           attrs="{'required': [('operacao_produto_id', '=', False), ('is_brazilian', '=', True)], 'invisible': [('is_brazilian', '!=', True)]}"/>
+                           attrs="{'required': [('operacao_produto_id', '=', False),
+                                                ('is_brazilian', '=', True)],
+                                   'invisible': [('is_brazilian', '!=', True)]}"/>
                 </field>
                 <field name="currency_id" position="attributes">
                     <attribute name="domain">[('is_currency', '=', True)]
@@ -43,10 +42,15 @@
                 </xpath>
                 <xpath expr="//field[@name='order_line']" position="after">
                     <field name="order_line" nolabel="1"
-                           attrs="{'readonly': [('state', 'in', ('done','cancel'))], 'invisible': [('is_brazilian', '!=', True)]}"
+                           attrs="{
+                                'readonly': [('state', 'in', ('done','cancel'))],
+                                'invisible': [('is_brazilian', '!=', True)]
+                                }"
                             context="{
                                 'tree_view_ref': 'sped_purchase.purchase_order_line_brazil_tree',
-                                'form_view_ref': 'sped_purchase.purchase_order_line_brazil_form'}"
+                                'form_view_ref': 'sped_purchase.purchase_order_line_brazil_form',
+                                'default_partner_id': partner_id
+                                }"
                     />
                 </xpath>
                 <field name="amount_untaxed" position="after">
@@ -54,20 +58,10 @@
                     <field name="vr_seguro" widget='monetary' options="{'currency_field': 'currency_id'}" attrs="{'invisible': [('is_brazilian', '!=', True)]}"/>
                     <field name="vr_outras" widget='monetary' options="{'currency_field': 'currency_id'}" attrs="{'invisible': [('is_brazilian', '!=', True)]}"/>
                 </field>
-                <button name="action_view_invoice" position="replace">
-                    <button type="object"  name="action_view_invoice"
-                            class="oe_stat_button"
-                            icon="fa-pencil-square-o"
-                            attrs="{'invisible':['|',('state', 'in', ('draft','sent','to approve')),('documento_ids','=',[])]}">
-                        <field name="quantidade_documentos" widget="statinfo" string="Faturas de Fornecedor"/>
-                        <field name='documento_ids' invisible="1"/>
-                    </button>
-                </button>
-                <button name="button_cancel" position="attributes">
-                    <attribute name="states">draft,to approve,sent,purchase,invoiced</attribute>
-                </button>
                 <button name="button_confirm" position="after">
-                    <button name="button_invoiced" states="purchase" string="Faturado pelo Fornecedor" type="object" />
+                    <button name="button_invoiced"
+                            attrs="{'invisible': [('invoice_status', '!=', 'to invoice')]}"
+                            string="Faturado pelo Fornecedor" type="object" />
                 </button>
             </field>
         </record>

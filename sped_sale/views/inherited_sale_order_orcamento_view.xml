@@ -279,24 +279,6 @@
         </field>
     </record>
 
-    <record model="ir.ui.view" id="sale_order_search">
-        <field name="name">sale.order.search (in sped_sale)</field>
-        <field name="model">sale.order</field>
-        <field name="inherit_id" ref="sale.view_sales_order_filter"/>
-        <field name="mode">primary</field>
-        <field name="priority">1</field>
-        <field name="arch" type="xml">
-            <field name="partner_id" position="attributes">
-                <attribute name="attrs">{'invisible': True}</attribute>
-            </field>
-            <field name="product_id" position="attributes">
-                <attribute name="attrs">{'invisible': True}</attribute>
-            </field>
-            <field name="product_id" position="after">
-                <field name="produto_id" />
-            </field>
-        </field>
-    </record>
 
     <record model="ir.ui.view" id="sale_order_calendar" >
         <field name="name">sale.order.calendar (in sped_sale)</field>

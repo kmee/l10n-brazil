@@ -1068,10 +1068,10 @@ class SpedCalculoImpostoItem(SpedBase):
             else:
                 res = self._onchange_produto_id_recebimento()
 
-            if hasattr(self, 'product_uom'):
-                self.product_uom = self.product_id.unidade_id.uom_id
-            if hasattr(self, 'uom_id'):
-                self.uom_id = self.product_id.unidade_id.uom_id
+            # if hasattr(self, 'product_uom'):
+            #     self.product_uom = self.product_id.unidade_id.uom_id
+            # if hasattr(self, 'uom_id'):
+            #     self.uom_id = self.product_id.unidade_id.uom_id
             return res
 
     def busca_operacao_item(self, domain_base):
@@ -1149,7 +1149,7 @@ class SpedCalculoImpostoItem(SpedBase):
         # Se já ocorreu o preenchimento da descrição, não sobrepõe
         #
         if not self.produto_nome:
-            self.produto_nome = self.product_id.nome
+            self.produto_nome = self.product_id.name
 
         self.org_icms = \
             (self.product_id.org_icms or ORIGEM_MERCADORIA_NACIONAL)
@@ -1179,7 +1179,7 @@ class SpedCalculoImpostoItem(SpedBase):
             self.vr_unitario = self.product_id.preco_venda
 
         elif self.operacao_id.preco_automatico == 'C':
-            self.vr_unitario = self.product_id.preco_custo
+            self.vr_unitario = self.product_id.standard_price
 
         elif self.operacao_id.preco_automatico == 'T':
             self.vr_unitario = self.product_id.preco_transferencia
