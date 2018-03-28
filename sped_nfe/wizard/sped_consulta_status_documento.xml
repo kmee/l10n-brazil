@@ -44,7 +44,7 @@
                 </form>
             </field>
         </record>
-        
+
         <record id="action_sped_consulta_status_documento" model="ir.actions.act_window">
             <field name="name">Consultar chave de acesso</field>
             <field name="res_model">sped_purchase.consulta_status_documento</field>
@@ -56,7 +56,8 @@
                 action="action_sped_consulta_status_documento"
                 id="menu_sped_consulta_status_documento"
                 name="Consultar Documento"
-                sequence="1"
+                sequence="500"
                 parent="sped_nfe.menu_sped_dfe"/>
     </data>
 </openerp>
+

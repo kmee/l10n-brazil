@@ -40,6 +40,7 @@
         'security/ir.model.access.csv',
         'wizard/sped_documento_exportar_xml.xml',
         'wizard/base_config_settings.xml',
+        'wizard/sped_consulta_status_documento.xml',
 
     ],
     'external_dependencies': {

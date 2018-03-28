@@ -9,3 +9,5 @@
 from . import wizard_confirma_acao
 from . import base_config_settings
 from . import sped_documento_exportar_xml
+from . import sped_consulta_status_documento
+
