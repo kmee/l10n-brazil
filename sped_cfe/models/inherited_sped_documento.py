@@ -796,21 +796,20 @@ class SpedDocumento(models.Model):
             mensagem += '\nMensagem: ' + \
                         resposta.mensagem
             if resposta.resposta.mensagem == u'Erro interno' and \
-                    resposta.resposta.mensagemSEFAZ == u'ERRO' and not \
-                    self.numero_identificador_sessao:
-                self.numero_identificador_sessao = \
-                    resposta.resposta.numeroSessao
+                    resposta.resposta.mensagemSEFAZ == u'ERRO' \
+                    and not self.numero_identificador_sessao:
+                    self.numero_identificador_sessao = \
+                        resposta.resposta.numeroSessao
             self.mensagem_nfe = mensagem
             self.situacao_nfe = SITUACAO_NFE_REJEITADA
         except Exception as resposta:
             if hasattr(resposta, 'resposta'):
                 self.codigo_rejeicao_cfe = resposta.resposta.EEEEE
-            if resposta.resposta.mensagem == u'Erro interno' and \
-                    resposta.resposta.mensagemSEFAZ == u'ERRO' and not \
-                    self.numero_identificador_sessao:
                 self.numero_identificador_sessao = \
                     resposta.resposta.numeroSessao
-            self.mensagem_nfe = "Falha na conexão com SATHUB"
+                self.mensagem_nfe = resposta.resposta.mensagem
+            else:
+                self.mensagem_nfe = resposta.message
             self.situacao_nfe = SITUACAO_NFE_REJEITADA
 
     @api.multi
