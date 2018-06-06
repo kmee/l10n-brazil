@@ -14,3 +14,4 @@ from . import res_country
 from . import l10n_br_base
 from . import sped_account_move_template_item
 from . import sped_account_move_template
+from . import account_payment
