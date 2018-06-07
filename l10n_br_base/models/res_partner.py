@@ -53,6 +53,10 @@ class ResPartner(models.Model):
             return address_format % args
 
     cnpj_cpf = fields.Char('CNPJ/CPF', size=18)
+     
+    whatsapp = fields.Boolean('Whatsapp')
+
+    gender = fields.Char('Sexo', size=1)
 
     inscr_est = fields.Char('Inscr. Estadual/RG', size=16)
 

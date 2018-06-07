@@ -99,9 +99,9 @@ class StockInvoiceOnShippingRelatedDocument(models.TransientModel):
                     )
                 ))
                 result |= item
-        # Why is this needed? Apparently the compute_all() method is not being
-        # called on the .create() above :-(
-        item.compute_all()
+                # Why is this needed? Apparently the compute_all() method is
+                # not being called on the .create() above :-(
+                item.compute_all()
         return result
 
 

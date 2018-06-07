@@ -4,6 +4,8 @@
 
 import time
 
+from satcomum.ersat import ChaveCFeSAT
+
 from openerp import models, fields, api
 from openerp.addons import decimal_precision as dp
 from openerp.tools.float_utils import float_compare
@@ -55,7 +57,9 @@ class PosOrder(models.Model):
 
     chave_cfe_cancelamento = fields.Char('Chave da Cfe Cancelamento')
 
-    num_sessao_sat_cancelamento = fields.Char(u'Número Sessão SAT Cancelamento')
+    num_sessao_sat_cancelamento = fields.Char(
+        u'Número Sessão SAT Cancelamento'
+    )
 
     cnpj_cpf = fields.Char(
         string=u'CNPJ/CPF',
@@ -97,8 +101,45 @@ class PosOrder(models.Model):
     @api.model
     def create(self, vals):
         order = super(PosOrder, self).create(vals)
+        pos_config = order.session_id.config_id
+        if pos_config.iface_sat_via_proxy:
+            sequence = pos_config.sequence_id
+            cfe = ChaveCFeSAT(vals['chave_cfe'])
+            order.name = sequence._interpolate_value("%s / %s" % (
+                cfe.numero_serie,
+                cfe.numero_cupom_fiscal,
+            ))
         order.simplified_limit_check()
         return order
+
+    @api.model
+    def _process_order(self, order):
+        order_id = super(PosOrder, self)._process_order(order)
+        order_id = self.browse(order_id)
+        for statement in order_id.statement_ids:
+            if statement.journal_id.sat_payment_mode == '05' and statement.journal_id.pagamento_funcionarios:
+                order_id.partner_id.credit_funcionario -= statement.amount
+            elif statement.journal_id.sat_payment_mode == "05" :
+                order_id.partner_id.credit_limit -= statement.amount
+        return order_id.id
+
+    @api.multi
+    def create_picking(self):
+        super(PosOrder, self).create_picking()
+        fiscal_category = self.session_id.config_id.fiscal_category_id
+        self.picking_id.fiscal_category_id = \
+            fiscal_category.id
+        obj_fp_rule = self.env['account.fiscal.position.rule']
+        kwargs = {
+            'partner_id': self.picking_id.company_id.partner_id.id,
+            'partner_shipping_id': self.picking_id.company_id.partner_id.id,
+            'fiscal_category_id': fiscal_category.id,
+            'company_id': self.picking_id.company_id.id,
+        }
+        self.picking_id.fiscal_position = obj_fp_rule.apply_fiscal_mapping(
+            {'value': {}}, **kwargs
+        )['value']['fiscal_position']
+        return True
 
     @api.model
     def return_orders_from_session(self, **kwargs):
@@ -132,6 +173,11 @@ class PosOrder(models.Model):
         clone_list = []
 
         for order in self.browse(ids):
+
+            for statement in order.statement_ids:
+                if statement.journal_id.sat_payment_mode == "05":
+                    order.partner_id.credit_limit += statement.amount
+
             current_session_ids = self.env['pos.session'].search([
                 ('state', '!=', 'closed'),
                 ('user_id', '=', self.env.uid)]
@@ -209,3 +255,30 @@ class PosOrder(models.Model):
         }
 
         return dados_reimpressao
+
+
+class PosOrderLine(models.Model):
+    _inherit = 'pos.order.line'
+
+    @api.multi
+    def _buscar_produtos_devolvidos(self):
+        for record in self:
+            if record.order_id.chave_cfe:
+                rel_documentos = self.env[
+                    'l10n_br_account_product.document.related'].search(
+                    [
+                        ('access_key', '=', record.order_id.chave_cfe[3:])
+                    ]
+                )
+                qtd_devolvidas = 0
+                for documento in rel_documentos:
+                    if documento.invoice_id.state in ('open', 'sefaz_export'):
+                        for line in documento.invoice_id.invoice_line:
+                            if record.product_id == line.product_id:
+                                qtd_devolvidas += line.quantity
+                record.qtd_produtos_devolvidos = qtd_devolvidas
+
+    qtd_produtos_devolvidos = fields.Integer(
+        string="Quantidade devolvida",
+        compute=_buscar_produtos_devolvidos
+    )

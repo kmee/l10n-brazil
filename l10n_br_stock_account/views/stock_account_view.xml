@@ -7,7 +7,7 @@
 			<field name="inherit_id" ref="l10n_br_stock.view_l10n_br_sale_stock_filter"/>
 			<field name="arch" type="xml">
 				<field name="ie" position="after">
-					<field name="fiscal_document_access_key"/>
+					<field name="fiscal_document_access_keys"/>
 				</field>
 			</field>
 		</record>
@@ -28,7 +28,7 @@
 						   attrs="{'invisible': [('invoice_state', '=', 'none')], 'required': [('invoice_state', '=', '2binvoiced')], 'readonly': [('invoice_state', '=', 'invoiced')]}"/>
 					<field name="fiscal_position" domain="[('fiscal_category_id', '=', fiscal_category_id)]"
 						   attrs="{'invisible': [('invoice_state', '=', 'none')], 'required': [('invoice_state', '=', '2binvoiced')], 'readonly': [('invoice_state', '=', 'invoiced')]}"/>
-					<field name="fiscal_document_access_key"/>
+					<field name="fiscal_document_access_keys"/>
 				</field>
 				<field name="partner_id" position="attributes">
 					<attribute name="context_br">{'fiscal_category_id': fiscal_category_id, 'company_id': company_id}

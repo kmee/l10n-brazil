@@ -65,12 +65,22 @@
             <field name="state">approved</field>
         </record>
 
+        <record id="fc_devolucao_revenda" model="l10n_br_account.fiscal.category">
+            <field name="code">DevoluçãoRevenda</field>
+            <field name="name">Devolução de Revenda</field>
+            <field name="type">input</field>
+            <field name="fiscal_type">product</field>
+            <field name="journal_type">sale_refund</field>
+            <field name="state">approved</field>
+        </record>
+
         <record id="fc_f8f20f4fc3420ac4fc03a8e409e54914" model="l10n_br_account.fiscal.category">
             <field name="code">Revenda</field>
             <field name="name">Revenda</field>
             <field name="type">output</field>
             <field name="fiscal_type">product</field>
             <field name="journal_type">sale</field>
+            <field name="refund_fiscal_category_id" ref="fc_devolucao_revenda"/>
             <field name="state">approved</field>
         </record>
 

@@ -2,7 +2,9 @@
 # © 2016 KMEE INFORMATICA LTDA (https://kmee.com.br)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
-from openerp import models, fields, api
+from openerp import models, fields, api, _
+from openerp.exceptions import Warning
+from openerp.tools.safe_eval import safe_eval
 
 
 class StockPickingReturn(models.TransientModel):
@@ -15,8 +17,62 @@ class StockPickingReturn(models.TransientModel):
             res.update({'invoice_state': '2binvoiced'})
         return res
 
-class PorOrderReturn(models.TransientModel):
+    @api.multi
+    def _buscar_valor_total_devolucao(self, pos_order):
+        precos_produtos_pos_order = {}
+        for line in pos_order.lines:
+            precos_produtos_pos_order.update({
+                line.product_id.id: line.price_unit - (
+                        line.price_unit * (line.discount/100)
+                )
+            })
+        valor_total_devolucao = 0.00
+        for line in self.product_return_moves:
+            valor_total_devolucao += \
+                precos_produtos_pos_order[line.product_id.id] * line.quantity
 
+        return valor_total_devolucao
+
+    @api.multi
+    def create_returns(self):
+        if self.env.context.get('pos_order_id'):
+            pos_order = self.env['pos.order'].browse(
+                self.env.context['pos_order_id']
+            )
+            for product_line in self.product_return_moves:
+                for line in pos_order.lines:
+                    if line.product_id == product_line.product_id:
+                        if line.qtd_produtos_devolvidos + product_line.quantity > line.qty:
+                            raise Warning(
+                                _('Esta quantidade do produto %s não pode '
+                                'ser devolvida') % (line.product_id.display_name))
+            res = super(StockPickingReturn, self).create_returns()
+            result_domain = safe_eval(res['domain'])
+            picking_ids = result_domain and result_domain[0] and \
+                          result_domain[0][2]
+            picking_devolucao = self.env['stock.picking'].browse(picking_ids)
+            cat_fiscal_devolucao = picking_devolucao.fiscal_category_id
+            obj_fp_rule = self.env['account.fiscal.position.rule']
+            kwargs = {
+                'partner_id': picking_devolucao.company_id.partner_id.id,
+                'partner_shipping_id':
+                    picking_devolucao.company_id.partner_id.id,
+                'fiscal_category_id': cat_fiscal_devolucao.id,
+                'company_id': picking_devolucao.company_id.id,
+            }
+            picking_devolucao.fiscal_position = obj_fp_rule.apply_fiscal_mapping(
+                {'value': {}}, **kwargs
+            )['value']['fiscal_position']
+            valor_total_devolucao = self._buscar_valor_total_devolucao(
+                pos_order
+            )
+            pos_order.partner_id.credit_limit += valor_total_devolucao
+            return res
+
+        return super(StockPickingReturn, self).create_returns()
+
+
+class PorOrderReturn(models.TransientModel):
     _name = 'pos.order.return'
     _description = "Pos Order Return"
 
@@ -66,10 +122,10 @@ class PorOrderReturn(models.TransientModel):
         active_ids = self._context['active_ids']
         order = self.env['pos.order'].browse(active_ids)
         order.partner_id = self.partner_id
-
         self._check_picking_parameters(order)
 
         ctx = dict(self._context)
+        ctx['pos_order_id'] = active_ids
         ctx['active_ids'] = order.picking_id.ids
         ctx['active_id'] = order.picking_id.id
         ctx['contact_display'] = 'partner_address'

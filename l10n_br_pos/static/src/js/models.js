@@ -52,7 +52,7 @@ function l10n_br_pos_models(instance, module) {
                 fields: ['name', 'state_id'],
                 loaded: function (self, cities) {
                     self.company.city = null;
-                    self.cities = [];
+                    self.cities = cities;
 //                    for (var i = 0; i < cities.length; i++) {
 //                        if(cities[i].state_id[0] == 79){
 //                            self.cities.push(cities[i]);
@@ -91,7 +91,7 @@ function l10n_br_pos_models(instance, module) {
             });
             this.models.push({
                 model:  'res.partner',
-                fields: ['name', 'cnpj_cpf', 'street','city','state_id','country_id','vat','phone','zip','mobile','email','ean13','write_date', 'debit', 'credit', 'credit_limit'],
+                fields: ['name', 'data_alteracao', 'whatsapp', 'gender', 'birthdate', 'number', 'street2', 'opt_out', 'create_date', 'cnpj_cpf', 'street','city','state_id','country_id','vat','phone','zip','mobile','email','ean13','write_date', 'debit', 'credit', 'credit_limit', 'user_ids', 'l10n_br_city_id'],
                 domain: [['customer','=',true]],
                 loaded: function(self,partners){
                     self.partners = partners;
@@ -173,6 +173,80 @@ function l10n_br_pos_models(instance, module) {
     var PosOrderSuper = module.Order;
 
     module.Order = module.Order.extend({
+        initialize: function(attributes){
+            PosOrderSuper.prototype.initialize.apply(this, arguments);
+            this.attributes.cpf_nota = null;
+            return this;
+        },
+        set_client: function(client){
+            PosOrderSuper.prototype.set_client.apply(this, arguments);
+            var self = this;
+            new instance.web.Model('res.partner').call('get_credit_limit', [this.attributes.client['id']]).then(function (result) {
+                self.attributes.client['credit_limit'] = result;
+            });
+        },
+        verificar_pagamento_limite_credito: function() {
+            var linhas_pagamento = this.attributes.paymentLines.models;
+            for (var i = 0; i < linhas_pagamento.length; i++) {
+                if (linhas_pagamento[i].cashregister.journal.sat_payment_mode == "05" && !linhas_pagamento[i].cashregister.journal.pagamento_funcionarios){
+                    return true;
+                }
+            }
+            return false;
+        },
+        funcionario_verificar_pagamento_limite_credito: function() {
+            var linhas_pagamento = this.attributes.paymentLines.models;
+            for (var i = 0; i < linhas_pagamento.length; i++) {
+                if (linhas_pagamento[i].cashregister.journal.sat_payment_mode == "05" && linhas_pagamento[i].cashregister.journal.pagamento_funcionarios){
+                    return true;
+                }
+            }
+            return false;
+        },
+        add_payment_credito_loja: function(cashregister) {
+            var paymentLines = this.get('paymentLines');
+            var currentOrder = this.pos.get('selectedOrder');
+            var total = this.getDueLeft();
+            var newPaymentline = new module.Paymentline({},{cashregister:cashregister, pos:this.pos});
+            if (cashregister.journal.pagamento_funcionarios) {
+                newPaymentline.set_amount(total);
+            } else {
+                if (this.attributes.client['credit_limit'] >= total) {
+                    newPaymentline.set_amount(total);
+                } else {
+                    newPaymentline.set_amount(this.attributes.client['credit_limit']);
+                }
+            }
+            paymentLines.add(newPaymentline);
+            this.selectPaymentline(newPaymentline);
+        },
+        addPaymentline: function(cashregister) {
+            if (cashregister.journal.sat_payment_mode == "05" && this.attributes.client) {
+                    if (cashregister.journal.pagamento_funcionarios && !this.funcionario_verificar_pagamento_limite_credito()) {
+                        pos_db = self.pos.db;
+                        partner = pos_db.get_partner_by_identification(self.pos.partners, this.attributes.client.cnpj_cpf);
+                        if (partner.user_ids.length > 0 || (this.attributes.client.user_ids && this.attributes.client.user_ids.length)) {
+                            this.add_payment_credito_loja(cashregister);
+                        } else {
+                            alert("Somente funcionários podem utilizar esta forma de pagamento!");
+                        }
+                    } else if(!this.verificar_pagamento_limite_credito()) {
+                        if (this.attributes.client['credit_limit'] > 0){
+                            this.add_payment_credito_loja(cashregister);
+                        } else {
+                            alert("Este cliente não possui limite de crédito na loja!");
+                        }
+                    }
+            } else if (cashregister.journal.sat_payment_mode == "05" && !this.attributes.client){
+                if (cashregister.journal.pagamento_funcionarios) {
+                    alert("Para usar esse pagamento é preciso selecionar um funcionário para a venda!");
+                } else {
+                    alert("Para usar esse pagamento é preciso selecionar um cliente para a venda!");
+                }
+            } else {
+                PosOrderSuper.prototype.addPaymentline.apply(this, arguments);
+            }
+        },
         get_return_cfe: function () {
             return this.cfe_return;
         },
@@ -198,36 +272,38 @@ function l10n_br_pos_models(instance, module) {
             var sat_status = status.drivers.satcfe ? status.drivers.satcfe.status : false;
             var result = PosOrderSuper.prototype.export_for_printing.call(this);
             if( sat_status == 'connected') {
-            // Refactory
+                var pos_config = this.pos.config;
                 if (this.pos.company.ambiente_sat == "homologacao") {
-                    company.cnpj = this.pos.config.cnpj_homologacao;
-                    company.ie = this.pos.config.ie_homologacao;
-                    company.cnpj_software_house = this.pos.config.cnpj_software_house;
+                    company.cnpj = pos_config.cnpj_homologacao;
+                    company.ie = pos_config.ie_homologacao;
+                    company.cnpj_software_house = pos_config.cnpj_software_house;
                 } else {
                     company.cnpj = this.pos.company.cnpj_cpf;
                     company.ie = this.pos.company.inscr_est;
-                    company.cnpj_software_house = this.pos.config.cnpj_software_house;
+                    company.cnpj_software_house = pos_config.cnpj_software_house;
                 }
                 result['company'] = {};
                 result['configs_sat'] = {};
                 result['pos_session_id'] = this.pos.pos_session.id;
-                result['client'] = client ? client.cnpj_cpf : null;
+                result['client'] = this.attributes.cpf_nota;
                 result['company']['cnpj'] = company.cnpj;
                 result['company']['ie'] = company.ie;
                 result['company']['cnpj_software_house'] = company.cnpj_software_house;
-                result['configs_sat']['sat_path'] = this.pos.config.sat_path;
-                result['configs_sat']['numero_caixa'] = this.pos.config.numero_caixa;
-                result['configs_sat']['cod_ativacao'] = this.pos.config.cod_ativacao;
-                result['configs_sat']['impressora'] = this.pos.config.impressora;
-                result['configs_sat']['printer_params'] = this.pos.config.printer_params;
+                result['configs_sat']['sat_path'] = pos_config.sat_path;
+                result['configs_sat']['numero_caixa'] = pos_config.numero_caixa;
+                result['configs_sat']['cod_ativacao'] = pos_config.cod_ativacao;
+                result['configs_sat']['impressora'] = pos_config.impressora;
+                result['configs_sat']['printer_params'] = pos_config.printer_params;
+                result['informacoes_adicionais'] = pos_config.company_id[1];
 
                 return result;
             }else{
                 result['pos_session_id'] = this.pos.pos_session.id;
-                result['client'] = client ? client.cnpj_cpf : null;
+                result['client'] = this.attributes.cpf_nota;
                 result['cfe_return'] = this.get_return_cfe() ? this.get_return_cfe() : false;
                 result['num_sessao_sat'] = this.get_num_sessao_sat() ? this.get_num_sessao_sat() : false;
                 result['chave_cfe'] = this.get_chave_cfe() ? this.get_chave_cfe() : false;
+                result['informacoes_adicionais'] = '';
 
                 return result;
             }
@@ -239,14 +315,15 @@ function l10n_br_pos_models(instance, module) {
             var sat_status = status.drivers.satcfe ? status.drivers.satcfe.status : false;
             var result = PosOrderSuper.prototype.export_as_JSON.call(this);
             if( sat_status == 'connected') {
+                var pos_config = this.pos.config;
                 if (this.pos.company.ambiente_sat == "homologacao") {
-                    company.cnpj = this.pos.config.cnpj_homologacao;
-                    company.ie = this.pos.config.ie_homologacao;
-                    company.cnpj_software_house = this.pos.config.cnpj_software_house;
+                    company.cnpj = pos_config.cnpj_homologacao;
+                    company.ie = pos_config.ie_homologacao;
+                    company.cnpj_software_house = pos_config.cnpj_software_house;
                 } else {
                     company.cnpj = this.pos.company.cnpj_cpf;
                     company.ie = this.pos.company.inscr_est;
-                    company.cnpj_software_house = this.pos.config.cnpj_software_house;
+                    company.cnpj_software_house = pos_config.cnpj_software_house;
                 }
 
                 result['company'] = {};
@@ -254,23 +331,25 @@ function l10n_br_pos_models(instance, module) {
                 result['company']['cnpj'] = company.cnpj;
                 result['company']['ie'] = company.ie;
                 result['company']['cnpj_software_house'] = company.cnpj_software_house;
-                result['configs_sat']['sat_path'] = this.pos.config.sat_path;
-                result['configs_sat']['numero_caixa'] = this.pos.config.numero_caixa;
-                result['configs_sat']['cod_ativacao'] = this.pos.config.cod_ativacao;
-                result['configs_sat']['impressora'] = this.pos.config.impressora;
-                result['configs_sat']['printer_params'] = this.pos.config.printer_params;
-                result['client'] = client ? client.cnpj_cpf : null;
+                result['configs_sat']['sat_path'] = pos_config.sat_path;
+                result['configs_sat']['numero_caixa'] = pos_config.numero_caixa;
+                result['configs_sat']['cod_ativacao'] = pos_config.cod_ativacao;
+                result['configs_sat']['impressora'] = pos_config.impressora;
+                result['configs_sat']['printer_params'] = pos_config.printer_params;
+                result['client'] = this.attributes.cpf_nota;
                 result['cfe_return'] = this.get_return_cfe() ? this.get_return_cfe() : false;
                 result['num_sessao_sat'] = this.get_num_sessao_sat() ? this.get_num_sessao_sat() : false;
                 result['chave_cfe'] = this.get_chave_cfe() ? this.get_chave_cfe() : false;
+                result['informacoes_adicionais'] = '';
 
                 return result;
             }else{
                 result['pos_session_id'] = this.pos.pos_session.id;
-                result['client'] = client ? client.cnpj_cpf : null;
+                result['client'] = this.attributes.cpf_nota;
                 result['cfe_return'] = this.get_return_cfe() ? this.get_return_cfe() : false;
                 result['num_sessao_sat'] = this.get_num_sessao_sat() ? this.get_num_sessao_sat() : false;
                 result['chave_cfe'] = this.get_chave_cfe() ? this.get_chave_cfe() : false;
+                result['informacoes_adicionais'] = '';
 
                 return result;
             }
@@ -283,21 +362,22 @@ function l10n_br_pos_models(instance, module) {
         //used to create a json of the ticket, to be sent to the printer
         export_for_printing: function () {
             var result = OrderlineSuper.prototype.export_as_JSON.call(this);
+            var produto = this.get_product();
             result['quantity'] = this.get_quantity();
             result['unit_name'] = this.get_unit().name;
             result['price'] = this.get_unit_price();
             result['discount'] = this.get_discount();
-            result['product_name'] = this.get_product().name;
+            result['product_name'] = produto.name;
             result['price_display'] = this.get_display_price();
             result['price_with_tax'] = this.get_price_with_tax();
             result['price_without_tax'] = this.get_price_without_tax();
             result['tax'] = this.get_tax();
-            result['product_description'] = this.get_product().description;
-            result['product_description_sale'] = this.get_product().description_sale;
-            result['product_default_code'] = this.get_product().default_code;
-            result['fiscal_classification_id'] = this.get_product().fiscal_classification_id;
-            result['estimated_taxes'] = this.get_product().estimated_taxes ? this.get_product().estimated_taxes < 1 : this.get_product().estimated_taxes/100;
-            result['origin'] = this.get_product().origin;
+            result['product_description'] = produto.description;
+            result['product_description_sale'] = produto.description_sale;
+            result['product_default_code'] = produto.default_code;
+            result['fiscal_classification_id'] = produto.fiscal_classification_id;
+            result['estimated_taxes'] = produto.estd_national_taxes_perct/100;
+            result['origin'] = produto.origin;
             return result;
         }
     });
@@ -325,73 +405,63 @@ function l10n_br_pos_models(instance, module) {
         }
     });
 
-       function arrange_elements(pos_model) {
-            var product_product_model = pos_model.find_model('product.product');
-            if (_.size(product_product_model) == 1) {
-                var res_partner_index =
-                    parseInt(Object.keys(product_product_model)[0]);
-                pos_model.models[res_partner_index].fields.push(
-                    'fiscal_classification_id',
-                    'origin',
-                    'estimated_taxes',
-                    'name'
-                );
+    function arrange_elements(pos_model) {
+        var product_product_model = pos_model.find_model('product.product');
+        if (_.size(product_product_model) == 1) {
+            var res_partner_index =
+                parseInt(Object.keys(product_product_model)[0]);
+            pos_model.models[res_partner_index].fields.push(
+                'fiscal_classification_id',
+                'origin',
+                'estd_national_taxes_perct',
+                'name'
+            );
+            pos_model.models[res_partner_index].domain.push(['qty_available', '>', 0]);
+        }
+        var account_journal_model = pos_model.find_model('account.journal');
+        if (_.size(account_journal_model) == 1) {
+            var account_journal_model =
+                parseInt(Object.keys(account_journal_model)[0]);
+            pos_model.models[res_partner_index].fields.push(
+                'sat_payment_mode',
+                'sat_card_accrediting'
+            );
+        }
+        var res_partner_model = pos_model.find_model('res.partner');
+        if (_.size(res_partner_model) == 1) {
+            var res_partner_index =
+                parseInt(Object.keys(res_partner_model)[0]);
+            pos_model.models[res_partner_index].fields.push(
+                'legal_name',
+                'cnpj_cpf',
+                'create_date',
+                'inscr_est',
+                'inscr_mun',
+                'suframa',
+                'district',
+                'number',
+                'country_id',
+                'state_id',
+                'l10n_br_city_id'
+            );
         }
 
-
-        function arrange_elements(pos_model) {
-            var account_journal_model = pos_model.find_model('account.journal');
-            if (_.size(account_journal_model) == 1) {
-                var account_journal_model =
-                    parseInt(Object.keys(account_journal_model)[0]);
-                pos_model.models[res_partner_index].fields.push(
-                    'sat_payment_mode',
-                    'sat_card_accrediting'
-                );
-            }
-
-            /**
-             * patch models to load some entities
-             * @param pos_model
-             */
-            function arrange_elements(pos_model) {
-                var res_partner_model = pos_model.find_model('res.partner');
-                if (_.size(res_partner_model) == 1) {
-                    var res_partner_index =
-                        parseInt(Object.keys(res_partner_model)[0]);
-                    pos_model.models[res_partner_index].fields.push(
-                        'legal_name',
-                        'cnpj_cpf',
-                        'inscr_est',
-                        'inscr_mun',
-                        'suframa',
-                        'district',
-                        'number',
-                        'country_id',
-                        'state_id',
-                        'l10n_br_city_id'
-                    );
-                }
-
-                var res_company_model = pos_model.find_model('res.company');
-                if (_.size(res_company_model) == 1) {
-                    var res_company_index =
-                        parseInt(Object.keys(res_company_model)[0]);
-                    pos_model.models[res_company_index].fields.push(
-                        'legal_name',
-                        'cnpj_cpf',
-                        'inscr_est',
-                        'inscr_mun',
-                        'suframa',
-                        'district',
-                        'number',
-                        'country_id',
-                        'state_id',
-                        'l10n_br_city_id'
-                    );
-                }
-                ;
-            };
-        };
-    };
+        var res_company_model = pos_model.find_model('res.company');
+        if (_.size(res_company_model) == 1) {
+            var res_company_index =
+                parseInt(Object.keys(res_company_model)[0]);
+            pos_model.models[res_company_index].fields.push(
+                'legal_name',
+                'cnpj_cpf',
+                'inscr_est',
+                'inscr_mun',
+                'suframa',
+                'district',
+                'number',
+                'country_id',
+                'state_id',
+                'l10n_br_city_id'
+            );
+        }
+    }
 }

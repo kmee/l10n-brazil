@@ -30,6 +30,13 @@ class PosConfig(models.Model):
     def _default_refund_pos_fiscal_category_id(self):
         return self.company_id.refund_pos_fiscal_category_id
 
+    # @api.multi
+    # @api.constrains('lim_data_alteracao')
+    # def _check_lim_data_alteracao(self):
+    #     if self.lim_data_alteracao < 0:
+    #         raise ValidationError("Somente números positivos são válidos")
+
+
     simplified_invoice_limit = fields.Float(
         string=u'Simplified invoice limit',
         digits=dp.get_precision('Account'),
@@ -45,6 +52,21 @@ class PosConfig(models.Model):
     save_identity_automatic = fields.Boolean(
         string=u'Save new client identity automatic',
         default=True
+    )
+
+    lim_data_alteracao = fields.Integer(
+        string=u"Atualizar dados (meses)",
+        default=3,
+    )
+
+    crm_ativo = fields.Boolean(
+        string=u'CRM ativo?',
+        default=False,
+    )
+
+    cpf_nota = fields.Boolean(
+        string=u'Inserir CPF na nota',
+        default=False
     )
 
     iface_sat_via_proxy = fields.Boolean(
@@ -117,6 +139,10 @@ class PosConfig(models.Model):
 
     assinatura_sat = fields.Char(
         'Assinatura no CFe'
+    )
+
+    enviar_pedido_cupom_fiscal = fields.Boolean(
+        string='Enviar pedido no cupom fiscal'
     )
 
     @api.multi

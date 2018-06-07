@@ -2,7 +2,13 @@
 # Copyright (C) 2014  Renato Lima - Akretion
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
+import itertools
+
 from openerp import models, fields, api
+
+
+def _get_fiscal_document_access_keys_depends(model):
+    return model._get_fiscal_document_access_keys_fields()
 
 
 class StockPicking(models.Model):
@@ -12,12 +18,33 @@ class StockPicking(models.Model):
     def _default_fiscal_category(self):
         return self.env.user.company_id.stock_fiscal_category_id
 
+    @api.model
+    def _get_fiscal_document_access_keys_fields(self):
+        return ['invoice_ids.nfe_access_key']
+
     @api.multi
-    @api.depends('invoice_id.nfe_access_key')
-    def _get_fiscal_document_access_key(self):
+    @api.depends(_get_fiscal_document_access_keys_depends)
+    def _get_fiscal_document_access_keys(self):
+        """
+        Concatenates all valid access keys in all dependent fields
+        """
+        mapped_fields = self._get_fiscal_document_access_keys_fields()
         for picking in self:
-            picking.fiscal_document_access_key = \
-                picking.invoice_id.nfe_access_key if picking.invoice_id else ''
+            keys = sorted(set(filter(None, itertools.chain(*[
+                picking.mapped(field) for field in mapped_fields
+            ]))))
+            picking.fiscal_document_access_keys = '\n'.join(keys)
+            picking.fiscal_document_access_key = (keys + [False])[0]
+
+    def _search_fiscal_document_access_keys(self, operator, value):
+        """
+        Search in all access_key fields
+        """
+        subdomain = [
+            (field, operator, value)
+            for field in self._get_fiscal_document_access_keys_fields()
+        ]
+        return ['|'] * (len(subdomain) - 1) + subdomain
 
     fiscal_category_id = fields.Many2one(
         'l10n_br_account.fiscal.category', 'Categoria Fiscal',
@@ -30,7 +57,19 @@ class StockPicking(models.Model):
         readonly=True, states={'draft': [('readonly', False)]})
     fiscal_document_access_key = fields.Char(
         u'Chave de acesso do Documento',
-        compute=_get_fiscal_document_access_key, store=True)
+        help=('Backward Compatibility field. Please use '
+              '"fiscal_document_access_keys"'),
+        compute="_get_fiscal_document_access_keys",
+        compute_sudo=True,
+        search="_search_fiscal_document_access_keys",
+    )
+    fiscal_document_access_keys = fields.Text(
+        u'Chaves de acesso',
+        help=u'Chaves de acesso dos documentos relacionados',
+        compute="_get_fiscal_document_access_keys",
+        compute_sudo=True,
+        search="_search_fiscal_document_access_keys",
+    )
 
     def _fiscal_position_map(self, result, **kwargs):
         ctx = dict(self.env.context)
