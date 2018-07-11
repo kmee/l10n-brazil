@@ -742,6 +742,8 @@ class AccountInvoice(models.Model):
     payment_term_required = fields.Boolean(
         related='fiscal_category_id.payment_term_required'
     )
+    payment_mode_id = fields.Many2one(
+        comodel_name='payment.mode', string="Payment Mode")
     type_nf_payment = fields.Selection([
         ('01', u'01 - Dinheiro'),
         ('02', u'02 - Cheque'),
