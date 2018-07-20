@@ -28,12 +28,12 @@ openerp.l10n_br_tef = function(instance){
     var ls_transaction_global_value = '';
     var transaction_queue = new Array();
     var payment_type;
-
+    var payment_name;
     var global_ls_product_type = "Credito-Banrisul";
 
-    var card_number = "0000000000000000";
-    var card_expiring_date = "00/00";
-    var card_security_code = "000";
+    var card_number = "5442556260904012";
+    var card_expiring_date = "03/19";
+    var card_security_code = "624";
 
     var pinpad_connected = 0;
 
@@ -118,7 +118,7 @@ openerp.l10n_br_tef = function(instance){
 
             return true;
         }
-        else if((io_tags.servico == '')&& (io_tags.retorno != "0")) {
+        else if((io_tags.mensagem != 'Fluxo Abortado pelo operador!!' ) && (io_tags.servico == '')&& (io_tags.retorno != "0")) {
             redo_operation(io_tags.sequencial);
             return false;
         }
@@ -205,8 +205,10 @@ openerp.l10n_br_tef = function(instance){
     function check_completed_send_security_code(){
         if((io_tags.automacao_coleta_palavra_chave == "transacao_valor") && (io_tags.automacao_coleta_tipo == "N")
             && (io_tags.automacao_coleta_retorno == "0")){
-
-            ls_transaction_global_value = $('.paymentline-input')[1]['value'].replace(',', '.');
+            for( var i=0; i < $('.paymentline-input').length; i++){
+                if($('.paymentline-name')[i].innerText.indexOf(payment_name) != -1)
+                ls_transaction_global_value = $(".paymentline-input")[i].value.replace(',','.');
+            }
             // Send the value
             collect('');
 
@@ -562,6 +564,14 @@ openerp.l10n_br_tef = function(instance){
         send('servico="consultar"retorno="0"sequencial="'+ sequential()+'"');
     }
 
+    function fluxoAbortar()
+	{
+		send('automacao_coleta_retorno="9"automacao_coleta_mensagem="Fluxo Abortado pelo operador!!"sequencial="'+(in_sequential_execute)+'"');
+		setTimeout(function(){
+		start();
+		}, 1000);
+	}
+
     function sequential()
     {
         // Incrementa o sequencial..
@@ -582,6 +592,7 @@ openerp.l10n_br_tef = function(instance){
 
     function start_operation()
     {
+        fluxoAbortar();
         if (('consultar' === io_tags.servico)&& (io_tags.transacao_produto != '' )){
             if(payment_type === "CC01"){
 
@@ -602,6 +613,12 @@ openerp.l10n_br_tef = function(instance){
         }
     }
 
+    module.Order = module.Order.extend({
+        verificar_metodo_pagamento: function(){
+            var payment_method = this.attributes.paymentLines.models;
+        }
+    });
+
     module.ProductScreenWidget.include({
         init: function(parent,options){
             this._super(parent,options);
@@ -620,7 +637,7 @@ openerp.l10n_br_tef = function(instance){
             if (["CD01", "CC01"].indexOf(line.cashregister.journal.code) > -1 &&
                 this.pos.config.iface_tef){
                 payment_type = line.cashregister.journal.code;
-
+                payment_name = line.cashregister.journal.name;
                 el_node.querySelector('.payment-terminal-transaction-start')
                     .addEventListener('click', function(){start_operation()});
             }
