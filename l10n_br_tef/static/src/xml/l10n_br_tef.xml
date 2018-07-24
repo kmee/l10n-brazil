@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<templates id="template" xml:space="preserve">
+    <templates id="template" xml:space="preserve">
     <t t-extend="Paymentline">
         <t t-jquery=".paymentline-input" t-operation="append">
             <t t-if="['CD01', 'CC01'].indexOf(line.cashregister.journal.code) > -1">
@@ -8,5 +8,14 @@
                 </span>
             </t>
         </t>
+    </t>
+
+    <t t-name="PinPadStatusWidget">
+        <div class="oe_status connected js_synch">
+            <i class='fa fa-fw fa-thumbs-up icon_connected'/>
+        </div>
+        <div class="oe_status disconnected js_synch oe_hidden">
+            <i class='fa fa-fw fa-thumbs-down icon_disconnected'/>
+        </div>
     </t>
 </templates>

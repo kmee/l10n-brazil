@@ -10,3 +10,11 @@
     bottom: 10px;
     position: absolute;
 }
+
+.icon_connected {
+    color: green;
+}
+
+.icon_disconnected {
+    color: red;
+}
