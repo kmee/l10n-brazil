@@ -12,10 +12,10 @@
 
     <t t-name="PinPadStatusWidget">
         <div class="oe_status connected js_synch">
-            <i class='fa fa-fw fa-thumbs-up icon_connected'/>
+            <i class='fa fa-fw fa-thumbs-up icon_connected' style="color: green;"/>
         </div>
         <div class="oe_status disconnected js_synch oe_hidden">
-            <i class='fa fa-fw fa-thumbs-down icon_disconnected'/>
+            <i class='fa fa-fw fa-thumbs-down icon_disconnected' style="color: red;"/>
         </div>
     </t>
 </templates>
