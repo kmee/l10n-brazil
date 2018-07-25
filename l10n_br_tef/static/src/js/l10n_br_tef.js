@@ -21,13 +21,10 @@
 openerp.l10n_br_tef = function(instance){
 
     module = instance.point_of_sale;
-    var connect_init = false;
-    connect();
-    setInterval(function(){
-        if (connect_init == false)
-            connect();
-    }, 10000);
+    var _t = instance.web._t;
 
+    var connect_init = false;
+    var set_interval_id = 0;
 
     module.PindPadWidget = module.StatusWidget.extend({
         template: 'PinPadStatusWidget',
@@ -42,8 +39,30 @@ openerp.l10n_br_tef = function(instance){
     module.PosWidget = module.PosWidget.extend({
         build_widgets: function(){
             this._super();
+            this.close_button = new module.HeaderButtonWidget(this,{
+                label: _t('Close'),
+                action: function(){
+                    var self = this;
+                    if (!this.confirmed) {
+                        this.$el.addClass('confirm');
+                        this.$el.text(_t('Confirm'));
+                        this.confirmed = setTimeout(function(){
+                            self.$el.removeClass('confirm');
+                            self.$el.text(_t('Close'));
+                            self.confirmed = false;
+                        },2000);
+                    } else {
+                        clearTimeout(this.confirmed);
+                        clearInterval(set_interval_id);
+                        this.pos_widget.close();
+                    }
+                },
+            });
             this.pind_pad_button = new module.PindPadWidget(this,{});
             this.pind_pad_button.appendTo(this.$('.pos-rightheader'));
+            $('.header-button').remove();
+            this.close_button.appendTo(this.$('.pos-rightheader'));
+
          },
     });
 
@@ -73,10 +92,10 @@ openerp.l10n_br_tef = function(instance){
             */
             io_connection.onclose = function () {
                 trace('Connection closed');
-                io_connection.close;
                 $(".connected").addClass("oe_hidden");
                 $(".disconnected").removeClass("oe_hidden");
                 connect_init = false;
+                io_connection.close();
             };
 
             /**
@@ -85,7 +104,10 @@ openerp.l10n_br_tef = function(instance){
             io_connection.onerror = function(error)
             {
                 trace(error.data);
-                //io_connection.close();
+                $(".connected").addClass("oe_hidden");
+                $(".disconnected").removeClass("oe_hidden");
+                connect_init = false;
+                io_connection.close();
             };
 
             /**
@@ -667,6 +689,11 @@ openerp.l10n_br_tef = function(instance){
     module.ProductScreenWidget.include({
         init: function(parent,options){
             this._super(parent,options);
+            set_interval_id =
+                setInterval(function(){
+                if (!connect_init)
+                    connect();
+            }, 10000);
         }
     });
 
