@@ -69,10 +69,16 @@ class NFe200(FiscalDocument):
                 self.nfe.infNFe.det.append(self.det)
 
             if invoice.journal_id.revenue_expense:
-                for dup in invoice.duplicata_ids:
-                    self.dup = self._get_Dup()
-                    self._encashment_data(invoice, dup)
-                    self.nfe.infNFe.cobr.dup.append(self.dup)
+                if hasattr(invoice, 'duplicata_ids'):
+                    for dup in invoice.duplicata_ids:
+                        self.dup = self._get_Dup()
+                        self._encashment_data(invoice, dup, 'dup')
+                        self.nfe.infNFe.cobr.dup.append(self.dup)
+                else:
+                    for move_line in invoice.move_line_receivable_id:
+                        self.dup = self._get_Dup()
+                        self._encashment_data(invoice, move_line, 'move_line')
+                        self.nfe.infNFe.cobr.dup.append(self.dup)
 
             try:
                 self._carrier_data(invoice)
@@ -542,13 +548,27 @@ class NFe200(FiscalDocument):
         self.di_line.vDescDI.valor = str(
             "%.2f" % invoice_line_di.amount_discount)
 
-    def _encashment_data(self, invoice, dup):
+    def _encashment_data(self, invoice, dup, type):
         """Dados de Cobrança"""
-        self.dup.nDup.valor = dup.numero
-        self.dup.dVenc.valor = (dup.data_vencimento or
+        if type == 'dup':
+            numero = dup.numero
+            venc = dup.data_vencimento
+            valor = dup.valor
+        else:
+            numero = dup.name
+            venc = dup.date_maturity
+            if invoice.type in ('out_invoice', 'in_refund'):
+                valor = dup.debit
+            else:
+                valor = dup.credit
+
+
+        self.dup.nDup.valor = numero
+        self.dup.dVenc.valor = (venc or
                                 invoice.date_due or
                                 invoice.date_invoice)
-        self.dup.vDup.valor = str("%.2f" % dup.valor)
+        self.dup.vDup.valor = str("%.2f" % valor)
+
 
     def _carrier_data(self, invoice):
         """Dados da Transportadora e veiculo"""
