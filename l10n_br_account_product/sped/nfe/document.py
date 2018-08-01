@@ -69,29 +69,12 @@ class NFe200(FiscalDocument):
 
                 self.nfe.infNFe.det.append(self.det)
 
-            if invoice.journal_id.revenue_expense:
-                if hasattr(invoice, 'duplicata_ids'):
-                    for dup in invoice.duplicata_ids:
-                        self.dup = self._get_Dup()
-                        self._encashment_data(invoice, dup, 'dup')
-                        self.nfe.infNFe.cobr.dup.append(self.dup)
-                else:
-                    for move_line in invoice.move_line_receivable_id:
-                        self.dup = self._get_Dup()
-                        self._encashment_data(invoice, move_line, 'move_line')
-                        self.nfe.infNFe.cobr.dup.append(self.dup)
+            self._encashment(invoice)
 
             try:
                 self._carrier_data(invoice)
             except AttributeError:
                 pass
-
-            self.pag = self._get_Pag()
-            self._details_pag(invoice)
-
-            self.detPag = self._get_DetPag()
-            self._details_pag_data(invoice)
-            self.nfe.infNFe.pag.detPag.append(self.detPag)
 
             self.vol = self._get_Vol()
             self._weight_data(invoice)
@@ -106,6 +89,20 @@ class NFe200(FiscalDocument):
             nfes.append(self.nfe)
 
         return nfes
+
+    def _encashment(self, invoice):
+
+        if invoice.journal_id.revenue_expense:
+            if hasattr(invoice, 'duplicata_ids'):
+                for dup in invoice.duplicata_ids:
+                    self.dup = self._get_Dup()
+                    self._encashment_data(invoice, dup, 'dup')
+                    self.nfe.infNFe.cobr.dup.append(self.dup)
+            else:
+                for move_line in invoice.move_line_receivable_id:
+                    self.dup = self._get_Dup()
+                    self._encashment_data(invoice, move_line, 'move_line')
+                    self.nfe.infNFe.cobr.dup.append(self.dup)
 
     def _nfe_identification(self, invoice, company, nfe_environment):
 
@@ -924,6 +921,27 @@ class NFe310(NFe200):
 class NFe400(NFe310):
     def __init__(self):
         super(NFe400, self).__init__()
+
+    def _encashment(self, invoice):
+
+        if invoice.journal_id.revenue_expense:
+            if hasattr(invoice, 'duplicata_ids'):
+                for dup in invoice.duplicata_ids:
+                    self.dup = self._get_Dup()
+                    self._encashment_data(invoice, dup, 'dup')
+                    self.nfe.infNFe.cobr.dup.append(self.dup)
+            else:
+                for move_line in invoice.move_line_receivable_id:
+                    self.dup = self._get_Dup()
+                    self._encashment_data(invoice, move_line, 'move_line')
+                    self.nfe.infNFe.cobr.dup.append(self.dup)
+
+        self.pag = self._get_Pag()
+        self._details_pag(invoice)
+
+        self.detPag = self._get_DetPag()
+        self._details_pag_data(invoice)
+        self.nfe.infNFe.pag.detPag.append(self.detPag)
 
     def _details_pag(self, invoice):
         # TODO - implementar campo
