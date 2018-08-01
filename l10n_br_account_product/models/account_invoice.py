@@ -184,14 +184,6 @@ class AccountInvoice(models.Model):
         self.cfop_ids = (lines).sorted()
 
     @api.multi
-    def _compute_financial_ids(self):
-        for record in self:
-            document_id = record._name + ',' + str(record.id)
-            record.financial_ids = record.env['financial.move'].search(
-                [['doc_source_id', '=', document_id]]
-            )
-
-    @api.multi
     @api.depends('invoice_line', 'tax_line.amount', 'issqn_wh', 'irrf_wh',
                  'inss_wh', 'csll_wh', 'pis_wh', 'cofins_wh')
     def _amount_all_service(self):
@@ -365,8 +357,9 @@ class AccountInvoice(models.Model):
         'Série NF', size=12, readonly=True, oldname='vendor_serie',
         states={'draft': [('readonly', False)]},
         help=u"Série do número da Nota Fiscal do Fornecedor")
-    nfe_version = fields.Selection(
-        [('1.10', '1.10'), ('2.00', '2.00'), ('3.10', '3.10')],
+    nfe_version = fields.Selection([
+        ('1.10', '1.10'), ('2.00', '2.00'),
+        ('3.10', '3.10'), ('4.00', '4.00')],
         u'Versão NFe', readonly=True, default=_default_nfe_version,
         states={'draft': [('readonly', False)]})
     date_hour_invoice = fields.Datetime(
@@ -384,11 +377,13 @@ class AccountInvoice(models.Model):
         states={'draft': [('readonly', False)]}, required=False,
         help=u'Indica operação com Consumidor final.')
     ind_pres = fields.Selection([
-        ('0', u'Não se aplica'),
+        ('0', u'Não se aplica (por exemplo,'
+              u' Nota Fiscal complementar ou de ajuste)'),
         ('1', u'Operação presencial'),
         ('2', u'Operação não presencial, pela Internet'),
         ('3', u'Operação não presencial, Teleatendimento'),
         ('4', u'NFC-e em operação com entrega em domicílio'),
+        ('5', u'Operação presencial, fora do estabelecimento'),
         ('9', u'Operação não presencial, outros'),
     ], u'Tipo de operação', readonly=True,
         states={'draft': [('readonly', False)]}, required=False,
@@ -740,25 +735,41 @@ class AccountInvoice(models.Model):
              u' + seguro\n'
              u' - desconto'
     )
-    financial_ids = fields.One2many(
-        comodel_name='financial.move',
-        compute='_compute_financial_ids',
-        string=u'Financial Items',
-        readonly=True,
-        copy=False
-    )
     account_move_template_id = fields.Many2one(
         comodel_name='sped.account.move.template',
         string='Modelo de partida dobrada',
     )
-    duplicata_ids = fields.One2many(
-        comodel_name='sped.documento.duplicata',
-        inverse_name='invoice_id',
-        string=u'Duplicatas',
-    )
     payment_term_required = fields.Boolean(
         related='fiscal_category_id.payment_term_required'
     )
+    payment_mode_id = fields.Many2one(
+        comodel_name='payment.mode', string="Payment Mode")
+    type_nf_payment = fields.Selection([
+        ('01', u'01 - Dinheiro'),
+        ('02', u'02 - Cheque'),
+        ('03', u'03 - Cartão de Crédito'),
+        ('04', u'04 - Cartão de Débito'),
+        ('06', u'05 - Crédito Loja'),
+        ('10', u'10 - Vale Alimentação'),
+        ('11', u'11 - Vale Refeição'),
+        ('12', u'12 - Vale Presente'),
+        ('13', u'13 - Vale Combustível'),
+        ('14', u'14 - Duplicata Mercantil'),
+        ('15', u'15 - Boleto Bancário'),
+        ('90', u'90 - Sem pagamento'),
+        ('99', u'99 - Outros')
+    ], string='Tipo de Pagamento da NF',
+        help=u'Obrigatório o preenchimento do Grupo Informações de Pagamento'
+             u' para NF-e e NFC-e. Para as notas com finalidade de Ajuste'
+             u' ou Devolução o campo Forma de Pagamento deve ser preenchido'
+             u' com 90 - Sem Pagamento.'
+    )
+
+    _sql_constraints = [
+        ('number_uniq', 'unique(number, company_id, journal_id,\
+             type, partner_id, document_serie_id, issuer)',
+         'Invoice Number must be unique per Company!'),
+    ]
 
     @api.one
     @api.constrains('number')
@@ -1006,6 +1017,76 @@ class AccountInvoice(models.Model):
         return result
 
     @api.multi
+    def finalize_invoice_move_lines(self, move_lines):
+        move_lines = super(AccountInvoice, self).finalize_invoice_move_lines(
+            move_lines)
+
+        # What we do here? IMPORTANT
+        # We make a copy of the retention tax and calculate the new total
+        # in the payment lines
+        value_to_debit = 0.0
+        move_lines_new = []
+        move_lines_tax = [move for move in move_lines
+                          if not move[2]['product_id'] and
+                          not move[2]['date_maturity']]
+        move_lines_payment = [move for move in move_lines
+                              if not move[2]['product_id'] and
+                              move[2]['date_maturity']]
+        move_lines_products = [move for move in move_lines
+                               if move[2]['product_id'] and
+                               not move[2]['date_maturity']]
+
+        def invert_credit_debit(move, value_to_debit):
+            credit = move[2]['credit']
+            debit = move[2]['debit']
+            value_to_debit += move[2]['credit'] or move[2]['debit']
+            move[2]['credit'] = debit
+            move[2]['debit'] = credit
+            return value_to_debit
+
+        for move in move_lines_tax:
+            move_lines_new.append(move)
+
+            tax_code = self.env['account.tax.code'].browse(
+                move[2]['tax_code_id'])
+
+            if tax_code.domain == 'retissqn' and self.issqn_wh:
+                value_to_debit = invert_credit_debit(move, value_to_debit)
+
+            if tax_code.domain == 'retpis' and self.pis_wh:
+                value_to_debit = invert_credit_debit(move, value_to_debit)
+
+            if tax_code.domain == 'retcofins' and self.cofins_wh:
+                value_to_debit = invert_credit_debit(move, value_to_debit)
+
+            if tax_code.domain == 'retinss' and self.inss_wh:
+                value_to_debit = invert_credit_debit(move, value_to_debit)
+
+            if tax_code.domain == 'retcsll' and self.csll_wh:
+                value_to_debit = invert_credit_debit(move, value_to_debit)
+
+            if tax_code.domain == 'retir' and self.irrf_wh:
+                value_to_debit = invert_credit_debit(move, value_to_debit)
+
+        move_lines_new.extend(move_lines_payment)
+        move_lines_new.extend(move_lines_products)
+
+        if value_to_debit > 0.0:
+            value_item = value_to_debit / float(len(move_lines_payment))
+            for move in move_lines_payment:
+                if move[2]['debit']:
+                    move[2]['debit'] -= value_item
+                elif move[2]['credit']:
+                    move[2]['credit'] -= value_item
+            for move in move_lines_products:
+                if move[2]['debit']:
+                    move[2]['debit'] += value_item
+                elif move[2]['credit']:
+                    move[2]['credit'] += value_item
+
+        return move_lines_new
+
+    @api.multi
     def _prepare_move_item(self, item):
         return {
             'document_number': '/',
@@ -1013,43 +1094,6 @@ class AccountInvoice(models.Model):
             'amount_document': item['debit'] or item['credit'],
             'account_type_id': item['user_type_id'],
         }
-
-    @api.multi
-    def _prepare_financial_move(self, lines):
-
-        return {
-            'date_document': self.date_invoice,
-            'type': '2receive',
-            'partner_id': self.partner_id.id,
-            'doc_source_id': self._name + ',' + str(self.id),
-            'bank_id': 1,
-            'company_id': self.company_id and self.company_id.id,
-            'currency_id': self.currency_id.id,
-            'payment_term_id':
-                self.payment_term and self.payment_term.id or False,
-            # 'analytic_account_id':
-            # 'payment_mode_id:
-            'lines': [self._prepare_move_item(item) for item in lines],
-            'account_id': self.fiscal_category_id.financial_account_id.id,
-            'document_type_id':
-                self.fiscal_category_id.financial_document_type_id.id,
-        }
-
-    @api.multi
-    def action_financial_create(self, move_lines):
-        # TODO: Refatorar este método utilizando o campo:
-        # move_line_receivable_id
-        to_financial = []
-        for x, y, item in move_lines:
-            account_id = self.env[
-                'account.account'].browse(item.get('account_id', []))
-            if account_id.type in ('payable', 'receivable'):
-                item['user_type_id'] = account_id.user_type.id
-                item['user_type'] = account_id.user_type.id
-                to_financial.append(item)
-
-        p = self._prepare_financial_move(to_financial)
-        self.env['financial.move']._create_from_dict(p)
 
     @api.multi
     def gera_account_move_line(self, line_ids, template_nao_contabilizados):
@@ -1162,7 +1206,8 @@ class AccountInvoice(models.Model):
                     'Please create some invoice lines.'))
             if inv.move_id:
                 continue
-
+            if not inv.account_move_template_id:
+                continue
             ctx = dict(self._context, lang=inv.partner_id.lang)
 
             company_currency = inv.company_id.currency_id
@@ -1303,163 +1348,12 @@ class AccountInvoice(models.Model):
         #
         super(AccountInvoice, self).action_move_create()
 
-    # @api.multi
-    # def finalize_invoice_move_lines(self, move_lines):
-    #     move_lines = super(AccountInvoice, self).finalize_invoice_move_lines(
-    #         move_lines)
-    #
-    #     # What we do here? IMPORTANT
-    #     # We make a copy of the retention tax and calculate the new total
-    #     # in the payment lines
-    #     value_to_debit = 0.0
-    #     move_lines_new = []
-    #     move_lines_tax = [move for move in move_lines
-    #                       if not move[2]['product_id'] and
-    #                       not move[2]['date_maturity']]
-    #     move_lines_payment = [move for move in move_lines
-    #                           if not move[2]['product_id'] and
-    #                           move[2]['date_maturity']]
-    #     move_lines_products = [move for move in move_lines
-    #                            if move[2]['product_id'] and
-    #                            not move[2]['date_maturity']]
-    #
-    #     def invert_credit_debit(move, value_to_debit):
-    #         credit = move[2]['credit']
-    #         debit = move[2]['debit']
-    #         value_to_debit += move[2]['credit'] or move[2]['debit']
-    #         move[2]['credit'] = debit
-    #         move[2]['debit'] = credit
-    #         return value_to_debit
-    #
-    #     for move in move_lines_tax:
-    #         move_lines_new.append(move)
-    #
-    #         tax_code = self.env['account.tax.code'].browse(
-    #             move[2]['tax_code_id'])
-    #
-    #         if tax_code.domain == 'retissqn' and self.issqn_wh:
-    #             value_to_debit = invert_credit_debit(move, value_to_debit)
-    #
-    #         if tax_code.domain == 'retpis' and self.pis_wh:
-    #             value_to_debit = invert_credit_debit(move, value_to_debit)
-    #
-    #         if tax_code.domain == 'retcofins' and self.cofins_wh:
-    #             value_to_debit = invert_credit_debit(move, value_to_debit)
-    #
-    #         if tax_code.domain == 'retinss' and self.inss_wh:
-    #             value_to_debit = invert_credit_debit(move, value_to_debit)
-    #
-    #         if tax_code.domain == 'retcsll' and self.csll_wh:
-    #             value_to_debit = invert_credit_debit(move, value_to_debit)
-    #
-    #         if tax_code.domain == 'retir' and self.irrf_wh:
-    #             value_to_debit = invert_credit_debit(move, value_to_debit)
-    #
-    #     move_lines_new.extend(move_lines_payment)
-    #     move_lines_new.extend(move_lines_products)
-    #
-    #     if value_to_debit > 0.0:
-    #         value_item = value_to_debit / float(len(move_lines_payment))
-    #         for move in move_lines_payment:
-    #             if move[2]['debit']:
-    #                 move[2]['debit'] -= value_item
-    #             elif move[2]['credit']:
-    #                 move[2]['credit'] -= value_item
-    #         for move in move_lines_products:
-    #             if move[2]['debit']:
-    #                 move[2]['debit'] += value_item
-    #             elif move[2]['credit']:
-    #                 move[2]['credit'] += value_item
-    #
-    #     return move_lines_new
-
-    @api.multi
-    def invoice_validate(self):
-        super(AccountInvoice, self).invoice_validate()
-        for invoice in self:
-            #
-            #  Geração dos lançamentos financeiros
-            #
-            # financial_create = self.filtered(
-            #     lambda invoice: invoice.revenue_expense)
-            # financial_create.action_financial_create(move_lines_new)
-            invoice.action_financial_create()
-
-            # invoice.financial_ids.write({
-            #     'document_number': invoice.name or
-            #                        invoice.move_id.name or '/'})
-            # invoice.financial_ids.action_confirm()
-
-    def action_financial_create(self):
-        """ Cria o lançamento financeiro do documento fiscal
-        :return:
-        """
-        for documento in self:
-            if documento.state not in 'open':
-                continue
-
-            # if documento.emissao == TIPO_EMISSAO_PROPRIA and \
-            #     documento.entrada_saida == ENTRADA_SAIDA_ENTRADA:
-            #     continue
-
-            #
-            # Temporariamente, apagamos todos os lançamentos anteriores
-            #
-                documento.financial_ids.unlink()
-
-            for duplicata in documento.duplicata_ids:
-                dados = duplicata.prepara_financial_move()
-                financial_move = \
-                    self.env['financial.move'].create(dados)
-                financial_move.action_confirm()
-
-    @api.onchange('payment_term', 'date_invoice', 'amount_net',
-                  'amount_total', 'duplicata_ids')
-    def onchange_duplicatas(self):
-        res = {}
-        valores = {}
-        res['value'] = valores
-
-        if not (self.payment_term and (self.amount_net or self.amount_total)):
-            return res
-
-        if not self.date_invoice:
-            self.date_invoice = fields.Date.context_today(self)
-
-        valor = self.amount_net or 0
-
-        #
-        # Para a compatibilidade com a chamada original (super), que usa
-        # o decorator deprecado api.one, pegamos aqui sempre o 1º elemento
-        # da lista que vai ser retornada
-        #
-
-        computations = self.payment_term.compute(
-            valor, self.date_invoice)[0]
-
-        self.duplicata_ids = False
-
-        payment_ids = []
-        for idx, item in enumerate(computations):
-            payment = dict(
-                numero=str(idx + 1),
-                data_vencimento=item[0],
-                valor=item[1],
-            )
-            payment_ids.append(payment)
-        self.duplicata_ids = payment_ids
-
-    @api.one
-    @api.depends('financial_ids.state')
-    def _compute_reconciled(self):
-        self.reconciled = self.test_paid()
-
-    @api.multi
-    def test_paid(self):
-        line_ids = self.financial_ids
-        if not line_ids:
-            return False
-        return all(line.state == 'paid' for line in line_ids)
+    @api.onchange('payment_mode_id')
+    def onchange_payment_mode(self):
+        for record in self:
+            if record.payment_mode_id:
+                record.type_nf_payment = \
+                    record.payment_mode_id.type_nf_payment
 
 
 class AccountInvoiceLine(models.Model):

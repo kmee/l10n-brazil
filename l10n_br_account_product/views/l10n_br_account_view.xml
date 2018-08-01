@@ -14,16 +14,9 @@
                     <field name="purpose" />
                 </field>
                 <xpath expr='//group[@string="Diário Contábil"]' position="after">
-
                     <group string="Contábil">
                         <field name="account_move_template_id" />
                     </group>
-                    <group string="Financeiro">
-                        <field name="financial_document_type_id"/>
-                        <field name="financial_account_id"/>
-                        <field name="payment_term_required"/>
-                    </group>
-
                 </xpath>
             </field>
         </record>

@@ -9,13 +9,14 @@ from __future__ import division, print_function, unicode_literals
 
 from openerp import api, fields, models
 
-from ..constantes import (
+from openerp.addons.l10n_br_account_product.constantes import (
     FORMA_PAGAMENTO,
     FORMA_PAGAMENTO_OUTROS,
     BANDEIRA_CARTAO,
     INTEGRACAO_CARTAO,
     INTEGRACAO_CARTAO_NAO_INTEGRADO,
 )
+
 
 class SpedFormaPagamento(models.Model):
     """ Visando atendar o layout da nf-e 4.0 e também do SAT implementamos
@@ -51,22 +52,22 @@ class SpedFormaPagamento(models.Model):
         required=True,
     )
     forma_pagamento = fields.Selection(
-        selection=FORMA_PAGAMENTO,
         string='Forma de pagamento',
+        selection=FORMA_PAGAMENTO,
         default=FORMA_PAGAMENTO_OUTROS,
         required=True,
     )
     bandeira_cartao = fields.Selection(
-        selection=BANDEIRA_CARTAO,
         string='Bandeira do cartão',
+        selection=BANDEIRA_CARTAO,
     )
     integracao_cartao = fields.Selection(
-        selection=INTEGRACAO_CARTAO,
         string='Integração do cartão',
+        selection=INTEGRACAO_CARTAO,
         default=INTEGRACAO_CARTAO_NAO_INTEGRADO,
     )
     payment_term_id = fields.One2many(
+        string='Condições de pagamento',
         comodel_name='account.payment.term',
         inverse_name='sped_forma_pagamento_id',
-        string='Condições de pagamento',
     )

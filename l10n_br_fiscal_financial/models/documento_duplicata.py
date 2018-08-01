@@ -21,13 +21,13 @@ class SpedDocumentoDuplicata(models.Model):
     # _rec_name = 'numero'
 
     invoice_id = fields.Many2one(
-        comodel_name='account.invoice',
         string='Documento',
+        comodel_name='account.invoice',
         ondelete='cascade',
     )
     payment_term_id = fields.Many2one(
-        comodel_name='account.payment.term',
         string='Pagamento',
+        comodel_name='account.payment.term',
         ondelete='cascade',
     )
     numero = fields.Char(

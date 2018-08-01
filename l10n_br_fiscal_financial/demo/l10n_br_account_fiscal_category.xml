@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2018 KMEE INFORMATICA LTDA
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+
+<openerp>
+<data noupdate="1">
+
+    <!-- TODO
+    <record model="l10n_br_account.fiscal.category" id="l10n_br_account_fiscal_category_demo_1">
+       <field name="name">...</field>
+    </record>
+    -->
+
+</data>
+</openerp>

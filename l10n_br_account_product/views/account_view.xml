@@ -10,7 +10,7 @@
             <field name="arch" type="xml">
                 <field name="active" position="after">
                     <field name="indPag" required="1"/>
-                    <field name="sped_forma_pagamento_id" required="1"/>
+                    <!--<field name="sped_forma_pagamento_id" required="1"/>-->
                 </field>
             </field>
         </record>

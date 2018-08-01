@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2018 KMEE INFORMATICA LTDA
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+
+<openerp>
+<data>
+
+    <record model="ir.ui.view" id="l10n_br_account_fiscal_category_form_view">
+        <field name="name">account.invoice.form (in l10n_br_fiscal_financial)</field>
+        <field name="model">account.invoice</field>
+        <field name="inherit_id" ref="l10n_br_account_product.l10n_br_account_product_nfe_form"/>
+        <field name="arch" type="xml">
+            <xpath expr='//group[@string="Duplicatas"]' position="after">
+                <page string="Financeiro" name="financial_page">
+                        <group cols="4">
+                            <field name="financial_ids" colspan="4" nolabel="1">
+                                <tree decoration-info="state == 'draft'"
+                                      decoration-muted="state == 'cancelled'">
+                                    <field name="date_business_maturity" string="Maturity"/>
+                                    <field name="date_document"/>
+                                    <field name="display_name"/>
+                                    <!--<field name="partner_id"/>-->
+                                    <!--<field name="document_type_id"/>-->
+                                    <!--<field name="document_number"/>-->
+                                    <field name="currency_id" groups="base.group_multi_currency"/>
+                                    <field name="amount_document" sum="Document"/>
+                                    <field name="amount_total" sum="Total"/>
+                                    <field name="date_payment"/>
+                                    <field name="amount_paid_document" sum="Paid"/>
+                                    <field name="amount_residual" sum="Residual"/>
+                                    <field name="state"/>
+                                </tree>
+                            </field>
+                        </group>
+                    </page>
+            </xpath>
+            <xpath expr='//group[@string="Duplicatas"]' position="replace">
+                <group string="Duplicatas">
+                    <field name="duplicata_ids" colspan="4" nolabel="1" >
+                        <tree string="Duplicatas" editable="bottom">
+                            <field name="numero" />
+                            <field name="data_vencimento" />
+                            <field name="valor" sum="valor" />
+                        </tree>
+                    </field>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+</data>
+</openerp>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2018 KMEE INFORMATICA LTDA
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+
+<openerp>
+<data>
+
+    <record model="ir.ui.view" id="l10n_br_account_fiscal_category_form_view">
+        <field name="name">l10n_br_account.fiscal.category.form (in l10n_br_fiscal_financial)</field>
+        <field name="model">l10n_br_account.fiscal.category</field>
+        <field name="inherit_id" ref="l10n_br_account_product.l10n_br_account_product_fiscal_category_form"/>
+        <field name="arch" type="xml">
+            <xpath expr='//group[@string="Contábil"]' position="after">
+                <group string="Financeiro">
+                    <field name="financial_document_type_id"/>
+                    <field name="financial_account_id"/>
+                    <field name="payment_term_required"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+</data>
+</openerp>

@@ -104,7 +104,8 @@ class AccountInvoice(models.Model):
 
     _sql_constraints = [
         ('number_uniq', 'unique(number, company_id, journal_id,\
-         type, partner_id)', 'Invoice Number must be unique per Company!'),
+         type, partner_id, document_serie_id)',
+         'Invoice Number must be unique per Company!'),
     ]
 
     @api.multi

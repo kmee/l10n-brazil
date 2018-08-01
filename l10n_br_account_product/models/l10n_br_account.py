@@ -28,17 +28,6 @@ class L10nBrAccountFiscalCategory(models.Model):
 
     purpose = fields.Selection(FISCAL_CATEGORY_PURPOSE, u'Finalidade')
 
-    financial_document_type_id = fields.Many2one(
-        comodel_name='financial.document.type',
-        string='Tipo de documento',
-        ondelete='restrict',
-    )
-    financial_account_id = fields.Many2one(
-        comodel_name='financial.account',
-        string='Conta financeira',
-        ondelete='restrict',
-        domain=[('type', '=', 'A')],
-    )
     account_move_template_id = fields.Many2one(
         comodel_name='sped.account.move.template',
         string='Modelo de partida dobrada',

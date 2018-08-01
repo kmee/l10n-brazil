@@ -23,50 +23,10 @@ from ..constantes import (
 
 class AccountPaymentTerm(models.Model):
     _inherit = 'account.payment.term'
-    _rec_name = 'nome_comercial'
 
     indPag = fields.Selection(
         [('0', u'Pagamento à Vista'), ('1', u'Pagamento à Prazo'),
          ('2', 'Outros')], 'Indicador de Pagamento', default='1')
-    sped_forma_pagamento_id = fields.Many2one(
-        comodel_name='sped.forma.pagamento',
-        string='Forma de pagamento',
-    )
-    nome_comercial = fields.Char(
-        string='Condição da pagamento',
-        compute='_compute_nome_comercial',
-    )
-
-    @api.multi
-    def _compute_nome_comercial(self):
-        for payment_term in self:
-            nome_comercial = ''
-            forma_pagamento = \
-                payment_term.sped_forma_pagamento_id.forma_pagamento
-            if forma_pagamento in FORMA_PAGAMENTO_CARTOES:
-                if forma_pagamento == \
-                    FORMA_PAGAMENTO_CARTAO_CREDITO:
-                    nome_comercial += '[Crédito '
-                elif forma_pagamento == \
-                    FORMA_PAGAMENTO_CARTAO_DEBITO:
-                    nome_comercial += '[Débito '
-
-                nome_comercial += \
-                    BANDEIRA_CARTAO_DICT[payment_term.bandeira_cartao]
-                nome_comercial += '] '
-            elif forma_pagamento == FORMA_PAGAMENTO_OUTROS:
-                nome_comercial += '['
-                nome_comercial += payment_term.sped_forma_pagamento_id.name
-                nome_comercial += '] '
-            elif forma_pagamento:
-                nome_comercial += '['
-                nome_comercial += \
-                    FORMA_PAGAMENTO_DICT[forma_pagamento]
-                nome_comercial += '] '
-
-            nome_comercial += payment_term.name
-
-            payment_term.nome_comercial = nome_comercial
 
 
 class AccountTaxTemplate(models.Model):

@@ -306,8 +306,9 @@
                             <group>
                                 <group>
                                     <field name="payment_term_required" invisible="1" />
-                                    <field name="payment_term" class="oe_inline" attrs="{'required': [('payment_term_required', '=', True)]}"/>
-
+                                    <field name="payment_term" class="oe_inline" attrs="{'required': [('payment_term_required', '=', True)]}" on_change="onchange_payment_term_date_invoice(payment_term, date_invoice)"/>
+                                    <field name="payment_mode_id" domain="[]"/>
+                                    <field name="type_nf_payment" attrs="{'required': [('nfe_version', '=', '4.00')]}"/>
                                     <field domain="[('partner_id.ref_companies', 'in', [company_id])]" name="partner_bank_id"/>
                                 </group>
                                 <group>
@@ -317,50 +318,22 @@
                                 </group>
                             </group>
                             <group string="Duplicatas">
-                                <!--<field nolabel="1" name="move_line_receivable_id">-->
-                                    <!--<tree string="Vencimentos">-->
-                                        <!--<field name="journal_id"/>-->
-                                        <!--<field name="period_id"/>-->
-                                        <!--<field name="date"/>-->
-                                        <!--<field name="date_maturity"/>-->
-                                        <!--<field name="name"/>-->
-                                        <!--<field name="ref"/>-->
-                                        <!--<field name="partner_id"/>-->
-                                        <!--<field name="move_id"/>-->
-                                        <!--<field name="debit"/>-->
-                                        <!--<field name="credit"/>-->
-                                        <!--<field name="reconcile_ref"/>-->
-                                    <!--</tree>-->
-                                <!--</field>-->
-                                <field name="duplicata_ids" colspan="4" nolabel="1" >
-                                    <tree string="Duplicatas" editable="bottom">
-                                        <field name="numero" />
-                                        <field name="data_vencimento" />
-                                        <field name="valor" sum="valor" />
+                                <field nolabel="1" name="move_line_receivable_id">
+                                    <tree string="Vencimentos">
+                                        <field name="journal_id"/>
+                                        <field name="period_id"/>
+                                        <field name="date"/>
+                                        <field name="date_maturity"/>
+                                        <field name="name"/>
+                                        <field name="ref"/>
+                                        <field name="partner_id"/>
+                                        <field name="move_id"/>
+                                        <field name="debit"/>
+                                        <field name="credit"/>
+                                        <field name="reconcile_ref"/>
                                     </tree>
                                 </field>
                             </group>
-                            <page string="Financeiro" name="financial_page">
-                            <group cols="4">
-                            <field name="financial_ids" colspan="4" nolabel="1">
-                                <tree decoration-info="state == 'draft'" decoration-muted="state == 'cancelled'">
-                                    <field name="date_business_maturity" string="Maturity"/>
-                                    <field name="date_document"/>
-                                    <field name="display_name"/>
-                                    <!--<field name="partner_id"/>-->
-                                    <!--<field name="document_type_id"/>-->
-                                    <!--<field name="document_number"/>-->
-                                    <field name="currency_id" groups="base.group_multi_currency"/>
-                                    <field name="amount_document" sum="Document"/>
-                                    <field name="amount_total" sum="Total"/>
-                                    <field name="date_payment"/>
-                                    <field name="amount_paid_document" sum="Paid"/>
-                                    <field name="amount_residual" sum="Residual"/>
-                                    <field name="state"/>
-                                </tree>
-                            </field>
-                            </group>
-                        </page>
                         </page>
                         <page string="Contábil">
                             <group col="4">
@@ -524,7 +497,7 @@
                                     <field name="fci" attrs="{'readonly': [('product_id','!=', False)]}"/>
                                     <field name="fiscal_category_id" required="1" domain="[('journal_type', '=', 'sale')]"/>
                                     <field name="fiscal_position" required="1" domain="[('fiscal_category_id', '=', fiscal_category_id)]"/>
-                                    <field name="account_move_template_id" required="1"/>
+                                    <field name="account_move_template_id"/>
                                     <field name="cfop_id"/>
                                     <field domain="[('journal_id', '=', parent.journal_id), ('type', '&lt;&gt;', 'view')]" name="account_id" on_change="onchange_account_id(product_id, parent.partner_id, parent.type, parent.fiscal_position,account_id, context)" groups="account.group_account_user"/>
                                     <field name="invoice_line_tax_id" context="{'type':parent.type}" domain="[('parent_id','=',False),('company_id', '=', parent.company_id)]" widget="many2many_tags"/>

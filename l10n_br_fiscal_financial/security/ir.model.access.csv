@@ -1,0 +1,5 @@
+group_id/id,model_id/id,name,id,perm_read,perm_create,perm_write,perm_unlink
+base.group_user,model_sped_documento_duplicata,Duplicatas do Documento Fiscal (suporte),sped_documento_duplicata_grupo_suporte,True,True,True,True
+account.group_account_user,model_sped_documento_duplicata,Duplicatas do Documento Fiscal (somente leitura),sped_documento_duplicata_grupo_fiscal_leitura,True,False,False,False
+account.group_account_invoice,model_sped_documento_duplicata,Duplicatas do Documento Fiscal (geral),sped_documento_duplicata_grupo_fiscal_geral,True,True,True,True
+account.group_account_manager,model_sped_documento_duplicata,Duplicatas do Documento Fiscal (gerente),sped_documento_duplicata_grupo_fiscal_gerente,True,True,True,True
