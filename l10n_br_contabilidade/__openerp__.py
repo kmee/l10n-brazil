@@ -17,17 +17,17 @@
         'mis_builder',
     ],
     'data': [
-        'views/menu_l10n_br_contabilidade.xml',
-        # 'security/ir.model.access.csv',
+        'security/ir.model.access.csv',
         #
-        # 'data/natureza_conta_data.xml',
+        'data/natureza_conta_data.xml',
         # # Menus
+        'views/menu_l10n_br_contabilidade.xml',
         # # Visão
         # 'views/account_account.xml',
         # 'views/account_account_report.xml',
         # 'views/account_account_report_line.xml',
         # 'views/account_journal.xml',
-        # 'views/account_natureza.xml',
+        'views/account_natureza.xml',
         # 'views/account_centro_custo.xml',
         # 'views/account_move.xml',
         # 'views/account_fechamento.xml',
