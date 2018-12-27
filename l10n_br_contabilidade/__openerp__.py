@@ -31,7 +31,6 @@
         'views/account_centro_custo.xml',
         # 'views/account_move.xml',
         'views/account_fechamento.xml',
-        # 'views/account_fiscalyear.xml',
         'views/account_account_type.xml',
         # 'views/account_reports.xml',
         'views/account_grupo.xml',
@@ -39,7 +38,7 @@
         # 'views/account_period.xml',
         'views/account_historico_padrao.xml',
         # 'views/account_mapeamento.xml',
-        # 'views/account_saldo.xml',
+        'views/account_saldo.xml',
     ],
     'demo': [
     ],
