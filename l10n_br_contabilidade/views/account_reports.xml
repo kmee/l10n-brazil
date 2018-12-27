@@ -13,7 +13,7 @@
                 id="menu_abgf_account_chart"
                 icon="STOCK_INDENT"
                 action="account.action_account_chart"
-                parent="abgf_contabilidade.abgf_menu_contas_contabilidade" />
+                parent="l10n_br_contabilidade.abgf_menu_contas_contabilidade" />
 
 
         <!-- Plano de Contas em PDF -->
@@ -24,7 +24,7 @@
                 id="menu_abgf_wizard_print_chart_account"
                 icon="STOCK_PRINT"
                 action="account_chart_report.action_print_chart_menu"
-                parent="abgf_contabilidade.abgf_menu_contas_contabilidade" />
+                parent="l10n_br_contabilidade.abgf_menu_contas_contabilidade" />
 
 
         <!-- Livro Razão -->
@@ -37,7 +37,7 @@
                 name="Livro Razão"
                 action="account_financial_report_webkit.action_account_general_ledger_menu_webkit"
                 sequence="10"
-                parent="abgf_contabilidade.abgf_menu_relatorios_contabilidade" />
+                parent="l10n_br_contabilidade.abgf_menu_relatorios_contabilidade" />
 
 
         <!-- Balancete -->
@@ -50,7 +50,7 @@
                 name="Balancete"
                 action="account_financial_report_webkit.action_account_trial_balance_menu_webkit"
                 sequence="20"
-                parent="abgf_contabilidade.abgf_menu_relatorios_contabilidade" />
+                parent="l10n_br_contabilidade.abgf_menu_relatorios_contabilidade" />
 
         <!-- Diários -->
         <record id="account_financial_report_webkit.action_account_print_journal_menu_webkit" model="ir.actions.act_window">
@@ -62,7 +62,7 @@
                 name="Diários"
                 action="account_financial_report_webkit.action_account_print_journal_menu_webkit"
                 sequence="30"
-                parent="abgf_contabilidade.abgf_menu_relatorios_contabilidade" />
+                parent="l10n_br_contabilidade.abgf_menu_relatorios_contabilidade" />
 
 
     </data>

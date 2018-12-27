@@ -4,7 +4,7 @@
 
 
 {
-    'name': 'ABGF Contabilidade',
+    'name': 'L10nBR Contabilidade',
     'category': 'ABGF',
     'license': 'AGPL-3',
     'author': 'ABGF, Odoo Community Association (OCA)',
@@ -16,29 +16,29 @@
         'account_chart_report',
     ],
     'data': [
-        'security/ir.model.access.csv',
-
-        'data/natureza_conta_data.xml',
-        # Menus
-        'views/menu_contabilidade_abgf.xml',
-        # Visão
-        'views/account_account.xml',
-        'views/account_account_report.xml',
-        'views/account_account_report_line.xml',
-        'views/account_journal.xml',
-        'views/account_natureza.xml',
-        'views/account_centro_custo.xml',
-        'views/account_move.xml',
-        'views/account_fechamento.xml',
-        'views/account_fiscalyear.xml',
-        'views/account_account_type.xml',
-        'views/account_reports.xml',
-        'views/account_grupo.xml',
-        'views/account_ramo.xml',
-        'views/account_period.xml',
-        'views/account_historico_padrao.xml',
-        'views/account_mapeamento.xml',
-        'views/account_saldo.xml',
+        # 'security/ir.model.access.csv',
+        #
+        # 'data/natureza_conta_data.xml',
+        # # Menus
+        # 'views/menu_contabilidade_abgf.xml',
+        # # Visão
+        # 'views/account_account.xml',
+        # 'views/account_account_report.xml',
+        # 'views/account_account_report_line.xml',
+        # 'views/account_journal.xml',
+        # 'views/account_natureza.xml',
+        # 'views/account_centro_custo.xml',
+        # 'views/account_move.xml',
+        # 'views/account_fechamento.xml',
+        # 'views/account_fiscalyear.xml',
+        # 'views/account_account_type.xml',
+        # 'views/account_reports.xml',
+        # 'views/account_grupo.xml',
+        # 'views/account_ramo.xml',
+        # 'views/account_period.xml',
+        # 'views/account_historico_padrao.xml',
+        # 'views/account_mapeamento.xml',
+        # 'views/account_saldo.xml',
     ],
     'demo': [
     ],
