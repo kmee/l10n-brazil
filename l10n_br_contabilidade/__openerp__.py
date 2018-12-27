@@ -23,8 +23,8 @@
         # # Menus
         'views/menu_l10n_br_contabilidade.xml',
         # # Visão
-        # 'views/account_account.xml',
         # 'views/account_account_report.xml',
+        'views/account_account.xml',
         'views/account_account_report_line.xml',
         # 'views/account_journal.xml',
         'views/account_natureza.xml',
