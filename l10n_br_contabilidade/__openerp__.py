@@ -14,13 +14,14 @@
     'depends': [
         'l10n_br_account_product',
         'account_chart_report',
+        'mis_builder',
     ],
     'data': [
+        'views/menu_l10n_br_contabilidade.xml',
         # 'security/ir.model.access.csv',
         #
         # 'data/natureza_conta_data.xml',
         # # Menus
-        # 'views/menu_contabilidade_abgf.xml',
         # # Visão
         # 'views/account_account.xml',
         # 'views/account_account_report.xml',
