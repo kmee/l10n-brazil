@@ -21,3 +21,4 @@ from . import account_saldo
 from . import account_divisao_resultado
 from . import mis_report_kpi
 from . import mis_report_style
+from . import mis_report
