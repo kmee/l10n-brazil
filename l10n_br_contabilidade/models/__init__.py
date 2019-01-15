@@ -23,3 +23,4 @@ from . import mis_report_kpi
 from . import mis_report_style
 from . import mis_report
 from . import mis_builder
+from . import res_partner
