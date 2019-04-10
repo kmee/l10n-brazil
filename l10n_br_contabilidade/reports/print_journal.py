@@ -84,8 +84,7 @@ def set_context(self, objects, data, ids, report_type=None):
         'start_period': start_period,
         'stop_period': stop_period,
         'chart_account': chart_account,
-        'moves': moves,
-    })
+        'moves': moves, })
 
     return super(PrintJournalWebkit, self).set_context(
         journals, data, new_ids, report_type=report_type)
