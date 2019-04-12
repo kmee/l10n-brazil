@@ -78,11 +78,11 @@
                     ## date
                     <div class="act_as_cell first_column" style="width: 60px;">${_('Date')}</div>
                     ## move
-                    <div class="act_as_cell" style="width: 100px;">${_('Entry')}</div>
+                    <div class="act_as_cell" style="width: 100px;">Sequência do Lançamento</div>
                     ## account code
                     <div class="act_as_cell" style="width: 95px;">${_('Account')}</div>
                     ## label
-                    <div class="act_as_cell" style="width: 550px;">${_('Label')}</div>
+                    <div class="act_as_cell" style="width: 550px;">Histórico</div>
                     ## debit
                     <div class="act_as_cell amount" style="width: 125px;">${_('Debit')}</div>
                     ## credit
@@ -110,7 +110,7 @@
                         ## date
                         <div class="act_as_cell first_column" style="width: 60px;">${formatLang(move.date, date=True) if new_move else ''}</div>
                         ## move
-                        <div class="act_as_cell" style="width: 100px;">${move.name if new_move else ''}</div>
+                        <div class="act_as_cell" style="width: 100px;">${move.sequencia if new_move else ''}</div>
                         ## account code
                         <div class="act_as_cell" style="width: 95px;">${line.account_id.code}</div>
                         ## label
