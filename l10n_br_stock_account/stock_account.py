@@ -8,7 +8,6 @@ from odoo import models, fields, api
 class StockPicking(models.Model):
     _inherit = 'stock.picking'
 
-    @api.model
     def _default_fiscal_category(self):
         company = self.env['res.company'].browse(self.env.user.company_id.id)
         return company.stock_fiscal_category_id
@@ -18,18 +17,18 @@ class StockPicking(models.Model):
         readonly=True, domain="[('state', '=', 'approved')]",
         states={'draft': [('readonly', False)]},
         default=_default_fiscal_category)
-    fiscal_position = fields.Many2one(
+    fiscal_position_id = fields.Many2one(
         'account.fiscal.position', u'Posição Fiscal',
         domain="[('fiscal_category_id','=',fiscal_category_id)]",
         readonly=True, states={'draft': [('readonly', False)]})
 
-    def _fiscal_position_map(self, result, **kwargs):
+    def _fiscal_position_map(self, **kwargs):
         ctx = dict(self.env.context)
         if ctx.get('fiscal_category_id'):
             kwargs['fiscal_category_id'] = ctx.get('fiscal_category_id')
         ctx.update({'use_domain': ('use_picking', '=', True)})
         return self.env['account.fiscal.position.rule'].with_context(
-            ctx).apply_fiscal_mapping(result, **kwargs)
+            ctx).apply_fiscal_mapping(**kwargs)
 
     @api.multi
     def onchange_fiscal_category_id(self, fiscal_category_id, partner_id,
@@ -113,7 +112,7 @@ class StockMove(models.Model):
         domain="[('type', '=', 'output'), ('journal_type', '=', 'sale')]",
         states={'draft': [('readonly', False)],
                 'sent': [('readonly', False)]})
-    fiscal_position = fields.Many2one(
+    fiscal_position_id = fields.Many2one(
         'account.fiscal.position', 'Fiscal Position', readonly=True,
         domain="[('fiscal_category_id','=',fiscal_category_id)]",
         states={'draft': [('readonly', False)],
@@ -123,8 +122,6 @@ class StockMove(models.Model):
         ctx = dict(self.env.context)
         kwargs['context'].update({'use_domain': ('use_picking', '=', True)})
         ctx.update({'use_domain': ('use_picking', '=', True)})
-        return self.env['account.fiscal.position.rule'].with_context(
-            ctx).apply_fiscal_mapping(result, **kwargs)
 
     @api.multi
     def onchange_product_id(self, product_id, location_id,
@@ -139,7 +136,7 @@ class StockMove(models.Model):
         result = {'value': {}}
         result['value']['invoice_state'] = context.get('parent_invoice_state')
 
-        if parent_fiscal_category_id and product_id and partner_id:
+        if parent_fiscal_category_id and self.product_id and self.partner_id:
 
             partner = self.env['res.partner'].browse(partner_id)
             obj_fp_rule = self.env['account.fiscal.position.rule']
@@ -160,11 +157,9 @@ class StockMove(models.Model):
                 'context': context
             }
 
-            result.update(self._fiscal_position_map(result, **kwargs))
+            result.update(self._fiscal_position_map(**kwargs))
 
-        result_super = super(StockMove, self).onchange_product_id(
-            product_id, location_id, location_dest_id, partner_id)
-
+        result_super = super(StockMove, self).onchange_product_id()
         if result_super.get('value'):
             result_super.get('value').update(result['value'])
         else:
@@ -175,82 +170,12 @@ class StockMove(models.Model):
     def onchange_fiscal_category_id(self, fiscal_category_id, partner_id,
                                     company_id):
 
-        result = {'value': {'fiscal_position': None}}
-
-        if not partner_id or not company_id or not fiscal_category_id:
-            return result
-
-        # TODO waiting migration super method to new api
-        partner_invoice_id = self.pool.get('res.partner').address_get(
-            self._cr, self._uid, [partner_id], ['invoice'])['invoice']
-        partner_shipping_id = self.pool.get('res.partner').address_get(
-            self._cr, self._uid, [partner_id], ['delivery'])['delivery']
-
-        kwargs = {
-            'partner_id': partner_id,
-            'partner_invoice_id': partner_invoice_id,
-            'partner_shipping_id': partner_shipping_id,
-            'company_id': company_id,
-            'context': dict(self.env.context),
-            'fiscal_category_id': fiscal_category_id,
-        }
-        return self._fiscal_position_map(result, **kwargs)
-
-    @api.model
-    def _get_invoice_line_vals(self, move, partner, inv_type):
-        result = super(StockMove, self)._get_invoice_line_vals(
-            move, partner, inv_type)
-        fiscal_position = move.fiscal_position or \
-            move.picking_id.fiscal_position
-        fiscal_category_id = move.fiscal_category_id or \
-            move.picking_id.fiscal_category_id
-
-        result['cfop_id'] = fiscal_position.cfop_id.id
-        result['fiscal_category_id'] = fiscal_category_id.id
-        result['fiscal_position'] = fiscal_position.id
-
-        # TODO este código é um fix pq no core nao se copia os impostos
-        ctx = dict(self.env.context)
-        ctx['fiscal_type'] = move.product_id.fiscal_type
-        ctx['partner_id'] = partner.id
-
-        # Required to compute_all in account.invoice.line
-        result['partner_id'] = partner.id
-
-        ctx['product_id'] = move.product_id.id
-
-        if inv_type in ('out_invoice', 'in_refund'):
-            ctx['type_tax_use'] = 'sale'
-            taxes = move.product_id.taxes_id
-        else:
-            ctx['type_tax_use'] = 'purchase'
-            taxes = move.product_id.supplier_taxes_id
-
-        if fiscal_position:
-            taxes = fiscal_position.with_context(ctx).map_tax(taxes)
-        result['invoice_line_tax_id'] = [[6, 0, taxes.ids]]
-
-        if fiscal_position:
-            account_id = result.get('account_id')
-            account_id = fiscal_position.map_account(account_id)
-
-        return result
-
-    @api.multi
-    def _picking_assign(self, move_ids, procurement_group,
-                        location_from, location_to):
-
-        result = super(StockMove, self)._picking_assign(
-            move_ids, procurement_group,
-            location_from, location_to)
-        if move_ids:
-            move = self.browse(move_ids)[0]
-            if move.picking_id:
-                picking_values = {
-                    'fiscal_category_id': move.fiscal_category_id.id,
-                    'fiscal_position': move.fiscal_position.id,
-                }
-                self.pool.get("stock.picking").write(
-                    move.picking_id.id,
-                    picking_values)
+    def _get_new_picking_values(self):
+        """ Prepares a new picking for this move as it could not be assigned to
+        another picking. This method is designed to be inherited. """
+        result = super(StockMove, self)._get_new_picking_values()
+        result.update({
+            'fiscal_category_id': self.fiscal_category_id.id,
+            'fiscal_position_id': self.fiscal_position_id.id,
+        })
         return result
