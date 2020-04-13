@@ -400,6 +400,27 @@ class DocumentAbstract(models.AbstractModel):
         inverse_name="document_id",
         string="Document Lines")
 
+    #
+    # Duplicatas e pagamentos
+    #
+    payment_term_id = fields.Many2one(
+        comodel_name='l10n_br_fiscal.payment.term',
+        string='Condição de pagamento',
+        ondelete='restrict',
+    )
+    financial_ids = fields.One2many(
+        comodel_name='l10n_br_fiscal.payment.line',
+        inverse_name='document_id',
+        string='Duplicatas',
+        copy=True,
+    )
+    fiscal_payment_ids = fields.One2many(
+        comodel_name='l10n_br_fiscal.payment',
+        inverse_name='document_id',
+        string='Pagamentos',
+        copy=True,
+    )
+
     @api.multi
     def name_get(self):
         return [(r.id, '{0} - Série: {1} - Número: {2}'.format(
