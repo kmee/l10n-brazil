@@ -97,6 +97,8 @@
         "wizards/document_cancel_wizard.xml",
         "wizards/document_correction_wizard.xml",
         "wizards/invalidate_number_wizard.xml",
+        'views/payment_view.xml',
+        'views/payment_term_view.xml',
 
         # Actions
         "views/l10n_br_fiscal_action.xml",
