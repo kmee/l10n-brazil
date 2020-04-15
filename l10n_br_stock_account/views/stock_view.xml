@@ -15,6 +15,7 @@
             </field>
         </record>
 
+    <!-- TODO - Model does not exist in registry.
         <record model="ir.ui.view"
                 id="l10n_br_stock_account_procurement_rule_inherit_form">
             <field name="name">
