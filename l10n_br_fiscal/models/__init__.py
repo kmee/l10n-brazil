@@ -67,6 +67,8 @@ from . import uom_uom
 from . import uom_uom_alternative
 from . import operation_dashboard
 from . import closing
+from . import payment_term_abstract
+from . import payment_term_line
 from . import payment_term
 from . import payment_line
 from . import payment
