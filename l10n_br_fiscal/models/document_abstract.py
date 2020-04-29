@@ -491,6 +491,18 @@ class DocumentAbstract(models.AbstractModel):
         if self.operation_id:
             self.operation_name = self.operation_id.name
 
+    @api.onchange("payment_term_id")
+    def _onchange_payment_term_id(self):
+        if self.payment_term_id:
+            self.fiscal_payment_ids = [(0, False, {
+                'amount': self.amount_total,
+                'payment_term_id': self.payment_term_id,
+                'line_ids': [payment.id for payment in self.payment_term_id.line_ids],
+            })]
+
+        for payment in self.fiscal_payment_ids:
+            payment._onchange_payment_term_id()
+
     @api.onchange("fiscal_payment_ids", "payment_term_id")
     def _onchange_fiscal_payment_ids(self):
         financial_ids = []
