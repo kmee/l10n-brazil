@@ -4,6 +4,7 @@
 
 from odoo.exceptions import UserError
 from odoo.tests import SavepointCase
+from odoo.exceptions import except_orm
 
 from ..constants.icms import ICMS_ORIGIN_TAX_IMPORTED
 
@@ -30,6 +31,12 @@ class TestFiscalDocumentGeneric(SavepointCase):
             "l10n_br_fiscal.demo_nfe_sn_nao_contribuinte"
         )
         cls.nfe_sn_export = cls.env.ref("l10n_br_fiscal.demo_nfe_sn_export")
+        self.demo_nfe_financial = self.env.ref(
+            'l10n_br_fiscal.demo_nfe_financial'
+        )
+        self.demo_nfe_raise_financial = self.env.ref(
+            'l10n_br_fiscal.demo_nfe_raise_financial'
+        )
 
     def test_nfe_same_state(self):
         """ Test NFe same state. """
@@ -488,6 +495,9 @@ class TestFiscalDocumentGeneric(SavepointCase):
                 " Operação Tributável com Alíquota Básica"
                 "from COFINS 3% for Venda de Contribuinte p/ Não Contribuinte.",
             )
+
+        self.nfe_not_taxpayer_pf.generate_financial()
+        self.nfe_not_taxpayer_pf.action_document_confirm()
 
     def test_nfe_export(self):
         """ Test NFe export. """
@@ -976,15 +986,3 @@ class TestFiscalDocumentGeneric(SavepointCase):
             self.nfe_same_state.fiscal_operation_id.return_fiscal_operation_id.id,
             "Error on creation return",
         )
-
-    def test_unlink_dummy_document(self):
-        """ Test Dummy Fiscal Document Unlink Restrictions """
-        dummy_document = self.env.ref("l10n_br_fiscal.fiscal_document_dummy")
-        with self.assertRaises(UserError):
-            dummy_document.unlink()
-
-    def test_unlink_dummy_document_line(self):
-        """ Test Dummy Fiscal Document Line Unlink Restrictions """
-        dummy_line = self.env.ref("l10n_br_fiscal.fiscal_document_line_dummy")
-        with self.assertRaises(UserError):
-            dummy_line.unlink()
