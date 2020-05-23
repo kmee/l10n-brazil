@@ -664,7 +664,7 @@
 
     <!-- NFe Test - Com onchanges -->
     <record id="demo_nfe_financial" model="l10n_br_fiscal.document">
-        <field name="operation_id" ref="l10n_br_fiscal.fo_venda"/>
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda"/>
         <field name="document_type_id" ref="l10n_br_fiscal.document_55"/>
         <field name="document_serie_id" ref="l10n_br_fiscal.document_55_serie_1"/>
         <field name="document_serie">1</field>
@@ -687,7 +687,7 @@
     <function model="l10n_br_fiscal.document" name="_onchange_partner_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_financial')]"/>
     </function>
-    <function model="l10n_br_fiscal.document" name="_onchange_operation_id">
+    <function model="l10n_br_fiscal.document" name="_onchange_fiscal_operation_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_financial')]"/>
     </function>
 
@@ -699,8 +699,8 @@
         <field name="price_unit">100</field>
         <field name="quantity">1</field>
         <field name="operation_type">out</field>
-        <field name="operation_id" ref="l10n_br_fiscal.fo_venda"/>
-        <field name="operation_line_id" ref="l10n_br_fiscal.fo_venda_venda"/>
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda"/>
+        <field name="fiscal_operation_line_id" ref="l10n_br_fiscal.fo_venda_venda"/>
     </record>
 
     <record id="demo_nfe_financial_line_1-2" model="l10n_br_fiscal.document.line">
@@ -711,8 +711,8 @@
         <field name="price_unit">100</field>
         <field name="quantity">1</field>
         <field name="operation_type">out</field>
-        <field name="operation_id" ref="l10n_br_fiscal.fo_venda"/>
-        <field name="operation_line_id" ref="l10n_br_fiscal.fo_venda_venda"/>
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda"/>
+        <field name="fiscal_operation_line_id" ref="l10n_br_fiscal.fo_venda_venda"/>
     </record>
 
     <function model="l10n_br_fiscal.document.line" name="_onchange_product_id_fiscal">
@@ -724,10 +724,10 @@
     <function model="l10n_br_fiscal.document.line" name="_onchange_ncm_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_financial_line_1-1')]"/>
     </function>
-    <function model="l10n_br_fiscal.document.line" name="_onchange_operation_id">
+    <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_operation_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_financial_line_1-1')]"/>
     </function>
-    <function model="l10n_br_fiscal.document.line" name="_onchange_operation_line_id">
+    <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_operation_line_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_financial_line_1-1')]"/>
     </function>
     <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_taxes">
@@ -743,10 +743,10 @@
     <function model="l10n_br_fiscal.document.line" name="_onchange_ncm_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_financial_line_1-2')]"/>
     </function>
-    <function model="l10n_br_fiscal.document.line" name="_onchange_operation_id">
+    <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_operation_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_financial_line_1-2')]"/>
     </function>
-    <function model="l10n_br_fiscal.document.line" name="_onchange_operation_line_id">
+    <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_operation_line_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_financial_line_1-2')]"/>
     </function>
     <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_taxes">
@@ -777,7 +777,7 @@
 
     <!-- NFe Test - Com onchanges -->
     <record id="demo_nfe_raise_financial" model="l10n_br_fiscal.document">
-        <field name="operation_id" ref="l10n_br_fiscal.fo_venda"/>
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda"/>
         <field name="document_type_id" ref="l10n_br_fiscal.document_55"/>
         <field name="document_serie_id" ref="l10n_br_fiscal.document_55_serie_1"/>
         <field name="document_serie">1</field>
@@ -800,7 +800,7 @@
     <function model="l10n_br_fiscal.document" name="_onchange_partner_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_raise_financial')]"/>
     </function>
-    <function model="l10n_br_fiscal.document" name="_onchange_operation_id">
+    <function model="l10n_br_fiscal.document" name="_onchange_fiscal_operation_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_raise_financial')]"/>
     </function>
 
@@ -812,8 +812,8 @@
         <field name="price_unit">100</field>
         <field name="quantity">1</field>
         <field name="operation_type">out</field>
-        <field name="operation_id" ref="l10n_br_fiscal.fo_venda"/>
-        <field name="operation_line_id" ref="l10n_br_fiscal.fo_venda_venda"/>
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda"/>
+        <field name="fiscal_operation_line_id" ref="l10n_br_fiscal.fo_venda_venda"/>
     </record>
 
     <record id="demo_nfe_line_raise_financial_1-2" model="l10n_br_fiscal.document.line">
@@ -824,8 +824,8 @@
         <field name="price_unit">100</field>
         <field name="quantity">1</field>
         <field name="operation_type">out</field>
-        <field name="operation_id" ref="l10n_br_fiscal.fo_venda"/>
-        <field name="operation_line_id" ref="l10n_br_fiscal.fo_venda_venda"/>
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda"/>
+        <field name="fiscal_operation_line_id" ref="l10n_br_fiscal.fo_venda_venda"/>
     </record>
 
     <function model="l10n_br_fiscal.document.line" name="_onchange_product_id_fiscal">
@@ -837,10 +837,10 @@
     <function model="l10n_br_fiscal.document.line" name="_onchange_ncm_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_line_raise_financial_1-1')]"/>
     </function>
-    <function model="l10n_br_fiscal.document.line" name="_onchange_operation_id">
+    <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_operation_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_line_raise_financial_1-1')]"/>
     </function>
-    <function model="l10n_br_fiscal.document.line" name="_onchange_operation_line_id">
+    <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_operation_line_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_line_raise_financial_1-1')]"/>
     </function>
     <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_taxes">
@@ -856,10 +856,10 @@
     <function model="l10n_br_fiscal.document.line" name="_onchange_ncm_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_line_raise_financial_1-2')]"/>
     </function>
-    <function model="l10n_br_fiscal.document.line" name="_onchange_operation_id">
+    <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_operation_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_line_raise_financial_1-2')]"/>
     </function>
-    <function model="l10n_br_fiscal.document.line" name="_onchange_operation_line_id">
+    <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_operation_line_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_line_raise_financial_1-2')]"/>
     </function>
     <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_taxes">
@@ -890,7 +890,7 @@
 
     <!-- NFe Test - Valor superior -->
     <record id="demo_nfe_financial_valor_superior" model="l10n_br_fiscal.document">
-        <field name="operation_id" ref="l10n_br_fiscal.fo_venda"/>
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda"/>
         <field name="document_type_id" ref="l10n_br_fiscal.document_55"/>
         <field name="document_serie_id" ref="l10n_br_fiscal.document_55_serie_1"/>
         <field name="document_serie">1</field>
@@ -913,7 +913,7 @@
     <function model="l10n_br_fiscal.document" name="_onchange_partner_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_financial_valor_superior')]"/>
     </function>
-    <function model="l10n_br_fiscal.document" name="_onchange_operation_id">
+    <function model="l10n_br_fiscal.document" name="_onchange_fiscal_operation_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_financial_valor_superior')]"/>
     </function>
 
@@ -925,8 +925,8 @@
         <field name="price_unit">100</field>
         <field name="quantity">1</field>
         <field name="operation_type">out</field>
-        <field name="operation_id" ref="l10n_br_fiscal.fo_venda"/>
-        <field name="operation_line_id" ref="l10n_br_fiscal.fo_venda_venda"/>
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda"/>
+        <field name="fiscal_operation_line_id" ref="l10n_br_fiscal.fo_venda_venda"/>
     </record>
 
     <record id="demo_nfe_line_financial_valor_superior_1-2" model="l10n_br_fiscal.document.line">
@@ -937,8 +937,8 @@
         <field name="price_unit">100</field>
         <field name="quantity">1</field>
         <field name="operation_type">out</field>
-        <field name="operation_id" ref="l10n_br_fiscal.fo_venda"/>
-        <field name="operation_line_id" ref="l10n_br_fiscal.fo_venda_venda"/>
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda"/>
+        <field name="fiscal_operation_line_id" ref="l10n_br_fiscal.fo_venda_venda"/>
     </record>
 
     <function model="l10n_br_fiscal.document.line" name="_onchange_product_id_fiscal">
@@ -950,10 +950,10 @@
     <function model="l10n_br_fiscal.document.line" name="_onchange_ncm_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_line_financial_valor_superior_1-1')]"/>
     </function>
-    <function model="l10n_br_fiscal.document.line" name="_onchange_operation_id">
+    <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_operation_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_line_financial_valor_superior_1-1')]"/>
     </function>
-    <function model="l10n_br_fiscal.document.line" name="_onchange_operation_line_id">
+    <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_operation_line_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_line_financial_valor_superior_1-1')]"/>
     </function>
     <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_taxes">
@@ -969,10 +969,10 @@
     <function model="l10n_br_fiscal.document.line" name="_onchange_ncm_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_line_financial_valor_superior_1-2')]"/>
     </function>
-    <function model="l10n_br_fiscal.document.line" name="_onchange_operation_id">
+    <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_operation_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_line_financial_valor_superior_1-2')]"/>
     </function>
-    <function model="l10n_br_fiscal.document.line" name="_onchange_operation_line_id">
+    <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_operation_line_id">
         <value eval="[ref('l10n_br_fiscal.demo_nfe_line_financial_valor_superior_1-2')]"/>
     </function>
     <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_taxes">
