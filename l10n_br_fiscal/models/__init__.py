@@ -83,3 +83,5 @@ from . import payment_term_line
 from . import payment_term
 from . import payment_line
 from . import payment
+from . import payment_mode
+from . import payment_condition
