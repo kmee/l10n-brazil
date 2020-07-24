@@ -1,5 +1,10 @@
+# -*- coding: utf-8 -*-
+#
 # Copyright 2020 KMEE INFORMATICA LTDA
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
+#
+
+from __future__ import division, print_function, unicode_literals
 
 import base64
 import gzip
@@ -10,8 +15,8 @@ import tempfile
 from datetime import datetime
 
 from erpbrasil.assinatura import certificado as cert
-from erpbrasil.edoc.mde import MDe as edoc_nfe
-from erpbrasil.edoc.mde import TransmissaoMDE as TransmissaoSOAP
+from erpbrasil.edoc.nfe import NFe as edoc_nfe
+from erpbrasil.transmissao import TransmissaoSOAP
 from lxml import objectify
 from requests import Session
 
@@ -178,7 +183,7 @@ class DFe(models.Model):
 
             self.validate_document_configuration(self.company_id)
 
-            nfe_result = self.download_nfe(self.company_id, mdfe_id.document_key)
+            nfe_result = self.download_nfe(self.company_id, mdfe_id.key)
 
             if nfe_result['code'] == '138':
 
@@ -214,15 +219,6 @@ class DFe(models.Model):
         for consulta_id in consulta_ids:
             if consulta_id.use_cron:
                 consulta_id.search_documents(raise_error=False)
-
-    @staticmethod
-    def _mask_cnpj(cnpj):
-        if cnpj:
-            val = re.sub('[^0-9]', '', cnpj)
-            if len(val) == 14:
-                cnpj = "%s.%s.%s/%s-%s" % (val[0:2], val[2:5], val[5:8],
-                                           val[8:12], val[12:14])
-        return cnpj
 
     @api.multi
     def search_documents(self, context=None, raise_error=True):
@@ -282,8 +278,7 @@ class DFe(models.Model):
                     for nfe in nfe_result['list_nfe']:
                         exists_nsu = env_mdfe.search([
                             ('nsu', '=', nfe['NSU']),
-                            # TODO: Verificar se formatação dos dois campos NSU
-                            #  equivalem
+                            # TODO: Verificar se formatação dos dois campos NSU equivalem
                             ('company_id', '=', self.company_id.id),
                         ])
 
@@ -300,10 +295,11 @@ class DFe(models.Model):
                         root = objectify.fromstring(nfe_xml)
                         self.last_nsu = nfe['NSU']
 
-                        if nfe['schema'] == 'procNFe_v3.10.xsd' and not exists_nsu:
+                        if nfe['schema'] == 'procNFe_v3.10.xsd' and \
+                            not exists_nsu:
                             chave_nfe = root.protNFe.infProt.chNFe
                             exists_chnfe = env_mdfe.search(
-                                [('document_key', '=', chave_nfe)]).id
+                                [('key', '=', chave_nfe)]).id
 
                             if not exists_chnfe:
                                 cnpj_forn = record._mask_cnpj(
@@ -314,8 +310,8 @@ class DFe(models.Model):
                                     [('cnpj_cpf', '=', cnpj_forn)])
 
                                 mdfe_dict = {
-                                    'document_number': root.NFe.infNFe.ide.nNF,
-                                    'document_key': chave_nfe,
+                                    'number': root.NFe.infNFe.ide.nNF,
+                                    'key': chave_nfe,
                                     'nsu': nfe['NSU'],
                                     # 'fornecedor': root.xNome,
                                     'operation_type': str(root.NFe.infNFe.ide.
@@ -365,10 +361,11 @@ class DFe(models.Model):
                                         'dfe_id': record.id,
                                     })
 
-                        elif nfe['schema'] == 'resNFe_v1.01.xsd' and not exists_nsu:
+                        elif nfe['schema'] == 'resNFe_v1.01.xsd' and \
+                            not exists_nsu:
                             chave_nfe = root.chNFe
                             exists_chnfe = env_mdfe.search([
-                                ('document_key', '=', chave_nfe)
+                                ('key', '=', chave_nfe)
                             ]).id
 
                             if not exists_chnfe:
@@ -382,7 +379,7 @@ class DFe(models.Model):
 
                                 mdfe_dict = {
                                     # 'number': root.NFe.infNFe.ide.nNF,
-                                    'document_key': chave_nfe,
+                                    'key': chave_nfe,
                                     'nsu': nfe['NSU'],
                                     'fornecedor': root.xNome,
                                     'operation_type': str(root.tpNF),
@@ -439,11 +436,13 @@ class DFe(models.Model):
                     self.write({'recipient_xml_ids': [(6, 0, xml_ids)]})
 
                 else:
-                    if not nfe_result.get('code') and not nfe_result.get('message'):
+                    if not nfe_result.get('code') and not \
+                        nfe_result.get('message'):
                         raise models.ValidationError(_(
                             'The service returned an incomprehensible answer.'
                             ' Check the handling of the service response'
                         ))
+
                     raise models.ValidationError('{} - {}'.format(
                         nfe_result.get('code', '???'),
                         nfe_result.get('message', ''))
@@ -465,7 +464,7 @@ class DFe(models.Model):
             raise orm.except_orm(_('Validation!'), _(error_msg))
 
     @staticmethod
-    def send_event(company_id, nfe_key, method):
+    def send_event(self, company_id, nfe_key, method):
         processor = _processador(company_id, force_ambiente=False)
         cnpj_partner = re.sub('[^0-9]', '', company_id.cnpj_cpf)
         result = {}

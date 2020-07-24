@@ -1,10 +1,20 @@
+# -*- coding: utf-8 -*-
+#
 # Copyright 2020 KMEE INFORMATICA LTDA
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
+#
+
+from __future__ import division, print_function, unicode_literals
 
 import base64
+import logging
+
 from lxml import objectify
 
 from odoo import _, api, models
+
+_logger = logging.getLogger(__name__)
+
 from odoo.addons.l10n_br_fiscal.constants.mdfe import (
     SIT_MANIF_PENDENTE,
     SIT_MANIF_CIENTE,
@@ -21,10 +31,12 @@ class MDFe(models.Model):
     def action_import_document(self):
         self.ensure_one()
         document_id = self.dfe_id.download_documents(mdfe_ids=self)
+
         return {
             "name": "Download Documents",
             "view_mode": "form",
             "view_type": 'tree',
+            # "view_id": view_id,
             "res_id": document_id.id,
             "res_model": "l10n_br_fiscal.document",
             "type": "ir.actions.act_window",
@@ -33,6 +45,7 @@ class MDFe(models.Model):
 
     @api.multi
     def action_salva_xml(self):
+
         attachment_id = self.action_import_document()
         return self.download_attachment(attachment_id)
 
@@ -52,9 +65,10 @@ class MDFe(models.Model):
         """
         for record in self:
             record.dfe_id.validate_document_configuration(record.company_id)
+
             nfe_result = record.dfe_id.send_event(
                 record.company_id,
-                record.document_key,
+                record.key,
                 operation
             )
             if nfe_result["code"] in valid_codes:
@@ -62,6 +76,7 @@ class MDFe(models.Model):
             else:
                 raise models.ValidationError('{} - {}'.format(
                     nfe_result["code"], nfe_result["message"]))
+
         return True
 
     @api.multi
@@ -98,21 +113,29 @@ class MDFe(models.Model):
 
     @api.multi
     def action_download_all_xmls(self):
+
         if len(self) == 1:
             if self.state == SIT_MANIF_PENDENTE[0]:
                 self.action_ciencia_emissao()
+
             attachment_id = self.action_download_xml()
             # TODO: Message post de Download concluído no formulário do MDF-e
             # TODO: Exibir conversação na MDF-e
             return self.download_attachment(attachment_id)
+
         attachments = []
+
         for record in self:
             # TODO: Message post de Download concluído no formulário do MDF-e
             # TODO: Exibir conversação na MDF-e
             attachment = record.action_download_xml()
             attachments.append(attachment)
+
         built_attachment = self.env["l10n_br_fiscal.attachment"].create([])
-        attachment_id = built_attachment.build_compressed_attachment(attachments)
+
+        attachment_id = built_attachment. \
+            build_compressed_attachment(attachments)
+
         return self.download_attachment(attachment_id)
 
     @api.multi
@@ -121,10 +144,12 @@ class MDFe(models.Model):
             record.dfe_id.validate_document_configuration(record.company_id)
             nfe_result = record.dfe_id.download_nfe(
                 record.company_id,
-                record.document_key
+                record.key
             )
+
             if nfe_result["code"] == "138":
-                file_name = "NFe%s.xml" % record.document_key
+
+                file_name = "NFe%s.xml" % record.key
                 return record.env["ir.attachment"].create(
                     {
                         "name": file_name,
@@ -148,21 +173,24 @@ class MDFe(models.Model):
     @api.multi
     def action_import_xml(self):
         for record in self:
-            record.dfe_id.validate_document_configuration(record.company_id)
-            download = record.dfe_id.download_nfe(
-                record.company_id, record.document_key
-            )
-            if download["code"] == "138" and download.get('nfe'):
-                edoc = self.env['l10n_br_fiscal.document'].import_xml(
-                    download.get('nfe'),
-                    dry_run=False,
-                )
+            record.dfe_id. \
+                validate_document_configuration(record.company_id)
+            nfe_result = record.dfe_id. \
+                download_nfe(record.company_id, record.key)
+
+            if nfe_result["code"] == "138":
+                nfe = objectify.fromstring(nfe_result["nfe"])
+                documento = self.env["l10n_br_fiscal.document"].new()
+                documento.modelo = nfe.NFe.infNFe.ide.mod.text
+                dados = documento.le_nfe(xml=nfe_result["nfe"])
+                record.document_id = dados
                 return {
                     "name": _("Associar Pedido de Compras"),
                     "view_mode": "form",
                     "view_type": "form",
-                    "view_id": self.env.ref("l10n_br_fiscal.document_form").id,
-                    "res_id": edoc.id,
+                    "view_id": self.env.ref(
+                        "sped_nfe.sped_documento_ajuste_recebimento_form").id,
+                    "res_id": dados.id,
                     "res_model": "l10n_br_fiscal.document",
                     "type": "ir.actions.act_window",
                     "target": "new",
@@ -171,5 +199,5 @@ class MDFe(models.Model):
                 }
             else:
                 raise models.ValidationError(_(
-                    download["code"] + ' - ' + download["message"])
+                    nfe_result["code"] + ' - ' + nfe_result["message"])
                 )
