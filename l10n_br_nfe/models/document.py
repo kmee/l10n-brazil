@@ -191,6 +191,29 @@ class NFe(spec_models.StackedModel):
         default='9',
     )
 
+    nfe40_vBC = fields.Monetary(
+        related='amount_icms_base')
+
+    nfe40_vICMS = fields.Monetary(
+        related='amount_icms_value')
+
+    nfe40_vPIS = fields.Monetary(
+        related='amount_pis_value')
+
+    nfe40_vIPI = fields.Monetary(
+        related='amount_ipi_value')
+
+    nfe40_vCOFINS = fields.Monetary(
+        related='amount_cofins_value')
+
+    nfe40_xLgr = fields.Char(
+        related='company_street'
+    )
+
+    nfe40_choice6 = fields.Selection(
+        compute='_compute_choice6'
+    )
+
     nfe40_tpEmis = fields.Selection(
         default='1',
     )
@@ -227,6 +250,10 @@ class NFe(spec_models.StackedModel):
                 'in': '0',
             }
             rec.nfe40_tpNF = operation_2_tpNF[rec.fiscal_operation_type]
+
+    def _compute_choice6(self):
+        for record in self:
+            record.nfe40_choice6 = 'nfe40_CNPJ'
 
     def _inverse_nfe40_tpNF(self):
         for rec in self:
