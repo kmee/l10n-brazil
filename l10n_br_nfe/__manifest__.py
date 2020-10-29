@@ -26,10 +26,9 @@
         "views/nfe_document_view.xml",
         "views/nfe_document_line_view.xml",
         "views/res_config_settings_view.xml",
-
+        "views/payment_view.xml",
         # Action
         "views/nfe_action.xml",
-
         # Menu
         "views/nfe_menu.xml",
     ],

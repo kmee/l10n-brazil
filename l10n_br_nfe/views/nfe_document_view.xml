@@ -49,11 +49,6 @@
                   <field name="nfe40_vol"/>
               </group>
           </page>
-          <page name="finance" position="inside">
-              <group>
-                  <field name="nfe40_detPag"/>
-              </group>
-          </page>
           <field name="state_fiscal" position="after">
               <field name="nfe40_infAdic"/>
           </field>
@@ -67,19 +62,6 @@
           <form>
               <group>
                   <field name="nfe40_infCpl"/>
-              </group>
-          </form>
-      </field>
-  </record>
-
-  <record id="nfe_40_detpag_form" model="ir.ui.view">
-      <field name="name">nfe.40.detpag.form</field>
-      <field name="model">nfe.40.detpag</field>
-      <field name="arch" type="xml">
-          <form>
-              <group>
-                  <field name="nfe40_tPag"/>
-                  <field name="nfe40_vPag"/>
               </group>
           </form>
       </field>
