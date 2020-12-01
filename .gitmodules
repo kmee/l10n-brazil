@@ -1,0 +1,20 @@
+[submodule ".branches/purchase"]
+	path = .branches/purchase
+	url = https://github.com/kmee/l10n-brazil.git
+	branch = 12.0-mig-l10n_br_purchase
+[submodule ".branches/contract"]
+	path = .branches/contract
+	url = https://github.com/odoo-brazil/l10n-brazil.git
+	branch = feature/12.0-l10n_br_contract
+[submodule ".branches/website_sale_delivery"]
+	path = .branches/website_sale_delivery
+	url = https://github.com/kmee/l10n-brazil.git
+	branch = feature/l10n_br_delivery
+[submodule ".branches/delivery"]
+	path = .branches/delivery
+	url = https://github.com/odoo-brazil/l10n-brazil.git
+	branch = mig-12.0-l10n_br_delivery
+[submodule ".branches/nfse_paulistana"]
+	path = .branches/nfse_paulistana
+	url = https://github.com/odoo-brazil/l10n-brazil.git
+	branch = 12.0-nfse-paulistana
