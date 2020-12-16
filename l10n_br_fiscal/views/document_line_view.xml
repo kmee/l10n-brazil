@@ -102,6 +102,28 @@
               </group>
             </group>
           </page>
+          <page name="inventory_cost" string="Inventory Cost">
+              <group>
+                <group>
+                  <field name="exclude_icms"/>
+                  <field name="exclude_icms_st"/>
+                  <field name="exclude_ipi"/>
+                  <field name="exclude_insurance"/>
+                </group>
+                <group>
+                  <field name="exclude_pis"/>
+                  <field name="exclude_cofins"/>
+                  <field name="exclude_freight"/>
+                  <field name="exclude_other_costs"/>
+                </group>
+              </group>
+              <group>
+                  <label for="amount_total_cost"/>
+                  <div>
+                      <field name="amount_total_cost"/>
+                  </div>
+              </group>
+          </page>
           <page name="fiscal_line_extra_info" string="Extra Info"/>
         </notebook>
       </form>
