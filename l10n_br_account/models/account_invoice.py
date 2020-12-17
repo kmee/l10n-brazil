@@ -23,7 +23,11 @@ FISCAL_TYPE_REFUND = {
     'in': ['sale_return', 'out_return'],
 }
 
-SHADOWED_FIELDS = ['partner_id', 'company_id', 'date', 'currency_id']
+SHADOWED_FIELDS = [
+    'partner_id', 'company_id', 'date', 'currency_id',
+    'payment_term_id', 'financial_ids', 'fiscal_payment_ids',
+    'journal_id', 'account_id', 'move_id',
+]
 
 
 class AccountInvoice(models.Model):
