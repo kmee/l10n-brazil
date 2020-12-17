@@ -255,6 +255,8 @@ class SaleOrder(models.Model):
         for invoice_id in inv_ids:
             invoice_created_by_super = self.env[
                 'account.invoice'].browse(invoice_id)
+            invoice_created_by_super.fiscal_document_id.\
+                _onchange_fiscal_operation_id()
 
             # Identify how many Document Types exist
             for inv_line in invoice_created_by_super.invoice_line_ids:
