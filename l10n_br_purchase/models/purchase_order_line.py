@@ -53,8 +53,8 @@ class PurchaseOrderLine(models.Model):
 
     tax_framework = fields.Selection(
         selection=TAX_FRAMEWORK,
-        related="order_id.company_id.tax_framework",
         string='Tax Framework',
+        compute='_compute_tax_framework',
     )
 
     @api.depends(
@@ -78,6 +78,14 @@ class PurchaseOrderLine(models.Model):
                 'price_subtotal': price_subtotal,
                 'price_total': price_subtotal + price_tax,
             })
+
+    @api.depends('fiscal_operation_type')
+    def _compute_tax_framework(self):
+        for record in self:
+            if record.fiscal_operation_type == 'out':
+                record.tax_framework = record.company_id.tax_framework
+            elif record.fiscal_operation_type == 'in':
+                record.tax_framework = record.partner_id.tax_framework
 
     @api.onchange('product_qty', 'product_uom')
     def _onchange_quantity(self):
