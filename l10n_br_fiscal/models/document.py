@@ -120,6 +120,10 @@ class Document(models.Model):
                 line.freight_value for line in record.line_ids)
             record.amount_total = sum(
                 line.amount_total for line in record.line_ids)
+            record.amount_financial = sum(
+                line.amount_financial for line in record.line_ids)
+            record.amount_tax_withholding = sum(
+                line.amount_tax_withholding for line in record.line_ids)
 
     @api.depends("amount_total", "fiscal_payment_ids")
     def _compute_payment_change_value(self):
@@ -591,6 +595,15 @@ class Document(models.Model):
 
     amount_total = fields.Monetary(
         string='Amount Total',
+        compute='_compute_amount',
+    )
+
+    amount_tax_withholding = fields.Monetary(
+        string="Amount Tax Withholding",
+        compute='_compute_amount')
+
+    amount_financial = fields.Monetary(
+        string='Amount Financial',
         compute='_compute_amount',
     )
 
