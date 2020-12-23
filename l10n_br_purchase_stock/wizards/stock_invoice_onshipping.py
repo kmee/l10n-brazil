@@ -34,4 +34,9 @@ class StockInvoiceOnshipping(models.TransientModel):
         if move.purchase_line_id:
             values['purchase_line_id'] = move.purchase_line_id.id
 
+            values['invoice_line_tax_ids'] = [
+                (6, 0, self.env['l10n_br_fiscal.tax'].browse(
+                    values['fiscal_tax_ids'][0][2]
+                ).account_taxes(user_type='purchase').ids)
+            ]
         return values
