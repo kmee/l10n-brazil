@@ -19,4 +19,6 @@ class PurchaseOrder(models.Model):
     def _prepare_picking(self):
         values = super()._prepare_picking()
         values.update(self._prepare_br_fiscal_dict())
+        if self.fiscal_operation_id:
+            values['invoice_state'] = self.fiscal_operation_id.invoice_state
         return values
