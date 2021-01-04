@@ -755,7 +755,7 @@ class NFe(spec_models.StackedModel):
                                        'nfe40_enderDest', 'nfe40_infRespTec']:
                 return False
         if field_name == 'nfe40_ISSQNtot' and all(
-                t == 'consu' for t in
+                t in ['consu', 'product'] for t in
                 self.nfe40_det.mapped('product_id.type')
         ):
             self[field_name] = False
