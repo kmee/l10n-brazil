@@ -248,6 +248,7 @@ class NFe(spec_models.StackedModel):
     partner_zip = fields.Char(string="CEP")
     partner_phone = fields.Char(string="Telefone")
     partner_is_company = fields.Boolean(string="É uma empresa")
+    nfe40_vFrete = fields.Monetary(related='amount_freight_value')
 
     @api.depends('line_ids')
     def _compute_amount(self):
