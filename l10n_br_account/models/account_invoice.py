@@ -233,3 +233,11 @@ class AccountInvoice(models.Model):
                         tax_grouped[key]['amount'] += val['amount']
                         tax_grouped[key]['base'] += round_curr(val['base'])
         return tax_grouped
+
+    @api.model
+    def _prepare_refund(self, invoice, date_invoice=None, date=None,
+                        description=None, journal_id=None):
+        values = super()._prepare_refund(
+            invoice, date_invoice, date, description, journal_id)
+        values['fiscal_operation_id'] = self.fiscal_operation_id.id
+        return values
