@@ -71,7 +71,8 @@ class AccountInvoiceRefund(models.TransientModel):
 
                     if (
                         not self.force_fiscal_operation_id
-                        and not line.fiscal_operation_id.refund_operation_id
+                        and
+                        not line.fiscal_operation_id.return_fiscal_operation_id
                     ):
                         raise UserError(
                             _(
