@@ -329,24 +329,14 @@
                 <div class="col-1 rotulo br">
                     CSLL
                 </div>
-                <div class="col-1 linha br centro">
-                    <t t-if="doc.amount_csll_value">
-                       <span t-field="doc.amount_csll_value" />
-                    </t>
-                    <t t-else="">
-                       <span t-field="doc.amount_csll_ret_value" />
-                    </t>
+                <div class="col linha br centro">
+                    <span t-field="doc.line_ids[0].irpj_wh_value" />
                 </div>
                 <div class="col-1 rotulo br">
                     IR
                 </div>
-                <div class="col-1 linha br centro">
-                    <t t-if="doc.amount_csll_value">
-                       <span t-field="doc.amount_csll_value" />
-                    </t>
-                    <t t-else="">
-                       <span t-field="doc.amount_csll_ret_value" />
-                    </t>
+                <div class="col linha br centro">
+                    <span t-field="doc.line_ids[0].inss_wh_value" />
                 </div>
                 <div class="col-1 rotulo br">
                     INSS
