@@ -18,3 +18,7 @@
 	path = .branches/nfse_paulistana
 	url = https://github.com/odoo-brazil/l10n-brazil.git
 	branch = 12.0-nfse-paulistana
+[submodule ".branches/banco_inter"]
+	path = .branches/banco_inter
+	url = https://github.com/kmee/l10n-brazil.git
+	branch = feature/12.0-api-banco-inter
