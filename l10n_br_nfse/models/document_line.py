@@ -61,6 +61,7 @@ class DocumentLine(models.Model):
                 lambda r: r.city_id == company_city_id)
             if city_id:
                 self.city_taxation_code_id = city_id
+                self.issqn_fg_city_id = company_city_id
 
     def _compute_taxes(self, taxes, cst=None):
         discount_value = self.discount_value
