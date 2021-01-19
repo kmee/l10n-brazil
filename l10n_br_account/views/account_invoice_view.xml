@@ -36,6 +36,7 @@
                     <field name="key" invisible="1"/>
                     <field name="document_serie_id" invisible="1"/>
                     <field name="document_serie" invisible="1"/>
+                    <field name="fiscal_document_id" invisible="1"/>
                 </group>
             </xpath>
             <notebook position="inside">
@@ -82,6 +83,7 @@
                     <field name="key" invisible="1"/>
                     <field name="document_serie_id" invisible="1"/>
                     <field name="document_serie" invisible="1"/>
+                    <field name="fiscal_document_id" invisible="1"/>
                 </group>
             </xpath>
             <notebook position="inside">
