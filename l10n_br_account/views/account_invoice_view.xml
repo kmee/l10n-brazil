@@ -78,11 +78,10 @@
                     <field name="ind_final" invisible="1"/>
                     <field name="ind_pres" invisible="1"/>
                     <field name="issuer" invisible="1"/>
-                    <field name="document_type_id" invisible="1"/>
+                    <field name="document_type_id"/>
                     <field name="key" invisible="1"/>
                     <field name="document_serie_id" invisible="1"/>
                     <field name="document_serie" invisible="1"/>
-                    <field name="fiscal_document_id" invisible="1"/>
                 </group>
             </xpath>
             <notebook position="inside">
