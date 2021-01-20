@@ -79,6 +79,11 @@ class AccountInvoice(models.Model):
         default=lambda self: self.env.ref(
             'l10n_br_fiscal.fiscal_document_dummy'),
     )
+    fiscal_operation_type = fields.Selection(
+        related='fiscal_document_id.fiscal_operation_type',
+        readonly=False,
+        copy=True,
+    )
 
     @api.multi
     @api.depends('move_id.line_ids')
