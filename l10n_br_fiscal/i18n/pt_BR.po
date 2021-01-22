@@ -5597,7 +5597,7 @@ msgstr "Indica a sequência da carta de correcão"
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_company__industry_type
 msgid "Industry Type"
-msgstr "Tipo de indústria"
+msgstr ""
 
 #. module: l10n_br_fiscal
 #: selection:l10n_br_fiscal.document.status.wizard,state:0
