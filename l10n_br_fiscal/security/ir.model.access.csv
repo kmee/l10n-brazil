@@ -1,6 +1,6 @@
 "id","name","model_id:id","group_id:id","perm_read","perm_write","perm_create","perm_unlink"
 "l10n_br_fiscal_cnae_user","CNAE for User","model_l10n_br_fiscal_cnae","l10n_br_fiscal.group_user",1,0,0,0
-"l10n_br_fiscal_cnae_manager","CNAE for Manager","model_l10n_br_fiscal_cnae","l10n_br_fiscal.group_manager",1,0,0,0
+"l10n_br_fiscal_cnae_manager","CNAE for Manager","model_l10n_br_fiscal_cnae","l10n_br_fiscal.group_manager",1,0,1,1
 "l10n_br_fiscal_cnae_maintenance","CNAE for Data Maintenance","model_l10n_br_fiscal_cnae","l10n_br_fiscal.group_data_maintenance",1,1,1,1
 "l10n_br_fiscal_cfop_user","Fiscal CFOP for User","model_l10n_br_fiscal_cfop","l10n_br_fiscal.group_user",1,0,0,0
 "l10n_br_fiscal_cfop_manager","Fiscal CFOP for Manager","model_l10n_br_fiscal_cfop","l10n_br_fiscal.group_manager",1,0,0,0
