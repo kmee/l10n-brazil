@@ -7107,7 +7107,7 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: selection:res.company,profit_calculation:0
 msgid "Presumed"
-msgstr ""
+msgstr "Presumido"
 
 #. module: l10n_br_fiscal
 #: selection:l10n_br_fiscal.document.line,icms_base_type:0
@@ -7286,7 +7286,7 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_company__profit_calculation
 msgid "Profit Calculation"
-msgstr ""
+msgstr "Cálculo de Lucros"
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__protocolo_autorizacao
@@ -7418,7 +7418,7 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: selection:res.company,profit_calculation:0
 msgid "Real"
-msgstr ""
+msgstr "Real"
 
 #. module: l10n_br_fiscal
 #: selection:l10n_br_fiscal.document.event,state:0
