@@ -183,7 +183,7 @@ msgstr "Operação Fiscal de Estoque"
 #. module: l10n_br_stock_account
 #: model:ir.model.fields,field_description:l10n_br_stock_account.field_res_company__stock_in_fiscal_operation_id
 msgid "Stock In Fiscal Operation"
-msgstr "Operação Fiscal no Estoque"
+msgstr "Operação Fiscal de Entrada de Estoque"
 
 #. module: l10n_br_stock_account
 #: model:ir.model,name:l10n_br_stock_account.model_stock_invoice_onshipping
