@@ -7634,7 +7634,7 @@ msgstr "Prefixo"
 #. module: l10n_br_fiscal
 #: selection:res.company,profit_calculation:0
 msgid "Presumed"
-msgstr "Presume"
+msgstr ""
 
 #. module: l10n_br_fiscal
 #: selection:l10n_br_fiscal.document.line,icms_base_type:0
@@ -7813,7 +7813,7 @@ msgstr "Produtos eletrônicos, eletroeletrônicos e eletrodomésticos"
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_company__profit_calculation
 msgid "Profit Calculation"
-msgstr "Cálculo do lucro"
+msgstr ""
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__protocolo_autorizacao
