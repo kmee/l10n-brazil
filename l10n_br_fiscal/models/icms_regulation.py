@@ -18,10 +18,10 @@ VIEW = """
 <page name="uf_{0}" string="{1}">
     <notebook>
         <page name="uf_{0}_internal" string="Interno">
-            <group name="icms_internal_{0}" string="Internal">
+            <group name="icms_internal_{0}" string="Interno">
             <field name="icms_internal_{0}_ids" context="{{'tree_view_ref': 'l10n_br_fiscal.tax_definition_icms_tree', 'default_icms_regulation_id': id, 'default_tax_group_id': {2}, 'default_state_from_id': {5}}}"/>
             </group>
-            <group name="icms_external_{0}" string="External">
+            <group name="icms_external_{0}" string="Externo">
             <field name="icms_external_{0}_ids" context="{{'tree_view_ref': 'l10n_br_fiscal.tax_definition_icms_tree', 'default_icms_regulation_id': id, 'default_tax_group_id': {2}, 'default_state_from_id': {5}}}"/>
             </group>
         </page>
