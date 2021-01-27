@@ -378,9 +378,9 @@ class Tax(models.Model):
                     precision)
 
             origin_value = round(
-                difal_icms_base * (icms_origin_perc / 100), precision)
+                icms_base * (icms_origin_perc / 100), precision)
             dest_value = round(
-                difal_icms_base * (icms_dest_perc / 100), precision)
+                icms_base * (icms_dest_perc / 100), precision)
 
             difal_value = dest_value - origin_value
 
@@ -415,7 +415,7 @@ class Tax(models.Model):
             taxes_dict[tax.tax_domain].update({
                 'icms_origin_perc': icms_origin_perc,
                 'icms_dest_perc': icms_dest_perc,
-                'icms_dest_base': difal_icms_base,
+                'icms_dest_base': icms_base,
                 'icms_sharing_percent': difal_share_dest,
                 'icms_origin_value': difal_origin_value,
                 'icms_dest_value': difal_dest_value,
