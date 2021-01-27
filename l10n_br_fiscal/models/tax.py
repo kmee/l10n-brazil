@@ -339,7 +339,9 @@ class Tax(models.Model):
         # DIFAL
         if (company.state_id != partner.state_id
                 and operation_line.fiscal_operation_type == FISCAL_OUT
-                and not partner.is_company):
+                and (operation_line.fiscal_operation_id.ind_final ==
+                     NFE_IND_FINAL_DEFAULT)
+                and partner.ind_ie_dest == NFE_IND_IE_DEST_9):
             tax_icms_difal = company.icms_regulation_id.map_tax_icms_difal(
                 company, partner, product, ncm, nbm, cest, operation_line)
             tax_icmsfcp_difal = company.icms_regulation_id.map_tax_icmsfcp(
