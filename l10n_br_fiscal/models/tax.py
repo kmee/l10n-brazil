@@ -202,6 +202,14 @@ class Tax(models.Model):
         remove_from_base = kwargs.get("remove_from_base", 0.00)
         compute_reduction = kwargs.get("compute_reduction", True)
 
+        tax_dict["name"] = tax.name
+        tax_dict["base_type"] = tax.tax_base_type
+        tax_dict["tax_include"] = tax.tax_group_id.tax_include
+        tax_dict["tax_withholding"] = tax.tax_group_id.tax_withholding
+        tax_dict["fiscal_tax_id"] = tax.id
+        tax_dict["tax_domain"] = tax.tax_domain
+        tax_dict["percent_reduction"] = tax.percent_reduction
+
         base = 0.00
 
         if not tax_dict.get("percent_amount") and tax.percent_amount:
@@ -230,6 +238,9 @@ class Tax(models.Model):
         # Compute Tax Base Amount
         if compute_reduction:
             base_amount -= base_reduction
+
+        if tax_dict["icmsst_mva_percent"]:
+            base_amount *= (1 + (tax_dict["icmsst_mva_percent"] / 100))
 
         if (not tax.percent_amount and not tax.value_amount and
             not tax_dict.get('percent_amount') and
@@ -296,6 +307,11 @@ class Tax(models.Model):
             tax_value = round(
                 base_amount * (tax_dict["percent_amount"] / 100),
                 precision)
+
+            if tax_dict["icmsst_mva_percent"]:
+                tax_value -= taxes_dict.get(
+                    "icms", {}
+                ).get("tax_value", 0.0)
 
             tax_dict["tax_value"] = tax_value
 
