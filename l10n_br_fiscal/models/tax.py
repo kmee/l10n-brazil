@@ -12,6 +12,7 @@ from ..constants.fiscal import (
     TAX_BASE_TYPE_VALUE,
     TAX_DOMAIN,
     TAX_DOMAIN_ICMS,
+    TAX_DOMAIN_ICMS_ST,
     NFE_IND_FINAL_DEFAULT,
     NFE_IND_IE_DEST_1,
     NFE_IND_IE_DEST_2,
@@ -198,6 +199,7 @@ class Tax(models.Model):
         tax_dict["fiscal_tax_id"] = tax.id
         tax_dict["tax_domain"] = tax.tax_domain
         tax_dict["percent_reduction"] = tax.percent_reduction
+        tax_dict["icmsst_mva_percent"] = tax.icmsst_mva_percent
 
         base = 0.00
 
@@ -227,6 +229,9 @@ class Tax(models.Model):
         # Compute Tax Base Amount
         if compute_reduction:
             base_amount -= base_reduction
+
+        if tax_dict["icmsst_mva_percent"]:
+            base_amount *= (1 + (tax_dict["icmsst_mva_percent"] / 100))
 
         if (not tax.percent_amount and not tax.value_amount and
             not tax_dict.get('percent_amount') and
@@ -278,6 +283,11 @@ class Tax(models.Model):
             tax_value = round(
                 base_amount * (tax_dict["percent_amount"] / 100),
                 precision)
+
+            if tax_dict["icmsst_mva_percent"]:
+                tax_value -= taxes_dict.get(
+                    "icms", {}
+                ).get("tax_value", 0.0)
 
             tax_dict["tax_value"] = tax_value
 
@@ -576,7 +586,11 @@ class Tax(models.Model):
             icmssn_range
         """
         taxes = {}
-        for tax in self.sorted(lambda t: t.tax_domain == TAX_DOMAIN_ICMS):
+        sort_dict = {
+            TAX_DOMAIN_ICMS: 1,
+            TAX_DOMAIN_ICMS_ST: 2,
+        }
+        for tax in self.sorted(lambda t: sort_dict.get(t.tax_domain, 0)):
             tax_dict = TAX_DICT_VALUES.copy()
             taxes[tax.tax_domain] = tax_dict
             try:
