@@ -575,7 +575,6 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         pass
 
     def _set_fields_icmsst(self, tax_dict):
-        self.icms_cst_id = tax_dict.get("cst_id")
         self.icmsst_base_type = tax_dict.get(
             "icmsst_base_type", ICMS_ST_BASE_TYPE_DEFAULT)
         self.icmsst_mva_percent = tax_dict.get("icmsst_mva_percent")
