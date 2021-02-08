@@ -144,7 +144,6 @@ class SaleOrderLine(models.Model):
     def _onchange_product_id_fiscal(self):
         super()._onchange_product_id_fiscal()
         if self.product_id.description_sale:
-            function = 'get_sale_order_line_multiline_description_sale'
             product = self.product_id.with_context(
                 lang=self.order_id.partner_id.lang,
                 partner=self.order_id.partner_id,
@@ -153,7 +152,7 @@ class SaleOrderLine(models.Model):
                 pricelist=self.order_id.pricelist_id.id,
                 uom=self.product_uom.id
             )
-            self.name = self.order_id[function](product)
+            self.name = self.get_sale_order_line_multiline_description_sale(product)
         if self.product_id and self.product_id.city_taxation_code_id:
             company_city_id = self.order_id.company_id.city_id
             city_id = self.product_id.city_taxation_code_id.filtered(
