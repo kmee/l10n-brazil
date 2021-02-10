@@ -223,7 +223,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
 
                 if computed_tax:
                     if not computed_tax.get("tax_include"):
-                        l.amount_tax_not_included = computed_tax.get(
+                        l.amount_tax_not_included += computed_tax.get(
                             "tax_value", 0.00)
                     if computed_tax.get("tax_withholding"):
                         l.amount_tax_withholding += computed_tax.get(
