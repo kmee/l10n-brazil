@@ -16,7 +16,8 @@ _logger = logging.getLogger(__name__)
 
 
 def filter_processador(record):
-    if record.document_electronic and \
+    if not record.document_electronic or \
+        record.document_electronic and \
             record.processador_edoc == PROCESSADOR_NENHUM:
         return True
     return False
@@ -151,7 +152,7 @@ class DocumentEletronic(models.AbstractModel):
         vals = {
             "type": event_type,
             "company_id": self.company_id.id,
-            "origin": self.document_type_id.code + "/" + self.number,
+            "origin": self.document_type_id.code + "-" + (self.number or 'N/A'),
             "create_date": fields.Datetime.now(),
             "fiscal_document_id": self.id,
         }
