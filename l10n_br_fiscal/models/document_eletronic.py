@@ -12,7 +12,8 @@ from ..constants.fiscal import (
 
 
 def filter_processador(record):
-    if record.document_electronic and \
+    if not record.document_electronic or \
+        record.document_electronic and \
             record.processador_edoc == PROCESSADOR_NENHUM:
         return True
     return False
