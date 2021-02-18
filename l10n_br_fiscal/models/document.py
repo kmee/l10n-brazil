@@ -173,7 +173,7 @@ class Document(models.Model):
     )
 
     date = fields.Datetime(
-        string='Date',
+        string='Issue Date',
         copy=False,
     )
 
@@ -200,7 +200,7 @@ class Document(models.Model):
     )
 
     date_in_out = fields.Datetime(
-        string='Date Move',
+        string='In / Out Date',
         copy=False,
     )
 
