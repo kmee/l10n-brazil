@@ -4,6 +4,7 @@
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
 import logging
+import re
 
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
@@ -184,6 +185,8 @@ class Partner(models.Model):
                 if record.inscr_est and record.is_company and record.state_id:
                     state_code = record.state_id.code or ""
                     uf = state_code.lower()
+                    if len(re.sub('[^0-9]', '', record.inscr_est)) < 13:
+                        record.inscr_est = record.inscr_est.zfill(13)
                     result = ie.validar(uf, record.inscr_est)
                 if not result:
                     raise ValidationError(_("Estadual Inscription Invalid !"))
