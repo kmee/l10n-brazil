@@ -55,7 +55,7 @@ class NFe(spec_models.StackedModel):
     _inherit = ["l10n_br_fiscal.document", "nfe.40.infnfe",
                 "nfe.40.tendereco", "nfe.40.tenderemi",
                 "nfe.40.dest", "nfe.40.emit", "nfe.40.cobr", "nfe.40.fat",
-                "nfe.40.tinfresptec"]
+                "nfe.40.tinfresptec", "nfe.40.transp", "nfe.40.transporta"]
     _stacked = 'nfe.40.infnfe'
     _stack_skip = ('nfe40_veicTransp')
     _spec_module = 'odoo.addons.l10n_br_nfe_spec.models.v4_00.leiauteNFe'
@@ -753,7 +753,8 @@ class NFe(spec_models.StackedModel):
             if not any(self[f] for f in self[field_name]._fields
                        if self._fields[f]._attrs.get('xsd')) and \
                     field_name not in ['nfe40_PIS', 'nfe40_COFINS',
-                                       'nfe40_enderDest', 'nfe40_infRespTec']:
+                                       'nfe40_enderDest', 'nfe40_infRespTec',
+                                       'nfe40_transp', 'nfe40_transporta']:
                 return False
         if field_name == 'nfe40_ISSQNtot' and all(
                 t in ['consu', 'product'] for t in
