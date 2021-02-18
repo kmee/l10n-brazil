@@ -14,4 +14,7 @@
             'xmldiff',
         ],
     },
+    "data": [
+        "security/v4_00/ir.model.access.csv",
+    ],
 }
