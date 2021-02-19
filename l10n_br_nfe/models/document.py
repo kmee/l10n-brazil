@@ -630,6 +630,10 @@ class NFe(spec_models.StackedModel):
                 if self.partner_cnpj_cpf:
                     return self.partner_cnpj_cpf.replace(
                         '.', '').replace('/', '').replace('-', '')
+            elif class_obj._name == 'nfe.40.transporta':
+                if self.nfe40_transporta.nfe40_CNPJ:
+                    return self.nfe40_transporta.nfe40_CNPJ.replace(
+                        '.', '').replace('/', '').replace('-', '')
         if xsd_field == 'nfe40_CPF':
             if class_obj._name == 'nfe.40.dest' and \
                     not self.partner_is_company:
