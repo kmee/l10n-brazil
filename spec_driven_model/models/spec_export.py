@@ -67,6 +67,9 @@ class AbstractSpecMixin(models.AbstractModel):
                 class_name=self._fields[field_name]._attrs.get(
                     'original_spec_model')
             )
+        elif 'spec.mixin.nfe' in self[field_name]._inherit:
+            return self._build_generateds(
+                class_obj._fields[field_name].comodel_name)
         else:
             return (self[field_name] or self)._build_generateds(
                 class_obj._fields[field_name].comodel_name)
