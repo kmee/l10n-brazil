@@ -583,6 +583,8 @@ class NFe(spec_models.StackedModel):
             self.company_id.partner_id.state_id.ibge_code,
             self.company_id.partner_id.city_id.ibge_code)
         self.nfe40_vBC = sum(self.line_ids.mapped('nfe40_vBC'))
+        self.nfe40_vBCST = sum(self.line_ids.mapped('nfe40_vBCST'))
+        self.nfe40_vST = sum(self.line_ids.mapped('nfe40_vICMSST'))
         self.nfe40_vICMS = sum(self.line_ids.mapped('nfe40_vICMS'))
         self.nfe40_vPIS = sum(self.line_ids.mapped('nfe40_vPIS'))
         self.nfe40_vIPI = self.amount_ipi_value
