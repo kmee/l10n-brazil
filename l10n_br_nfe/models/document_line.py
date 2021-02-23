@@ -3,7 +3,7 @@
 from odoo import api, fields
 from odoo.addons.spec_driven_model.models import spec_models
 
-ICMS_ST_CST_CODES = ['60',]
+ICMS_ST_CST_CODES = ['60', '10']
 
 
 class NFeLine(spec_models.StackedModel):
