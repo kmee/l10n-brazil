@@ -650,6 +650,9 @@ class NFe(spec_models.StackedModel):
                            '- SEM VALOR FISCAL'
                 if self.partner_legal_name:
                     return self.partner_legal_name
+            if class_obj._name == 'nfe.40.transporta':
+                if self.nfe40_transporta and self.nfe40_transporta.nfe40_xNome:
+                    return self.nfe40_transporta.nfe40_xNome
         if xsd_field == 'nfe40_IE':
             if class_obj._name == 'nfe.40.emit':
                 if self.company_inscr_est:
@@ -657,6 +660,9 @@ class NFe(spec_models.StackedModel):
             if class_obj._name == 'nfe.40.dest':
                 if self.partner_inscr_est:
                     return self.partner_inscr_est.replace('.', '')
+            if class_obj._name == 'nfe.40.transporta':
+                if self.nfe40_transporta and self.nfe40_transporta.nfe40_IE:
+                    return self.nfe40_transporta.nfe40_IE.replace('.', '')
         if xsd_field == 'nfe40_ISUF':
             if class_obj._name == 'nfe.40.emit':
                 if self.company_suframa:
@@ -709,6 +715,9 @@ class NFe(spec_models.StackedModel):
             if class_obj._name == 'nfe.40.tendereco':
                 if self.partner_city_id.name:
                     return self.partner_city_id.name
+            if class_obj._name == 'nfe.40.transporta':
+                if self.nfe40_transporta and self.nfe40_transporta.nfe40_xMun:
+                    return self.nfe40_transporta.nfe40_xMun
         if xsd_field == 'nfe40_UF':
             if class_obj._name == 'nfe.40.tenderemi':
                 if self.company_state_id.code:
@@ -716,6 +725,9 @@ class NFe(spec_models.StackedModel):
             if class_obj._name == 'nfe.40.tendereco':
                 if self.partner_state_id.code:
                     return self.partner_state_id.code
+            if class_obj._name == 'nfe.40.transporta':
+                if self.nfe40_transporta and self.nfe40_transporta.nfe40_UF:
+                    return self.nfe40_transporta.nfe40_UF
         if xsd_field == 'nfe40_CEP':
             if class_obj._name == 'nfe.40.tenderemi':
                 if self.company_zip:
@@ -748,6 +760,11 @@ class NFe(spec_models.StackedModel):
                     return self.partner_phone.replace('(', '').replace(
                         ')', '').replace(' ', '').replace(
                         '-', '').replace('+', '')
+        if xsd_field == 'nfe40_xEnder':
+            if class_obj._name == 'nfe.40.transporta':
+                if self.nfe40_transporta:
+                    if self.nfe40_transporta.nfe40_xEnder:
+                        return self.nfe40_transporta.nfe40_xEnder
 
         return super(NFe, self)._export_field(
             xsd_field, class_obj, member_spec)
