@@ -24,6 +24,8 @@
         'views/fiscal_operation_line_view.xml',
         'views/account_invoice_view.xml',
         'views/account_invoice_line_view.xml',
+        'views/nfe_document_line_view.xml',
+        'views/nfe_document_view.xml',
 
         # Wizards
         'wizards/account_invoice_refund_view.xml',
