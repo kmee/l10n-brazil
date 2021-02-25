@@ -258,8 +258,6 @@ class DocumentLine(models.Model):
 
     def recompute_taxes(self):
         for line in self:
-            line._compute_amount()
-            continue
             price_unit = line.price_unit
             line._onchange_product_id_fiscal()
             line._onchange_ncm_id()
@@ -268,3 +266,5 @@ class DocumentLine(models.Model):
             line.price_unit = price_unit
             line._onchange_commercial_quantity()
             line._onchange_fiscal_taxes()
+            line._compute_amount()
+            line.document_comment()

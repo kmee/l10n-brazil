@@ -982,4 +982,5 @@ class Document(models.Model):
         }
 
     def recompute_lines_taxes(self):
+        self.document_comment()
         self.mapped('line_ids').recompute_taxes()
