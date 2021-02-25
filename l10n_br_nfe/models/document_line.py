@@ -128,7 +128,9 @@ class NFeLine(spec_models.StackedModel):
     nfe40_vICMSST = fields.Monetary(
         related='icmsst_value'
     )
-
+    nfe40_infAdProd = fields.Char(
+        related='additional_data',
+    )
 
     @api.depends('icms_cst_id')
     def _compute_choice11(self):
