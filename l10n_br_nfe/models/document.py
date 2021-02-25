@@ -9,6 +9,7 @@ from erpbrasil.assinatura import certificado as cert
 from erpbrasil.edoc.nfe import NFe as edoc_nfe
 from erpbrasil.transmissao import TransmissaoSOAP
 from erpbrasil.edoc.pdf import base
+from lxml import etree
 from nfelib.v4_00 import leiauteNFe
 from odoo import api, fields, _
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
@@ -32,6 +33,7 @@ from odoo.exceptions import UserError
 from ..constants.nfe import (NFE_ENVIRONMENT_DEFAULT, NFE_ENVIRONMENTS,
                              NFE_VERSION_DEFAULT, NFE_VERSIONS)
 from requests import Session
+import tempfile
 
 
 PROCESSADOR_ERPBRASIL_EDOC = 'erpbrasil_edoc'
@@ -928,7 +930,14 @@ class NFe(spec_models.StackedModel):
             company_id=self.company_id,
             chave=self.key,
         )
-        arquivo = output + self.file_xml_autorizacao_id.datas_fname
+
+        if self.file_xml_autorizacao_id:
+            arquivo = output + self.file_xml_autorizacao_id.datas_fname
+        else:
+            tmp_xml = tempfile.NamedTemporaryFile()
+            self.temp_xml_autorizacao(tmp_xml)
+            arquivo = tmp_xml.name
+
         base.ImprimirXml.imprimir(caminho_xml=arquivo, output_dir=output)
         file_name = 'danfe.pdf'
         with open(output + file_name, 'rb') as f:
@@ -950,3 +959,26 @@ class NFe(spec_models.StackedModel):
         if not self.file_pdf_id:
             self.gera_pdf()
         return super(NFe, self).view_pdf()
+
+    def temp_xml_autorizacao(self, tmp_xml):
+        xml_string = base64.b64decode(self.file_xml_id.datas).decode()
+        root = etree.fromstring(xml_string)
+
+        ns = {None: 'http://www.portalfiscal.inf.br/nfe'}
+        new_root = etree.Element('nfeProc', nsmap=ns)
+
+        protNFe_node = etree.Element('protNFe')
+        infProt = etree.SubElement(protNFe_node, 'infProt')
+        etree.SubElement(infProt, 'tpAmb').text = '2'
+        etree.SubElement(infProt, 'verAplic').text = ''
+        etree.SubElement(infProt, 'dhRecbto').text = None
+        etree.SubElement(infProt, 'nProt').text = ''
+        etree.SubElement(infProt, 'digVal').text = ''
+        etree.SubElement(infProt, 'cStat').text = ''
+        etree.SubElement(infProt, 'xMotivo').text = ''
+
+        new_root.append(root)
+        new_root.append(protNFe_node)
+
+        tmp_xml.write(etree.tostring(new_root))
+        tmp_xml.seek(0)
