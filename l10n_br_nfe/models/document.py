@@ -57,7 +57,8 @@ class NFe(spec_models.StackedModel):
     _inherit = ["l10n_br_fiscal.document", "nfe.40.infnfe",
                 "nfe.40.tendereco", "nfe.40.tenderemi",
                 "nfe.40.dest", "nfe.40.emit", "nfe.40.cobr", "nfe.40.fat",
-                "nfe.40.tinfresptec", "nfe.40.transp", "nfe.40.transporta"]
+                "nfe.40.tinfresptec", "nfe.40.transp", "nfe.40.transporta",
+                "nfe.40.infadic"]
     _stacked = 'nfe.40.infnfe'
     _stack_skip = ('nfe40_veicTransp')
     _spec_module = 'odoo.addons.l10n_br_nfe_spec.models.v4_00.leiauteNFe'
@@ -65,7 +66,7 @@ class NFe(spec_models.StackedModel):
     _nfe_search_keys = ['nfe40_Id']
 
     # all m2o at this level will be stacked even if not required:
-    _force_stack_paths = ('infnfe.total',)
+    _force_stack_paths = ('infnfe.total', 'infnfe.infAdic')
 
     nfe40_finNFe = fields.Selection(
         related='edoc_purpose',
@@ -592,6 +593,7 @@ class NFe(spec_models.StackedModel):
         self.nfe40_vIPI = self.amount_ipi_value
         self.nfe40_vCOFINS = sum(
             self.line_ids.mapped('nfe40_vCOFINS'))
+        self.nfe40_infAdFisco = self.fiscal_additional_data
         return super(NFe, self)._export_fields(
             xsd_fields, class_obj, export_dict)
 
