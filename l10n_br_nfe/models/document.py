@@ -594,6 +594,7 @@ class NFe(spec_models.StackedModel):
         self.nfe40_vCOFINS = sum(
             self.line_ids.mapped('nfe40_vCOFINS'))
         self.nfe40_infAdFisco = self.fiscal_additional_data
+        self.nfe40_infCpl = self.customer_additional_data
         return super(NFe, self)._export_fields(
             xsd_fields, class_obj, export_dict)
 
