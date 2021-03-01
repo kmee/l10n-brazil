@@ -223,8 +223,7 @@ class SaleOrder(models.Model):
                 else:
                     line.discount = order.discount_rate
                     line._onchange_discount_percent()
-                line._onchange_commercial_quantity()
-                line._onchange_fiscal_taxes()
+                line._compute_amount()
 
     @api.onchange('fiscal_operation_id')
     def _onchange_fiscal_operation_id(self):
