@@ -27,7 +27,7 @@
                 </button>
             </button>
             <button name="action_done" position="after">
-                <button name="recompute_lines_taxes" icon="fa-repeat" type="object" string="Recompute Lines Taxes" states="draft,sent"/>
+                <button name="recompute_lines_taxes" icon="fa-repeat" type="object" states="draft,sent"/>
             </button>
             <field name="amount_untaxed" position="before">
                 <field name="amount_gross" widget='monetary' options="{'currency_field': 'currency_id'}"/>
