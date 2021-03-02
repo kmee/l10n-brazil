@@ -150,7 +150,8 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
             cest=self.cest_id,
             operation_line=self.fiscal_operation_line_id,
             icmssn_range=self.icmssn_range_id,
-            icms_origin=self.icms_origin)
+            icms_origin=self.icms_origin,
+            freight_mode=self.document_id.nfe40_modFrete )
 
     @api.multi
     def _prepare_br_fiscal_dict(self, default=False):

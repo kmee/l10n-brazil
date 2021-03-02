@@ -578,13 +578,18 @@ class Tax(models.Model):
         return self._compute_generic(tax, taxes_dict, **kwargs)
 
     def _compute_ipi(self, tax, taxes_dict, **kwargs):
-        insurance_value = kwargs.get("insurance_value", 0.00)
-        freight_value = kwargs.get("freight_value", 0.00)
-        other_costs_value = kwargs.get("other_costs_value", 0.00)
+        # The freight should be included in the base only when the transport is
+        # carried out or charged by an affiliated, controlled or controlling or
+        # interconnected firm of the contributing institution or by a firm with
+        # which it has an interdependent relationship
+        if kwargs.get("freight_mod") in ['0', '3']:
+            insurance_value = kwargs.get("insurance_value", 0.00)
+            freight_value = kwargs.get("freight_value", 0.00)
+            other_costs_value = kwargs.get("other_costs_value", 0.00)
 
-        add_to_base = [insurance_value, freight_value, other_costs_value]
+            add_to_base = [insurance_value, freight_value, other_costs_value]
 
-        kwargs.update({'add_to_base': sum(add_to_base),})
+            kwargs.update({'add_to_base': sum(add_to_base)})
 
         taxes_dict[tax.tax_domain].update(self._compute_tax_base(
             tax, taxes_dict.get(tax.tax_domain), **kwargs))
