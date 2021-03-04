@@ -564,6 +564,9 @@ class NFe(spec_models.StackedModel):
         self.nfe40_vPIS = self.amount_pis_value
         self.nfe40_vIPI = self.amount_ipi_value
         self.nfe40_vCOFINS = self.amount_cofins_value
+        self.nfe40_vBCST = sum(self.line_ids.mapped('nfe40_vBCST'))  # FIXME:
+        self.nfe40_vST = sum(self.line_ids.mapped('nfe40_vICMSST'))  # FIXME:
+
         return super(NFe, self)._export_fields(
             xsd_fields, class_obj, export_dict)
 
