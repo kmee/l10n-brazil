@@ -25,8 +25,12 @@ class ResCompany(spec_models.SpecModel):
     def _compute_nfe_data(self):
         # compute because a simple related field makes the match_record fail
         for rec in self:
-            rec.is_company = True
-            rec.nfe40_CNPJ = rec.partner_id.cnpj_cpf
+            if rec.is_company:
+                rec.nfe40_choice6 = 'nfe40_CNPJ'
+                rec.nfe40_CNPJ = rec.partner_id.cnpj_cpf
+            else:
+                rec.nfe40_choice6 = 'nfe40_CPF'
+                rec.nfe40_CPF = rec.partner_id.cnpj_cpf
 
     nfe40_CNPJ = fields.Char(compute='_compute_nfe_data')
     nfe40_xNome = fields.Char(related='partner_id.legal_name')
@@ -56,6 +60,10 @@ class ResCompany(spec_models.SpecModel):
         string='NF-e Default Serie',
     )
 
+    nfe40_choice6 = fields.Selection(
+        compute='_compute_nfe_data'
+    )
+
     def _build_attr(self, node, fields, vals, path, attr, create_m2o):
         if attr.get_name() == 'enderEmit'\
                 and self.env.context.get('edoc_type') == 'in':
@@ -75,3 +83,4 @@ class ResCompany(spec_models.SpecModel):
             values['name'] = (values.get('nfe40_xNome')
                               or values.get('nfe40_xFant'))
         return values
+

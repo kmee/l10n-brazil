@@ -217,10 +217,6 @@ class NFe(spec_models.StackedModel):
         related='company_street'
     )
 
-    nfe40_choice6 = fields.Selection(
-        compute='_compute_choice6'
-    )
-
     nfe40_tpEmis = fields.Selection(
         default='1',
     )
@@ -257,10 +253,6 @@ class NFe(spec_models.StackedModel):
                 'in': '0',
             }
             rec.nfe40_tpNF = operation_2_tpNF[rec.fiscal_operation_type]
-
-    def _compute_choice6(self):
-        for record in self:
-            record.nfe40_choice6 = 'nfe40_CNPJ'
 
     def _inverse_nfe40_tpNF(self):
         for rec in self:
@@ -462,10 +454,10 @@ class NFe(spec_models.StackedModel):
                     record.autorizacao_event_id.set_done(xml_file)
                     record.atualiza_status_nfe(protocolo.infProt)
                     if protocolo.infProt.cStat == AUTORIZADO:
-		    	try:
-		            record.gera_pdf()
-		        except Exception as e:
-		            pass  # TODO: Tratar excessões
+                        try:
+                            record.gera_pdf()
+                        except Exception as e:
+                            pass  # TODO: Tratar excessões
             elif processo.resposta.cStat == '225':
                 state = SITUACAO_EDOC_REJEITADA
 
