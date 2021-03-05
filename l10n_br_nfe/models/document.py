@@ -577,14 +577,20 @@ class NFe(spec_models.StackedModel):
             xsd_field, class_obj, member_spec)
 
     def _export_many2one(self, field_name, xsd_required, class_obj=None):
-        if not self[field_name] and not xsd_required:
-            if not any(self[f] for f in self[field_name]._fields
-                       if self._fields[f]._attrs.get('xsd')) and \
-                    field_name not in ['nfe40_PIS', 'nfe40_COFINS',
-                                       'nfe40_enderDest', 'nfe40_infRespTec']:
+        self.ensure_one()
+        if field_name in self._stacking_points.keys():
+            if field_name == 'nfe40_ISSQNtot' and not any(
+                    t == 'issqn' for t in
+                    self.nfe40_det.mapped('product_id.tax_icms_or_issqn')
+            ):
                 return False
 
-            elif (not xsd_required) and field_name not in ['nfe40_enderDest']:
+            elif (not xsd_required) and field_name not in [
+                'nfe40_PIS',
+                'nfe40_COFINS',
+                'nfe40_enderDest',
+                'nfe40_infRespTec'
+            ]:
                 comodel = self.env[self._stacking_points.get(
                     field_name).comodel_name]
                 fields = [f for f in comodel._fields
