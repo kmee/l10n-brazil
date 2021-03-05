@@ -25,7 +25,7 @@ class ResCompany(spec_models.SpecModel):
     def _compute_nfe_data(self):
         # compute because a simple related field makes the match_record fail
         for rec in self:
-            if rec.is_company:
+            if rec.partner_id.is_company:
                 rec.nfe40_choice6 = 'nfe40_CNPJ'
                 rec.nfe40_CNPJ = rec.partner_id.cnpj_cpf
             else:
