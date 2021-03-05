@@ -43,7 +43,7 @@
           <page name="delivery" position="inside">
               <group>
                   <field name="nfe40_modFrete"/>
-                  <field name="nfe40_transporta"/>
+<!--                  <field name="nfe40_transporta"/>-->
               </group>
               <group>
                   <field name="nfe40_vol"/>
