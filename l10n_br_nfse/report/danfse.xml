@@ -60,7 +60,7 @@
                     <br />
                     Secretaria Municipal da Fazenda
                     <br />
-                    NOTA FISCAL ELETRÔNICA DE SERVIÇO - <span style="text-transform:uppercase" t-field="doc.company_id.provedor_nfse" />
+                    NOTA FISCAL ELETRÔNICA DE SERVIÇO
                 </div>
                 <div class="col-3" style="padding:0px;">
                     <div style="padding: 3px; text-align:center;">
@@ -304,7 +304,7 @@
             </div>
 
             <div class="row completa">
-                <div class="col rotulo br">
+                <div class="col-2 rotulo br">
                     PIS
                 </div>
                 <div class="col-1 linha br centro">
@@ -315,7 +315,7 @@
                        <span t-field="doc.amount_pis_ret_value" />
                     </t>
                 </div>
-                <div class="col rotulo br">
+                <div class="col-1 rotulo br">
                     COFINS
                 </div>
                 <div class="col-1 linha br centro">
@@ -348,8 +348,8 @@
                        <span t-field="doc.amount_csll_ret_value" />
                     </t>
                 </div>
-                <div class="col rotulo br">
-                    INSS(R$)
+                <div class="col-1 rotulo br">
+                    INSS
                 </div>
                 <div class="col-2 linha centro">
                     <t t-if="doc.amount_inss_value">
@@ -359,25 +359,9 @@
                        <span t-field="doc.amount_inss_wh_value" />
                     </t>
                 </div>
-                <div class="col rotulo br">
-                    CSLL(R$)
-                </div>
-                <div class="col linha br centro">
-                    <span t-field="doc.line_ids[0].csll_wh_value" />
-                </div>
             </div>
 
-            <div class="row completa">
-                <div class="col-5 rotulo-header br">
-                    Detalhamento de Valores - Prestador dos Serviços
-                </div>
-                <div class="col-2 rotulo-header br">
-                    Outras Retenções
-                </div>
-                <div class="col-5 rotulo-header">
-                    Cálculo do ISSQN devido no Município
-                </div>
-            </div>
+            <div class="row centro" style="border: 0px; padding: 2px;" />
 
             <div class="row completa">
                 <div class="col-3 rotulo esquerda br">
