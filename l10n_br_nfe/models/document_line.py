@@ -428,8 +428,8 @@ class NFeLine(spec_models.StackedModel):
         self.nfe40_pPIS = self.pis_percent
         self.nfe40_pCOFINS = self.cofins_percent
         self.nfe40_cEnq = str(self.ipi_guideline_id.code or '999').zfill(3)
-        return super()._export_fields(xsd_fields, class_obj, export_dict)
         self.nfe40_pCredSN = self.icmssn_percent
+        return super()._export_fields(xsd_fields, class_obj, export_dict)
 
     def _export_field(self, xsd_field, class_obj, member_spec):
         # ISSQN
