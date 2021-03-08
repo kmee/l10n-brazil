@@ -595,8 +595,11 @@ class NFe(spec_models.StackedModel):
             self.line_ids.mapped('nfe40_vCOFINS'))
         self.nfe40_infAdFisco = self.fiscal_additional_data
         self.nfe40_infCpl = self.customer_additional_data
-        return super(NFe, self)._export_fields(
+        super(NFe, self)._export_fields(
             xsd_fields, class_obj, export_dict)
+        if export_dict.get('vTroco') and not self.nfe40_vTroco:
+            export_dict.pop('vTroco')
+
 
     def _export_field(self, xsd_field, class_obj, member_spec):
         if xsd_field in ('nfe40_vICMSUFDest', 'nfe40_vICMSUFRemet'):
