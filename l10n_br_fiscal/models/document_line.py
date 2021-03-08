@@ -1,7 +1,8 @@
 # Copyright (C) 2013  Renato Lima - Akretion
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 from ..constants.fiscal import (TAX_FRAMEWORK)
 
@@ -75,6 +76,7 @@ class DocumentLine(models.Model):
     document_id = fields.Many2one(
         comodel_name='l10n_br_fiscal.document',
         string='Document',
+        ondelete='cascade',
     )
 
     # used mostly to enable _inherits of account.invoice on fiscal_document
@@ -158,3 +160,10 @@ class DocumentLine(models.Model):
         compute='_compute_amount',
         default=0.00,
     )
+
+    @api.multi
+    def unlink(self):
+        if self.env.ref('l10n_br_fiscal.fiscal_document_line_dummy') in self:
+            raise UserError(
+                _("You cannot unlink Fiscal Document Line Dummy !"))
+        return super().unlink()
