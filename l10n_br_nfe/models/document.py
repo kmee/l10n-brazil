@@ -5,6 +5,7 @@
 import base64
 import logging
 import tempfile
+from unicodedata import normalize
 
 from erpbrasil.assinatura import certificado as cert
 from erpbrasil.base import misc
@@ -55,7 +56,7 @@ def filter_processador_edoc_nfe(record):
 
 class NFe(spec_models.StackedModel):
     _name = 'l10n_br_fiscal.document'
-    _inherit = ["l10n_br_fiscal.document", "nfe.40.infnfe"]
+    _inherit = ["l10n_br_fiscal.document", "nfe.40.infnfe", "nfe.40.infadic"]
     _stacked = 'nfe.40.infnfe'
     _stack_skip = ('nfe40_veicTransp')
     _field_prefix = 'nfe40_'
@@ -69,7 +70,7 @@ class NFe(spec_models.StackedModel):
     _nfe_search_keys = ['nfe40_Id']
 
     # all m2o at this level will be stacked even if not required:
-    _force_stack_paths = ('infnfe.total',)
+    _force_stack_paths = ('infnfe.total', 'infnfe.infAdic')
 
     def _compute_emit(self):
         for doc in self:  # TODO if out
@@ -235,6 +236,28 @@ class NFe(spec_models.StackedModel):
     nfe40_vCOFINS = fields.Monetary(
         related='amount_cofins_value'
     )
+
+    nfe40_infAdFisco = fields.Char(
+        compute='_compute_nfe40_additional_data',
+    )
+
+    nfe40_infCpl = fields.Char(
+        compute='_compute_nfe40_additional_data',
+    )
+
+    @api.depends('fiscal_additional_data', 'fiscal_additional_data')
+    def _compute_nfe40_additional_data(self):
+        for record in self:
+            if record.fiscal_additional_data:
+                record.nfe40_infAdFisco = normalize(
+                    'NFKD', record.fiscal_additional_data
+                ).encode('ASCII', 'ignore').decode('ASCII').replace(
+                    '\n', '').replace('\r', '')
+            if record.customer_additional_data:
+                record.nfe40_infCpl = normalize(
+                    'NFKD', record.customer_additional_data
+                ).encode('ASCII', 'ignore').decode('ASCII').replace(
+                    '\n', '').replace('\r', '')
 
     @api.multi
     @api.depends('fiscal_operation_type')
