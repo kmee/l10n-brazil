@@ -101,8 +101,9 @@ class PaymentMixin(models.AbstractModel):
         for record in self:
             if not record.env.context.get('action_document_confirm'):
                 continue
-            elif (record.amount_missing_payment_value > 0 and
-                    record.payment_mode != FORMA_PAGAMENTO_SEM_PAGAMENTO):
+            elif record.payment_mode == FORMA_PAGAMENTO_SEM_PAGAMENTO:
+                continue
+            elif record.amount_missing_payment_value > 0:
                 if not record.payment_term_id:
                     raise UserError(
                         _("O Valor dos lançamentos financeiros é "
