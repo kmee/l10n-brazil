@@ -298,8 +298,7 @@
                     <t t-foreach="doc.line_ids" t-as="line">
                         <p t-field="line.name"></p>
                     </t>
-<!--                    <span t-field="doc.informacoes_legais"></span>-->
-<!--                    <span t-field="doc.informacoes_complementares"></span>-->
+                    <span t-field="doc.fiscal_additional_data"></span>
                 </div>
             </div>
 
