@@ -2,6 +2,8 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 from odoo import api, fields
 from odoo.addons.spec_driven_model.models import spec_models
+from odoo.addons.l10n_br_nfe_spec.models.v4_00.leiauteNFe import \
+    PICMSINTER_ICMSUFDEST
 
 ICMS_ST_CST_CODES = ['60', '10']
 
@@ -298,7 +300,8 @@ class NFeLine(spec_models.StackedModel):
                 self.nfe40_pICMSUFDest = 18.0
             elif self.document_id.partner_id.state_id.code == 'RJ':
                 self.nfe40_pICMSUFDest = 20.0
-            self.nfe40_pICMSInter = '%.2f' % self.icms_percent
+            self.nfe40_pICMSInter = '%.2f' % self.icms_percent \
+                if self.icms_percent else '12.00'
             self.nfe40_pICMSInterPart = 100.0
             self.nfe40_vICMSUFDest = (
                 self.nfe40_vBCUFDest * (
