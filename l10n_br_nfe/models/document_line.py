@@ -1,7 +1,11 @@
 # Copyright 2020 KMEE INFORMATICA LTDA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+from unicodedata import normalize
+
 from odoo import api, fields
 from odoo.addons.spec_driven_model.models import spec_models
+from odoo.addons.l10n_br_nfe_spec.models.v4_00.leiauteNFe import \
+    PICMSINTER_ICMSUFDEST
 
 ICMS_ST_CST_CODES = ['60', '10']
 
@@ -129,8 +133,17 @@ class NFeLine(spec_models.StackedModel):
         related='icmsst_value'
     )
     nfe40_infAdProd = fields.Char(
-        related='additional_data',
+        compute='_compute_nfe40_infAdProd',
     )
+
+    @api.depends('additional_data')
+    def _compute_nfe40_infAdProd(self):
+        for record in self:
+            if record.additional_data:
+                record.nfe40_infAdProd = normalize(
+                    'NFKD', record.additional_data
+                ).encode('ASCII', 'ignore').decode('ASCII').replace(
+                    '\n', '').replace('\r', '')
 
     @api.depends('icms_cst_id')
     def _compute_choice11(self):
@@ -298,7 +311,8 @@ class NFeLine(spec_models.StackedModel):
                 self.nfe40_pICMSUFDest = 18.0
             elif self.document_id.partner_id.state_id.code == 'RJ':
                 self.nfe40_pICMSUFDest = 20.0
-            self.nfe40_pICMSInter = '%.2f' % self.icms_percent
+            self.nfe40_pICMSInter = '%.2f' % self.icms_percent \
+                if self.icms_percent else '12.00'
             self.nfe40_pICMSInterPart = 100.0
             self.nfe40_vICMSUFDest = (
                 self.nfe40_vBCUFDest * (

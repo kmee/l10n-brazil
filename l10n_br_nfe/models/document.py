@@ -3,6 +3,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 import base64
 import logging
+from unicodedata import normalize
 
 from erpbrasil.base import misc
 from erpbrasil.assinatura import certificado as cert
@@ -252,6 +253,27 @@ class NFe(spec_models.StackedModel):
     partner_phone = fields.Char(string="Telefone")
     partner_is_company = fields.Boolean(string="É uma empresa")
     nfe40_vFrete = fields.Monetary(related='amount_freight_value')
+    nfe40_infAdFisco = fields.Char(
+        compute='_compute_nfe40_additional_data',
+    )
+
+    nfe40_infCpl = fields.Char(
+        compute='_compute_nfe40_additional_data',
+    )
+
+    @api.depends('fiscal_additional_data', 'fiscal_additional_data')
+    def _compute_nfe40_additional_data(self):
+        for record in self:
+            if record.fiscal_additional_data:
+                record.nfe40_infAdFisco = normalize(
+                    'NFKD', record.fiscal_additional_data
+                ).encode('ASCII', 'ignore').decode('ASCII').replace(
+                    '\n', '').replace('\r', '')
+            if record.customer_additional_data:
+                record.nfe40_infCpl = normalize(
+                    'NFKD', record.customer_additional_data
+                ).encode('ASCII', 'ignore').decode('ASCII').replace(
+                    '\n', '').replace('\r', '')
 
     @api.depends('line_ids')
     def _compute_amount(self):
@@ -593,8 +615,6 @@ class NFe(spec_models.StackedModel):
         self.nfe40_vIPI = self.amount_ipi_value
         self.nfe40_vCOFINS = sum(
             self.line_ids.mapped('nfe40_vCOFINS'))
-        self.nfe40_infAdFisco = self.fiscal_additional_data
-        self.nfe40_infCpl = self.customer_additional_data
         super(NFe, self)._export_fields(
             xsd_fields, class_obj, export_dict)
         if export_dict.get('vTroco') and not self.nfe40_vTroco:
@@ -660,6 +680,8 @@ class NFe(spec_models.StackedModel):
                            '- SEM VALOR FISCAL'
                 if self.partner_legal_name:
                     return self.partner_legal_name
+                elif self.partner_name:
+                    return self.partner_name
             if class_obj._name == 'nfe.40.transporta':
                 if self.nfe40_transporta and self.nfe40_transporta.nfe40_xNome:
                     return self.nfe40_transporta.nfe40_xNome
