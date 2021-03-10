@@ -680,6 +680,8 @@ class NFe(spec_models.StackedModel):
                            '- SEM VALOR FISCAL'
                 if self.partner_legal_name:
                     return self.partner_legal_name
+                elif self.partner_name:
+                    return self.partner_name
             if class_obj._name == 'nfe.40.transporta':
                 if self.nfe40_transporta and self.nfe40_transporta.nfe40_xNome:
                     return self.nfe40_transporta.nfe40_xNome
