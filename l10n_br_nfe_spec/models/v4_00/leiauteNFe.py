@@ -6152,7 +6152,7 @@ class Transporta(models.AbstractModel):
     _name = 'nfe.40.transporta'
     _inherit = 'spec.mixin.nfe'
     _generateds_type = 'transportaType'
-    _concrete_rec_name = 'nfe40_CNPJ'
+    _concrete_rec_name = 'nfe40_xNome'
 
     nfe40_choice19 = fields.Selection([
         ('nfe40_CNPJ', 'CNPJ'),
