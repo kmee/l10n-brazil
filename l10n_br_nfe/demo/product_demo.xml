@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="0">
+    <!-- product for same stage in Simples Nacional -->
+    <record id="product_same_state" model="product.product">
+        <field name="name">Produto Simples Nacional Mesmo Estado</field>
+        <field nae="list_price">7.76</field>
+        <field name="standard_price">0.0</field>
+        <field name="default_code">[CFOP5101]</field>
+        <field name="uom_id" ref="uom.product_uom_kgm"/>
+        <field name="uom_po_id" ref="uom.product_uom_kgm"/>
+        <field name="categ_id" ref="product.product_category_1"/>
+        <field name="ncm_id" ref="l10n_br_fiscal.ncm_00000000"/>
+        <field name="fiscal_type">02</field>
+        <field name="tax_icmms_or_issqn">icms</field>
+        <field name="fiscal_genre_id" ref="l10n_br_fiscal.product_genre_48"/>
+        <field name="icms_origin">0</field>
+    </record>
+</odoo>

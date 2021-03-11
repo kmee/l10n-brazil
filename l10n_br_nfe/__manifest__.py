@@ -35,6 +35,8 @@
     "demo": [
         "demo/fiscal_document_demo.xml",
         "demo/company_demo.xml",
+        "demo/l10n_br_fiscal.ncm-demo.csv",
+        "demo/product_demo.xml",
     ],
     'post_init_hook': 'post_init_hook',
     "installable": True,
