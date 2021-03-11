@@ -173,8 +173,8 @@ class SaleOrder(models.Model):
 
         return order_view
 
-    @api.onchange('discount_rate')
-    def onchange_discount_rate(self):
+    @api.multi
+    def update_discount_rate(self):
         for order in self:
             for line in order.order_line:
                 line.discount = order.discount_rate
