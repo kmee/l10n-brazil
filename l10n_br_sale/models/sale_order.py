@@ -209,8 +209,8 @@ class SaleOrder(models.Model):
 
         return order_view
 
-    @api.onchange('discount_rate')
-    def onchange_discount_rate(self):
+    @api.multi
+    def update_discount_rate(self):
         for order in self:
             for line in order.order_line:
                 if line.discount_fixed:
@@ -373,7 +373,7 @@ class SaleOrder(models.Model):
 
     def recompute_lines_taxes(self):
         if self.env.user.has_group('l10n_br_sale.group_total_discount'):
-            self.onchange_discount_rate()
+            self.update_discount_rate()
         self.mapped('order_line').recompute_taxes()
 
     def _amount_by_group(self):

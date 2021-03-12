@@ -764,11 +764,6 @@ class Document(models.Model):
             values['date'] = self._date_server_format()
         return super().create(values)
 
-    def check_financial(self):
-        for record in self:
-            for payment in record.fiscal_payment_ids:
-                payment.check_financial()
-
     @api.onchange('company_id')
     def _onchange_company_id(self):
         if self.company_id:
