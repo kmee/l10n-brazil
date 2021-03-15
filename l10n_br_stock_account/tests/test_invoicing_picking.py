@@ -2,14 +2,15 @@
 #   Magno Costa <magno.costa@akretion.com.br>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
-from odoo.tests.common import TransactionCase
+from odoo.tests import SavepointCase
 
 
-class InvoicingPickingTest(TransactionCase):
+class InvoicingPickingTest(SavepointCase):
     """Test invoicing picking"""
 
-    def setUp(self):
-        super(InvoicingPickingTest, self).setUp()
+    @classmethod
+    def setUpClass(self):
+        super().setUpClass()
         self.stock_picking = self.env['stock.picking']
         self.invoice_model = self.env['account.invoice']
         self.invoice_wizard = self.env['stock.invoice.onshipping']
@@ -103,6 +104,12 @@ class InvoicingPickingTest(TransactionCase):
             # Venda, ex.: Simples Remessa, Remessa p/ Industrialiazação e etc.
             # Aqui o campo não pode ser negativo
             self.assertEqual(line.price_unit, line.product_id.standard_price)
+            # Valida presença dos campos principais para o mapeamento Fiscal
+            self.assertTrue(
+                line.fiscal_operation_id, 'Missing Fiscal Operation.')
+            self.assertTrue(
+                line.fiscal_operation_line_id,
+                'Missing Fiscal Operation Line.')
 
         self.assertTrue(
             invoice.fiscal_operation_id,
