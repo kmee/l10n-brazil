@@ -13,6 +13,11 @@
         <field name="processador_edoc">oca</field>
         <field name="partner_id" ref="l10n_br_base.res_partner_cliente1_sp"/>
         <field name="user_id" ref="base.user_demo"/>
+        <field name="partner_legal_name">Cliente 1 SP</field>
+        <field name="partner_name">Cliente 1 SP Contribuinte</field>
+        <field name="partner_cnpj_cpf">81.493.979/0001-89</field>
+        <field name="partner_inscr_est">454.504.604.553</field>
+        <field name="partner_tax_framework">3</field>
         <field name="fiscal_operation_type">out</field>
     </record>
 
@@ -96,4 +101,78 @@
         <value eval="[ref('l10n_br_nfe.demo_nfe_line_same_state_1-2')]"/>
     </function>
 
+<!--    <record id="demo_nfe_same_state" model="l10n_br_fiscal.document">-->
+<!--        <field name="nfe40_detPag" model="nfe.40.detpag" eval="[-->
+<!--            (0, 0, {-->
+<!--                'nfe40_indPag': '0',-->
+<!--                'nfe40_tPag': '99',-->
+<!--                'nfe40_vPag': obj().env.ref('l10n_br_nfe.demo_nfe_same_state').amount_total,-->
+<!--        })]"/>-->
+<!--    </record>-->
+
+<!--    <function model="l10n_br_fiscal.document" name="action_document_confirm">-->
+<!--        <value eval="[ref('l10n_br_nfe.demo_nfe_same_state')]"/>-->
+<!--    </function>-->
+
+    <!-- NFe Test - Pessoa Física - ICMS 18% with a reduction of 51.11% for NCM 94013090 -->
+    <record id="demo_nfe_natural_icms_18_red_51_11" model="l10n_br_fiscal.document">
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda"/>
+        <field name="document_type_id" ref="l10n_br_fiscal.document_55"/>
+        <field name="document_serie_id" ref="l10n_br_fiscal.empresa_lc_document_55_serie_1"/>
+        <field name="company_id" ref="l10n_br_base.empresa_lucro_presumido"/>
+        <field name="company_number">1</field>
+        <field name="document_serie">1</field>
+        <field name="document_section">nfe</field>
+        <field name="processador_edoc">oca</field>
+        <field name="partner_id" ref="l10n_br_base.res_partner_cliente11_sp"/>
+        <field name="user_id" ref="base.user_demo"/>
+        <field name="partner_legal_name">Cliente 11 SP - PF Não Contribuinte</field>
+        <field name="partner_name">Cliente 11 SP - PF</field>
+        <field name="partner_cnpj_cpf">765.865.078-12</field>
+        <field name="partner_inscr_est">525.424.040.648</field>
+        <field name="fiscal_operation_type">out</field>
+    </record>
+
+    <function model="l10n_br_fiscal.document" name="_onchange_company_id">
+        <value eval="[ref('l10n_br_nfe.demo_nfe_natural_icms_18_red_51_11')]"/>
+    </function>
+
+    <function model="l10n_br_fiscal.document" name="_onchange_fiscal_operation_id">
+        <value eval="[ref('l10n_br_nfe.demo_nfe_natural_icms_18_red_51_11')]"/>
+    </function>
+
+    <record id="demo_nfe_natural_icms_18_red_51_11-1" model="l10n_br_fiscal.document.line">
+        <field name="document_id" ref="demo_nfe_natural_icms_18_red_51_11"/>
+        <field name="name">Teste</field>
+        <field name="product_id" ref="l10n_br_fiscal.product_finished_nation_origin_ncm_94013090"/>
+        <field name="uom_id" ref="uom.product_uom_unit"/>
+        <field name="quantity">1</field>
+        <field name="fiscal_operation_type">out</field>
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda"/>
+        <field name="fiscal_operation_line_id" ref="l10n_br_fiscal.fo_venda_venda"/>
+    </record>
+
+    <function model="l10n_br_fiscal.document.line" name="_onchange_product_id_fiscal">
+        <value eval="[ref('l10n_br_nfe.demo_nfe_natural_icms_18_red_51_11-1')]"/>
+    </function>
+
+    <function model="l10n_br_fiscal.document.line" name="_onchange_commercial_quantity">
+        <value eval="[ref('l10n_br_nfe.demo_nfe_natural_icms_18_red_51_11-1')]"/>
+    </function>
+
+    <function model="l10n_br_fiscal.document.line" name="_onchange_ncm_id">
+        <value eval="[ref('l10n_br_nfe.demo_nfe_natural_icms_18_red_51_11-1')]"/>
+    </function>
+
+    <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_operation_id">
+        <value eval="[ref('l10n_br_nfe.demo_nfe_natural_icms_18_red_51_11-1')]"/>
+    </function>
+
+    <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_operation_line_id">
+        <value eval="[ref('l10n_br_nfe.demo_nfe_natural_icms_18_red_51_11-1')]"/>
+    </function>
+
+    <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_taxes">
+        <value eval="[ref('l10n_br_nfe.demo_nfe_natural_icms_18_red_51_11-1')]"/>
+    </function>
 </odoo>
