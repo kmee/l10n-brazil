@@ -280,6 +280,23 @@
         <field name="fiscal_genre_id" ref="l10n_br_fiscal.product_genre_69"/>
         <field name="icms_origin">0</field>
     </record>
+
+    <!-- Finished Product of national origin NCM 94052000-->
+    <record id="product_finished_nation_origin_ncm_94052000" model="product.product">
+        <field name="name">Finished Product of national origin NCM 94052000</field>
+        <field name="list_price">234.00</field>
+        <field name="standard_price">0.0</field>
+        <field name="type">service</field>
+        <field name="default_code">94052000</field>
+        <field name="uom_id" ref="uom.product_uom_unit"/>
+        <field name="uom_po_id" ref="uom.product_uom_unit"/>
+        <field name="categ_id" ref="product.product_category_all"/>
+        <field name="ncm_id" ref="l10n_br_fiscal.ncm_94052000"/>
+        <field name="fiscal_type">04</field>
+        <field name="tax_icms_or_issqn">icms</field>
+        <field name="fiscal_genre_id" ref="l10n_br_fiscal.product_genre_69"/>
+        <field name="icms_origin">0</field>
+    </record>
     <!-- Service products -->
     <!-- Customized Development-->
     <record id="customized_development_sale" model="product.product">
