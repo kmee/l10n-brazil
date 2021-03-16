@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!-- ICMS 18% with a reduction of 51.11% for NCM 94013090-->
+    <record id="tax_icms_regulation_sp_sp_icms_18_default" model="l10n_br_fiscal.tax.definition">
+        <field name="ncm_ids" eval="[(6, 0, [ref('l10n_br_fiscal.ncm_94013090')])]"/>
+        <field name="state">approved</field>
+    </record>
+
+    <!-- ICMS 7% for NCM 94052000 -->
+    <record id="l10n_br_fiscal.tax_icms_regulation_sp_sp_icms_7" model="l10n_br_fiscal.tax.definition">
+        <field name="ncm_ids" eval="[(6, 0, [ref('l10n_br_fiscal.ncm_94052000')])]"/>
+        <field name="state">approved</field>
+    </record>
+
+    <!-- ICMS 18% for NCM 84714900 -->
+    <record id="l10n_br_fiscal.tax_icms_regulation_sp_sp_icms_18_default" model="l10n_br_fiscal.tax.definition">
+        <field name="ncm_ids" eval="[(6, 0, [ref('l10n_br_fiscal.ncm_84714900')])]"/>
+        <field name="state">approved</field>
+    </record>
+
+</odoo>
