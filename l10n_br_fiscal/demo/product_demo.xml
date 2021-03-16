@@ -297,6 +297,24 @@
         <field name="fiscal_genre_id" ref="l10n_br_fiscal.product_genre_69"/>
         <field name="icms_origin">0</field>
     </record>
+
+    <!-- Resale Product of national origin NCM 84714900-->
+    <record id="product_resale_nation_origin_ncm_84714900" model="product.product">
+        <field name="name">Resale Product of national origin NCM 84714900</field>
+        <field name="list_price">80.00</field>
+        <field name="standard_price">0.0</field>
+        <field name="type">service</field>
+        <field name="default_code">84714900</field>
+        <field name="uom_id" ref="uom.product_uom_unit"/>
+        <field name="uom_po_id" ref="uom.product_uom_unit"/>
+        <field name="categ_id" ref="product.product_category_all"/>
+        <field name="ncm_id" ref="l10n_br_fiscal.ncm_84714900"/>
+        <field name="fiscal_type">00</field>
+        <field name="tax_icms_or_issqn">icms</field>
+        <field name="fiscal_genre_id" ref="l10n_br_fiscal.product_genre_69"/>
+        <field name="icms_origin">0</field>
+    </record>
+
     <!-- Service products -->
     <!-- Customized Development-->
     <record id="customized_development_sale" model="product.product">
