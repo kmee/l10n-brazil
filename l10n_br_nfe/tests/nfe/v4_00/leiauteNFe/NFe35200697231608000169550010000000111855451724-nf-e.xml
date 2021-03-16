@@ -1,20 +1,20 @@
 <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
-  <infNFe versao="4.00" Id="NFe35200681583054000129550010000000011760018059">
+  <infNFe versao="4.00" Id="NFeTest">
     <ide>
       <cUF>35</cUF>
-      <cNF>76001805</cNF>
+      <cNF>06277716</cNF>
       <natOp>Venda</natOp>
       <mod>55</mod>
       <serie>1</serie>
       <nNF>1</nNF>
-      <dhEmi>2020-06-04T13:58:46+02:00</dhEmi>
-      <dhSaiEnt>2020-06-04T13:58:46+02:00</dhSaiEnt>
+      <dhEmi>2020-01-01T12:00:00+01:00</dhEmi>
+      <dhSaiEnt>2020-01-01T12:00:00+01:00</dhSaiEnt>
       <tpNF>1</tpNF>
       <idDest>1</idDest>
       <cMunFG>3550308</cMunFG>
       <tpImp>1</tpImp>
       <tpEmis>1</tpEmis>
-      <cDV>9</cDV>
+      <cDV>0</cDV>
       <tpAmb>2</tpAmb>
       <finNFe>1</finNFe>
       <indFinal>1</indFinal>
@@ -204,7 +204,7 @@
     <pag>
       <detPag>
         <indPag>0</indPag>
-        <tPag>01</tPag>
+        <tPag>99</tPag>
         <vPag>4147.25</vPag>
       </detPag>
       <vTroco>0.00</vTroco>
