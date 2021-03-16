@@ -1,5 +1,5 @@
 <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
-  <infNFe versao="4.00" Id="NFe35200781583054000129550010000000011062777160">
+  <infNFe versao="4.00" Id="NFeTest">
     <ide>
       <cUF>35</cUF>
       <cNF>06277716</cNF>
@@ -7,8 +7,8 @@
       <mod>55</mod>
       <serie>1</serie>
       <nNF>1</nNF>
-      <dhEmi>2020-06-04T13:58:46+02:00</dhEmi>
-      <dhSaiEnt>2020-06-04T13:58:46+02:00</dhSaiEnt>
+      <dhEmi>2020-01-01T12:00:00+01:00</dhEmi>
+      <dhSaiEnt>2020-01-01T12:00:00+01:00</dhSaiEnt>
       <tpNF>1</tpNF>
       <idDest>1</idDest>
       <cMunFG>3550308</cMunFG>
