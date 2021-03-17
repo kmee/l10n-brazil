@@ -15,6 +15,9 @@ class DocumentCancel(models.Model):
     @api.multi
     def cancel_document(self, event_id):
         for record in self:
+            if record.document_id.document_type_id == self.env.ref(
+                    'l10n_br_fiscal.document_SE'):
+                return super().cancel_document(event_id)
             if not record.document_id or not record.justificative:
                 return super().cancel_document(event_id)
 
