@@ -52,4 +52,18 @@
         <field name="state">approved</field>
     </record>
 
+    <record id="l10n_br_fiscal.tax_icms_regulation_sp_icms_7" model="l10n_br_fiscal.tax.definition">
+        <field name="icms_regulation_id" ref="tax_icms_regulation"/>
+        <field name="state_from_id" ref="base.state_br_sp"/>
+        <field name="state_to_ids" eval="[(6, 0, [ref('base.state_br_ac'), ref('base.state_br_al'), ref('base.state_br_am'), ref('base.state_br_ap'), ref('base.state_br_ba'), ref('base.state_br_ce'), ref('base.state_br_df'), ref('base.state_br_es'), ref('base.state_br_go'), ref('base.state_br_ma'), ref('base.state_br_mt'), ref('base.state_br_ms'), ref('base.state_br_pa'), ref('base.state_br_pb'), ref('base.state_br_pe'), ref('base.state_br_pi'), ref('base.state_br_rn'), ref('base.state_br_ro'), ref('base.state_br_rr'), ref('base.state_br_se'), ref('base.state_br_to')])]"/>
+        <field name="is_taxed" eval="True"/>
+        <field name="is_debit_credit" eval="True"/>
+        <field name="custom_tax" eval="True"/>
+        <field name="tax_id" ref="l10n_br_fiscal.tax_icms_7"/>
+        <field name="cst_id" ref="l10n_br_fiscal.cst_icms_00"/>
+        <field name="tax_group_id" ref="l10n_br_fiscal.tax_group_icms"/>
+        <field name="ncm_ids" eval="[(6, 0, [ref('l10n_br_fiscal.ncm_22089000')])]"/>
+        <field name="state">approved</field>
+    </record>
+
 </odoo>
