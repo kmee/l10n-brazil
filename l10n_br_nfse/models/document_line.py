@@ -80,7 +80,7 @@ class DocumentLine(models.Model):
             'valor_deducoes': round(float(self.fiscal_deductions_value), 2),
             'valor_pis': round(float(self.pis_value), 2),
             'valor_pis_retido': round(float(self.pis_wh_value), 2),
-            'valor_cofins': round(float(self.cofins_value), 2),
+            'valor_cofins': '%.2f' % self.cofins_value,
             'valor_cofins_retido': round(float(self.cofins_wh_value), 2),
             'valor_inss': round(float(self.inss_value), 2),
             'valor_inss_retido': round(float(self.inss_wh_value), 2),
