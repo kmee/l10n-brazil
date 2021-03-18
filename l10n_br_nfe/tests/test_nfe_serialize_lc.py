@@ -19,8 +19,9 @@ class TestNFeExportLC(TestNFeExport):
                     'NFe35200697231608000169550010000000111855451724-nf-e.xml',
             },
             {
-                'record_id':
-                    self.env.ref('l10n_br_nfe.demo_nfe_natural_icms_18_red_51_11'),
+                'record_id': self.env.ref(
+                        'l10n_br_nfe.demo_nfe_natural_icms_18_red_51_11'
+                ),
                 'xml_file':
                     'NFe35210381583054000129550010000000021659443040-nf-e.xml',
             },

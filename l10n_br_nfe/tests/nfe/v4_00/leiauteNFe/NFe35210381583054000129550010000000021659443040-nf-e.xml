@@ -28,7 +28,6 @@
             <xFant>Empresa Lucro Presumido</xFant>
             <enderEmit>
                 <xLgr>Avenida Paulista</xLgr>
-                <nro>1</nro>
                 <xBairro>Bela Vista</xBairro>
                 <cMun>3550308</cMun>
                 <xMun>São Paulo</xMun>
@@ -61,17 +60,17 @@
         </dest>
         <det nItem="1">
             <prod>
-                <cProd>94013090</cProd>
+                <cProd>17029000</cProd>
                 <cEAN>SEM GTIN</cEAN>
-                <xProd>[94013090] Finished Product of national origin NCM 94013090</xProd>
-                <NCM>94013090</NCM>
+                <xProd>[17029000] Finished Product of national origin NCM 17029000</xProd>
+                <NCM>17029000</NCM>
                 <CFOP>5101</CFOP>
-                <uCom>UNID</uCom>
+                <uCom>KG</uCom>
                 <qCom>1.0000</qCom>
                 <vUnCom>728.5700000000</vUnCom>
                 <vProd>728.57</vProd>
                 <cEANTrib>SEM GTIN</cEANTrib>
-                <uTrib>UNID</uTrib>
+                <uTrib>KG</uTrib>
                 <qTrib>1.0000</qTrib>
                 <vUnTrib>728.5700000000</vUnTrib>
                 <indTot>1</indTot>
@@ -115,7 +114,7 @@
                     </COFINSAliq>
                 </COFINS>
             </imposto>
-            <infAdProd>Val Aprox Tributos Federal R$ 36.43</infAdProd>
+            <infAdProd>Val Aprox Tributos Federal R$ 36,43</infAdProd>
         </det>
         <total>
             <ICMSTot>
