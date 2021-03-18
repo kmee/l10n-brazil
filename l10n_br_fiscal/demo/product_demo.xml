@@ -329,7 +329,7 @@
         <field name="fiscal_type">00</field>
         <field name="tax_icms_or_issqn">icms</field>
         <field name="fiscal_genre_id" ref="l10n_br_fiscal.product_genre_69"/>
-        <field name="icms_origin">7</field>
+        <field name="icms_origin">2</field>
     </record>
 
     <!-- Finished Product of national origin NCM 22089000-->
