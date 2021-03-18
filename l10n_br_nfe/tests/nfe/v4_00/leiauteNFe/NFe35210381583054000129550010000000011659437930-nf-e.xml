@@ -10,7 +10,7 @@
             <dhEmi>2020-01-01T12:00:00+01:00</dhEmi>
             <dhSaiEnt>2020-01-01T12:00:00+01:00</dhSaiEnt>
             <tpNF>1</tpNF>
-            <idDest>1</idDest>
+            <idDest>2</idDest>
             <cMunFG>3550308</cMunFG>
             <tpImp>1</tpImp>
             <tpEmis>1</tpEmis>
@@ -28,7 +28,6 @@
             <xFant>Empresa Lucro Presumido</xFant>
             <enderEmit>
                 <xLgr>Avenida Paulista</xLgr>
-                <nro>1</nro>
                 <xBairro>Bela Vista</xBairro>
                 <cMun>3550308</cMun>
                 <xMun>São Paulo</xMun>
@@ -42,36 +41,39 @@
             <CRT>3</CRT>
         </emit>
         <dest>
-            <CPF>76586507812</CPF>
+            <CNPJ>84148732000113</CNPJ>
             <xNome>NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL</xNome>
             <enderDest>
-                <xLgr>Rua do Bosque</xLgr>
-                <nro>238</nro>
-                <xBairro>Barra Funda</xBairro>
-                <cMun>3550308</cMun>
-                <xMun>São Paulo</xMun>
-                <UF>SP</UF>
-                <CEP>01136000</CEP>
+                <xLgr>Avenida Javari</xLgr>
+                <nro>s/n</nro>
+                <xCpl>Lote 9.45/15E</xCpl>
+                <xBairro>Distrito Industrial</xBairro>
+                <cMun>1302603</cMun>
+                <xMun>Manaus</xMun>
+                <UF>AM</UF>
+                <CEP>69075110</CEP>
                 <cPais>1058</cPais>
                 <xPais>Brasil</xPais>
-                <fone>1138817417</fone>
+                <fone>9221458888</fone>
             </enderDest>
-            <indIEDest>9</indIEDest>
-            <email>cliente11@cliente11.com.br</email>
+            <indIEDest>1</indIEDest>
+            <IE>095693211</IE>
+            <ISUF>100695108</ISUF>
+            <email>cliente4@cliente4.com.br</email>
         </dest>
         <det nItem="1">
             <prod>
-                <cProd>84714900</cProd>
+                <cProd>12040090</cProd>
                 <cEAN>SEM GTIN</cEAN>
-                <xProd>[84714900] Resale Product of national origin NCM 84714900</xProd>
-                <NCM>84714900</NCM>
-                <CFOP>5102</CFOP>
-                <uCom>UNID</uCom>
+                <xProd>[12040090] Resale Product of national origin NCM 12040090</xProd>
+                <NCM>12040090</NCM>
+                <CFOP>6102</CFOP>
+                <uCom>KG</uCom>
                 <qCom>2.0000</qCom>
                 <vUnCom>80.0000000000</vUnCom>
                 <vProd>160.00</vProd>
                 <cEANTrib>SEM GTIN</cEANTrib>
-                <uTrib>UNID</uTrib>
+                <uTrib>KG</uTrib>
                 <qTrib>2.0000</qTrib>
                 <vUnTrib>80.0000000000</vUnTrib>
                 <indTot>1</indTot>
@@ -80,12 +82,12 @@
                 <vTotTrib>0.00</vTotTrib>
                 <ICMS>
                     <ICMS00>
-                        <orig>0</orig>
+                        <orig>2</orig>
                         <CST>00</CST>
                         <modBC>0</modBC>
                         <vBC>160.00</vBC>
-                        <pICMS>18.0000</pICMS>
-                        <vICMS>28.80</vICMS>
+                        <pICMS>4.0000</pICMS>
+                        <vICMS>6.40</vICMS>
                     </ICMS00>
                 </ICMS>
                 <IPI>
@@ -115,7 +117,7 @@
         <total>
             <ICMSTot>
                 <vBC>160.00</vBC>
-                <vICMS>28.80</vICMS>
+                <vICMS>6.40</vICMS>
                 <vICMSDeson>0.00</vICMSDeson>
                 <vFCPUFDest>0.00</vFCPUFDest>
                 <vICMSUFDest>0.00</vICMSUFDest>
@@ -151,7 +153,7 @@
             <vTroco>0.00</vTroco>
         </pag>
         <infAdic>
-            <infAdFisco>Documento emitido por: Marc Demo, Documento emitido por: Marc Demo</infAdFisco>
+            <infAdFisco>Documento emitido por: Marc Demo</infAdFisco>
         </infAdic>
     </infNFe>
 </NFe>
