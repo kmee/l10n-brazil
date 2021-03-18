@@ -6,7 +6,7 @@
             <natOp>Venda</natOp>
             <mod>55</mod>
             <serie>1</serie>
-            <nNF>3</nNF>
+            <nNF>1</nNF>
             <dhEmi>2020-01-01T12:00:00+01:00</dhEmi>
             <dhSaiEnt>2020-01-01T12:00:00+01:00</dhSaiEnt>
             <tpNF>1</tpNF>
@@ -14,7 +14,7 @@
             <cMunFG>3550308</cMunFG>
             <tpImp>1</tpImp>
             <tpEmis>1</tpEmis>
-            <cDV>6</cDV>
+            <cDV>5</cDV>
             <tpAmb>2</tpAmb>
             <finNFe>1</finNFe>
             <indFinal>1</indFinal>
@@ -63,17 +63,17 @@
         </dest>
         <det nItem="1">
             <prod>
-                <cProd>22089000</cProd>
+                <cProd>94052000</cProd>
                 <cEAN>SEM GTIN</cEAN>
-                <xProd>[22089000] Finished Product of national origin NCM 22089000</xProd>
-                <NCM>22089000</NCM>
+                <xProd>[94052000] Finished Product of national origin NCM 94052000</xProd>
+                <NCM>94052000</NCM>
                 <CFOP>6101</CFOP>
-                <uCom>LITRO</uCom>
+                <uCom>UNID</uCom>
                 <qCom>2.0000</qCom>
                 <vUnCom>234.0000000000</vUnCom>
                 <vProd>468.00</vProd>
                 <cEANTrib>SEM GTIN</cEANTrib>
-                <uTrib>LITRO</uTrib>
+                <uTrib>UNID</uTrib>
                 <qTrib>2.0000</qTrib>
                 <vUnTrib>234.0000000000</vUnTrib>
                 <indTot>1</indTot>
@@ -85,9 +85,9 @@
                         <orig>0</orig>
                         <CST>00</CST>
                         <modBC>0</modBC>
-                        <vBC>608.40</vBC>
+                        <vBC>538.20</vBC>
                         <pICMS>7.0000</pICMS>
-                        <vICMS>42.59</vICMS>
+                        <vICMS>37.67</vICMS>
                     </ICMS00>
                 </ICMS>
                 <IPI>
@@ -95,8 +95,8 @@
                     <IPITrib>
                         <CST>50</CST>
                         <vBC>468.00</vBC>
-                        <pIPI>30.0000</pIPI>
-                        <vIPI>140.40</vIPI>
+                        <pIPI>15.0000</pIPI>
+                        <vIPI>70.20</vIPI>
                     </IPITrib>
                 </IPI>
                 <PIS>
@@ -116,12 +116,12 @@
                     </COFINSAliq>
                 </COFINS>
             </imposto>
-            <infAdProd>Val Aprox Tributos Federal R$ 140,40</infAdProd>
+            <infAdProd>Val Aprox Tributos Federal R$ 70,20</infAdProd>
         </det>
         <total>
             <ICMSTot>
-                <vBC>608.40</vBC>
-                <vICMS>42.59</vICMS>
+                <vBC>538.20</vBC>
+                <vICMS>37.67</vICMS>
                 <vICMSDeson>0.00</vICMSDeson>
                 <vFCPUFDest>0.00</vFCPUFDest>
                 <vICMSUFDest>0.00</vICMSUFDest>
@@ -136,12 +136,12 @@
                 <vSeg>0.00</vSeg>
                 <vDesc>0.00</vDesc>
                 <vII>0.00</vII>
-                <vIPI>140.40</vIPI>
+                <vIPI>70.20</vIPI>
                 <vIPIDevol>0.00</vIPIDevol>
                 <vPIS>3.04</vPIS>
                 <vCOFINS>14.04</vCOFINS>
                 <vOutro>0.00</vOutro>
-                <vNF>608.40</vNF>
+                <vNF>538.20</vNF>
                 <vTotTrib>0.00</vTotTrib>
             </ICMSTot>
         </total>
@@ -152,7 +152,7 @@
             <detPag>
                 <indPag>0</indPag>
                 <tPag>99</tPag>
-                <vPag>608.40</vPag>
+                <vPag>538.20</vPag>
             </detPag>
             <vTroco>0.00</vTroco>
         </pag>
