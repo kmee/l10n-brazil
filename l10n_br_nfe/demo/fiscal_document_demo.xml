@@ -114,7 +114,7 @@
 <!--        <value eval="[ref('l10n_br_nfe.demo_nfe_same_state')]"/>-->
 <!--    </function>-->
 
-    <!-- NFe Test - Pessoa Física - ICMS 18% with a reduction of 51.11% for NCM 94013090 -->
+    <!-- NFe Test - Pessoa Física - ICMS 18% with a reduction of 51.11% for NCM 17029000 -->
     <record id="demo_nfe_natural_icms_18_red_51_11" model="l10n_br_fiscal.document">
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda"/>
         <field name="document_type_id" ref="l10n_br_fiscal.document_55"/>
@@ -144,7 +144,7 @@
     <record id="demo_nfe_natural_icms_18_red_51_11-1" model="l10n_br_fiscal.document.line">
         <field name="document_id" ref="demo_nfe_natural_icms_18_red_51_11"/>
         <field name="name">Teste</field>
-        <field name="product_id" ref="l10n_br_fiscal.product_finished_nation_origin_ncm_94013090"/>
+        <field name="product_id" ref="l10n_br_fiscal.product_finished_nation_origin_ncm_17029000"/>
         <field name="uom_id" ref="uom.product_uom_unit"/>
         <field name="quantity">1</field>
         <field name="fiscal_operation_type">out</field>
@@ -276,7 +276,6 @@
         <field name="fiscal_operation_type">out</field>
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda"/>
         <field name="fiscal_operation_line_id" ref="l10n_br_fiscal.fo_venda_venda"/>
-        <field name="cfop_id" ref="l10n_br_fiscal.cfop_6101"/>
 
     </record>
 
