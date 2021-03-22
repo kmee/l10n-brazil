@@ -76,7 +76,8 @@ Available addons
 ----------------
 addon | version | summary
 --- | --- | ---
-[l10n_br_account](l10n_br_account/) | 12.0.3.0.0 | Brazilian Localization Account
+[l10n_br_account](l10n_br_account/) | 12.0.3.1.0 | Brazilian Localization Account
+[l10n_br_account_bank_statement_import_cnab](l10n_br_account_bank_statement_import_cnab/) | 12.0.1.0.0 | Importação de Extrato Bancário CNAB 240 - Segmento E
 [l10n_br_account_payment_order](l10n_br_account_payment_order/) | 12.0.1.0.0 | Brazilian Payment Order
 [l10n_br_base](l10n_br_base/) | 12.0.1.0.2 | Customization of base module for implementations in Brazil.
 [l10n_br_coa](l10n_br_coa/) | 12.0.2.2.0 | Base Brasilian Localization for the Chart of Accounts
@@ -89,7 +90,7 @@ addon | version | summary
 [l10n_br_delivery](l10n_br_delivery/) | 12.0.1.1.0 | This module changes the delivery model strategy to match brazilian standards.
 [l10n_br_fiscal](l10n_br_fiscal/) | 12.0.6.0.0 | Brazilian fiscal core module.
 [l10n_br_hr](l10n_br_hr/) | 12.0.1.0.0 | Brazilian Localization HR
-[l10n_br_hr_contract](l10n_br_hr_contract/) | 12.0.1.0.0 | Brazilian Localization HR Contract
+[l10n_br_hr_contract](l10n_br_hr_contract/) | 12.0.1.1.0 | Brazilian Localization HR Contract
 [l10n_br_mis_report](l10n_br_mis_report/) | 12.0.1.1.0 | Templates de relatórios contábeis brasileiros: Balanço Patrimonial e DRE
 [l10n_br_nfe_spec](l10n_br_nfe_spec/) | 12.0.1.0.0 | nfe spec
 [l10n_br_nfse](l10n_br_nfse/) | 12.0.1.8.0 | NFS-e
@@ -97,13 +98,13 @@ addon | version | summary
 [l10n_br_nfse_issnet](l10n_br_nfse_issnet/) | 12.0.1.0.1 | NFS-e (ISSNet)
 [l10n_br_portal](l10n_br_portal/) | 12.0.1.0.0 | Campos Brasileiros no Portal
 [l10n_br_purchase](l10n_br_purchase/) | 12.0.2.0.0 | Brazilian Localization Purchase
-[l10n_br_purchase_stock](l10n_br_purchase_stock/) | 12.0.1.1.0 | Brazilian Localization Purchase Stock
+[l10n_br_purchase_stock](l10n_br_purchase_stock/) | 12.0.1.2.0 | Brazilian Localization Purchase Stock
 [l10n_br_repair](l10n_br_repair/) | 12.0.2.0.0 | Brazilian Localization Repair
 [l10n_br_resource](l10n_br_resource/) | 12.0.1.0.0 | This module extend core resource to create important brazilian informations. Define a Brazilian calendar and some tools to compute dates used in financial and payroll modules
-[l10n_br_sale](l10n_br_sale/) | 12.0.2.0.0 | Brazilian Localization Sale
-[l10n_br_sale_stock](l10n_br_sale_stock/) | 12.0.5.0.0 | Brazilian Localization Sales and Warehouse
+[l10n_br_sale](l10n_br_sale/) | 12.0.2.1.0 | Brazilian Localization Sale
+[l10n_br_sale_stock](l10n_br_sale_stock/) | 12.0.5.1.0 | Brazilian Localization Sales and Warehouse
 [l10n_br_stock](l10n_br_stock/) | 12.0.1.0.0 | Brazilian Localization Warehouse
-[l10n_br_stock_account](l10n_br_stock_account/) | 12.0.3.0.0 | Brazilian Localization WMS Accounting
+[l10n_br_stock_account](l10n_br_stock_account/) | 12.0.3.1.0 | Brazilian Localization WMS Accounting
 [l10n_br_website_sale](l10n_br_website_sale/) | 12.0.1.0.1 | Website sale localização brasileira.
 [l10n_br_website_sale_delivery](l10n_br_website_sale_delivery/) | 12.0.1.1.0 | Implements Brazilian freight values for delivery.
 [l10n_br_zip](l10n_br_zip/) | 12.0.3.0.1 | Brazilian Localisation ZIP Codes
