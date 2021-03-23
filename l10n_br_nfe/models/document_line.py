@@ -360,6 +360,18 @@ class NFeLine(spec_models.StackedModel):
                 self.nfe40_pICMSUFDest = 20.0
             self.nfe40_pICMSInter = '%.2f' % self.icms_percent \
                 if self.icms_percent else '12.00'
+            if self.company_id.icms_regulation_id:
+                tax_icms_ids = self.company_id.icms_regulation_id.map_tax(
+                    company=self.company_id,
+                    partner=self.partner_id,
+                    product=self.product_id,
+                    ncm=self.ncm_id,
+                    nbm=self.nbm_id,
+                    cest=self.cest_id,
+                    operation_line=self.fiscal_operation_line_id)
+                for tax in tax_icms_ids:
+                    if tax.tax_domain == 'icms':
+                        self.nfe40_pICMSInter = '%.2f' % tax.percent_amount
             self.nfe40_pICMSInterPart = 100.0
             self.nfe40_vICMSUFDest = (
                 self.nfe40_vBCUFDest * (
