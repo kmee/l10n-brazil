@@ -269,7 +269,7 @@
         <field name="name">Finished Product of national origin NCM 17029000</field>
         <field name="list_price">728.57</field>
         <field name="standard_price">0.0</field>
-        <field name="type">service</field>
+        <field name="type">consu</field>
         <field name="default_code">17029000</field>
         <field name="uom_id" ref="uom.product_uom_kgm"/>
         <field name="uom_po_id" ref="uom.product_uom_kgm"/>
@@ -286,7 +286,7 @@
         <field name="name">Finished Product of national origin NCM 94052000</field>
         <field name="list_price">234.00</field>
         <field name="standard_price">0.0</field>
-        <field name="type">service</field>
+        <field name="type">consu</field>
         <field name="default_code">94052000</field>
         <field name="uom_id" ref="uom.product_uom_unit"/>
         <field name="uom_po_id" ref="uom.product_uom_unit"/>
@@ -303,7 +303,7 @@
         <field name="name">Resale Product of national origin NCM 84714900</field>
         <field name="list_price">80.00</field>
         <field name="standard_price">0.0</field>
-        <field name="type">service</field>
+        <field name="type">consu</field>
         <field name="default_code">84714900</field>
         <field name="uom_id" ref="uom.product_uom_unit"/>
         <field name="uom_po_id" ref="uom.product_uom_unit"/>
@@ -320,7 +320,7 @@
         <field name="name">Resale Product of national origin NCM 12040090</field>
         <field name="list_price">80.00</field>
         <field name="standard_price">0.0</field>
-        <field name="type">service</field>
+        <field name="type">consu</field>
         <field name="default_code">12040090</field>
         <field name="uom_id" ref="uom.product_uom_kgm"/>
         <field name="uom_po_id" ref="uom.product_uom_kgm"/>
@@ -337,7 +337,7 @@
         <field name="name">Finished Product of national origin NCM 22089000</field>
         <field name="list_price">234</field>
         <field name="standard_price">0.0</field>
-        <field name="type">service</field>
+        <field name="type">consu</field>
         <field name="default_code">22089000</field>
         <field name="uom_id" ref="uom.product_uom_litre"/>
         <field name="uom_po_id" ref="uom.product_uom_litre"/>
@@ -354,7 +354,7 @@
         <field name="name">Sale Product of national origin with NCM 29202400</field>
         <field name="list_price">2.1000</field>
         <field name="standard_price">0.0</field>
-        <field name="type">service</field>
+        <field name="type">consu</field>
         <field name="default_code">22089000</field>
         <field name="uom_id" ref="uom.product_uom_kgm"/>
         <field name="uom_po_id" ref="uom.product_uom_kgm"/>
