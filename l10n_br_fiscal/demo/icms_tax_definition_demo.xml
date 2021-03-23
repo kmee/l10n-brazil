@@ -16,12 +16,6 @@
         <field name="state">approved</field>
     </record>
 
-<!--    &lt;!&ndash; ICMS 4% for NCM 84714900 &ndash;&gt;-->
-<!--    <record id="l10n_br_fiscal.tax_icms_regulation_sp_sp_icms_4" model="l10n_br_fiscal.tax.definition">-->
-<!--        <field name="ncm_ids" eval="[(6, 0, [ref('l10n_br_fiscal.ncm_84714900')])]"/>-->
-<!--        <field name="state">approved</field>-->
-<!--    </record>-->
-
     <!-- ICMS 7% for NCM 94052000 -->
     <record id="l10n_br_fiscal.tax_icms_regulation_sp_sp_icms_7" model="l10n_br_fiscal.tax.definition">
         <field name="icms_regulation_id" ref="l10n_br_fiscal.tax_icms_regulation"/>
