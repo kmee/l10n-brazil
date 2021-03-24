@@ -343,7 +343,7 @@
         <field name="uom_po_id" ref="uom.product_uom_litre"/>
         <field name="categ_id" ref="product.product_category_all"/>
         <field name="ncm_id" ref="l10n_br_fiscal.ncm_22089000"/>
-        <field name="fiscal_type">02</field>
+        <field name="fiscal_type">04</field>
         <field name="tax_icms_or_issqn">icms</field>
         <field name="fiscal_genre_id" ref="l10n_br_fiscal.product_genre_69"/>
         <field name="icms_origin">0</field>
