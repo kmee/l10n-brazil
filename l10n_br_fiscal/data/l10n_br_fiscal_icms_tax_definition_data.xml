@@ -3315,6 +3315,7 @@
     <field name="is_taxed" eval="True"/>
     <field name="is_debit_credit" eval="True"/>
     <field name="nbms">4014.10.0000</field>
+    <field name="cests">13.002.00</field>
     <field name="custom_tax" eval="True"/>
     <field name="tax_id" ref="l10n_br_fiscal.tax_icms_7"/>
     <field name="cst_id" ref="l10n_br_fiscal.cst_icms_00"/>
