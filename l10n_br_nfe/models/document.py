@@ -241,6 +241,9 @@ class NFe(spec_models.StackedModel):
     nfe40_infCpl = fields.Char(
         compute='_compute_nfe40_additional_data',
     )
+    nfe40_transporta = fields.Many2one(
+        comodel_name='res.partner'
+    )
 
     @api.depends('fiscal_additional_data', 'fiscal_additional_data')
     def _compute_nfe40_additional_data(self):
