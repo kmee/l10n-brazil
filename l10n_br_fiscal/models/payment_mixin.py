@@ -102,7 +102,10 @@ class PaymentMixin(models.AbstractModel):
             continue
             if not record.env.context.get('action_document_confirm'):
                 continue
-            elif record.payment_mode == FORMA_PAGAMENTO_SEM_PAGAMENTO:
+            elif record.payment_mode == FORMA_PAGAMENTO_SEM_PAGAMENTO or any(
+                p.payment_mode == FORMA_PAGAMENTO_SEM_PAGAMENTO
+                for p in record.fiscal_payment_ids
+            ):
                 continue
             elif record.amount_missing_payment_value > 0:
                 if not record.payment_term_id:
