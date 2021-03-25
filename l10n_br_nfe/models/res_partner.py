@@ -15,7 +15,7 @@ class ResPartner(spec_models.SpecModel):
     _name = 'res.partner'
     _inherit = ['res.partner', 'nfe.40.tendereco',
                 'nfe.40.tlocal', 'nfe.40.dest', 'nfe.40.tenderemi',
-                'nfe.40.tinfresptec']
+                'nfe.40.tinfresptec', 'nfe.40.transporta']
     _nfe_search_keys = ['nfe40_CNPJ', 'nfe40_CPF', 'nfe40_xNome']
 
     @api.model
@@ -58,7 +58,7 @@ class ResPartner(spec_models.SpecModel):
     nfe40_IE = fields.Char(related='inscr_est')
     nfe40_ISUF = fields.Char(related='suframa')
     nfe40_email = fields.Char(related='email')
-
+    nfe40_xEnder = fields.Char(compute='_compute_nfe40_xEnder')
     # nfe.40.infresptec
     nfe40_xContato = fields.Char(related='legal_name')
 
@@ -66,6 +66,13 @@ class ResPartner(spec_models.SpecModel):
         ('nfe40_CNPJ', 'CNPJ'),
         ('nfe40_CPF', 'CPF')],
         "CNPJ/CPF do Parceiro")
+
+    @api.multi
+    def _compute_nfe40_xEnder(self):
+        for rec in self:
+            rec.nfe40_xEnder = ', '.join(
+                (rec.street or '', rec.street_number or '', rec.district or '')
+            )
 
     @api.multi
     def _compute_nfe40_enderDest(self):
