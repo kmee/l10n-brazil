@@ -72,7 +72,7 @@ class NFe(spec_models.StackedModel):
     _nfe_search_keys = ['nfe40_Id']
 
     # all m2o at this level will be stacked even if not required:
-    _force_stack_paths = ('infnfe.total', 'infnfe.infAdic')
+    _force_stack_paths = ('infnfe.total', 'infnfe.infAdic', 'infnfe.infRespTec')
 
     def _compute_emit(self):
         for doc in self:  # TODO if out
