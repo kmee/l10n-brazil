@@ -458,7 +458,7 @@
         <field name="name">Test Invoice for Sale</field>
         <field name="product_id" ref="l10n_br_fiscal.product_sale_national_origin_ncm_29202400"/>
         <field name="uom_id" ref="uom.product_uom_kgm"/>
-        <field name="quantity">7.76</field>
+        <field name="quantity">2.1</field>
         <field name="fiscal_operation_type">out</field>
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda"/>
         <field name="fiscal_operation_line_id" ref="l10n_br_fiscal.fo_venda_venda"/>
