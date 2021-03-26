@@ -353,7 +353,7 @@
     <!-- Sale Product of national origin with NCM 29202400 -->
     <record id="product_sale_national_origin_ncm_29202400" model="product.product">
         <field name="name">Sale Product of national origin with NCM 29202400</field>
-        <field name="list_price">2.1000</field>
+        <field name="list_price">7.76</field>
         <field name="standard_price">0.0</field>
         <field name="type">consu</field>
         <field name="default_code">22089000</field>
