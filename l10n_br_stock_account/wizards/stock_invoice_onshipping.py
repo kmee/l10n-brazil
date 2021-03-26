@@ -93,13 +93,13 @@ class StockInvoiceOnshipping(models.TransientModel):
         return values
 
     @api.multi
-    def _simulate_invoice_line_onchange(self, values):
+    def _simulate_invoice_line_onchange(self, values, price_unit=None):
         """
         Simulate onchange for invoice line
         :param values: dict
         :return: dict
         """
-        price_unit = values.pop('price_unit')
+        price_unit = values.pop('price_unit') or price_unit
         new_values = super()._simulate_invoice_line_onchange(values.copy())
         line = self.env['account.invoice.line'].new(new_values.copy())
         line.price_unit = price_unit
