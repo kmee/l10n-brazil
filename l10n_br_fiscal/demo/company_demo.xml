@@ -2,12 +2,27 @@
 <odoo noupdate="1">
 
     <!-- Sua Empresa -->
+    <record id="base.main_partner" model="res.partner">
+        <field name="fiscal_profile_id" ref="l10n_br_fiscal.partner_fiscal_profile_snc"/>
+    </record>
+
+    <!-- Empresa Lucro Presumido -->
+    <record id="l10n_br_base.lucro_presumido_partner" model="res.partner">
+        <field name="fiscal_profile_id" ref="l10n_br_fiscal.partner_fiscal_profile_cnt"/>
+    </record>
+
+    <!-- Empresa Simples Nacional -->
+    <record id="l10n_br_base.simples_nacional_partner" model="res.partner">
+        <field name="fiscal_profile_id" ref="l10n_br_fiscal.partner_fiscal_profile_snc"/>
+    </record>
+
+    <!-- Sua Empresa -->
     <record id="base.main_company" model="res.company">
         <field name="tax_framework">1</field>
         <field name="is_industry" eval="True"/>
         <field name="ripi" eval="True"/>
         <field name="piscofins_id" ref="l10n_br_fiscal.tax_pis_cofins_simples_nacional"/>
-        <field name="tax_ipi_id" ref="l10n_br_fiscal.tax_ipi_simples_nacional"/>
+        <field name="tax_ipi_id" ref="l10n_br_fiscal.tax_ipi_outros"/>
         <field name="tax_icms_id" ref="l10n_br_fiscal.tax_icms_sn_com_credito"/>
         <field name="cnae_main_id" ref="l10n_br_fiscal.cnae_3101200"/>
         <field name="document_type_id" ref="l10n_br_fiscal.document_55"/>
@@ -40,7 +55,7 @@
         <field name="is_taxed">True</field>
         <field name="is_debit_credit">True</field>
         <field name="custom_tax">True</field>
-        <field name="tax_id" ref="l10n_br_fiscal.tax_cofins_simples_nacional"/>
+        <field name="tax_id" ref="l10n_br_fiscal.tax_cofins_outros"/>
         <field name="cst_id" ref="l10n_br_fiscal.cst_cofins_49"/>
         <field name="state">draft</field>
     </record>
@@ -51,7 +66,7 @@
         <field name="is_taxed">True</field>
         <field name="is_debit_credit">True</field>
         <field name="custom_tax">True</field>
-        <field name="tax_id" ref="l10n_br_fiscal.tax_pis_simples_nacional"/>
+        <field name="tax_id" ref="l10n_br_fiscal.tax_pis_outros"/>
         <field name="cst_id" ref="l10n_br_fiscal.cst_pis_49"/>
         <field name="state">draft</field>
     </record>
@@ -62,7 +77,7 @@
         <field name="is_taxed">True</field>
         <field name="is_debit_credit">True</field>
         <field name="custom_tax">True</field>
-        <field name="tax_id" ref="l10n_br_fiscal.tax_ipi_simples_nacional"/>
+        <field name="tax_id" ref="l10n_br_fiscal.tax_ipi_outros"/>
         <field name="cst_id" ref="l10n_br_fiscal.cst_ipi_99"/>
         <field name="state">draft</field>
     </record>
@@ -125,7 +140,7 @@
         <field name="is_industry" eval="True"/>
         <field name="ripi" eval="True"/>
         <field name="piscofins_id" ref="l10n_br_fiscal.tax_pis_cofins_simples_nacional"/>
-        <field name="tax_ipi_id" ref="l10n_br_fiscal.tax_ipi_simples_nacional"/>
+        <field name="tax_ipi_id" ref="l10n_br_fiscal.tax_ipi_outros"/>
         <field name="tax_icms_id" ref="l10n_br_fiscal.tax_icms_sn_com_credito"/>
         <field name="cnae_main_id" ref="l10n_br_fiscal.cnae_3101200"/>
         <field name="document_type_id" ref="l10n_br_fiscal.document_55"/>
@@ -166,7 +181,7 @@
         <field name="is_taxed">True</field>
         <field name="is_debit_credit">True</field>
         <field name="custom_tax">True</field>
-        <field name="tax_id" ref="l10n_br_fiscal.tax_cofins_simples_nacional"/>
+        <field name="tax_id" ref="l10n_br_fiscal.tax_cofins_outros"/>
         <field name="cst_id" ref="l10n_br_fiscal.cst_cofins_49"/>
         <field name="state">draft</field>
     </record>
@@ -177,7 +192,7 @@
         <field name="is_taxed">True</field>
         <field name="is_debit_credit">True</field>
         <field name="custom_tax">True</field>
-        <field name="tax_id" ref="l10n_br_fiscal.tax_pis_simples_nacional"/>
+        <field name="tax_id" ref="l10n_br_fiscal.tax_pis_outros"/>
         <field name="cst_id" ref="l10n_br_fiscal.cst_pis_49"/>
         <field name="state">draft</field>
     </record>
@@ -188,9 +203,10 @@
         <field name="is_taxed">True</field>
         <field name="is_debit_credit">True</field>
         <field name="custom_tax">True</field>
-        <field name="tax_id" ref="l10n_br_fiscal.tax_ipi_simples_nacional"/>
+        <field name="tax_id" ref="l10n_br_fiscal.tax_ipi_outros"/>
         <field name="cst_id" ref="l10n_br_fiscal.cst_ipi_99"/>
         <field name="state">draft</field>
     </record>
+
 
 </odoo>

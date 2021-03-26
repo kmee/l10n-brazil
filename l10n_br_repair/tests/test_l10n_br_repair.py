@@ -68,16 +68,16 @@ class L10nBrRepairBaseTest(TransactionCase):
                 'tax': self.env.ref('l10n_br_fiscal.tax_issqn_5'),
             },
             'ipi': {
-                'tax': self.env.ref('l10n_br_fiscal.tax_ipi_simples_nacional'),
+                'tax': self.env.ref('l10n_br_fiscal.tax_ipi_outros'),
                 'cst': self.env.ref('l10n_br_fiscal.cst_ipi_99'),
             },
             'pis': {
-                'tax': self.env.ref('l10n_br_fiscal.tax_pis_simples_nacional'),
+                'tax': self.env.ref('l10n_br_fiscal.tax_pis_outros'),
                 'cst': self.env.ref('l10n_br_fiscal.cst_pis_49'),
             },
             'cofins': {
                 'tax': self.env.ref(
-                    'l10n_br_fiscal.tax_cofins_simples_nacional'),
+                    'l10n_br_fiscal.tax_cofins_outros'),
                 'cst': self.env.ref('l10n_br_fiscal.cst_cofins_49'),
             },
             'icmsfcp': {
@@ -186,7 +186,10 @@ class L10nBrRepairBaseTest(TransactionCase):
             "after change fiscal category.",
         )
         self.assertEquals(
-            self.so_products.amount_discount, 0, "Error to discount value")
+            self.so_products.amount_discount_value,
+            0,
+            "Error to discount value",
+        )
 
         for line in self.so_products.operations:
             self._run_operations_onchanges(line)
@@ -330,7 +333,10 @@ class L10nBrRepairBaseTest(TransactionCase):
         )
 
         self.assertEquals(
-            self.so_services.amount_discount, 0, "Error to discount value")
+            self.so_services.amount_discount_value,
+            0,
+            "Error to discount value",
+        )
 
         for line in self.so_services.fees_lines:
             self._run_fees_lines_onchanges(line)

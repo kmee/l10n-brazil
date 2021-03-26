@@ -9,6 +9,7 @@ from odoo.addons import decimal_precision as dp
 from odoo.addons.l10n_br_fiscal.constants.fiscal import NFE_IND_IE_DEST_9
 
 
+
 class SaleOrder(models.Model):
     _name = 'sale.order'
     _inherit = [_name, 'l10n_br_fiscal.document.mixin']
@@ -62,7 +63,7 @@ class SaleOrder(models.Model):
     discount_rate = fields.Float(
         string='Discount',
         readonly=True,
-        states={'draft': [('readonly', False)]},
+        states={'draft': [('readonly', False)], 'sent': [('readonly', False)]},
     )
 
     amount_gross = fields.Monetary(
@@ -73,42 +74,6 @@ class SaleOrder(models.Model):
         help="Amount without discount.",
     )
 
-    amount_discount = fields.Monetary(
-        compute='_amount_all',
-        store=True,
-        string='Discount (-)',
-        readonly=True,
-        help="The discount amount.",
-    )
-
-    amount_freight = fields.Monetary(
-        compute='_amount_all',
-        store=True,
-        string='Freight',
-        readonly=True,
-        default=0.00,
-        digits=dp.get_precision('Account'),
-        states={'draft': [('readonly', False)]},
-    )
-
-    amount_insurance = fields.Monetary(
-        compute='_amount_all',
-        store=True,
-        string='Insurance',
-        readonly=True,
-        default=0.00,
-        digits=dp.get_precision('Account'),
-    )
-
-    amount_costs = fields.Monetary(
-        compute='_amount_all',
-        store=True,
-        string='Other Costs',
-        readonly=True,
-        default=0.00,
-        digits=dp.get_precision('Account'),
-    )
-
     comment_ids = fields.Many2many(
         comodel_name='l10n_br_fiscal.comment',
         relation='sale_order_comment_rel',
@@ -117,33 +82,22 @@ class SaleOrder(models.Model):
         string='Comments',
     )
 
+    @api.multi
+    def _get_amount_lines(self):
+        """Get object lines instaces used to compute fields"""
+        return self.mapped('order_line')
+
+    @api.depends('order_line')
+    def _compute_amount(self):
+        super()._compute_amount()
+
     @api.depends('order_line.price_total')
     def _amount_all(self):
         """Compute the total amounts of the SO."""
         for order in self:
+            order._compute_amount()
             order.amount_gross = sum(
                 line.price_gross for line in order.order_line)
-
-            order.amount_discount = sum(
-                line.discount_value for line in order.order_line)
-
-            order.amount_untaxed = sum(
-                line.price_subtotal for line in order.order_line)
-
-            order.amount_tax = sum(
-                line.price_tax for line in order.order_line)
-
-            order.amount_total = sum(
-                line.price_total for line in order.order_line)
-
-            order.amount_freight = sum(
-                line.freight_value for line in order.order_line)
-
-            order.amount_costs = sum(
-                line.other_costs_value for line in order.order_line)
-
-            order.amount_insurance = sum(
-                line.insurance_value for line in order.order_line)
 
     @api.model
     def fields_view_get(self, view_id=None, view_type="form",
@@ -178,8 +132,16 @@ class SaleOrder(models.Model):
     def onchange_discount_rate(self):
         for order in self:
             for line in order.order_line:
-                line.discount = order.discount_rate
-                line._onchange_discount_percent()
+                if self.env.user.has_group(
+                        'l10n_br_sale.group_discount_per_value'):
+                    line.discount_value = (
+                        (line.product_uom_qty * line.price_unit)
+                        * (order.discount_rate / 100)
+                    )
+                    line._onchange_discount_value()
+                else:
+                    line.discount = order.discount_rate
+                    line._onchange_discount_percent()
 
     @api.onchange('fiscal_operation_id')
     def _onchange_fiscal_operation_id(self):
