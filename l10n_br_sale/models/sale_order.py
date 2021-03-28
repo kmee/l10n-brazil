@@ -160,6 +160,16 @@ class SaleOrder(models.Model):
             if final_operation_id:
                 self.fiscal_operation_id = final_consumption_operation_id
 
+    @api.onchange('partner_id')
+    def onchange_partner_id(self):
+        super().onchange_partner_id()
+        if self.partner_id.ind_ie_dest == NFE_IND_IE_DEST_9:
+            company_id = self.env.user.company_id
+            final_consumption_operation_id = \
+                company_id.sale_final_consumption_fiscal_operation_id
+            if final_operation_id:
+                self.fiscal_operation_id = final_consumption_operation_id
+
     @api.multi
     def _prepare_invoice(self):
         self.ensure_one()
