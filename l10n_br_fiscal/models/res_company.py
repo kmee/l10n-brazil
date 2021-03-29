@@ -2,6 +2,8 @@
 # Copyright (C) 2020  Luis Felipe Mileo - KMEE
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
+import logging
+
 from odoo import api, fields, models
 from odoo.addons import decimal_precision as dp
 
@@ -34,17 +36,21 @@ from ..constants.fiscal import (
     COEFFICIENT_R,
 )
 
+_logger = logging.getLogger(__name__)
+
 
 class ResCompany(models.Model):
     _inherit = "res.company"
 
     @api.multi
-    def _compute_l10n_br_data(self):
+    def _get_company_address_fields(self, partner):
         """ Read the l10n_br specific functional fields. """
-        super(ResCompany, self)._compute_l10n_br_data()
-        for c in self:
-            c.tax_framework = c.partner_id.tax_framework
-            c.cnae_main_id = c.partner_id.cnae_main_id
+        partner_fields = super()._get_company_address_fields(partner)
+        partner_fields.update({
+            'tax_framework': partner.tax_framework,
+            'cnae_main_id': partner.cnae_main_id,
+        })
+        return partner_fields
 
     def _inverse_cnae_main_id(self):
         """ Write the l10n_br specific functional fields. """
@@ -96,7 +102,7 @@ class ResCompany(models.Model):
 
     cnae_main_id = fields.Many2one(
         comodel_name="l10n_br_fiscal.cnae",
-        compute="_compute_l10n_br_data",
+        compute="_compute_address",
         inverse="_inverse_cnae_main_id",
         domain="[('internal_type', '=', 'normal'), "
         "('id', 'not in', cnae_secondary_ids)]",
@@ -114,7 +120,7 @@ class ResCompany(models.Model):
     tax_framework = fields.Selection(
         selection=TAX_FRAMEWORK,
         default=TAX_FRAMEWORK_NORMAL,
-        compute="_compute_l10n_br_data",
+        compute="_compute_address",
         inverse="_inverse_tax_framework",
         string="Tax Framework")
 
@@ -377,7 +383,7 @@ class ResCompany(models.Model):
         if not self.ripi and self.tax_framework == TAX_FRAMEWORK_NORMAL:
             self.tax_ipi_id = self.env.ref("l10n_br_fiscal.tax_ipi_nt")
         elif self.tax_framework in TAX_FRAMEWORK_SIMPLES_ALL:
-            self.tax_ipi_id = self.env.ref("l10n_br_fiscal.tax_ipi_simples_nacional")
+            self.tax_ipi_id = self.env.ref("l10n_br_fiscal.tax_ipi_outros")
             self.ripi = False
         else:
             self.tax_ipi_id = False
