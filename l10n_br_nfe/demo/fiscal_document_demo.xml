@@ -436,12 +436,12 @@
         <field name="document_serie">1</field>
         <field name="document_section">nfe</field>
         <field name="processador_edoc">oca</field>
-        <field name="partner_id" ref="l10n_br_base.res_partner_cliente11_sp"/>
+        <field name="partner_id" ref="l10n_br_base.res_partner_cliente1_sp"/>
         <field name="user_id" ref="base.user_demo"/>
-        <field name="partner_legal_name">Cliente 11 SP - Pessoa Fisica</field>
-        <field name="partner_name">Cliente 11 SP - PF</field>
-        <field name="partner_cnpj_cpf">765.865.078-12</field>
-        <field name="partner_inscr_est">525.424.040.648</field>
+        <field name="partner_legal_name">Cliente 1 SP Contribuinte</field>
+        <field name="partner_name">Cliente 1 SP</field>
+        <field name="partner_cnpj_cpf">81.493.979/0001-89</field>
+        <field name="partner_inscr_est">460.429.771.334</field>
         <field name="fiscal_operation_type">out</field>
     </record>
 
