@@ -3,7 +3,7 @@
 from .test_nfe_serialize import TestNFeExport
 
 
-class TestNFeExportLC(TestNFeExport):
+class TestNFeExportSN(TestNFeExport):
     def setUp(self):
         super().setUp()
 
