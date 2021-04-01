@@ -382,6 +382,11 @@ class NFeLine(spec_models.StackedModel):
             'vFCPUFDest': str("%.02f" % self.icmsfcp_value),
             'vICMSUFDest': str("%.02f" % self.icms_destination_value),
             'vICMSUFRemet': str("%.02f" % self.icms_origin_value),
+
+            # SIMPLES NACIONAL
+            'CSOSN': self.icms_cst_id.code,
+            'pCredSN': str('%.04f' % self.icmssn_percent),
+            'vCredICMSSN': str("%.02f" % self.icmssn_credit_value),
         }
         return icms
 
