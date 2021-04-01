@@ -14,7 +14,7 @@
             <cMunFG>3501152</cMunFG>
             <tpImp>1</tpImp>
             <tpEmis>1</tpEmis>
-            <cDV>5</cDV>
+            <cDV>1</cDV>
             <tpAmb>2</tpAmb>
             <finNFe>1</finNFe>
             <indFinal>1</indFinal>
@@ -139,7 +139,7 @@
                 <vCOFINS>0.00</vCOFINS>
                 <vOutro>0.00</vOutro>
                 <vNF>16.30</vNF>
-                <vTotTrib>4.88</vTotTrib>
+                <vTotTrib>0.00</vTotTrib>
             </ICMSTot>
         </total>
         <transp>
@@ -154,7 +154,7 @@
             <vTroco>0.00</vTroco>
         </pag>
         <infAdic>
-            <infAdFisco>Documento emitido por: Mitchell Admin</infAdFisco>
+            <infAdFisco>Documento emitido por: Marc Demo</infAdFisco>
         </infAdic>
     </infNFe>
 </NFe>
