@@ -2,7 +2,8 @@
 #   Magno Costa <magno.costa@akretion.com.br>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
-from odoo import api, fields, models
+from odoo import api, fields, models, _
+from odoo.exceptions import ValidationError
 from ...l10n_br_fiscal.constants.fiscal import TAX_FRAMEWORK
 
 
@@ -125,9 +126,13 @@ class SaleOrderLine(models.Model):
         the price and fiscal quantity."""
         self._onchange_commercial_quantity()
 
-    @api.onchange('discount')
+    @api.onchange('discount', 'product_uom_qty', 'price_unit')
     def _onchange_discount_percent(self):
         """Update discount value"""
+        if self.discount < 0 or self.discount > 100:
+            raise ValidationError(_(
+                'Desconto Inválido'
+            ))
         self.discount_value = (
             (self.product_uom_qty * self.price_unit)
             * (self.discount / 100)

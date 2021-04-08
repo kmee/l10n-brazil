@@ -52,7 +52,7 @@
                 </group>
             </field>
             <xpath expr="//field[@name='order_line']" position="attributes">
-                <attribute name="context">{'default_fiscal_operation_id': fiscal_operation_id, 'default_partner_id': partner_id, 'default_company_id': company_id}</attribute>
+                <attribute name="context">{'default_fiscal_operation_id': fiscal_operation_id, 'default_partner_id': partner_id, 'default_company_id': company_id, 'default_discount': discount_rate}</attribute>
             </xpath>
             <xpath expr="//field[@name='order_line']/tree" position="attributes">
                 <attribute name="editable"/>
