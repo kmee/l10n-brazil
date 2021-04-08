@@ -141,44 +141,52 @@ class SaleOrder(models.Model):
         string='Comments',
     )
 
-    @api.depends('order_line.price_total')
+    @api.depends('order_line')
     def _amount_all(self):
         """Compute the total amounts of the SO."""
         for order in self:
-            order.amount_gross = sum(
+            amount_gross = sum(
                 line.price_gross for line in order.order_line)
 
-            order.amount_discount = sum(
+            amount_discount = sum(
                 line.discount_value for line in order.order_line)
 
-            order.amount_untaxed = sum(
+            amount_untaxed = sum(
                 line.price_subtotal for line in order.order_line)
 
-            order.amount_tax = sum(
+            amount_tax = sum(
                 line.price_tax for line in order.order_line)
 
-            order.amount_total = sum(
+            amount_total = sum(
                 line.price_total for line in order.order_line)
 
-            order.amount_freight = sum(
+            amount_freight = sum(
                 line.freight_value for line in order.order_line)
 
-            order.amount_costs = sum(
+            amount_costs = sum(
                 line.other_costs_value for line in order.order_line)
 
-            order.amount_insurance = sum(
+            amount_insurance = sum(
                 line.insurance_value for line in order.order_line)
 
-            order.amount_icmsst = sum(
+            amount_icmsst = sum(
                 line.icmsst_value for line in order.order_line)
 
-            order.amount_ipi = sum(
+            amount_ipi = sum(
                 line.ipi_value for line in order.order_line)
-            if order.order_line and all(
-                line.discount == order.order_line[0].discount
-                for line in order.order_line
-            ) and order.order_line[0].discount != order.discount_rate:
-                order.discount_rate = order.order_line[0].discount
+
+            order.update({
+                'amount_gross': amount_gross,
+                'amount_discount': amount_discount,
+                'amount_untaxed': amount_untaxed,
+                'amount_tax': amount_tax,
+                'amount_total': amount_total,
+                'amount_freight': amount_freight,
+                'amount_costs': amount_costs,
+                'amount_insurance': amount_insurance,
+                'amount_icmsst': amount_icmsst,
+                'amount_ipi': amount_ipi,
+            })
 
     @api.model
     def fields_view_get(self, view_id=None, view_type="form",
