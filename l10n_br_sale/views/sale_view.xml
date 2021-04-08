@@ -154,10 +154,9 @@
                 <group style="width: 65%%"
                        groups="l10n_br_sale.group_total_discount">
                     <label for="discount_rate"/>
-                    <div>
+                    <div name="discount_rate">
                         <field name="discount_rate" class="oe_inline"/>
                         %%
-                        <button name="update_discount_rate" icon="fa-repeat" type="object"/>
                     </div>
                 </group>
             </xpath>
