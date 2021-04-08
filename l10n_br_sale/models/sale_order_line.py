@@ -126,7 +126,7 @@ class SaleOrderLine(models.Model):
         the price and fiscal quantity."""
         self._onchange_commercial_quantity()
 
-    @api.onchange('discount')
+    @api.onchange('discount', 'product_uom_qty', 'price_unit')
     def _onchange_discount_percent(self):
         """Update discount value"""
         if self.discount < 0 or self.discount > 100:
