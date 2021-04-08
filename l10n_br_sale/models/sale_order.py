@@ -379,11 +379,6 @@ class SaleOrder(models.Model):
 
         return inv_ids
 
-    def recompute_lines_taxes(self):
-        if self.env.user.has_group('l10n_br_sale.group_total_discount'):
-            self.update_discount_rate()
-        self.mapped('order_line').recompute_taxes()
-
     def _amount_by_group(self):
         for order in self:
             currency = order.currency_id or order.company_id.currency_id
