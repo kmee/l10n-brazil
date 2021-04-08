@@ -128,18 +128,17 @@ class SaleOrderLine(models.Model):
     @api.onchange('discount')
     def _onchange_discount_percent(self):
         """Update discount value"""
-        if not self.env.user.has_group('l10n_br_sale.group_discount_per_value'):
-            self.discount_value = (
-                (self.product_uom_qty * self.price_unit)
-                * (self.discount / 100)
-            )
+        self.discount_value = (
+            (self.product_uom_qty * self.price_unit)
+            * (self.discount / 100)
+        )
 
-    @api.onchange('discount_value')
-    def _onchange_discount_value(self):
-        """Update discount percent"""
-        if self.env.user.has_group('l10n_br_sale.group_discount_per_value'):
-            self.discount = ((self.discount_value * 100) /
-                             (self.product_uom_qty * self.price_unit or 1))
+    # @api.onchange('discount_value')
+    # def _onchange_discount_value(self):
+    #     """Update discount percent"""
+    #     if self.env.user.has_group('l10n_br_sale.group_discount_per_value'):
+    #         self.discount = ((self.discount_value * 100) /
+    #                          (self.product_uom_qty * self.price_unit or 1))
 
     @api.onchange('fiscal_tax_ids')
     def _onchange_fiscal_tax_ids(self):
@@ -165,14 +164,3 @@ class SaleOrderLine(models.Model):
                 lambda r: r.city_id == company_city_id)
             if city_id:
                 self.issqn_fg_city_id = company_city_id
-
-    def recompute_taxes(self):
-        for line in self:
-            price_unit = line.price_unit
-            line._onchange_product_id_fiscal()
-            line._onchange_ncm_id()
-            line._onchange_fiscal_operation_id()
-            line._onchange_fiscal_operation_line_id()
-            line.price_unit = price_unit
-            line._onchange_commercial_quantity()
-            line._onchange_fiscal_taxes()
