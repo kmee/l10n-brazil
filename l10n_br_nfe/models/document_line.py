@@ -784,7 +784,7 @@ class NFeLine(spec_models.StackedModel):
                     if hasattr(icms, 'vBCFCPSTRet'):
                         icms_vals['icmsfcp_base_wh'] = float(icms.vBCFCPSTRet)
                     if hasattr(icms, 'vFCPSTRet'):
-                        imcs_vals['icmsfcp_value_wh'] = float(icms.vFCPSTRet)
+                        icms_vals['icmsfcp_value_wh'] = float(icms.vFCPSTRet)
                     if hasattr(icms, 'vBCEfet'):
                         icms_vals['effective_base_value'] = float(icms.vBCEfet)
                     if hasattr(icms, 'vICMSEfet'):
