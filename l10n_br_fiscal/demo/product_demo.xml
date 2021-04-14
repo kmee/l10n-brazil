@@ -316,9 +316,9 @@
         <field name="icms_origin">0</field>
     </record>
 
-    <!-- Resale Product of national origin NCM 12040090-->
+    <!-- Resale Product of foreign origin NCM 12040090-->
     <record id="product_resale_nation_origin_ncm_12040090" model="product.product">
-        <field name="name">Resale Product of national origin NCM 12040090</field>
+        <field name="name">Resale Product of foreign origin NCM 12040090</field>
         <field name="list_price">80.00</field>
         <field name="standard_price">0.0</field>
         <field name="type">consu</field>
@@ -350,9 +350,9 @@
         <field name="icms_origin">0</field>
     </record>
 
-    <!-- Sale Product of national origin with NCM 29202400 -->
+    <!-- Finished Sale Product of national origin with NCM 29202400 -->
     <record id="product_sale_national_origin_ncm_29202400" model="product.product">
-        <field name="name">Sale Product of national origin with NCM 29202400</field>
+        <field name="name">Finished Sale Product of national origin with NCM 29202400</field>
         <field name="list_price">7.76</field>
         <field name="standard_price">0.0</field>
         <field name="type">consu</field>
