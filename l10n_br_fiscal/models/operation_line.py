@@ -7,7 +7,6 @@ from odoo.exceptions import UserError
 from ..constants.fiscal import (
     FISCAL_IN_OUT_ALL,
     NFE_IND_IE_DEST,
-    NFE_IND_IE_DEST_DEFAULT,
     OPERATION_STATE,
     OPERATION_STATE_DEFAULT,
     PRODUCT_FISCAL_TYPE,
@@ -101,8 +100,7 @@ class OperationLine(models.Model):
     ind_ie_dest = fields.Selection(
         selection=NFE_IND_IE_DEST,
         string='ICMS Taxpayer',
-        required=True,
-        default=NFE_IND_IE_DEST_DEFAULT)
+    )
 
     product_type = fields.Selection(
         selection=PRODUCT_FISCAL_TYPE,
@@ -227,15 +225,21 @@ class OperationLine(models.Model):
                     mapping_result['taxes'][tax.tax_domain] = tax
 
             # 4 From Operation Line
-            for tax in self.tax_definition_ids.mapped('tax_id'):
+            for tax in self.tax_definition_ids.map_tax_definition(
+                company, partner, product, ncm=ncm, nbm=nbm, nbs=nbs, cest=cest
+            ).mapped('tax_id'):
                 mapping_result['taxes'][tax.tax_domain] = tax
 
             # 5 From CFOP
-            for tax in cfop.tax_definition_ids.mapped('tax_id'):
+            for tax in cfop.tax_definition_ids.map_tax_definition(
+                company, partner, product, ncm=ncm, nbm=nbm, nbs=nbs, cest=cest
+            ).mapped('tax_id'):
                 mapping_result['taxes'][tax.tax_domain] = tax
 
             # 6 From Partner Profile
-            for tax in partner.fiscal_profile_id.tax_definition_ids.mapped('tax_id'):
+            for tax in partner.fiscal_profile_id.tax_definition_ids.map_tax_definition(
+                company, partner, product, ncm=ncm, nbm=nbm, nbs=nbs, cest=cest
+            ).mapped('tax_id'):
                 mapping_result['taxes'][tax.tax_domain] = tax
 
         if product.tax_icms_or_issqn == TAX_DOMAIN_ICMS:

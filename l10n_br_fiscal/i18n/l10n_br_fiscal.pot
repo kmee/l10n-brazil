@@ -831,6 +831,14 @@ msgid "Amount Fiscal"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__amount_price_gross
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__price_gross
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__price_gross
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_mixin__amount_price_gross
+msgid "Amount Gross"
+msgstr ""
+
+#. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__amount_tax
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__amount_tax
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__amount_tax
@@ -875,6 +883,14 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_simplified_tax_range__amount_deduced
 msgid "Amount to be Deducted"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document__amount_price_gross
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__price_gross
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__price_gross
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_mixin__amount_price_gross
+msgid "Amount without discount."
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -1055,6 +1071,11 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_closing__block
 msgid "Block period"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:res.partner,nfe40_xPais:l10n_br_fiscal.res_partner_anonimo
+msgid "Brazil"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -3461,7 +3482,7 @@ msgid "Fiscal Operation Line"
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: code:addons/l10n_br_fiscal/models/operation_line.py:154
+#: code:addons/l10n_br_fiscal/models/operation_line.py:152
 #: sql_constraint:l10n_br_fiscal.operation.line:0
 #, python-format
 msgid "Fiscal Operation Line already exists with this name !"
@@ -6458,7 +6479,6 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: selection:l10n_br_fiscal.document.electronic,processador_edoc:0
 #: selection:l10n_br_fiscal.document.workflow,processador_edoc:0
-#: selection:res.company,processador_edoc:0
 msgid "Odoo Community"
 msgstr ""
 
@@ -8966,7 +8986,7 @@ msgid "WARNING - When saving the XML of a document, you will be informing the co
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: code:addons/l10n_br_fiscal/models/operation_line.py:268
+#: code:addons/l10n_br_fiscal/models/operation_line.py:272
 #, python-format
 msgid "Warning!"
 msgstr ""
@@ -9071,7 +9091,7 @@ msgid "You can note repeat the alternative name"
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: code:addons/l10n_br_fiscal/models/operation_line.py:260
+#: code:addons/l10n_br_fiscal/models/operation_line.py:264
 #, python-format
 msgid "You cannot delete an Operation Line which is not draft !"
 msgstr ""
@@ -9101,13 +9121,13 @@ msgid "You cannot unlink Fiscal Document Line Dummy !"
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: code:addons/l10n_br_fiscal/models/operation_line.py:269
+#: code:addons/l10n_br_fiscal/models/operation_line.py:273
 #, python-format
 msgid "You must first select a operation type."
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: code:addons/l10n_br_fiscal/models/operation_line.py:163
+#: code:addons/l10n_br_fiscal/models/operation_line.py:161
 #, python-format
 msgid "You need set a default fiscal document in your company !"
 msgstr ""
@@ -9120,6 +9140,11 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.l10n_br_fiscal_res_config_settings_form
 msgid "dias"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: selection:res.company,processador_edoc:0
+msgid "erpbrasil.edoc"
 msgstr ""
 
 #. module: l10n_br_fiscal
