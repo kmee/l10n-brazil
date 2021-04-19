@@ -365,13 +365,13 @@ class NFeLine(spec_models.StackedModel):
 
             # ICMS COBRADO ANTERIORMENTE POR SUBSTITUIÇÃO TRIBUTÁRIA
             'vBCSTRet': str("%.02f" % self.icmsst_wh_base),
-            'pST': str("%.04f" % (self.icmsfcp_percent + self.icmsst_percent)),
+            'pST': str("%.04f" % (self.icmsst_wh_percent + self.icmsfcp_wh_percent)),
             'vICMSSTRet': str("%.02f" % self.icmsst_wh_value),
             'vBCFCPSTRet': str("%.02f" % self.icmsfcp_base_wh),
             'pFCPSTRet': str("%.04f" % self.icmsfcp_percent_wh),
             'vFCPSTRet': str("%.02f" % self.icmsfcp_value_wh),
-            'pRedBCEfet': str("%.04f" % self.effective_base_percent),
-            'vBCEfet': str("%.02f" % self.effective_base_value),
+            'pRedBCEfet': str("%.04f" % self.icms_effective_reduction),
+            'vBCEfet': str("%.02f" % self.icms_effective_base),
             'pICMSEfet': str("%.04f" % self.icms_effective_percent),
             'vICMSEfet': str("%.02f" % self.icms_effective_value),
 
@@ -393,7 +393,7 @@ class NFeLine(spec_models.StackedModel):
             # FUNDO DE COMBATE À POBREZA
             'vBCFCPST': str('%.02f' % self.icmsfcp_base),
             'pFCPST': str('%.04f' % self.icmsfcp_percent),
-            'vFCPST': str('%.02f' % self.icmsfcp_value),
+            'vFCPST': str('%.02f' % self.icmsfcpst_value),
         }
         return icms
 
@@ -759,6 +759,8 @@ class NFeLine(spec_models.StackedModel):
                         icms_vals['icmsfcp_base_wh'] = float(icms.vBCFCPSTRet)
                     if hasattr(icms, 'vFCPSTRet'):
                         icms_vals['icmsfcp_value_wh'] = float(icms.vFCPSTRet)
+                    if hasattr(icms, 'vFCPST'):
+                        icms_vals['icmsfcpst_value'] = float(icms.vFCPST)
                     if hasattr(icms, 'vBCEfet'):
                         icms_vals['effective_base_value'] = float(icms.vBCEfet)
                     if hasattr(icms, 'vICMSEfet'):
