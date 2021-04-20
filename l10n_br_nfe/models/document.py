@@ -645,7 +645,7 @@ class NFe(spec_models.StackedModel):
         )
         # Gravamos o arquivo no disco e no filestore ASAP.
         self.cancel_event_id = self._gerar_evento(
-            processo.envio_xml.decode('utf-8'),
+            xml_file=processo.envio_xml.decode('utf-8'),
             event_type='2',
         )
 
@@ -686,9 +686,15 @@ class NFe(spec_models.StackedModel):
         self.ensure_one()
         processador = self._processador()
 
+        numeros = self.event_ids.filtered(
+            lambda e: e.type == '14' and e.state == 'done'
+        ).mapped('sequence')
+
+        sequencia = str(int(max(numeros)) + 1) if numeros else '1'
+
         evento = processador.carta_correcao(
             chave=self.key[3:],
-            sequencia='2',
+            sequencia=sequencia,
             justificativa=justificative.replace('\n', '\\n')
         )
         processo = processador.enviar_lote_evento(
@@ -696,8 +702,9 @@ class NFe(spec_models.StackedModel):
         )
         # Gravamos o arquivo no disco e no filestore ASAP.
         event_id = self._gerar_evento(
-            processo.envio_xml.decode('utf-8'),
+            xml_file=processo.envio_xml.decode('utf-8'),
             event_type='14',
+            sequence=sequencia
         )
 
         for retevento in processo.resposta.retEvento:
