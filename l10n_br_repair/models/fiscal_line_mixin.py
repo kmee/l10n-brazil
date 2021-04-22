@@ -70,8 +70,8 @@ class FiscalLineMixin(models.AbstractModel):
         'insurance_value',
         'other_costs_value',
         'tax_id')
-    def _compute_price_subtotal(self):
-        super()._compute_price_subtotal()
+    def _compute_price_subtotal_mixin(self):
+        # super()._compute_price_subtotal()
         for l in self:
             l._update_taxes()
             price_tax = l.price_tax + l.amount_tax_not_included

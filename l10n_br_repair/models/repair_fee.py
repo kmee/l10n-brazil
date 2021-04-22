@@ -1,7 +1,7 @@
 # Copyright 2020 - TODAY, Marcel Savegnago - Escodoo - https://www.escodoo.com.br
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import fields, models
+from odoo import fields, models, api
 from ...l10n_br_fiscal.constants.fiscal import TAX_FRAMEWORK
 
 
@@ -53,3 +53,9 @@ class RepairFee(models.Model):
         related='repair_id.company_id',
         store=True,
     )
+
+    @api.depends('price_unit', 'repair_id', 'product_uom_qty', 'product_id', 'discount')
+    def _compute_price_subtotal(self):
+        super()._compute_price_subtotal()
+        super()._compute_price_subtotal_mixin()
+
