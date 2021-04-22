@@ -342,7 +342,7 @@ class NFeLine(spec_models.StackedModel):
 
         if self.document_id.ind_final == '1' and \
                 self.document_id.nfe40_idDest == '2' and \
-                self.document_id.nfe40_indIEDest == '9' and \
+                self.document_id.partner_id.ind_ie_dest == '9' and \
                 self.cfop_id.code not in CFOP_INDRETOR:
             self.nfe40_vBCUFDest = self.nfe40_vBC
             if self.document_id.partner_id.state_id.code in [
@@ -436,6 +436,9 @@ class NFeLine(spec_models.StackedModel):
                 self.product_id.type == 'consu':
             self[field_name] = False
             return False
+        if field_name == 'nfe40_ICMSUFDest' and \
+                not self.nfe40_vBCUFDest:
+            return False
         if field_name in ['nfe40_II', 'nfe40_PISST', 'nfe40_COFINSST']:
             self[field_name] = False
             return False
@@ -446,7 +449,7 @@ class NFeLine(spec_models.StackedModel):
                                xsd_required):
         if field_name == 'nfe40_vProd' and class_obj._name == 'nfe.40.prod':
             self[field_name] = self['nfe40_qCom'] * self['nfe40_vUnCom']
-        if field_name == 'nfe40_pICMSInterPart':
+        if field_name == 'nfe40_pICMSInterPart' and self['nfe40_vBCUFDest']:
             self[field_name] = 100.0
         if not self[field_name] and not xsd_required:
             if not (class_obj._name == 'nfe.40.imposto' and
