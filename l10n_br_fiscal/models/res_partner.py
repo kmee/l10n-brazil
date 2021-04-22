@@ -71,5 +71,5 @@ class ResPartner(models.Model):
     def _onchange_ind_ie_dest(self):
         for p in self:
             if p.ind_ie_dest == NFE_IND_IE_DEST_9:
-                p.inscr_est = False
+                # p.inscr_est = False
                 p.state_tax_number_ids = False
