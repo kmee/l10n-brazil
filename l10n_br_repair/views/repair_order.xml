@@ -42,4 +42,18 @@
         </field>
     </record>
 
+    <template id="report_repairorder" inherit_id="repair.report_repairorder">
+        <xpath expr="//table[hasclass('o_main_table')]//th[hasclass('text-center')]" position="after">
+            <th class="text-right">Desconto (%)</th>
+        </xpath>
+        <xpath expr="//t[@t-if='o.fees_lines']//tr[hasclass('o_line_section')]" position="replace">
+            <tr class="bg-200 o_line_section"><td colspan="6"><strong>Operations</strong></td></tr>
+        </xpath>
+        <xpath expr="//t[@t-if='o.fees_lines']//td[hasclass('o_price_total')]" position="before">
+            <td class="text-right">
+                <span t-field="fees.discount"/>
+            </td>
+        </xpath>
+    </template>
+
 </odoo>
