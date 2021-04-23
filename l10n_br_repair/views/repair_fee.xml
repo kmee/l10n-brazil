@@ -39,6 +39,10 @@
             <xpath expr="//field[@name='fees_lines']/form//field[@name='tax_id']" position="replace"/>
             <xpath expr="//field[@name='fees_lines']/form//field[@name='name']" position="replace"/>
 
+            <xpath expr="//field[@name='fees_lines']/form//field[@name='price_subtotal']" position="attributes">
+                 <attribute name="invisible">0</attribute>
+                 <attribute name="force_save">1</attribute>
+            </xpath>
             <xpath expr="//field[@name='fees_lines']/form//field[@name='price_unit']" position="after">
                 <label for="fiscal_quantity" string="Fiscal Quantity"/>
                 <div>
@@ -60,7 +64,6 @@
                     <field name="city_taxation_code_id" attrs="{'invisible': [('tax_icms_or_issqn', '=', 'icms')]}"/>
                     <field name="cfop_destination" invisible="1"/>
                     <field name="price_total" invisible="1"/>
-                    <field name="price_subtotal" invisible="1"/>
                 </group>
             </xpath>
 
