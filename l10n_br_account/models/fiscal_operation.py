@@ -34,6 +34,12 @@ class Operation(models.Model):
         company_dependent=True,
     )
 
+    account_id = fields.Many2one(
+        comodel_name='account.account',
+        string='Account',
+        company_dependent=True,
+    )
+
     @api.multi
     def _change_action_view(self, action):
         fiscal_op_type = action.get('context')
