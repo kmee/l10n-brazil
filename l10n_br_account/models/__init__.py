@@ -13,3 +13,4 @@ from . import account_invoice_line
 from . import fiscal_document
 from . import account_move
 from . import account_move_line
+from . import l10n_br_fiscal_cfop
