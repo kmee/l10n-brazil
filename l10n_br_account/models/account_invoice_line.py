@@ -246,9 +246,9 @@ class AccountInvoiceLine(models.Model):
     def _onchange_fiscal_account_id(self):
         if (self.product_id and self.fiscal_operation_id and
                 self.fiscal_operation_line_id and self.cfop_id):
-         account_id = self.account_id
-         self.account_id = (
+            account_id = self.account_id
+        self.account_id = (
             self.cfop_id.account_id or
             self.fiscal_operation_line_id.account_id or
             account_id
-         )
+        )
