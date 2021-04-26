@@ -135,6 +135,11 @@ msgid "Add a new NFe"
 msgstr ""
 
 #. module: l10n_br_nfe
+#: model:ir.model.fields,help:l10n_br_nfe.field_l10n_br_fiscal_document_line__nfe40_vProd
+msgid "Amount without discount."
+msgstr ""
+
+#. module: l10n_br_nfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe.nfe_document_form
 msgid "Amounts"
 msgstr ""
@@ -152,15 +157,20 @@ msgid "BC Code"
 msgstr ""
 
 #. module: l10n_br_nfe
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document__nfe40_vBC
+msgid "BC do ICMS"
+msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document__nfe40_vBCST
+msgid "BC do ICMS ST"
+msgstr ""
+
+#. module: l10n_br_nfe
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_hr_employee_dependent__nfe40_xBairro
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_res_partner__nfe40_xBairro
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_res_users__nfe40_xBairro
 msgid "Bairro"
-msgstr ""
-
-#. module: l10n_br_nfe
-#: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document__nfe40_vBC
-msgid "Base de Cálculo do ISS"
 msgstr ""
 
 #. module: l10n_br_nfe
@@ -242,7 +252,7 @@ msgid "CPF (v2.0)"
 msgstr ""
 
 #. module: l10n_br_nfe
-#: code:addons/l10n_br_nfe/models/document.py:312
+#: code:addons/l10n_br_nfe/models/document.py:322
 #: code:addons/l10n_br_nfe/models/document_invalidate_number.py:22
 #, python-format
 msgid "Certificado não encontrado"
@@ -450,6 +460,11 @@ msgstr ""
 #. module: l10n_br_nfe
 #: model:ir.module.category,description:l10n_br_nfe.module_category_l10n_br_nfe
 msgid "Extends Odoo to helps you manage your brazilian fiscal documents: NF-e"
+msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document_line__nfe40_vBC
+msgid "FIXME Não usar esse campo!"
 msgstr ""
 
 #. module: l10n_br_nfe
@@ -1259,6 +1274,11 @@ msgid "Valor Total do ICMS"
 msgstr ""
 
 #. module: l10n_br_nfe
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document__nfe40_vST
+msgid "Valor Total do ICMS ST"
+msgstr ""
+
+#. module: l10n_br_nfe
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document__nfe40_vIPI
 msgid "Valor Total do IPI"
 msgstr ""
@@ -1275,12 +1295,7 @@ msgstr ""
 
 #. module: l10n_br_nfe
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document_line__nfe40_vCOFINS
-msgid "Valor do COFINS"
-msgstr ""
-
-#. module: l10n_br_nfe
-#: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document__nfe40_vCOFINS
-msgid "Valor do COFINS sobre serviços"
+msgid "Valor do COFINS (NFe)"
 msgstr ""
 
 #. module: l10n_br_nfe
@@ -1321,13 +1336,9 @@ msgid "Valor do IPI"
 msgstr ""
 
 #. module: l10n_br_nfe
-#: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document_line__nfe40_vPIS
-msgid "Valor do PIS ST"
-msgstr ""
-
-#. module: l10n_br_nfe
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document__nfe40_vPIS
-msgid "Valor do PIS sobre serviços"
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document_line__nfe40_vPIS
+msgid "Valor do PIS (NFe)"
 msgstr ""
 
 #. module: l10n_br_nfe
@@ -1483,6 +1494,11 @@ msgstr ""
 #. module: l10n_br_nfe
 #: selection:l10n_br_fiscal.document.line,nfe40_choice20:0
 msgid "vUnid"
+msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document__nfe40_vCOFINS
+msgid "valor do COFINS (NFe)"
 msgstr ""
 
 #. module: l10n_br_nfe

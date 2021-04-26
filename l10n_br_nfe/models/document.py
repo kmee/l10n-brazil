@@ -217,15 +217,24 @@ class NFe(spec_models.StackedModel):
     nfe40_vTotTrib = fields.Monetary(
         related='amount_estimate_tax'
     )
+
     nfe40_vBC = fields.Monetary(
-        related='amount_icms_base'
+        string='BC do ICMS',
+        related='amount_icms_base',
+    )
+    nfe40_vBCST = fields.Monetary(
+        related='amount_icmsst_base'
     )
 
     nfe40_vICMS = fields.Monetary(
         related='amount_icms_value'
     )
+    nfe40_vST = fields.Monetary(
+        related='amount_icmsst_value'
+    )
 
     nfe40_vPIS = fields.Monetary(
+        string='Valor do PIS (NFe)',
         related='amount_pis_value'
     )
 
@@ -234,6 +243,7 @@ class NFe(spec_models.StackedModel):
     )
 
     nfe40_vCOFINS = fields.Monetary(
+        string='valor do COFINS (NFe)',
         related='amount_cofins_value'
     )
 
