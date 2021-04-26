@@ -554,7 +554,8 @@ class NFe(spec_models.StackedModel):
             ):
                 return False
 
-            elif (not xsd_required) and field_name not in ['nfe40_enderDest']:
+            elif (not xsd_required) and field_name not in [
+                    'nfe40_enderDest', 'nfe40_fat']:
                 comodel = self.env[self._stacking_points.get(
                     field_name).comodel_name]
                 fields = [f for f in comodel._fields
