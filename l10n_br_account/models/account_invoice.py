@@ -105,6 +105,11 @@ class AccountInvoice(models.Model):
         ondelete='cascade',
     )
 
+    document_type = fields.Char(
+        related='document_type_id.code',
+        stored=True,
+    )
+
     @api.multi
     @api.depends('move_id.line_ids')
     def _compute_financial(self):
@@ -451,6 +456,13 @@ class AccountInvoice(models.Model):
         for i in self.filtered(lambda d: d.fiscal_document_id != dummy_doc):
             i.action_cancel()
             i.action_invoice_draft()
+
+    @api.multi
+    def action_invoice_cancel(self):
+        dummy_doc = self.env.ref('l10n_br_fiscal.fiscal_document_dummy')
+        for i in self.filtered(lambda d: d.fiscal_document_id != dummy_doc):
+            return i.fiscal_document_id.action_document_cancel()
+        return super().action_invoice_cancel()
 
     def view_xml(self):
         self.ensure_one()
