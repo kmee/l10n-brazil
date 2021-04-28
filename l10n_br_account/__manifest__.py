@@ -26,6 +26,7 @@
         'views/account_invoice_line_view.xml',
         'views/fiscal_invoice_view.xml',
         'views/fiscal_invoice_line_view.xml',
+        'views/l10n_br_fiscal_cfop.xml',
 
         # Wizards
         'wizards/account_invoice_refund_view.xml',
