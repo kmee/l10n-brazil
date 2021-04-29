@@ -52,6 +52,11 @@ class Ncm(models.Model):
     tax_estimate_ids = fields.One2many(
         inverse_name='ncm_id')
 
+    ipi_guideline_id = fields.Many2one(
+        comodel_name="l10n_br_fiscal.tax.ipi.guideline",
+        string="IPI Guideline"
+    )
+
     _sql_constraints = [(
         'fiscal_ncm_code_exception_uniq',
         "unique (code, exception)",
