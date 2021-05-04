@@ -5,18 +5,34 @@
 
 from odoo import api, fields, models
 
+from ..constants import (
+    BR_CODES_PAYMENT_ORDER,
+)
+
 
 class AccountInvoice(models.Model):
     _inherit = 'account.invoice'
+
+    @api.multi
+    @api.depends('move_id.line_ids')
+    def _compute_financial(self):
+        for invoice in self:
+            lines = invoice.move_id.line_ids.filtered(
+                lambda l: l.account_id == invoice.account_id and
+                l.account_id.internal_type in ('receivable', 'payable'))
+            invoice.financial_move_line_ids = lines.sorted()
 
     eval_payment_mode_instructions = fields.Text(
         string='Instruções de Cobrança do Modo de Pagamento',
         related='payment_mode_id.instructions',
         readonly=True,
+        help='Instruções Ordem de Pagamento configuradas'
+             ' no Modo de pagamento'
     )
 
     instructions = fields.Text(
         string='Instruções de cobrança',
+        help='Instruções Extras da Ordem de Pagamento'
     )
 
     # eval_situacao_pagamento = fields.Selection(
@@ -35,15 +51,6 @@ class AccountInvoice(models.Model):
         store=True,
         compute='_compute_financial',
     )
-
-    @api.multi
-    @api.depends('move_id.line_ids')
-    def _compute_financial(self):
-        for invoice in self:
-            lines = invoice.move_id.line_ids.filtered(
-                lambda l: l.account_id == invoice.account_id and
-                l.account_id.internal_type in ('receivable', 'payable'))
-            invoice.financial_move_line_ids = lines.sorted()
 
     @api.onchange('payment_mode_id')
     def _onchange_payment_mode_id(self):
@@ -77,7 +84,7 @@ class AccountInvoice(models.Model):
     def action_invoice_cancel(self):
         for record in self:
             if record.payment_mode_id.payment_method_code in \
-                    ('240', '400', '500'):
+                    BR_CODES_PAYMENT_ORDER:
                 for line in record.move_id.line_ids:
                     # Verificar a situação do CNAB para apenas apagar
                     # a linha ou mandar uma solicitação de Baixa
@@ -105,7 +112,7 @@ class AccountInvoice(models.Model):
             # Podem existir Modo de Pagto q geram Ordens mas não são CNAB
             # por isso nesse caso tbm nada a ser feito
             if inv.payment_mode_id.payment_method_code not in \
-                    ('240', '400', '500'):
+                    BR_CODES_PAYMENT_ORDER:
                 continue
 
             # TODO - apesar do campo financial_move_line_ids ser do tipo
@@ -149,10 +156,9 @@ class AccountInvoice(models.Model):
     @api.multi
     def invoice_validate(self):
         result = super().invoice_validate()
-        filtered_invoice_ids = self.filtered(lambda s: s.payment_mode_id)
+        filtered_invoice_ids = self.filtered(lambda s: (
+            s.payment_mode_id and
+            s.payment_mode_id.auto_create_payment_order))
         if filtered_invoice_ids:
-            for filtered_invoice_id in filtered_invoice_ids:
-                # Criando Ordem de Pagto Automaticamente
-                if filtered_invoice_id.payment_mode_id.payment_order_ok:
-                    filtered_invoice_id.create_account_payment_line()
+            filtered_invoice_ids.create_account_payment_line()
         return result

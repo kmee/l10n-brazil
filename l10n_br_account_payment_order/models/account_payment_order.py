@@ -17,6 +17,8 @@ from ..constants import (
     FORMA_LANCAMENTO,
     INDICATIVO_FORMA_PAGAMENTO,
     TIPO_SERVICO,
+    CODE_MANUAL_TEST,
+    BR_CODES_PAYMENT_ORDER,
 )
 
 _logger = logging.getLogger(__name__)
@@ -108,8 +110,8 @@ class AccountPaymentOrder(models.Model):
             #  Já não gera erro ao tentar criar o arquivo ?
             if record.bank_line_error_ids:
                 record.message_post(
-                    body=('Erro ao gerar o arquivo, '
-                          'verifique a aba Linhas com problemas.')
+                    body=_(('Erro ao gerar o arquivo, '
+                            'verifique a aba Linhas com problemas.'))
                 )
                 for payment_line in record.payment_line_ids:
                     payment_line.move_line_id.cnab_state = 'exporting_error'
@@ -119,7 +121,7 @@ class AccountPaymentOrder(models.Model):
                     if line.move_line_id:
                         line.move_line_id.bank_payment_line_id = \
                             line.bank_line_id
-                record.message_post(body='Arquivo gerado com sucesso.')
+                record.message_post(body=_('Arquivo gerado com sucesso.'))
 
         return result
 
@@ -128,7 +130,7 @@ class AccountPaymentOrder(models.Model):
         for order in self:
             # TODO: Existe o caso de se apagar uma Ordem de Pagto
             #  no caso CNAB ? O que deveria ser feito nesse caso ?
-            if order.payment_method_code in ('240', '400', '500') and \
+            if order.payment_method_code in BR_CODES_PAYMENT_ORDER and \
                     order.payment_mode_id.payment_method_id.payment_type == \
                     'inbound':
                 raise UserError(_(
@@ -140,9 +142,25 @@ class AccountPaymentOrder(models.Model):
         for order in self:
             # TODO: Existe o caso de se Cancelar uma Ordem de Pagto
             #  no caso CNAB ? O que deveria ser feito nesse caso ?
-            if order.payment_method_code in ('240', '400', '500') and \
+            if order.payment_method_code in BR_CODES_PAYMENT_ORDER and \
                     order.payment_mode_id.payment_method_id.payment_type == \
                     'inbound':
                 raise UserError(_(
                     'You cannot Cancel CNAB order.'))
         return super().unlink()
+
+    @api.multi
+    def generate_payment_file(self):
+        """ Esse modo deve ser usado somente para testes,
+        com ele é possível passarmos por todos os fluxos de
+        funcionamento das ordens de pagamento.
+
+        Permitindo que através de testes via interface e testes
+        automatizados sejam geradas ordens de pagamento de inclusão,
+        alteração, baixa e etc."""
+
+        self.ensure_one()
+        if self.payment_method_id.code == CODE_MANUAL_TEST:
+            return (False, False)
+        else:
+            super().generate_payment_file()

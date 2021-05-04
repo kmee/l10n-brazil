@@ -9,6 +9,7 @@ from odoo.exceptions import ValidationError, UserError
 from ..constants import (
     FORMA_LANCAMENTO,
     TIPO_SERVICO,
+    BR_CODES_PAYMENT_ORDER,
 )
 
 
@@ -16,6 +17,11 @@ class AccountPaymentMode(models.Model):
     _name = 'account.payment.mode'
     _inherit = ['account.payment.mode', 'mail.thread',
                 'l10n_br_cnab.boleto.fields', 'l10n_br_cnab.payment.fields']
+
+    auto_create_payment_order = fields.Boolean(
+        string='Adicionar automaticamente ao validar a fatura',
+        help='Cria a ordem de pagamento automaticamente ao confirmar a fatura',
+    )
 
     service_type = fields.Selection(
         selection=TIPO_SERVICO,
@@ -83,7 +89,7 @@ class AccountPaymentMode(models.Model):
     )
     def _check_cnab_restriction(self):
         for record in self:
-            if record.payment_method_code not in ('240', '400', '500'):
+            if record.payment_method_code not in BR_CODES_PAYMENT_ORDER:
                 return False
             fields_forbidden_cnab = []
             if record.group_lines:
@@ -100,7 +106,7 @@ class AccountPaymentMode(models.Model):
                 )
 
             if self.bank_code_bc == '341' and not self.boleto_wallet:
-                raise ValidationError('Carteira no banco Itaú é obrigatória')
+                raise ValidationError(_('Carteira no banco Itaú é obrigatória'))
 
     @api.onchange('product_tax_id')
     def _onchange_product_tax_id(self):
@@ -138,7 +144,7 @@ class AccountPaymentMode(models.Model):
     @api.onchange('payment_method_id')
     def _onchange_payment_method_id(self):
         for record in self:
-            if record.payment_method_code in ('400', '240', '500'):
+            if record.payment_method_code in BR_CODES_PAYMENT_ORDER:
                 # Campos Default que não devem estar marcados no caso CNAB
                 record.group_lines = False
                 record.generate_move = False
