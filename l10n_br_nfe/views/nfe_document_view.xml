@@ -45,6 +45,13 @@
                   <field name="nfe40_modFrete"/>
                   <field name="nfe40_transporta"/>
               </group>
+              <group
+                  attrs="{'invisible': [('nfe40_idDest', '!=', '3')]}">
+                  <field name="nfe40_idDest" invisible="1"/>
+                  <field name="nfe40_UFSaidaPais"/>
+                  <field name="nfe40_xLocExporta"/>
+                  <field name="nfe40_xLocDespacho"/>
+              </group>
               <group>
                   <field name="nfe40_vol"/>
               </group>
