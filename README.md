@@ -92,17 +92,17 @@ addon | version | summary
 [l10n_br_hr](l10n_br_hr/) | 12.0.1.0.0 | Brazilian Localization HR
 [l10n_br_hr_contract](l10n_br_hr_contract/) | 12.0.1.1.0 | Brazilian Localization HR Contract
 [l10n_br_mis_report](l10n_br_mis_report/) | 12.0.1.1.0 | Templates de relatórios contábeis brasileiros: Balanço Patrimonial e DRE
-[l10n_br_nfe](l10n_br_nfe/) | 12.0.1.3.1 | Brazilian Eletronic Invoice NF-e .
+[l10n_br_nfe](l10n_br_nfe/) | 12.0.1.4.0 | Brazilian Eletronic Invoice NF-e .
 [l10n_br_nfe_spec](l10n_br_nfe_spec/) | 12.0.1.0.0 | nfe spec
 [l10n_br_nfse](l10n_br_nfse/) | 12.0.3.2.0 | NFS-e
 [l10n_br_nfse_ginfes](l10n_br_nfse_ginfes/) | 12.0.2.0.0 | NFS-e (Ginfes)
 [l10n_br_nfse_issnet](l10n_br_nfse_issnet/) | 12.0.2.0.0 | NFS-e (ISSNet)
 [l10n_br_portal](l10n_br_portal/) | 12.0.1.1.0 | Campos Brasileiros no Portal
-[l10n_br_purchase](l10n_br_purchase/) | 12.0.4.2.0 | Brazilian Localization Purchase
+[l10n_br_purchase](l10n_br_purchase/) | 12.0.4.3.0 | Brazilian Localization Purchase
 [l10n_br_purchase_stock](l10n_br_purchase_stock/) | 12.0.2.0.0 | Brazilian Localization Purchase Stock
 [l10n_br_repair](l10n_br_repair/) | 12.0.5.1.0 | Brazilian Localization Repair
 [l10n_br_resource](l10n_br_resource/) | 12.0.1.0.0 | This module extend core resource to create important brazilian informations. Define a Brazilian calendar and some tools to compute dates used in financial and payroll modules
-[l10n_br_sale](l10n_br_sale/) | 12.0.5.1.0 | Brazilian Localization Sale
+[l10n_br_sale](l10n_br_sale/) | 12.0.5.3.0 | Brazilian Localization Sale
 [l10n_br_sale_stock](l10n_br_sale_stock/) | 12.0.5.2.2 | Brazilian Localization Sales and Warehouse
 [l10n_br_stock](l10n_br_stock/) | 12.0.1.0.0 | Brazilian Localization Warehouse
 [l10n_br_stock_account](l10n_br_stock_account/) | 12.0.4.0.0 | Brazilian Localization WMS Accounting

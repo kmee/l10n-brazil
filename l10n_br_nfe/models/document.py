@@ -256,6 +256,7 @@ class NFe(spec_models.StackedModel):
     )
 
     nfe40_infRespTec = fields.Many2one(
+        comodel_name='res.partner',
         related='company_id.technical_support_id'
     )
 
@@ -530,9 +531,17 @@ class NFe(spec_models.StackedModel):
                     self.line_ids.mapped('nfe40_vICMSUFDest'))
                 self.nfe40_vICMSUFRemet = sum(
                     self.line_ids.mapped('nfe40_vICMSUFRemet'))
+            else:
+                self.nfe40_vICMSUFDest = 0.0
+                self.nfe40_vICMSUFRemet = 0.0
         if xsd_field == 'nfe40_tpAmb':
             self.env.context = dict(self.env.context)
             self.env.context.update({'tpAmb': self[xsd_field]})
+        elif xsd_field == 'nfe40_fat':
+            self._stacking_points['nfe40_fat'] = self._fields['nfe40_fat']
+            res = super()._export_field(xsd_field, class_obj, member_spec)
+            self._stacking_points.pop('nfe40_fat')
+            return res
         return super(NFe, self)._export_field(
             xsd_field, class_obj, member_spec)
 
