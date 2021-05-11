@@ -233,6 +233,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
                                         self.fiscal_operation_line_id.tax_calc)
         if tax_calc in (TAX_CALC_MANUAL, TAX_CALC_ONLY):
             return
+
         for line in self:
             line.fiscal_tax_ids = False
 
