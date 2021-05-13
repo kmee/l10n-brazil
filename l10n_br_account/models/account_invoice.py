@@ -506,7 +506,6 @@ class AccountInvoice(models.Model):
     def refund(self, date_invoice=None, date=None, description=None, journal_id=None):
         new_invoices = super(AccountInvoice, self).refund(
             date_invoice, date, description, journal_id)
-
         force_fiscal_operation_id = False
         if self.env.context.get('force_fiscal_operation_id'):
             force_fiscal_operation_id = self.env['l10n_br_fiscal.operation'].browse(
@@ -526,6 +525,7 @@ class AccountInvoice(models.Model):
             r.fiscal_operation_id = (
                 force_fiscal_operation_id or
                 r.fiscal_operation_id.return_fiscal_operation_id)
+            r._onchange_account_id()
 
             for line in r.invoice_line_ids:
                 if (not force_fiscal_operation_id and
@@ -538,6 +538,7 @@ class AccountInvoice(models.Model):
                     force_fiscal_operation_id or
                     line.fiscal_operation_id.return_fiscal_operation_id)
                 line._onchange_fiscal_operation_id()
+                line._onchange_fiscal_account_id()
 
             refund_invoice_id = my_new_invoices.refund_invoice_id
 
