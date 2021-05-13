@@ -25,6 +25,11 @@
         <field name="document_id" ref="fiscal_document_dummy"/>
     </record>
 
+    <record id="fiscal_payment_line_dummy" model="l10n_br_fiscal.payment.line">
+        <field name="active">False</field>
+        <field name="document_id" ref="fiscal_document_dummy"/>
+    </record>
+
     <!-- l10n_br_fiscal.operation -->
     <record id="fo_venda" model="l10n_br_fiscal.operation">
         <field name="code">Venda</field>
