@@ -17,6 +17,51 @@ from odoo.addons.l10n_br_fiscal.constants.icms import (
 ICMSSN_CST_CODES_USE_102 = ('102', '103', '300', '400')
 ICMSSN_CST_CODES_USE_202 = ('202', '203')
 ICMS_ST_CST_CODES = ['60', '10']
+CFOP_INDRETOR = [
+    '2453',
+    '2454',
+    '2455',
+    '2554',
+    '2657',
+    '2664',
+    '2902',
+    '2903',
+    '2904',
+    '2906',
+    '2907',
+    '2909',
+    '2913',
+    '2914',
+    '2916',
+    '2921',
+    '2925',
+    '5453',
+    '5454',
+    '5455',
+    '5664',
+    '5665',
+    '5902',
+    '5903',
+    '5906',
+    '5907',
+    '5909',
+    '5913',
+    '5916',
+    '5925',
+    '6453',
+    '6454',
+    '6455',
+    '6664',
+    '6665',
+    '6902',
+    '6903',
+    '6906',
+    '6907',
+    '6909',
+    '6913',
+    '6916',
+    '6925'
+]
 
 
 class NFeLine(spec_models.StackedModel):
@@ -488,6 +533,56 @@ class NFeLine(spec_models.StackedModel):
         self.nfe40_pCOFINS = self.cofins_percent
         self.nfe40_cEnq = str(self.ipi_guideline_id.code or '999').zfill(3)
         self.nfe40_pCredSN = self.icmssn_percent
+
+        if self.icmsfcp_value:
+            self.nfe40_pFCPUFDest = self.icmsfcp_percent
+            self.nfe40_vFCPUFDest = self.icmsfcp_value
+
+        if self.document_id.ind_final == '1' and \
+                self.document_id.nfe40_idDest == '2' and \
+                self.document_id.partner_id.ind_ie_dest == '9' and \
+                self.cfop_id.code not in CFOP_INDRETOR:
+            self.nfe40_vBCUFDest = str("%.02f" % self.icms_destination_base)
+            if self.document_id.partner_id.state_id.code in [
+                    'AC', 'CE', 'ES', 'GO', 'MT', 'MS', 'PA', 'PI', 'RR', 'SC'
+            ]:
+                self.nfe40_pICMSUFDest = 17.0
+            elif self.document_id.partner_id.state_id.code == 'RO':
+                self.nfe40_pICMSUFDest = 17.5
+            elif self.document_id.partner_id.state_id.code in [
+                    'AM', 'AP', 'BA', 'DF', 'MA', 'MG', 'PB', 'PR', 'PE',
+                    'RN', 'RS', 'SP', 'SE', 'TO'
+            ]:
+                self.nfe40_pICMSUFDest = 18.0
+            elif self.document_id.partner_id.state_id.code == 'RJ':
+                self.nfe40_pICMSUFDest = 20.0
+            self.nfe40_pICMSInter = '%.2f' % self.icms_percent \
+                if self.icms_percent else '12.00'
+            if self.company_id.icms_regulation_id:
+                tax_icms_ids = self.company_id.icms_regulation_id.map_tax(
+                    company=self.company_id,
+                    partner=self.partner_id,
+                    product=self.product_id,
+                    ncm=self.ncm_id,
+                    nbm=self.nbm_id,
+                    cest=self.cest_id,
+                    operation_line=self.fiscal_operation_line_id)
+                for tax in tax_icms_ids:
+                    if tax.tax_domain == 'icms':
+                        self.nfe40_pICMSInter = '%.2f' % tax.percent_amount
+            self.nfe40_pICMSInterPart = 100.0
+            self.nfe40_vICMSUFDest = (
+                self.nfe40_vBCUFDest * (
+                    (self.nfe40_pICMSUFDest - float(
+                        self.nfe40_pICMSInter)
+                     ) / 100) * (self.nfe40_pICMSInterPart / 100))
+            self.nfe40_vICMSUFRemet = (
+                self.nfe40_vBCUFDest * (
+                    (self.nfe40_pICMSUFDest - float(
+                        self.nfe40_pICMSInter)
+                     ) / 100) * ((100 - self.nfe40_pICMSInterPart
+                                  ) / 100))
+
         return super()._export_fields(xsd_fields, class_obj, export_dict)
 
     def _export_field(self, xsd_field, class_obj, member_spec):
