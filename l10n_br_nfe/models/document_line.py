@@ -368,7 +368,7 @@ class NFeLine(spec_models.StackedModel):
             'pST': str("%.04f" % (self.icmsst_wh_percent + self.icmsfcp_wh_percent)),
             'vICMSSTRet': str("%.02f" % self.icmsst_wh_value),
             'vBCFCPSTRet': str("%.02f" % self.icmsfcp_base_wh),
-            'pFCPSTRet': str("%.04f" % self.icmsfcp_percent_wh),
+            'pFCPSTRet': str("%.04f" % self.icmsfcp_wh_percent),
             'vFCPSTRet': str("%.02f" % self.icmsfcp_value_wh),
             'pRedBCEfet': str("%.04f" % self.icms_effective_reduction),
             'vBCEfet': str("%.02f" % self.icms_effective_base),
