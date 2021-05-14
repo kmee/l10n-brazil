@@ -29,6 +29,7 @@
                     <notebook>
                       <page name="general" string="General">
                         <group string="Tax Framework" name="tax_framework">
+                            <field name="tax_calc"/>
                             <field name="partner_tax_framework"/>
                             <field name="company_tax_framework"/>
                             <field name="ind_ie_dest"/>
