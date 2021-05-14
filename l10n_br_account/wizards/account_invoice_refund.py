@@ -6,9 +6,6 @@ from lxml import etree
 
 from odoo import api, fields, models
 from odoo.osv.orm import setup_modifiers
-from odoo.addons.l10n_br_fiscal.constants.fiscal import (
-    TAX_CALC_ONLY,
-)
 
 from ..models.account_invoice import REFUND_TO_OPERATION, FISCAL_TYPE_REFUND
 
@@ -20,17 +17,10 @@ class AccountInvoiceRefund(models.TransientModel):
         comodel_name="l10n_br_fiscal.operation",
         string="Force Fiscal Operation")
 
-    use_origin_tax = fields.Boolean(
-        string='Use Origin Taxes',
-        default=True,
-    )
-
     @api.multi
     def invoice_refund(self):
         new_context = self.env.context.copy()
         new_context['force_fiscal_operation_id'] = self.force_fiscal_operation_id.id
-        if self.use_origin_tax:
-            new_context['TAX_CALC_OVERRIDE'] = TAX_CALC_ONLY
         return super(
             AccountInvoiceRefund, self.with_context(new_context)).invoice_refund()
 
