@@ -688,10 +688,12 @@ class NFe(spec_models.StackedModel):
         if xsd_field == 'nfe40_IE':
             if class_obj._name == 'nfe.40.emit':
                 if self.company_inscr_est:
-                    return self.company_inscr_est.replace('.', '')
+                    return self.company_inscr_est.replace(
+                        '.', '').replace('-', '')
             if class_obj._name == 'nfe.40.dest':
                 if self.partner_inscr_est:
-                    return self.partner_inscr_est.replace('.', '')
+                    return self.partner_inscr_est.replace(
+                        '.', '').replace('-', '')
             if class_obj._name == 'nfe.40.transporta':
                 if self.nfe40_transporta and self.nfe40_transporta.nfe40_IE:
                     return self.nfe40_transporta.nfe40_IE.replace('.', '')
