@@ -5,12 +5,12 @@
     'name': 'NFS-e (Ginfes)',
     'summary': """
         NFS-e (Ginfes)""",
-    'version': '12.0.2.0.0',
+    'version': '12.0.3.0.0',
     'license': 'AGPL-3',
     'author': 'KMEE, Odoo Community Association (OCA)',
     'maintainers': ['gabrielcardoso21', 'mileo', 'luismalta'],
     'website': 'https://github.com/OCA/l10n-brazil',
-    "development_status": "Alpha",
+    "development_status": "Beta",
     'external_dependencies': {
         'python': [
             'erpbrasil.edoc',

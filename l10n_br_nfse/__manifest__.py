@@ -5,7 +5,7 @@
     'name': 'NFS-e',
     'summary': """
         NFS-e""",
-    'version': '12.0.3.2.0',
+    'version': '12.0.4.0.0',
     'license': 'AGPL-3',
     'author': 'KMEE, Odoo Community Association (OCA)',
     'maintainers': ['gabrielcardoso21', 'mileo', 'luismalta'],
@@ -29,8 +29,6 @@
         'views/product_product_view.xml',
         'views/document_line_view.xml',
         'views/res_company_view.xml',
-
-        'wizards/wizard_document_status.xml',
 
         'report/danfse.xml',
     ],

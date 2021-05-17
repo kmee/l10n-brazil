@@ -28,6 +28,7 @@ from ..constants.icms import (
     ICMS_DIFAL_UNIQUE_BASE,
     ICMS_DIFAL_DOUBLE_BASE,
     ICMS_ORIGIN_TAX_IMPORTED,
+    ICSM_CST_CSOSN_ST_BASE,
 )
 
 
@@ -420,17 +421,17 @@ class Tax(models.Model):
             icms_dest_value = round(
                 icms_base * (icms_dest_perc / 100), precision)
 
-            if company.state_id.code in ICMS_DIFAL_UNIQUE_BASE:
+            if partner.state_id.code in ICMS_DIFAL_UNIQUE_BASE:
                 difal_icms_base = icms_base
 
-            if company.state_id.code in ICMS_DIFAL_DOUBLE_BASE:
+            if partner.state_id.code in ICMS_DIFAL_DOUBLE_BASE:
                 difal_icms_base = round(
-                    (icms_base - icms_dest_value) / (1 - (
+                    (icms_base - icms_origin_value) / (1 - (
                         (icms_dest_perc + icmsfcp_perc) / 100)),
                     precision)
 
-                icms_origin_value = round(
-                    difal_icms_base * (icms_origin_perc / 100), precision)
+                icms_dest_value = round(
+                    difal_icms_base * (icms_dest_perc / 100), precision)
 
             difal_value = icms_dest_value - icms_origin_value
 
@@ -475,10 +476,39 @@ class Tax(models.Model):
 
     def _compute_icmsfcp(self, tax, taxes_dict, **kwargs):
         """Compute ICMS FCP"""
-        tax_dict_icms = taxes_dict.get('icms')
+        partner = kwargs.get("partner")
+        company = kwargs.get("company")
+        icms_cst_id = kwargs.get("icms_cst_id")
+
+        if taxes_dict.get('icms'):
+            if company.state_id != partner.state_id:
+                taxes_dict[tax.tax_domain]['base'] = taxes_dict['icms'].get(
+                    'icms_dest_base', 0.0)
+            else:
+                taxes_dict[tax.tax_domain]['base'] = taxes_dict['icms'].get(
+                    'base', 0.0)
+        elif taxes_dict.get('icmssn'):
+            taxes_dict[tax.tax_domain]['base'] = taxes_dict['icmssn'].get(
+                'base', 0.0)
+
+        taxes_dict[tax.tax_domain].pop('percent_amount', None)
+
+        taxes_dict[tax.tax_domain].update(self._compute_tax(
+            tax, taxes_dict, **kwargs))
+
         taxes_dict[tax.tax_domain].update({
-            'base': tax_dict_icms.get('icms_dest_base', 0.0),
-        })
+            'icms_base_type': tax.icms_base_type})
+
+        taxes_dict[tax.tax_domain]["fcpst_base"] = taxes_dict.get(
+            'icmsst', {}).get('base', 0.00)
+
+        # TODO Improve this condition
+        if icms_cst_id.code in ICSM_CST_CSOSN_ST_BASE:
+            taxes_dict[tax.tax_domain]["fcpst_value"] = taxes_dict[tax.tax_domain][
+                "fcpst_base"] * (taxes_dict[tax.tax_domain]["percent_amount"] / 100)
+            taxes_dict[tax.tax_domain]["fcpst_value"] -= taxes_dict[tax.tax_domain][
+                "tax_value"]
+
         return self._compute_tax(tax, taxes_dict, **kwargs)
 
     def _compute_icmsst(self, tax, taxes_dict, **kwargs):

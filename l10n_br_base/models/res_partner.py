@@ -44,8 +44,11 @@ class Partner(models.Model):
             if not record.cnpj_cpf:
                 return
 
+            if self.env.context.get('disable_allow_cnpj_multi_ie'):
+                return
+
             allow_cnpj_multi_ie = record.env["ir.config_parameter"].sudo().get_param(
-                "l10n_br_base_allow_cnpj_multi_ie", default=True
+                "l10n_br_base.allow_cnpj_multi_ie", default=True
             )
 
             if record.parent_id:
@@ -58,22 +61,26 @@ class Partner(models.Model):
 
             # se encontrar CNPJ iguais
             if record.env["res.partner"].search(domain):
-
-                if allow_cnpj_multi_ie == "True":
-                    for partner in record.env["res.partner"].search(domain):
-                        if (
-                            partner.inscr_est == record.inscr_est
-                            and not record.inscr_est
-                        ):
-                            raise ValidationError(
-                                _(
-                                    "There is already a partner record with this "
-                                    "Estadual Inscription !"
+                if cnpj_cpf.validar_cnpj(record.cnpj_cpf):
+                    if allow_cnpj_multi_ie == "True":
+                        for partner in record.env["res.partner"].search(domain):
+                            if (
+                                partner.inscr_est == record.inscr_est
+                                and not record.inscr_est
+                            ):
+                                raise ValidationError(
+                                    _(
+                                        "There is already a partner record with this "
+                                        "Estadual Inscription !"
+                                    )
                                 )
-                            )
+                    else:
+                        raise ValidationError(
+                            _("There is already a partner record with this CNPJ !")
+                        )
                 else:
                     raise ValidationError(
-                        _("There is already a partner record with this CNPJ !")
+                        _("There is already a partner record with this CPF/RG!")
                     )
 
     @api.multi
@@ -85,7 +92,7 @@ class Partner(models.Model):
             disable_cnpj_ie_validation = record.env["ir.config_parameter"].sudo()\
                 .get_param(
                 "l10n_br_base.disable_cpf_cnpj_validation", default=False
-            )
+            ) or self.env.context.get('disable_cpf_cnpj_validation')
             if not disable_cnpj_ie_validation:
                 if record.country_id:
                     country_code = record.country_id.code
@@ -116,7 +123,7 @@ class Partner(models.Model):
 
             disable_ie_validation = record.env["ir.config_parameter"].sudo().get_param(
                 "l10n_br_base.disable_ie_validation", default=False
-            )
+            ) or self.env.context.get('disable_ie_validation')
             if not disable_ie_validation:
                 if record.inscr_est and record.is_company and record.state_id:
                     state_code = record.state_id.code or ""

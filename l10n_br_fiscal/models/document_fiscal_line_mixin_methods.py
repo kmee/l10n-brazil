@@ -197,7 +197,8 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
             cest=self.cest_id,
             operation_line=self.fiscal_operation_line_id,
             icmssn_range=self.icmssn_range_id,
-            icms_origin=self.icms_origin)
+            icms_origin=self.icms_origin,
+            icms_cst_id=self.icms_cst_id)
 
     @api.multi
     def _prepare_br_fiscal_dict(self, default=False):
@@ -348,7 +349,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         self.price_unit = price.get(
             self.fiscal_operation_id.default_price_unit, 0.00)
 
-    def _document_comment_vals(self):
+    def __document_comment_vals(self):
         return {
             'user': self.env.user,
             'ctx': self._context,
@@ -356,11 +357,11 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
             'item': self,
         }
 
-    def document_comment(self):
+    def _document_comment(self):
         for d in self.filtered('comment_ids'):
             d.additional_data = d.additional_data or ''
             d.additional_data += d.comment_ids.compute_message(
-                d._document_comment_vals())
+                d.__document_comment_vals())
 
     @api.onchange('fiscal_operation_id')
     def _onchange_fiscal_operation_id(self):
@@ -393,6 +394,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
                 nbs=self.nbs_id,
                 cest=self.cest_id)
 
+            self.ipi_guideline_id = mapping_result['ipi_guideline']
             self.cfop_id = mapping_result['cfop']
             taxes = self.env['l10n_br_fiscal.tax']
             for tax in mapping_result['taxes'].values():
@@ -653,6 +655,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         self.icmsfcp_base = tax_dict.get("base", 0.0)
         self.icmsfcp_percent = tax_dict.get("percent_amount", 0.0)
         self.icmsfcp_value = tax_dict.get("tax_value", 0.0)
+        self.icmsfcpst_value = tax_dict.get("fcpst_value", 0.0)
 
     @api.onchange(
         "icmsfcp_percent",
