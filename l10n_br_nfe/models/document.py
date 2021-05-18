@@ -969,8 +969,8 @@ class NFe(spec_models.StackedModel):
             arquivo = tmp_xml.name
 
         base.ImprimirXml.imprimir(caminho_xml=arquivo, output_dir=output)
-        file_name = 'danfe.pdf'
-        with open(output + file_name, 'rb') as f:
+        file_name = '%s - NF - %s.pdf' % (self.number, self.partner_name)
+        with open(output + 'danfe.pdf', 'rb') as f:
             arquivo_data = f.read()
 
         self.file_pdf_id = self.env['ir.attachment'].create(
