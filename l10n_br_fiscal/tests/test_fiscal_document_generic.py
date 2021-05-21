@@ -46,10 +46,10 @@ class TestFiscalDocumentGeneric(SavepointCase):
         cls.nfe_sn_export = cls.env.ref(
             'l10n_br_fiscal.demo_nfe_sn_export'
         )
-        self.demo_nfe_financial = self.env.ref(
+        cls.demo_nfe_financial = cls.env.ref(
             'l10n_br_fiscal.demo_nfe_financial'
         )
-        self.demo_nfe_raise_financial = self.env.ref(
+        cls.demo_nfe_raise_financial = cls.env.ref(
             'l10n_br_fiscal.demo_nfe_raise_financial'
         )
 
