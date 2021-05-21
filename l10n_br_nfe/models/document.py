@@ -67,7 +67,7 @@ class NFe(spec_models.StackedModel):
         "nfe.40.exporta",
         "nfe.40.cobr",
         "nfe.40.fat",
-	]
+    ]
     _stacked = 'nfe.40.infnfe'
     _stack_skip = ('nfe40_veicTransp')
     _field_prefix = 'nfe40_'
