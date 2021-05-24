@@ -377,6 +377,10 @@ class Document(models.Model):
 
     def send_email(self, state):
         email_template = self._get_email_template(state)
+
+        partner_ids = self.partner_id.filtered('edoc_send_email')
+        partner_ids |= self.partner_id.child_ids.filtered('edoc_send_email')
+
         if email_template:
             email_template.send_mail(self.id)
 
