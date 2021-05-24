@@ -13,6 +13,7 @@ from ..constants.fiscal import (
     OPERATION_STATE,
     OPERATION_STATE_DEFAULT,
     PRODUCT_FISCAL_TYPE,
+    TAX_CALC,
     TAX_CALC_ONLY,
     TAX_DOMAIN_ICMS,
     TAX_DOMAIN_ISSQN,
@@ -78,8 +79,15 @@ class OperationLine(models.Model):
         readonly=True)
 
     tax_calc = fields.Selection(
-        related='fiscal_operation_id.tax_calc',
-        readonly=True,
+        selection=TAX_CALC,
+        string='Calculo tributação',
+        help="""Determina se o calculo da tributação deve ser:\n
+              - Automático: O sistema determina nas aliquotas, cfop e entre outros;\n
+              - Semi-Automático: O usuário informa a cfop, aliquotas e o
+             sistema calcula os impostos\n
+              - Manual: O usuário informa as aliquotas e realiza os cálculos
+               manualmente.
+             """,
     )
 
     tax_icms_or_issqn = fields.Selection(
@@ -114,7 +122,7 @@ class OperationLine(models.Model):
 
     company_tax_framework = fields.Selection(
         selection=TAX_FRAMEWORK,
-        string='Copmpany Tax Framework')
+        string='Company Tax Framework')
 
     add_to_amount = fields.Boolean(
         string='Add to Document Amount?',
@@ -190,7 +198,9 @@ class OperationLine(models.Model):
                          fiscal_price=None, fiscal_quantity=None,
                          ncm=None, nbm=None, nbs=None, cest=None):
         tax_calc = self.env.context.get(
-            'TAX_CALC_OVERRIDE', self.tax_calc
+            'TAX_CALC_OVERRIDE',
+            self.tax_calc or
+            self.fiscal_operation_id.tax_calc
         )
 
         mapping_result = {

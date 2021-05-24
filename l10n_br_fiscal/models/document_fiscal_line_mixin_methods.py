@@ -229,10 +229,14 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
 
     @api.multi
     def _remove_all_fiscal_tax_ids(self):
-        tax_calc = self.env.context.get('TAX_CALC_OVERRIDE',
-                                        self.fiscal_operation_line_id.tax_calc)
+        tax_calc = self.env.context.get(
+            'TAX_CALC_OVERRIDE',
+            self.fiscal_operation_line_id.tax_calc or
+            self.fiscal_operation_line_id.fiscal_operation_id.tax_calc,
+        )
         if tax_calc in (TAX_CALC_MANUAL, TAX_CALC_ONLY):
             return
+
         for line in self:
             line.fiscal_tax_ids = False
 
@@ -386,8 +390,11 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
 
     @api.onchange("fiscal_operation_line_id")
     def _onchange_fiscal_operation_line_id(self):
-        tax_calc = self.env.context.get('TAX_CALC_OVERRIDE',
-                                        self.fiscal_operation_line_id.tax_calc)
+        tax_calc = self.env.context.get(
+            'TAX_CALC_OVERRIDE',
+            self.fiscal_operation_line_id.tax_calc or
+            self.fiscal_operation_line_id.fiscal_operation_id.tax_calc,
+        )
         if tax_calc == TAX_CALC_MANUAL:
             return
 

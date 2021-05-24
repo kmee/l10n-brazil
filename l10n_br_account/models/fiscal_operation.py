@@ -23,14 +23,17 @@ class Operation(models.Model):
         comodel_name='account.journal',
         string='Account Journal',
         company_dependent=True,
-        domain="[('type', 'in', {'out': ['sale', 'general'], 'in': "
-               "['purchase', 'general'], 'all': ['sale', 'purchase', "
-               "'general']}.get(fiscal_operation_type, []))]",
     )
 
     fiscal_position_id = fields.Many2one(
         comodel_name='account.fiscal.position',
         string='Fiscal Position',
+        company_dependent=True,
+    )
+
+    account_id = fields.Many2one(
+        comodel_name='account.account',
+        string='Account',
         company_dependent=True,
     )
 
