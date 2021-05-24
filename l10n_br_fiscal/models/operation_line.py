@@ -5,19 +5,20 @@ from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 from ..constants.fiscal import (
+    CFOP_DESTINATION_EXPORT,
+    FISCAL_COMMENT_LINE,
     FISCAL_IN_OUT_ALL,
     NFE_IND_IE_DEST,
+    OPERATION_FISCAL_TYPE,
     OPERATION_STATE,
     OPERATION_STATE_DEFAULT,
     PRODUCT_FISCAL_TYPE,
+    TAX_CALC_ONLY,
+    TAX_DOMAIN_ICMS,
+    TAX_DOMAIN_ISSQN,
     TAX_FRAMEWORK,
     TAX_FRAMEWORK_NORMAL,
-    OPERATION_FISCAL_TYPE,
-    CFOP_DESTINATION_EXPORT,
-    FISCAL_COMMENT_LINE,
     TAX_ICMS_OR_ISSQN,
-    TAX_DOMAIN_ISSQN,
-    TAX_DOMAIN_ICMS,
 )
 
 from ..constants.icms import ICMS_ORIGIN
@@ -75,6 +76,11 @@ class OperationLine(models.Model):
         string='Fiscal Type',
         store=True,
         readonly=True)
+
+    tax_calc = fields.Selection(
+        related='fiscal_operation_id.tax_calc',
+        readonly=True,
+    )
 
     tax_icms_or_issqn = fields.Selection(
         selection=TAX_ICMS_OR_ISSQN,
@@ -183,6 +189,9 @@ class OperationLine(models.Model):
     def map_fiscal_taxes(self, company, partner, product=None,
                          fiscal_price=None, fiscal_quantity=None,
                          ncm=None, nbm=None, nbs=None, cest=None):
+        tax_calc = self.env.context.get(
+            'TAX_CALC_OVERRIDE', self.tax_calc
+        )
 
         mapping_result = {
             'taxes': {},
@@ -196,6 +205,9 @@ class OperationLine(models.Model):
         # Define CFOP
         cfop = self._get_cfop(company, partner)
         mapping_result['cfop'] = cfop
+
+        if tax_calc == TAX_CALC_ONLY:
+            return mapping_result
 
         # 1 Get Tax Defs from Company
         for tax_definition in company.tax_definition_ids.map_tax_definition(
