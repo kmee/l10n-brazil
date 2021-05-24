@@ -38,7 +38,6 @@ FISCAL_TYPE_REFUND = {
 SHADOWED_FIELDS = [
     'partner_id',
     'company_id',
-    'date',
     'currency_id',
     'partner_shipping_id',
 ]
@@ -105,11 +104,6 @@ class AccountInvoice(models.Model):
         related='document_type_id.code',
         stored=True,
     )
-
-    @api.multi
-    def _get_amount_lines(self):
-        """Get object lines instaces used to compute fields"""
-        return self.mapped('invoice_line_ids')
 
     @api.multi
     def _get_amount_lines(self):
