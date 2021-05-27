@@ -12,9 +12,9 @@ class L10nBrSaleBaseTest(SavepointCase):
         cls.main_company = cls.env.ref('base.main_company')
         cls.company = cls.env.ref('base.main_company')
         cls.so_recurrency_service = \
-            self.env.ref('l10n_br_product_contract.main_so_recurrency_service')
+            cls.env.ref('l10n_br_product_contract.main_so_recurrency_service')
         cls.sl_recurrency_service = \
-            self.env.ref('l10n_br_product_contract.main_sl_recurrency_service_1_1')
+            cls.env.ref('l10n_br_product_contract.main_sl_recurrency_service_1_1')
 
     def test_l10n_br_product_contract_confirm_so(self):
         self.so_recurrency_service.action_confirm()
