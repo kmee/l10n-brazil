@@ -39,6 +39,8 @@
         "data/ir_cron.xml",
         "data/l10n_br_fiscal_comment_data.xml",
         "data/res_partner_data.xml",
+        "data/payment_term_data.xml",
+        "data/res_partner_data.xml",
 
         # Views
         "views/cnae_view.xml",
@@ -98,6 +100,8 @@
         "wizards/document_correction_wizard.xml",
         "wizards/document_status_wizard.xml",
         "wizards/invalidate_number_wizard.xml",
+        'views/payment_view.xml',
+        'views/payment_term_view.xml',
 
         # Actions
         "views/l10n_br_fiscal_action.xml",
