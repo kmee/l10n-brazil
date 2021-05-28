@@ -26,6 +26,7 @@
         "views/nfe_menu.xml",
 
         # Views
+        "views/payment_view.xml",
         "views/res_company_view.xml",
         "views/nfe_document_view.xml",
         "views/res_config_settings_view.xml",
