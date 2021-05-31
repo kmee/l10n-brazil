@@ -79,7 +79,7 @@ addon | version | summary
 [l10n_br_account](l10n_br_account/) | 12.0.5.1.0 | Brazilian Localization Account
 [l10n_br_account_bank_statement_import_cnab](l10n_br_account_bank_statement_import_cnab/) | 12.0.1.0.0 | Importação de Extrato Bancário CNAB 240 - Segmento E
 [l10n_br_account_payment_order](l10n_br_account_payment_order/) | 12.0.1.0.0 | Brazilian Payment Order
-[l10n_br_base](l10n_br_base/) | 12.0.3.1.0 | Customization of base module for implementations in Brazil.
+[l10n_br_base](l10n_br_base/) | 12.0.3.2.0 | Customization of base module for implementations in Brazil.
 [l10n_br_coa](l10n_br_coa/) | 12.0.3.1.0 | Base Brasilian Localization for the Chart of Accounts
 [l10n_br_coa_complete](l10n_br_coa_complete/) | 12.0.1.0.0 | Plano de Contas Completo para empresas Simples, Presumido, Real, SA, Consolidação
 [l10n_br_coa_generic](l10n_br_coa_generic/) | 12.0.4.1.0 | Plano de Contas para empresas do Regime normal (Micro e pequenas empresas)
@@ -88,7 +88,7 @@ addon | version | summary
 [l10n_br_crm](l10n_br_crm/) | 12.0.1.0.0 | Brazilian Localization CRM
 [l10n_br_currency_rate_update](l10n_br_currency_rate_update/) | 12.0.1.0.0 | Update exchange rates using OCA modules for Brazil
 [l10n_br_delivery](l10n_br_delivery/) | 12.0.3.0.0 | This module changes the delivery model strategy to match brazilian standards.
-[l10n_br_fiscal](l10n_br_fiscal/) | 12.0.13.2.0 | Brazilian fiscal core module.
+[l10n_br_fiscal](l10n_br_fiscal/) | 12.0.13.3.0 | Brazilian fiscal core module.
 [l10n_br_hr](l10n_br_hr/) | 12.0.1.0.0 | Brazilian Localization HR
 [l10n_br_hr_contract](l10n_br_hr_contract/) | 12.0.1.1.0 | Brazilian Localization HR Contract
 [l10n_br_mis_report](l10n_br_mis_report/) | 12.0.1.2.0 | Templates de relatórios contábeis brasileiros: Balanço Patrimonial e DRE
@@ -97,13 +97,14 @@ addon | version | summary
 [l10n_br_nfse](l10n_br_nfse/) | 12.0.4.1.0 | NFS-e
 [l10n_br_nfse_ginfes](l10n_br_nfse_ginfes/) | 12.0.3.0.0 | NFS-e (Ginfes)
 [l10n_br_nfse_issnet](l10n_br_nfse_issnet/) | 12.0.3.0.0 | NFS-e (ISSNet)
+[l10n_br_nfse_paulistana](l10n_br_nfse_paulistana/) | 12.0.1.0.0 | NFS-e (Nota Paulistana)
 [l10n_br_portal](l10n_br_portal/) | 12.0.1.2.0 | Campos Brasileiros no Portal
 [l10n_br_purchase](l10n_br_purchase/) | 12.0.4.3.0 | Brazilian Localization Purchase
 [l10n_br_purchase_stock](l10n_br_purchase_stock/) | 12.0.2.0.0 | Brazilian Localization Purchase Stock
 [l10n_br_repair](l10n_br_repair/) | 12.0.5.1.0 | Brazilian Localization Repair
 [l10n_br_resource](l10n_br_resource/) | 12.0.1.1.0 | This module extend core resource to create important brazilian informations. Define a Brazilian calendar and some tools to compute dates used in financial and payroll modules
-[l10n_br_sale](l10n_br_sale/) | 12.0.5.3.0 | Brazilian Localization Sale
-[l10n_br_sale_stock](l10n_br_sale_stock/) | 12.0.5.2.2 | Brazilian Localization Sales and Warehouse
+[l10n_br_sale](l10n_br_sale/) | 12.0.5.4.0 | Brazilian Localization Sale
+[l10n_br_sale_stock](l10n_br_sale_stock/) | 12.0.5.3.0 | Brazilian Localization Sales and Warehouse
 [l10n_br_stock](l10n_br_stock/) | 12.0.1.0.0 | Brazilian Localization Warehouse
 [l10n_br_stock_account](l10n_br_stock_account/) | 12.0.4.0.0 | Brazilian Localization WMS Accounting
 [l10n_br_website_sale](l10n_br_website_sale/) | 12.0.1.2.0 | Website sale localização brasileira.

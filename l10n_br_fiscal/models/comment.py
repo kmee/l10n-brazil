@@ -84,7 +84,6 @@ class Comment(models.Model):
 
         return self.browse(recs).name_get()
 
-    @api.multi
     def name_get(self):
         def truncate_name(name):
             if len(name) > 60:
@@ -97,6 +96,7 @@ class Comment(models.Model):
     # This way we can format numbers in currency template on fiscal observation
     # msg We'll call this function when setting the variables env below
     def format_amount(self, env, amount, currency):
+        self.ensure_one()
         fmt = "%.{0}f".format(currency.decimal_places)
         lang = env['res.lang']._lang_get('pt_BR')
 

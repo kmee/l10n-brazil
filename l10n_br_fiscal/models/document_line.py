@@ -53,6 +53,7 @@ class DocumentLine(models.Model):
 
     partner_id = fields.Many2one(
         related='document_id.partner_id',
+        store=True,
     )
 
     currency_id = fields.Many2one(
@@ -70,34 +71,28 @@ class DocumentLine(models.Model):
     amount_untaxed = fields.Monetary(
         string='Amount Untaxed',
         compute='_compute_amounts',
-        default=0.00,
     )
 
     amount_tax = fields.Monetary(
         string='Amount Tax',
         compute='_compute_amounts',
-        default=0.00,
     )
 
     amount_fiscal = fields.Monetary(
         string='Amount Fiscal',
         compute='_compute_amounts',
-        default=0.00,
     )
 
     amount_financial = fields.Monetary(
         string='Amount Financial',
         compute='_compute_amounts',
-        default=0.00,
     )
 
     amount_total = fields.Monetary(
         string='Amount Total',
         compute='_compute_amounts',
-        default=0.00,
     )
 
-    @api.multi
     def unlink(self):
         if self.env.ref('l10n_br_fiscal.fiscal_document_line_dummy') in self:
             raise UserError(

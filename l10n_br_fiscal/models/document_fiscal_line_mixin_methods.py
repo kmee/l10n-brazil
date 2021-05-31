@@ -177,6 +177,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
             )
 
     def _compute_taxes(self, taxes, cst=None):
+        self.ensure_one()
         return taxes.compute_taxes(
             company=self.company_id,
             partner=self.partner_id,
@@ -200,7 +201,6 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
             icms_origin=self.icms_origin,
             icms_cst_id=self.icms_cst_id)
 
-    @api.multi
     def _prepare_br_fiscal_dict(self, default=False):
         self.ensure_one()
         fields = self.env["l10n_br_fiscal.document.line.mixin"]._fields.keys()
@@ -215,7 +215,6 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
             return {"default_%s" % (k,): vals[k] for k in vals.keys()}
         return vals
 
-    @api.multi
     def _get_all_tax_id_fields(self):
         self.ensure_one()
         taxes = self.env['l10n_br_fiscal.tax']
@@ -225,7 +224,6 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
 
         return taxes
 
-    @api.multi
     def _remove_all_fiscal_tax_ids(self):
         for line in self:
             line.fiscal_tax_ids = False
@@ -254,7 +252,6 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
             self._set_fields_irpj_wh(TAX_DICT_VALUES)
             self._set_fields_inss_wh(TAX_DICT_VALUES)
 
-    @api.multi
     def _update_fiscal_tax_ids(self, taxes):
         for line in self:
             taxes_groups = line.fiscal_tax_ids.mapped('tax_domain')
@@ -263,7 +260,6 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
 
             line.fiscal_tax_ids = fiscal_taxes + taxes
 
-    @api.multi
     def _update_taxes(self):
         for line in self:
             compute_result = self._compute_taxes(line.fiscal_tax_ids)
@@ -341,6 +337,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
                     self._set_fields_inss_wh(computed_tax)
 
     def _get_product_price(self):
+        self.ensure_one()
         price = {
             'sale_price': self.product_id.list_price,
             'cost_price': self.product_id.standard_price,
@@ -350,6 +347,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
             self.fiscal_operation_id.default_price_unit, 0.00)
 
     def __document_comment_vals(self):
+        self.ensure_one()
         return {
             'user': self.env.user,
             'ctx': self._context,
@@ -447,6 +445,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         self._onchange_fiscal_operation_id()
 
     def _set_fields_issqn(self, tax_dict):
+        self.ensure_one()
         if tax_dict:
             self.issqn_base = tax_dict.get("base")
             self.issqn_percent = tax_dict.get("percent_amount")
@@ -462,6 +461,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         pass
 
     def _set_fields_issqn_wh(self, tax_dict):
+        self.ensure_one()
         if tax_dict:
             self.issqn_wh_base = tax_dict.get("base")
             self.issqn_wh_percent = tax_dict.get("percent_amount")
@@ -477,6 +477,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         pass
 
     def _set_fields_csll(self, tax_dict):
+        self.ensure_one()
         if tax_dict:
             self.csll_base = tax_dict.get("base")
             self.csll_percent = tax_dict.get("percent_amount")
@@ -492,6 +493,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         pass
 
     def _set_fields_csll_wh(self, tax_dict):
+        self.ensure_one()
         if tax_dict:
             self.csll_wh_base = tax_dict.get("base")
             self.csll_wh_percent = tax_dict.get("percent_amount")
@@ -507,6 +509,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         pass
 
     def _set_fields_irpj(self, tax_dict):
+        self.ensure_one()
         if tax_dict:
             self.irpj_base = tax_dict.get("base")
             self.irpj_percent = tax_dict.get("percent_amount")
@@ -522,6 +525,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         pass
 
     def _set_fields_irpj_wh(self, tax_dict):
+        self.ensure_one()
         if tax_dict:
             self.irpj_wh_base = tax_dict.get("base")
             self.irpj_wh_percent = tax_dict.get("percent_amount")
@@ -537,6 +541,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         pass
 
     def _set_fields_inss(self, tax_dict):
+        self.ensure_one()
         if tax_dict:
             self.inss_base = tax_dict.get("base")
             self.inss_percent = tax_dict.get("percent_amount")
@@ -552,6 +557,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         pass
 
     def _set_fields_inss_wh(self, tax_dict):
+        self.ensure_one()
         if tax_dict:
             self.inss_wh_base = tax_dict.get("base")
             self.inss_wh_percent = tax_dict.get("percent_amount")
@@ -567,6 +573,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         pass
 
     def _set_fields_icms(self, tax_dict):
+        self.ensure_one()
         if tax_dict:
             self.icms_cst_id = tax_dict.get("cst_id")
             self.icms_base_type = tax_dict.get(
@@ -610,6 +617,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         pass
 
     def _set_fields_icmssn(self, tax_dict):
+        self.ensure_one()
         self.icms_cst_id = tax_dict.get("cst_id")
         self.icmssn_base = tax_dict.get("base")
         self.icmssn_percent = tax_dict.get("percent_amount")
@@ -627,6 +635,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         pass
 
     def _set_fields_icmsst(self, tax_dict):
+        self.ensure_one()
         self.icmsst_base_type = tax_dict.get(
             "icmsst_base_type", ICMS_ST_BASE_TYPE_DEFAULT)
         self.icmsst_mva_percent = tax_dict.get("icmsst_mva_percent")
@@ -652,6 +661,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         pass
 
     def _set_fields_icmsfcp(self, tax_dict):
+        self.ensure_one()
         self.icmsfcp_base = tax_dict.get("base", 0.0)
         self.icmsfcp_percent = tax_dict.get("percent_amount", 0.0)
         self.icmsfcp_value = tax_dict.get("tax_value", 0.0)
@@ -664,6 +674,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         pass
 
     def _set_fields_ipi(self, tax_dict):
+        self.ensure_one()
         if tax_dict:
             self.ipi_cst_id = tax_dict.get("cst_id")
             self.ipi_base_type = tax_dict.get("base_type", False)
@@ -681,6 +692,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         pass
 
     def _set_fields_ii(self, tax_dict):
+        self.ensure_one()
         if tax_dict:
             self.ii_base = tax_dict.get("base", 0.00)
             self.ii_percent = tax_dict.get("percent_amount", 0.00)
@@ -694,6 +706,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         pass
 
     def _set_fields_pis(self, tax_dict):
+        self.ensure_one()
         if tax_dict:
             self.pis_cst_id = tax_dict.get("cst_id")
             self.pis_base_type = tax_dict.get("base_type")
@@ -712,8 +725,8 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         pass
 
     def _set_fields_pis_wh(self, tax_dict):
+        self.ensure_one()
         if tax_dict:
-            self.pis_wh_cst_id = tax_dict.get("cst_id")
             self.pis_wh_base_type = tax_dict.get("base_type")
             self.pis_wh_base = tax_dict.get("base", 0.00)
             self.pis_wh_percent = tax_dict.get("percent_amount", 0.00)
@@ -730,6 +743,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         pass
 
     def _set_fields_pisst(self, tax_dict):
+        self.ensure_one()
         if tax_dict:
             self.pisst_cst_id = tax_dict.get("cst_id")
             self.pisst_base_type = tax_dict.get("base_type")
@@ -748,6 +762,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         pass
 
     def _set_fields_cofins(self, tax_dict):
+        self.ensure_one()
         if tax_dict:
             self.cofins_cst_id = tax_dict.get("cst_id")
             self.cofins_base_type = tax_dict.get("base_type")
@@ -766,8 +781,8 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         pass
 
     def _set_fields_cofins_wh(self, tax_dict):
+        self.ensure_one()
         if tax_dict:
-            self.cofins_wh_cst_id = tax_dict.get("cst_id")
             self.cofins_wh_base_type = tax_dict.get("base_type")
             self.cofins_wh_base = tax_dict.get("base", 0.00)
             self.cofins_wh_percent = tax_dict.get("percent_amount", 0.00)
@@ -784,6 +799,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         pass
 
     def _set_fields_cofinsst(self, tax_dict):
+        self.ensure_one()
         if tax_dict:
             self.cofinsst_cst_id = tax_dict.get("cst_id")
             self.cofinsst_base_type = tax_dict.get("base_type")

@@ -89,19 +89,16 @@ class Tax(models.Model):
 
     percent_amount = fields.Float(
         string="Percent",
-        default=0.00,
         digits=dp.get_precision("Fiscal Tax Percent"),
         required=True)
 
     percent_reduction = fields.Float(
         string="Percent Reduction",
-        default=0.00,
         digits=dp.get_precision("Fiscal Tax Percent"),
         required=True)
 
     percent_debit_credit = fields.Float(
         string="Percent Debit/Credit",
-        default=0.00,
         digits=dp.get_precision("Fiscal Tax Percent"),
         required=True)
 
@@ -112,7 +109,6 @@ class Tax(models.Model):
 
     value_amount = fields.Float(
         string="Value",
-        default=0.00,
         digits=dp.get_precision("Fiscal Tax Value"),
         required=True)
 
@@ -159,13 +155,11 @@ class Tax(models.Model):
 
     icmsst_mva_percent = fields.Float(
         string="MVA Percent",
-        default=0.00,
         digits=dp.get_precision("Fiscal Tax Percent"),
         required=True)
 
     icmsst_value = fields.Float(
         string="PFC Value",
-        default=0.00,
         digits=dp.get_precision("Fiscal Tax Value"),
         required=True)
 
@@ -173,7 +167,6 @@ class Tax(models.Model):
         "fiscal_tax_code_uniq", "unique (name)",
         "Tax already exists with this name !")]
 
-    @api.multi
     def get_account_tax(self, fiscal_operation_type=FISCAL_OUT):
         account_tax_type = {'out': 'sale', 'in': 'purchase'}
         type_tax_use = account_tax_type.get(fiscal_operation_type, 'sale')
@@ -652,7 +645,6 @@ class Tax(models.Model):
 
         return self._compute_tax(tax, taxes_dict, **kwargs)
 
-    @api.multi
     def compute_taxes(self, **kwargs):
         """
         arguments:
