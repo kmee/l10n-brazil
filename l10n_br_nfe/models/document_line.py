@@ -375,16 +375,6 @@ class NFeLine(spec_models.StackedModel):
             'pICMSEfet': str("%.04f" % self.icms_effective_percent),
             'vICMSEfet': str("%.02f" % self.icms_effective_value),
 
-            # DIFAL ICMS
-            'vBCUFDest': str("%.02f" % self.icms_destination_base),
-            'pFCPUFDest': str("%.04f" % self.icmsfcp_percent),
-            'pICMSUFDest': str("%.04f" % self.icms_origin_percent),
-            'pICMSInter': str("%.04f" % self.icms_destination_percent),
-            'pICMSInterPart': str("%.04f" % self.icms_sharing_percent),
-            'vFCPUFDest': str("%.02f" % self.icmsfcp_value),
-            'vICMSUFDest': str("%.02f" % self.icms_destination_value),
-            'vICMSUFRemet': str("%.02f" % self.icms_origin_value),
-
             # ICMS SIMPLES NACIONAL
             'CSOSN': self.icms_cst_id.code,
             'pCredSN': str('%.04f' % self.icmssn_percent),
