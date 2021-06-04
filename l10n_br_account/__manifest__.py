@@ -18,6 +18,7 @@
         "data/account_tax_template.xml",
 
         # Views
+        "views/res_partner_view.xml",
         "views/account_tax_view.xml",
         "views/account_tax_template_view.xml",
         "views/fiscal_operation_view.xml",
