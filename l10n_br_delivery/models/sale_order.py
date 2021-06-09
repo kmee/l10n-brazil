@@ -11,6 +11,8 @@ class SaleOrder(models.Model):
 
     amount_freight_value = fields.Monetary(
         inverse='_inverse_amount_freight',
+        compute=False,
+        store=True,
     )
 
     amount_insurance_value = fields.Monetary(
@@ -22,6 +24,21 @@ class SaleOrder(models.Model):
         inverse='_inverse_amount_other',
         readonly=False,
     )
+
+    @api.model
+    def _get_amount_fields(self):
+        """Get all fields with 'amount_' prefix"""
+        amount_fields = super()._get_amount_fields()
+        amount_fields.remove('amount_freight_value')
+        return amount_fields
+
+    def _compute_amount(self):
+        super()._compute_amount()
+        for doc in self:
+            if doc.amount_freight_value:
+                if doc.amount_freight_value != sum(
+                        doc.order_line.mapped('freight_value')):
+                    doc._inverse_amount_freight()
 
     @api.multi
     def set_delivery_line(self):
