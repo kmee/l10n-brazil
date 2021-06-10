@@ -292,7 +292,7 @@ class NFe(spec_models.StackedModel):
     nfe40_nFat = fields.Char(related='document_number')
 
     nfe40_vLiq = fields.Monetary(
-        related='amount_total'
+        related='amount_financial'
     )
 
     nfe40_vOrig = fields.Monetary(
@@ -304,7 +304,7 @@ class NFe(spec_models.StackedModel):
         super()._compute_amount()
         for record in self:
             record.nfe40_vOrig = sum(
-                [record.amount_total, record.amount_discount_value]
+                [record.amount_financial, record.amount_discount_value]
             )
 
     @api.depends('fiscal_payment_ids')
@@ -551,11 +551,13 @@ class NFe(spec_models.StackedModel):
         if xsd_field == 'nfe40_tpAmb':
             self.env.context = dict(self.env.context)
             self.env.context.update({'tpAmb': self[xsd_field]})
-        elif xsd_field == 'nfe40_fat':
+        elif xsd_field == 'nfe40_fat' and self.payment_mode != '90':
             self._stacking_points['nfe40_fat'] = self._fields['nfe40_fat']
             res = super()._export_field(xsd_field, class_obj, member_spec)
             self._stacking_points.pop('nfe40_fat')
             return res
+        elif xsd_field == 'nfe40_vTroco' and self.payment_mode == '90':
+            return False
         return super(NFe, self)._export_field(
             xsd_field, class_obj, member_spec)
 
