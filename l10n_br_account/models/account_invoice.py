@@ -407,11 +407,19 @@ class AccountInvoice(models.Model):
         dos lançamentos contábeis."""
         super().action_date_assign()
         dummy_doc = self.env.ref("l10n_br_fiscal.fiscal_document_dummy")
-        for invoice in self:
-            if invoice.fiscal_document_id != dummy_doc:
-                if invoice.issuer == DOCUMENT_ISSUER_COMPANY:
-                    invoice.fiscal_document_id._document_date()
-                    invoice.fiscal_document_id._document_number()
+        for inv in self:
+            if inv.fiscal_document_id != dummy_doc:
+                if inv.issuer == DOCUMENT_ISSUER_COMPANY:
+                    if not inv.comment_ids and inv.fiscal_operation_id.comment_ids:
+                        inv.comment_ids |= self.fiscal_operation_id.comment_ids
+
+                    for l in inv.invoice_line_ids:
+                        if not l.comment_ids and l.fiscal_operation_line_id.comment_ids:
+                            l.comment_ids |= l.fiscal_operation_line_id.comment_ids
+
+                    inv.fiscal_document_id._document_date()
+                    inv.fiscal_document_id._document_number()
+                    inv.fiscal_document_id._document_number()
 
     def action_move_create(self):
         result = super().action_move_create()
