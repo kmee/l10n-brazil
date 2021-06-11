@@ -476,6 +476,9 @@ class NFe(spec_models.StackedModel):
             ]
         self.nfe40_detPag.__class__._field_prefix = 'nfe40_'
 
+        if not self.nfe40_detPag:
+            raise UserError(_('Favor preencher os dados do pagamento'))
+
     def _compute_amount(self):
         super()._compute_amount()
         if self.payment_mode == '90':
