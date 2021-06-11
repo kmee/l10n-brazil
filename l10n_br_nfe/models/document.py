@@ -294,12 +294,11 @@ class NFe(spec_models.StackedModel):
     )
 
     nfe40_vOrig = fields.Monetary(
-        compute='_compute_amount',
+        compute='_compute_amount_vorig',
     )
 
-    @api.depends('line_ids')
-    def _compute_amount(self):
-        super()._compute_amount()
+    @api.depends('amount_financial', 'amount_discount_value')
+    def _compute_amount_vorig(self):
         for record in self:
             record.nfe40_vOrig = sum(
                 [record.amount_financial, record.amount_discount_value]
