@@ -413,6 +413,10 @@ class NFe(spec_models.StackedModel):
             record._export_fields_pagamentos()
             edoc = record.serialize()[0]
             processador = record._processador()
+            try:
+                processador.valida_xml(edoc)
+            except Exception as e:
+                raise UserError(_("Erro de validação do XML: {}".format(e)))
             xml_file = processador.\
                 _generateds_to_string_etree(edoc, pretty_print=pretty_print)[0]
             _logger.debug(xml_file)
@@ -491,6 +495,10 @@ class NFe(spec_models.StackedModel):
             record._export_fields_pagamentos()
             processador = record._processador()
             for edoc in record.serialize():
+                try:
+                    processador.valida_xml(edoc)
+                except Exception as e:
+                    raise UserError(_("Erro de validação do XML: {}".format(e)))
                 processo = None
                 for p in processador.processar_documento(edoc):
                     processo = p
