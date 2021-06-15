@@ -62,8 +62,14 @@ def filter_processador_edoc_nfe(record):
 
 class NFe(spec_models.StackedModel):
     _name = 'l10n_br_fiscal.document'
-    _inherit = ["l10n_br_fiscal.document", "nfe.40.infnfe", "nfe.40.infadic",
-                "nfe.40.exporta"]
+    _inherit = [
+        "l10n_br_fiscal.document",
+        "nfe.40.infnfe",
+        "nfe.40.infadic",
+        "nfe.40.exporta",
+        "nfe.40.cobr",
+        "nfe.40.fat",
+    ]
     _stacked = 'nfe.40.infnfe'
     _stack_skip = ('nfe40_veicTransp')
     _field_prefix = 'nfe40_'
@@ -267,6 +273,45 @@ class NFe(spec_models.StackedModel):
         related='company_id.technical_support_id'
     )
 
+    nfe40_detPag = fields.One2many(
+        related='fiscal_payment_ids',
+        comodel_name='l10n_br_fiscal.payment',
+        inverse_name='document_id',
+    )
+
+    nfe40_dup = fields.One2many(
+        related='financial_ids',
+        comodel_name='l10n_br_fiscal.payment.line',
+        inverse_name='document_id',
+    )
+
+    nfe40_vTroco = fields.Monetary(
+        compute='_compute_nfe40_vTroco',
+    )
+
+    nfe40_nFat = fields.Char(related='document_number')
+
+    nfe40_vLiq = fields.Monetary(
+        related='amount_financial'
+    )
+
+    nfe40_vOrig = fields.Monetary(
+        compute='_compute_amount_vorig',
+    )
+
+    @api.depends('amount_financial', 'amount_discount_value')
+    def _compute_amount_vorig(self):
+        for record in self:
+            record.nfe40_vOrig = sum(
+                [record.amount_financial, record.amount_discount_value]
+            )
+
+    @api.depends('fiscal_payment_ids')
+    def _compute_nfe40_vTroco(self):
+        for record in self:
+            record.nfe40_vTroco = sum(
+                record.fiscal_payment_ids.mapped('amount_change'))
+
     nfe40_idDest = fields.Selection(
         compute='_compute_nfe40_idDest',
     )
@@ -431,6 +476,14 @@ class NFe(spec_models.StackedModel):
             ]
         self.nfe40_detPag.__class__._field_prefix = 'nfe40_'
 
+        if not self.nfe40_detPag:
+            raise UserError(_('Favor preencher os dados do pagamento'))
+
+    def _compute_amount(self):
+        super()._compute_amount()
+        if self.payment_mode == '90':
+            self.amount_financial = 0.0
+
     @api.multi
     def _eletronic_document_send(self):
         super(NFe, self)._eletronic_document_send()
@@ -505,11 +558,13 @@ class NFe(spec_models.StackedModel):
         if xsd_field == 'nfe40_tpAmb':
             self.env.context = dict(self.env.context)
             self.env.context.update({'tpAmb': self[xsd_field]})
-        elif xsd_field == 'nfe40_fat':
+        elif xsd_field == 'nfe40_fat' and self.payment_mode != '90':
             self._stacking_points['nfe40_fat'] = self._fields['nfe40_fat']
             res = super()._export_field(xsd_field, class_obj, member_spec)
             self._stacking_points.pop('nfe40_fat')
             return res
+        elif xsd_field == 'nfe40_vTroco' and self.payment_mode == '90':
+            return False
         return super(NFe, self)._export_field(
             xsd_field, class_obj, member_spec)
 
@@ -550,6 +605,8 @@ class NFe(spec_models.StackedModel):
             i += 1
             if class_obj._fields[field_name].comodel_name == 'nfe.40.det':
                 field_data.nItem = i
+            if class_obj._fields[field_name].comodel_name == 'nfe.40.dup':
+                field_data.nDup = str(i).zfill(3)
         return res
 
     def _build_attr(self, node, fields, vals, path, attr):
@@ -560,6 +617,10 @@ class NFe(spec_models.StackedModel):
             vals['document_type_id'] = \
                 self.env['l10n_br_fiscal.document.type'].search([
                     ('code', '=', value)], limit=1).id
+
+        if key == 'nfe40_pag' and vals.get('financial_ids'):
+            vals['fiscal_payment_ids'][0][2]['line_ids'] = \
+                vals.pop('financial_ids')
 
         return super(NFe, self)._build_attr(node, fields, vals, path, attr)
 
