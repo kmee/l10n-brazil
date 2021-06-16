@@ -43,7 +43,7 @@ class DataAbstract(models.AbstractModel):
                     "('name', 'ilike', self + '%')]",
                 )
 
-            orm.setup_modifiers(node)
+                orm.setup_modifiers(node)
             model_view["arch"] = etree.tostring(doc)
 
         return model_view
@@ -67,7 +67,8 @@ class DataAbstract(models.AbstractModel):
                     ],
                 ]
             )
-            return self._search(domain, limit=limit, access_rights_uid=name_get_uid)
+            ids = self._search(domain, limit=limit, access_rights_uid=name_get_uid)
+            return models.lazy_name_get(self.browse(ids))
         return super()._name_search(
             name, args=args, operator=operator, limit=limit, name_get_uid=name_get_uid
         )
