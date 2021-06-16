@@ -43,7 +43,7 @@ class StockInvoiceOnshipping(models.TransientModel):
 
         return key
 
-    def _get_invoice_line_values(self, moves, invoice_values, invoice):
+    def _get_invoice_line_values(self, moves, invoice_values):
         """
         Create invoice line values from given moves
         :param moves: stock.move
@@ -51,7 +51,7 @@ class StockInvoiceOnshipping(models.TransientModel):
         :return: dict
         """
 
-        values = super()._get_invoice_line_values(moves, invoice_values, invoice)
+        values = super()._get_invoice_line_values(moves, invoice_values)
         # Devido ao KEY com purchase_line_id aqui
         # vem somente um registro
         if len(moves) == 1:

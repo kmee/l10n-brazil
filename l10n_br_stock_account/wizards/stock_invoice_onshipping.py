@@ -40,7 +40,7 @@ class StockInvoiceOnshipping(models.TransientModel):
         return journal
 
     def _build_invoice_values_from_pickings(self, pickings):
-        invoice, values = super()._build_invoice_values_from_pickings(pickings)
+        values = super()._build_invoice_values_from_pickings(pickings)
         pick = fields.first(pickings)
         fiscal_vals = pick._prepare_br_fiscal_dict()
 
@@ -67,9 +67,9 @@ class StockInvoiceOnshipping(models.TransientModel):
         # fiscal_vals.update(values)
         values.update(fiscal_vals)
 
-        return invoice, values
+        return values
 
-    def _get_invoice_line_values(self, moves, invoice_values, invoice):
+    def _get_invoice_line_values(self, moves, invoice_values):
         """
         Create invoice line values from given moves
         :param moves: stock.move
@@ -77,7 +77,7 @@ class StockInvoiceOnshipping(models.TransientModel):
         :return: dict
         """
 
-        values = super()._get_invoice_line_values(moves, invoice_values, invoice)
+        values = super()._get_invoice_line_values(moves, invoice_values)
         move = fields.first(moves)
         fiscal_values = move._prepare_br_fiscal_dict()
 

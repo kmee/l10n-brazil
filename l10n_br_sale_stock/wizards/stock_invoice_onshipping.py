@@ -14,7 +14,7 @@ class StockInvoiceOnshipping(models.TransientModel):
         :param pickings: stock.picking recordset
         :return: dict
         """
-        invoice, values = super()._build_invoice_values_from_pickings(pickings)
+        values = super()._build_invoice_values_from_pickings(pickings)
 
         pick = fields.first(pickings)
         if pick.sale_id:
@@ -36,7 +36,7 @@ class StockInvoiceOnshipping(models.TransientModel):
                     }
                 )
 
-        return invoice, values
+        return values
 
     def _get_move_key(self, move):
         """
@@ -62,7 +62,7 @@ class StockInvoiceOnshipping(models.TransientModel):
 
         return key
 
-    def _get_invoice_line_values(self, moves, invoice_values, invoice):
+    def _get_invoice_line_values(self, moves, invoice_values):
         """
         Create invoice line values from given moves
         :param moves: stock.move
@@ -70,7 +70,7 @@ class StockInvoiceOnshipping(models.TransientModel):
         :return: dict
         """
 
-        values = super()._get_invoice_line_values(moves, invoice_values, invoice)
+        values = super()._get_invoice_line_values(moves, invoice_values)
         # Devido ao KEY com sale_line_id aqui
         # vem somente um registro
         if len(moves) == 1:
