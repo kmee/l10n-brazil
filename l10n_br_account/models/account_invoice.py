@@ -107,6 +107,15 @@ class AccountInvoice(models.Model):
         stored=True,
     )
 
+    def _get_onchange_create(self):
+        res = super()._get_onchange_create()
+        res["_onchange_fiscal_operation_id"] = [
+            "account_id",
+            "comment_ids",
+            "operation_name",
+        ]
+        return res
+
     def _get_amount_lines(self):
         """Get object lines instaces used to compute fields"""
         return self.mapped("invoice_line_ids")
