@@ -589,6 +589,7 @@ class AccountInvoice(models.Model):
             r.fiscal_operation_id = (
                 force_fiscal_operation_id or
                 r.fiscal_operation_id.return_fiscal_operation_id)
+            r.fiscal_document_id._onchange_fiscal_operation_id()
 
             for line in r.invoice_line_ids:
                 if (not force_fiscal_operation_id and
