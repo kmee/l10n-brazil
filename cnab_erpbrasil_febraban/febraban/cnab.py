@@ -8,12 +8,14 @@ import logging
 import base64
 import codecs
 from unidecode import unidecode
+from datetime import datetime
 
 _logger = logging.getLogger(__name__)
 
 try:
     from febraban.cnab240.itau.sispag import \
         Transfer, DasPayment, IssPayment, UtilityPayment, File
+    from febraban.cnab240.itau.charge import Slip, File as SlipFile
     from febraban.cnab240.itau.sispag.file.lot import Lot
     from febraban.cnab240.libs.barCode import LineNumberO
     from febraban.cnab240.user import User, UserAddress, UserBank
@@ -55,80 +57,140 @@ class Cnab(object):
                 )
             )
 
-            bank_line_obj = order.env['bank.payment.line']
-            option_obj = order.env['l10n_br.cnab.option']
+            slip_file = SlipFile()
+            slip_file.setSender(sender)
+            slip_file.setIssueDate(datetime.now())
 
-            file = File()
-            file.setSender(sender)
-
-            for group in bank_line_obj.read_group(
-                [('id', 'in', order.bank_line_ids.ids)],
-                [], ['release_form_id', 'service_type_id'], lazy=False
-            ):
-                lot = Lot()
-                sender.name = order.company_id.legal_name.upper()
-                lot.setSender(sender)
-                lot.setHeaderLotType(
-                    kind=option_obj.browse(group['service_type_id'][0]).code,
-                    method=option_obj.browse(group['release_form_id'][0]).code,
+            for line in order.bank_line_ids:
+                receiver = User(
+                    name=line.partner_id.name.upper(),
+                    identifier=(line.partner_id.cnpj_cpf or ''
+                                ).replace('-', '').replace(
+                        '.', '').replace('/', ''),
+                    address=UserAddress(
+                        streetLine1="AV PAULISTA 1000",
+                        district="BELA VISTA",
+                        city="SAO PAULO",
+                        stateCode="SP",
+                        zipCode="01310000"
+                    )
                 )
 
-                for line in bank_line_obj.search(group['__domain']):
-                    receiver = User(
-                        name=line.partner_id.name.upper(),
-                        identifier=(line.partner_id.cnpj_cpf or ''
-                                    ).replace('-', '').replace(
-                            '.', '').replace('/', ''),
-                        bank=UserBank(
-                            bankId=line.partner_bank_id.bank_id.code_bc,
-                            branchCode=line.partner_bank_id.bra_number,
-                            accountNumber=line.partner_bank_id.acc_number,
-                            accountVerifier=
-                            line.partner_bank_id.acc_number_dig
-                        )
-                    )
+                slip = Slip()
+                slip.setSender(sender)
+                slip.setAmountInCents(str(int(line.amount_currency * 100)))
+                slip.setPayer(receiver)
+                slip.setIssueDate(datetime.now())
+                slip.setExpirationDate(datetime.now())
+                slip.setBankIdentifier(
+                    identifier="1",
+                    branch=sender.bank.branchCode,
+                    accountNumber=sender.bank.accountNumber,
+                    wallet="109"
+                )
+                slip.setIdentifier("ID456")
+                slip.setFineAndInterest(datetime=datetime.now(), fine="0",
+                                        interest="0")
+                slip.setOverdueLimit("3")
+                slip_file.add(register=slip)
 
-                    if line.release_form_id.code == "41":
-                        payment = Transfer()
-                        payment.setSender(sender)
-                        payment.setReceiver(receiver)
-                        payment.setAmountInCents(str(int(line.amount_currency * 100)))
-                        payment.setScheduleDate(line.date.strftime('%d%m%Y'))
-                        payment.setInfo(
-                            reason="10"  # Crédito em Conta Corrente
-                        )
-                        payment.setIdentifier("ID%s" % line.own_number)
-                    elif line.release_form_id.code == "91":
-                        payment = DasPayment()
-                        payment.setPayment(
-                            sender=sender,
-                            scheduleDate=line.date.strftime('%d%m%Y'),
-                            identifier="ID%s" % line.own_number,
-                            lineNumber=LineNumberO(line.communication)
-                        )
-                    elif line.release_form_id.code == "19":
-                        payment = IssPayment()
-                        payment.setPayment(
-                            sender=sender,
-                            scheduleDate=line.date.strftime('%d%m%Y'),
-                            identifier="ID%s" % line.own_number,
-                            lineNumber=LineNumberO(line.communication)
-                        )
-                    elif line.release_form_id.code == "13":
-                        payment = UtilityPayment()
-                        payment.setPayment(
-                            sender=sender,
-                            scheduleDate=line.date.strftime('%d%m%Y'),
-                            identifier="ID%s" % line.own_number,
-                            lineNumber=LineNumberO(line.communication)
-                        )
-                    else:
-                        continue
-                    lot.add(register=payment)
+            return slip_file.toString().encode()
 
-                file.addLot(lot)
-
-            return file.toString().encode()
+            # sender = User(
+            #     name=order.company_id.legal_name.upper(),
+            #     identifier=order.company_id.cnpj_cpf.replace(
+            #         '.', '').replace('/', '').replace('-', ''),
+            #     bank=UserBank(
+            #         bankId=bank_code,
+            #         branchCode=order.company_partner_bank_id.bra_number,
+            #         accountNumber=order.company_partner_bank_id.acc_number,
+            #         accountVerifier=
+            #         order.company_partner_bank_id.acc_number_dig
+            #     ),
+            #     address=UserAddress(
+            #         streetLine1=(order.company_id.partner_id.street + ' ' +
+            #                      (order.company_id.partner_id.street_number
+            #                       or '')).upper(),
+            #         city=unidecode(order.company_id.city_id.name).upper(),
+            #         stateCode=order.company_id.state_id.code,
+            #         zipCode=order.company_id.zip.replace('-', '')
+            #     )
+            # )
+            #
+            # bank_line_obj = order.env['bank.payment.line']
+            # option_obj = order.env['l10n_br.cnab.option']
+            #
+            # file = File()
+            # file.setSender(sender)
+            #
+            # for group in bank_line_obj.read_group(
+            #     [('id', 'in', order.bank_line_ids.ids)],
+            #     [], ['release_form_id', 'service_type_id'], lazy=False
+            # ):
+            #     lot = Lot()
+            #     sender.name = order.company_id.legal_name.upper()
+            #     lot.setSender(sender)
+            #     lot.setHeaderLotType(
+            #         kind=option_obj.browse(group['service_type_id'][0]).code,
+            #         method=option_obj.browse(group['release_form_id'][0]).code,
+            #     )
+            #
+            #     for line in bank_line_obj.search(group['__domain']):
+            #         receiver = User(
+            #             name=line.partner_id.name.upper(),
+            #             identifier=(line.partner_id.cnpj_cpf or ''
+            #                         ).replace('-', '').replace(
+            #                 '.', '').replace('/', ''),
+            #             bank=UserBank(
+            #                 bankId=line.partner_bank_id.bank_id.code_bc,
+            #                 branchCode=line.partner_bank_id.bra_number,
+            #                 accountNumber=line.partner_bank_id.acc_number,
+            #                 accountVerifier=
+            #                 line.partner_bank_id.acc_number_dig
+            #             )
+            #         )
+            #
+            #         if line.release_form_id.code == "41":
+            #             payment = Transfer()
+            #             payment.setSender(sender)
+            #             payment.setReceiver(receiver)
+            #             payment.setAmountInCents(str(int(line.amount_currency * 100)))
+            #             payment.setScheduleDate(line.date.strftime('%d%m%Y'))
+            #             payment.setInfo(
+            #                 reason="10"  # Crédito em Conta Corrente
+            #             )
+            #             payment.setIdentifier("ID%s" % line.own_number)
+            #         elif line.release_form_id.code == "91":
+            #             payment = DasPayment()
+            #             payment.setPayment(
+            #                 sender=sender,
+            #                 scheduleDate=line.date.strftime('%d%m%Y'),
+            #                 identifier="ID%s" % line.own_number,
+            #                 lineNumber=LineNumberO(line.communication)
+            #             )
+            #         elif line.release_form_id.code == "19":
+            #             payment = IssPayment()
+            #             payment.setPayment(
+            #                 sender=sender,
+            #                 scheduleDate=line.date.strftime('%d%m%Y'),
+            #                 identifier="ID%s" % line.own_number,
+            #                 lineNumber=LineNumberO(line.communication)
+            #             )
+            #         elif line.release_form_id.code == "13":
+            #             payment = UtilityPayment()
+            #             payment.setPayment(
+            #                 sender=sender,
+            #                 scheduleDate=line.date.strftime('%d%m%Y'),
+            #                 identifier="ID%s" % line.own_number,
+            #                 lineNumber=LineNumberO(line.communication)
+            #             )
+            #         else:
+            #             continue
+            #         lot.add(register=payment)
+            #
+            #     file.addLot(lot)
+            #
+            # return file.toString().encode()
 
     @staticmethod
     def detectar_retorno(cnab_file_object):
