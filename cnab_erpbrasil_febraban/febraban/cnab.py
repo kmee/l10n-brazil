@@ -7,6 +7,7 @@
 import logging
 import base64
 import codecs
+import re
 from unidecode import unidecode
 from datetime import datetime
 
@@ -15,7 +16,7 @@ _logger = logging.getLogger(__name__)
 try:
     from febraban.cnab240.itau.sispag import \
         Transfer, DasPayment, IssPayment, UtilityPayment, File
-    from febraban.cnab240.itau.charge import Slip, File as SlipFile
+    from febraban.cnab240.itau.charge import Slip, SlipParser, File as SlipFile
     from febraban.cnab240.itau.sispag.file.lot import Lot
     from febraban.cnab240.libs.barCode import LineNumberO
     from febraban.cnab240.user import User, UserAddress, UserBank
@@ -30,193 +31,155 @@ class Cnab(object):
         self.cnab_type = False
 
     @staticmethod
-    def gerar_remessa(order):
+    def _prepare_user(partner_id, company_partner_bank_id=None):
+        user_bank = None
+        if company_partner_bank_id:
+            user_bank = UserBank(
+                bankId=company_partner_bank_id.bank_id.code_bc or False,
+                branchCode=company_partner_bank_id.bra_number or False,
+                accountNumber=company_partner_bank_id.acc_number or False,
+                accountVerifier=company_partner_bank_id.acc_number_dig or False,
+                bankName=unidecode(
+                    re.sub(
+                        r'[\W_]+', ' ',
+                        company_partner_bank_id.bank_id.name)) or False,
+            )
+
+        return User(
+            name=partner_id.legal_name.upper(),
+            identifier=partner_id.cnpj_cpf.replace(
+                '.', '').replace('/', '').replace('-', ''),
+            bank=user_bank,
+            address=UserAddress(
+                streetLine1=(partner_id.street + ' ' +
+                             (partner_id.street_number
+                              or '')).upper(),
+                city=unidecode(partner_id.city_id.name).upper(),
+                stateCode=partner_id.state_id.code,
+                zipCode=partner_id.zip.replace('-', '')
+            )
+        )
+
+    @staticmethod
+    def _prepare_charge(order):
+        bank_id = order.company_partner_bank_id
+        partner_id = order.company_id.partner_id
+
+        sender = Cnab._prepare_user(partner_id, bank_id)
+
+        file = SlipFile()
+        file.setSender(sender)
+        file.setIssueDate(datetime.now())
+
+        for line in order.bank_line_ids:
+            receiver = Cnab._prepare_user(line.partner_id)
+
+            slip = Slip()
+            slip.setSender(sender)
+            slip.setAmountInCents(str(int(line.amount_currency * 100)))
+            slip.setPayer(receiver)
+            slip.setIssueDate(datetime.now())
+            slip.setExpirationDate(datetime.now())
+            slip.setBankIdentifier(
+                identifier="1",
+                branch=sender.bank.branchCode,
+                accountNumber=sender.bank.accountNumber,
+                wallet=order.payment_mode_id.boleto_wallet
+            )
+            slip.setIdentifier(order.name)
+            slip.setFineAndInterest(datetime=datetime.now(), fine="0",
+                                    interest="0")
+            slip.setOverdueLimit("3")
+            file.add(register=slip)
+
+        return file.toString().encode()
+
+    @staticmethod
+    def _prepare_sispag(order):
         bank_id = order.company_partner_bank_id.bank_id
-        bank_code = bank_id.code_bc
+        partner_id = order.company_id.partner_id
+
+        sender = Cnab._prepare_user(partner_id, bank_id)
+
+        bank_line_obj = order.env['bank.payment.line']
+        option_obj = order.env['l10n_br.cnab.option']
+
+        file = File()
+        file.setSender(sender)
+
+        for group in bank_line_obj.read_group(
+            [('id', 'in', order.bank_line_ids.ids)],
+            [], ['release_form_id', 'service_type_id'], lazy=False
+        ):
+            lot = Lot()
+            sender.name = order.company_id.legal_name.upper()
+            lot.setSender(sender)
+            lot.setHeaderLotType(
+                kind=option_obj.browse(group['service_type_id'][0]).code,
+                method=option_obj.browse(group['release_form_id'][0]).code,
+            )
+
+            for line in bank_line_obj.search(group['__domain']):
+                receiver = Cnab._prepare_user(line.partner_id, line.partner_bank_id)
+
+                if line.release_form_id.code == "41":
+                    payment = Transfer()
+                    payment.setSender(sender)
+                    payment.setReceiver(receiver)
+                    payment.setAmountInCents(str(int(line.amount_currency * 100)))
+                    payment.setScheduleDate(line.date.strftime('%d%m%Y'))
+                    payment.setInfo(
+                        reason="10"  # Crédito em Conta Corrente
+                    )
+                    payment.setIdentifier("ID%s" % line.own_number)
+                elif line.release_form_id.code == "91":
+                    payment = DasPayment()
+                    payment.setPayment(
+                        sender=sender,
+                        scheduleDate=line.date.strftime('%d%m%Y'),
+                        identifier="ID%s" % line.own_number,
+                        lineNumber=LineNumberO(line.communication)
+                    )
+                elif line.release_form_id.code == "19":
+                    payment = IssPayment()
+                    payment.setPayment(
+                        sender=sender,
+                        scheduleDate=line.date.strftime('%d%m%Y'),
+                        identifier="ID%s" % line.own_number,
+                        lineNumber=LineNumberO(line.communication)
+                    )
+                elif line.release_form_id.code == "13":
+                    payment = UtilityPayment()
+                    payment.setPayment(
+                        sender=sender,
+                        scheduleDate=line.date.strftime('%d%m%Y'),
+                        identifier="ID%s" % line.own_number,
+                        lineNumber=LineNumberO(line.communication)
+                    )
+                else:
+                    continue
+                lot.add(register=payment)
+
+            file.addLot(lot)
+            return file.toString().encode()
+
+    @staticmethod
+    def gerar_remessa(order):
         cnab_type = order.payment_mode_id.payment_method_id.code
 
         if cnab_type == '240':
-            sender = User(
-                name=order.company_id.legal_name.upper(),
-                identifier=order.company_id.cnpj_cpf.replace(
-                    '.', '').replace('/', '').replace('-', ''),
-                bank=UserBank(
-                    bankId=bank_code,
-                    branchCode=order.company_partner_bank_id.bra_number,
-                    accountNumber=order.company_partner_bank_id.acc_number,
-                    accountVerifier=
-                    order.company_partner_bank_id.acc_number_dig
-                ),
-                address=UserAddress(
-                    streetLine1=(order.company_id.partner_id.street + ' ' +
-                                 (order.company_id.partner_id.street_number
-                                  or '')).upper(),
-                    city=unidecode(order.company_id.city_id.name).upper(),
-                    stateCode=order.company_id.state_id.code,
-                    zipCode=order.company_id.zip.replace('-', '')
-                )
-            )
-
-            slip_file = SlipFile()
-            slip_file.setSender(sender)
-            slip_file.setIssueDate(datetime.now())
-
-            for line in order.bank_line_ids:
-                receiver = User(
-                    name=line.partner_id.name.upper(),
-                    identifier=(line.partner_id.cnpj_cpf or ''
-                                ).replace('-', '').replace(
-                        '.', '').replace('/', ''),
-                    address=UserAddress(
-                        streetLine1="AV PAULISTA 1000",
-                        district="BELA VISTA",
-                        city="SAO PAULO",
-                        stateCode="SP",
-                        zipCode="01310000"
-                    )
-                )
-
-                slip = Slip()
-                slip.setSender(sender)
-                slip.setAmountInCents(str(int(line.amount_currency * 100)))
-                slip.setPayer(receiver)
-                slip.setIssueDate(datetime.now())
-                slip.setExpirationDate(datetime.now())
-                slip.setBankIdentifier(
-                    identifier="1",
-                    branch=sender.bank.branchCode,
-                    accountNumber=sender.bank.accountNumber,
-                    wallet="109"
-                )
-                slip.setIdentifier("ID456")
-                slip.setFineAndInterest(datetime=datetime.now(), fine="0",
-                                        interest="0")
-                slip.setOverdueLimit("3")
-                slip_file.add(register=slip)
-
-            return slip_file.toString().encode()
-
-            # sender = User(
-            #     name=order.company_id.legal_name.upper(),
-            #     identifier=order.company_id.cnpj_cpf.replace(
-            #         '.', '').replace('/', '').replace('-', ''),
-            #     bank=UserBank(
-            #         bankId=bank_code,
-            #         branchCode=order.company_partner_bank_id.bra_number,
-            #         accountNumber=order.company_partner_bank_id.acc_number,
-            #         accountVerifier=
-            #         order.company_partner_bank_id.acc_number_dig
-            #     ),
-            #     address=UserAddress(
-            #         streetLine1=(order.company_id.partner_id.street + ' ' +
-            #                      (order.company_id.partner_id.street_number
-            #                       or '')).upper(),
-            #         city=unidecode(order.company_id.city_id.name).upper(),
-            #         stateCode=order.company_id.state_id.code,
-            #         zipCode=order.company_id.zip.replace('-', '')
-            #     )
-            # )
-            #
-            # bank_line_obj = order.env['bank.payment.line']
-            # option_obj = order.env['l10n_br.cnab.option']
-            #
-            # file = File()
-            # file.setSender(sender)
-            #
-            # for group in bank_line_obj.read_group(
-            #     [('id', 'in', order.bank_line_ids.ids)],
-            #     [], ['release_form_id', 'service_type_id'], lazy=False
-            # ):
-            #     lot = Lot()
-            #     sender.name = order.company_id.legal_name.upper()
-            #     lot.setSender(sender)
-            #     lot.setHeaderLotType(
-            #         kind=option_obj.browse(group['service_type_id'][0]).code,
-            #         method=option_obj.browse(group['release_form_id'][0]).code,
-            #     )
-            #
-            #     for line in bank_line_obj.search(group['__domain']):
-            #         receiver = User(
-            #             name=line.partner_id.name.upper(),
-            #             identifier=(line.partner_id.cnpj_cpf or ''
-            #                         ).replace('-', '').replace(
-            #                 '.', '').replace('/', ''),
-            #             bank=UserBank(
-            #                 bankId=line.partner_bank_id.bank_id.code_bc,
-            #                 branchCode=line.partner_bank_id.bra_number,
-            #                 accountNumber=line.partner_bank_id.acc_number,
-            #                 accountVerifier=
-            #                 line.partner_bank_id.acc_number_dig
-            #             )
-            #         )
-            #
-            #         if line.release_form_id.code == "41":
-            #             payment = Transfer()
-            #             payment.setSender(sender)
-            #             payment.setReceiver(receiver)
-            #             payment.setAmountInCents(str(int(line.amount_currency * 100)))
-            #             payment.setScheduleDate(line.date.strftime('%d%m%Y'))
-            #             payment.setInfo(
-            #                 reason="10"  # Crédito em Conta Corrente
-            #             )
-            #             payment.setIdentifier("ID%s" % line.own_number)
-            #         elif line.release_form_id.code == "91":
-            #             payment = DasPayment()
-            #             payment.setPayment(
-            #                 sender=sender,
-            #                 scheduleDate=line.date.strftime('%d%m%Y'),
-            #                 identifier="ID%s" % line.own_number,
-            #                 lineNumber=LineNumberO(line.communication)
-            #             )
-            #         elif line.release_form_id.code == "19":
-            #             payment = IssPayment()
-            #             payment.setPayment(
-            #                 sender=sender,
-            #                 scheduleDate=line.date.strftime('%d%m%Y'),
-            #                 identifier="ID%s" % line.own_number,
-            #                 lineNumber=LineNumberO(line.communication)
-            #             )
-            #         elif line.release_form_id.code == "13":
-            #             payment = UtilityPayment()
-            #             payment.setPayment(
-            #                 sender=sender,
-            #                 scheduleDate=line.date.strftime('%d%m%Y'),
-            #                 identifier="ID%s" % line.own_number,
-            #                 lineNumber=LineNumberO(line.communication)
-            #             )
-            #         else:
-            #             continue
-            #         lot.add(register=payment)
-            #
-            #     file.addLot(lot)
-            #
-            # return file.toString().encode()
+            if order.payment_mode_id.service_type == '01':
+                return Cnab._prepare_charge(order)
+            else:
+                return Cnab._prepare_sispag(order)
 
     @staticmethod
-    def detectar_retorno(cnab_file_object):
-        arquivo_retono = base64.b64decode(cnab_file_object)
-        f = open('/tmp/cnab_retorno.ret', 'wb')
-        f.write(arquivo_retono)
-        f.close()
-        arquivo_retorno = codecs.open(
-            '/tmp/cnab_retorno.ret',
-            encoding='ascii'
-        )
-        header = arquivo_retorno.readline()
-        arquivo_retorno.seek(0)
+    def parse_retorno(file_path):
+        file = open(file_path, "r")
 
-        if 210 < len(header) < 410:
-            cnab_type = '400'
-            banco = header[76:79]
-        elif len(header) < 210:
-            cnab_type = '240'
-            banco = header[:3]
+        responses = SlipParser.parseFile(file)
 
-        cnab = Cnab.get_cnab(banco, cnab_type)()
-        return cnab_type, cnab.retorno(arquivo_retorno)
-    #
-    # def retorno(self, arquivo_retorno):
-    #     return ArquivoCobranca400(
-    #         self.classe_retorno,
-    #         arquivo=arquivo_retorno
-    #     )
+        for response in responses:
+            pass
+
+

@@ -29,6 +29,7 @@
                                 <field name="condition_issuing_paper"/>
                                 <field name="cnab_sequence_id"/>
                                 <field name="communication_2"/>
+                                <field name="service_type"/>
                             </group>
                         </page>
                         <page string="Cobranca" attrs="{'invisible': [('payment_type', '!=', 'inbound')]}">
@@ -68,7 +69,6 @@
                         </page>
                         <page string="Pagamento" attrs="{'invisible': [('payment_type', '!=', 'outbound')]}">
                             <group>
-                                <field name="service_type"/>
                                 <field name="release_form"/>
                                 <field name="doc_finality_code"/>
                                 <field name="ted_finality_code"/>
