@@ -481,8 +481,9 @@ class NFe(spec_models.StackedModel):
 
     def _compute_amount(self):
         super()._compute_amount()
-        if self.payment_mode == '90':
-            self.amount_financial = 0.0
+        for record in self:
+            if record.payment_mode == '90':
+                record.amount_financial = 0.0
 
     @api.multi
     def _eletronic_document_send(self):
