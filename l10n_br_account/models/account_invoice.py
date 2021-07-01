@@ -107,6 +107,35 @@ class AccountInvoice(models.Model):
         stored=True,
     )
 
+    def generate_financial(self):
+        for record in self:
+            if record.payment_term_id and self.company_id and self.currency_id:
+                record.financial_ids.unlink()
+                record.fiscal_payment_ids.unlink()
+                vals = {
+                    'payment_term_id':
+                        self.payment_term_id and
+                        self.payment_term_id.id or False,
+                    'payment_mode': self.payment_mode,
+                    'amount': self.amount_missing_payment_value,
+                    'currency_id': self.currency_id.id,
+                    'company_id': self.company_id.id,
+                }
+                vals.update(self.fiscal_payment_ids._compute_payment_vals(
+                    payment_term_id=self.payment_term_id,
+                    currency_id=self.currency_id,
+                    company_id=self.company_id,
+                    amount=self.amount_missing_payment_value, date=self.date)
+                )
+                vals['document_id'] = self.fiscal_document_id.id
+                self.fiscal_payment_ids = self.fiscal_payment_ids.new(vals)
+                for line in self.fiscal_payment_ids.mapped('line_ids'):
+                    setattr(line, 'document_id', self.fiscal_document_id.id)
+
+            elif record.fiscal_payment_ids:
+                record.financial_ids.unlink()
+                record.fiscal_payment_ids.unlink()
+
     def _get_amount_lines(self):
         """Get object lines instaces used to compute fields"""
         return self.mapped("invoice_line_ids")
@@ -416,6 +445,8 @@ class AccountInvoice(models.Model):
     def action_move_create(self):
         result = super().action_move_create()
         dummy_doc = self.env.ref("l10n_br_fiscal.fiscal_document_dummy")
+        self.filtered(
+            lambda i: i.fiscal_document_id != dummy_doc).generate_financial()
         self.mapped("fiscal_document_id").filtered(
             lambda d: d != dummy_doc
         ).action_document_confirm()
