@@ -140,6 +140,15 @@ class AccountInvoice(models.Model):
         """Get object lines instaces used to compute fields"""
         return self.mapped("invoice_line_ids")
 
+    def _get_onchange_create(self):
+        res = super()._get_onchange_create()
+        res["_onchange_fiscal_operation_id"] = [
+            "account_id",
+            "comment_ids",
+            "operation_name",
+        ]
+        return res
+
     @api.depends("move_id.line_ids", "move_id.state")
     def _compute_financial(self):
         for invoice in self:
@@ -412,6 +421,15 @@ class AccountInvoice(models.Model):
         super()._onchange_fiscal_operation_id()
         if self.fiscal_operation_id and self.fiscal_operation_id.journal_id:
             self.journal_id = self.fiscal_operation_id.journal_id
+
+    @api.onchange("fiscal_operation_id", "account_id", "partner_id")
+    def _onchange_account_id(self):
+        if (
+            self.partner_id
+            and self.fiscal_operation_id
+            and self.fiscal_operation_id.account_id
+        ):
+            self.account_id = self.fiscal_operation_id.account_id
 
     def open_fiscal_document(self):
         if self.env.context.get("type", "") == "out_invoice":
