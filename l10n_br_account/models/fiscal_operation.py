@@ -20,6 +20,11 @@ FISCAL_TYPE_INVOICE = {
 class Operation(models.Model):
     _inherit = "l10n_br_fiscal.operation"
 
+    deductible_taxes = fields.Boolean(
+        string="Deductible Taxes",
+        company_dependent=True,
+    )
+
     journal_id = fields.Many2one(
         comodel_name="account.journal",
         string="Account Journal",

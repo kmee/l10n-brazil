@@ -26,6 +26,8 @@
         "data/l10n_br_fiscal_data.xml",
         "data/uom_data.xml",
         "data/product_data.xml",
+        "data/partner_profile_data.xml",
+        "data/res_partner_data.xml",
         "data/l10n_br_fiscal.tax.group.csv",
         "data/l10n_br_fiscal.icms.relief.csv",
         "data/l10n_br_fiscal.document.type.csv",
@@ -33,13 +35,10 @@
         "data/l10n_br_fiscal.cst.csv",
         "data/l10n_br_fiscal.tax.csv",
         "data/l10n_br_fiscal.tax.pis.cofins.csv",
-        "data/partner_profile_data.xml",
         "data/l10n_br_fiscal_server_action.xml",
         "data/ir_cron.xml",
         "data/l10n_br_fiscal_comment_data.xml",
-        "data/res_partner_data.xml",
         "data/payment_term_data.xml",
-        "data/res_partner_data.xml",
 
         # Views
         "views/cnae_view.xml",
