@@ -17,6 +17,10 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     SITUACAO_EDOC_EM_DIGITACAO,
 )
 
+from odoo.addons.l10n_br_fiscal.constants.payment import (
+    FORMA_PAGAMENTO_SEM_PAGAMENTO
+)
+
 INVOICE_TO_OPERATION = {
     "out_invoice": "out",
     "in_invoice": "in",
@@ -554,6 +558,12 @@ class AccountInvoice(models.Model):
                     refund_inv_id.fiscal_document_id._prepare_referenced_subsequent()
                 )
                 my_new_invoices.fiscal_document_id._document_reference(reference_ids)
+
+            r.payment_mode = FORMA_PAGAMENTO_SEM_PAGAMENTO
+            r.payment_term_id = self.env['account.payment.term'].search(
+                [('name', 'like', '%vista%')], limit=1
+            )
+            r.generate_financial()
 
         return new_invoices
 
