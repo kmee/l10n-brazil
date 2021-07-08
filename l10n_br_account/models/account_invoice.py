@@ -590,7 +590,7 @@ class AccountInvoice(models.Model):
 
         my_new_invoices = self.browse(new_invoices.ids)
 
-        for r in my_new_invoices:
+        for r in my_new_invoices.with_context(REFUND_OPERATION=True):
             if not r.document_type_id:
                 continue
             if (

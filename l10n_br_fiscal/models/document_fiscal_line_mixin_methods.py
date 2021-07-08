@@ -256,9 +256,14 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
                 computed_tax = computed_taxes.get(tax.tax_domain, {})
                 if hasattr(line, "%s_tax_id" % (tax.tax_domain,)):
                     setattr(line, "%s_tax_id" % (tax.tax_domain,), tax)
-                    method = getattr(self, "_set_fields_%s" % (tax.tax_domain,))
-                    if method:
-                        method(computed_tax)
+                    if self._context.get("RETURN_OPERATION"):
+                        setattr(line, "%s_cst_id" % (tax.tax_domain,),
+                                computed_tax.get("cst_id"))
+                    else:
+                        method = getattr(self,
+                                         "_set_fields_%s" % (tax.tax_domain,))
+                        if method:
+                            method(computed_tax)
 
     def _get_product_price(self):
         self.ensure_one()
@@ -305,8 +310,6 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         tax_calc = self.env.context.get(
             "TAX_CALC_OVERRIDE", self.fiscal_operation_line_id.tax_calc
         )
-        if tax_calc == TAX_CALC_MANUAL:
-            return
 
         # Reset Taxes
         self._remove_all_fiscal_tax_ids()
@@ -324,6 +327,9 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
 
             self.ipi_guideline_id = mapping_result["ipi_guideline"]
             self.cfop_id = mapping_result["cfop"]
+
+            if tax_calc == TAX_CALC_MANUAL:
+                return
 
             if mapping_result.get("taxes"):
                 taxes = self.env["l10n_br_fiscal.tax"]
