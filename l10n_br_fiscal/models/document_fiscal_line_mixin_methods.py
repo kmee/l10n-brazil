@@ -250,9 +250,14 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
                 computed_tax = computed_taxes.get(tax.tax_domain, {})
                 if hasattr(line, "%s_tax_id" % (tax.tax_domain,)):
                     setattr(line, "%s_tax_id" % (tax.tax_domain,), tax)
-                    method = getattr(self, "_set_fields_%s" % (tax.tax_domain,))
-                    if method:
-                        method(computed_tax)
+                    if self._context.get("RETURN_OPERATION"):
+                        setattr(line, "%s_cst_id" % (tax.tax_domain,),
+                                computed_tax.get("cst_id"))
+                    else:
+                        method = getattr(self,
+                                         "_set_fields_%s" % (tax.tax_domain,))
+                        if method:
+                            method(computed_tax)
 
     def _get_product_price(self):
         self.ensure_one()
