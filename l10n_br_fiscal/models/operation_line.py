@@ -153,6 +153,10 @@ class OperationLine(models.Model):
 
     date_end = fields.Datetime(string="End Date")
 
+    is_st = fields.Boolean(
+        string="Is ST?"
+    )
+
     _sql_constraints = [
         (
             "fiscal_operation_name_uniq",
