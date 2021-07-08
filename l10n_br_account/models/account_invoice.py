@@ -647,6 +647,11 @@ class AccountInvoice(models.Model):
             )
             r.generate_financial()
 
+            r.edoc_purpose = '4'
+
+            r.document_related_ids = [(5, 0, 0), (0, 0, {'document_related_id': self.fiscal_document_id.id})]
+            r.document_related_ids._onchange_document_related_id()
+
         return new_invoices
 
     def _refund_cleanup_lines(self, lines):
