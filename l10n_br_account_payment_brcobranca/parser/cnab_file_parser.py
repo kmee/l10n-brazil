@@ -213,6 +213,13 @@ class CNABFileParser(FileParser):
             # ex.: 00000000000002010
             nosso_numero_sem_dig = linha_cnab["nosso_numero"][:-1]
 
+            # O BrCobranca não esta usando as posições que identificam o
+            # Nosso Numero com o digito verificador para o arquivo de retorno do Itaú
+            # https://github.com/kivanio/brcobranca/blob/master/lib/brcobranca/
+            # retorno/cnab400/itau.rb#L47
+            if bank_name_brcobranca == 'itau':
+                nosso_numero_sem_dig = linha_cnab["nosso_numero"]
+
             # No arquivo de retorno do CNAB o campo pode ter um tamanho
             # diferente, o tamanho do campo é preenchido na totalidade
             # com zeros a esquerda, e no odoo o tamanho do sequencial pode
