@@ -272,6 +272,7 @@ class AccountInvoice(models.Model):
         dummy_doc = self.env.ref("l10n_br_fiscal.fiscal_document_dummy")
         if self.fiscal_document_id != dummy_doc:
             default["line_ids"] = False
+            default["fiscal_payment_ids"] = False
         return super().copy(default)
 
     @api.one
