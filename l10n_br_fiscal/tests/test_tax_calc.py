@@ -24,6 +24,7 @@ class TestTaxCalc(TransactionCase):
             NCM.
         """
         product = self.fiscal_document_demo_1.line_ids[0]
+        product._onchange_fiscal_operation_id()
 
         self.assertEqual(
             product.icms_percent,
@@ -82,6 +83,8 @@ class TestTaxCalc(TransactionCase):
         Unlike the default behavior of the system, when the 'tax_calc' is set to
             semi-automatic, the user must select the rates that will be used on
             that product and only then the system will calculate them.
+
+        The demo data used in this test had its taxes manually selected.
 
         Used in return operations. Rates must be the same as those used in the
             input/output operation.
