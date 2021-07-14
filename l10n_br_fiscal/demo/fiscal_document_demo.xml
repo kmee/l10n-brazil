@@ -675,8 +675,10 @@
         <field name="fiscal_operation_type">in</field>
     </record>
 
-    <record id="demo_nfe_sales_return_same_state-1-1"
-            model="l10n_br_fiscal.document.line">
+    <record
+        id="demo_nfe_sales_return_same_state-1-1"
+        model="l10n_br_fiscal.document.line"
+    >
         <field name="document_id" ref="demo_nfe_sales_return_same_state" />
         <field name="name">Teste - Nota de Devolução de Venda</field>
         <field name="product_id" ref="product.product_product_6" />
@@ -685,7 +687,10 @@
         <field name="quantity">1</field>
         <field name="fiscal_operation_type">in</field>
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_devolucao_venda" />
-        <field name="fiscal_operation_line_id" ref="l10n_br_fiscal.fo_devolucao_venda_devolucao_venda" />
+        <field
+            name="fiscal_operation_line_id"
+            ref="l10n_br_fiscal.fo_devolucao_venda_devolucao_venda"
+        />
         <field name="icms_tax_id" ref="l10n_br_fiscal.tax_icms_12" />
         <field name="ipi_tax_id" ref="l10n_br_fiscal.tax_ipi_nt" />
         <field name="cofins_tax_id" ref="l10n_br_fiscal.tax_pis_0_65" />
@@ -696,10 +701,7 @@
         <value eval="[ref('demo_nfe_sales_return_same_state-1-1')]" />
     </function>
 
-    <function
-            model="l10n_br_fiscal.document.line"
-            name="_onchange_fiscal_operation_id"
-    >
+    <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_operation_id">
         <value eval="[ref('demo_nfe_sales_return_same_state-1-1')]" />
     </function>
 
