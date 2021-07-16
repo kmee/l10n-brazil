@@ -111,9 +111,9 @@
                 </group>
                   <group string="Retenções">
                     <field
-                                            name="issqn_wh_tax_id"
-                                            attrs="{'readonly': [('rel_tax_calc', '=', 'tax_calc_manual')]}"
-                                        />
+                                        name="issqn_wh_tax_id"
+                                        attrs="{'readonly': [('rel_tax_calc', '=', 'tax_calc_manual')]}"
+                                    />
                   </group>
                   <group>
                       <group>
@@ -466,9 +466,9 @@
                             >
                 <group string="II">
                     <field
-                                name="ii_tax_id"
-                                attrs="{'readonly': [('rel_tax_calc', '=', 'tax_calc_manual')]}"
-                            />
+                                        name="ii_tax_id"
+                                        attrs="{'readonly': [('rel_tax_calc', '=', 'tax_calc_manual')]}"
+                                    />
                 </group>
                 <group>
                   <group>
@@ -582,7 +582,7 @@
                       <field
                                         name="pis_wh_tax_id"
                                         attrs="{'readonly': [('rel_tax_calc', '=', 'tax_calc_manual')]}"
-                                        />
+                                    />
                   </group>
                   <group>
                       <group>
@@ -710,9 +710,9 @@
                 </group>
                   <group string="Retenções">
                       <field
-                                            name="cofins_wh_tax_id"
-                                            attrs="{'readonly': [('rel_tax_calc', '=', 'tax_calc_manual')]}"
-                                        />
+                                        name="cofins_wh_tax_id"
+                                        attrs="{'readonly': [('rel_tax_calc', '=', 'tax_calc_manual')]}"
+                                    />
                   </group>
                   <group>
                       <group>
@@ -748,9 +748,9 @@
                             >
                     <group>
                         <field
-                                    name="csll_tax_id"
-                                    attrs="{'readonly': [('rel_tax_calc', '=', 'tax_calc_manual')]}"
-                                />
+                                        name="csll_tax_id"
+                                        attrs="{'readonly': [('rel_tax_calc', '=', 'tax_calc_manual')]}"
+                                    />
                     </group>
                     <group>
                         <group>
@@ -780,9 +780,9 @@
                     </group>
                     <group string="Retenções">
                         <field
-                                    name="csll_wh_tax_id"
-                                    attrs="{'readonly': [('rel_tax_calc', '=', 'tax_calc_manual')]}"
-                                />
+                                        name="csll_wh_tax_id"
+                                        attrs="{'readonly': [('rel_tax_calc', '=', 'tax_calc_manual')]}"
+                                    />
                     </group>
                     <group>
                         <group>
@@ -850,9 +850,9 @@
                     </group>
                     <group string="Retenções">
                         <field
-                                    name="irpj_wh_tax_id"
-                                    attrs="{'readonly': [('rel_tax_calc', '=', 'tax_calc_manual')]}"
-                                />
+                                        name="irpj_wh_tax_id"
+                                        attrs="{'readonly': [('rel_tax_calc', '=', 'tax_calc_manual')]}"
+                                    />
                     </group>
                     <group>
                         <group>
@@ -888,9 +888,9 @@
                             >
                     <group>
                         <field
-                                name="inss_tax_id"
-                                attrs="{'readonly': [('rel_tax_calc', '=', 'tax_calc_manual')]}"
-                            />
+                                        name="inss_tax_id"
+                                        attrs="{'readonly': [('rel_tax_calc', '=', 'tax_calc_manual')]}"
+                                    />
                     </group>
                     <group>
                         <group>
@@ -921,7 +921,7 @@
                     <group string="Retenções">
                         <field
                                         name="inss_wh_tax_id"
-                                       attrs="{'readonly': [('rel_tax_calc', '=', 'tax_calc_manual')]}"
+                                        attrs="{'readonly': [('rel_tax_calc', '=', 'tax_calc_manual')]}"
                                     />
                     </group>
                     <group>
