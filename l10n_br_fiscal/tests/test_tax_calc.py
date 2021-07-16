@@ -12,6 +12,9 @@ class TestTaxCalc(TransactionCase):
         self.fiscal_document_demo_2 = self.env.ref(
             "l10n_br_fiscal.demo_nfe_sales_return_same_state"
         )
+        self.fiscal_document_demo_3 = self.env.ref(
+            "l10n_br_fiscal.demo_nfe_purchase_same_state"
+        )
 
     def test_tax_engine_automatic(self):
         """
@@ -143,6 +146,41 @@ class TestTaxCalc(TransactionCase):
             "Semi-Automatic Tax Engine.",
         )
 
-    # TODO
+
     def test_tax_engine_manual(self):
-        pass
+        """
+        Unlike the other options, when 'tax_calc' is set to manual, it's the user's
+            responsibility to enter all tax information into the system. He can
+            register this option in any of the operations, not being restricted to
+            anything.
+        """
+        product = self.fiscal_document_demo_3.line_ids[0]
+        product._onchange_fiscal_operation_id()
+
+        icms_value = product.icms_base * (product.icms_percent / 100)
+        self.assertEqual(
+            product.icms_value,
+            icms_value,
+            "The value of ICMS is not the same. Error in manual demo data entry."
+        )
+
+        ipi_value = product.ipi_base * (product.ipi_percent / 100)
+        self.assertEqual(
+            product.ipi_value,
+            ipi_value,
+            "The value of IPI is not the same. Error in manual demo data entry."
+        )
+
+        pis_value = product.pis_base * (product.pis_percent / 100)
+        self.assertEqual(
+            product.pis_value,
+            pis_value,
+            "The value of PIS is not the same. Error in manual demo data entry."
+        )
+
+        cofins_value = product.cofins_base * (product.cofins_percent / 100)
+        self.assertEqual(
+            product.cofins_value,
+            cofins_value,
+            "The value of Cofins is not the same. Error in manual demo data entry."
+        )
