@@ -721,10 +721,7 @@
         <field name="fiscal_operation_type">in</field>
     </record>
 
-    <record
-        id="demo_nfe_purchase_same_state-1-1"
-        model="l10n_br_fiscal.document.line"
-    >
+    <record id="demo_nfe_purchase_same_state-1-1" model="l10n_br_fiscal.document.line">
         <field name="document_id" ref="demo_nfe_purchase_same_state" />
         <field name="name">Teste - Nota de Compra em Modo Manual</field>
         <field name="product_id" ref="product.product_product_6" />
@@ -732,7 +729,7 @@
         <field name="price_unit">1000</field>
         <field name="quantity">1</field>
         <field name="fiscal_quantity">1</field>
-        <field name="fiscal_prince">1000</field>
+        <field name="fiscal_price">1000</field>
         <field name="fiscal_operation_type">in</field>
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_compras" />
         <field
@@ -743,15 +740,15 @@
         <field name="icms_base">1000</field>
         <field name="icms_percent">15</field>
         <field name="icms_value">150</field>
-        <field name="ipi_cst_id" ref="l10n_br_fiscal.cst_ipi_49"/>
+        <field name="ipi_cst_id" ref="l10n_br_fiscal.cst_ipi_49" />
         <field name="ipi_percent">20</field>
         <field name="ipi_base">1000</field>
         <field name="ipi_value">200</field>
-        <field name="pis_cst_id" ref="l10n_br_fiscal.cst_pis_01"/>
+        <field name="pis_cst_id" ref="l10n_br_fiscal.cst_pis_01" />
         <field name="pis_base">1000</field>
         <field name="pis_percent">5</field>
         <field name="pis_value">50</field>
-        <field name="cofins_cst" ref="l10n_br_fiscal.cst_cofins_01" />
+        <field name="cofins_cst_id" ref="l10n_br_fiscal.cst_cofins_01" />
         <field name="cofins_base">1000</field>
         <field name="cofins_percent">2</field>
         <field name="cofins_value">20</field>
