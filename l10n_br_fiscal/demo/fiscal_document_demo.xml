@@ -660,7 +660,7 @@
         <value eval="[ref('demo_nfe_line_so_simples_faturamento_7-1')]" />
     </function>
 
-    <!-- NFe Test - Sales Return - Same State -->
+    <!-- NFe Test - Sales Return - Same State - Semi-Automatic -->
     <record id="demo_nfe_sales_return_same_state" model="l10n_br_fiscal.document">
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_devolucao_venda" />
         <field name="document_type_id" ref="l10n_br_fiscal.document_55" />
@@ -680,7 +680,8 @@
         model="l10n_br_fiscal.document.line"
     >
         <field name="document_id" ref="demo_nfe_sales_return_same_state" />
-        <field name="name">Teste - Nota de Devolução de Venda</field>
+        <field name="name">Teste - Nota de Devolução de Venda em Modo
+            Semi-Automático</field>
         <field name="product_id" ref="product.product_product_6" />
         <field name="uom_id" ref="uom.product_uom_unit" />
         <field name="price_unit">100</field>
@@ -704,5 +705,56 @@
     <function model="l10n_br_fiscal.document.line" name="_onchange_fiscal_operation_id">
         <value eval="[ref('demo_nfe_sales_return_same_state-1-1')]" />
     </function>
+
+    <!-- NFe Test - Purchase - Same state - Manual -->
+    <record id="demo_nfe_purchase_same_state" model="l10n_br_fiscal.document">
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_compras" />
+        <field name="document_type_id" ref="l10n_br_fiscal.document_55" />
+        <field
+            name="document_serie_id"
+            ref="l10n_br_fiscal.empresa_lc_document_55_serie_1"
+        />
+        <field name="company_id" ref="l10n_br_base.empresa_lucro_presumido" />
+        <field name="document_serie">1</field>
+        <field name="partner_id" ref="l10n_br_base.res_partner_cliente1_sp" />
+        <field name="user_id" ref="base.user_demo" />
+        <field name="fiscal_operation_type">in</field>
+    </record>
+
+    <record
+        id="demo_nfe_purchase_same_state-1-1"
+        model="l10n_br_fiscal.document.line"
+    >
+        <field name="document_id" ref="demo_nfe_purchase_same_state" />
+        <field name="name">Teste - Nota de Compra em Modo Manual</field>
+        <field name="product_id" ref="product.product_product_6" />
+        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field name="price_unit">1000</field>
+        <field name="quantity">1</field>
+        <field name="fiscal_quantity">1</field>
+        <field name="fiscal_prince">1000</field>
+        <field name="fiscal_operation_type">in</field>
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_compras" />
+        <field
+            name="fiscal_operation_line_id"
+            ref="l10n_br_fiscal.fo_compras_compras"
+        />
+        <field name="icms_cst_id" ref="l10n_br_fiscal.cst_icms_00" />
+        <field name="icms_base">1000</field>
+        <field name="icms_percent">15</field>
+        <field name="icms_value">150</field>
+        <field name="ipi_cst_id" ref="l10n_br_fiscal.cst_ipi_49"/>
+        <field name="ipi_percent">20</field>
+        <field name="ipi_base">1000</field>
+        <field name="ipi_value">200</field>
+        <field name="pis_cst_id" ref="l10n_br_fiscal.cst_pis_01"/>
+        <field name="pis_base">1000</field>
+        <field name="pis_percent">5</field>
+        <field name="pis_value">50</field>
+        <field name="cofins_cst" ref="l10n_br_fiscal.cst_cofins_01" />
+        <field name="cofins_base">1000</field>
+        <field name="cofins_percent">2</field>
+        <field name="cofins_value">20</field>
+    </record>
 
 </odoo>
