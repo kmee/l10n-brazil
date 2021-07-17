@@ -27,9 +27,16 @@
             <tree>
                 <field name="code" />
                 <field name="name" />
+<<<<<<< HEAD
                 <field name="company_id" groups="base.group_multi_company" />
                 <field name="fiscal_operation_type" />
                 <field name="fiscal_type" />
+=======
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="fiscal_operation_type" />
+                <field name="fiscal_type" />
+                <field name="ind_final" />
+>>>>>>> 077cbc27... [REF] Operation view usability
                 <field name="state" />
             </tree>
         </field>
@@ -87,12 +94,8 @@
                         <group>
                             <field name="fiscal_operation_type" />
                             <field name="fiscal_type" />
-                            <field name="company_id" />
-                            <field name="edoc_purpose" />
-                            <field
-                                name="company_id"
-                                groups="base.group_multi_company"
-                            />
+                            <field name="ind_final" />
+                            <field name="company_id" groups="base.group_multi_company"/>
                         </group>
                         <group>
                             <field
