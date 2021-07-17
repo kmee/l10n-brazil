@@ -48,7 +48,7 @@ class Operation(models.Model):
 
     ind_final = fields.Selection(
         selection=FINAL_CUSTOMER,
-        string="Final Consumption Operation",
+        string="Final Consumption",
         default=FINAL_CUSTOMER_YES,
         track_visibility="onchange",
     )
