@@ -26,6 +26,7 @@ class Operation(models.Model):
         required=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
+        track_visibility="onchange",
     )
 
     name = fields.Char(
@@ -33,6 +34,7 @@ class Operation(models.Model):
         required=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
+        track_visibility="onchange",
     )
 
     fiscal_operation_type = fields.Selection(
@@ -41,12 +43,14 @@ class Operation(models.Model):
         required=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
+        track_visibility="onchange",
     )
 
     ind_final = fields.Selection(
         selection=FINAL_CUSTOMER,
         string="Final Consumption Operation",
         default=FINAL_CUSTOMER_YES,
+        track_visibility="onchange",
     )
 
     edoc_purpose = fields.Selection(
@@ -58,6 +62,7 @@ class Operation(models.Model):
         ],
         string="Finalidade",
         default="1",
+        track_visibility="onchange",
     )
     default_price_unit = fields.Selection(
         selection=[("sale_price", _("Sale Price")), ("cost_price", _("Cost Price"))],
@@ -65,6 +70,7 @@ class Operation(models.Model):
         default="sale_price",
         readonly=True,
         states={"draft": [("readonly", False)]},
+        track_visibility="onchange",
     )
 
     fiscal_type = fields.Selection(
@@ -74,6 +80,7 @@ class Operation(models.Model):
         required=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
+        track_visibility="onchange",
     )
 
     return_fiscal_operation_id = fields.Many2one(
@@ -86,6 +93,7 @@ class Operation(models.Model):
         "['purchase_refund'], 'other': ['return_in', 'return_out'],"
         "'return_in': ['return_out'], 'return_out': ['return_in']}.get("
         "fiscal_type, []))]",
+        track_visibility="onchange",
     )
 
     inverse_fiscal_operation_id = fields.Many2one(
@@ -93,6 +101,7 @@ class Operation(models.Model):
         string="Inverse Operation",
         readonly=True,
         states={"draft": [("readonly", False)]},
+        track_visibility="onchange",
     )
 
     company_id = fields.Many2one(
@@ -100,6 +109,7 @@ class Operation(models.Model):
         string="Company",
         readonly=True,
         states={"draft": [("readonly", False)]},
+        track_visibility="onchange",
     )
 
     state = fields.Selection(
