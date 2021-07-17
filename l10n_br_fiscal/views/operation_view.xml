@@ -27,16 +27,10 @@
             <tree>
                 <field name="code" />
                 <field name="name" />
-<<<<<<< HEAD
-                <field name="company_id" groups="base.group_multi_company" />
-                <field name="fiscal_operation_type" />
-                <field name="fiscal_type" />
-=======
                 <field name="company_id" groups="base.group_multi_company"/>
                 <field name="fiscal_operation_type" />
                 <field name="fiscal_type" />
                 <field name="ind_final" />
->>>>>>> 077cbc27... [REF] Operation view usability
                 <field name="state" />
             </tree>
         </field>
@@ -94,17 +88,11 @@
                         <group>
                             <field name="fiscal_operation_type" />
                             <field name="fiscal_type" />
-                            <field name="ind_final" />
-                            <field name="company_id" groups="base.group_multi_company"/>
                         </group>
                         <group>
-                            <field
-                                name="company_id"
-                                groups="base.group_multi_company"
-                            />
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="ind_final" />
                             <field name="default_price_unit" />
-                            <field name="return_fiscal_operation_id" />
-                            <field name="inverse_fiscal_operation_id" />
                         </group>
                     </group>
                     <notebook>
@@ -139,7 +127,10 @@
                                 </form>
                             </field>
                         </page>
-                        <page name="subsequent_operation" string="Operations">
+                        <page
+                            name="subsequent_operation"
+                            string="Operations"
+                        >
                             <group>
                                 <field name="return_fiscal_operation_id" />
                                 <field name="inverse_fiscal_operation_id" />
