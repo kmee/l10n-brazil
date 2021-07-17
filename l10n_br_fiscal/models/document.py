@@ -473,6 +473,7 @@ class Document(models.Model):
         if self.fiscal_operation_id:
             self.fiscal_operation_type = self.fiscal_operation_id.fiscal_operation_type
             self.ind_final = self.fiscal_operation_id.ind_final
+            self.edoc_purpose = self.fiscal_operation_id.edoc_purpose
 
         if self.issuer == DOCUMENT_ISSUER_COMPANY and not self.document_type_id:
             self.document_type_id = self.company_id.document_type_id
