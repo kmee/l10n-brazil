@@ -62,6 +62,7 @@ class Operation(models.Model):
         selection=FINAL_CUSTOMER,
         string="Final Consumption Operation",
         default=FINAL_CUSTOMER_YES,
+        track_visibility="onchange",
     )
 
     edoc_purpose = fields.Selection(
@@ -73,6 +74,7 @@ class Operation(models.Model):
         ],
         string="Finalidade",
         default="1",
+        track_visibility="onchange",
     )
 
     default_price_unit = fields.Selection(
