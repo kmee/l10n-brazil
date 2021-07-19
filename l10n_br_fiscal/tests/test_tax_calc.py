@@ -13,7 +13,7 @@ class TestTaxCalc(TransactionCase):
             "l10n_br_fiscal.demo_nfe_sales_return_same_state"
         )
         self.fiscal_document_demo_3 = self.env.ref(
-            "l10n_br_fiscal.demo_nfe_purchase_same_state"
+            "l10n_br_fiscal.demo_nfe_future_delivery_same_state"
         )
 
     def test_tax_engine_automatic(self):

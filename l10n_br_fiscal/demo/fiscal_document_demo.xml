@@ -706,8 +706,8 @@
         <value eval="[ref('demo_nfe_sales_return_same_state-1-1')]" />
     </function>
 
-    <!-- NFe Test - Purchase - Same state - Manual -->
-    <record id="demo_nfe_purchase_same_state" model="l10n_br_fiscal.document">
+    <!-- NFe Test - Sale Future Delivery - Same state - Manual -->
+    <record id="demo_nfe_future_delivery_same_state" model="l10n_br_fiscal.document">
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_compras" />
         <field name="document_type_id" ref="l10n_br_fiscal.document_55" />
         <field
@@ -722,7 +722,7 @@
     </record>
 
     <record id="demo_nfe_purchase_same_state-1-1" model="l10n_br_fiscal.document.line">
-        <field name="document_id" ref="demo_nfe_purchase_same_state" />
+        <field name="document_id" ref="demo_nfe_future_delivery_same_state" />
         <field name="name">Teste - Nota de Compra em Modo Manual</field>
         <field name="product_id" ref="product.product_product_6" />
         <field name="uom_id" ref="uom.product_uom_unit" />
@@ -731,10 +731,10 @@
         <field name="fiscal_quantity">1</field>
         <field name="fiscal_price">1000</field>
         <field name="fiscal_operation_type">in</field>
-        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_compras" />
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_entrega_futura" />
         <field
             name="fiscal_operation_line_id"
-            ref="l10n_br_fiscal.fo_compras_compras"
+            ref="l10n_br_fiscal.fo_entrega_futura_entrega_futura"
         />
         <field name="icms_cst_id" ref="l10n_br_fiscal.cst_icms_00" />
         <field name="icms_base">1000</field>

@@ -183,7 +183,6 @@
         <field name="fiscal_type">purchase</field>
         <field name="default_price_unit">cost_price</field>
         <field name="state">approved</field>
-        <field name="tax_calc">tax_calc_manual</field>
     </record>
 
     <record id="fo_compras_compras" model="l10n_br_fiscal.operation.line">
@@ -330,6 +329,7 @@
         <field name="cfop_internal_id" ref="l10n_br_fiscal.cfop_5116" />
         <field name="cfop_external_id" ref="l10n_br_fiscal.cfop_6116" />
         <field name="state">approved</field>
+        <field name="tax_calc">tax_calc_manual</field>
     </record>
 
     <record id="fo_remessa_industrializacao" model="l10n_br_fiscal.operation">
