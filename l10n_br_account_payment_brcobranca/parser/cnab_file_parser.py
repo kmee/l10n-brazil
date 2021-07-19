@@ -296,9 +296,6 @@ class CNABFileParser(FileParser):
                 "title_value": valor_titulo,
                 "bank_payment_line_id": bank_line.id or False,
                 "invoice_id": account_move_line.invoice_id.id,
-                "due_date": datetime.datetime.strptime(
-                    str(linha_cnab["data_vencimento"]), "%d%m%y"
-                ).date(),
                 "move_line_id": account_move_line.id,
                 "company_title_identification": linha_cnab["documento_numero"]
                 or account_move_line.document_number,
@@ -311,6 +308,13 @@ class CNABFileParser(FileParser):
                 #    obj_account_move_line.company_id.partner_id.name,
                 # 'tipo_moeda': evento.credito_moeda_tipo,
             }
+
+            # No Banco Itaú, os retornos com instrução 'rejeitada' veem com a data de
+            # vencimento zerada
+            if linha_cnab["data_vencimento"] != '000000':
+                cnab_return_log_event['due_date'] = datetime.datetime.strptime(
+                    str(linha_cnab["data_vencimento"]), "%d%m%y"
+                ).date()
 
             # Caso de Pagamento deve criar os Lançamentos de Diário
             if cod_ocorrencia in cnab_liq_move_code:
