@@ -70,6 +70,7 @@
                                 required="1"
                                 options="{'no_create': True, 'no_create_edit': True}"
                             />
+                            <field name="icms_regulation_id" />
                             <field name="tax_icms_or_issqn" required="1" />
                             <field
                                 name="service_type_id"
