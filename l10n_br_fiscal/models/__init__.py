@@ -4,6 +4,7 @@ from . import attachment
 from . import data_abstract
 from . import data_product_abstract
 from . import data_ncm_nbs_abstract
+from . import payment_mixin
 from . import document_workflow
 from . import document_fiscal_mixin_methods
 from . import document_fiscal_mixin
@@ -45,7 +46,6 @@ from . import icms_regulation
 from . import icms_relief
 from . import document_type
 from . import document_serie
-from . import payment
 from . import product_genre
 from . import certificate
 from . import product_mixin
@@ -76,3 +76,9 @@ from . import city_taxation_code
 
 from . import dfe
 from . import mdfe
+from . import payment_term_abstract
+from . import payment_term_line
+from . import payment_term
+from . import payment_line
+from . import payment
+
