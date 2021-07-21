@@ -17,6 +17,10 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     SITUACAO_EDOC_EM_DIGITACAO,
 )
 
+from odoo.addons.l10n_br_fiscal.constants.payment import (
+    FORMA_PAGAMENTO_SEM_PAGAMENTO
+)
+
 INVOICE_TO_OPERATION = {
     "out_invoice": "out",
     "in_invoice": "in",
@@ -568,3 +572,101 @@ class AccountInvoice(models.Model):
     def view_pdf(self):
         self.ensure_one()
         return self.fiscal_document_id.view_pdf()
+
+    def _get_refund_common_fields(self):
+        fields = super()._get_refund_common_fields()
+        fields += [
+            "fiscal_operation_id",
+            "document_type_id",
+            "document_serie_id",
+        ]
+        return fields
+
+    @api.multi
+    @api.returns("self")
+    def refund(self, date_invoice=None, date=None, description=None, journal_id=None):
+        new_invoices = super(AccountInvoice, self).refund(
+            date_invoice, date, description, journal_id
+        )
+
+        force_fiscal_operation_id = False
+        if self.env.context.get("force_fiscal_operation_id"):
+            force_fiscal_operation_id = self.env["l10n_br_fiscal.operation"].browse(
+                self.env.context.get("force_fiscal_operation_id")
+            )
+
+        my_new_invoices = self.browse(new_invoices.ids)
+
+        for r in my_new_invoices.with_context(REFUND_OPERATION=True):
+            if not r.document_type_id:
+                continue
+            if (
+                not force_fiscal_operation_id
+                and not r.fiscal_operation_id.return_fiscal_operation_id
+            ):
+                raise UserError(
+                    _("""Document without Return Fiscal Operation! \n Force one!""")
+                )
+
+            r.fiscal_operation_id = (
+                force_fiscal_operation_id
+                or r.fiscal_operation_id.return_fiscal_operation_id
+            )
+            r.fiscal_document_id._onchange_fiscal_operation_id()
+
+            for line in r.invoice_line_ids:
+                if (
+                    not force_fiscal_operation_id
+                    and not line.fiscal_operation_id.return_fiscal_operation_id
+                ):
+                    raise UserError(
+                        _(
+                            """Line without Return Fiscal Operation! \n
+                            Please force one! \n{}""".format(
+                                line.name
+                            )
+                        )
+                    )
+
+                line.fiscal_operation_id = (
+                    force_fiscal_operation_id
+                    or line.fiscal_operation_id.return_fiscal_operation_id
+                )
+                line._onchange_fiscal_operation_id()
+
+            refund_inv_id = my_new_invoices.refund_invoice_id
+
+            if (
+                refund_inv_id.fiscal_document_id
+                and my_new_invoices.fiscal_document_id
+            ):
+                reference_ids = (
+                    refund_inv_id.fiscal_document_id._prepare_referenced_subsequent()
+                )
+                my_new_invoices.fiscal_document_id._document_reference(reference_ids)
+
+            r.payment_mode = FORMA_PAGAMENTO_SEM_PAGAMENTO
+            r.payment_term_id = self.env['account.payment.term'].search(
+                [('name', 'like', '%vista%')], limit=1
+            )
+            r.generate_financial()
+
+            r.edoc_purpose = '4'
+
+            r.document_related_ids = [(5, 0, 0), (0, 0, {'document_related_id': self.fiscal_document_id.id})]
+            r.document_related_ids._onchange_document_related_id()
+
+        return new_invoices
+
+    def _refund_cleanup_lines(self, lines):
+        result = super(AccountInvoice, self)._refund_cleanup_lines(lines)
+        for _a, _b, vals in result:
+            if vals.get("fiscal_document_line_id"):
+                vals.pop("fiscal_document_line_id")
+
+        for i, line in enumerate(lines):
+            for name, _field in line._fields.items():
+                if name == "fiscal_tax_ids":
+                    result[i][2][name] = [(6, 0, line[name].ids)]
+
+        return result
