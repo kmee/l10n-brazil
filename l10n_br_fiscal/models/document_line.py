@@ -88,6 +88,8 @@ class DocumentLine(models.Model):
         compute="_compute_amounts",
     )
 
+    rel_tax_calc = fields.Selection(related="fiscal_operation_id.tax_calc")
+
     def unlink(self):
         dummy_docs = self.env["res.company"].search([]).mapped("fiscal_dummy_id")
         if any(line.document_id in dummy_docs for line in self):
