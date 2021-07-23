@@ -352,6 +352,7 @@ class Document(models.Model):
                                 )
 
                 record.write(vals)
+                record.make_pdf()
         return
 
     def _document_status(self):
