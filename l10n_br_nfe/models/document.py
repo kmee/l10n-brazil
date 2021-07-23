@@ -309,7 +309,8 @@ class NFe(spec_models.StackedModel):
                     .decode("ASCII")
                     .replace("\n", "")
                     .replace("\r", "")
-                )
+                    .replace("\t", "")
+                )[:2000]
             if record.customer_additional_data:
                 record.nfe40_infCpl = (
                     normalize("NFKD", record.customer_additional_data)
@@ -317,7 +318,8 @@ class NFe(spec_models.StackedModel):
                     .decode("ASCII")
                     .replace("\n", "")
                     .replace("\r", "")
-                )
+                    .replace("\t", "")
+                )[:500]
 
     @api.multi
     @api.depends("fiscal_operation_type")

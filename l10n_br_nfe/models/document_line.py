@@ -230,7 +230,8 @@ class NFeLine(spec_models.StackedModel):
                     .decode("ASCII")
                     .replace("\n", "")
                     .replace("\r", "")
-                )
+                    .replace("\t", "")
+                )[:500]
             else:
                 record.nfe40_infAdProd = False
 
