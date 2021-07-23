@@ -21,13 +21,14 @@ from ..constants.fiscal import (
 class Operation(models.Model):
     _name = "l10n_br_fiscal.operation"
     _description = "Fiscal Operation"
-    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _inherit = ["mail.thread", "mail.activity.mixin", "l10n_br_fiscal.data.abstract"]
 
     code = fields.Char(
         string="Code",
         required=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
+        track_visibility="onchange",
     )
 
     name = fields.Char(
@@ -35,6 +36,7 @@ class Operation(models.Model):
         required=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
+        track_visibility="onchange",
     )
 
     fiscal_operation_type = fields.Selection(
@@ -43,12 +45,26 @@ class Operation(models.Model):
         required=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
+        track_visibility="onchange",
     )
 
     ind_final = fields.Selection(
         selection=FINAL_CUSTOMER,
-        string="Final Consumption Operation",
+        string="Final Consumption",
         default=FINAL_CUSTOMER_YES,
+        track_visibility="onchange",
+    )
+
+    edoc_purpose = fields.Selection(
+        selection=[
+            ("1", "Normal"),
+            ("2", "Complementar"),
+            ("3", "Ajuste"),
+            ("4", "Devolução de mercadoria"),
+        ],
+        string="Finalidade",
+        default="1",
+        track_visibility="onchange",
     )
 
     default_price_unit = fields.Selection(
@@ -57,6 +73,7 @@ class Operation(models.Model):
         default="sale_price",
         readonly=True,
         states={"draft": [("readonly", False)]},
+        track_visibility="onchange",
     )
 
     fiscal_type = fields.Selection(
@@ -66,6 +83,7 @@ class Operation(models.Model):
         required=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
+        track_visibility="onchange",
     )
 
     return_fiscal_operation_id = fields.Many2one(
@@ -78,6 +96,7 @@ class Operation(models.Model):
         "['purchase_refund'], 'other': ['return_in', 'return_out'],"
         "'return_in': ['return_out'], 'return_out': ['return_in']}.get("
         "fiscal_type, []))]",
+        track_visibility="onchange",
     )
 
     inverse_fiscal_operation_id = fields.Many2one(
@@ -85,6 +104,7 @@ class Operation(models.Model):
         string="Inverse Operation",
         readonly=True,
         states={"draft": [("readonly", False)]},
+        track_visibility="onchange",
     )
 
     company_id = fields.Many2one(
@@ -92,6 +112,7 @@ class Operation(models.Model):
         string="Company",
         readonly=True,
         states={"draft": [("readonly", False)]},
+        track_visibility="onchange",
     )
 
     state = fields.Selection(
@@ -159,15 +180,19 @@ class Operation(models.Model):
 
     def action_review(self):
         self.write({"state": "review"})
-        self.line_ids.write({"state": "review"})
+        self.line_ids.filtered(lambda l: l.state == "draft").write({"state": "review"})
 
     def action_approve(self):
         self.write({"state": "approved"})
-        self.line_ids.write({"state": "approved"})
+        self.line_ids.filtered(lambda l: l.state == "review").write(
+            {"state": "approved"}
+        )
 
     def action_draft(self):
         self.write({"state": "draft"})
-        self.line_ids.write({"state": "draft"})
+        self.line_ids.filtered(lambda l: l.state == "approved").write(
+            {"state": "draft"}
+        )
 
     def unlink(self):
         operations = self.filtered(lambda l: l.state == "approved")
@@ -192,7 +217,7 @@ class Operation(models.Model):
 
         return serie
 
-    def _line_domain(self, company, partner, product):
+    def _line_domain(self, company, partner, product, icms_regulation):
 
         domain = [
             ("fiscal_operation_id", "=", self.id),
@@ -239,16 +264,28 @@ class Operation(models.Model):
             ("tax_icms_or_issqn", "=", False),
         ]
 
+        domain += [
+            "|",
+            ("icms_regulation_id", "=", icms_regulation.id),
+            ("icms_regulation_id", "=", False),
+        ]
+
         return domain
 
-    def line_definition(self, company, partner, product):
+    def line_definition(self, company, partner, product, icms_regulation):
         self.ensure_one()
         if not company:
             company = self.env.user.company_id
 
         line = self.line_ids.search(
-            self._line_domain(company, partner, product), limit=1
+            self._line_domain(company, partner, product, icms_regulation)
         )
+
+        if len(line) > 1:
+            line = line.filtered(lambda x: x.icms_regulation_id == icms_regulation)
+
+            if len(line) > 1:
+                raise UserError(_("Mais de uma linha de operação selecionada"))
 
         return line
 

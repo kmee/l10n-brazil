@@ -6,7 +6,7 @@
         <field name="model">l10n_br_fiscal.operation.line</field>
         <field name="inherit_id" ref="l10n_br_fiscal.operation_line_form" />
         <field name="arch" type="xml">
-            <field name="ind_ie_dest" position="after">
+            <group name="gereral_settings" position="inside">
                 <field
                     name="fiscal_position_id"
                     attrs="{'readonly': [('state', '!=', 'draft')]}"
@@ -15,7 +15,7 @@
                     name="account_id"
                     attrs="{'readonly': [('state', '!=', 'draft')]}"
                 />
-            </field>
+            </group>
         </field>
     </record>
 

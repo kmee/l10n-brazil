@@ -117,7 +117,7 @@ class OperationLine(models.Model):
     )
 
     company_tax_framework = fields.Selection(
-        selection=TAX_FRAMEWORK, string="Copmpany Tax Framework"
+        selection=TAX_FRAMEWORK, string="Company Tax Framework"
     )
 
     add_to_amount = fields.Boolean(string="Add to Document Amount?", default=True)
@@ -144,9 +144,16 @@ class OperationLine(models.Model):
         string="State",
         default=OPERATION_STATE_DEFAULT,
         index=True,
-        readonly=True,
         track_visibility="onchange",
         copy=False,
+    )
+
+    icms_regulation_id = fields.Many2one(
+        comodel_name="l10n_br_fiscal.icms.regulation", string="Tax Regulation"
+    )
+
+    force_icms_regulation_id = fields.Many2one(
+        comodel_name="l10n_br_fiscal.icms.regulation", string="Force Tax Regulation"
     )
 
     date_start = fields.Datetime(string="Start Date")
@@ -201,6 +208,7 @@ class OperationLine(models.Model):
         nbm=None,
         nbs=None,
         cest=None,
+        icms_regulation=None,
     ):
         tax_calc = self.env.context.get("TAX_CALC_OVERRIDE", self.tax_calc)
 
@@ -239,8 +247,9 @@ class OperationLine(models.Model):
                 mapping_result["taxes"][tax_ii.tax_domain] = tax_ii
 
             # 3 From ICMS Regulation
-            if company.icms_regulation_id:
-                tax_icms_ids = company.icms_regulation_id.map_tax(
+            icms_regulation_id = icms_regulation or company.icms_regulation_id
+            if icms_regulation_id:
+                tax_icms_ids = icms_regulation_id.map_tax(
                     company=company,
                     partner=partner,
                     product=product,

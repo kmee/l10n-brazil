@@ -141,6 +141,10 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         default=_default_operation,
     )
 
+    icms_regulation_id = fields.Many2one(
+        comodel_name="l10n_br_fiscal.icms.regulation", string="Tax Regulation"
+    )
+
     fiscal_operation_type = fields.Selection(
         selection=FISCAL_IN_OUT,
         related="fiscal_operation_id.fiscal_operation_type",
