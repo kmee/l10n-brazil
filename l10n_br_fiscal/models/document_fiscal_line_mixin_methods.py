@@ -288,6 +288,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
             d.additional_data = d.additional_data or ""
             comment = d.comment_ids.compute_message(d.__document_comment_vals())
             d.additional_data += comment if comment not in d.additional_data else ""
+            d.additional_data = d.additional_data[:500]
 
     @api.onchange("fiscal_operation_id")
     def _onchange_fiscal_operation_id(self):

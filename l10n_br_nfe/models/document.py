@@ -325,12 +325,12 @@ class NFe(spec_models.StackedModel):
                 record.nfe40_infAdFisco = normalize(
                     'NFKD', record.fiscal_additional_data
                 ).encode('ASCII', 'ignore').decode('ASCII').replace(
-                    '\n', '').replace('\r', '')
+                    '\n', '').replace('\r', '').replace('\t', '')[:2000]
             if record.customer_additional_data:
                 record.nfe40_infCpl = normalize(
                     'NFKD', record.customer_additional_data
                 ).encode('ASCII', 'ignore').decode('ASCII').replace(
-                    '\n', '').replace('\r', '')
+                    '\n', '').replace('\r', '').replace('\t', '')[:500]
 
     @api.multi
     @api.depends('fiscal_operation_type')

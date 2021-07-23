@@ -80,6 +80,7 @@ class FiscalDocumentMixinMethods(models.AbstractModel):
             if new_comment not in (d.customer_additional_data or ""):
                 com_comments.append(new_comment)
                 d.customer_additional_data = ", ".join([c for c in com_comments if c])
+                d.customer_additional_data = d.customer_additional_data[:500]
             d.line_ids._document_comment()
 
     @api.onchange("fiscal_operation_id")
