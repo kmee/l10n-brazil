@@ -86,10 +86,11 @@ class AccountInvoice(models.Model):
     def action_invoice_cancel(self):
         for record in self:
             if record.payment_mode_id.payment_method_code in BR_CODES_PAYMENT_ORDER:
-                for line in record.move_id.line_ids:
-                    # Verificar a situação do CNAB para apenas apagar
-                    # a linha ou mandar uma solicitação de Baixa
-                    line.update_cnab_for_cancel_invoice()
+                if not self._context.get('cnab_return'):
+                    for line in record.move_id.line_ids:
+                        # Verificar a situação do CNAB para apenas apagar
+                        # a linha ou mandar uma solicitação de Baixa
+                        line.update_cnab_for_cancel_invoice()
 
         return super().action_invoice_cancel()
 

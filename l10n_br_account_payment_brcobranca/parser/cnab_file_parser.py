@@ -280,10 +280,15 @@ class CNABFileParser(FileParser):
 
             # Codigos de Movimento de Retorno - Liquidação
             cnab_liq_move_code = []
+            cnab_write_off_code = []
             for (
                 move_code
             ) in account_move_line.payment_mode_id.cnab_liq_return_move_code_ids:
                 cnab_liq_move_code.append(move_code.code)
+            for (
+                move_code
+            ) in account_move_line.payment_mode_id.cnab_write_off_return_move_code_ids:
+                cnab_write_off_code.append(move_code.code)
 
             favored_bank_account = (
                 account_move_line.payment_mode_id.fixed_journal_id.bank_account_id
@@ -324,6 +329,10 @@ class CNABFileParser(FileParser):
                 )
                 result_row_list.append(row_list)
                 cnab_return_log_event.update(log_event_payment)
+            elif cod_ocorrencia in cnab_write_off_code:
+                account_move_line.invoice_id.with_context(cnab_return=True).\
+                    action_invoice_cancel()
+                cnab_return_log_event.pop('move_line_id')
             else:
                 # Nos codigos de retorno cadastrados no Data do modulo
                 # l10n_br_account_payment_order o 02 se refere a
@@ -337,6 +346,8 @@ class CNABFileParser(FileParser):
                 elif cod_ocorrencia == "03":
                     # TODO - algo a mais a ser feito ?
                     account_move_line.cnab_state = "not_accepted"
+
+
 
             # Inclui o LOG do Evento CNAB
             self.cnab_return_events.append(cnab_return_log_event)

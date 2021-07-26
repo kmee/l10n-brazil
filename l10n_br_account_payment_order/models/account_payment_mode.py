@@ -80,6 +80,15 @@ class AccountPaymentMode(models.Model):
         track_visibility="always",
     )
 
+    cnab_write_off_return_move_code_ids = fields.Many2many(
+        comodel_name="l10n_br_cnab.return.move.code",
+        relation="l10n_br_cnab_return_write_off_move_code_rel",
+        column1="cnab_write_off_return_move_code_id",
+        column2="payment_mode_id",
+        string="CNAB Write Off Return Move Code",
+        track_visibility="always",
+    )
+
     @api.constrains(
         "code_convetion",
         "cnab_sequence_id",
