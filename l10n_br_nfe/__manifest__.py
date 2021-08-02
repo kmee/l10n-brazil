@@ -21,7 +21,7 @@
         "wizards/import_document.xml",
 
         # Menus
-        "views/nfe_menu.xml",
+        #"views/nfe_menu.xml",
 
         # Views
         "views/payment_view.xml",
