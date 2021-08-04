@@ -432,10 +432,11 @@ class Tax(models.Model):
             # Difal - ICMS Dest Value
             icms_dest_value = round(icms_base * (icms_dest_perc / 100), precision)
 
-            if partner.state_id.code in ICMS_DIFAL_UNIQUE_BASE:
+            if partner.state_id.code in ICMS_DIFAL_UNIQUE_BASE or \
+                    partner.ind_ie_dest == NFE_IND_IE_DEST_9:
                 difal_icms_base = icms_base
 
-            if partner.state_id.code in ICMS_DIFAL_DOUBLE_BASE:
+            elif partner.state_id.code in ICMS_DIFAL_DOUBLE_BASE:
                 difal_icms_base = round(
                     (icms_base - icms_origin_value)
                     / (1 - ((icms_dest_perc + icmsfcp_perc) / 100)),
