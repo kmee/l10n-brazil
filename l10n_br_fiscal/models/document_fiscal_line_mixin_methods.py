@@ -562,6 +562,12 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
             # vICMSUFDest - Valor do ICMS Interestadual para a UF de destino
             self.icms_destination_value = tax_dict.get("icms_dest_value")
 
+            # ICMS EFETIVO
+            self.icms_effective_reduction = tax_dict.get("icms_effective_reduction")
+            self.icms_effective_base = tax_dict.get("icms_effective_base")
+            self.icms_effective_percent = tax_dict.get("icms_effective_percent")
+            self.icms_effective_value = tax_dict.get("icms_effective_value")
+
     @api.onchange(
         "icms_base",
         "icms_percent",
