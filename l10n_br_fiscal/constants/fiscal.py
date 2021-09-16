@@ -296,6 +296,7 @@ NFE_IND_PRES = [
 
 
 NFE_IND_PRES_DEFAULT = "0"
+NFCE_IND_PRES_DEFAULT = "1"
 
 FINAL_CUSTOMER = [("0", "Não"), ("1", "Sim")]
 
