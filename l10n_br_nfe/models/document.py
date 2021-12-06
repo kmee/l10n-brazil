@@ -428,11 +428,7 @@ class NFe(spec_models.StackedModel):
     # NF-e tag: transporta
     ##########################
 
-    nfe40_transporta = fields.Many2one(comodel_name="res.partner", related="carrier_id")
-
-    carrier_id = fields.Many2one(
-        comodel_name="res.partner",
-    )
+    nfe40_transporta = fields.Many2one(comodel_name="res.partner")
 
     ##########################
     # NF-e tag: pag
