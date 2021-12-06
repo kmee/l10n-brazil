@@ -20,8 +20,7 @@ addons:
       - postgresql-contrib
 
 before_script:
-  - createdb openerp_template
-  - psql -d openerp_template -c "CREATE EXTENSION \"unaccent\""
+  - psql -d template1 -c "CREATE EXTENSION \"unaccent\""
 
 stages:
   - linting
@@ -46,6 +45,10 @@ jobs:
 env:
   global:
   - VERSION="12.0" TESTS="0" LINT_CHECK="0"
+  - SETUP_TEMPLATE_DB="template1"
+  - SERVER_OPTIONS="--unaccent"
+  - OPTIONS="--unaccent"
+
 
   matrix:
   - LINT_CHECK="1"
@@ -54,13 +57,11 @@ env:
 
 
 install:
-  - git clone --depth=1 https://github.com/OCA/maintainer-quality-tools.git
+  - git clone --depth=1 https://github.com/kmee/maintainer-quality-tools.git --branch=feature/setup-template
     ${HOME}/maintainer-quality-tools
   - export PATH=${HOME}/maintainer-quality-tools/travis:${PATH}
   - export WKHTMLTOPDF_VERSION=0.12.5
   - travis_install_nightly
-  - printf '[options]\n\unaccent = True\n' > ${HOME}/.openerp_serverrc
-
 
 script:
   - travis_run_tests
