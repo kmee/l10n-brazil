@@ -428,7 +428,7 @@ class NFe(spec_models.StackedModel):
     # NF-e tag: transporta
     ##########################
 
-    nfe40_transporta = fields.Many2one(comodel_name="res.partner")
+    nfe40_transporta = fields.Many2one(comodel_name="nfe.40.transporta")
 
     ##########################
     # NF-e tag: pag
@@ -503,10 +503,11 @@ class NFe(spec_models.StackedModel):
     # NF-e tag: infRespTec
     ##########################
 
-    nfe40_infRespTec = fields.Many2one(
-        comodel_name="res.partner",
-        related="company_id.technical_support_id",
-    )
+    nfe40_infRespTec = fields.Many2one(comodel_name="nfe.40.tinfresptec")
+    # nfe40_infRespTec = fields.Many2one(
+    #     comodel_name="res.partner",
+    #     related="company_id.technical_support_id",
+    # )
 
     ################################
     # Framework Spec model's methods
