@@ -1,13 +1,11 @@
 odoo.define("payment_pagseguro.tour", function (require){
     "use strict";
 
-    var core = require('web.core');
     var tour = require('web_tour.tour');
     var base = require("web_editor.base");
     var rpc = require('web.rpc');
-    var _t = core._t;
 
-    tour.register('shop_buy_with_pagseguro', {
+    tour.register('shop_buy_pagseguro', {
         url: "/shop",
         test: true,
         wait_for: base.ready(),
@@ -31,6 +29,7 @@ odoo.define("payment_pagseguro.tour", function (require){
                             'method': 'write',
                             'args': [acquirer, {
                                 'pagseguro_token': "8EC2714B10DC42DE882BC341A5366899",
+                                'website_published': true,
                             }],
                         });
                     });
