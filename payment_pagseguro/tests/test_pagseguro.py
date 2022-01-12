@@ -11,7 +11,6 @@ _logger = logging.getLogger(__name__)
 
 @odoo.tests.tagged("post_install", "-at_install")
 class PagseguroTest(HttpCase):
-        
     def test_buy_with_pagseguro(self):
         self.browser_js(
             "/",
