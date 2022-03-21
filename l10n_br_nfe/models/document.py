@@ -55,6 +55,15 @@ from ..constants.nfe import (
 
 _logger = logging.getLogger(__name__)
 
+MODFRETE_TRANSP = [
+    ("0", "0 - Contratação do Frete por conta do Remetente (CIF)"),
+    ("1", "1 - Contratação do Frete por conta do" " destinatário/remetente (FOB)"),
+    ("2", "2 - Contratação do Frete por conta de terceiros"),
+    ("3", "3 - Transporte próprio por conta do remetente"),
+    ("4", "4 - Transporte próprio por conta do destinatário"),
+    ("9", "9 - Sem Ocorrência de transporte."),
+]
+
 
 def filter_processador_edoc_nfe(record):
     if record.processador_edoc == PROCESSADOR_OCA and record.document_type_id.code in [
@@ -436,7 +445,17 @@ class NFe(spec_models.StackedModel):
     # NF-e tag: transporta
     ##########################
 
-    nfe40_transporta = fields.Many2one(comodel_name="nfe.40.transporta")
+    nfe40_transporta = fields.Many2one(
+        comodel_name="res.partner",
+        related="transporter_id",
+        string="Dados do transportador",
+    )
+
+    transporter_id = fields.Many2one(
+        comodel_name='res.partner',
+        help='The partner that is doing the delivery service.',
+        string='Transportadora'
+    )
 
     ##########################
     # NF-e tag: pag
