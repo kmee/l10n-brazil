@@ -452,9 +452,9 @@ class NFe(spec_models.StackedModel):
     )
 
     transporter_id = fields.Many2one(
-        comodel_name='res.partner',
-        help='The partner that is doing the delivery service.',
-        string='Transportadora'
+        comodel_name="res.partner",
+        help="The partner that is doing the delivery service.",
+        string="Transportadora",
     )
 
     ##########################
