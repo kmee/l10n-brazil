@@ -686,12 +686,12 @@ class NFe(spec_models.StackedModel):
                 self.env["res.partner"], vals, new_value, "partner_id", value, path
             )
         if key == "nfe40_entrega" and self.env.context.get("edoc_type") == "in":
-            enderEntreg_value = self.env["res.partner"].build_attrs(
-                value, path=path
-            )
+            enderEntreg_value = self.env["res.partner"].build_attrs(value, path=path)
             new_value.update(enderEntreg_value)
             parent_domain = [("nfe40_CNPJ", "=", new_value.get("nfe40_CNPJ"))]
-            parent_partner_match = self.env['res.partner'].search(parent_domain, limit=1)
+            parent_partner_match = self.env["res.partner"].search(
+                parent_domain, limit=1
+            )
             new_vals = {
                 "nfe40_CNPJ": False,
                 "type": "delivery",
