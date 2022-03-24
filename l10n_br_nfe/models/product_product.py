@@ -71,5 +71,6 @@ class SupplierInfo(models.Model):
 
     def create(self, vals):
         res = super(SupplierInfo, self).create(vals)
-        res.product_uom = res.product_tmpl_id.uom_id
+        if not res.product_uom:
+            res.product_uom = res.product_tmpl_id.uom_id
         return res

@@ -318,6 +318,12 @@ class NFe(spec_models.StackedModel):
 
     imported_document = fields.Boolean(string="Imported", default=False)
 
+    partner_document_number = fields.Char(
+        string="Partner Document Number",
+        copy=False,
+        index=True,
+    )
+
     @api.depends("fiscal_additional_data", "fiscal_additional_data")
     def _compute_nfe40_additional_data(self):
         for record in self:
@@ -918,4 +924,13 @@ class NFe(spec_models.StackedModel):
         return document
 
     def import_xml(self, nfe_binding, dry_run, edoc_type="out"):
-        return self._import_xml_nfe(nfe_binding, dry_run, edoc_type)
+        document = self._import_xml_nfe(nfe_binding, dry_run, edoc_type)
+        if document.imported_document:
+            partner_id = document.partner_id
+            if partner_id:
+                sequence_id = partner_id.imported_document_sequence
+                if not sequence_id:
+                    sequence_id = partner_id._create_imported_document_sequence()
+                document.partner_document_number = document.document_number
+                document.document_number = re.sub(r'[^\w]', '', partner_id.cnpj_cpf) + '/NFe-' + str(sequence_id.next_by_id())
+        return document

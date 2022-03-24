@@ -93,6 +93,8 @@ class ResPartner(spec_models.SpecModel):
         string="CNPJ/CPF/idEstrangeiro",
     )
 
+    imported_document_sequence = fields.Many2one('ir.sequence', string='Imported Document Sequence', readonly=True, copy=False)
+
     def _compute_nfe40_xEnder(self):
         for rec in self:
             rec.nfe40_xEnder = ", ".join(
@@ -164,3 +166,17 @@ class ResPartner(spec_models.SpecModel):
             if self.country_id.code != "BR":
                 return self.vat or self.cnpj_cpf or self.rg or "EXTERIOR"
         return super()._export_field(xsd_field, class_obj, member_spec)
+
+    @api.model
+    def _create_imported_document_sequence(self):
+        """ Create new nogap entry sequence for every
+        new production order created by this production request """
+        sequence = {
+            'name': self.name,
+            'implementation': 'no_gap',
+            'padding': 2,
+            'number_increment': 1,
+        }
+
+        self.imported_document_sequence = self.env['ir.sequence'].create(sequence)
+        return self.imported_document_sequence
