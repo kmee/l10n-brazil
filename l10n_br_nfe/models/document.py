@@ -932,5 +932,9 @@ class NFe(spec_models.StackedModel):
                 if not sequence_id:
                     sequence_id = partner_id._create_imported_document_sequence()
                 document.partner_document_number = document.document_number
-                document.document_number = re.sub(r'[^\w]', '', partner_id.cnpj_cpf) + '/NFe-' + str(sequence_id.next_by_id())
+                document.document_number = (
+                    re.sub(r"[^\w]", "", partner_id.cnpj_cpf)
+                    + "/NFe-"
+                    + str(sequence_id.next_by_id())
+                )
         return document

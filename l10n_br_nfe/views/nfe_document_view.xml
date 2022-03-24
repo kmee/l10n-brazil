@@ -39,11 +39,11 @@
           </page>
 
           <!-- Add Partner Document Number to view -->
-          <xpath expr="//group[@name='document_header_right']/field[@name='document_serie']" position="after">
-                <field name="state_fiscal"/>
-          </xpath>
-          <xpath expr="//group[@name='document_header_left']/field[@name='state_fiscal']" position="replace">
-                <field name="partner_document_number"/>
+          <xpath
+                expr="//group[@name='document_header_left']/field[@name='document_number']"
+                position="after"
+            >
+                <field name="partner_document_number" />
           </xpath>
 
           <!-- Hide confirm button for imported documents -->

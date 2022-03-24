@@ -93,7 +93,9 @@ class ResPartner(spec_models.SpecModel):
         string="CNPJ/CPF/idEstrangeiro",
     )
 
-    imported_document_sequence = fields.Many2one('ir.sequence', string='Imported Document Sequence', readonly=True, copy=False)
+    imported_document_sequence = fields.Many2one(
+        "ir.sequence", string="Imported Document Sequence", readonly=True, copy=False
+    )
 
     def _compute_nfe40_xEnder(self):
         for rec in self:
@@ -169,14 +171,14 @@ class ResPartner(spec_models.SpecModel):
 
     @api.model
     def _create_imported_document_sequence(self):
-        """ Create new nogap entry sequence for every
-        new production order created by this production request """
+        """Create new nogap entry sequence for every
+        new production order created by this production request"""
         sequence = {
-            'name': self.name,
-            'implementation': 'no_gap',
-            'padding': 2,
-            'number_increment': 1,
+            "name": self.name,
+            "implementation": "no_gap",
+            "padding": 2,
+            "number_increment": 1,
         }
 
-        self.imported_document_sequence = self.env['ir.sequence'].create(sequence)
+        self.imported_document_sequence = self.env["ir.sequence"].create(sequence)
         return self.imported_document_sequence
