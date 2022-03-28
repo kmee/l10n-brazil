@@ -217,7 +217,7 @@ class NFe(spec_models.StackedModel):
         inverse="_inverse_nfe40_tpImp",
     )
 
-    # A definição de um valor default faz com que o valor não seja alterado na importação
+    # definição de valor default faz com que o valor não seja alterado na importação
     nfe40_modFrete = fields.Selection(
         related="modFrete",
     )
