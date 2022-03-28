@@ -226,7 +226,8 @@ class NfeImport(models.TransientModel):
                 if xml_product.prod.xProd == wizard_product.product_name:
                     # Validação comentada para realização de testes
                     # TODO: Descomentar essa validação
-                    # self._check_ncm_nbm_cest(xml_product.prod, wizard_product.product_id)
+                    # self._check_ncm_nbm_cest(
+                    #   xml_product.prod, wizard_product.product_id)
                     xml_product.prod.xProd = database_product.name
                     xml_product.prod.cEAN = database_product.barcode
                     xml_product.prod.cEANTrib = database_product.barcode
@@ -311,7 +312,8 @@ class NfeImportProducts(models.TransientModel):
     uom_internal = fields.Many2one(
         "uom.uom",
         "Internal UOM",
-        help="Unidade de medida interna equivalente à unidade de medida no documento fiscal",
+        help="Unidade de medida interna equivalente à unidade de medida no documento"
+        " fiscal",
     )
 
     uom_com = fields.Char(string="UOM Comercial")
