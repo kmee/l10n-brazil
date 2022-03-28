@@ -217,7 +217,7 @@ class NFe(spec_models.StackedModel):
         inverse="_inverse_nfe40_tpImp",
     )
 
-    # A definição de um valor default faz com que o valor não seja alterado na importação
+    # definição de valor default faz com que o valor não seja alterado na importação
     nfe40_modFrete = fields.Selection(
         related="modFrete",
     )
@@ -334,7 +334,7 @@ class NFe(spec_models.StackedModel):
 
     payment_line_ids = fields.One2many(related="payment_id.payment_line_ids")
 
-    fatura_id = fields.Many2one(related="nfe40_cobr.fatura_id")
+    fatura_id = fields.Many2one(related="payment_id.fatura_id")
 
     @api.depends("fiscal_additional_data", "fiscal_additional_data")
     def _compute_nfe40_additional_data(self):
