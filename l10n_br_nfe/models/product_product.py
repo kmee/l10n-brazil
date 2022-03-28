@@ -66,6 +66,7 @@ class SupplierInfo(models.Model):
         "Unit of Measure",
         related="",
         readonly=False,
+        required=True,
         help="This comes from the last imported document.",
     )
 

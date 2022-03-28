@@ -304,16 +304,20 @@ class NFe(spec_models.StackedModel):
         string="Dados do transportador",
     )
 
-    transporter_id = fields.Many2one(
-        comodel_name="res.partner",
-        help="The partner that is doing the delivery service.",
-        string="Transportadora",
-    )
-
     nfe40_infRespTec = fields.Many2one(comodel_name="nfe.40.tinfresptec")
 
     nfe40_idDest = fields.Selection(
         compute="_compute_nfe40_idDest",
+    )
+
+    nfe40_cobr = fields.Many2one(
+        related="payment_id",
+    )
+
+    transporter_id = fields.Many2one(
+        comodel_name="res.partner",
+        help="The partner that is doing the delivery service.",
+        string="Transportadora",
     )
 
     imported_document = fields.Boolean(string="Imported", default=False)
@@ -323,6 +327,14 @@ class NFe(spec_models.StackedModel):
         copy=False,
         index=True,
     )
+
+    payment_id = fields.Many2one(
+        comodel_name="l10n_br_nfe.document.payment", string="Cobrança", required=False
+    )
+
+    payment_line_ids = fields.One2many(related="payment_id.payment_line_ids")
+
+    fatura_id = fields.Many2one(related="nfe40_cobr.fatura_id")
 
     @api.depends("fiscal_additional_data", "fiscal_additional_data")
     def _compute_nfe40_additional_data(self):

@@ -1,0 +1,10 @@
+"id","name","model_id:id","group_id:id","perm_read","perm_write","perm_create","perm_unlink"
+"l10n_br_nfe_payment_line_user","Duplicata for User","model_l10n_br_nfe_document_payment_line","l10n_br_fiscal.group_user",1,0,0,0
+"l10n_br_nfe_payment_line_manager","Duplicata for Manager","model_l10n_br_nfe_document_payment_line","l10n_br_fiscal.group_manager",1,1,1,1
+"l10n_br_nfe_payment_line_maintenance","Duplicata for Data Maintenance","model_l10n_br_nfe_document_payment_line","l10n_br_fiscal.group_data_maintenance",1,1,1,1
+"l10n_br_nfe_payment_user","Cobrança for User","model_l10n_br_nfe_document_payment","l10n_br_fiscal.group_user",1,0,0,0
+"l10n_br_nfe_payment_manager","Cobrança for Manager","model_l10n_br_nfe_document_payment","l10n_br_fiscal.group_manager",1,1,1,1
+"l10n_br_nfe_payment_maintenance","Cobrança for Data Maintenance","model_l10n_br_nfe_document_payment","l10n_br_fiscal.group_data_maintenance",1,1,1,1
+"l10n_br_nfe_fatura_user","Fatura for User","model_l10n_br_nfe_document_fatura","l10n_br_fiscal.group_user",1,0,0,0
+"l10n_br_nfe_fatura_manager","Fatura for Manager","model_l10n_br_nfe_document_fatura","l10n_br_fiscal.group_manager",1,1,1,1
+"l10n_br_nfe_fatura_maintenance","Fatura for Data Maintenance","model_l10n_br_nfe_document_fatura","l10n_br_fiscal.group_data_maintenance",1,1,1,1

@@ -20,6 +20,7 @@
         "data/ir_config_parameter.xml",
         # Security
         "security/nfe_security.xml",
+        "security/ir.model.access.csv",
         "wizards/import_document.xml",
         # Menus
         "views/nfe_menu.xml",
