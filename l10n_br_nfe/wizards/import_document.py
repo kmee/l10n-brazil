@@ -312,8 +312,7 @@ class NfeImportProducts(models.TransientModel):
     uom_internal = fields.Many2one(
         "uom.uom",
         "Internal UOM",
-        help="Unidade de medida interna equivalente à unidade de medida no documento"
-        " fiscal",
+        help="Internal UoM, equivalent to the one in the document",
     )
 
     uom_com = fields.Char(string="UOM Comercial")

@@ -311,7 +311,7 @@ class NFe(spec_models.StackedModel):
     )
 
     nfe40_cobr = fields.Many2one(
-        related="payment_id",
+        related="cobranca_id",
     )
 
     transporter_id = fields.Many2one(
@@ -328,13 +328,13 @@ class NFe(spec_models.StackedModel):
         index=True,
     )
 
-    payment_id = fields.Many2one(
-        comodel_name="l10n_br_nfe.document.payment", string="Cobrança", required=False
+    cobranca_id = fields.Many2one(
+        comodel_name="l10n_br_nfe.document.cobranca", string="Cobrança", required=False
     )
 
-    payment_line_ids = fields.One2many(related="payment_id.payment_line_ids")
+    duplicata_ids = fields.One2many(related="cobranca_id.duplicata_ids")
 
-    fatura_id = fields.Many2one(related="payment_id.fatura_id")
+    fatura_id = fields.Many2one(related="cobranca_id.fatura_id")
 
     @api.depends("fiscal_additional_data", "fiscal_additional_data")
     def _compute_nfe40_additional_data(self):

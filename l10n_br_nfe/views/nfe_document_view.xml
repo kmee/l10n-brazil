@@ -32,7 +32,7 @@
           <page name="finance" position="inside">
               <group>
                   <field
-                        name="payment_line_ids"
+                        name="duplicata_ids"
                         attrs="{'invisible': [('imported_document', '=', False)]}"
                     >
                       <tree string="Duplicatas">

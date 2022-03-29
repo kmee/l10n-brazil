@@ -7,25 +7,25 @@ from odoo.addons.spec_driven_model.models import spec_models
 
 
 class DocumentPayment(models.Model):
-    _name = "l10n_br_nfe.document.payment"
+    _name = "l10n_br_nfe.document.cobranca"
     _description = "Dados da Cobrança"
 
-    payment_line_ids = fields.One2many(
-        comodel_name="l10n_br_nfe.document.payment.line",
-        inverse_name="payment_id",
+    duplicata_ids = fields.One2many(
+        comodel_name="l10n_br_nfe.document.cobranca.duplicata",
+        inverse_name="cobranca_id",
         string="Duplicatas",
         required=False,
     )
 
     fatura_id = fields.Many2one(
-        comodel_name="l10n_br_nfe.document.fatura",
+        comodel_name="l10n_br_nfe.document.cobranca.fatura",
         string="Fatura",
     )
 
 
 class NFeCobr(spec_models.StackedModel):
-    _name = "l10n_br_nfe.document.payment"
-    _inherit = ["l10n_br_nfe.document.payment", "nfe.40.cobr"]
+    _name = "l10n_br_nfe.document.cobranca"
+    _inherit = ["l10n_br_nfe.document.cobranca", "nfe.40.cobr"]
     _stacked = "nfe.40.cobr"
     _field_prefix = "nfe40_"
     _schema_name = "nfe"
@@ -38,8 +38,8 @@ class NFeCobr(spec_models.StackedModel):
     _force_stack_paths = ()
 
     nfe40_dup = fields.One2many(
-        comodel_name="l10n_br_nfe.document.payment.line",
-        inverse_name="payment_id",
+        comodel_name="l10n_br_nfe.document.cobranca.duplicata",
+        inverse_name="cobranca_id",
         string="Duplicatas",
         required=False,
     )
@@ -48,10 +48,10 @@ class NFeCobr(spec_models.StackedModel):
 
 
 class DocumentFatura(models.Model):
-    _name = "l10n_br_nfe.document.fatura"
+    _name = "l10n_br_nfe.document.cobranca.fatura"
     _description = "Dados da Fatura"
 
-    payment_number = fields.Char(
+    cobranca_number = fields.Char(
         string="Número da Fatura",
     )
 
@@ -78,8 +78,8 @@ class DocumentFatura(models.Model):
 
 
 class NFeFat(spec_models.StackedModel):
-    _name = "l10n_br_nfe.document.fatura"
-    _inherit = ["l10n_br_nfe.document.fatura", "nfe.40.fat"]
+    _name = "l10n_br_nfe.document.cobranca.fatura"
+    _inherit = ["l10n_br_nfe.document.cobranca.fatura", "nfe.40.fat"]
     _stacked = "nfe.40.fat"
     _field_prefix = "nfe40_"
     _schema_name = "nfe"
@@ -91,7 +91,7 @@ class NFeFat(spec_models.StackedModel):
     # all m2o below this level will be stacked even if not required:
     _force_stack_paths = ()
 
-    nfe40_nFat = fields.Char(related="payment_number")
+    nfe40_nFat = fields.Char(related="cobranca_number")
 
     nfe40_vOrig = fields.Monetary(related="amount_original")
 
@@ -101,7 +101,7 @@ class NFeFat(spec_models.StackedModel):
 
 
 class DocumentPaymentLine(models.Model):
-    _name = "l10n_br_nfe.document.payment.line"
+    _name = "l10n_br_nfe.document.cobranca.duplicata"
     _description = "Duplicatas"
 
     line_number = fields.Char(
@@ -114,8 +114,8 @@ class DocumentPaymentLine(models.Model):
 
     amount_total = fields.Monetary(string="Valor", currency_field="currency_id")
 
-    payment_id = fields.Many2one(
-        comodel_name="l10n_br_nfe.document.payment",
+    cobranca_id = fields.Many2one(
+        comodel_name="l10n_br_nfe.document.cobranca",
         string="Cobrança",
     )
 
@@ -136,8 +136,8 @@ class DocumentPaymentLine(models.Model):
 
 
 class NFeDupLine(spec_models.StackedModel):
-    _name = "l10n_br_nfe.document.payment.line"
-    _inherit = ["l10n_br_nfe.document.payment.line", "nfe.40.dup"]
+    _name = "l10n_br_nfe.document.cobranca.duplicata"
+    _inherit = ["l10n_br_nfe.document.cobranca.duplicata", "nfe.40.dup"]
     _stacked = "nfe.40.dup"
     _field_prefix = "nfe40_"
     _schema_name = "nfe"
