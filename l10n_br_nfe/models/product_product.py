@@ -61,17 +61,14 @@ class ProductProduct(models.Model):
 class SupplierInfo(models.Model):
     _inherit = "product.supplierinfo"
 
-    product_uom = fields.Many2one(
+    partner_uom = fields.Many2one(
         "uom.uom",
-        "Unit of Measure",
-        related="",
-        readonly=False,
-        required=True,
+        "Partner Unit of Measure",
         help="This comes from the last imported document.",
     )
 
     def create(self, vals):
         res = super(SupplierInfo, self).create(vals)
-        if not res.product_uom:
-            res.product_uom = res.product_tmpl_id.uom_id
+        if not res.partner_uom:
+            res.partner_uom = res.product_tmpl_id.uom_id
         return res

@@ -256,7 +256,7 @@ class NfeImport(models.TransientModel):
                     ._compute_price(
                         product_line.price_unit_com, product_line.product_id.uom_id
                     ),
-                    "product_uom": product_line.uom_internal.id,
+                    "partner_uom": product_line.uom_internal.id,
                 }
                 partner_product_relation.update(values)
             else:
@@ -265,7 +265,7 @@ class NfeImport(models.TransientModel):
                         "name": edoc.partner_id.id,
                         "product_name": product_line.product_name,
                         "product_id": product_line.product_id.id,
-                        "product_uom": product_line.uom_internal.id,
+                        "partner_uom": product_line.uom_internal.id,
                         "price": self.env["uom.uom"]
                         .browse(product_line.uom_internal.id)
                         ._compute_price(
@@ -286,7 +286,7 @@ class NfeImport(models.TransientModel):
             )
             if partner_product_relation:
                 product_line.product_id = partner_product_relation.product_id
-                product_line.uom_internal = partner_product_relation.product_uom
+                product_line.uom_internal = partner_product_relation.partner_uom
 
     def _attach_original_nfe_xml_to_document(self, edoc):
         vals = {
