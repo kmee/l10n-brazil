@@ -311,7 +311,9 @@ class NFe(spec_models.StackedModel):
     )
 
     nfe40_cobr = fields.Many2one(
-        related="cobranca_id",
+        comodel_name="l10n_br_nfe.document.cobranca",
+        compute="_compute_cobranca_id_fields",
+        # related="cobranca_id",
     )
 
     transporter_id = fields.Many2one(
@@ -332,9 +334,28 @@ class NFe(spec_models.StackedModel):
         comodel_name="l10n_br_nfe.document.cobranca", string="Cobrança", required=False
     )
 
-    duplicata_ids = fields.One2many(related="cobranca_id.duplicata_ids")
+    duplicata_ids = fields.One2many(
+        comodel_name="l10n_br_nfe.document.cobranca.duplicata",
+        compute="_compute_cobranca_id_fields",
+        # related="cobranca_id.duplicata_ids"
+    )
 
-    fatura_id = fields.Many2one(related="cobranca_id.fatura_id")
+    fatura_id = fields.Many2one(
+        comodel_name="l10n_br_nfe.document.cobranca.fatura",
+        compute="_compute_cobranca_id_fields",
+        # related="cobranca_id.fatura_id"
+    )
+
+    @api.depends("cobranca_id")
+    def _compute_cobranca_id_fields(self):
+        for record in self:
+            record.duplicata_ids = False
+            record.fatura_id = False
+            record.nfe40_cobr = False
+            if len(record.cobranca_id) > 0:
+                record.nfe40_cobr = record.cobranca_id
+                record.duplicata_ids = record.cobranca_id.duplicata_ids
+                record.fatura_id = record.cobranca_id.fatura_id
 
     @api.depends("fiscal_additional_data", "fiscal_additional_data")
     def _compute_nfe40_additional_data(self):
