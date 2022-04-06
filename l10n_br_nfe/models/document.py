@@ -214,6 +214,20 @@ class NFe(spec_models.StackedModel):
 
     # <cDV>0</cDV> TODO
 
+    modFrete = fields.Selection(
+        MODFRETE_TRANSP,
+        string="Modalidade do frete",
+        help="Modalidade do frete"
+        "\n0- Contratação do Frete por conta do Remetente (CIF);"
+        "\n1- Contratação do Frete por conta do destinatário/remetente (FOB);"
+        "\n2- Contratação do Frete por conta de terceiros;"
+        "\n3- Transporte próprio por conta do remetente;"
+        "\n4- Transporte próprio por conta do destinatário;"
+        "\n9- Sem Ocorrência de transporte.",
+        default="9",
+    )
+>>>>>>> [REF] cleaner import code
+
     nfe40_tpAmb = fields.Selection(related="nfe_environment")
 
     nfe_environment = fields.Selection(
@@ -496,6 +510,12 @@ class NFe(spec_models.StackedModel):
     )
 
     imported_document = fields.Boolean(string="Imported", default=False)
+
+    partner_document_number = fields.Char(
+        string="Partner Document Number",
+        copy=False,
+        index=True,
+    )
 
     @api.depends("fiscal_additional_data", "fiscal_additional_data")
     def _compute_nfe40_additional_data(self):
@@ -809,6 +829,138 @@ class NFe(spec_models.StackedModel):
             if not record.date_in_out:
                 record.date_in_out = fields.Datetime.now()
 
+<<<<<<< HEAD
+=======
+    def _export_fields(self, xsd_fields, class_obj, export_dict):
+        if self.company_id.partner_id.state_id.ibge_code:
+            self.nfe40_cUF = self.company_id.partner_id.state_id.ibge_code
+        if self.document_type_id.code:
+            self.nfe40_mod = self.document_type_id.code
+        self.nfe40_cMunFG = self.company_id.partner_id.city_id.ibge_code
+        return super(NFe, self)._export_fields(xsd_fields, class_obj, export_dict)
+
+    def _export_field(self, xsd_field, class_obj, member_spec):
+        if xsd_field in ("nfe40_vICMSUFDest", "nfe40_vICMSUFRemet"):
+            if (
+                self.ind_final == "1"
+                and self.nfe40_idDest == "2"
+                and self.nfe40_indIEDest == "9"
+            ):
+                self.nfe40_vICMSUFDest = sum(self.line_ids.mapped("nfe40_vICMSUFDest"))
+                self.nfe40_vICMSUFRemet = sum(
+                    self.line_ids.mapped("nfe40_vICMSUFRemet")
+                )
+            else:
+                self.nfe40_vICMSUFDest = 0.0
+                self.nfe40_vICMSUFRemet = 0.0
+        if xsd_field == "nfe40_tpAmb":
+            self.env.context = dict(self.env.context)
+            self.env.context.update({"tpAmb": self[xsd_field]})
+        elif xsd_field == "nfe40_vTroco" and (
+            self.nfe40_detPag and self.nfe40_detPag[0].nfe40_tPag == "90"
+        ):
+            return False
+        return super(NFe, self)._export_field(xsd_field, class_obj, member_spec)
+
+    def _export_many2one(self, field_name, xsd_required, class_obj=None):
+        self.ensure_one()
+        if field_name in self._stacking_points.keys():
+            if field_name == "nfe40_ISSQNtot" and not any(
+                t == "issqn"
+                for t in self.nfe40_det.mapped("product_id.tax_icms_or_issqn")
+            ):
+                return False
+
+            elif (not xsd_required) and field_name not in ["nfe40_enderDest"]:
+                comodel = self.env[self._stacking_points.get(field_name).comodel_name]
+                fields = [
+                    f for f in comodel._fields if f.startswith(self._field_prefix)
+                ]
+                sub_tag_read = self.read(fields)[0]
+                if not any(
+                    v
+                    for k, v in sub_tag_read.items()
+                    if k.startswith(self._field_prefix)
+                ):
+                    return False
+
+        return super(NFe, self)._export_many2one(field_name, xsd_required, class_obj)
+
+    def _export_float_monetary(self, field_name, member_spec, class_obj, xsd_required):
+        if field_name == "nfe40_vProd" and class_obj._name == "nfe.40.icmstot":
+            self[field_name] = sum(self["nfe40_det"].mapped("nfe40_vProd"))
+        return super(NFe, self)._export_float_monetary(
+            field_name, member_spec, class_obj, xsd_required
+        )
+
+    def _export_one2many(self, field_name, class_obj=None):
+        res = super(NFe, self)._export_one2many(field_name, class_obj)
+        i = 0
+        for field_data in res:
+            i += 1
+            if class_obj._fields[field_name].comodel_name == "nfe.40.det":
+                field_data.nItem = i
+        return res
+
+    def _build_attr(self, node, fields, vals, path, attr):
+        key = "nfe40_%s" % (attr.get_name(),)  # TODO schema wise
+        value = getattr(node, attr.get_name())
+
+        if key == "nfe40_mod":
+            vals["document_type_id"] = (
+                self.env["l10n_br_fiscal.document.type"]
+                .search([("code", "=", value)], limit=1)
+                .id
+            )
+
+        return super(NFe, self)._build_attr(node, fields, vals, path, attr)
+
+    def _build_many2one(self, comodel, vals, new_value, key, value, path):
+        if key == "nfe40_emit" and self.env.context.get("edoc_type") == "in":
+            enderEmit_value = self.env["res.partner"].build_attrs(
+                value.enderEmit, path=path
+            )
+            new_value.update(enderEmit_value)
+            new_value["is_company"] = True
+            new_value["cnpj_cpf"] = new_value.get("nfe40_CNPJ")
+            super()._build_many2one(
+                self.env["res.partner"], vals, new_value, "partner_id", value, path
+            )
+        elif key == "nfe40_entrega" and self.env.context.get("edoc_type") == "in":
+            enderEntreg_value = self.env["res.partner"].build_attrs(value, path=path)
+            new_value.update(enderEntreg_value)
+            parent_domain = [("nfe40_CNPJ", "=", new_value.get("nfe40_CNPJ"))]
+            parent_partner_match = self.env["res.partner"].search(
+                parent_domain, limit=1
+            )
+            new_vals = {
+                "nfe40_CNPJ": False,
+                "type": "delivery",
+                "parent_id": parent_partner_match.id,
+                "company_type": "person",
+            }
+            new_value.update(new_vals)
+            super()._build_many2one(
+                self.env["res.partner"], vals, new_value, key, value, path
+            )
+        elif self.env.context.get("edoc_type") == "in" and key in [
+            "nfe40_dest",
+            "nfe40_enderDest",
+        ]:
+            # this would be the emit/company data, but we won't update it on
+            # NFe import so just do nothing
+            return
+        elif (
+            self._name == "account.invoice"
+            and comodel._name == "l10n_br_fiscal.document"
+        ):
+            # module l10n_br_account_nfe
+            # stacked m2o
+            vals.update(new_value)
+        else:
+            super(NFe, self)._build_many2one(comodel, vals, new_value, key, value, path)
+
+>>>>>>> [REF] cleaner import code
     def view_pdf(self):
         if not self.filtered(filter_processador_edoc_nfe):
             return super().view_pdf()
@@ -1008,4 +1160,17 @@ class NFe(spec_models.StackedModel):
         return document
 
     def import_xml(self, nfe_binding, dry_run, edoc_type="out"):
-        return self._import_xml_nfe(nfe_binding, dry_run, edoc_type)
+        document = self._import_xml_nfe(nfe_binding, dry_run, edoc_type)
+        if document.imported_document:
+            partner_id = document.partner_id
+            if partner_id:
+                sequence_id = partner_id.imported_document_sequence
+                if not sequence_id:
+                    sequence_id = partner_id._create_imported_document_sequence()
+                document.partner_document_number = document.document_number
+                document.document_number = (
+                    re.sub(r"[^\w]", "", partner_id.cnpj_cpf)
+                    + "/NFe-"
+                    + str(sequence_id.next_by_id())
+                )
+        return document
