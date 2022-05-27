@@ -802,8 +802,6 @@ class NFe(spec_models.StackedModel):
             if not record.date_in_out:
                 record.date_in_out = fields.Datetime.now()
 
-<<<<<<< HEAD
-=======
     def _export_fields(self, xsd_fields, class_obj, export_dict):
         if self.company_id.partner_id.state_id.ibge_code:
             self.nfe40_cUF = self.company_id.partner_id.state_id.ibge_code
