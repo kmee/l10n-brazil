@@ -414,7 +414,6 @@ class NFe(spec_models.StackedModel):
         string="valor do COFINS (NFe)", related="amount_cofins_value"
     )
 
-<<<<<<< HEAD
     nfe40_vOutro = fields.Monetary(related="amount_other_value")
 
     nfe40_vNF = fields.Monetary(related="amount_total")
@@ -436,15 +435,6 @@ class NFe(spec_models.StackedModel):
     ##########################
     # NF-e tag: transporta
     ##########################
-=======
-    nfe40_infAdFisco = fields.Text(
-        compute="_compute_nfe40_additional_data",
-    )
-
-    nfe40_infCpl = fields.Text(
-        compute="_compute_nfe40_additional_data",
-    )
->>>>>>> [ADD] Added tests and made some minor fixes
 
     nfe40_transporta = fields.Many2one(
         comodel_name="res.partner",
@@ -943,17 +933,6 @@ class NFe(spec_models.StackedModel):
         else:
             super(NFe, self)._build_many2one(comodel, vals, new_value, key, value, path)
 
-<<<<<<< HEAD
->>>>>>> [REF] cleaner import code
-=======
-    def _prepare_import_dict(self, vals, model=None):
-        vals = super(NFe, self)._prepare_import_dict(vals, model)
-        if all(key in vals for key in ("document_number", "nfe40_nNF")):
-            vals["partner_document_number"] = vals.get("nfe40_nNF")
-            vals["document_number"] = ""
-        return vals
-
->>>>>>> [ADD] Added tests and made some minor fixes
     def view_pdf(self):
         if not self.filtered(filter_processador_edoc_nfe):
             return super().view_pdf()
