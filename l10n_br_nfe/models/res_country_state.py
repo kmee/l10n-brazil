@@ -8,14 +8,3 @@ class ResCountryState(models.Model):
     _inherit = "res.country.state"
     _nfe_search_keys = ["ibge_code", "code"]
     _nfe_extra_domain = [("ibge_code", "!=", False)]
-
-    @api.model
-    def match_or_create_m2o(self, rec_dict, parent_dict, model=None):
-        """If state not found, break hard, don't create it"""
-
-        if rec_dict.get("code"):
-            domain = [("code", "=", rec_dict.get("code")), ("ibge_code", "!=", False)]
-            match = self.search(domain, limit=1)
-            if match:
-                return match.id
-        return False
