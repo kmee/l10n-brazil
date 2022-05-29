@@ -21,6 +21,14 @@ class PaymentAcquirerPagseguro(models.Model):
         default=12,
     )
 
+    client_id = fields.Char(string='Client ID')
+
+    client_secret = fields.Char(string='Client Secret')
+
+    crt_file = fields.Binary(string="CRT File")
+
+    key_file = fields.Binary(string="KEY File")
+
     def get_installments_options(self):
         """ Get list of installment options available to compose the html tag """
         return list(range(1, self.pagseguro_max_installments + 1))
@@ -43,8 +51,8 @@ class PaymentAcquirerPagseguro(models.Model):
         """
         payment_token = (
             self.env["payment.token"]
-            .sudo()
-            .create(
+                .sudo()
+                .create(
                 {
                     "cc_holder_name": data["cc_holder_name"],
                     "acquirer_ref": int(data["partner_id"]),

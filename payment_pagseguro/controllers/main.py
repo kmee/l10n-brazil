@@ -58,7 +58,7 @@ class PagseguroController(http.Controller):
 
         r = requests.post(
             api_url_public_keys,
-            headers=acquirer._get_pagseguro_api_headers(),
+            headers=acquirer.sudo()._get_pagseguro_api_headers(),
             json={"type": "card"},
         )
 
