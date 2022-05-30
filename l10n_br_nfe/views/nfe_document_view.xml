@@ -38,14 +38,6 @@
               </group>
           </page>
 
-          <!-- Add Partner Document Number to view -->
-          <xpath
-                expr="//group[@name='document_header_left']/field[@name='document_number']"
-                position="after"
-            >
-                <field name="partner_document_number" />
-          </xpath>
-
           <!-- Hide confirm button for imported documents -->
           <xpath expr="//form/field[@name='document_type']" position="after">
               <field name="imported_document" invisible="1" />
