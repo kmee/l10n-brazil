@@ -486,12 +486,6 @@ class NFe(spec_models.StackedModel):
 
     imported_document = fields.Boolean(string="Imported", default=False)
 
-    partner_document_number = fields.Char(
-        string="Partner Document Number",
-        copy=False,
-        index=True,
-    )
-
     @api.depends("fiscal_additional_data", "fiscal_additional_data")
     def _compute_nfe40_additional_data(self):
         for record in self:
