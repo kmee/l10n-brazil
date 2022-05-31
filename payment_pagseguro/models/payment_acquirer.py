@@ -8,8 +8,7 @@ import requests
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
-CERTIFICATE_PATH = str(
-    pathlib.Path(__file__).parent.resolve()) + "/../static/binary/"
+CERTIFICATE_PATH = str(pathlib.Path(__file__).parent.resolve()) + "/../static/binary/"
 
 
 class PaymentAcquirerPagseguro(models.Model):
@@ -29,9 +28,9 @@ class PaymentAcquirerPagseguro(models.Model):
         default=12,
     )
 
-    client_id = fields.Char(string='Client ID')
+    client_id = fields.Char(string="Client ID")
 
-    client_secret = fields.Char(string='Client Secret')
+    client_secret = fields.Char(string="Client Secret")
 
     crt_file = fields.Binary(string="CRT File")
 
@@ -50,13 +49,13 @@ class PaymentAcquirerPagseguro(models.Model):
     @api.onchange("crt_file")
     def onchange_crt_file(self):
         if self.crt_file:
-            with open(CERTIFICATE_PATH + self.crt_filename, 'wb') as f:
+            with open(CERTIFICATE_PATH + self.crt_filename, "wb") as f:
                 f.write(base64.b64decode(self.crt_file))
 
     @api.onchange("key_file")
     def onchange_key_file(self):
         if self.key_file:
-            with open(CERTIFICATE_PATH + self.key_filename, 'wb') as f:
+            with open(CERTIFICATE_PATH + self.key_filename, "wb") as f:
                 f.write(base64.b64decode(self.key_file))
 
     @api.multi
@@ -69,10 +68,7 @@ class PaymentAcquirerPagseguro(models.Model):
             self.pix_authentication = None
             raise UserError(_("Please add CRT FILe and KEY File."))
         auth = (self.client_id, self.client_secret)
-        data = {
-            "grant_type": "client_credentials",
-            "scope": "pix.write pix.read"
-        }
+        data = {"grant_type": "client_credentials", "scope": "pix.write pix.read"}
 
         r = requests.post(
             url + "/pix/oauth2",
@@ -83,15 +79,18 @@ class PaymentAcquirerPagseguro(models.Model):
 
         data = r.json()
         if r.status_code == 200:
-            self.pix_authentication = data['access_token']
+            self.pix_authentication = data["access_token"]
             self.state_validate = "Ok"
         else:
             self.pix_authentication = None
             self.state_validate = "Error"
-            raise UserError(_(
-                f"Authentication failed.\n\n"
-                f" Code: {r.status_code}\n\n"
-                f"{r.text}"))
+            raise UserError(
+                _(
+                    f"Authentication failed.\n\n"
+                    f" Code: {r.status_code}\n\n"
+                    f"{r.text}"
+                )
+            )
 
     def get_installments_options(self):
         """ Get list of installment options available to compose the html tag """
@@ -115,8 +114,8 @@ class PaymentAcquirerPagseguro(models.Model):
         """
         payment_token = (
             self.env["payment.token"]
-                .sudo()
-                .create(
+            .sudo()
+            .create(
                 {
                     "cc_holder_name": data["cc_holder_name"],
                     "acquirer_ref": int(data["partner_id"]),
