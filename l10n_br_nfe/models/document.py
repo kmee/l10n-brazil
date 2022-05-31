@@ -1109,15 +1109,4 @@ class NFe(spec_models.StackedModel):
         return document
 
     def import_xml(self, nfe_binding, dry_run, edoc_type="out"):
-        document = self._import_xml_nfe(nfe_binding, dry_run, edoc_type)
-        partner_id = document.partner_id
-        if partner_id:
-            sequence_id = partner_id.imported_document_sequence
-            if not sequence_id:
-                sequence_id = partner_id._create_imported_document_sequence()
-            document.document_number = (
-                re.sub(r"[^\w]", "", partner_id.cnpj_cpf)
-                + "/NFe-"
-                + str(sequence_id.next_by_id())
-            )
-        return document
+        return self._import_xml_nfe(nfe_binding, dry_run, edoc_type)
