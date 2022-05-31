@@ -742,10 +742,7 @@ class NFeLine(spec_models.StackedModel):
                         ).id
                     if hasattr(icms, "vICMSDeson") and icms.vICMSDeson is not None:
                         icms_vals["icms_relief_value"] = float(icms.vICMSDeson)
-                    if (
-                        hasattr(icms, "vICMSSubstituto")
-
-                    ):
+                    if (hasattr(icms, "vICMSSubstituto")):
                         icms_vals["icms_substitute"] = float(icms.vICMSSubstituto)
 
                     # ICMS ST fields
