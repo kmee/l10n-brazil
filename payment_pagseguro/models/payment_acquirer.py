@@ -1,7 +1,15 @@
 # Copyright 2020 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+import base64
+import pathlib
 
-from odoo import api, fields, models
+import requests
+
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
+
+CERTIFICATE_PATH = str(
+    pathlib.Path(__file__).parent.resolve()) + "/../static/binary/"
 
 
 class PaymentAcquirerPagseguro(models.Model):
@@ -27,7 +35,63 @@ class PaymentAcquirerPagseguro(models.Model):
 
     crt_file = fields.Binary(string="CRT File")
 
+    crt_filename = fields.Char()
+
     key_file = fields.Binary(string="KEY File")
+
+    key_filename = fields.Char()
+
+    seller_token = fields.Char(string="Seller token")
+
+    pix_authentication = fields.Char(string="Pix authentication")
+
+    state_validate = fields.Char(string="Validate credentials")
+
+    @api.onchange("crt_file")
+    def onchange_crt_file(self):
+        if self.crt_file:
+            with open(CERTIFICATE_PATH + self.crt_filename, 'wb') as f:
+                f.write(base64.b64decode(self.crt_file))
+
+    @api.onchange("key_file")
+    def onchange_key_file(self):
+        if self.key_file:
+            with open(CERTIFICATE_PATH + self.key_filename, 'wb') as f:
+                f.write(base64.b64decode(self.key_file))
+
+    @api.multi
+    def validate_credentials(self):
+        url = self._get_pagseguro_api_url_pix()
+        if self.crt_filename and self.key_filename:
+            crt = CERTIFICATE_PATH + self.crt_filename
+            key = CERTIFICATE_PATH + self.key_filename
+        else:
+            self.pix_authentication = None
+            raise UserError(_("Please add CRT FILe and KEY File."))
+        auth = (self.client_id, self.client_secret)
+        data = {
+            "grant_type": "client_credentials",
+            "scope": "pix.write pix.read"
+        }
+
+        r = requests.post(
+            url + "/pix/oauth2",
+            auth=auth,
+            data=data,
+            cert=(crt, key),
+        )
+
+        data = r.json()
+        if r.status_code == 200:
+            self.pix_authentication = data['access_token']
+            self.state_validate = "Ok"
+        else:
+            self.pix_authentication = None
+            self.state_validate = "Error"
+            raise UserError(_(
+                f"Authentication failed.\n\n"
+                f" Code: {r.status_code}\n\n"
+                f"{r.text}"))
 
     def get_installments_options(self):
         """ Get list of installment options available to compose the html tag """
@@ -106,3 +170,13 @@ class PaymentAcquirerPagseguro(models.Model):
         res["authorize"].append("pagseguro")
         res["tokenize"].append("pagseguro")
         return res
+
+    def _get_pagseguro_api_url_pix(self):
+        """Get pagseguro API PIX URLs.
+
+        Takes environment in consideration.
+        """
+        if self.environment == "test":
+            return "https://secure.sandbox.api.pagseguro.com"
+        if self.environment == "prod":
+            return "https://secure.api.pagseguro.com"

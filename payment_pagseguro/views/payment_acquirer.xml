@@ -8,21 +8,48 @@
         <record model="ir.ui.view" id="payment_acquirer_form_view">
             <field name="name">payment.acquirer.form (in payment_pagseguro)</field>
             <field name="model">payment.acquirer</field>
-            <field name="inherit_id" ref="payment.acquirer_form"/>
+            <field name="inherit_id" ref="payment.acquirer_form" />
             <field name="arch" type="xml">
                 <xpath expr='//group[@name="acquirer"]' position='after'>
                     <group attrs="{'invisible': [('provider', '!=', 'pagseguro')]}">
-                        <field name="pagseguro_token" string="Pagseguro Token" password="True"/>
+                        <field
+                            name="pagseguro_token"
+                            string="Pagseguro Token"
+                            password="True"
+                        />
                     </group>
-                    <group string="PIX" name="pix" attrs="{'invisible': [('provider', '!=', 'pagseguro')]}">
-                        <field name="client_id"/>
-                        <field name="client_secret"/>
-                        <field name="crt_file"/>
-                        <field name="key_file"/>
+                    <group
+                        string="PIX"
+                        name="pix"
+                        attrs="{'invisible': [('provider', '!=', 'pagseguro')]}"
+                    >
+                        <field name="client_id" />
+                        <field name="client_secret" />
+                        <field name="crt_file" filename="crt_filename" />
+                        <field name="crt_filename" invisible="1" />
+                        <field name="key_file" filename="key_filename" />
+                        <field name="key_filename" invisible="1" />
+                        <field name="seller_token" />
                     </group>
                 </xpath>
                 <xpath expr='//field[@name="journal_id"]' position='before'>
-                    <field name="pagseguro_max_installments"/>
+                    <field name="pagseguro_max_installments" />
+                </xpath>
+                <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
+                    <div>
+                        <button
+                            name="validate_credentials"
+                            class="oe_stat_button"
+                            type="object"
+                            icon="fa-check-square-o"
+                        >
+                            <field
+                                name="state_validate"
+                                string="Validate Pix"
+                                widget="statinfo"
+                            />
+                        </button>
+                    </div>
                 </xpath>
             </field>
         </record>
