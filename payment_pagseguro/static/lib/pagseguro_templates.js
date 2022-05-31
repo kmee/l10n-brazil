@@ -2,17 +2,16 @@
 // License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 function onChangePaymentMethod() {
+    let forms = document.getElementsByClassName('form-group');
+    
     if (document.getElementById("payment_form").value === "CREDIT_CARD") {
-        document.getElementById("installments").style.visibility = "visible";
-        document.getElementById("installmentsvalue").style.visibility = "visible";
-        document.querySelector("div > div.row.mt8 > div:nth-child(2) > label").style.visibility = 'visible';
-        document.querySelector("div > div.row.mt8 > div:nth-child(3) > label").style.visibility = 'visible';
-
+        for (let i = 1; i < forms.length; i++) {
+            forms[i].style.display = 'block';
+        }
     } else {
-        document.getElementById("installments").style.visibility = "hidden";
-        document.getElementById("installmentsvalue").style.visibility = "hidden";
-        document.querySelector("div > div.row.mt8 > div:nth-child(2) > label").style.visibility = 'hidden';
-        document.querySelector("div > div.row.mt8 > div:nth-child(3) > label").style.visibility = 'hidden';
+        for (let i = 1; i < forms.length; i++) {
+            forms[i].style.display = 'none';
+        }
     }
 }
 

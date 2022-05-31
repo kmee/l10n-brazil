@@ -1,5 +1,6 @@
 # Copyright 2020 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
 import base64
 from pathlib import Path
 
@@ -77,7 +78,7 @@ class PaymentAcquirerPagseguro(models.Model):
                 self.pagseguro_crt_filename,
                 self.pagseguro_key_filename,
                 self.pagseguro_client_id,
-                self.pagseguro_client_secret
+                self.pagseguro_client_secret,
             ]
         ):
             raise UserError(_("Please fill your PIX credentials."))

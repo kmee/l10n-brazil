@@ -25,9 +25,15 @@
                     >
                         <field name="pagseguro_client_id" />
                         <field name="pagseguro_client_secret" />
-                        <field name="pagseguro_crt_file" filename="pagseguro_crt_filename" />
+                        <field
+                            name="pagseguro_crt_file"
+                            filename="pagseguro_crt_filename"
+                        />
                         <field name="pagseguro_crt_filename" invisible="1" />
-                        <field name="pagseguro_key_file" filename="pagseguro_key_filename" />
+                        <field
+                            name="pagseguro_key_file"
+                            filename="pagseguro_key_filename"
+                        />
                         <field name="pagseguro_key_filename" invisible="1" />
                         <field name="pagseguro_pix_key" />
                         <field name="pagseguro_pix_authenticated" invisible="1" />
