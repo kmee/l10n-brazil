@@ -1,14 +1,14 @@
 # Copyright 2020 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 import base64
-import pathlib
+from pathlib import Path
 
 import requests
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
-CERTIFICATE_PATH = str(pathlib.Path(__file__).parent.resolve()) + "/../static/binary/"
+CERTIFICATE_PATH = str(Path(__file__).parent.resolve()) + "/../static/binary/"
 
 
 class PaymentAcquirerPagseguro(models.Model):
@@ -44,51 +44,68 @@ class PaymentAcquirerPagseguro(models.Model):
 
     pix_authentication = fields.Char(string="Pix authentication")
 
-    state_validate = fields.Char(string="Validate credentials")
+    pix_authenticated = fields.Boolean(default=False)
+
+    @api.onchange("client_id", "client_secret")
+    def onchange_client_credentials(self):
+        self.pix_authenticated = False
 
     @api.onchange("crt_file")
     def onchange_crt_file(self):
         if self.crt_file:
-            with open(CERTIFICATE_PATH + self.crt_filename, "wb") as f:
-                f.write(base64.b64decode(self.crt_file))
+            self.save_certificate(self.crt_file, self.crt_filename)
+        self.pix_authenticated = False
 
     @api.onchange("key_file")
     def onchange_key_file(self):
         if self.key_file:
-            with open(CERTIFICATE_PATH + self.key_filename, "wb") as f:
-                f.write(base64.b64decode(self.key_file))
+            self.save_certificate(self.key_file, self.key_filename)
+        self.pix_authenticated = False
+
+    @staticmethod
+    def save_certificate(content, filename):
+        if not Path(CERTIFICATE_PATH).exists():
+            Path(CERTIFICATE_PATH).mkdir()
+
+        with open(CERTIFICATE_PATH + filename, "wb") as f:
+            f.write(base64.b64decode(content))
 
     @api.multi
     def validate_credentials(self):
+        if not all(
+            [self.crt_filename, self.key_filename, self.client_id, self.client_secret]
+        ):
+            raise UserError(_("Please fill your PIX credentials."))
+
         url = self._get_pagseguro_api_url_pix()
-        if self.crt_filename and self.key_filename:
-            crt = CERTIFICATE_PATH + self.crt_filename
-            key = CERTIFICATE_PATH + self.key_filename
-        else:
-            self.pix_authentication = None
-            raise UserError(_("Please add CRT FILe and KEY File."))
+        crt = CERTIFICATE_PATH + self.crt_filename
+        key = CERTIFICATE_PATH + self.key_filename
         auth = (self.client_id, self.client_secret)
         data = {"grant_type": "client_credentials", "scope": "pix.write pix.read"}
 
-        r = requests.post(
-            url + "/pix/oauth2",
-            auth=auth,
-            data=data,
-            cert=(crt, key),
-        )
+        try:
+            r = requests.post(
+                url + "/pix/oauth2",
+                auth=auth,
+                data=data,
+                cert=(crt, key),
+            )
+        except Exception:
+            raise UserError(_("Authentication failed"))
 
         data = r.json()
         if r.status_code == 200:
-            self.pix_authentication = data["access_token"]
-            self.state_validate = "Ok"
+            self.pix_authentication = data.get("access_token")
+            self.pix_authenticated = True
         else:
-            self.pix_authentication = None
-            self.state_validate = "Error"
+            self.pix_authentication = False
+            self.pix_authenticated = False
+            error = data.get("error_messages")[0]
             raise UserError(
                 _(
                     f"Authentication failed.\n\n"
-                    f" Code: {r.status_code}\n\n"
-                    f"{r.text}"
+                    f" Code: {error.get('code')}\n\n"
+                    f"{error.get('description')}"
                 )
             )
 

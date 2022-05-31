@@ -23,19 +23,6 @@
             ><![CDATA[
 <p>You will be redirected to the pagseguro website after clicking on the payment button.</p>]]></field>
             <field name='pagseguro_token'>dummy</field>
-            <!-- Dados PIX: -->
-            <field name="client_id">4167fa34-3b0f-11eb-adc1-0242ac120002</field>
-            <field name="client_secret">45ebc59a-3b0f-11eb-adc1-0242ac120002</field>
-            <field
-                name="crt_file"
-                type="base64"
-                file="payment_pagseguro/static/binary/kmee-sandbox.pem"
-            />
-            <field
-                name="key_file"
-                type="base64"
-                file="payment_pagseguro/static/binary/kmee-sandbox.key"
-            />
             <field
                 name="payment_icon_ids"
                 eval="[(6, 0, [

@@ -30,6 +30,7 @@
                         <field name="key_file" filename="key_filename" />
                         <field name="key_filename" invisible="1" />
                         <field name="seller_token" />
+                        <field name="pix_authenticated" invisible="1" />
                     </group>
                 </xpath>
                 <xpath expr='//field[@name="journal_id"]' position='before'>
@@ -39,15 +40,21 @@
                     <div>
                         <button
                             name="validate_credentials"
-                            class="oe_stat_button"
+                            class="oe_stat_button o_field_widget"
                             type="object"
-                            icon="fa-check-square-o"
+                            icon="fa-check"
+                            attrs="{'invisible': [('pix_authenticated', '=', False)]}"
                         >
-                            <field
-                                name="state_validate"
-                                string="Validate Pix"
-                                widget="statinfo"
-                            />
+                            <span class="text-success">PIX Validated</span>
+                        </button>
+                        <button
+                            name="validate_credentials"
+                            class="oe_stat_button o_field_widget"
+                            type="object"
+                            icon="fa-times"
+                            attrs="{'invisible': [('pix_authenticated', '=', True)]}"
+                        >
+                            <span class="text-danger">PIX Validated</span>
                         </button>
                     </div>
                 </xpath>
