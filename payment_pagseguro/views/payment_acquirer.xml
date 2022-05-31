@@ -23,14 +23,14 @@
                         name="pix"
                         attrs="{'invisible': [('provider', '!=', 'pagseguro')]}"
                     >
-                        <field name="client_id" />
-                        <field name="client_secret" />
-                        <field name="crt_file" filename="crt_filename" />
-                        <field name="crt_filename" invisible="1" />
-                        <field name="key_file" filename="key_filename" />
-                        <field name="key_filename" invisible="1" />
-                        <field name="seller_token" />
-                        <field name="pix_authenticated" invisible="1" />
+                        <field name="pagseguro_client_id" />
+                        <field name="pagseguro_client_secret" />
+                        <field name="pagseguro_crt_file" filename="pagseguro_crt_filename" />
+                        <field name="pagseguro_crt_filename" invisible="1" />
+                        <field name="pagseguro_key_file" filename="pagseguro_key_filename" />
+                        <field name="pagseguro_key_filename" invisible="1" />
+                        <field name="pagseguro_pix_key" />
+                        <field name="pagseguro_pix_authenticated" invisible="1" />
                     </group>
                 </xpath>
                 <xpath expr='//field[@name="journal_id"]' position='before'>
@@ -39,20 +39,20 @@
                 <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
                     <div>
                         <button
-                            name="validate_credentials"
+                            name="pagseguro_pix_validate"
                             class="oe_stat_button o_field_widget"
                             type="object"
                             icon="fa-check"
-                            attrs="{'invisible': [('pix_authenticated', '=', False)]}"
+                            attrs="{'invisible': [('pagseguro_pix_authenticated', '=', False)]}"
                         >
                             <span class="text-success">PIX Validated</span>
                         </button>
                         <button
-                            name="validate_credentials"
+                            name="pagseguro_pix_validate"
                             class="oe_stat_button o_field_widget"
                             type="object"
                             icon="fa-times"
-                            attrs="{'invisible': [('pix_authenticated', '=', True)]}"
+                            attrs="{'invisible': [('pagseguro_pix_authenticated', '=', True)]}"
                         >
                             <span class="text-danger">PIX Validated</span>
                         </button>

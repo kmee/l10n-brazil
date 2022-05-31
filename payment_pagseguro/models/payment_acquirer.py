@@ -28,39 +28,39 @@ class PaymentAcquirerPagseguro(models.Model):
         default=12,
     )
 
-    client_id = fields.Char(string="Client ID")
+    pagseguro_client_id = fields.Char(string="Pagseguro Client ID")
 
-    client_secret = fields.Char(string="Client Secret")
+    pagseguro_client_secret = fields.Char(string="Pagseguro Client Secret")
 
-    crt_file = fields.Binary(string="CRT File")
+    pagseguro_crt_file = fields.Binary(string="Pagseguro CRT File")
 
-    crt_filename = fields.Char()
+    pagseguro_crt_filename = fields.Char()
 
-    key_file = fields.Binary(string="KEY File")
+    pagseguro_key_file = fields.Binary(string="Pagseguro KEY File")
 
-    key_filename = fields.Char()
+    pagseguro_key_filename = fields.Char()
 
-    seller_token = fields.Char(string="Seller token")
+    pagseguro_pix_key = fields.Char(string="Pagseguro PIX Key")
 
-    pix_authentication = fields.Char(string="Pix authentication")
+    pagseguro_pix_acces_token = fields.Char()
 
-    pix_authenticated = fields.Boolean(default=False)
+    pagseguro_pix_authenticated = fields.Boolean(default=False)
 
-    @api.onchange("client_id", "client_secret")
+    @api.onchange("pagseguro_client_id", "pagseguro_client_secret")
     def onchange_client_credentials(self):
-        self.pix_authenticated = False
+        self.pagseguro_pix_authenticated = False
 
-    @api.onchange("crt_file")
+    @api.onchange("pagseguro_crt_file")
     def onchange_crt_file(self):
-        if self.crt_file:
-            self.save_certificate(self.crt_file, self.crt_filename)
-        self.pix_authenticated = False
+        if self.pagseguro_crt_file:
+            self.save_certificate(self.pagseguro_crt_file, self.pagseguro_crt_filename)
+        self.pagseguro_pix_authenticated = False
 
-    @api.onchange("key_file")
+    @api.onchange("pagseguro_key_file")
     def onchange_key_file(self):
-        if self.key_file:
-            self.save_certificate(self.key_file, self.key_filename)
-        self.pix_authenticated = False
+        if self.pagseguro_key_file:
+            self.save_certificate(self.pagseguro_key_file, self.pagseguro_key_filename)
+        self.pagseguro_pix_authenticated = False
 
     @staticmethod
     def save_certificate(content, filename):
@@ -71,16 +71,21 @@ class PaymentAcquirerPagseguro(models.Model):
             f.write(base64.b64decode(content))
 
     @api.multi
-    def validate_credentials(self):
+    def pagseguro_pix_validate(self):
         if not all(
-            [self.crt_filename, self.key_filename, self.client_id, self.client_secret]
+            [
+                self.pagseguro_crt_filename,
+                self.pagseguro_key_filename,
+                self.pagseguro_client_id,
+                self.pagseguro_client_secret
+            ]
         ):
             raise UserError(_("Please fill your PIX credentials."))
 
         url = self._get_pagseguro_api_url_pix()
-        crt = CERTIFICATE_PATH + self.crt_filename
-        key = CERTIFICATE_PATH + self.key_filename
-        auth = (self.client_id, self.client_secret)
+        crt = CERTIFICATE_PATH + self.pagseguro_crt_filename
+        key = CERTIFICATE_PATH + self.pagseguro_key_filename
+        auth = (self.pagseguro_client_id, self.pagseguro_client_secret)
         data = {"grant_type": "client_credentials", "scope": "pix.write pix.read"}
 
         try:
@@ -95,11 +100,11 @@ class PaymentAcquirerPagseguro(models.Model):
 
         data = r.json()
         if r.status_code == 200:
-            self.pix_authentication = data.get("access_token")
-            self.pix_authenticated = True
+            self.pagseguro_pix_acces_token = data.get("access_token")
+            self.pagseguro_pix_authenticated = True
         else:
-            self.pix_authentication = False
-            self.pix_authenticated = False
+            self.pagseguro_pix_acces_token = False
+            self.pagseguro_pix_authenticated = False
             error = data.get("error_messages")[0]
             raise UserError(
                 _(
