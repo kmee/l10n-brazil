@@ -257,10 +257,7 @@ class AbstractSpecMixin(models.AbstractModel):
                 if hasattr(model, "_nfe_extra_domain"):
                     domain = model._nfe_extra_domain + [(key, "=", rec_dict.get(key))]
                 else:
-                    operator = (
-                        "=" if not isinstance(rec_dict.get(key), str) else "ilike"
-                    )
-                    domain = [(key, operator, rec_dict.get(key))]
+                    domain = [(key, '=', rec_dict.get(key))]
                 match_ids = model.search(domain)
                 if match_ids:
                     if len(match_ids) > 1:
