@@ -191,7 +191,6 @@ class NFe(spec_models.StackedModel):
         selection=NFE_DANFE_LAYOUTS + NFCE_DANFE_LAYOUTS,
         string="Danfe Layout",
     )
-
     nfe40_tpEmis = fields.Selection(
         related="nfe_transmission"
     )  # TODO no caso de entrada
