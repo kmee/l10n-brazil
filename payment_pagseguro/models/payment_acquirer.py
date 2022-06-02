@@ -2,12 +2,16 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 import base64
+import logging
+import tempfile
 from pathlib import Path
 
 import requests
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+
+_logger = logging.getLogger(__name__)
 
 CERTIFICATE_PATH = str(Path(__file__).parent.resolve()) + "/../static/binary/"
 
@@ -41,51 +45,59 @@ class PaymentAcquirerPagseguro(models.Model):
 
     pagseguro_key_filename = fields.Char()
 
-    pagseguro_pix_key = fields.Char(string="Pagseguro PIX Key")
+    pagseguro_tx_id = fields.Char(string="Transaction id")
 
     pagseguro_pix_acces_token = fields.Char()
 
     pagseguro_pix_authenticated = fields.Boolean(default=False)
 
-    @api.onchange("pagseguro_client_id", "pagseguro_client_secret")
+    pagseguro_pix_expiration = fields.Integer(
+        string="Pagseguro PIX Expiration",
+        default=3600,
+        help="Representa o tempo de vida da cobrança, "
+        "especificado em segundos a partir da data de criação",
+    )
+
+    @api.onchange(
+        "pagseguro_client_id",
+        "pagseguro_client_secret",
+        "pagseguro_crt_file",
+        "pagseguro_key_file",
+    )
     def onchange_client_credentials(self):
         self.pagseguro_pix_authenticated = False
 
-    @api.onchange("pagseguro_crt_file")
-    def onchange_crt_file(self):
-        if self.pagseguro_crt_file:
-            self.save_certificate(self.pagseguro_crt_file, self.pagseguro_crt_filename)
-        self.pagseguro_pix_authenticated = False
-
-    @api.onchange("pagseguro_key_file")
-    def onchange_key_file(self):
-        if self.pagseguro_key_file:
-            self.save_certificate(self.pagseguro_key_file, self.pagseguro_key_filename)
-        self.pagseguro_pix_authenticated = False
-
     @staticmethod
-    def save_certificate(content, filename):
-        if not Path(CERTIFICATE_PATH).exists():
-            Path(CERTIFICATE_PATH).mkdir()
+    def _save_certificate(certificate_binary, suffix):
+        """Save certificate in a temporary directory and return its path"""
+        fd, path = tempfile.mkstemp(suffix=suffix)
+        content = base64.b64decode(certificate_binary).decode("utf-8")
 
-        with open(CERTIFICATE_PATH + filename, "wb") as f:
-            f.write(base64.b64decode(content))
+        with open(fd, "w") as f:
+            f.write(content)
+
+        return path
 
     @api.multi
     def pagseguro_pix_validate(self):
+        """Validate Pagseguro PIX credentials
+
+        Calls Pagseguro API to validate client credentials.
+        """
         if not all(
             [
-                self.pagseguro_crt_filename,
-                self.pagseguro_key_filename,
+                self.pagseguro_crt_file,
+                self.pagseguro_key_file,
                 self.pagseguro_client_id,
                 self.pagseguro_client_secret,
             ]
         ):
             raise UserError(_("Please fill your PIX credentials."))
 
+        # Request parameters
+        crt_path = self._save_certificate(self.pagseguro_crt_file, suffix=".pem")
+        key_path = self._save_certificate(self.pagseguro_key_file, suffix=".key")
         url = self._get_pagseguro_api_url_pix()
-        crt = CERTIFICATE_PATH + self.pagseguro_crt_filename
-        key = CERTIFICATE_PATH + self.pagseguro_key_filename
         auth = (self.pagseguro_client_id, self.pagseguro_client_secret)
         data = {"grant_type": "client_credentials", "scope": "pix.write pix.read"}
 
@@ -94,9 +106,10 @@ class PaymentAcquirerPagseguro(models.Model):
                 url + "/pix/oauth2",
                 auth=auth,
                 data=data,
-                cert=(crt, key),
+                cert=(crt_path, key_path),
             )
-        except Exception:
+        except Exception as e:
+            _logger.error(e)
             raise UserError(_("Authentication failed"))
 
         data = r.json()
@@ -116,7 +129,7 @@ class PaymentAcquirerPagseguro(models.Model):
             )
 
     def get_installments_options(self):
-        """ Get list of installment options available to compose the html tag """
+        """Get list of installment options available to compose the html tag"""
         return list(range(1, self.pagseguro_max_installments + 1))
 
     @api.multi
@@ -147,6 +160,26 @@ class PaymentAcquirerPagseguro(models.Model):
                     "pagseguro_card_token": data["cc_token"],
                     "pagseguro_payment_method": data["payment_method"],
                     "pagseguro_installments": int(data["installments"]),
+                }
+            )
+        )
+        return payment_token
+
+    @api.model
+    def pagseguro_pix_form_process(self, data):
+        """Saves the payment.token object with data from PagSeguro server
+
+        Cvc, number and expiry date card info should be empty by this point.
+        """
+        payment_token = (
+            self.env["payment.token"]
+            .sudo()
+            .create(
+                {
+                    "acquirer_ref": int(data["partner_id"]),
+                    "acquirer_id": int(data["acquirer_id"]),
+                    "partner_id": int(data["partner_id"]),
+                    "pagseguro_tx_id": data["tx_id"],
                 }
             )
         )

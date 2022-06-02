@@ -28,6 +28,47 @@ class PaymentTransactionPagseguro(models.Model):
         required=False,
     )
 
+    @api.multi
+    def _create_pagseguro_pix_charge(self):
+        if not self.acquirer_id.pagseguro_pix_acces_token:
+            return {"result": False, "error_message": "No Access Token"}
+
+        url = self.acquirer_id._get_pagseguro_api_url_pix()
+        auth_token = self.acquirer_id.pagseguro_pix_acces_token
+        header = {"Authorization": "Bearer" + auth_token}
+        data = {
+            "calendario": {"expiracao": "3600"},
+            "devedor": {
+                "cpf": self.payment_token_id.partner_id.cpf_cnpj,
+                "nome": self.payment_token_id.partner_id.name,
+            },
+            "valor": {"original": int(self.amount * 100)},
+            "chave": self.acquirer_id.pagseguro_pix_key,
+            "solicitacaoPagador": "Serviço realizado.",
+        }
+
+        try:
+            r = requests.put(
+                url + "/instant-payments/cob/" + self.payment_token_id.pagseguro_tx_id,
+                data=data,
+                headers=header,
+            )
+        except Exception:
+            return {"result": False, "error_message": "Transaction failed"}
+
+        res = r.json()
+        if r.status_code == 200:
+            self.acquirer_id.pagseguro_pix_authenticated = True
+        else:
+            self.acquirer_id.pagseguro_pix_authenticated = False
+            # error = data.get("error_messages")[0]
+        _logger.info(
+            "_create_pagseguro_charge: Values received:\n%s",
+            self.pprint_filtered_response(res),
+        )
+
+        return res
+
     def _create_pagseguro_charge(self):
         """Creates the s2s payment.
 
@@ -54,11 +95,21 @@ class PaymentTransactionPagseguro(models.Model):
         )
         return res
 
+    def _pagseguro_pix_validate_tree(self, result):
+        """Not implemented"""
+        return False
+
+    @api.multi
+    def pagseguro_pix_do_transaction(self):
+        self.ensure_one()
+
+        result = self._create_pagseguro_pix_charge()
+        return self._pagseguro_pix_validate_tree(result)
+
     @api.multi
     def pagseguro_s2s_do_transaction(self, **kwargs):
         self.ensure_one()
         result = self._create_pagseguro_charge()
-
         return self._pagseguro_s2s_validate_tree(result)
 
     @api.multi
@@ -250,7 +301,7 @@ class PaymentTransactionPagseguro(models.Model):
         return CHARGE_PARAMS
 
     def log_transaction(self, reference, message):
-        """ Logs a transaction. It can be either a successful or a failed one. """
+        """Logs a transaction. It can be either a successful or a failed one."""
         self.sudo().write(
             {
                 "date": fields.datetime.now(),
