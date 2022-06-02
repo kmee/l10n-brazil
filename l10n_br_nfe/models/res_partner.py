@@ -178,16 +178,3 @@ class ResPartner(spec_models.SpecModel):
             if self.country_id.code != "BR":
                 return self.vat or self.cnpj_cpf or self.rg or "EXTERIOR"
         return super()._export_field(xsd_field, class_obj, member_spec)
-
-    @api.model
-    def _create_imported_document_sequence(self):
-        sequence = {
-            "name": self.name,
-            "implementation": "no_gap",
-            "padding": 2,
-            "number_increment": 1,
-        }
-        self.imported_document_sequence = (
-            self.env["ir.sequence"].sudo().create(sequence)
-        )
-        return self.imported_document_sequence
