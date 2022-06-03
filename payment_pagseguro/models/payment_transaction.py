@@ -31,7 +31,7 @@ class PaymentTransactionPagseguro(models.Model):
     @api.multi
     def _create_pagseguro_pix_charge(self, cert):
         if not self.acquirer_id.pagseguro_pix_acces_token:
-            return {"result": False, "error_message": "No Access Token"}
+            return {"status": "INVALID", "error": "No Access Token"}
 
         url = self.acquirer_id._get_pagseguro_api_url_pix()
         auth_token = self.acquirer_id.pagseguro_pix_acces_token
@@ -47,7 +47,7 @@ class PaymentTransactionPagseguro(models.Model):
                 "cpf": cpf.replace(".", "").replace("-", ""),
                 "nome": str(self.payment_token_id.partner_id.name),
             },
-            "valor": {"original": str(round(self.amount, 2))},
+            "valor": {"original": "%.2f" % self.amount},
             "chave": str(self.acquirer_id.pagseguro_pix_key),
             "solicitacaoPagador": "Compra online.",
         }
@@ -56,7 +56,7 @@ class PaymentTransactionPagseguro(models.Model):
             r = requests.put(
                 url + "/instant-payments/cob/" + self.payment_token_id.pagseguro_tx_id,
                 json=payload,
-                cert=(cert.get("crt_path"), cert.get("key_path")),
+                cert=(cert[0], cert[1]),
                 headers=header,
             )
         except Exception as e:
@@ -100,7 +100,7 @@ class PaymentTransactionPagseguro(models.Model):
     @api.multi
     def pagseguro_pix_do_transaction(self):
         self.ensure_one()
-        cert = self.acquirer_id.pagseguro_pix_validate()
+        cert = self.acquirer_id.get_cert()
         charge = self._create_pagseguro_pix_charge(cert)
         return self._pagseguro_pix_validate_tree(charge)
 
@@ -115,6 +115,8 @@ class PaymentTransactionPagseguro(models.Model):
             self.payment_token_id.verified = True
 
             return {"result": True, "location": charge.get("loc", {}).get("location")}
+        elif charge.get("status") == "INVALID":
+            return {"result": False, "error": charge.get("error")}
         else:
             return {
                 "result": False,

@@ -78,6 +78,12 @@ class PaymentAcquirerPagseguro(models.Model):
 
         return path
 
+    def get_cert(self):
+        crt_path = self._save_certificate(self.pagseguro_crt_file, suffix=".pem")
+        key_path = self._save_certificate(self.pagseguro_key_file, suffix=".key")
+
+        return crt_path, key_path
+
     @api.multi
     def pagseguro_pix_validate(self):
         """Validate Pagseguro PIX credentials
@@ -95,8 +101,6 @@ class PaymentAcquirerPagseguro(models.Model):
             raise UserError(_("Please fill your PIX credentials."))
 
         # Request parameters
-        crt_path = self._save_certificate(self.pagseguro_crt_file, suffix=".pem")
-        key_path = self._save_certificate(self.pagseguro_key_file, suffix=".key")
         url = self._get_pagseguro_api_url_pix()
         auth = (self.pagseguro_client_id, self.pagseguro_client_secret)
         data = {"grant_type": "client_credentials", "scope": "pix.write pix.read"}
@@ -106,7 +110,7 @@ class PaymentAcquirerPagseguro(models.Model):
                 url + "/pix/oauth2",
                 auth=auth,
                 data=data,
-                cert=(crt_path, key_path),
+                cert=self.get_cert(),
             )
         except Exception as e:
             _logger.error(e)
@@ -127,8 +131,6 @@ class PaymentAcquirerPagseguro(models.Model):
                     f"{error.get('description')}"
                 )
             )
-
-        return {"crt_path": crt_path, "key_path": key_path}
 
     def get_installments_options(self):
         """Get list of installment options available to compose the html tag"""
