@@ -11,7 +11,10 @@
             <field name="inherit_id" ref="payment.acquirer_form" />
             <field name="arch" type="xml">
                 <xpath expr='//group[@name="acquirer"]' position='after'>
-                    <group attrs="{'invisible': [('provider', '!=', 'pagseguro')]}">
+                    <group
+                        string="CREDIT"
+                        attrs="{'invisible': [('provider', '!=', 'pagseguro')]}"
+                    >
                         <field
                             name="pagseguro_token"
                             string="Pagseguro Token"
@@ -25,6 +28,7 @@
                     >
                         <field name="pagseguro_client_id" />
                         <field name="pagseguro_client_secret" />
+                        <field name="pagseguro_pix_key" />
                         <field
                             name="pagseguro_crt_file"
                             filename="pagseguro_crt_filename"
@@ -35,7 +39,6 @@
                             filename="pagseguro_key_filename"
                         />
                         <field name="pagseguro_key_filename" invisible="1" />
-                        <field name="pagseguro_tx_id" />
                         <field name="pagseguro_pix_authenticated" invisible="1" />
                     </group>
                 </xpath>

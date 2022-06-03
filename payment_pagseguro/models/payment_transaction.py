@@ -29,39 +29,41 @@ class PaymentTransactionPagseguro(models.Model):
     )
 
     @api.multi
-    def _create_pagseguro_pix_charge(self):
+    def _create_pagseguro_pix_charge(self, cert):
         if not self.acquirer_id.pagseguro_pix_acces_token:
             return {"result": False, "error_message": "No Access Token"}
 
         url = self.acquirer_id._get_pagseguro_api_url_pix()
         auth_token = self.acquirer_id.pagseguro_pix_acces_token
-        header = {"Authorization": "Bearer" + auth_token}
-        data = {
-            "calendario": {"expiracao": "3600"},
+        header = {
+            "Authorization": "Bearer " + auth_token,
+            "Content-Type": "application/json",
+        }
+
+        cpf = str(self.payment_token_id.partner_id.cnpj_cpf)
+        payload = {
+            "calendario": {"expiracao": str(self.acquirer_id.pagseguro_pix_expiration)},
             "devedor": {
-                "cpf": self.payment_token_id.partner_id.cpf_cnpj,
-                "nome": self.payment_token_id.partner_id.name,
+                "cpf": cpf.replace(".", "").replace("-", ""),
+                "nome": str(self.payment_token_id.partner_id.name),
             },
-            "valor": {"original": int(self.amount * 100)},
-            "chave": self.acquirer_id.pagseguro_pix_key,
-            "solicitacaoPagador": "Serviço realizado.",
+            "valor": {"original": str(round(self.amount, 2))},
+            "chave": str(self.acquirer_id.pagseguro_pix_key),
+            "solicitacaoPagador": "Compra online.",
         }
 
         try:
             r = requests.put(
                 url + "/instant-payments/cob/" + self.payment_token_id.pagseguro_tx_id,
-                data=data,
+                json=payload,
+                cert=(cert.get("crt_path"), cert.get("key_path")),
                 headers=header,
             )
-        except Exception:
-            return {"result": False, "error_message": "Transaction failed"}
+        except Exception as e:
+            _logger.error(e)
+            raise ValidationError(_("Failed to send request to Pagseguro"))
 
         res = r.json()
-        if r.status_code == 200:
-            self.acquirer_id.pagseguro_pix_authenticated = True
-        else:
-            self.acquirer_id.pagseguro_pix_authenticated = False
-            # error = data.get("error_messages")[0]
         _logger.info(
             "_create_pagseguro_charge: Values received:\n%s",
             self.pprint_filtered_response(res),
@@ -95,16 +97,29 @@ class PaymentTransactionPagseguro(models.Model):
         )
         return res
 
-    def _pagseguro_pix_validate_tree(self, result):
-        """Not implemented"""
-        return False
-
     @api.multi
     def pagseguro_pix_do_transaction(self):
         self.ensure_one()
+        cert = self.acquirer_id.pagseguro_pix_validate()
+        charge = self._create_pagseguro_pix_charge(cert)
+        return self._pagseguro_pix_validate_tree(charge)
 
-        result = self._create_pagseguro_pix_charge()
-        return self._pagseguro_pix_validate_tree(result)
+    def _pagseguro_pix_validate_tree(self, charge):
+        self.ensure_one()
+
+        if charge.get("status") == "ATIVA":
+            self.log_transaction(
+                reference=charge.get("txid"), message=charge.get("status")
+            )
+            self._set_transaction_authorized()
+            self.payment_token_id.verified = True
+
+            return {"result": True, "location": charge.get("loc", {}).get("location")}
+        else:
+            return {
+                "result": False,
+                "error": f"{charge.get('title')}: {charge.get('detail')}",
+            }
 
     @api.multi
     def pagseguro_s2s_do_transaction(self, **kwargs):

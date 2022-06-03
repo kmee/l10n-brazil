@@ -37,6 +37,8 @@ class PaymentAcquirerPagseguro(models.Model):
 
     pagseguro_client_secret = fields.Char(string="Pagseguro Client Secret")
 
+    pagseguro_pix_key = fields.Char(string="Pagseguro PIX Key")
+
     pagseguro_crt_file = fields.Binary(string="Pagseguro CRT File")
 
     pagseguro_crt_filename = fields.Char()
@@ -44,8 +46,6 @@ class PaymentAcquirerPagseguro(models.Model):
     pagseguro_key_file = fields.Binary(string="Pagseguro KEY File")
 
     pagseguro_key_filename = fields.Char()
-
-    pagseguro_tx_id = fields.Char(string="Transaction id")
 
     pagseguro_pix_acces_token = fields.Char()
 
@@ -112,14 +112,14 @@ class PaymentAcquirerPagseguro(models.Model):
             _logger.error(e)
             raise UserError(_("Authentication failed"))
 
-        data = r.json()
+        res = r.json()
         if r.status_code == 200:
-            self.pagseguro_pix_acces_token = data.get("access_token")
+            self.pagseguro_pix_acces_token = res.get("access_token")
             self.pagseguro_pix_authenticated = True
         else:
             self.pagseguro_pix_acces_token = False
             self.pagseguro_pix_authenticated = False
-            error = data.get("error_messages")[0]
+            error = res.get("error_messages")[0]
             raise UserError(
                 _(
                     f"Authentication failed.\n\n"
@@ -127,6 +127,8 @@ class PaymentAcquirerPagseguro(models.Model):
                     f"{error.get('description')}"
                 )
             )
+
+        return {"crt_path": crt_path, "key_path": key_path}
 
     def get_installments_options(self):
         """Get list of installment options available to compose the html tag"""
@@ -160,26 +162,6 @@ class PaymentAcquirerPagseguro(models.Model):
                     "pagseguro_card_token": data["cc_token"],
                     "pagseguro_payment_method": data["payment_method"],
                     "pagseguro_installments": int(data["installments"]),
-                }
-            )
-        )
-        return payment_token
-
-    @api.model
-    def pagseguro_pix_form_process(self, data):
-        """Saves the payment.token object with data from PagSeguro server
-
-        Cvc, number and expiry date card info should be empty by this point.
-        """
-        payment_token = (
-            self.env["payment.token"]
-            .sudo()
-            .create(
-                {
-                    "acquirer_ref": int(data["partner_id"]),
-                    "acquirer_id": int(data["acquirer_id"]),
-                    "partner_id": int(data["partner_id"]),
-                    "pagseguro_tx_id": data["tx_id"],
                 }
             )
         )
