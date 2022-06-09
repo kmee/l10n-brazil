@@ -268,14 +268,7 @@ class PaymentTransactionPagseguro(models.Model):
                 self.log_transaction(reference=tree.get("id"), message="")
 
             # store capture and void links for future manual operations
-            for method in tree.get("links"):
-                if "rel" in method and "href" in method:
-                    if method.get("rel") == "SELF":
-                        self.pagseguro_s2s_check_link = method.get("href")
-                    if method.get("rel") == "CHARGE.CAPTURE":
-                        self.pagseguro_s2s_capture_link = method.get("href")
-                    if method.get("rel") == "CHARGE.CANCEL":
-                        self.pagseguro_s2s_void_link = method.get("href")
+            self.store_links(tree)
 
             # setting transaction to authorized - must match Pagseguro
             # payment using the case without automatic capture
@@ -291,6 +284,26 @@ class PaymentTransactionPagseguro(models.Model):
         self._validate_tree_message(tree)
 
         return False
+
+    def store_links_credit(self, tree):
+        for link in tree.get("links"):
+            if link.get("rel") == "SELF":
+                self.pagseguro_s2s_check_link = link.get("href")
+            if link.get("rel") == "CHARGE.CAPTURE":
+                self.pagseguro_s2s_capture_link = link.get("href")
+            if link.get("rel") == "CHARGE.CANCEL":
+                self.pagseguro_s2s_void_link = link.get("href")
+
+    def store_links_boleto(self, tree):
+        for link in tree.get("links"):
+            if link.get("media") == "application/json":
+                self.pagseguro_s2s_check_link = link.get("href")
+
+    def store_links(self, tree):
+        if self.payment_token_id.pagseguro_payment_method == "CREDIT_CARD":
+            self.store_links_credit(tree)
+        elif self.payment_token_id.pagseguro_payment_method == "BOLETO":
+            self.store_links_boleto(tree)
 
     @api.multi
     def _validate_tree_message(self, tree):
@@ -410,5 +423,5 @@ class PaymentTransactionPagseguro(models.Model):
     def pagseguro_boleto_do_transaction(self, **kwargs):
         self.ensure_one()
         result = self._create_pagseguro_charge()
+        self._pagseguro_s2s_validate_tree(result)
         return result
-        # return self._pagseguro_s2s_validate_tree(result)
