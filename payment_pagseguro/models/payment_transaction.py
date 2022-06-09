@@ -1,10 +1,12 @@
 # Copyright 2020 KMEE INFORMATICA LTDA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import datetime
 import logging
 import pprint
 
 import requests
+from erpbrasil.base.misc import punctuation_rm
 
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
@@ -44,7 +46,7 @@ class PaymentTransactionPagseguro(models.Model):
         payload = {
             "calendario": {"expiracao": str(self.acquirer_id.pagseguro_pix_expiration)},
             "devedor": {
-                "cpf": cpf.replace(".", "").replace("-", ""),
+                "cpf": punctuation_rm(cpf),
                 "nome": str(self.payment_token_id.partner_id.name),
             },
             "valor": {"original": "%.2f" % self.amount},
@@ -305,25 +307,17 @@ class PaymentTransactionPagseguro(models.Model):
             self._set_transaction_cancel()
 
     @api.multi
-    def _get_pagseguro_charge_params(self):
+    def _get_pagseguro_credit_card_charge_params(self):
         """
-        Returns dict containing the required body information to create a
-        charge on Pagseguro.
-
-        Uses the payment amount, currency and encrypted credit card.
-
-        Returns:
-            dict: Charge parameters
+        Returns pagseguro credit card charge params.
         """
-        # currency = self.acquirer_id.company_id.currency_id.name
-        # if currency != "BRL":
-        #     raise UserError(_("Only BRL currency is allowed."))
-        CHARGE_PARAMS = {
+        return {
             "reference_id": str(self.payment_token_id.acquirer_id.id),
             "description": self.display_name[:13],
             "amount": {
-                # Charge is in BRL cents -> Multiply by 100
-                "value": int(self.amount * 100),
+                "value": int(
+                    self.amount * 100
+                ),  # Charge is in BRL cents -> Multiply by 100
                 "currency": "BRL",
             },
             "payment_method": {
@@ -337,7 +331,59 @@ class PaymentTransactionPagseguro(models.Model):
             },
         }
 
+    def _get_pagseguro_boleto_charge_params(self):
+        """
+        Returns pagseguro boleto charge params.
+        """
+        partner = self.payment_token_id.partner_id
+        # Boleto expires in 3 days
+        due_date = datetime.datetime.now() + datetime.timedelta(days=3)
+
+        CHARGE_PARAMS = {
+            "reference_id": self.display_name,
+            "description": self.display_name,
+            "amount": {
+                "value": int(self.amount * 100),
+                "currency": "BRL",
+            },
+            "payment_method": {
+                "soft_descriptor": self.acquirer_id.company_id.name,
+                "type": "BOLETO",
+                "boleto": {
+                    "due_date": fields.Date.to_string(due_date),
+                    "instruction_lines": {
+                        "line_1": "Pagamento processado para DESC Fatura",
+                        "line_2": "Via PagSeguro",
+                    },
+                    "holder": {
+                        "name": partner.name,
+                        "tax_id": int(punctuation_rm(partner.cnpj_cpf)),
+                        "email": partner.email,
+                        "address": {
+                            "street": partner.street_name,
+                            "number": partner.street_number,
+                            "locality": partner.district,
+                            "city": partner.city_id.name,
+                            "region": partner.state_id.name,
+                            "region_code": partner.state_id.code,
+                            "country": partner.country_id.name,
+                            "postal_code": partner.zip,
+                        },
+                    },
+                },
+            },
+        }
+
         return CHARGE_PARAMS
+
+    @api.multi
+    def _get_pagseguro_charge_params(self):
+        """Returns dict containing the required body information to create a
+        charge on Pagseguro."""
+        if self.payment_token_id.pagseguro_payment_method == "CREDIT_CARD":
+            return self._get_pagseguro_credit_card_charge_params()
+        elif self.payment_token_id.pagseguro_payment_method == "BOLETO":
+            return self._get_pagseguro_boleto_charge_params()
 
     def log_transaction(self, reference, message):
         """Logs a transaction. It can be either a successful or a failed one."""
@@ -359,3 +405,10 @@ class PaymentTransactionPagseguro(models.Model):
         output_response.pop("payment_method", None)
 
         return pprint.pformat(output_response)
+
+    @api.multi
+    def pagseguro_boleto_do_transaction(self, **kwargs):
+        self.ensure_one()
+        result = self._create_pagseguro_charge()
+        return result
+        # return self._pagseguro_s2s_validate_tree(result)
