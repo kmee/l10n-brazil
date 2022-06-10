@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo noupdate="1">
+
+    <record id="payment_mode_pagseguro" model="account.payment.mode">
+        <field name="name">Pagseguro</field>
+        <field name="bank_account_link">variable</field>
+        <field
+            name="payment_method_id"
+            ref="payment.account_payment_method_electronic_in"
+        />
+        <field
+            name="payment_acquirer_id"
+            ref="payment_pagseguro.payment_acquirer_pagseguro"
+        />
+    </record>
+
+</odoo>

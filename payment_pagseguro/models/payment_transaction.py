@@ -270,9 +270,11 @@ class PaymentTransactionPagseguro(models.Model):
             # store capture and void links for future manual operations
             self.store_links(tree)
 
-            # setting transaction to authorized - must match Pagseguro
-            # payment using the case without automatic capture
-            self._set_transaction_authorized()
+            if tree.get("status") == "PAID":  # Happens when capture is True
+                self._set_transaction_done()
+            elif tree.get("status") == "AUTHORIZED":  # Happens when capture is False
+                self._set_transaction_authorized()
+
             self.execute_callback()
             if self.payment_token_id:
                 self.payment_token_id.verified = True
@@ -337,7 +339,7 @@ class PaymentTransactionPagseguro(models.Model):
                 "soft_descriptor": self.acquirer_id.company_id.name,
                 "type": self.payment_token_id.pagseguro_payment_method,
                 "installments": self.payment_token_id.pagseguro_installments,
-                "capture": False,
+                "capture": self.payment_token_id.pagseguro_capture_transaction,
                 "card": {
                     "encrypted": self.payment_token_id.pagseguro_card_token,
                 },
@@ -425,3 +427,25 @@ class PaymentTransactionPagseguro(models.Model):
         result = self._create_pagseguro_charge()
         self._pagseguro_s2s_validate_tree(result)
         return result
+
+    @api.multi
+    def pagseguro_check_transaction(self):
+        if not self.pagseguro_s2s_check_link:
+            raise ValidationError(_("There is no check link for this transaction."))
+
+        _logger.info(
+            "pagseguro_check_transaction_boleto: Sending values to URL %s",
+            self.pagseguro_s2s_check_link,
+        )
+
+        r = requests.get(
+            self.pagseguro_s2s_check_link,
+            headers=self.acquirer_id._get_pagseguro_api_headers(),
+        )
+        res = r.json()
+
+        self.log_transaction(res["id"], res.get("status"))
+        if res.get("status") == "PAID":
+            self._set_transaction_done()
+        elif res.get("status") in ["CANCELED", "DECLINED"]:
+            self._set_transaction_cancel()

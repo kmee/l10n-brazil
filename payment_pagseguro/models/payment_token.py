@@ -28,3 +28,7 @@ class PaymentTokenPagSeguro(models.Model):
     )
 
     pagseguro_tx_id = fields.Char(string="Pagseguro transaction id", required=False)
+
+    pagseguro_capture_transaction = fields.Boolean(
+        string="Pagseguro Capture Transaction", required=False
+    )
