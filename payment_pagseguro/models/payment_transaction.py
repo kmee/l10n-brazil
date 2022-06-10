@@ -30,6 +30,17 @@ class PaymentTransactionPagseguro(models.Model):
         required=False,
     )
 
+    def _set_transaction_state(self, res):
+        """Change transaction state based on Pagseguro status"""
+        pagseguro_status = res.get("status")
+
+        if pagseguro_status == "PAID":
+            self._set_transaction_done()
+        elif pagseguro_status in ["AUTHORIZED", "WAITING"]:
+            self._set_transaction_authorized()
+        elif pagseguro_status in ["CANCELED", "DECLINED"]:
+            self._set_transaction_cancel()
+
     @api.multi
     def _create_pagseguro_pix_charge(self, cert):
         if not self.acquirer_id.pagseguro_pix_acces_token:
@@ -269,11 +280,7 @@ class PaymentTransactionPagseguro(models.Model):
 
             # store capture and void links for future manual operations
             self.store_links(tree)
-
-            if tree.get("status") == "PAID":  # Happens when capture is True
-                self._set_transaction_done()
-            elif tree.get("status") == "AUTHORIZED":  # Happens when capture is False
-                self._set_transaction_authorized()
+            self._set_transaction_state(tree)
 
             self.execute_callback()
             if self.payment_token_id:
@@ -445,7 +452,4 @@ class PaymentTransactionPagseguro(models.Model):
         res = r.json()
 
         self.log_transaction(res["id"], res.get("status"))
-        if res.get("status") == "PAID":
-            self._set_transaction_done()
-        elif res.get("status") in ["CANCELED", "DECLINED"]:
-            self._set_transaction_cancel()
+        self._set_transaction_state(res)
