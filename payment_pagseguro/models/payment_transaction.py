@@ -360,6 +360,8 @@ class PaymentTransactionPagseguro(models.Model):
         partner = self.payment_token_id.partner_id
         # Boleto expires in 3 days
         due_date = datetime.datetime.now() + datetime.timedelta(days=3)
+        base_url = self.env["ir.config_parameter"].get_param("web.base.url")
+        notification_url = base_url + "/notification-url"
 
         CHARGE_PARAMS = {
             "reference_id": self.display_name,
@@ -368,6 +370,7 @@ class PaymentTransactionPagseguro(models.Model):
                 "value": int(self.amount * 100),
                 "currency": "BRL",
             },
+            "notification_urls": [notification_url],
             "payment_method": {
                 "soft_descriptor": self.acquirer_id.company_id.name,
                 "type": "BOLETO",
@@ -441,7 +444,7 @@ class PaymentTransactionPagseguro(models.Model):
             raise ValidationError(_("There is no check link for this transaction."))
 
         _logger.info(
-            "pagseguro_check_transaction_boleto: Sending values to URL %s",
+            "pagseguro_check_transaction: Sending values to URL %s",
             self.pagseguro_s2s_check_link,
         )
 
@@ -451,5 +454,8 @@ class PaymentTransactionPagseguro(models.Model):
         )
         res = r.json()
 
-        self.log_transaction(res["id"], res.get("status"))
+        _logger.info(
+            "pagseguro_check_transaction: Transaction %s has status %s"
+            % (res["id"], res.get("status"))
+        )
         self._set_transaction_state(res)
