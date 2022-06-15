@@ -164,6 +164,7 @@ class PaymentAcquirerPagseguro(models.Model):
                     "pagseguro_card_token": data["cc_token"],
                     "pagseguro_payment_method": data["payment_method"],
                     "pagseguro_installments": int(data["installments"]),
+                    "pagseguro_capture_transaction": data["capture"],
                 }
             )
         )
