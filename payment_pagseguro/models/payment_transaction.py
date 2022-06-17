@@ -124,10 +124,11 @@ class PaymentTransactionPagseguro(models.Model):
             }
 
     @api.multi
-    def pagseguro_search_payment_pix(self, tx_id, revisao):
-        self.ensure_one()
-        cert = self.acquirer_id.get_cert()
-        # _logger.error("CRT CHAVE - " + cert[0], "KEY CHAVE - " + cert[1])
+    def pagseguro_search_payment_pix(self, params):
+        acquirer_id = self.env.ref(
+            "payment_pagseguro.payment_acquirer_pagseguro"
+        ).sudo()
+        cert = acquirer_id.get_cert()
         url = "https://secure.sandbox.api.pagseguro.com/instant-payments/cob/"
         auth_token = self.acquirer_id.pagseguro_pix_acces_token
         params = {"tx_id": "123BAJDH1JASHjvkae123kejauuj745", "revisao": "0"}
