@@ -23,7 +23,6 @@ class PagseguroController(http.Controller):
         if not kwargs.get("partner_id"):
             kwargs = dict(kwargs, partner_id=request.env.user.partner_id.id)
 
-        kwargs["capture"] = False
         token = (
             request.env["payment.acquirer"]
             .browse(int(kwargs.get("acquirer_id")))
@@ -85,11 +84,11 @@ class PagseguroController(http.Controller):
         Since this is a sensitive public route no further information is given.
         """
         params = request.jsonrequest
-        notification_code = params.get("id")
+        charge_id = params.get("id")
         tx = (
             request.env["payment.transaction"]
             .sudo()
-            .search([("acquirer_reference", "=", notification_code)])
+            .search([("acquirer_reference", "=", charge_id)])
         )
         tx.ensure_one()
 

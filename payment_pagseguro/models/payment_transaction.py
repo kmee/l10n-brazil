@@ -346,7 +346,7 @@ class PaymentTransactionPagseguro(models.Model):
                 "soft_descriptor": self.acquirer_id.company_id.name,
                 "type": self.payment_token_id.pagseguro_payment_method,
                 "installments": self.payment_token_id.pagseguro_installments,
-                "capture": self.payment_token_id.pagseguro_capture_transaction,
+                "capture": self.acquirer_id.pagseguro_capture,
                 "card": {
                     "encrypted": self.payment_token_id.pagseguro_card_token,
                 },
@@ -432,7 +432,7 @@ class PaymentTransactionPagseguro(models.Model):
         return pprint.pformat(output_response)
 
     @api.multi
-    def pagseguro_boleto_do_transaction(self, **kwargs):
+    def pagseguro_boleto_do_transaction(self):
         self.ensure_one()
         result = self._create_pagseguro_charge()
         self._pagseguro_s2s_validate_tree(result)

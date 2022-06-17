@@ -12,7 +12,7 @@
             <field name="arch" type="xml">
                 <xpath expr='//group[@name="acquirer"]' position='after'>
                     <group
-                        string="CREDIT"
+                        string="CREDIT/BILL"
                         attrs="{'invisible': [('provider', '!=', 'pagseguro')]}"
                     >
                         <field
@@ -20,6 +20,7 @@
                             string="Pagseguro Token"
                             password="True"
                         />
+                        <field name="pagseguro_capture" />
                     </group>
                     <group
                         string="PIX"
