@@ -37,6 +37,8 @@ class PaymentAcquirerPagseguro(models.Model):
 
     pagseguro_client_secret = fields.Char(string="Pagseguro Client Secret")
 
+    pagseguro_email = fields.Char(string="Pagseguro Email")
+
     pagseguro_pix_key = fields.Char(string="Pagseguro PIX Key")
 
     pagseguro_crt_file = fields.Binary(string="Pagseguro CRT File")

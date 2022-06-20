@@ -26,6 +26,7 @@
                         name="pix"
                         attrs="{'invisible': [('provider', '!=', 'pagseguro')]}"
                     >
+                        <field name="pagseguro_email" />
                         <field name="pagseguro_client_id" />
                         <field name="pagseguro_client_secret" />
                         <field name="pagseguro_pix_key" />

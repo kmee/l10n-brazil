@@ -73,3 +73,22 @@ class PagseguroController(http.Controller):
         public_key = res.get("public_key")
 
         return public_key
+
+    @http.route(
+        "/notification-pix-url",
+        auth="public",
+        csrf=False,
+        type="json",
+        methods=["POST"],
+    )
+    def notification_url(self):
+        params = request.jsonrequest
+        acquirer_id = request.env.ref(
+            "payment_pagseguro.payment_acquirer_pagseguro"
+        ).sudo()
+        transaction_id = (
+            request.env["payment.transaction"]
+            .sudo()
+            .search([("acquirer_id", "=", acquirer_id.id)], limit=1)
+        )
+        transaction_id.pagseguro_search_payment_pix(params)
