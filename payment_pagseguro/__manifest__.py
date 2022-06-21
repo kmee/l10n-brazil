@@ -16,6 +16,7 @@
     ],
     "data": [
         "data/payment_acquirer_data.xml",
+        "data/payment_method_data.xml",
         "data/payment_mode.xml",
         "data/ir_cron_data.xml",
         "views/payment_pagseguro_templates.xml",

@@ -159,7 +159,7 @@ class PaymentTransactionPagseguro(models.Model):
         _logger.error(r.text)
 
     @api.multi
-    def pagseguro_s2s_do_transaction(self, **kwargs):
+    def pagseguro_s2s_do_transaction(self):
         self.ensure_one()
         result = self._create_pagseguro_charge()
         return self._pagseguro_s2s_validate_tree(result)
