@@ -83,12 +83,4 @@ class PagseguroController(http.Controller):
     )
     def notification_url(self):
         params = request.jsonrequest
-        acquirer_id = request.env.ref(
-            "payment_pagseguro.payment_acquirer_pagseguro"
-        ).sudo()
-        transaction_id = (
-            request.env["payment.transaction"]
-            .sudo()
-            .search([("acquirer_id", "=", acquirer_id.id)], limit=1)
-        )
-        transaction_id.pagseguro_search_payment_pix(params)
+        request.env["payment.transaction"].sudo().pagseguro_search_payment_pix(params)

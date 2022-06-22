@@ -149,7 +149,7 @@ class PaymentTransactionPagseguro(models.Model):
                 "error": f"{charge.get('title')}: {charge.get('detail')}",
             }
 
-    @api.multi
+    @api.model
     def pagseguro_search_payment_pix(self, params):
         acquirer_id = self.env.ref(
             "payment_pagseguro.payment_acquirer_pagseguro"
@@ -168,17 +168,19 @@ class PaymentTransactionPagseguro(models.Model):
             headers=header,
             json=params,
         )
-        string_xml = r.content
-        xml_tree = ElementTree.fromstring(string_xml)
-        code = xml_tree.find("code").text
-        status = xml_tree.find("status").text
-        transaction_id = self.search([("acquirer_reference", "=", code)])
-        transaction_id._set_transaction_state_pix(status)
+        if r.status_code == 200:
+            string_xml = r.content
+            xml_tree = ElementTree.fromstring(string_xml)
+            code = xml_tree.find("code").text
+            status = xml_tree.find("status").text
+            transaction_id = self.search([("acquirer_reference", "=", code)])
+            transaction_id._set_transaction_state_pix(status)
 
-        _logger.info(
-            "pagseguro_search_payment_pix: Transaction %s has status %s"
-            % (code, status)
-        )
+            _logger.info(
+                "pagseguro_search_payment_pix: Transaction %s has status %s"
+                % (code, status)
+            )
+        _logger.error("Failed to receive Webhook notification.")
 
     @api.multi
     def pagseguro_s2s_do_transaction(self, **kwargs):
