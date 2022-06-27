@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  ~ Copyright 2022 KMEE
+  ~ License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+  -->
+<odoo>
+    <data>
+
+        <!-- Payment methods -->
+
+        <record id="account_payment_method_credit_card" model="account.payment.method">
+            <field name="name">Credit Card</field>
+            <field name="code">credit_card</field>
+            <field name="payment_type">inbound</field>
+        </record>
+
+        <record id="account_payment_method_boleto" model="account.payment.method">
+            <field name="name">Boleto</field>
+            <field name="code">boleto</field>
+            <field name="payment_type">inbound</field>
+        </record>
+
+        <record id="account_payment_method_pix" model="account.payment.method">
+            <field name="name">PIX</field>
+            <field name="code">pix</field>
+            <field name="payment_type">inbound</field>
+        </record>
+
+    </data>
+</odoo>

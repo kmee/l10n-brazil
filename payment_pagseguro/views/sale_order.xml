@@ -18,7 +18,7 @@
                         string="Check Transaction"
                         attrs="{'invisible':[
                                 '|',
-                                ('payment_mode_id', '!=', %(invader_payment_pagseguro.payment_mode_pagseguro)d),
+                                ('payment_mode_id', '!=', %(payment_mode_pagseguro)d),
                                 ('authorized_transaction_ids', '=', [])
                             ]}"
                     />

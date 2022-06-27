@@ -21,17 +21,31 @@ class PaymentAcquirerPagseguro(models.Model):
 
     provider = fields.Selection(selection_add=[("pagseguro", "Pagseguro")])
 
+    # BOLETO/CREDIT CARD
+
     pagseguro_token = fields.Char(
         string="Pagseguro Token",
         required_if_provider="pagseguro",
         groups="base.group_user",
     )
 
+    # CREDIT CARD
+
     pagseguro_max_installments = fields.Integer(
         string="Pagseguro max installments",
         help="The maximum installments allowed by brands is 12",
         default=12,
     )
+
+    pagseguro_capture = fields.Boolean(
+        string="Pagseguro Capture Transaction",
+        help="When Capture is False, charge will be created as "
+        "authorized and a capture is necessary to change it to paid."
+        "When True, the charge will be created as paid.",
+        required=False,
+    )
+
+    # PIX
 
     pagseguro_client_id = fields.Char(string="Pagseguro Client ID")
 
@@ -166,7 +180,6 @@ class PaymentAcquirerPagseguro(models.Model):
                     "pagseguro_card_token": data["cc_token"],
                     "pagseguro_payment_method": data["payment_method"],
                     "pagseguro_installments": int(data["installments"]),
-                    "pagseguro_capture_transaction": data["capture"],
                 }
             )
         )
