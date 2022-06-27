@@ -180,7 +180,8 @@ class PaymentTransactionPagseguro(models.Model):
                 "pagseguro_search_payment_pix: Transaction %s has status %s"
                 % (code, status)
             )
-        _logger.error("Failed to receive Webhook notification.")
+        else:
+            _logger.error("Failed to receive Webhook notification.")
 
     @api.multi
     def pagseguro_s2s_do_transaction(self, **kwargs):
