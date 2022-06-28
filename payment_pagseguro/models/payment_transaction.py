@@ -4,6 +4,7 @@
 import datetime
 import logging
 import pprint
+from xml.etree import ElementTree
 
 import requests
 from erpbrasil.base.misc import punctuation_rm
@@ -39,6 +40,18 @@ class PaymentTransactionPagseguro(models.Model):
         elif pagseguro_status in ["AUTHORIZED", "WAITING"]:
             self._set_transaction_authorized()
         elif pagseguro_status in ["CANCELED", "DECLINED"]:
+            self._set_transaction_cancel()
+
+    def _set_transaction_state_pix(self, pagseguro_status):
+        """Change transaction state Pix based on Pagseguro status"""
+
+        if pagseguro_status == 4:
+            self.done = self._set_transaction_done()
+        elif pagseguro_status == 3:
+            self._set_transaction_authorized()
+        elif pagseguro_status in [1, 2, 5, 9]:
+            self._set_transaction_pending()
+        elif pagseguro_status in [6, 7, 8]:
             self._set_transaction_cancel()
 
     @api.multi
@@ -136,27 +149,39 @@ class PaymentTransactionPagseguro(models.Model):
                 "error": f"{charge.get('title')}: {charge.get('detail')}",
             }
 
-    @api.multi
-    def pagseguro_search_payment_pix(self, tx_id, revisao):
-        self.ensure_one()
-        cert = self.acquirer_id.get_cert()
-        # _logger.error("CRT CHAVE - " + cert[0], "KEY CHAVE - " + cert[1])
-        url = "https://secure.sandbox.api.pagseguro.com/instant-payments/cob/"
-        auth_token = self.acquirer_id.pagseguro_pix_acces_token
-        params = {"tx_id": "123BAJDH1JASHjvkae123kejauuj745", "revisao": "0"}
-        # _logger.error(auth_token)
+    @api.model
+    def pagseguro_search_payment_pix(self, params):
+        acquirer_id = self.env.ref(
+            "payment_pagseguro.payment_acquirer_pagseguro"
+        ).sudo()
+        notification_code = params["notificationCode"]
+        cert = acquirer_id.get_cert()
+        url = acquirer_id._get_pagseguro_api_url_pix()
+        auth_token = self.acquirer_id.pagseguro_token
+        params = {"email": acquirer_id.pagseguro_email, "token": auth_token}
         header = {
-            "Authorization": "Bearer " + auth_token,
-            "Content-Type": "application/json",
+            "Content-Type": "application/xml",
         }
-
         r = requests.get(
-            url,
+            url + "/v3/transactions/notifications/" + notification_code,
             cert=(cert[0], cert[1]),
             headers=header,
             json=params,
         )
-        _logger.error(r.text)
+        if r.status_code == 200:
+            string_xml = r.content
+            xml_tree = ElementTree.fromstring(string_xml)
+            code = xml_tree.find("code").text
+            status = xml_tree.find("status").text
+            transaction_id = self.search([("acquirer_reference", "=", code)])
+            transaction_id._set_transaction_state_pix(status)
+
+            _logger.info(
+                "pagseguro_search_payment_pix: Transaction %s has status %s"
+                % (code, status)
+            )
+        else:
+            _logger.error("Failed to receive Webhook notification.")
 
     @api.multi
     def pagseguro_s2s_do_transaction(self):
@@ -176,7 +201,8 @@ class PaymentTransactionPagseguro(models.Model):
         if any([currency != "BRL" for currency in currencies]):
             raise ValidationError(
                 _(
-                    "Please check if all related sale orders and invoices are in BRL "
+                    "Please check if all related sale orders "
+                    "and invoices are in BRL "
                     "currency (supported by pagseguro)."
                 )
             )
