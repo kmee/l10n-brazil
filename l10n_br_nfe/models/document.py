@@ -505,8 +505,19 @@ class NFe(spec_models.StackedModel):
 
     nfe40_infRespTec = fields.Many2one(
         comodel_name="res.partner",
-        related="company_id.technical_support_id",
+        computed="_compute_resp_tec_data",
+        store=True,
     )
+
+    @api.depends("company_id.technical_support_id")
+    def _compute_resp_tec_data(self):
+        for record in self:
+            if not record.nfe40_infRespTec and record.company_id.technical_support_id:
+                record.nfe40_infRespTec = record.company_id.technical_support_id
+
+    ##########################
+
+    imported_document = fields.Boolean(string="Imported", default=False)
 
     ################################
     # Framework Spec model's methods
@@ -959,3 +970,10 @@ class NFe(spec_models.StackedModel):
                 protocol_number=retevento.infEvento.nProt,
                 file_response_xml=processo.retorno.content.decode("utf-8"),
             )
+
+    def create(self, values):
+        res = super(NFe, self).create(values)
+        infresptec_id = values.get("nfe40_infRespTec")
+        if infresptec_id:
+            res.nfe40_infRespTec = self.env["res.partner"].browse(infresptec_id)
+        return res
