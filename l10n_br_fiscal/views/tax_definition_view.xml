@@ -27,6 +27,10 @@
         <field name="tax_group_id" invisible="1" />
         <field name="state_from_id" />
         <field name="state_to_ids" />
+        <field name="nbm_ids" />
+        <field name="ncm_ids" />
+        <field name="cest_ids" />
+        <field name="product_ids" />
         <field name="tax_id" />
         <field name="cst_code" />
       </tree>
@@ -87,7 +91,7 @@
                         />
             <field
                             name="cst_id"
-                            attrs="{'invisible': ['|', ('custom_tax', '=', False), ('tax_domain', 'not in', ('icmssn', 'icms', 'ipi', 'pis', 'pisst', 'cofins', 'cofinsst'))], 'required': [('custom_tax', '=', True), ('tax_domain', 'in', ('icms', 'ipi', 'pis', 'pisst', 'cofins', 'cofinsst'))]}"
+                            attrs="{'invisible': ['|', ('custom_tax', '=', False), ('tax_domain', 'not in', ('icmssn', 'icms', 'ipi', 'pis', 'pisst', 'cofins', 'cofinsst'))]}"
                             options="{'no_create': True, 'no_create_edit': True}"
                         />
             <field
