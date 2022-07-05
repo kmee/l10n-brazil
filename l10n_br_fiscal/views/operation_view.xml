@@ -30,6 +30,7 @@
                 <field name="company_id" groups="base.group_multi_company" />
                 <field name="fiscal_operation_type" />
                 <field name="fiscal_type" />
+                <field name="ind_final" />
                 <field name="state" />
             </tree>
         </field>
@@ -93,15 +94,16 @@
                                 name="company_id"
                                 groups="base.group_multi_company"
                             />
+                            <field name="ind_final" />
+                            <field name="edoc_purpose" />
                         </group>
                         <group>
                             <field
                                 name="company_id"
                                 groups="base.group_multi_company"
                             />
+                            <field name="ind_final" />
                             <field name="default_price_unit" />
-                            <field name="return_fiscal_operation_id" />
-                            <field name="inverse_fiscal_operation_id" />
                         </group>
                     </group>
                     <notebook>
