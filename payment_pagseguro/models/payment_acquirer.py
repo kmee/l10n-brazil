@@ -119,7 +119,10 @@ class PaymentAcquirerPagseguro(models.Model):
         # Request parameters
         url = self._get_pagseguro_api_url_pix()
         auth = (self.pagseguro_client_id, self.pagseguro_client_secret)
-        data = {"grant_type": "client_credentials", "scope": "pix.write pix.read"}
+        data = {
+            "grant_type": "client_credentials",
+            "scope": "pix.write pix.read cob.write",
+        }
 
         try:
             r = requests.post(
