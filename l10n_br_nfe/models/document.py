@@ -298,7 +298,7 @@ class NFe(spec_models.StackedModel):
     # can change depending if it's and incoming our outgoing NFe
     # specially when importing (ERP NFe migration vs supplier Nfe).
     nfe40_emit = fields.Many2one(
-        comodel_name="res.company",
+        comodel_name="res.partner",
         compute="_compute_emit_data",
         readonly=True,
         string="Emit",
@@ -315,8 +315,11 @@ class NFe(spec_models.StackedModel):
     ##########################
 
     def _compute_emit_data(self):
-        for doc in self:  # TODO if out
-            doc.nfe40_emit = doc.company_id
+        for doc in self:
+            if doc.issuer == 'company':
+                doc.nfe40_emit = doc.company_id.partner_id
+            else:
+                doc.nfe40_emit = doc.partner_id
 
     ##########################
     # NF-e tag: dest
@@ -341,8 +344,11 @@ class NFe(spec_models.StackedModel):
 
     @api.depends("partner_id")
     def _compute_dest_data(self):
-        for doc in self:  # TODO if out
-            doc.nfe40_dest = doc.partner_id
+        for doc in self:
+            if doc.issuer == 'company':
+                doc.nfe40_dest = doc.partner_id
+            else:
+                doc.nfe40_dest = doc.company_id.partner_id
 
     ##########################
     # NF-e tag: det
