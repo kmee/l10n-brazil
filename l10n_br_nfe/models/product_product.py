@@ -14,7 +14,7 @@ from odoo.osv import expression
 
 class ProductProduct(models.Model):
     _inherit = "product.product"
-    _nfe_search_keys = ["default_code", "barcode"]
+    _nfe_search_keys = ["barcode"]
 
     def match_or_create_m2o(self, rec_dict, parent_dict, model=None):
         create_dict = {}
