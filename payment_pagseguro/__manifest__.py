@@ -15,11 +15,11 @@
         "l10n_br_account_payment_order",  # Used for Boleto Payment form
     ],
     "data": [
+        "views/payment_pagseguro_templates.xml",
         "data/payment_acquirer_data.xml",
         "data/payment_method_data.xml",
         "data/payment_mode.xml",
-        "data/ir_cron_data.xml",
-        "views/payment_pagseguro_templates.xml",
+        "data/ir_cron_data.xml",        
         "views/payment_acquirer.xml",
         "views/sale_order.xml",
     ],
