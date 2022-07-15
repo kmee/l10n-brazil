@@ -5,6 +5,7 @@ import logging
 
 import requests
 import werkzeug
+import time
 
 from odoo import http
 from odoo.http import request
@@ -96,11 +97,21 @@ class PagseguroController(http.Controller):
         """
         params = request.jsonrequest
         charge_id = params.get("id")
-        tx = (
-            request.env["payment.transaction"]
-            .sudo()
-            .search([("acquirer_reference", "=", charge_id)])
-        )
+        tx_obtained = False
+        try_count = 0
+        while not tx_obtained:
+            tx = (
+                request.env["payment.transaction"]
+                .sudo()
+                .search([("acquirer_reference", "=", charge_id)])
+            )
+            if try_count > 3:
+                break
+            else:
+                try_count += 1
+                time.sleep(1)
+            tx_obtained = len(tx) > 0
+
         tx.ensure_one()
 
         # Sends requests to pagseguro to check charge status instead of trusting
