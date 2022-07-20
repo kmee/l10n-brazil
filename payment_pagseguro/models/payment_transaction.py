@@ -19,17 +19,27 @@ class PaymentTransactionPagseguro(models.Model):
     _inherit = "payment.transaction"
 
     pagseguro_s2s_capture_link = fields.Char(
-        string="Capture Link Pagseguro",
+        string="Pagseguro Capture Link",
         required=False,
     )
     pagseguro_s2s_void_link = fields.Char(
-        string="Cancel Link",
+        string="Pagseguro Cancel Link",
         required=False,
     )
     pagseguro_s2s_check_link = fields.Char(
-        string="Check Link Pagseguro",
+        string="Pagseguro Check Link",
         required=False,
     )
+
+    pagseguro_boleto_pdf_link = fields.Char(string="Pagseguro boleto pdf link")
+
+    pagseguro_boleto_image_link = fields.Char(string="Pagseguro boleto image link")
+
+    pagseguro_boleto_barcode = fields.Char(string="Pagseguro boleto barcode")
+
+    pagseguro_pix_copy_paste = fields.Char(string="Pagseguro PIX copy and paste code")
+
+    pagseguro_pix_image_link = fields.Char(string="Pagseguro boleto image link")
 
     def _set_transaction_state(self, res):
         """Change transaction state based on Pagseguro status"""
@@ -139,6 +149,8 @@ class PaymentTransactionPagseguro(models.Model):
             )
             self._set_transaction_authorized()
             self.payment_token_id.verified = True
+            self.pagseguro_pix_copy_paste = charge.get("pixCopiaECola")
+            self.pagseguro_pix_image_link = charge.get("urlImagemQrCode")
 
             return {"result": True, "location": charge.get("loc", {}).get("location")}
         elif charge.get("status") == "INVALID":
@@ -299,8 +311,9 @@ class PaymentTransactionPagseguro(models.Model):
             )
             return True
 
-        if tree.get("payment_response"):
-            code = tree.get("payment_response", {}).get("code")
+        payment = tree.get("payment_response", {})
+        if payment:
+            code = payment.get("code")
             if code == "20000":
                 self.log_transaction(reference=tree.get("id"), message="")
 
@@ -320,7 +333,7 @@ class PaymentTransactionPagseguro(models.Model):
 
         return False
 
-    def store_links_credit(self, tree):
+    def _store_links_credit(self, tree):
         for link in tree.get("links"):
             if link.get("rel") == "SELF":
                 self.pagseguro_s2s_check_link = link.get("href")
@@ -329,16 +342,25 @@ class PaymentTransactionPagseguro(models.Model):
             if link.get("rel") == "CHARGE.CANCEL":
                 self.pagseguro_s2s_void_link = link.get("href")
 
-    def store_links_boleto(self, tree):
+    def _store_links_boleto(self, tree):
         for link in tree.get("links"):
             if link.get("media") == "application/json":
                 self.pagseguro_s2s_check_link = link.get("href")
+            elif link.get("media") == "application/pdf":
+                self.pagseguro_boleto_pdf_link = link.get("href")
+            elif link.get("media") == "image/png":
+                self.pagseguro_boleto_image_link = link.get("href")
+
+    def _save_barcode(self, tree):
+        barcode = tree.get("payment_response", {}).get("boleto", {}).get("barcode")
+        self.pagseguro_boleto_barcode = barcode
 
     def store_links(self, tree):
         if self.payment_token_id.pagseguro_payment_method == "CREDIT_CARD":
-            self.store_links_credit(tree)
+            self._store_links_credit(tree)
         elif self.payment_token_id.pagseguro_payment_method == "BOLETO":
-            self.store_links_boleto(tree)
+            self._store_links_boleto(tree)
+            self._save_barcode(tree)
 
     @api.multi
     def _validate_tree_message(self, tree):
@@ -386,8 +408,12 @@ class PaymentTransactionPagseguro(models.Model):
         partner = self.payment_token_id.partner_id
         # Boleto expires in 3 days
         due_date = datetime.datetime.now() + datetime.timedelta(days=3)
-        base_url = self.env["ir.config_parameter"].get_param("web.base.url")
-        notification_url = base_url + "/notification-url"
+
+        if self.acquirer_id.pagseguro_notification_url:
+            notification_url = self.acquirer_id.pagseguro_notification_url
+        else:
+            base_url = self.env["ir.config_parameter"].get_param("web.base.url")
+            notification_url = base_url + "/notification-url"
 
         CHARGE_PARAMS = {
             "reference_id": self.display_name,
