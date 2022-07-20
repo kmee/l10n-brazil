@@ -21,6 +21,7 @@
                             password="True"
                         />
                         <field name="pagseguro_capture" />
+                        <field name="pagseguro_notification_url" />
                     </group>
                     <group
                         string="PIX"

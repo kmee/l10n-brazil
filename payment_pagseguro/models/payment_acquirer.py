@@ -45,6 +45,12 @@ class PaymentAcquirerPagseguro(models.Model):
         required=False,
     )
 
+    pagseguro_notification_url = fields.Char(
+        string="Pagseguro notification url",
+        help="Pagseguro will send notifications to this URL when a charge is updated."
+        "if not provided, is equal to base odoo url + /notification-url",
+    )
+
     # PIX
 
     pagseguro_client_id = fields.Char(string="Pagseguro Client ID")
