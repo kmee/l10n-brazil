@@ -352,7 +352,7 @@ class PaymentTransactionPagseguro(models.Model):
                 self.pagseguro_boleto_image_link = link.get("href")
 
     def _save_barcode(self, tree):
-        barcode = tree.get("payment_response", {}).get("boleto", {}).get("barcode")
+        barcode = tree.get("payment_method", {}).get("boleto", {}).get("barcode")
         self.pagseguro_boleto_barcode = barcode
 
     def store_links(self, tree):
