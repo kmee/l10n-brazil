@@ -182,11 +182,12 @@ class PaymentAcquirerPagseguro(models.Model):
             .sudo()
             .create(
                 {
-                    "cc_holder_name": data["cc_holder_name"],
                     "acquirer_ref": int(data["partner_id"]),
                     "acquirer_id": int(data["acquirer_id"]),
                     "partner_id": int(data["partner_id"]),
-                    "pagseguro_card_token": data["cc_token"],
+                    "pagseguro_card_holder_name": data["card_holder_name"],
+                    "pagseguro_card_brand": data.get("card_brand", False),
+                    "pagseguro_card_token": data["card_token"],
                     "pagseguro_payment_method": data["payment_method"],
                     "pagseguro_installments": int(data["installments"]),
                 }

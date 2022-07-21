@@ -39,7 +39,7 @@ class PaymentTransactionPagseguro(models.Model):
 
     pagseguro_pix_copy_paste = fields.Char(string="Pagseguro PIX copy and paste code")
 
-    pagseguro_pix_image_link = fields.Char(string="Pagseguro boleto image link")
+    pagseguro_pix_image_link = fields.Char(string="Pagseguro PIX image link")
 
     def _set_transaction_state(self, res):
         """Change transaction state based on Pagseguro status"""
