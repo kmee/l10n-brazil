@@ -26,6 +26,13 @@ class L10nBrCNABBoletoFields(models.Model):
         track_visibility="always",
     )
 
+    code_convenio_lider = fields.Char(
+        string="Convênio Líder",
+        size=7,
+        help="Código do Convênio Líder, exclusivo para o Banco do Brasil",
+        track_visibility="always",
+    )
+
     condition_issuing_paper = fields.Selection(
         selection=[
             ("1", "Banco emite e Processa"),
@@ -42,6 +49,21 @@ class L10nBrCNABBoletoFields(models.Model):
     boleto_wallet = fields.Char(
         string="Carteira",
         size=3,
+        track_visibility="always",
+    )
+
+    boleto_wallet2 = fields.Char(
+        string="Carteira Boleto",
+        help="Código da carteira para ser impresso no boleto, "
+        "quando o mesmo for diferente do impresso na remessa.",
+        size=3,
+        track_visibility="always",
+    )
+
+    transmission_code = fields.Char(
+        string="Código de Transmissão",
+        help="Informação cedida pelo banco que identifica o arquivo remessa do cliente",
+        size=20,
         track_visibility="always",
     )
 

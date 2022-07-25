@@ -1,6 +1,7 @@
 # Copyright (C) 2019  Renato Lima - Akretion
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
+
 {
     "name": "NF-e",
     "summary": "Brazilian Eletronic Invoice NF-e .",
@@ -9,7 +10,7 @@
     "author": "Akretion," "KMEE," "Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/l10n-brazil",
     "development_status": "Beta",
-    "version": "12.0.7.3.0",
+    "version": "12.0.8.0.0",
     "depends": [
         "l10n_br_fiscal",
         "l10n_br_nfe_spec",
@@ -24,6 +25,12 @@
         "views/res_company_view.xml",
         "views/nfe_document_view.xml",
         "views/res_config_settings_view.xml",
+        # Wizards
+        "wizards/import_document.xml",
+        # Actions,
+        "views/nfe_action.xml",
+        # Menus
+        "views/nfe_menu.xml",
     ],
     "demo": [
         "demo/res_users_demo.xml",

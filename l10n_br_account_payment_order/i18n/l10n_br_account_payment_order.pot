@@ -706,7 +706,7 @@ msgid "Arquivo gerado com problemas..."
 msgstr ""
 
 #. module: l10n_br_account_payment_order
-#: code:addons/l10n_br_account_payment_order/models/account_payment_order.py:126
+#: code:addons/l10n_br_account_payment_order/models/account_payment_order.py:130
 #, python-format
 msgid "Arquivo gerado com sucesso."
 msgstr ""
@@ -1158,6 +1158,12 @@ msgid "Carteira"
 msgstr ""
 
 #. module: l10n_br_account_payment_order
+#: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_account_payment_mode__boleto_wallet2
+#: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_l10n_br_cnab_boleto_fields__boleto_wallet2
+msgid "Carteira Boleto"
+msgstr ""
+
+#. module: l10n_br_account_payment_order
 #: code:addons/l10n_br_account_payment_order/models/account_payment_mode.py:114
 #, python-format
 msgid "Carteira no banco Itaú é obrigatória"
@@ -1377,6 +1383,11 @@ msgid "Configurações Gerais"
 msgstr ""
 
 #. module: l10n_br_account_payment_order
+#: model:ir.model.fields,help:l10n_br_account_payment_order.field_account_move_line__own_number_boleto
+msgid "Conforme impresso no boleto, inclusive com o dígito verificador (DV)"
+msgstr ""
+
+#. module: l10n_br_account_payment_order
 #: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_l10n_br_cnab_return_event__favored_bank_account_id
 #: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_l10n_br_cnab_return_lot__account_bank_id
 #: model_terms:ir.ui.view,arch_db:l10n_br_account_payment_order.cnab_return_log_search
@@ -1459,6 +1470,13 @@ msgid "Contem erro de exportação"
 msgstr ""
 
 #. module: l10n_br_account_payment_order
+#: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_account_payment_mode__code_convenio_lider
+#: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_account_payment_order__code_convenio_lider
+#: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_l10n_br_cnab_boleto_fields__code_convenio_lider
+msgid "Convênio Líder"
+msgstr ""
+
+#. module: l10n_br_account_payment_order
 #: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_account_move_line_cnab_change__create_uid
 #: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_l10n_br_cnab_boleto_fields__create_uid
 #: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_l10n_br_cnab_change_methods__create_uid
@@ -1535,9 +1553,21 @@ msgid "Código da Multa"
 msgstr ""
 
 #. module: l10n_br_account_payment_order
+#: model:ir.model.fields,help:l10n_br_account_payment_order.field_account_payment_mode__boleto_wallet2
+#: model:ir.model.fields,help:l10n_br_account_payment_order.field_l10n_br_cnab_boleto_fields__boleto_wallet2
+msgid "Código da carteira para ser impresso no boleto, quando o mesmo for diferente do impresso na remessa."
+msgstr ""
+
+#. module: l10n_br_account_payment_order
 #: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_account_payment_mode__boleto_protest_code
 #: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_l10n_br_cnab_boleto_fields__boleto_protest_code
 msgid "Código de Protesto"
+msgstr ""
+
+#. module: l10n_br_account_payment_order
+#: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_account_payment_mode__transmission_code
+#: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_l10n_br_cnab_boleto_fields__transmission_code
+msgid "Código de Transmissão"
 msgstr ""
 
 #. module: l10n_br_account_payment_order
@@ -1546,6 +1576,13 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_bank_payment_line__complementary_finality_code
 #: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_l10n_br_cnab_payment_fields__complementary_finality_code
 msgid "Código de finalidade complementar"
+msgstr ""
+
+#. module: l10n_br_account_payment_order
+#: model:ir.model.fields,help:l10n_br_account_payment_order.field_account_payment_mode__code_convenio_lider
+#: model:ir.model.fields,help:l10n_br_account_payment_order.field_account_payment_order__code_convenio_lider
+#: model:ir.model.fields,help:l10n_br_account_payment_order.field_l10n_br_cnab_boleto_fields__code_convenio_lider
+msgid "Código do Convênio Líder, exclusivo para o Banco do Brasil"
 msgstr ""
 
 #. module: l10n_br_account_payment_order
@@ -1648,7 +1685,7 @@ msgid "Erro ao exportar"
 msgstr ""
 
 #. module: l10n_br_account_payment_order
-#: code:addons/l10n_br_account_payment_order/models/account_payment_order.py:114
+#: code:addons/l10n_br_account_payment_order/models/account_payment_order.py:118
 #, python-format
 msgid "Erro ao gerar o arquivo, verifique a aba Linhas com problemas."
 msgstr ""
@@ -1831,6 +1868,12 @@ msgstr ""
 #. module: l10n_br_account_payment_order
 #: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_account_payment_order__indicative_form_payment
 msgid "Indicativo de Forma de Pagamento"
+msgstr ""
+
+#. module: l10n_br_account_payment_order
+#: model:ir.model.fields,help:l10n_br_account_payment_order.field_account_payment_mode__transmission_code
+#: model:ir.model.fields,help:l10n_br_account_payment_order.field_l10n_br_cnab_boleto_fields__transmission_code
+msgid "Informação cedida pelo banco que identifica o arquivo remessa do cliente"
 msgstr ""
 
 #. module: l10n_br_account_payment_order
@@ -2152,7 +2195,6 @@ msgid "Nome do Arquivo"
 msgstr ""
 
 #. module: l10n_br_account_payment_order
-#: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_account_move_line__own_number
 #: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_account_payment_line__own_number
 #: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_bank_payment_line__own_number
 msgid "Nosso Numero"
@@ -2161,6 +2203,11 @@ msgstr ""
 #. module: l10n_br_account_payment_order
 #: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_l10n_br_cnab_return_event__own_number
 msgid "Nosso Número"
+msgstr ""
+
+#. module: l10n_br_account_payment_order
+#: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_account_move_line__own_number_boleto
+msgid "Nosso Número Completo"
 msgstr ""
 
 #. module: l10n_br_account_payment_order
@@ -2516,6 +2563,11 @@ msgid "Sequencia do Arquivo CNAB"
 msgstr ""
 
 #. module: l10n_br_account_payment_order
+#: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_account_move_line__own_number
+msgid "Sequencial Nosso Numero"
+msgstr ""
+
+#. module: l10n_br_account_payment_order
 #: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_l10n_br_cnab_return_log__sequential_file
 msgid "Sequencial do Arquivo"
 msgstr ""
@@ -2836,13 +2888,13 @@ msgid "Write Off Movement Instruction Code"
 msgstr ""
 
 #. module: l10n_br_account_payment_order
-#: code:addons/l10n_br_account_payment_order/models/account_payment_order.py:149
+#: code:addons/l10n_br_account_payment_order/models/account_payment_order.py:153
 #, python-format
 msgid "You cannot Cancel CNAB order."
 msgstr ""
 
 #. module: l10n_br_account_payment_order
-#: code:addons/l10n_br_account_payment_order/models/account_payment_order.py:138
+#: code:addons/l10n_br_account_payment_order/models/account_payment_order.py:142
 #, python-format
 msgid "You cannot delete CNAB order."
 msgstr ""
