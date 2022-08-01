@@ -399,7 +399,10 @@ class NFe(spec_models.StackedModel):
     # TODO  Verificar as operações de bonificação se o desconto sai correto
     # nfe40_vDesc = fields.Monetary(related="amount_financial_discount_value")
     # nfe40_vDesc = fields.Monetary(related="amount_discount_value")
-    nfe40_vDesc = fields.Monetary(related="amount_discount_value")
+    nfe40_vDesc = fields.Monetary(
+        string="Montante de Desconto",
+        related="amount_discount_value",
+    )
 
     nfe40_vII = fields.Monetary(related="amount_ii_value")
 
@@ -415,7 +418,10 @@ class NFe(spec_models.StackedModel):
         string="valor do COFINS (NFe)", related="amount_cofins_value"
     )
 
-    nfe40_vOutro = fields.Monetary(related="amount_other_value")
+    nfe40_vOutro = fields.Monetary(
+        string="Outros Custos",
+        related="amount_other_value",
+    )
 
     nfe40_vNF = fields.Monetary(related="amount_total")
 
@@ -524,6 +530,29 @@ class NFe(spec_models.StackedModel):
     ##########################
 
     imported_document = fields.Boolean(string="Imported", default=False)
+
+    ##########################
+    # NF-e tag: autXML
+    # Compute Methods
+    ##########################
+
+    def _default_nfe40_autxml(self):
+        company = self.env.user.company_id
+        authorized_partners = []
+        if company.accountant_id and company.nfe_authorize_accountant_download_xml:
+            authorized_partners.append(company.accountant_id.id)
+        if (
+            company.technical_support_id
+            and company.nfe_authorize_technical_download_xml
+        ):
+            authorized_partners.append(company.technical_support_id.id)
+        return authorized_partners
+
+    ##########################
+    # NF-e tag: autXML
+    ##########################
+
+    nfe40_autXML = fields.One2many(default=_default_nfe40_autxml)
 
     ################################
     # Framework Spec model's methods
