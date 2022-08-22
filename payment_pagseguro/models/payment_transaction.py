@@ -444,7 +444,7 @@ class PaymentTransactionPagseguro(models.Model):
                             "region": partner.state_id.name,
                             "region_code": partner.state_id.code,
                             "country": partner.country_id.name,
-                            "postal_code": partner.zip,
+                            "postal_code": punctuation_rm(partner.zip),
                         },
                     },
                 },
