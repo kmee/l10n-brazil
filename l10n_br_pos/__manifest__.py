@@ -3,7 +3,7 @@
 
 {
     "name": "Ponto de venda adaptado a legislação Brasileira",
-    "version": "12.0.1.0.0",
+    "version": "14.0.1.0.0",
     "author": "KMEE, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/l10n-brazil",
     "license": "AGPL-3",
@@ -16,7 +16,6 @@
         "l10n_br_zip",
         "l10n_br_base",
         "point_of_sale",
-
         # TODO: Check this files after alpha version
         #   "queue_job",
         #   "l10n_br_stock_account",
@@ -29,7 +28,7 @@
         #   "pos_order_return",
     ],
     "external_dependencies": {
-        "python": ['satcomum'],
+        "python": ["satcomum"],
     },
     "data": [
         # security
@@ -45,9 +44,7 @@
         "views/product_template_view.xml",
         "views/res_company.xml",
         "views/pos_payment_method_view.xml",
-
         # "views/pos_template.xml",
-
         # TODO: Check this files after alpha version
         #   "views/account_invoice_view.xml"
         #   "views/pos_order_line_view.xml",

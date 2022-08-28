@@ -11,5 +11,6 @@ odoo_test_helper
 phonenumbers
 pycep_correios
 vcrpy
+satcomum
 workalendar
 xmldiff
