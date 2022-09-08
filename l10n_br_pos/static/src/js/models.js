@@ -352,7 +352,7 @@ odoo.define("l10n_br_pos.models", function (require) {
             /* Compute fiscal message */
             return new Function(`return \`${templateString}\`;`).call(this, taxes);
         },
-        _document_status_popup: async function () {
+        _document_status_popup: function () {
             var msgs = [];
             this.document_event_messages.forEach((element) => {
                 msgs.push({
@@ -361,7 +361,7 @@ odoo.define("l10n_br_pos.models", function (require) {
                     item: element.id,
                 });
             });
-            await Gui.showPopup("SelectionPopup", {
+            Gui.showPopup("SelectionPopup", {
                 title: _t("Status documento fiscal"),
                 list: this.document_event_messages,
                 confirmText: "Confirm",
@@ -374,7 +374,7 @@ odoo.define("l10n_br_pos.models", function (require) {
                 label: "Iniciando Processo de Transmissão",
             });
             this.state_edoc = SITUACAO_EDOC_A_ENVIAR;
-            await this._document_status_popup();
+            this._document_status_popup();
             var result = false;
             var processor_result = null;
             // Verifica se os campos do documento fiscal são válidos
@@ -399,7 +399,7 @@ odoo.define("l10n_br_pos.models", function (require) {
                 id: 1002,
                 label: "Validando documento fiscal",
             });
-            await this._document_status_popup();
+            this._document_status_popup();
 
             //     // if (order.is_to_invoice()) {
             //     //     res |= this.order_nfe_nfse_is_valid(order);
@@ -418,7 +418,7 @@ odoo.define("l10n_br_pos.models", function (require) {
                 id: 1003,
                 label: "Sem processador localizado",
             });
-            await this._document_status_popup();
+            this._document_status_popup();
             return null;
         },
         _document_check_result: async function () {
@@ -426,7 +426,7 @@ odoo.define("l10n_br_pos.models", function (require) {
                 id: 1004,
                 label: "Validando retorno do envio",
             });
-            await this._document_status_popup();
+            this._document_status_popup();
             this.state_edoc = SITUACAO_EDOC_AUTORIZADA;
         },
 
@@ -438,7 +438,7 @@ odoo.define("l10n_br_pos.models", function (require) {
                 id: 2002,
                 label: "Validando cancelamento do documento",
             });
-            await this._document_status_popup();
+            this._document_status_popup();
             return true;
         },
         _document_cancel_check_result: async function () {
@@ -446,7 +446,7 @@ odoo.define("l10n_br_pos.models", function (require) {
                 id: 1004,
                 label: "Validando retorno do envio",
             });
-            await this._document_status_popup();
+            this._document_status_popup();
             this.state_edoc = SITUACAO_EDOC_CANCELADA;
         },
         document_cancel: async function (cancel_reason) {
@@ -456,7 +456,7 @@ odoo.define("l10n_br_pos.models", function (require) {
                 id: 2001,
                 label: "Cancelando o documento fiscal",
             });
-            await this._document_status_popup();
+            this._document_status_popup();
             var result = false;
             var processor_result = null;
             result = await this._document_cancel_validate();
