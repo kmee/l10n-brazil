@@ -352,7 +352,7 @@ odoo.define("l10n_br_pos.models", function (require) {
             /* Compute fiscal message */
             return new Function(`return \`${templateString}\`;`).call(this, taxes);
         },
-        _document_status_popup: function () {
+        _document_status_popup: async function () {
             var msgs = [];
             this.document_event_messages.forEach((element) => {
                 msgs.push({
@@ -361,20 +361,20 @@ odoo.define("l10n_br_pos.models", function (require) {
                     item: element.id,
                 });
             });
-            Gui.showPopup("SelectionPopup", {
+            await Gui.showPopup("SelectionPopup", {
                 title: _t("Status documento fiscal"),
                 list: this.document_event_messages,
                 confirmText: "Confirm",
                 cancelText: "Cancel",
             });
         },
-        document_send: async function () {
+        document_send: async function (component) {
             this.document_event_messages.push({
                 id: 1000,
                 label: "Iniciando Processo de Transmissão",
             });
             this.state_edoc = SITUACAO_EDOC_A_ENVIAR;
-            this._document_status_popup();
+            await this._document_status_popup();
             var result = false;
             var processor_result = null;
             // Verifica se os campos do documento fiscal são válidos
@@ -387,6 +387,9 @@ odoo.define("l10n_br_pos.models", function (require) {
                     processor_result = await processor.send_order(this);
                     // Valida se foi emitido corretamente e salva os dados do resulto
                     result = await this._document_check_result(processor_result);
+                    if (result) {
+                        component.trigger("close-popup");
+                    }
                 }
             }
             return result;
@@ -396,7 +399,7 @@ odoo.define("l10n_br_pos.models", function (require) {
                 id: 1002,
                 label: "Validando documento fiscal",
             });
-            this._document_status_popup();
+            await this._document_status_popup();
 
             //     // if (order.is_to_invoice()) {
             //     //     res |= this.order_nfe_nfse_is_valid(order);
@@ -415,7 +418,7 @@ odoo.define("l10n_br_pos.models", function (require) {
                 id: 1003,
                 label: "Sem processador localizado",
             });
-            this._document_status_popup();
+            await this._document_status_popup();
             return null;
         },
         _document_check_result: async function () {
@@ -423,7 +426,7 @@ odoo.define("l10n_br_pos.models", function (require) {
                 id: 1004,
                 label: "Validando retorno do envio",
             });
-            this._document_status_popup();
+            await this._document_status_popup();
             this.state_edoc = SITUACAO_EDOC_AUTORIZADA;
         },
 
@@ -435,7 +438,7 @@ odoo.define("l10n_br_pos.models", function (require) {
                 id: 2002,
                 label: "Validando cancelamento do documento",
             });
-            this._document_status_popup();
+            await this._document_status_popup();
             return true;
         },
         _document_cancel_check_result: async function () {
@@ -443,7 +446,7 @@ odoo.define("l10n_br_pos.models", function (require) {
                 id: 1004,
                 label: "Validando retorno do envio",
             });
-            this._document_status_popup();
+            await this._document_status_popup();
             this.state_edoc = SITUACAO_EDOC_CANCELADA;
         },
         document_cancel: async function (cancel_reason) {
@@ -453,7 +456,7 @@ odoo.define("l10n_br_pos.models", function (require) {
                 id: 2001,
                 label: "Cancelando o documento fiscal",
             });
-            this._document_status_popup();
+            await this._document_status_popup();
             var result = false;
             var processor_result = null;
             result = await this._document_cancel_validate();
