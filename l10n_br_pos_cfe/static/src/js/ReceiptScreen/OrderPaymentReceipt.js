@@ -12,6 +12,10 @@ odoo.define("l10n_br_pos_cfe.OrderPaymentReceipt", function (require) {
             return this.props.paymentline;
         }
 
+        get rounding() {
+            return this.props.rounding;
+        }
+
         // Getters //
 
         get name() {
@@ -19,7 +23,7 @@ odoo.define("l10n_br_pos_cfe.OrderPaymentReceipt", function (require) {
         }
 
         get amount() {
-            return round_pr(this.paymentline.amount);
+            return round_pr(this.paymentline.amount, this.rounding);
         }
     }
     OrderPaymentReceipt.template = "OrderPaymentReceipt";

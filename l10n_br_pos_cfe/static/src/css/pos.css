@@ -30,7 +30,7 @@
 }
 
 .company-info__cnpj-ie {
-    font-size: 14px;
+    font-size: 10px;
 }
 
 /* SUBTITLE */
@@ -38,7 +38,6 @@
 .subtitle__extract {
     text-align: center;
     font-size: 16px;
-    text-transform: uppercase;
     font-weight: bold;
 }
 
@@ -56,6 +55,10 @@
 .body__orderlines {
     font-size: 10px;
     display: flex;
+}
+
+.orderline__element {
+    margin-left: 5px;
 }
 
 /* TOTAL */
@@ -83,6 +86,12 @@
 /* PAYMENT */
 
 .receipt-paymentline {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+}
+
+.receipt__change {
     display: flex;
     justify-content: space-between;
     font-size: 14px;

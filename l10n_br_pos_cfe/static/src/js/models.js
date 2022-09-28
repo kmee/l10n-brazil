@@ -74,6 +74,8 @@ odoo.define("l10n_br_pos_cfe.models", function (require) {
                 city: pos_company.city_id[1],
                 zip: pos_company.zip,
             };
+            json.company.inscr_mun = pos_company.inscr_mun;
+            json.rounding = this.pos.currency.rounding;
 
             if (pos_company.ambiente_sat === AMBIENTE_PRODUCAO) {
                 json.company.cnpj = pos_company.cnpj_cpf;
