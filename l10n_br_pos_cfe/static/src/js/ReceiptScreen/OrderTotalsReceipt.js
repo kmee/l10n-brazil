@@ -12,14 +12,18 @@ odoo.define("l10n_br_pos_cfe.OrderTotalsReceipt", function (require) {
             return this.props.order;
         }
 
+        get rounding() {
+            return this.props.rounding;
+        }
+
         // Getters //
 
         get total_with_tax() {
-            return this.order.total_with_tax;
+            return round_pr(this.order.total_with_tax, this.rounding);
         }
 
         get total_discount() {
-            return this.order.total_discount;
+            return round_pr(this.order.total_discount, this.rounding);
         }
 
         get subtotal() {
@@ -30,7 +34,8 @@ odoo.define("l10n_br_pos_cfe.OrderTotalsReceipt", function (require) {
             return round_pr(
                 orderlines.reduce((sum, line) => {
                     return sum + line.price * line.quantity;
-                }, 0)
+                }, 0),
+                this.rounding
             );
         }
     }

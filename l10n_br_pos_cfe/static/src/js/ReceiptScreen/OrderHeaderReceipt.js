@@ -30,6 +30,10 @@ odoo.define("l10n_br_pos_cfe.OrderHeaderReceipt", function (require) {
         get address() {
             return `${this.company.address.street_name} ${this.company.address.street_number} ${this.company.address.district} ${this.company.address.city} ${this.company.address.zip}`;
         }
+
+        get im() {
+            return this.company.inscr_mun;
+        }
     }
     OrderHeaderReceipt.template = "OrderHeaderReceipt";
 

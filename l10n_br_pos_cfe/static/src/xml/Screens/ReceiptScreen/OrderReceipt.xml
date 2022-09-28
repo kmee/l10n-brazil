@@ -27,20 +27,23 @@
                     <t t-foreach="receipt.orderlines" t-as="line" t-key="line.id">
                         <OrderRowReceipt line="line" />
                     </t>
-                    <OrderTotalsReceipt order="receipt" />
+                    <OrderTotalsReceipt order="receipt" rounding="receipt.rounding" />
                     <t
                         t-foreach="receipt.paymentlines"
                         t-as="paymentline"
                         t-key="paymentline.id"
                     >
-                        <OrderPaymentReceipt paymentline="paymentline" />
+                        <OrderPaymentReceipt
+                            paymentline="paymentline"
+                            rounding="receipt.rounding"
+                        />
                     </t>
-                    <div>
+                    <div class="receipt__change">
                         <div>
-                            <span>Troco</span>
+                            <span>Troco R$</span>
                         </div>
                         <div>
-                            <span>Valor Troco</span>
+                            <span><t t-esc="receipt.change" /></span>
                         </div>
                     </div>
                     <p
