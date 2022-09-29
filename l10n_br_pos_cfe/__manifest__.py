@@ -19,6 +19,7 @@
         "python": ["satcomum"],
     },
     "data": [
+        "data/pos_payment_method_data.xml",
         # Views
         "views/pos_payment_method_view.xml",
         # Templates
