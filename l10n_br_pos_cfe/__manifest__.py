@@ -29,7 +29,7 @@
         "demo/pos_payment_method_demo.xml",
     ],
     "qweb": [
-        "static/src/xml/Screens/ReceiptScreen/OrderReceipt.xml",
+        "static/src/xml/Screens/ReceiptScreen/SatOrderReceipt.xml",
         "static/src/xml/Screens/ReceiptScreen/OrderRowReceipt.xml",
         "static/src/xml/Screens/ReceiptScreen/OrderHeaderReceipt.xml",
         "static/src/xml/Screens/ReceiptScreen/OrderSubtitleReceipt.xml",
