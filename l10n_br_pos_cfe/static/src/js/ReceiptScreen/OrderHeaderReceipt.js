@@ -32,7 +32,7 @@ odoo.define("l10n_br_pos_cfe.OrderHeaderReceipt", function (require) {
         }
 
         get im() {
-            return this.company.inscr_mun;
+            return this.company.inscr_mun || "";
         }
     }
     OrderHeaderReceipt.template = "OrderHeaderReceipt";

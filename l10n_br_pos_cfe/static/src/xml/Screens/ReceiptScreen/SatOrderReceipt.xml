@@ -44,7 +44,7 @@
                     class="receipt__divider"
                 >------------------------------------------------</p>
             </div>
-            <OrderFooterReceipt />
+            <OrderFooterReceipt order="receipt" />
         </div>
     </t>
 
