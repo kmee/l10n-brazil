@@ -4,7 +4,7 @@
     <t t-name="OrderSubtitleReceipt" owl="1">
         <div class="subtitle">
             <div class="subtitle__extract">
-                <span>EXTRATO No. XXXXXXXXX</span>
+                <span>EXTRATO No. <t t-esc="document_number" /></span>
             </div>
 
             <div class="subtitle__sales-action">

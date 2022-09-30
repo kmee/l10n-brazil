@@ -8,15 +8,30 @@
             </div>
 
             <div class="footer__date">
-                DD/MM/AAAA - HH:MM:SS
+                <t t-esc="document_date" />
             </div>
 
             <div class="footer__barcode">
-                ( imagem do código de barras )
+                <div>
+                    <t t-esc="document_key" />
+                </div>
+                <div>
+                    <img
+                        class="footer__barcode-image"
+                        t-att-src="'/report/barcode/Code128/'+order['document_key_formatted']"
+                        alt="Barcode"
+                    />
+                </div>
             </div>
 
             <div class="footer__qrcode">
-                ( imagem do QRCode )
+                <div>
+                    <img
+                        t-att-src="'report/barcode/QR/'+"
+                        style="width:50px;heigth:50px;"
+                        alt="QRCode"
+                    />
+                </div>
             </div>
 
             <div class="footer__observation">
