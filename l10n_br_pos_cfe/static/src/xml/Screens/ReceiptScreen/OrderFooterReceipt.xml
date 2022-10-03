@@ -15,23 +15,20 @@
                 <div>
                     <t t-esc="document_key" />
                 </div>
-                <div>
-                    <img
-                        class="footer__barcode-image"
-                        t-att-src="'/report/barcode/Code128/'+order['document_key_formatted']"
-                        alt="Barcode"
-                    />
+                <div class="barcodeImage">
+                    <p class="satBarcode">
+                    </p>
                 </div>
             </div>
 
             <div class="footer__qrcode">
-                <div>
+                <!-- <div>
                     <img
                         t-att-src="'report/barcode/QR/'+"
                         style="width:50px;heigth:50px;"
                         alt="QRCode"
                     />
-                </div>
+                </div> -->
             </div>
 
             <div class="footer__observation">
