@@ -14,7 +14,14 @@ odoo.define("l10n_br_pos_cfe.OrderRowReceipt", function (require) {
 
         // Getters //
         get id() {
-            return this.line.id;
+            const lineCollections = this.env.pos.get_order().get_orderlines();
+            const index = _.findIndex(lineCollections, {id: this.line.id}) + 1;
+            if (index < 10) {
+                return String(index).padStart(3, "0");
+            } else if (index < 100) {
+                return String(index).padStart(2, "0");
+            }
+            return String(index);
         }
 
         get defaultCode() {

@@ -87,7 +87,7 @@ odoo.define("l10n_br_pos_cfe.OrderFooterReceipt", function (require) {
         }
 
         get document_key() {
-            return this.getFormattedDocumentKey();
+            return this.getFormattedDocumentKey().replace(/(.{4})/g, "$1 ");
         }
 
         get document_date() {
