@@ -7,6 +7,7 @@ odoo.define("l10n_br_pos_cfe.OrderFooterReceipt", function (require) {
     class OrderFooterReceipt extends PosComponent {
         mounted() {
             setTimeout(() => this._generateBarcode(this.getFormattedDocumentKey()), 0);
+            setTimeout(() => this._generateQRCode(), 0);
         }
 
         get order() {
@@ -32,8 +33,51 @@ odoo.define("l10n_br_pos_cfe.OrderFooterReceipt", function (require) {
             }
         }
 
+        _generateQRCode() {
+            // eslint-disable-next-line
+            return new QRCode(document.getElementById("footer__qrcode"), {
+                text: this.getTextForQRCode(),
+                width: 151,
+                height: 151,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                // eslint-disable-next-line
+                correctLevel: QRCode.CorrectLevel.L,
+            });
+        }
+
         getFormattedDocumentKey() {
             return this.order.document_key.replace("CFe", "");
+        }
+
+        getTextForQRCode() {
+            const orderDate = this.order.authorization_date;
+            const qrCodeSignature = this.order.document_qrcode_signature;
+            const orderTotalAmount = this.order.total_with_tax;
+            const cnpjCpf = this.order.cnpj_cpf || "";
+
+            const str = "";
+
+            const qrCodeDate = this.getQRCodeDate(orderDate);
+
+            return str.concat(
+                this.getFormattedDocumentKey(),
+                "|",
+                qrCodeDate,
+                "|",
+                orderTotalAmount,
+                "|",
+                cnpjCpf,
+                "|",
+                qrCodeSignature
+            );
+        }
+
+        getQRCodeDate(authorization_date) {
+            return authorization_date
+                .replaceAll("-", "")
+                .replaceAll(":", "")
+                .replaceAll("T", "");
         }
 
         // Getters //

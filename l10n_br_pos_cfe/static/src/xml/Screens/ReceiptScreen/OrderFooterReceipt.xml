@@ -21,14 +21,7 @@
                 </div>
             </div>
 
-            <div class="footer__qrcode">
-                <!-- <div>
-                    <img
-                        t-att-src="'report/barcode/QR/'+"
-                        style="width:50px;heigth:50px;"
-                        alt="QRCode"
-                    />
-                </div> -->
+            <div class="footer__qrcode" id="footer__qrcode">
             </div>
 
             <div class="footer__observation">
