@@ -6,7 +6,7 @@
 
 .header__name {
     text-align: center;
-    font-size: 18px;
+    font-size: 26px;
     text-transform: uppercase;
     margin-bottom: 0;
     font-weight: bold;
@@ -14,46 +14,44 @@
 
 .header__legal-name {
     text-align: center;
-    font-size: 16px;
+    font-size: 24px;
 }
 
 .header__address {
     text-align: center;
-    font-size: 16px;
+    font-size: 24px;
 }
 
 .header__company-info {
     display: flex;
-    flex-direction: row;
-    font-size: 14px;
-    justify-content: space-evenly;
-}
-
-.company-info__cnpj-ie {
-    font-size: 10px;
+    flex-direction: column;
+    font-size: 18px;
+    margin-top: 10px;
+    align-items: flex-start;
 }
 
 /* SUBTITLE */
 
 .subtitle__extract {
     text-align: center;
-    font-size: 16px;
+    font-size: 22px;
     font-weight: bold;
+    margin-bottom: 5px;
 }
 
 .subtitle__sales-action {
     text-align: center;
-    font-size: 16px;
+    font-size: 22px;
 }
 
 /* BODY */
 
 .body__header {
-    font-size: 11px;
+    font-size: 16px;
 }
 
 .body__orderlines {
-    font-size: 10px;
+    font-size: 16px;
     display: flex;
 }
 
@@ -61,11 +59,36 @@
     margin-left: 5px;
 }
 
+.body__end {
+    margin-top: 5px;
+    display: flex;
+    flex-direction: column;
+}
+
+.body__message {
+    font-size: 12px;
+}
+
+.body__caption {
+    font-size: 16px;
+}
+
+.body__line-discount {
+    margin: 2px 0;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+/* .body__line-discount p {
+    margin: 0px;
+} */
+
 /* TOTAL */
 
 .totals {
     margin-top: 10px;
-    font-size: 14px;
+    font-size: 18px;
 }
 
 .totals__subtotal {
@@ -89,29 +112,31 @@
 .receipt-paymentline {
     display: flex;
     justify-content: space-between;
-    font-size: 14px;
+    font-size: 18px;
 }
 
 .receipt__change {
     display: flex;
     justify-content: space-between;
-    font-size: 14px;
+    font-size: 18px;
 }
-
-/* TAXES */
 
 /* FOOTER */
 
 .footer__sat-info {
-    font-size: 16px;
+    font-size: 22px;
     text-align: center;
     font-weight: bold;
 }
 
 .footer__date {
-    font-size: 16px;
+    font-size: 22px;
     text-align: center;
     margin: 10px 0;
+}
+
+.footer_barcodeKey {
+    font-size: 16px;
 }
 
 .footer__barcode {
@@ -129,9 +154,12 @@
 .footer__qrcode {
     font-size: 12px;
     text-align: center;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
 }
 
 .footer__observation {
-    font-size: 10px;
+    font-size: 12px;
     text-align: center;
 }

@@ -12,7 +12,7 @@
             </div>
 
             <div class="footer__barcode">
-                <div>
+                <div class="footer_barcodeKey">
                     <t t-esc="document_key" />
                 </div>
                 <div class="barcodeImage">
