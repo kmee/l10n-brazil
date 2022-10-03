@@ -6,10 +6,7 @@ odoo.define("l10n_br_pos_cfe.OrderFooterReceipt", function (require) {
 
     class OrderFooterReceipt extends PosComponent {
         mounted() {
-            setTimeout(
-                () => this._generateBarcode(this.order.document_key_formatted),
-                0
-            );
+            setTimeout(() => this._generateBarcode(this.getFormattedDocumentKey()), 0);
         }
 
         get order() {
@@ -35,11 +32,18 @@ odoo.define("l10n_br_pos_cfe.OrderFooterReceipt", function (require) {
             }
         }
 
+        getFormattedDocumentKey() {
+            return this.order.document_key.replace("CFe", "");
+        }
+
         // Getters //
 
+        get satNumber() {
+            return this.order.document_serie;
+        }
+
         get document_key() {
-            this.order.document_key_formatted = this.order.document_key.substring(3);
-            return this.order.document_key_formatted;
+            return this.getFormattedDocumentKey();
         }
 
         get document_date() {

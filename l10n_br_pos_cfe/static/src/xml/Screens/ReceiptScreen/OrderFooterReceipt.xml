@@ -4,7 +4,7 @@
     <t t-name="OrderFooterReceipt" owl="1">
         <div class="footer">
             <div class="footer__sat-info">
-                SAT No. XXXXXXXXX
+                SAT No. <t t-esc="satNumber" />
             </div>
 
             <div class="footer__date">
