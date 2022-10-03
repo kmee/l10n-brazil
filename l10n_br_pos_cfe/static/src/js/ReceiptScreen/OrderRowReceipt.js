@@ -34,7 +34,7 @@ odoo.define("l10n_br_pos_cfe.OrderRowReceipt", function (require) {
         }
 
         get productPrice() {
-            return this.line.price;
+            return this.line.price.toFixed(2);
         }
 
         get taxes() {
@@ -42,7 +42,7 @@ odoo.define("l10n_br_pos_cfe.OrderRowReceipt", function (require) {
         }
 
         get total() {
-            return round_pr(this.productQuantity * this.productPrice);
+            return round_pr(this.productQuantity * this.productPrice).toFixed(2);
         }
     }
     OrderRowReceipt.template = "OrderRowReceipt";
