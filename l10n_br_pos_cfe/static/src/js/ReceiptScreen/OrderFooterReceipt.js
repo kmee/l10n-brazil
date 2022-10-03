@@ -43,7 +43,7 @@ odoo.define("l10n_br_pos_cfe.OrderFooterReceipt", function (require) {
         }
 
         get document_date() {
-            return moment(this.order.authorization_date).format("YYYY/MM/DD hh:mm:ss");
+            return moment(this.order.authorization_date).format("DD/MM/YYYY HH:mm:ss");
         }
     }
     OrderFooterReceipt.template = "OrderFooterReceipt";
