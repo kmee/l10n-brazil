@@ -15,13 +15,14 @@
                 <div class="footer_barcodeKey">
                     <t t-esc="document_key" />
                 </div>
-                <div class="barcodeImage">
-                    <p class="satBarcode">
-                    </p>
+                <div class="satBarcode">
+                    <!-- <p class="satBarcode">
+                    </p> -->
                 </div>
             </div>
 
             <div class="footer__qrcode" id="footer__qrcode">
+                <t t-esc="qrcode" />
             </div>
 
             <div class="footer__observation">

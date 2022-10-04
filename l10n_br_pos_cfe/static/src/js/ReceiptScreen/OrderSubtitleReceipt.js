@@ -14,6 +14,13 @@ odoo.define("l10n_br_pos_cfe.OrderSubtitleReceipt", function (require) {
         get document_number() {
             return this.order.document_number || "";
         }
+
+        get satAmbiente() {
+            if (this.env.pos.config.sat_ambiente === "homologacao") {
+                return true;
+            }
+            return false;
+        }
     }
     OrderSubtitleReceipt.template = "OrderSubtitleReceipt";
 
