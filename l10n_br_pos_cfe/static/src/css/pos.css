@@ -1,5 +1,10 @@
 .receipt__divider {
     margin: 0;
+    padding: 0;
+}
+
+.pos-receipt {
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 /* HEADER */
@@ -19,7 +24,7 @@
 
 .header__address {
     text-align: center;
-    font-size: 24px;
+    font-size: 22px;
 }
 
 .header__company-info {
@@ -44,6 +49,21 @@
     font-size: 22px;
 }
 
+.subtitle__test-env {
+    text-align: center;
+}
+
+.test-env__title {
+    font-size: 22px;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+.test-env__divider {
+    font-size: 22px;
+    font-weight: bold;
+}
+
 /* BODY */
 
 .body__header {
@@ -51,12 +71,24 @@
 }
 
 .body__orderlines {
-    font-size: 16px;
+    font-size: 14px;
     display: flex;
+    justify-content: space-between;
+    text-align: initial;
 }
 
-.orderline__element {
-    margin-left: 5px;
+.orderline__left {
+    display: flex;
+    /* align-content: center; */
+    flex-direction: row;
+    justify-content: space-evenly;
+}
+
+.orderline__right {
+    display: flex;
+    /* align-content: center; */
+    flex-direction: row;
+    justify-content: space-evenly;
 }
 
 .body__end {
@@ -74,20 +106,22 @@
 }
 
 .body__line-discount {
+    font-size: 14;
     margin: 2px 0;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
 }
 
-/* .body__line-discount p {
-    margin: 0px;
-} */
+.orderline__element {
+    margin-left: 2px;
+}
 
 /* TOTAL */
 
 .totals {
     margin-top: 10px;
+    margin-bottom: 5px;
     font-size: 18px;
 }
 
@@ -110,12 +144,14 @@
 /* PAYMENT */
 
 .receipt-paymentline {
+    margin: 5px 0;
     display: flex;
     justify-content: space-between;
     font-size: 18px;
 }
 
 .receipt__change {
+    margin: 5px 0;
     display: flex;
     justify-content: space-between;
     font-size: 18px;

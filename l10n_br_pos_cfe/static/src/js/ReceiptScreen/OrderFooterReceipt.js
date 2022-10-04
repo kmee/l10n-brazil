@@ -23,22 +23,22 @@ odoo.define("l10n_br_pos_cfe.OrderFooterReceipt", function (require) {
                 s = 2;
                 console.error("Message too long for Data Matrix.");
             } else {
-                s = Math.floor((400 + dm[1].length) / dm[1].length);
+                s = Math.floor((300 + dm[1].length) / dm[1].length);
                 // eslint-disable-next-line
                 barcode[0].innerHTML = toHtml(
                     // eslint-disable-next-line
                     [code128(documentKey)],
-                    [(s / 4) | 0, 50]
+                    [(s / 8) | 0, 75]
                 );
             }
         }
 
-        _generateQRCode() {
+        async _generateQRCode() {
             // eslint-disable-next-line
-            return new QRCode(document.getElementById("footer__qrcode"), {
+            return await new QRCode(document.getElementById("footer__qrcode"), {
                 text: this.getTextForQRCode(),
-                width: 151,
-                height: 151,
+                width: 325,
+                height: 325,
                 colorDark: "#000000",
                 colorLight: "#ffffff",
                 // eslint-disable-next-line

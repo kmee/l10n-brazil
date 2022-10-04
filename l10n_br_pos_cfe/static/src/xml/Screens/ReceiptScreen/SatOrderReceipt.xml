@@ -4,20 +4,20 @@
     <t t-name="SatOrderReceipt" owl="1">
         <div class="pos-receipt">
             <OrderHeaderReceipt company="receipt.company" />
-            <p
+            <span
                 class="receipt__divider"
-            >----------------------------------------------------------</p>
+            >---------------------------------------------------------</span>
             <OrderSubtitleReceipt order="receipt" />
-            <p
+            <span
                 class="receipt__divider"
-            >----------------------------------------------------------</p>
+            >---------------------------------------------------------</span>
             <div class="body">
                 <div class="body__header">
                     # | COD | DESC | QTD | UN | VL UN R$ | (VL TR R$)* | VL ITEM R$
                 </div>
-                <p
+                <span
                     class="receipt__divider"
-                >----------------------------------------------------------</p>
+                >---------------------------------------------------------</span>
                 <t t-foreach="receipt.orderlines" t-as="line" t-key="line.id">
                     <OrderRowReceipt line="line" />
                     <t t-if="line.discount">
@@ -54,9 +54,9 @@
                         class="body__caption"
                     >* Valor aproximado dos tributos do item.</span>
                 </div>
-                <p
+                <span
                     class="receipt__divider"
-                >----------------------------------------------------------</p>
+                >---------------------------------------------------------</span>
             </div>
             <OrderFooterReceipt order="receipt" />
         </div>

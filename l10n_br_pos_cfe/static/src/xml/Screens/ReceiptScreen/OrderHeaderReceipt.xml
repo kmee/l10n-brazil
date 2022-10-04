@@ -12,7 +12,11 @@
             </div>
 
             <div class="header__address">
-                <t t-esc="address" />
+                <t t-esc="addressStreetNumber" />
+                <br />
+                <t t-esc="addressDistrict" />
+                <br />
+                <t t-esc="addressCityZip" />
             </div>
 
             <div class="header__company-info">
