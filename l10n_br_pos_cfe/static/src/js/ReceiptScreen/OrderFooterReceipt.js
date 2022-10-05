@@ -15,30 +15,19 @@ odoo.define("l10n_br_pos_cfe.OrderFooterReceipt", function (require) {
         }
 
         _generateBarcode(documentKey) {
-            let s = 1;
-            const barcode = document.getElementsByClassName("satBarcode");
-            // eslint-disable-next-line
-            const dm = datamatrix(documentKey, true);
-            if (dm.length === 0) {
-                s = 2;
-                console.error("Message too long for Data Matrix.");
-            } else {
-                s = Math.floor((300 + dm[1].length) / dm[1].length);
-                // eslint-disable-next-line
-                barcode[0].innerHTML = toHtml(
-                    // eslint-disable-next-line
-                    [code128(documentKey)],
-                    [(s / 8) | 0, 75]
-                );
-            }
+            $("#satBarcode").JsBarcode(documentKey, {
+                displayValue: false,
+                height: 60,
+                width: 1.5,
+            });
         }
 
         async _generateQRCode() {
             // eslint-disable-next-line
             return await new QRCode(document.getElementById("footer__qrcode"), {
                 text: this.getTextForQRCode(),
-                width: 325,
-                height: 325,
+                width: 275,
+                height: 275,
                 colorDark: "#000000",
                 colorLight: "#ffffff",
                 // eslint-disable-next-line

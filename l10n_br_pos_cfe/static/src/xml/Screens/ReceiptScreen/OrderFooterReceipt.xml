@@ -16,8 +16,7 @@
                     <t t-esc="document_key" />
                 </div>
                 <div class="satBarcode">
-                    <!-- <p class="satBarcode">
-                    </p> -->
+                    <img id="satBarcode" />
                 </div>
             </div>
 
