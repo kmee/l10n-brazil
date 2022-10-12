@@ -6,8 +6,8 @@ odoo.define("l10n_br_pos_cfe.OrderFooterReceipt", function (require) {
 
     class OrderFooterReceipt extends PosComponent {
         mounted() {
-            setTimeout(() => this._generateBarcode(this.getFormattedDocumentKey()), 0);
-            setTimeout(() => this._generateQRCode(), 0);
+            this._generateBarcode(this.getFormattedDocumentKey());
+            this._generateQRCode();
         }
 
         get order() {
