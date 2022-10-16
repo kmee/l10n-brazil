@@ -60,8 +60,8 @@ class PartnerPix(models.Model):
                 email,
                 check_deliverability=False,
             )
-        except EmailSyntaxError:
-            raise ValidationError(_(f"{email.strip()} is an invalid email"))
+        except EmailSyntaxError as e:
+            raise ValidationError(_(f"{email.strip()} is an invalid email")) from e
         normalized_email = result["local"].lower() + "@" + result["domain_i18n"]
         if len(normalized_email) > 77:
             raise ValidationError(
@@ -76,7 +76,7 @@ class PartnerPix(models.Model):
         try:
             phonenumber = phonenumbers.parse(phone, "BR")
         except phonenumbers.phonenumberutil.NumberParseException as e:
-            raise ValidationError(_(f"Unable to parse {phone}: {str(e)}"))
+            raise ValidationError(_(f"Unable to parse {phone}: {str(e)}")) from e
         if not phonenumbers.is_possible_number(phonenumber):
             raise ValidationError(
                 _(f"Impossible number {phone}: probably invalid number of digits.")
@@ -120,13 +120,13 @@ class PartnerPix(models.Model):
         for block in blocks:
             try:
                 int(block, 16)
-            except ValueError:
+            except ValueError as e:
                 raise ValidationError(
                     _(
                         f"Invalid Random Key: {key} \nthe block {block} "
                         f"is not a valid hexadecimal format."
                     )
-                )
+                ) from e
         return key
 
     @api.model
