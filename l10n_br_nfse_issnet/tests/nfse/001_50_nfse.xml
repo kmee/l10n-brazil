@@ -1,11 +1,16 @@
-<EnviarLoteRpsEnvio xmlns="http://www.issnetonline.com.br/webserviceabrasf/vsd/servico_enviar_lote_rps_envio.xsd" xmlns:tc="http://www.issnetonline.com.br/webserviceabrasf/vsd/tipos_complexos.xsd">
+<EnviarLoteRpsEnvio
+    xmlns="http://www.issnetonline.com.br/webserviceabrasf/vsd/servico_enviar_lote_rps_envio.xsd"
+    xmlns:tc="http://www.issnetonline.com.br/webserviceabrasf/vsd/tipos_complexos.xsd"
+>
     <LoteRps>
         <tc:CpfCnpj>
             <tc:Cnpj>59594315000157</tc:Cnpj>
         </tc:CpfCnpj>
         <tc:InscricaoMunicipal>35172</tc:InscricaoMunicipal>
         <tc:QuantidadeRps>1</tc:QuantidadeRps>
-        <tc:ListaRps xmlns="http://www.issnetonline.com.br/webserviceabrasf/vsd/tipos_complexos.xsd">
+        <tc:ListaRps
+            xmlns="http://www.issnetonline.com.br/webserviceabrasf/vsd/tipos_complexos.xsd"
+        >
             <tc:Rps>
                 <tc:InfRps id="rps50">
                     <tc:IdentificacaoRps>
@@ -40,8 +45,10 @@
                         </tc:Valores>
                         <tc:ItemListaServico>105</tc:ItemListaServico>
                         <tc:CodigoCnae>3101200</tc:CodigoCnae>
-                        <tc:CodigoTributacaoMunicipio>6311900</tc:CodigoTributacaoMunicipio>
-                        <tc:Discriminacao>[ODOO_DEV] Customized Odoo Development</tc:Discriminacao>
+                        <tc:CodigoTributacaoMunicipio
+                        >6311900</tc:CodigoTributacaoMunicipio>
+                        <tc:Discriminacao
+                        >[ODOO_DEV] Customized Odoo Development</tc:Discriminacao>
                         <tc:MunicipioPrestacaoServico>999</tc:MunicipioPrestacaoServico>
                     </tc:Servico>
                     <tc:Prestador>
