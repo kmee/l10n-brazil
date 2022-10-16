@@ -3,9 +3,8 @@
 
 import logging
 
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
-
-from odoo import api, models, fields, _
 
 _logger = logging.getLogger(__name__)
 
@@ -17,7 +16,7 @@ except ImportError:
 
 
 class AccountBankStatementImport(models.TransientModel):
-    _inherit = 'account.bank.statement.import'
+    _inherit = "account.bank.statement.import"
 
     @api.model
     def _check_cnab(self, data_file):
@@ -41,15 +40,17 @@ class AccountBankStatementImport(models.TransientModel):
             name += " : " + line.document_number
 
         date = (
-            line.date_account[-4:] + '-' +
-            line.date_account[2:4] + '-' +
-            line.date_account[0:2]
+            line.date_account[-4:]
+            + "-"
+            + line.date_account[2:4]
+            + "-"
+            + line.date_account[0:2]
         )
 
         vals = {
-            'date': fields.Date.to_date(date),
-            'name': name,
-            'amount': float(line.amount),
+            "date": fields.Date.to_date(date),
+            "name": name,
+            "amount": float(line.amount),
             # 'ref': Can other banks send more data?
             # 'unique_import_id':
         }
@@ -67,14 +68,18 @@ class AccountBankStatementImport(models.TransientModel):
                 if vals:
                     transactions.append(vals)
         except Exception as e:
-            raise UserError(_(
-                "The following problem occurred during import. "
-                "The file might not be valid.\n\n %s") % e.message)
+            raise UserError(
+                _(
+                    "The following problem occurred during import. "
+                    "The file might not be valid.\n\n %s"
+                )
+                % e.message
+            )
 
         vals_bank_statement = {
-            'name': cnab.account_number,
-            'transactions': transactions,
-            'balance_start': int(cnab.start_amount_in_cents) / 100,
-            'balance_end_real': int(cnab.stop_amount_in_cents) / 100,
+            "name": cnab.account_number,
+            "transactions": transactions,
+            "balance_start": int(cnab.start_amount_in_cents) / 100,
+            "balance_end_real": int(cnab.stop_amount_in_cents) / 100,
         }
         return cnab.currency, cnab.account_number.strip("0"), [vals_bank_statement]
