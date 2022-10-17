@@ -21,7 +21,6 @@
             </div>
 
             <div class="footer__qrcode" id="footer__qrcode">
-                <t t-esc="qrcode" />
             </div>
 
             <div class="footer__observation">
