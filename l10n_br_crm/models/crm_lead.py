@@ -23,9 +23,9 @@ class Lead(models.Model):
 
     cnpj = fields.Char(string="CNPJ")
 
-    street_name = fields.Char(string="Street Name")
+    street_name = fields.Char()
 
-    street_number = fields.Char(string="Street Number")
+    street_number = fields.Char()
 
     name_surname = fields.Char(
         string="Name and Surname", help="Name used in fiscal documents"
@@ -104,7 +104,7 @@ class Lead(models.Model):
 
     @api.onchange("partner_id")
     def _onchange_partner_id(self):
-        result = super(Lead, self)._prepare_values_from_partner(self.partner_id)
+        result = self._prepare_values_from_partner(self.partner_id)
 
         if self.partner_id:
             result["street_name"] = self.partner_id.street_name
@@ -130,7 +130,7 @@ class Lead(models.Model):
                 result["cpf"] = self.partner_id.cnpj_cpf
                 result["rg"] = self.partner_id.rg
                 result["name_surname"] = self.partner_id.legal_name
-        self.update(result)
+            self.update(result)
 
     def _prepare_customer_values(self, name, is_company, parent_id=False):
         """Extract data from lead to create a partner.
