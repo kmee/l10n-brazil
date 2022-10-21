@@ -1,10 +1,10 @@
 # Copyright 2020 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo.tests.common import Form, SavepointCase
+from odoo.tests.common import Form, TransactionCase
 
 
-class TestL10nBrContract(SavepointCase):
+class TestL10nBrContract(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super(TestL10nBrContract, cls).setUpClass()
