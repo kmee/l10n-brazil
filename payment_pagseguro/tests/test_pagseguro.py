@@ -1,7 +1,10 @@
 # Copyright 2020 KMEE INFORMATICA LTDA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import os
 import time
+
+import vcr
 
 import odoo
 from odoo.exceptions import ValidationError
@@ -15,6 +18,7 @@ class PagseguroTest(odoo.tests.HttpCase):
         self.eur_currency = self.env["res.currency"].search([("name", "=", "EUR")])
         self.brl_currency = self.env["res.currency"].search([("name", "=", "BRL")])
 
+    @vcr.use_cassette(os.path.dirname(__file__) + "/fixtures/test_buy_pagseguro.yaml", record=all)
     def test_buy_pagseguro(self):
         self.browser_js(
             "/shop",
