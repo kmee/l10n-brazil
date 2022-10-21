@@ -17,7 +17,7 @@ class HrEmployee(models.Model):
 
     cnpj_cpf = fields.Char(string="CNPJ/CPF")
 
-    naturalidade = fields.Many2one(string="Naturalidade", comodel_name="res.city")
+    naturalidade = fields.Many2one(comodel_name="res.city")
 
     pis_pasep = fields.Char(string="PIS/PASEP")
 
@@ -28,7 +28,8 @@ class HrEmployee(models.Model):
     ctps_date = fields.Date(string="CTPS emission date")
 
     ctps_uf_id = fields.Many2one(
-        string="CTPS district", comodel_name="res.country.state"
+        string="CTPS district",
+        comodel_name="res.country.state",
     )
 
     creservist = fields.Char(string="Military service status certificate")
@@ -88,7 +89,7 @@ class HrEmployee(models.Model):
 
     expiration_date = fields.Date(string="Expiration date")
 
-    ethnicity = fields.Many2one(string="Ethnicity", comodel_name="hr.ethnicity")
+    ethnicity = fields.Many2one(comodel_name="hr.ethnicity")
 
     blood_type = fields.Selection(
         string="Blood type",
