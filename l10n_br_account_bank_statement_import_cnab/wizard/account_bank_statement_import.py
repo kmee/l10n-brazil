@@ -74,7 +74,7 @@ class AccountBankStatementImport(models.TransientModel):
                     "The file might not be valid.\n\n %s"
                 )
                 % e.message
-            )
+            ) from e
 
         vals_bank_statement = {
             "name": cnab.account_number,
