@@ -57,10 +57,7 @@
                                 <field name="ctps" string="Number" />
                                 <field name="ctps_series" />
                                 <field name="ctps_date" />
-                                <field
-                                    name="ctps_uf_id"
-                                    domain="[('country_id','=',country_id)]"
-                                />
+                                <field name="ctps_uf_id" />
                             </group>
                             <group name="civil_certificate" string="Civil certificate">
                                 <field name="civil_certificate_type_id" />
@@ -71,10 +68,7 @@
                                 <field name="organ_exp" />
                                 <field name="rg_emission" />
                                 <field name="identity_validity" />
-                                <field
-                                    name="identity_uf_id"
-                                    domain="[('country_id','=',country_id)]"
-                                />
+                                <field name="identity_uf_id" />
                                 <field name="identity_city_id" />
                             </group>
                             <group name="reservist" string="Reservist">
@@ -114,16 +108,15 @@
                     string="Spouse and Dependents"
                     groups="hr.group_hr_manager,hr.group_hr_user"
                 >
-                    <form string="Spouse and Dependents" version="7.0">
-                        <group colspan="4" col="4">
-                            <field name="have_dependent" />
-                        </group>
-                        <field
-                            name="dependent_ids"
-                            widget="one2many_list"
-                            attrs="{'invisible':[('have_dependent', '!=', True)]}"
-                        />
-                    </form>
+                    <group>
+                        <field name="have_dependent" />
+                    </group>
+                    <field
+                        name="dependent_ids"
+                        widget="one2many_list"
+                        attrs="{'invisible':[('have_dependent', '!=', True)]}"
+                        nolabel="1"
+                    />
                 </page>
                 <page
                     name="health"
