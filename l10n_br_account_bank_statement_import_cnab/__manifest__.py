@@ -5,7 +5,7 @@
     "name": "L10n Br Account Bank Statement Import Cnab",
     "summary": """
         Importação de Extrato Bancário CNAB 240 - Segmento E""",
-    "version": "12.0.1.0.0",
+    "version": "16.0.1.0.0",
     "license": "AGPL-3",
     "author": "KMEE,Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/l10n-brazil",
