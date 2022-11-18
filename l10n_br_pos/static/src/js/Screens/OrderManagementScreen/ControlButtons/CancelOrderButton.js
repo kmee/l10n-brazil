@@ -73,7 +73,15 @@ odoo.define("l10n_br_pos.CancelOrderButton", function (require) {
             if (!order) return;
             const cancel_reason = await this._show_selection_popup();
             if (cancel_reason) {
-                order.document_cancel(cancel_reason);
+                const result = await order.document_cancel(cancel_reason);
+                if (result) {
+                    order.cancel_order(result);
+                } else {
+                    this.document_event_messages.push({
+                        id: 5001,
+                        label: "Falha no cancelamento.",
+                    });
+                }
             }
         }
     }
