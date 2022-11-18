@@ -12,6 +12,7 @@ odoo.define("l10n_br_pos_cfe.models", function (require) {
 
     const SITUACAO_EDOC_REJEITADA = "rejeitada";
     const SITUACAO_EDOC_AUTORIZADA = "autorizada";
+    const SITUACAO_EDOC_CANCELADA = "cancelada";
 
     var models = require("point_of_sale.models");
     const {Gui} = require("point_of_sale.Gui");
@@ -168,19 +169,25 @@ odoo.define("l10n_br_pos_cfe.models", function (require) {
             // this.fiscal_coupon_date = json_result.timeStamp.replace("T", " ");
         },
         _document_cancel_check_result: async function (result) {
-            if (this.backendId === result.response.order_id) {
+            if (!this.document_type === "59") {
+                return _super_order._document_cancel_check_result.apply(
+                    this,
+                    arguments
+                );
+            }
+            if (result?.successful && this.backendId === result.response.order_id) {
                 this.cancel_file = result.response.xml;
                 this.cancel_protocol_number = result.response.numeroSessao;
                 this.cancel_document_key = result.response.chave_cfe;
-                // FIXME: cancel_date
-                // this.cancel_date =
+                this.state_edoc = SITUACAO_EDOC_CANCELADA;
+                return result;
             } else {
                 Gui.showPopup("ErrorTracebackPopup", {
                     title: this.pos.env._t("Falha ao cancelar o CF-E"),
                     body: result.response,
                 });
             }
-            return _super_order._document_cancel_check_result.apply(this, arguments);
+            return false;
         },
         set_document_key: function (document_key) {
             this.document_key = document_key;
