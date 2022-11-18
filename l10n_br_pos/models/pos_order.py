@@ -277,7 +277,7 @@ class PosOrder(models.Model):
         attachment_ids.unlink()
         vals = {
             "name": file_name,
-            "datas_fname": file_name,
+            "store_fname": file_name,
             "res_model": self._name,
             "res_id": self.id,
             "datas": file_content.encode("utf-8"),
