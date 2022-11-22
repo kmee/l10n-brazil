@@ -176,10 +176,8 @@ odoo.define("l10n_br_pos_cfe.models", function (require) {
                 );
             }
             if (result?.successful && this.backendId === result.response.order_id) {
-                this.cancel_file = result.response.xml;
-                this.cancel_protocol_number = result.response.numeroSessao;
-                this.cancel_document_key = result.response.chave_cfe;
-                this.state_edoc = SITUACAO_EDOC_CANCELADA;
+                this._set_cfe_cancel_response(result);
+
                 return result;
             } else {
                 Gui.showPopup("ErrorTracebackPopup", {
@@ -188,6 +186,27 @@ odoo.define("l10n_br_pos_cfe.models", function (require) {
                 });
             }
             return false;
+        },
+        _set_cfe_cancel_response: function (result) {
+            const XmlDecoded = this.decode_cancel_xml(result.response.xml);
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(XmlDecoded, "application/xml");
+            let hEmi = doc.querySelector("ide>hEmi").innerHTML;
+            let dEmi = doc.querySelector("ide>dEmi").innerHTML;
+            let cancel_date = `${dEmi.substring(0, 4)}-${dEmi.substring(
+                4,
+                6
+            )}-${dEmi.substring(6, 8)}T${hEmi.substring(0, 2)}:${hEmi.substring(
+                2,
+                4
+            )}:${hEmi.substring(4, 6)}`;
+            this.cancel_date = cancel_date;
+            this.cancel_file = result.response.xml;
+            this.cancel_protocol_number = result.response.numSessao;
+            this.cancel_document_key = result.response.chave_cfe;
+            this.cancel_qrcode_signature =
+                doc.querySelector("assinaturaQRCODE").innerHTML;
+            this.state_edoc = SITUACAO_EDOC_CANCELADA;
         },
         set_document_key: function (document_key) {
             this.document_key = document_key;
