@@ -1,9 +1,11 @@
 # © 2016 KMEE INFORMATICA LTDA (https://kmee.com.br)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
+
 import logging
 from datetime import datetime
 
 from odoo import api, fields, models
+from odoo.osv.expression import AND
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import SITUACAO_EDOC
 
@@ -507,6 +509,7 @@ class PosOrder(models.Model):
         self.cancel_document_key = order_vals["chave_cfe"]
         self.cancel_document_session_number = order_vals["numSessao"]
         self.state_edoc = "cancelada"
+        self.cancel_file = order_vals["xml"]
 
     def _generate_refund_payments(self, refund_order):
         for payment in self.payment_ids:
@@ -555,3 +558,24 @@ class PosOrder(models.Model):
             mail_create_nosubscribe=True,
             mail_notrack=True,
         ).refund()
+
+        refund_order = self.search(
+            [("pos_reference", "=", order.pos_reference), ("amount_total", ">", 0)]
+        )
+        refund_order.pos_reference = f"{order.pos_reference}-cancelled"
+
+    @api.model
+    def search_paid_order_ids(self, config_id, domain, limit, offset):
+        """Search for 'paid' orders that satisfy the given domain, limit and offset."""
+        default_domain = [
+            "&",
+            ("config_id", "=", config_id),
+            "!",
+            "|",
+            ("state", "=", "draft"),
+            ("state", "=", "cancel"),
+        ]
+        real_domain = AND([domain, default_domain])
+        ids = self.search(AND([domain, default_domain]), limit=limit, offset=offset).ids
+        totalCount = self.search_count(real_domain)
+        return {"ids": ids, "totalCount": totalCount}
