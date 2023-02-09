@@ -667,6 +667,7 @@ class NFe(spec_models.StackedModel):
             super()._build_many2one(
                 self.env["res.partner"], vals, new_value, "partner_id", value, path
             )
+            self.env['res.partner'].browse(vals['partner_id']).update(enderEmit_value)
         elif key in [
             "nfe40_dest",
             "nfe40_enderDest",
@@ -714,6 +715,7 @@ class NFe(spec_models.StackedModel):
             super()._build_many2one(
                 self.env["res.partner"], vals, new_value, "partner_id", value, path
             )
+            self.env['res.partner'].browse(vals['partner_id']).update(enderDest_value)
         elif (
             self._name == "account.invoice"
             and comodel._name == "l10n_br_fiscal.document"
