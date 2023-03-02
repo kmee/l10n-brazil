@@ -171,6 +171,8 @@ odoo.define("l10n_br_pos.models", function (require) {
             // Campo em que são armazenados as mensagens do processo de comunicação.
             this.document_event_messages = this.document_event_messages || [];
 
+            this.isTransmissionProcessing = false;
+
             this.init_locked = false;
             this.save_to_db();
         },
@@ -399,10 +401,15 @@ odoo.define("l10n_br_pos.models", function (require) {
                     result = await this._document_check_result(processor_result);
                     if (result) {
                         component.trigger("close-popup");
+                    } else {
+                        this.isTransmissionProcessing = false;
                     }
                 } else {
                     result = false;
+                    this.isTransmissionProcessing = false;
                 }
+            } else {
+                this.isTransmissionProcessing = false;
             }
             return result;
         },
