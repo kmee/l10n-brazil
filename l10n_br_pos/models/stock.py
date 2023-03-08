@@ -13,3 +13,12 @@ class StockPicking(models.Model):
         return su._get_fiscal_document_access_keys_fields() + [
             "pos_order_ids.chave_cfe"
         ]
+
+
+class StockScrap(models.Model):
+
+    _inherit = "stock.scrap"
+
+    @api.model
+    def create_and_do_scrap(self, vals):
+        return self.create(vals).do_scrap()
