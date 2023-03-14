@@ -143,18 +143,20 @@ class PaymentTransactionPagseguro(models.Model):
     def _pagseguro_pix_validate_tree(self, charge):
         self.ensure_one()
 
+        self.pagseguro_pix_copy_paste = charge.get("pixCopiaECola")
+        self.pagseguro_pix_image_link = charge.get("urlImagemQrCode")
+
         if charge.get("status") == "ATIVA":
             self.log_transaction(
                 reference=charge.get("txid"), message=charge.get("status")
             )
             self._set_transaction_authorized()
             self.payment_token_id.verified = True
-            self.pagseguro_pix_copy_paste = charge.get("pixCopiaECola")
-            self.pagseguro_pix_image_link = charge.get("urlImagemQrCode")
-
             return {"result": True, "location": charge.get("loc", {}).get("location")}
+
         elif charge.get("status") == "INVALID":
             return {"result": False, "error": charge.get("error")}
+
         else:
             return {
                 "result": False,
@@ -324,6 +326,7 @@ class PaymentTransactionPagseguro(models.Model):
             self.execute_callback()
             if self.payment_token_id:
                 self.payment_token_id.verified = True
+                self._validate_tree_message(tree)
                 return True
             else:
                 self._validate_tree_message(tree)
