@@ -824,8 +824,19 @@ class NFe(spec_models.StackedModel):
     def import_xml(self, nfe_binding, dry_run, edoc_type="out"):
         return self._import_xml(nfe_binding, dry_run, edoc_type)
 
-    def atualiza_status_nfe(self, infProt, xml_file):
+    def atualiza_status_nfe(self, processo):
         self.ensure_one()
+        if hasattr(processo, "processo_xml"):
+            xml_file = processo.processo_xml.decode("utf-8")
+        else:
+            xml_file = processo.retorno.content.decode("utf-8")
+
+        if hasattr(processo, "protocolo"):
+            # Assincrono
+            infProt = processo.protocolo.infProt
+        else:
+            # Sincrono
+            infProt = processo.resposta.protNFe.infProt
         # TODO: Verificar a consulta de notas
         # if not infProt.chNFe == self.key:
         #     self = self.search([
@@ -882,10 +893,14 @@ class NFe(spec_models.StackedModel):
                         )
 
             if processo.resposta.cStat in LOTE_PROCESSADO + ["100"]:
-                record.atualiza_status_nfe(
-                    processo.protocolo.infProt, processo.processo_xml.decode("utf-8")
-                )
-                if processo.protocolo.infProt.cStat in AUTORIZADO:
+                record.atualiza_status_nfe(processo)
+
+                if hasattr(processo, "protocolo"):
+                    status = processo.protocolo.infProt.cStat
+                else:
+                    status = processo.resposta.cStat
+
+                if status in AUTORIZADO:
                     try:
                         record.make_pdf()
                     except Exception as e:
@@ -897,7 +912,18 @@ class NFe(spec_models.StackedModel):
                         # o usuário clicar no gera PDF novamente.
                         _logger.error("DANFE Error \n {}".format(e))
 
-            elif processo.resposta.cStat == "225":
+            elif processo.resposta.cStat in DENEGADO:
+                state = SITUACAO_EDOC_DENEGADA
+
+                record._change_state(state)
+
+                record.write(
+                    {
+                        "status_code": processo.resposta.cStat,
+                        "status_name": processo.resposta.xMotivo,
+                    }
+                )
+            else:
                 state = SITUACAO_EDOC_REJEITADA
 
                 record._change_state(state)
