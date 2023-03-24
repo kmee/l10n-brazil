@@ -184,9 +184,8 @@ odoo.define("l10n_br_pos_cfe.models", function (require) {
             this.cancel_file = result.response.xml;
             this.cancel_protocol_number = result.response.numSessao;
             this.cancel_document_key = result.response.chave_cfe;
-            this.cancel_qrcode_signature = doc.querySelector(
-                "assinaturaQRCODE"
-            ).innerHTML;
+            this.cancel_qrcode_signature =
+                doc.querySelector("assinaturaQRCODE").innerHTML;
             this.state_edoc = SITUACAO_EDOC_CANCELADA;
         },
         set_document_key: function (document_key) {

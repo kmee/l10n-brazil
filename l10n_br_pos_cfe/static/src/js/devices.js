@@ -8,8 +8,8 @@ Copyright (C) 2016-Today KMEE (https://kmee.com.br)
 odoo.define("l10n_br_pos_cfe.devices", function (require) {
     "use strict";
     var devices = require("point_of_sale.devices");
-    var FiscalDocumentCFe = require("l10n_br_pos_cfe.FiscalDocumentCFe")
-        .FiscalDocumentCFe;
+    var FiscalDocumentCFe =
+        require("l10n_br_pos_cfe.FiscalDocumentCFe").FiscalDocumentCFe;
 
     var ProxyDeviceSuper = devices.ProxyDevice;
 
