@@ -11,13 +11,18 @@
                     type="object"
                     string="Update Pos TAX"
                 />
-                <group>
-                    <field
-                        name="pos_fiscal_map_ids"
-                        nolabel="1"
-                        context="{'default_product_tmpl_id': id}"
-                    />
-                </group>
+                <field
+                    name="pos_fiscal_map_ids"
+                    nolabel="1"
+                    context="{'default_product_tmpl_id': id}"
+                >
+                    <tree>
+                        <field name="pos_config_id" />
+                        <field name="fiscal_operation_line_id" />
+                        <field name="cfop_id" />
+                        <field name="fiscal_tax_ids" widget="many2many_tags" />
+                    </tree>
+                </field>
             </group>
         </field>
     </record>
