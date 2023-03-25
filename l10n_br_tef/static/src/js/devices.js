@@ -246,8 +246,8 @@ odoo.define("l10n_br_tef.devices", function (require) {
         check_authorized_operation: function () {
             // Authorized operation -- Without PinPad
             if (this.tags.automacao_coleta_mensagem === "Transacao autorizada") {
-                const transaction_value = this.pos.get("selectedOrder")
-                    .selected_paymentline.amount;
+                const transaction_value =
+                    this.pos.get("selectedOrder").selected_paymentline.amount;
                 this.collect("", transaction_value);
 
                 this.screenPopupPagamento("Transação Aprovada");
@@ -482,11 +482,11 @@ odoo.define("l10n_br_tef.devices", function (require) {
                     this.cancelation_info &&
                     this.cancelation_info.cancellation_transaction_value
                 ) {
-                    transaction_value = this.cancelation_info
-                        .cancellation_transaction_value;
+                    transaction_value =
+                        this.cancelation_info.cancellation_transaction_value;
                 } else {
-                    transaction_value = this.pos.get("selectedOrder")
-                        .selected_paymentline.amount;
+                    transaction_value =
+                        this.pos.get("selectedOrder").selected_paymentline.amount;
                 }
                 this.collect("", transaction_value);
 
@@ -633,14 +633,13 @@ odoo.define("l10n_br_tef.devices", function (require) {
             const self = this;
             if (this.transaction_queue.length > 0) {
                 setTimeout(function () {
-                    self.transaction_queue[
-                        self.transaction_queue.length - 1
-                    ] = self.transaction_queue[
-                        self.transaction_queue.length - 1
-                    ].replace(
-                        /sequencial="\d+"/,
-                        'sequencial="' + sequential_return + '"'
-                    );
+                    self.transaction_queue[self.transaction_queue.length - 1] =
+                        self.transaction_queue[
+                            self.transaction_queue.length - 1
+                        ].replace(
+                            /sequencial="\d+"/,
+                            'sequencial="' + sequential_return + '"'
+                        );
                     self.send(
                         self.transaction_queue[self.transaction_queue.length - 1]
                     );
@@ -693,9 +692,10 @@ odoo.define("l10n_br_tef.devices", function (require) {
                  */
                 const payment_term = $(".paymentline-input.payment_term").get("0");
                 if (payment_term) {
-                    this.plots = payment_term.options[
-                        payment_term.selectedIndex
-                    ].text.match(/\d+/);
+                    this.plots =
+                        payment_term.options[payment_term.selectedIndex].text.match(
+                            /\d+/
+                        );
                     if (this.plots) this.plots = parseInt(this.plots[0]);
                     else this.plots = 1;
                 }
@@ -703,8 +703,7 @@ odoo.define("l10n_br_tef.devices", function (require) {
                 if (!this.funding_institution && this.plots > 1) {
                     this.pos.gui.show_popup("error", {
                         title: "No type of installment scheme selected!",
-                        body:
-                            "You must select at least one institution in the POS settings",
+                        body: "You must select at least one institution in the POS settings",
                     });
                     return false;
                 }
@@ -952,7 +951,8 @@ odoo.define("l10n_br_tef.devices", function (require) {
             let ls_product_type = "";
             let ls_transaction_type = "";
 
-            const selected_payment_line = this.pos.gui.current_screen.get_selected_paymentline();
+            const selected_payment_line =
+                this.pos.gui.current_screen.get_selected_paymentline();
 
             if (this.operation === "purchase") {
                 ls_transaction_type = "Cartao Vender";
@@ -1084,8 +1084,8 @@ odoo.define("l10n_br_tef.devices", function (require) {
                 this.tags.automacao_coleta_tipo !== "N"
             ) {
                 // Transaction Value
-                const transaction_value = this.pos.get("selectedOrder")
-                    .selected_paymentline.amount;
+                const transaction_value =
+                    this.pos.get("selectedOrder").selected_paymentline.amount;
 
                 this.collect("", transaction_value);
 
@@ -1206,8 +1206,7 @@ odoo.define("l10n_br_tef.devices", function (require) {
             if (!this.connect_init) {
                 this.pos.gui.show_popup("error", {
                     title: "Cliente V$Pague não iniciado!",
-                    body:
-                        "Certifique-se de que o Cliente V$Pague está funcionando normalmente",
+                    body: "Certifique-se de que o Cliente V$Pague está funcionando normalmente",
                 });
             } else {
                 this.operation = operation;

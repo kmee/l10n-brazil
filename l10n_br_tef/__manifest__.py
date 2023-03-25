@@ -15,7 +15,6 @@
     "data": [
         "views/pos_config_view.xml",
         "views/pos_payment_method_view.xml",
-
         "views/pos_assets.xml",
     ],
     "qweb": ["static/src/xml/templates.xml"],

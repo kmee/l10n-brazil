@@ -15,5 +15,7 @@ class PosPaymentMethod(models.Model):
         return res
 
     destaxa_payment_terminal_mode = fields.Selection(
-        [("01", "Cartão Crédito"), ("02", "Cartão Débito")], string="Payment Mode", default="01"
+        [("01", "Cartão Crédito"), ("02", "Cartão Débito")],
+        string="Payment Mode",
+        default="01",
     )

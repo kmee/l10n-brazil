@@ -32,7 +32,6 @@ odoo.define("l10n_br_tef.models", function (require) {
         },
     });
 
-
     // TODO v14: dados irrelevantes devido a arquitetura da V14, verificar
     // newPaymentline.set_payment_status('pending'); no arquivo models do core.
 
