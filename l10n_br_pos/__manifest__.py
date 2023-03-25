@@ -18,6 +18,7 @@
         "point_of_sale",
     ],
     "data": [
+        "views/res_config_settings.xml",
         "security/l10n_br_pos_product_fiscal_map.xml",
         "data/l10n_br_fiscal_cfop_data.xml",
         "views/l10n_br_pos_product_fiscal_map.xml",
