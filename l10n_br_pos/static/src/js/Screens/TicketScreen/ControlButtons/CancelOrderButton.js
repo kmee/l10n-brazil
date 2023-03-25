@@ -1,18 +1,14 @@
 odoo.define("l10n_br_pos.CancelOrderButton", function (require) {
     "use strict";
 
-    const {useListener} = require("web.custom_hooks");
-    const {useContext} = owl.hooks;
+    const {useListener} = require("@web/core/utils/hooks");
     const PosComponent = require("point_of_sale.PosComponent");
-    const OrderManagementScreen = require("point_of_sale.OrderManagementScreen");
     const Registries = require("point_of_sale.Registries");
-    const contexts = require("point_of_sale.PosContext");
 
     class CancelOrderButton extends PosComponent {
-        constructor() {
-            super(...arguments);
+        setup() {
+            super.setup();
             useListener("click", this._onClick);
-            this.orderManagementContext = useContext(contexts.orderManagement);
         }
         async _show_edit_reason_popup() {
             const {confirmed, payload} = await this.showPopup("TextInputPopup", {
@@ -69,11 +65,11 @@ odoo.define("l10n_br_pos.CancelOrderButton", function (require) {
             return cancel_reason;
         }
         async _onClick() {
-            const order = this.orderManagementContext.selectedOrder;
+            const order = this.props.order;
             if (!order) return;
             const cancel_reason = await this._show_selection_popup();
             if (cancel_reason) {
-                const result = await order.document_cancel(cancel_reason);
+                const result = await order.document_cancel(cancel_reason, this);
                 if (result) {
                     order.cancel_order(result);
                     this.showScreen("ReprintReceiptScreen", {order: order});
@@ -87,14 +83,6 @@ odoo.define("l10n_br_pos.CancelOrderButton", function (require) {
         }
     }
     CancelOrderButton.template = "CancelOrderButton";
-
-    OrderManagementScreen.addControlButton({
-        component: CancelOrderButton,
-        condition: function () {
-            return true;
-        },
-    });
-
     Registries.Component.add(CancelOrderButton);
 
     return CancelOrderButton;

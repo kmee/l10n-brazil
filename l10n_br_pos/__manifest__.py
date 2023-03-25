@@ -28,4 +28,11 @@
         "views/pos_payment_method_view.xml",
     ],
     "installable": True,
+    "assets": {
+        "point_of_sale.assets": [
+            "l10n_br_pos/static/src//lib/**/*.js",
+            "l10n_br_pos/static/src/js/**/*.js",
+            "l10n_br_pos/static/src/xml/**/*.xml",
+        ],
+    },
 }
