@@ -11,142 +11,144 @@
 odoo.define("l10n_br_tef.widgets", function (require) {
     "use strict";
 
-    const chrome = require("point_of_sale.chrome");
-    const gui = require("point_of_sale.gui");
-    const PopupWidget = require("point_of_sale.popups");
-    const widgets = chrome.Chrome.prototype.widgets;
+    const Chrome = require("point_of_sale.Chrome");
+    const Registries = require("point_of_sale.Registries");
+    const gui = require("point_of_sale.Gui");
+    // const PopupWidget = require("point_of_sale.popups");
 
-    const TefStatusWidget = chrome.StatusWidget.extend({
-        template: "TefStatusWidget",
+    // class TefStatusWidget extends Chrome.StatusWidget.extend {
 
-        set_tef_status: function (status) {
-            if (status.state === "connected") {
-                const warning = false;
-                const msg = "";
-                this.set_status(warning ? "warning" : "connected", msg);
-            } else {
-                this.set_status(status.state, "");
-            }
-        },
+    //     set_tef_status (status) {
+    //         if (status.state === "connected") {
+    //             const warning = false;
+    //             const msg = "";
+    //             this.set_status(warning ? "warning" : "connected", msg);
+    //         } else {
+    //             this.set_status(status.state, "");
+    //         }
+    //     }
 
-        start: function () {
-            this.set_tef_status(this.pos.get("tef_status"));
-            this.pos.bind("change:tef_status", (pos, tef_status) => {
-                this.set_status(tef_status.state, tef_status.pending);
-            });
+    //     start () {
+    //         this.set_tef_status(this.pos.get("tef_status"));
+    //         this.pos.bind("change:tef_status", (pos, tef_status) => {
+    //             this.set_status(tef_status.state, tef_status.pending);
+    //         });
 
-            // Forces reconnection to the TEF client
-            this.$el.click(() => {
-                this.pos.tef_client.connect();
-            });
+    //         // Forces reconnection to the TEF client
+    //         this.$el.click(() => {
+    //             this.pos.tef_client.connect();
+    //         });
 
-            // TODO: Lidar com o cancelamento/estorno;
-            // let cancel_btn = $('.btn-cancelar-pagamento');
-            // cancel_btn.hide();
-            //
-            // if (this.pos.config.iface_tef) {
-            //     cancel_btn.show();
-            //     cancel_btn.unbind('click').on("click", function (event) {
-            //         self.pos_widget.payment_screen.cancel_payment()
-            //     });
-            // }
-        },
-    });
+    //         // TODO: Lidar com o cancelamento/estorno;
+    //         // let cancel_btn = $('.btn-cancelar-pagamento');
+    //         // cancel_btn.hide();
+    //         //
+    //         // if (this.pos.config.iface_tef) {
+    //         //     cancel_btn.show();
+    //         //     cancel_btn.unbind('click').on("click", function (event) {
+    //         //         self.pos_widget.payment_screen.cancel_payment()
+    //         //     });
+    //         // }
+    //     }
+    // };
 
-    widgets.splice(_.indexOf(_.pluck(widgets, "name"), "notification"), 0, {
-        name: "l10n_br_tef_status_widget",
-        widget: TefStatusWidget,
-        append: ".pos-rightheader",
-        condition: function () {
-            return this.pos.config.iface_tef;
-        },
-    });
+    // TefStatusWidget.template = "TefStatusWidget"
+    // Registries.Component.add(TefStatusWidget);
 
-    // FIXME: Adapt the popup to the new pos structure
-    const CancelamentoCompraPopup = PopupWidget.extend({
-        template: "PurchaseCancellationWidget",
+    // widgets.splice(_.indexOf(_.pluck(widgets, "name"), "notification"), 0, {
+    //     name: "l10n_br_tef_status_widget",
+    //     widget: TefStatusWidget,
+    //     append: ".pos-rightheader",
+    //     condition: function () {
+    //         return this.pos.config.iface_tef;
+    //     },
+    // });
 
-        show: function (options) {
-            const self = this;
-            this._super(options);
+    // // FIXME: Adapt the popup to the new pos structure
+    // const CancelamentoCompraPopup = PopupWidget.extend({
+    //     template: "PurchaseCancellationWidget",
 
-            $(".btn-report_data").unbind("click");
-            // TODO: Check if this bind makes sense. At first the search_handler is only used for product search.
-            this.el
-                .querySelector(".btn-report_data")
-                .addEventListener("click", this.search_handler);
-            $(".btn-report_data", this.el).click(function () {
-                self.pos_widget.product_screen.proceed_cancellation();
-            });
+    //     show: function (options) {
+    //         const self = this;
+    //         this._super(options);
 
-            $(".btn-cancel-operation").unbind("click");
-            // TODO: Check if this bind makes sense. At first the search_handler is only used for product search.
-            this.el
-                .querySelector(".btn-cancel-operation")
-                .addEventListener("click", this.search_handler);
-            $(".btn-cancel-operation", this.el).click(function () {
-                self.pos_widget.product_screen.abort();
-            });
-        },
-    });
+    //         $(".btn-report_data").unbind("click");
+    //         // TODO: Check if this bind makes sense. At first the search_handler is only used for product search.
+    //         this.el
+    //             .querySelector(".btn-report_data")
+    //             .addEventListener("click", this.search_handler);
+    //         $(".btn-report_data", this.el).click(function () {
+    //             self.pos_widget.product_screen.proceed_cancellation();
+    //         });
 
-    // FIXME: Adapt the popup to the new pos structure
-    const ConfirmaCancelamentoCompraPopup = PopupWidget.extend({
-        template: "PurchaseCancellationConfirmWidget",
+    //         $(".btn-cancel-operation").unbind("click");
+    //         // TODO: Check if this bind makes sense. At first the search_handler is only used for product search.
+    //         this.el
+    //             .querySelector(".btn-cancel-operation")
+    //             .addEventListener("click", this.search_handler);
+    //         $(".btn-cancel-operation", this.el).click(function () {
+    //             self.pos_widget.product_screen.abort();
+    //         });
+    //     },
+    // });
 
-        show: function (options) {
-            const self = this;
-            this._super();
+    // // FIXME: Adapt the popup to the new pos structure
+    // const ConfirmaCancelamentoCompraPopup = PopupWidget.extend({
+    //     template: "PurchaseCancellationConfirmWidget",
 
-            this.message = options.message || "";
-            this.comment = options.comment || "";
-            this.renderElement();
+    //     show: function (options) {
+    //         const self = this;
+    //         this._super();
 
-            $(".btn-confirm-cancellation").unbind("click");
-            // TODO: Check if this bind makes sense. At first the search_handler is only used for product search.
-            this.el
-                .querySelector(".btn-confirm-cancellation")
-                .addEventListener("click", this.search_handler);
-            $(".btn-confirm-cancellation", this.el).click(function () {
-                self.pos_widget.product_screen.confirm_proceed_cancellation(true);
-            });
+    //         this.message = options.message || "";
+    //         this.comment = options.comment || "";
+    //         this.renderElement();
 
-            $(".btn-cancel-cancellation").unbind("click");
-            // TODO: Check if this bind makes sense. At first the search_handler is only used for product search.
-            this.el
-                .querySelector(".btn-cancel-cancellation")
-                .addEventListener("click", this.search_handler);
-            $(".btn-cancel-cancellation", this.el).click(function () {
-                self.pos_widget.product_screen.confirm_proceed_cancellation(false);
-            });
-        },
-    });
+    //         $(".btn-confirm-cancellation").unbind("click");
+    //         // TODO: Check if this bind makes sense. At first the search_handler is only used for product search.
+    //         this.el
+    //             .querySelector(".btn-confirm-cancellation")
+    //             .addEventListener("click", this.search_handler);
+    //         $(".btn-confirm-cancellation", this.el).click(function () {
+    //             self.pos_widget.product_screen.confirm_proceed_cancellation(true);
+    //         });
 
-    const StatusPagementoPopUp = PopupWidget.extend({
-        template: "PaymentStatusWidget",
+    //         $(".btn-cancel-cancellation").unbind("click");
+    //         // TODO: Check if this bind makes sense. At first the search_handler is only used for product search.
+    //         this.el
+    //             .querySelector(".btn-cancel-cancellation")
+    //             .addEventListener("click", this.search_handler);
+    //         $(".btn-cancel-cancellation", this.el).click(function () {
+    //             self.pos_widget.product_screen.confirm_proceed_cancellation(false);
+    //         });
+    //     },
+    // });
 
-        show: function (options) {
-            this._super();
-            this.message = options.title || "";
-            this.comment = options.body || "";
-            this.renderElement();
-        },
-    });
+    // const StatusPagementoPopUp = PopupWidget.extend({
+    //     template: "PaymentStatusWidget",
 
-    gui.define_popup({
-        name: "CancelamentoCompraPopup",
-        widget: CancelamentoCompraPopup,
-    });
-    gui.define_popup({
-        name: "ConfirmaCancelamentoCompraPopup",
-        widget: ConfirmaCancelamentoCompraPopup,
-    });
-    gui.define_popup({name: "StatusPagementoPopUp", widget: StatusPagementoPopUp});
+    //     show: function (options) {
+    //         this._super();
+    //         this.message = options.title || "";
+    //         this.comment = options.body || "";
+    //         this.renderElement();
+    //     },
+    // });
+
+    // gui.define_popup({
+    //     name: "CancelamentoCompraPopup",
+    //     widget: CancelamentoCompraPopup,
+    // });
+    // gui.define_popup({
+    //     name: "ConfirmaCancelamentoCompraPopup",
+    //     widget: ConfirmaCancelamentoCompraPopup,
+    // });
+    // gui.define_popup({name: "StatusPagementoPopUp", widget: StatusPagementoPopUp});
 
     return {
-        TefStatusWidget: TefStatusWidget,
-        CancelamentoCompraPopup: CancelamentoCompraPopup,
-        ConfirmaCancelamentoCompraPopup: ConfirmaCancelamentoCompraPopup,
-        StatusPagementoPopUp: StatusPagementoPopUp,
+        // TefStatusWidget: TefStatusWidget,
+        // CancelamentoCompraPopup: CancelamentoCompraPopup,
+        // ConfirmaCancelamentoCompraPopup: ConfirmaCancelamentoCompraPopup,
+        // StatusPagementoPopUp: StatusPagementoPopUp,
     };
 });

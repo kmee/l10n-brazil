@@ -11,26 +11,24 @@
 odoo.define("l10n_br_tef.models", function (require) {
     "use strict";
 
-    const models = require("point_of_sale.models");
-
-    var DestaxaPaymentTerminal = require("l10n_br_tef.PaymentDestaxa");
-    models.register_payment_method("destaxa_payment_terminal", DestaxaPaymentTerminal);
-    models.load_fields("pos.payment.method", ["destaxa_payment_terminal_mode"]);
-
+    const { PosGlobalState, register_payment_method } = require("point_of_sale.models");
+    const Registries = require("point_of_sale.Registries");
     const tef_devices = require("l10n_br_tef.devices");
+    const DestaxaPaymentTerminal = require("l10n_br_tef.PaymentDestaxa");
 
-    const _orderproto = models.Order.prototype;
-    const PosModelSuper = models.PosModel;
-    const _super_payment_line = models.Paymentline.prototype;
+    register_payment_method("destaxa_payment_terminal", DestaxaPaymentTerminal);
 
-    models.PosModel = models.PosModel.extend({
-        after_load_server_data: function () {
-            const res = PosModelSuper.prototype.after_load_server_data.call(this);
-            this.tef_client = new tef_devices.TefProxy({pos: this});
-            this.set({tef_status: {state: "disconnected", pending: 0}});
-            return res;
-        },
-    });
+
+    const PosTefTerminalPosGlobalState = (PosGlobalState) =>
+        class PosTefTerminalPosGlobalState extends PosGlobalState {
+            after_load_server_data() {
+                const res = super.after_load_server_data(...arguments);
+                this.tef_client = new tef_devices.TefProxy({pos: this});
+                this.set({tef_status: {state: "disconnected", pending: 0}});
+                return res;
+            }
+        };
+    Registries.Model.extend(PosGlobalState, PosTefTerminalPosGlobalState);
 
     // TODO v14: dados irrelevantes devido a arquitetura da V14, verificar
     // newPaymentline.set_payment_status('pending'); no arquivo models do core.

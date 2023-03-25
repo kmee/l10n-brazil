@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2022 KMEE
+License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+
+    <record model="ir.ui.view" id="res_config_settings_view_form">
+        <field name="name">res.config.settings.view.form (in l10n_br_tef)</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="point_of_sale.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <div id="pos_payment_terminals_section" position="inside">
+                <div class="col-12 col-lg-6 o_setting_box"
+                    id="tef_payment_terminal_setting"
+                    title="The transactions are processed by TEF. Set your Stripe credentials on the related payment method.">
+                    <div class="o_setting_left_pane">
+                        <field name="iface_tef" />
+                    </div>
+                    <div class="o_setting_right_pane">
+                        <label for="iface_tef" string="TEF" />
+                        <div class="text-muted">
+                            A TEF terminal is available on the Proxy
+                        </div>
+                    </div>
+
+
+                    <div class="o_setting_right_pane">
+                        <div
+                            class="content-group row mt16"
+                            attrs="{'invisible': [('iface_tef', '=', False)]}">
+                            <div class="row mt16">
+                                <label
+                                    string="Establishment"
+                                    for="institution_selection"
+                                    class="col-lg-3 o_light_label"
+                                />
+                                <field
+                                    name="institution_selection"
+                                    attrs="{'required': [('iface_tef', '=', True)]}"
+                                />
+                            </div>
+                            <div class="row">
+                                <label
+                                    string="Environment"
+                                    for="environment_selection"
+                                    class="col-lg-3 o_light_label"
+                                />
+                                <field
+                                    name="environment_selection"
+                                    attrs="{'required': [('iface_tef', '=', True)]}"
+                                />
+                            </div>
+                            <div class="row">
+                                <label
+                                    string="Credit Server"
+                                    for="credit_server"
+                                    class="col-lg-3 o_light_label"
+                                />
+                                <field
+                                    name="credit_server"
+                                    attrs="{'invisible': [('environment_selection', '=', 'production')], 'required': [('iface_tef', '=', True), ('environment_selection', '=', 'homologation')]}"
+                                />
+                            </div>
+                            <div class="row">
+                                <label
+                                    string="Debit Server"
+                                    for="debit_server"
+                                    class="col-lg-3 o_light_label"
+                                />
+                                <field
+                                    name="debit_server"
+                                    attrs="{'invisible': [('environment_selection', '=', 'production')], 'required': [('iface_tef', '=', True), ('environment_selection', '=', 'homologation')]}"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </field>
+    </record>
+
+</odoo>

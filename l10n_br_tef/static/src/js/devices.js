@@ -7,6 +7,7 @@
     @author Luis Felipe Mileo  <mileo@kmee.com.br>
     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 */
+/* eslint complexity: 0  no-alert:0 valid-jsdoc:0*/
 
 odoo.define("l10n_br_tef.devices", function (require) {
     "use strict";
@@ -42,7 +43,7 @@ odoo.define("l10n_br_tef.devices", function (require) {
             else if (as_tag === "transacao_produto") this.transacao_produto = as_value;
             else if (as_tag === "retorno") this.retorno = as_value;
             else if (as_tag === "mensagem") this.mensagem = as_value;
-            else if (as_tag === "sequencial") this.sequencial = parseInt(as_value, 0);
+            else if (as_tag === "sequencial") this.sequencial = parseInt(as_value, 10);
             else if (as_tag === "automacao_coleta_palavra_chave")
                 this.automacao_coleta_palavra_chave = as_value;
             else if (as_tag === "automacao_coleta_tipo")
@@ -91,19 +92,19 @@ odoo.define("l10n_br_tef.devices", function (require) {
             this.connect();
         },
         set_connected: function () {
-            this.pos.set({tef_status: {state: "connected", pending: 0}});
+            // this.pos.set({tef_status: {state: "connected", pending: 0}});
         },
         set_connecting: function () {
-            this.pos.set({tef_status: {state: "connected", pending: 0}});
+            // this.pos.set({tef_status: {state: "connected", pending: 0}});
         },
         set_warning: function () {
-            this.pos.set({tef_status: {state: "warning", pending: 0}});
+            // this.pos.set({tef_status: {state: "warning", pending: 0}});
         },
         set_disconnected: function () {
-            this.pos.set({tef_status: {state: "disconnected", pending: 0}});
+            // this.pos.set({tef_status: {state: "disconnected", pending: 0}});
         },
         set_error: function () {
-            this.pos.set({tef_status: {state: "error", pending: 0}});
+            // this.pos.set({tef_status: {state: "error", pending: 0}});
         },
         connect: function () {
             const self = this;
@@ -259,7 +260,7 @@ odoo.define("l10n_br_tef.devices", function (require) {
             else if (this.tags.mensagem === "Transacao autorizada") {
                 this.screenPopupPagamento("Transação Aprovada");
 
-                confirm(this.tags.sequencial);
+                self.confirm(this.tags.sequencial);
                 this.tags.mensagem = "";
                 return true;
             }
@@ -336,7 +337,7 @@ odoo.define("l10n_br_tef.devices", function (require) {
         check_cancellation_remove_card: function () {
             const self = this;
             if (this.tags.mensagem === ">CANCELAMENTO OK, RETIRE O CARTAO") {
-                confirm(this.tags.sequencial);
+                self.confirm(this.tags.sequencial);
 
                 setTimeout(function () {
                     self.screenPopupPagamento("Retire o Cartão");
@@ -358,7 +359,7 @@ odoo.define("l10n_br_tef.devices", function (require) {
             ) {
                 self.finish();
 
-                self.pos.gui.current_popup.hide();
+                // self.pos.gui.current_popup.hide();
 
                 this.tags.transacao = "";
                 setTimeout(function () {
@@ -566,7 +567,7 @@ odoo.define("l10n_br_tef.devices", function (require) {
                 self.finish();
                 self.complete_paymentline();
 
-                self.pos.gui.current_popup.hide();
+                // self.pos.gui.current_popup.hide();
 
                 this.tags.transacao = "";
                 setTimeout(function () {
@@ -609,11 +610,11 @@ odoo.define("l10n_br_tef.devices", function (require) {
         abort: function () {
             const self = this;
 
-            if (self.pos.gui.current_popup) {
-                self.pos.gui.current_popup.hide();
-                self.clearCancelamentoCompraPopup();
-                this.cancelation_info = null;
-            }
+            // if (self.pos.gui.current_popup) {
+            //     self.pos.gui.current_popup.hide();
+            //     self.clearCancelamentoCompraPopup();
+            //     this.cancelation_info = null;
+            // }
             setTimeout(function () {
                 self.send(
                     'automacao_coleta_retorno="9"automacao_coleta_mensagem="Fluxo Abortado pelo operador!!"automacao_coleta_sequencial="' +
@@ -622,11 +623,11 @@ odoo.define("l10n_br_tef.devices", function (require) {
                 );
             }, 1000);
 
-            setTimeout(function () {
-                if (self.pos.gui.current_popup) {
-                    self.pos.gui.current_popup.hide();
-                }
-            }, 3000);
+            // setTimeout(function () {
+            //     if (self.pos.gui.current_popup) {
+            //         self.pos.gui.current_popup.hide();
+            //     }
+            // }, 3000);
         },
 
         redo_operation: function (sequential_return) {
@@ -696,7 +697,7 @@ odoo.define("l10n_br_tef.devices", function (require) {
                         payment_term.options[payment_term.selectedIndex].text.match(
                             /\d+/
                         );
-                    if (this.plots) this.plots = parseInt(this.plots[0]);
+                    if (this.plots) this.plots = parseInt(this.plots[0], 10);
                     else this.plots = 1;
                 }
 
@@ -1025,11 +1026,11 @@ odoo.define("l10n_br_tef.devices", function (require) {
                     '"'
             );
 
-            setTimeout(function () {
-                if (self.posmodel.gui.current_popup) {
-                    self.posmodel.gui.current_popup.hide();
-                }
-            }, 1000);
+            // setTimeout(function () {
+            //     if (self.posmodel.gui.current_popup) {
+            //         self.posmodel.gui.current_popup.hide();
+            //     }
+            // }, 1000);
         },
 
         check_completed_send_card_number: function () {
@@ -1137,7 +1138,7 @@ odoo.define("l10n_br_tef.devices", function (require) {
                     this.tags.fill_tags(ls_tag, ls_value);
                 }
             } catch (err) {
-                alert("Internal Error: " + err.message);
+                window.alert("Internal Error: " + err.message);
             }
         },
         collect: function (ao_event, transaction_value = null) {
@@ -1203,14 +1204,14 @@ odoo.define("l10n_br_tef.devices", function (require) {
                 this.init_debug_card();
             }
 
-            if (!this.connect_init) {
+            if (this.connect_init) {
+                this.operation = operation;
+                this.start();
+            } else {
                 this.pos.gui.show_popup("error", {
                     title: "Cliente V$Pague não iniciado!",
                     body: "Certifique-se de que o Cliente V$Pague está funcionando normalmente",
                 });
-            } else {
-                this.operation = operation;
-                this.start();
             }
         },
         send: function (as_buffer) {

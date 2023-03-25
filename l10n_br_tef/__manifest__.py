@@ -3,7 +3,7 @@
 
 {
     "name": "l10n_br_tef",
-    "version": "14.0.1.0.0",
+    "version": "16.0.1.0.0",
     "category": "Point Of Sale",
     "summary": "Manage Payment TEF device from POS",
     "author": "KMEE, Odoo Community Association (OCA)",
@@ -13,9 +13,14 @@
         "point_of_sale",
     ],
     "data": [
-        "views/pos_config_view.xml",
+        "views/res_config_settings_view.xml",
         "views/pos_payment_method_view.xml",
-        "views/pos_assets.xml",
     ],
-    "qweb": ["static/src/xml/templates.xml"],
+    "assets": {
+        "point_of_sale.assets": [
+            "l10n_br_tef/static/src/js/**/*.js",
+            "l10n_br_tef/static/src/css/**/*.css",
+            "l10n_br_tef/static/src/xml/**/*.xml",
+        ],
+    },
 }

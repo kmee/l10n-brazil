@@ -110,11 +110,11 @@
           <div class="popup popup-select-variant statusPagamentoPopUp">
               <div class="modal-content">
                 <div class="modal-header">
-                    <p class="message"><t t-esc=" widget.message" /></p>
+                    <p class="message"><t t-out=" widget.message" /></p>
                 </div>
                   <div class="modal-body">
 
-                    <p class="comment"><t t-esc=" widget.comment" /></p>
+                    <p class="comment"><t t-out=" widget.comment" /></p>
                 </div>
               </div>
           </div>
@@ -179,10 +179,10 @@
             <div class="popup popup-confirm confirmaCancelamentoCompraPopup">
                 <div class="modal-content">
                 <div class="modal-header">
-                    <p class="message"><t t-esc=" widget.message" /></p>
+                    <p class="message"><t t-out=" widget.message" /></p>
                 </div>
                     <div class="modal-body">
-                    <p class="comment"><t t-esc=" widget.comment" /></p>
+                    <p class="comment"><t t-out=" widget.comment" /></p>
                 </div>
                     <div class="footer">
                     <div class="button btn-confirm-cancellation">
