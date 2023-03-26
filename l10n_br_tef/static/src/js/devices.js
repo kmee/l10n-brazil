@@ -248,8 +248,11 @@ odoo.define("l10n_br_tef.devices", function (require) {
         check_authorized_operation: function () {
             // Authorized operation -- Without PinPad
             if (this.tags.automacao_coleta_mensagem === "Transacao autorizada") {
-                const transaction_value =
-                    this.pos.get("selectedOrder").selected_paymentline.amount;
+
+                const order = this.pos.get_order()
+                const selected_payment_line = order.selected_paymentline;
+                const transaction_value = selected_payment_line.amount;
+
                 this.collect("", transaction_value);
 
                 this.screenPopupPagamento("Transação Aprovada");
@@ -487,8 +490,9 @@ odoo.define("l10n_br_tef.devices", function (require) {
                     transaction_value =
                         this.cancelation_info.cancellation_transaction_value;
                 } else {
-                    transaction_value =
-                        this.pos.get("selectedOrder").selected_paymentline.amount;
+                    const order = this.pos.get_order()
+                    const selected_payment_line = order.selected_paymentline;
+                    const transaction_value = selected_payment_line.amount
                 }
                 this.collect("", transaction_value);
 
@@ -953,14 +957,13 @@ odoo.define("l10n_br_tef.devices", function (require) {
             let ls_product_type = "";
             let ls_transaction_type = "";
 
-            const selected_payment_line =
-                this.pos.gui.current_screen.get_selected_paymentline();
+            const order = this.pos.get_order()
+            const selected_payment_line = order.selected_paymentline;
 
             if (this.operation === "purchase") {
                 ls_transaction_type = "Cartao Vender";
 
-                const payment_type =
-                    selected_payment_line.cashregister.journal.tef_payment_mode;
+                const payment_type = selected_payment_line.payment_method.destaxa_payment_terminal_mode
 
                 if (payment_type === "01") {
                     ls_card_type = "Credito";
@@ -1086,8 +1089,9 @@ odoo.define("l10n_br_tef.devices", function (require) {
                 this.tags.automacao_coleta_tipo !== "N"
             ) {
                 // Transaction Value
-                const transaction_value =
-                    this.pos.get("selectedOrder").selected_paymentline.amount;
+                const order = this.pos.get_order()
+                const selected_payment_line = order.selected_paymentline;
+                const transaction_value = selected_payment_line.amount;
 
                 this.collect("", transaction_value);
 
