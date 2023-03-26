@@ -4,15 +4,19 @@ odoo.define("l10n_br_pos_cfe.OrderFooterReceipt", function (require) {
     const PosComponent = require("point_of_sale.PosComponent");
     const Registries = require("point_of_sale.Registries");
 
-    class OrderFooterReceipt extends PosComponent {
-        mounted() {
-            this._generateBarcode(this.getFormattedDocumentKey());
-            this._generateQRCode();
+    const { onMounted } = owl;
 
-            if (this.order.state_edoc === "cancelada") {
-                this._generateBarcodeCancel(this.getFormattedDocumentKeyCancel());
-                this._generateQRCodeCancel();
-            }
+    class OrderFooterReceipt extends PosComponent {
+        setup() {
+            onMounted(async () => {
+                this._generateBarcode(this.getFormattedDocumentKey());
+                this._generateQRCode();
+
+                if (this.order.state_edoc === "cancelada") {
+                    this._generateBarcodeCancel(this.getFormattedDocumentKeyCancel());
+                    this._generateQRCodeCancel();
+                }
+            })
         }
 
         get order() {
@@ -37,7 +41,8 @@ odoo.define("l10n_br_pos_cfe.OrderFooterReceipt", function (require) {
 
         async _generateQRCode() {
             // eslint-disable-next-line
-            return await new QRCode(document.getElementById("footer__qrcode"), {
+            const element = document.getElementById("footer__qrcode")
+            return await new QRCode(element, {
                 text: this.getTextForQRCode(),
                 width: 275,
                 height: 275,
