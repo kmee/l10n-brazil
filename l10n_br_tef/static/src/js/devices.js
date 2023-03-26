@@ -1087,12 +1087,13 @@ odoo.define("l10n_br_tef.devices", function (require) {
 
         complete_paymentline: function () {
             this.disable_order_transaction();
-            const payment_screen = this.pos.gui.current_screen;
-            const selected_paymentline = payment_screen.get_selected_paymentline();
-            if (selected_paymentline) {
-                selected_paymentline.tef_payment_completed = true;
-                payment_screen.render_paymentlines();
-            }
+            this.pos.get_order().selected_paymentline.set_payment_status("done");
+            // Selected_paymentline.tef_payment_completed = true;
+            // const payment_screen = this.pos.gui.current_screen;
+            // const selected_paymentline = payment_screen.get_selected_paymentline();
+            // if (selected_paymentline) {
+            // payment_screen.render_paymentlines();
+            // }
         },
 
         // ClearCancelamentoCompraPopup: function () {
