@@ -10,6 +10,10 @@
                     name="destaxa_payment_terminal_mode"
                     attrs="{'invisible': [('use_payment_terminal', '!=', 'destaxa_payment_terminal')]}"
                 />
+                <field
+                    name="destaxa_product_type"
+                    attrs="{'invisible': [('use_payment_terminal', '!=', 'destaxa_payment_terminal')]}"
+                />
             </field>
         </field>
     </record>

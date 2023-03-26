@@ -49,28 +49,6 @@ License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
                                     attrs="{'required': [('iface_tef', '=', True)]}"
                                 />
                             </div>
-                            <div class="row">
-                                <label
-                                    string="Credit Server"
-                                    for="credit_server"
-                                    class="col-lg-3 o_light_label"
-                                />
-                                <field
-                                    name="credit_server"
-                                    attrs="{'invisible': [('environment_selection', '=', 'production')], 'required': [('iface_tef', '=', True), ('environment_selection', '=', 'homologation')]}"
-                                />
-                            </div>
-                            <div class="row">
-                                <label
-                                    string="Debit Server"
-                                    for="debit_server"
-                                    class="col-lg-3 o_light_label"
-                                />
-                                <field
-                                    name="debit_server"
-                                    attrs="{'invisible': [('environment_selection', '=', 'production')], 'required': [('iface_tef', '=', True), ('environment_selection', '=', 'homologation')]}"
-                                />
-                            </div>
                         </div>
                     </div>
                 </div>

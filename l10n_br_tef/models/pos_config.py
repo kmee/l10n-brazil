@@ -28,13 +28,3 @@ class PosConfig(models.Model):
         help="Environment Selection",
         default="Homologacao",
     )
-
-    credit_server = fields.Char(
-        string="Credit Approval Server",
-        help="Which credit approval server should be used",
-    )
-
-    debit_server = fields.Char(
-        string="Debit Approval Server",
-        help="Which debit approval server should be used",
-    )

@@ -973,12 +973,9 @@ odoo.define("l10n_br_tef.devices", function (require) {
                     ls_card_type = "";
                 }
 
-                if (this.environment === "Homologacao")
-                    ls_product_type =
-                        payment_type === "01" ? this.credit_server : this.debit_server;
-                if (this.environment === "Producao")
-                    // TODO: Verificar porque está hardcoded 'MASTERCARD'
-                    ls_product_type = "MASTERCARD";
+
+                ls_product_type = selected_payment_line.payment_method.destaxa_payment_terminal_mode
+
             } else if (this.operation === "cancellation") {
                 ls_transaction_type = "Administracao Cancelar";
             }

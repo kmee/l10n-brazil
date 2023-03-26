@@ -15,11 +15,3 @@ class ResConfigSettings(models.TransientModel):
     environment_selection = fields.Selection(
         related="pos_config_id.environment_selection", readonly=False
     )
-
-    credit_server = fields.Char(
-        related="pos_config_id.credit_server", readonly=False
-    )
-
-    debit_server = fields.Char(
-        related="pos_config_id.debit_server", readonly=False
-    )

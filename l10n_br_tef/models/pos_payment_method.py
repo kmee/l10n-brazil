@@ -19,3 +19,19 @@ class PosPaymentMethod(models.Model):
         string="Payment Mode",
         default="01",
     )
+
+    destaxa_product_type = fields.Selection([
+        # ("CDC-Userede", "CDC-Userede"),
+        # ("Consulta AVS-Userede", "Consulta AVS-Userede"),
+        ("Crediario-Userede", "Crediario-Userede"),
+        ("Credito-Safrapay", "Credito-Safrapay"),
+        ("Credito-Userede", "Credito-Userede"),
+        ("Debito-Safrapay", "Debito-Safrapay"),
+        ("Debito-Userede", "Debito-Userede"),
+        ("PIX-Shipay", "PIX-Shipay"),
+        ("Picpay-Shipay", "Picpay-Shipay"),
+        ("Voucher Frota-Userede", "Voucher Frota-Userede"),
+        ("Voucher-Safrapay", "Voucher-Safrapay"),
+        ("Voucher-Userede", "Voucher-Userede"),
+    ])
+
