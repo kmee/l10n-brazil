@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <t t-name="PaymentStatusPopUp" owl="1">
+        <div class="modal-dialog">
+            <div class="popup popup-select-variant statusPagamentoPopUp">
+                <div class="modal-content">
+                  <div class="modal-header">
+                      <p class="message"><t t-out=" props.message" /></p>
+                  </div>
+                    <div class="modal-body">
+
+                      <p class="comment"><t t-out=" props.comment" /></p>
+                  </div>
+                </div>
+            </div>
+          </div>
+    </t>
+
+</templates>

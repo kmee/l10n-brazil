@@ -15,6 +15,7 @@ odoo.define("l10n_br_tef.devices", function (require) {
     const core = require("web.core");
     const _t = core._t;
 
+    const { Gui } = require('point_of_sale.Gui');
     let ls_transaction_global_value = "";
 
     /**
@@ -544,7 +545,7 @@ odoo.define("l10n_br_tef.devices", function (require) {
                 ) > -1 &&
                 this.tags.automacao_coleta_tipo === "X"
             ) {
-                this.pos.gui.show_popup("ConfirmaCancelamentoCompraPopup", {
+                Gui.showPopup("ConfirmaCancelamentoCompraPopup", {
                     title: _t("Purchase Information"),
                     body: _t(this.tags.automacao_coleta_mensagem),
                 });
@@ -674,10 +675,10 @@ odoo.define("l10n_br_tef.devices", function (require) {
 
         screenPopupPagamento: function (msg) {
             console.log(msg);
-            this.pos.gui.show_popup("StatusPagementoPopUp", {
-                title: _t("Please, wait!"),
-                body: _t(msg),
-            });
+            // Gui.showPopup("PaymentStatusPopUp", {
+            //     title: _t("Please, wait!"),
+            //     body: _t(msg),
+            // });
         },
 
         check_completed_start: function () {
@@ -702,7 +703,7 @@ odoo.define("l10n_br_tef.devices", function (require) {
                 }
 
                 if (!this.funding_institution && this.plots > 1) {
-                    this.pos.gui.show_popup("error", {
+                    Gui.showPopup("error", {
                         title: "No type of installment scheme selected!",
                         body: "You must select at least one institution in the POS settings",
                     });
@@ -724,7 +725,7 @@ odoo.define("l10n_br_tef.devices", function (require) {
                 this.tags.automacao_coleta_palavra_chave ===
                     "transacao_administracao_usuario"
             ) {
-                this.pos.gui.show_popup("CancelamentoCompraPopup", {});
+                Gui.showPopup("CancelamentoCompraPopup", {});
                 this.tags.automacao_coleta_mensagem = "";
                 this.tags.automacao_coleta_palavra_chave = "";
                 this.tags.automacao_coleta_tipo = "";
@@ -1208,7 +1209,7 @@ odoo.define("l10n_br_tef.devices", function (require) {
                 this.operation = operation;
                 this.start();
             } else {
-                this.pos.gui.show_popup("error", {
+                Gui.showPopup("error", {
                     title: "Cliente V$Pague não iniciado!",
                     body: "Certifique-se de que o Cliente V$Pague está funcionando normalmente",
                 });
