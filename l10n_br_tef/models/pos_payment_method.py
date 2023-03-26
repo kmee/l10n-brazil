@@ -15,23 +15,24 @@ class PosPaymentMethod(models.Model):
         return res
 
     destaxa_payment_terminal_mode = fields.Selection(
-        [("01", "Cartão Crédito"), ("02", "Cartão Débito")],
+        [("Credito", "Cartão Crédito"), ("Debito", "Cartão Débito")],
         string="Payment Mode",
-        default="01",
+        default="Credito",
     )
 
-    destaxa_product_type = fields.Selection([
-        # ("CDC-Userede", "CDC-Userede"),
-        # ("Consulta AVS-Userede", "Consulta AVS-Userede"),
-        ("Crediario-Userede", "Crediario-Userede"),
-        ("Credito-Safrapay", "Credito-Safrapay"),
-        ("Credito-Userede", "Credito-Userede"),
-        ("Debito-Safrapay", "Debito-Safrapay"),
-        ("Debito-Userede", "Debito-Userede"),
-        ("PIX-Shipay", "PIX-Shipay"),
-        ("Picpay-Shipay", "Picpay-Shipay"),
-        ("Voucher Frota-Userede", "Voucher Frota-Userede"),
-        ("Voucher-Safrapay", "Voucher-Safrapay"),
-        ("Voucher-Userede", "Voucher-Userede"),
-    ])
-
+    destaxa_product_type = fields.Selection(
+        [
+            # ("CDC-Userede", "CDC-Userede"),
+            # ("Consulta AVS-Userede", "Consulta AVS-Userede"),
+            ("Crediario-Userede", "Crediario-Userede"),
+            ("Credito-Safrapay", "Credito-Safrapay"),
+            ("Credito-Userede", "Credito-Userede"),
+            ("Debito-Safrapay", "Debito-Safrapay"),
+            ("Debito-Userede", "Debito-Userede"),
+            ("PIX-Shipay", "PIX-Shipay"),
+            ("Picpay-Shipay", "Picpay-Shipay"),
+            ("Voucher Frota-Userede", "Voucher Frota-Userede"),
+            ("Voucher-Safrapay", "Voucher-Safrapay"),
+            ("Voucher-Userede", "Voucher-Userede"),
+        ]
+    )
