@@ -41,6 +41,7 @@ odoo.define("l10n_br_tef.PaymentDestaxa", function (require) {
             return promise;
         },
         _destaxa_payment_terminal_cancel: function (order, cid) {
+            this.pos.tef_client.abort();
             console.log("Destaxa Cancel");
         },
         _destaxa_payment_terminal_reversal: function (cid) {

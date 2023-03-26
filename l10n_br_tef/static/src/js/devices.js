@@ -380,7 +380,8 @@ odoo.define("l10n_br_tef.devices", function (require) {
 
         check_cancelled_transaction: function () {
             if (this.tags.automacao_coleta_mensagem === "Transacao cancelada") {
-                this.disable_order_transaction();
+                // this.disable_order_transaction();
+                this.cancel_transaction();
                 return true;
             }
             return false;
@@ -849,7 +850,8 @@ odoo.define("l10n_br_tef.devices", function (require) {
                 const message =
                     this.tags.message || this.tags.automacao_coleta_mensagem;
                 if (message) this.screenPopupPagamento(message);
-                this.abort();
+                // this.abort();
+                this.cancel_transaction();
             }
         },
 
@@ -998,6 +1000,7 @@ odoo.define("l10n_br_tef.devices", function (require) {
                         self.in_sequential_execute +
                         '"'
                 );
+                self.cancel_transaction();
             }, 1000);
 
             // SetTimeout(function () {
@@ -1073,6 +1076,10 @@ odoo.define("l10n_br_tef.devices", function (require) {
         //     // Handle Exceptions Here
         //     return false;
         // },
+
+        cancel_transaction: function () {
+            this.pos.get_order().selected_paymentline.set_payment_status("retry");
+        },
 
         disable_order_transaction: function () {
             // FIXME: Feedback
