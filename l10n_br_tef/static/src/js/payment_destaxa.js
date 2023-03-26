@@ -33,6 +33,7 @@ odoo.define("l10n_br_tef.PaymentDestaxa", function (require) {
         },
         _destaxa_payment_terminal_pay: function (cid) {
             console.log("Destaxa Pay");
+            this.pos.tef_client.start_operation("purchase");
         },
         _destaxa_payment_terminal_cancel: function (order, cid) {
             console.log("Destaxa Cancel");
