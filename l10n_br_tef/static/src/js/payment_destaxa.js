@@ -35,6 +35,10 @@ odoo.define("l10n_br_tef.PaymentDestaxa", function (require) {
             console.log("Destaxa Pay");
             this.pos.get_order().selected_paymentline.set_payment_status("waitingCard");
             await this.pos.tef_client.start_operation("Cartao Vender");
+            const promise = new Promise((resolve, reject) => {
+                this.pos.get_order().selected_paymentline.resolve_pay_promise = resolve;
+            });
+            return promise;
         },
         _destaxa_payment_terminal_cancel: function (order, cid) {
             console.log("Destaxa Cancel");

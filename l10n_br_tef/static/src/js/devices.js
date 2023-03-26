@@ -1087,7 +1087,10 @@ odoo.define("l10n_br_tef.devices", function (require) {
 
         complete_paymentline: function () {
             this.disable_order_transaction();
-            this.pos.get_order().selected_paymentline.set_payment_status("done");
+            const order = this.pos.get_order();
+            const selected_paymentline = order.selected_paymentline;
+            selected_paymentline.resolve_pay_promise(true);
+            // This.pos.get_order().selected_paymentline.set_payment_status("done");
             // Selected_paymentline.tef_payment_completed = true;
             // const payment_screen = this.pos.gui.current_screen;
             // const selected_paymentline = payment_screen.get_selected_paymentline();
