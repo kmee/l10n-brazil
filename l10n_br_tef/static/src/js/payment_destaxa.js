@@ -33,10 +33,27 @@ odoo.define("l10n_br_tef.PaymentVspague", function (require) {
         },
         _vspague_payment_terminal_pay: async function (cid) {
             console.log("Vspague Pay");
-            this.pos.get_order().selected_paymentline.set_payment_status("waitingCard");
-            await this.pos.tef_client.start_operation("Cartao Vender");
+            const selected_paymentline = this.pos.get_order().selected_paymentline;
+            selected_paymentline.set_payment_status("waitingCard");
+
+            const payment_mode = selected_paymentline.payment_method.vspague_payment_terminal_mode
+
+            let operation = null;
+            if (payment_mode in ['Credito', 'Debito']){
+                operation = "Cartao Vender";
+            } else if (payment_mode === 'Pix'){
+                operation = "Digital Pagar";
+            }
+
+            if (!operation){
+                // TODO: Show error popup
+                console.error('Unable to determine payment operation.');
+                return;
+            }
+
+            await this.pos.tef_client.start_operation(operation);
             const promise = new Promise((resolve, reject) => {
-                this.pos.get_order().selected_paymentline.resolve_pay_promise = resolve;
+                selected_paymentline.resolve_pay_promise = resolve;
             });
             return promise;
         },

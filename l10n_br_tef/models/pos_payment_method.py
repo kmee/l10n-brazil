@@ -15,7 +15,7 @@ class PosPaymentMethod(models.Model):
         return res
 
     vspague_payment_terminal_mode = fields.Selection(
-        [("Credito", "Cartão Crédito"), ("Debito", "Cartão Débito")],
+        [("Credito", "Cartão Crédito"), ("Debito", "Cartão Débito"), ("Pix", "Pix")],
         string="Payment Mode",
         default="Credito",
     )

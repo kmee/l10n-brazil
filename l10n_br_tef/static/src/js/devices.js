@@ -916,6 +916,9 @@ odoo.define("l10n_br_tef.devices", function (require) {
                 }
             } else if (this.operation === "cancellation") {
                 ls_transaction_type = "Administracao Cancelar";
+            } else if (this.operation === "Digital Pagar"){
+                ls_transaction_type = "Digital Pagar";
+                ls_transaction_global_value = selected_payment_line.amount;
             }
 
             // TODO: Check in which flow it is necessary to pass the field "transacao_valor" filled in
