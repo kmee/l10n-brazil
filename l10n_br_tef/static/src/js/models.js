@@ -11,20 +11,21 @@
 odoo.define("l10n_br_tef.models", function (require) {
     "use strict";
 
-    const { PosGlobalState, register_payment_method } = require("point_of_sale.models");
+    const {PosGlobalState, register_payment_method} = require("point_of_sale.models");
     const Registries = require("point_of_sale.Registries");
     const tef_devices = require("l10n_br_tef.devices");
     const DestaxaPaymentTerminal = require("l10n_br_tef.PaymentDestaxa");
 
     register_payment_method("destaxa_payment_terminal", DestaxaPaymentTerminal);
 
-
     const PosTefTerminalPosGlobalState = (PosGlobalState) =>
         class PosTefTerminalPosGlobalState extends PosGlobalState {
             after_load_server_data() {
                 const res = super.after_load_server_data(...arguments);
-                this.tef_client = new tef_devices.TefProxy({pos: this});
-                // this.set({tef_status: {state: "disconnected", pending: 0}});
+                if (this.config.iface_tef) {
+                    this.tef_client = new tef_devices.TefProxy({pos: this});
+                }
+                // This.set({tef_status: {state: "disconnected", pending: 0}});
                 return res;
             }
         };
