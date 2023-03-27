@@ -11,16 +11,16 @@ class PosPaymentMethod(models.Model):
 
     def _get_payment_terminal_selection(self):
         res = super()._get_payment_terminal_selection()
-        res.append(("destaxa_payment_terminal", _("Destaxa Payment Terminal")))
+        res.append(("vspague_payment_terminal", _("VSPague Payment Terminal")))
         return res
 
-    destaxa_payment_terminal_mode = fields.Selection(
+    vspague_payment_terminal_mode = fields.Selection(
         [("Credito", "Cartão Crédito"), ("Debito", "Cartão Débito")],
         string="Payment Mode",
         default="Credito",
     )
 
-    destaxa_product_type = fields.Selection(
+    vspague_product_type = fields.Selection(
         [
             # ("CDC-Userede", "CDC-Userede"),
             # ("Consulta AVS-Userede", "Consulta AVS-Userede"),

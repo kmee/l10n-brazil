@@ -7,12 +7,12 @@
         <field name="arch" type="xml">
             <field name="use_payment_terminal" position="after">
                 <field
-                    name="destaxa_payment_terminal_mode"
-                    attrs="{'invisible': [('use_payment_terminal', '!=', 'destaxa_payment_terminal')]}"
+                    name="vspague_payment_terminal_mode"
+                    attrs="{'invisible': [('use_payment_terminal', '!=', 'vspague_payment_terminal')]}"
                 />
                 <field
-                    name="destaxa_product_type"
-                    attrs="{'invisible': [('use_payment_terminal', '!=', 'destaxa_payment_terminal')]}"
+                    name="vspague_product_type"
+                    attrs="{'invisible': [('use_payment_terminal', '!=', 'vspague_payment_terminal')]}"
                 />
             </field>
         </field>

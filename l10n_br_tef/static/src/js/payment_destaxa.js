@@ -5,34 +5,34 @@
     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 */
 
-odoo.define("l10n_br_tef.PaymentDestaxa", function (require) {
+odoo.define("l10n_br_tef.PaymentVspague", function (require) {
     "use strict";
 
     var PaymentInterface = require("point_of_sale.PaymentInterface");
 
-    var DestaxaPaymentTerminal = PaymentInterface.extend({
+    var VspaguePaymentTerminal = PaymentInterface.extend({
         init: function () {
             this._super.apply(this, arguments);
             this.enable_reversals();
         },
         send_payment_request: function (cid) {
             this._super.apply(this, arguments);
-            return this._destaxa_payment_terminal_pay(cid);
+            return this._vspague_payment_terminal_pay(cid);
         },
         send_payment_cancel: function (order, cid) {
             this._super.apply(this, arguments);
-            return this._destaxa_payment_terminal_cancel(order, cid);
+            return this._vspague_payment_terminal_cancel(order, cid);
         },
         send_payment_reversal: function (cid) {
             this._super.apply(this, arguments);
-            return this._destaxa_payment_terminal_reversal(cid);
+            return this._vspague_payment_terminal_reversal(cid);
         },
         close: function () {
             this._super.apply(this, arguments);
-            return this._destaxa_payment_terminal_close();
+            return this._vspague_payment_terminal_close();
         },
-        _destaxa_payment_terminal_pay: async function (cid) {
-            console.log("Destaxa Pay");
+        _vspague_payment_terminal_pay: async function (cid) {
+            console.log("Vspague Pay");
             this.pos.get_order().selected_paymentline.set_payment_status("waitingCard");
             await this.pos.tef_client.start_operation("Cartao Vender");
             const promise = new Promise((resolve, reject) => {
@@ -40,16 +40,16 @@ odoo.define("l10n_br_tef.PaymentDestaxa", function (require) {
             });
             return promise;
         },
-        _destaxa_payment_terminal_cancel: function (order, cid) {
+        _vspague_payment_terminal_cancel: function (order, cid) {
             this.pos.tef_client.abort();
-            console.log("Destaxa Cancel");
+            console.log("Vspague Cancel");
         },
-        _destaxa_payment_terminal_reversal: function (cid) {
-            console.log("Destaxa Reversal");
+        _vspague_payment_terminal_reversal: function (cid) {
+            console.log("Vspague Reversal");
         },
-        _destaxa_payment_terminal_close: function () {
-            console.log("Destaxa Close");
+        _vspague_payment_terminal_close: function () {
+            console.log("Vspague Close");
         },
     });
-    return DestaxaPaymentTerminal;
+    return VspaguePaymentTerminal;
 });

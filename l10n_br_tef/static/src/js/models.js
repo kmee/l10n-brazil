@@ -14,9 +14,9 @@ odoo.define("l10n_br_tef.models", function (require) {
     const {PosGlobalState, register_payment_method} = require("point_of_sale.models");
     const Registries = require("point_of_sale.Registries");
     const tef_devices = require("l10n_br_tef.devices");
-    const DestaxaPaymentTerminal = require("l10n_br_tef.PaymentDestaxa");
+    const VspaguePaymentTerminal = require("l10n_br_tef.PaymentVspague");
 
-    register_payment_method("destaxa_payment_terminal", DestaxaPaymentTerminal);
+    register_payment_method("vspague_payment_terminal", VspaguePaymentTerminal);
 
     const PosTefTerminalPosGlobalState = (PosGlobalState) =>
         class PosTefTerminalPosGlobalState extends PosGlobalState {

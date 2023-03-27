@@ -1,4 +1,4 @@
-from odoo import _, fields, models
+from odoo import models
 
 
 class PosSession(models.Model):
@@ -7,8 +7,8 @@ class PosSession(models.Model):
     def _loader_params_pos_payment_method(self):
 
         result = super()._loader_params_pos_payment_method()
-        result['search_params']['fields'].extend(
-            ['destaxa_payment_terminal_mode', 'destaxa_product_type']
+        result["search_params"]["fields"].extend(
+            ["vspague_payment_terminal_mode", "vspague_product_type"]
         )
 
         return result

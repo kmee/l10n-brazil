@@ -22,7 +22,7 @@ odoo.define("l10n_br_tef.devices", function (require) {
     /**
      Necessary TAGs for integration.
      */
-    class TagsDestaxa {
+    class TagsVspague {
         fill_tags(as_tag, as_value) {
             if (as_tag === "automacao_coleta_opcao")
                 this.automacao_coleta_opcao = as_value;
@@ -81,7 +81,7 @@ odoo.define("l10n_br_tef.devices", function (require) {
             this.ws_connection = null;
             this.connect_init = false;
             this.transaction_queue = [];
-            this.tags = new TagsDestaxa();
+            this.tags = new TagsVspague();
 
             this.installments = 1;
             this.in_sequential_execute = 0;
@@ -241,12 +241,12 @@ odoo.define("l10n_br_tef.devices", function (require) {
 
         _trace: function (message) {
             if (this.pos.debug) {
-                console.log("[DESTAXA] " + message);
+                console.log("[VSPague] " + message);
             }
         },
 
         _disassembling_service: function (to_service) {
-            /** Interpreta mesagem de retorno e preenche o objeto: TagsDestaxa
+            /** Interpreta mesagem de retorno e preenche o objeto: TagsVspague
              *
              */
 
@@ -380,7 +380,7 @@ odoo.define("l10n_br_tef.devices", function (require) {
 
         check_cancelled_transaction: function () {
             if (this.tags.automacao_coleta_mensagem === "Transacao cancelada") {
-                // this.disable_order_transaction();
+                // This.disable_order_transaction();
                 this.cancel_transaction();
                 return true;
             }
@@ -850,7 +850,7 @@ odoo.define("l10n_br_tef.devices", function (require) {
                 const message =
                     this.tags.message || this.tags.automacao_coleta_mensagem;
                 if (message) this.screenPopupPagamento(message);
-                // this.abort();
+                // This.abort();
                 this.cancel_transaction();
             }
         },
@@ -901,9 +901,9 @@ odoo.define("l10n_br_tef.devices", function (require) {
             if (this.operation === "Cartao Vender") {
                 ls_transaction_type = this.operation;
                 ls_card_type =
-                    selected_payment_line.payment_method.destaxa_payment_terminal_mode;
+                    selected_payment_line.payment_method.vspague_payment_terminal_mode;
                 ls_product_type =
-                    selected_payment_line.payment_method.destaxa_product_type;
+                    selected_payment_line.payment_method.vspague_product_type;
                 ls_transaction_global_value = selected_payment_line.amount;
 
                 if (this.installments > 1) {
