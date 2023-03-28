@@ -60,16 +60,16 @@ odoo.define("l10n_br_pos_cfe.FiscalDocumentCFe", function (require) {
 
             while (this.fiscal_queue.length > 0) {
                 var order = this.fiscal_queue.shift();
-                if (
-                    order.document_session_number &&
-                    this.pos.last_document_session_number ===
-                        order.document_session_number
-                ) {
-                    //  TODO: Melhorar esse método, consultando os dados da sessão em questão.
-                    return this.fiscalDocumentResultGenerator.IoTActionError(
-                        _t("Documento já transmitido.")
-                    );
-                }
+                // If (
+                //     order.document_session_number &&
+                //     this.pos.last_document_session_number ===
+                //         order.document_session_number
+                // ) {
+                //     //  TODO: Melhorar esse método, consultando os dados da sessão em questão.
+                //     return this.fiscalDocumentResultGenerator.IoTActionError(
+                //         _t("Documento já transmitido.")
+                //     );
+                // }
                 var order_json = order.export_for_printing();
 
                 try {
