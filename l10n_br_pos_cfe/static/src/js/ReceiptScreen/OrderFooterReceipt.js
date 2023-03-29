@@ -4,7 +4,7 @@ odoo.define("l10n_br_pos_cfe.OrderFooterReceipt", function (require) {
     const PosComponent = require("point_of_sale.PosComponent");
     const Registries = require("point_of_sale.Registries");
 
-    const { onMounted } = owl;
+    const {onMounted} = owl;
 
     class OrderFooterReceipt extends PosComponent {
         setup() {
@@ -16,7 +16,7 @@ odoo.define("l10n_br_pos_cfe.OrderFooterReceipt", function (require) {
                     this._generateBarcodeCancel(this.getFormattedDocumentKeyCancel());
                     this._generateQRCodeCancel();
                 }
-            })
+            });
         }
 
         get order() {
@@ -41,7 +41,7 @@ odoo.define("l10n_br_pos_cfe.OrderFooterReceipt", function (require) {
 
         async _generateQRCode() {
             // eslint-disable-next-line
-            const element = document.getElementById("footer__qrcode")
+            const element = document.getElementById("footer__qrcode");
             return await new QRCode(element, {
                 text: this.getTextForQRCode(),
                 width: 275,

@@ -17,7 +17,7 @@ odoo.define("l10n_br_pos_cfe.ProxyStatus", function (require) {
                 var warning = false;
                 var msg = "";
                 if (this.env.pos.config.iface_fiscal_via_proxy) {
-                    // var cfeStatus = newStatus.drivers.hw_fiscal
+                    // Var cfeStatus = newStatus.drivers.hw_fiscal
                     //     ? newStatus.drivers.hw_fiscal.status
                     //     : false;
                     // if (cfeStatus !== "connected" && cfeStatus !== "connecting") {

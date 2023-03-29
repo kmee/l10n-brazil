@@ -14,9 +14,8 @@ odoo.define("l10n_br_pos_cfe.models", function (require) {
     const SITUACAO_EDOC_AUTORIZADA = "autorizada";
     const SITUACAO_EDOC_CANCELADA = "cancelada";
 
-    const { Order, Orderline, Payment } = require("point_of_sale.models");
-    const { _t } = require('web.core');
-    const { Gui } = require("point_of_sale.Gui");
+    const {Order, Orderline, Payment} = require("point_of_sale.models");
+    const {Gui} = require("point_of_sale.Gui");
     const Registries = require("point_of_sale.Registries");
 
     const L10nBrPosCfeOrder = (Order) =>

@@ -9,6 +9,7 @@ odoo.define("l10n_br_pos_cfe.devices", function (require) {
     "use strict";
     var mixins = require("web.mixins");
     var ProxyDevice = require("point_of_sale.devices").ProxyDevice;
+    var Session = require("web.Session");
     var FiscalDocumentCFe =
         require("l10n_br_pos_cfe.FiscalDocumentCFe").FiscalDocumentCFe;
 
@@ -69,7 +70,7 @@ odoo.define("l10n_br_pos_cfe.devices", function (require) {
                 }
             }
         },
-        connect: function () {
+        connect: function (url) {
             var self = this;
             this.connection = new Session(undefined, url, {use_cors: true});
             this.host = url;
@@ -117,11 +118,8 @@ odoo.define("l10n_br_pos_cfe.devices", function (require) {
                         return self.find_proxy(options);
                     }
                 });
-            } else {
-                // Just find something quick
-                if (window.location.protocol != "https:") {
-                    found_url = this.find_proxy(options);
-                }
+            } else if (window.location.protocol != "https:") {
+                found_url = this.find_proxy(options);
             }
 
             var successProm = found_url.then(function (url) {
