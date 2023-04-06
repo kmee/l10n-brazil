@@ -11,7 +11,7 @@
             <div
                     class="alert alert-warning"
                     role="alert"
-                    attrs="{'invisible': [('nfe_environment','=',2)]}"
+                    attrs="{'invisible': [('nfe_environment','=', '1')]}"
                 >
             Nf-e Environment: <strong><field name="nfe_environment" /></strong>
             </div>
