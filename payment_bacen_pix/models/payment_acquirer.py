@@ -5,7 +5,7 @@ import json
 import logging
 
 import requests
-from werkzeug.urls import url_join
+import werkzeug.urls
 
 from odoo import fields, models
 
@@ -16,17 +16,18 @@ BACENPIX_PROVIDER = "bacenpix"
 SANDBOX_GET_TOKEN_URL = "https://oauth.hm.bb.com.br/"
 PROD_GET_TOKEN_URL = "https://oauth.bb.com.br/"
 
-BACENPIX_GET_TOKEN = {"enabled": PROD_GET_TOKEN_URL, "test": SANDBOX_GET_TOKEN_URL}
+BACENPIX_GET_TOKEN = {"prod": PROD_GET_TOKEN_URL, "test": SANDBOX_GET_TOKEN_URL}
 
 SANDBOX_URL = "https://api-pix.hm.bb.com.br/"
 PROD_URL = "https://api-pix.bb.com.br/"
 
+AUTH_ENDPOINT = "oauth/token"
 
 PIX_ENDPOINT_V2 = "pix/v2"
 TRANSACTION_STATUS_V2 = "v2/transactions/?id={}"
 
 BACENPIX = {
-    "enabled": PROD_URL,
+    "prod": PROD_URL,
     "test": SANDBOX_URL,
 }
 
@@ -39,7 +40,7 @@ class PaymentAcquirer(models.Model):
 
     provider = fields.Selection(
         selection_add=[(BACENPIX_PROVIDER, "Bacen (pix)")],
-        ondelete={BACENPIX_PROVIDER: "set default"},
+        # ondelete={BACENPIX_PROVIDER: "set default"},
     )
 
     bacenpix_email_account = fields.Char("Email", groups="base.group_user")
@@ -80,24 +81,14 @@ class PaymentAcquirer(models.Model):
             "client_secret": self.bacenpx_client_secret,
         }
 
-        payload = (
-            "oauth/token?grant_type=client_credentials"
-            + "&scope=cob.write%20cob.read%20cobv.write%20"
-            + "cobv.read%20lotecobv.write%20lotecobv.read"
-            + "%20pix.write%20pix.read%20webhook.read%20"
-            + "webhook.write%20payloadlocation.write%20payloadlocation.read"
-            + "&client_id="
-            + self.bacenpix_client_id
-            + "&client_secret="
-            + self.bacenpx_client_secret
-        )
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
             "Authorization": self.bacen_pix_basic,
         }
         response = requests.request(
             "POST",
-            url_join(BACENPIX_GET_TOKEN[self.state], data=payload, params=querystring),
+            werkzeug.urls.url_join(BACENPIX_GET_TOKEN[self.environment], AUTH_ENDPOINT),
+            params=querystring,
             headers=headers,
         )
         if response.status_code != 200:
@@ -111,7 +102,7 @@ class PaymentAcquirer(models.Model):
 
     def _bacenpix_header(self):
         self.bacen_pix_get_token()
-        if self.state == "test":
+        if self.environment == "test":
             return {
                 "Authorization": self.bacenpix_api_key,
                 "Content-Type": "application/json",
@@ -126,7 +117,7 @@ class PaymentAcquirer(models.Model):
     def _bacenpix_new_transaction(self, payload):
         response = requests.request(
             "POST",
-            url_join(BACENPIX[self.state], PIX_ENDPOINT_V2),
+            werkzeug.urls.url_join(BACENPIX[self.environment], PIX_ENDPOINT_V2),
             headers=self._bacenpix_header(),
             data=payload,
         )
@@ -135,7 +126,9 @@ class PaymentAcquirer(models.Model):
     def _bacenpix_status_transaction(self, tx_bacen_id):
         response = requests.request(
             "GET",
-            url_join(BACENPIX[self.state], TRANSACTION_STATUS_V2.format(tx_bacen_id)),
+            werkzeug.urls.url_join(
+                BACENPIX[self.environment], TRANSACTION_STATUS_V2.format(tx_bacen_id)
+            ),
             headers=self._bacenpix_header(),
             data={},
         )

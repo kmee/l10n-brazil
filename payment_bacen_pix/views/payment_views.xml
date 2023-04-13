@@ -11,34 +11,34 @@
                     <group attrs="{'invisible': [('provider', '!=', 'bacenpix')]}">
                         <field
                             name="bacenpix_email_account"
-                            attrs="{'required':[ ('provider', '=', 'bacenpix'), ('state', '!=', 'disabled')]}"
+                            attrs="{'required':[ ('provider', '=', 'bacenpix')]}"
                         />
                         <field
                             name="bacenpix_client_id"
-                            attrs="{'required':[ ('provider', '=', 'bacenpix'), ('state', '!=', 'disabled')]}"
+                            attrs="{'required':[ ('provider', '=', 'bacenpix')]}"
                         />
                         <field
                             name="bacenpx_client_secret"
-                            attrs="{'required':[ ('provider', '=', 'bacenpix'), ('state', '!=', 'disabled')]}"
+                            attrs="{'required':[ ('provider', '=', 'bacenpix')]}"
                         />
                         <field
                             name="bacenpix_dev_app_key"
-                            attrs="{'required':[ ('provider', '=', 'bacenpix'), ('state', '!=', 'disabled'),  ('state', '!=', 'enabled')]}"
+                            attrs="{'required':[ ('provider', '=', 'bacenpix')]}"
                         />
                         <field
                             name="bacen_pix_basic"
-                            attrs="{'required':[ ('provider', '=', 'bacenpix'), ('state', '!=', 'disabled')]}"
+                            attrs="{'required':[ ('provider', '=', 'bacenpix')]}"
                         />
                         <button
                             name="bacen_pix_get_token"
                             string="Get Token"
                             type="object"
                             class="oe_inline fa fa-arrow-right oe_link"
-                            attrs="{'required':[ ('provider', '=', 'bacenpix'), ('state', '!=', 'disabled')]}"
+                            attrs="{'required':[ ('provider', '=', 'bacenpix')]}"
                         />
                         <field
                             name="bacenpix_api_key"
-                            attrs="{'required':[ ('provider', '=', 'bacenpix'), ('state', '!=', 'disabled')]}"
+                            attrs="{'required':[ ('provider', '=', 'bacenpix')]}"
                         />
                     </group>
                 </xpath>
