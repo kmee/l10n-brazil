@@ -18,12 +18,12 @@ PROD_GET_TOKEN_URL = "https://oauth.bb.com.br/"
 
 BACENPIX_GET_TOKEN = {"prod": PROD_GET_TOKEN_URL, "test": SANDBOX_GET_TOKEN_URL}
 
-SANDBOX_URL = "https://api-pix.hm.bb.com.br/"
+SANDBOX_URL = "https://api.hm.bb.com.br/"
 PROD_URL = "https://api-pix.bb.com.br/"
 
 AUTH_ENDPOINT = "oauth/token"
 
-PIX_ENDPOINT_V2 = "pix/v2"
+PIX_ENDPOINT_V1 = "pix/v1/cob/"
 TRANSACTION_STATUS_V2 = "v2/transactions/?id={}"
 
 BACENPIX = {
@@ -49,6 +49,14 @@ class PaymentAcquirer(models.Model):
     bacenpix_api_key = fields.Char(string="API KEY", groups="base.group_user")
     bacenpix_dev_app_key = fields.Char(string="Dev APP KEY", groups="base.group_user")
     bacen_pix_basic = fields.Char(string="Basic", groups="base.group_user")
+    bacen_pix_key = fields.Char(string="PIX Key", groups="base.group_user")
+    bacen_pix_expiration = fields.Integer(
+        string="Bacen PIX Expiration",
+        default=3600,
+        help="Represents the lifetime of the charge, "
+        "specified in seconds from the creation date",
+        groups="base.group_user"
+    )
 
     def bacenpix_compute_fees(self, amount, currency_id, country_id):
         """Compute fees
@@ -95,29 +103,27 @@ class PaymentAcquirer(models.Model):
             self.bacenpix_api_key = "Error"
         else:
             response_data = json.loads(json.dumps(response.json()))
-            # self.bacenpix_api_key = response_data
             self.bacenpix_api_key = (
                 response_data["token_type"] + " " + response_data["access_token"]
             )
 
     def _bacenpix_header(self):
         self.bacen_pix_get_token()
-        if self.environment == "test":
-            return {
-                "Authorization": self.bacenpix_api_key,
-                "Content-Type": "application/json",
-                "X-Application-Key": self.bacenpix_dev_app_key,
-            }
 
         return {
             "Authorization": self.bacenpix_api_key,
             "Content-Type": "application/json",
         }
 
-    def _bacenpix_new_transaction(self, payload):
+    def _bacenpix_new_transaction(self, tx_id, payload):
+        params = {
+            "gw-dev-app-key": self.bacenpix_dev_app_key,
+            "txid": tx_id
+        }
         response = requests.request(
-            "POST",
-            werkzeug.urls.url_join(BACENPIX[self.environment], PIX_ENDPOINT_V2),
+            "PUT",
+            werkzeug.urls.url_join(BACENPIX[self.environment], PIX_ENDPOINT_V1),
+            params=params,
             headers=self._bacenpix_header(),
             data=payload,
         )

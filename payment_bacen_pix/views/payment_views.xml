@@ -39,9 +39,20 @@
                         <field
                             name="bacenpix_api_key"
                             attrs="{'required':[ ('provider', '=', 'bacenpix')]}"
-                        />
+                        />                       
+                        
                     </group>
                 </xpath>
+                
+                <xpath expr='//field[@name="journal_id"]' position='before'>
+                    <group attrs="{'invisible': [('provider', '!=', 'bacenpix')]}">
+                        <field
+                            name="bacen_pix_expiration"/>
+                        <field
+                            name="bacen_pix_key"/>                       
+                    </group>
+                </xpath>
+
             </field>
         </record>
 

@@ -113,23 +113,13 @@ class PaymentTransaction(models.Model):
         """Compleate the values used to create the payment.transaction"""
 
         partner_id = self.env["res.partner"].browse(values.get("partner_id", []))
-        self.env["res.currency"].browse(values.get("currency_id", []))
+
         acquirer_id = self.env["payment.acquirer"].browse(values.get("acquirer_id", []))
 
-        invoice_due_dates = (
-            self.env["account.move"]
-            .browse([x[2][0] for x in values.get("invoice_ids")])
-            .filtered("invoice_date_due")
-            .mapped("invoice_date_due")
-        )
-        if invoice_due_dates:
-            due = max(invoice_due_dates)
-        else:
-            due = fields.Date.context_today(self)
+        due = fields.Date.context_today(self)
         due = datetime.combine(due, datetime.max.time())
 
         base_url = acquirer_id.get_base_url()
-        # base_url = "https://.....sa.ngrok.io"
 
         callback_hash = self._bacenpix_generate_callback_hash(values.get("reference"))
 
@@ -138,32 +128,41 @@ class PaymentTransaction(models.Model):
 
         payload = json.dumps(
             {
-                "transaction_id": values.get("reference"),
-                # "currency": currency_id.name,
-                "currency": "BRL",
-                "amount": values.get("amount"),
-                "due": due.strftime("%Y-%m-%dT%H:%M:%S"),
-                "name": values.get("partner_name"),
-                "document_type": "CPF",
-                "document_number": partner_id.vat,
-                "webhook": webhook,
+                "calendario": {
+                    "expiracao": str(acquirer_id.bacen_pix_expiration),
+                },
+                "devedor": {
+                    "cpf": partner_id.cnpj_cpf.replace('.', '').replace('-', ''),
+                    "nome": values.get("partner_name")
+                },
+                "valor": {
+                    "original": str(values.get("amount")),
+                },
+                "chave": str(acquirer_id.bacen_pix_key),
             }
         )
-        response = acquirer_id._bacenpix_new_transaction(payload)
+        txid = values.get("tx_id")
+        response = acquirer_id._bacenpix_new_transaction(txid, payload)
         response_data = response.json()
         if not response.ok:
             raise ValidationError(
-                _("Payload Error {type} \n {message}".format(**response_data))
+                _("Payload Error Code: {codigo}. {mensagem}".format(**response_data['erros'][0]))
             )
         else:
             _logger.info(response_data)
             return dict(
-                acquirer_reference=response_data.get("id"),
-                state_message=response_data.get("status"),
                 callback_hash=callback_hash,
                 bacenpix_currency=response_data.get("currency"),
                 bacenpix_amount=response_data.get("amount"),
                 bacenpix_date_due=due,
                 bacenpix_qrcode=response_data.get("qrcode"),
                 date=datetime.now(),
+                criacao=response_data.get("criacao"),
+                expiracao=response_data.get("expiracao"),
+                location=response_data.get("location"),
+                textoImagemQRcode=response_data.get("textoImagemQRcode"),
+                txid=response_data.get("txid"),
+                chave=response_data.get("chave"),
+                state=response_data.get("ok"),
+                state_message=response_data.get("text"),
             )
