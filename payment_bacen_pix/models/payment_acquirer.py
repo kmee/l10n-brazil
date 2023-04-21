@@ -24,7 +24,6 @@ PROD_URL = "https://api-pix.bb.com.br/"
 AUTH_ENDPOINT = "oauth/token"
 
 PIX_ENDPOINT_V1 = "pix/v1/cob/"
-TRANSACTION_STATUS_V2 = "v2/transactions/?id={}"
 
 BACENPIX = {
     "prod": PROD_URL,
@@ -49,7 +48,11 @@ class PaymentAcquirer(models.Model):
     bacenpix_api_key = fields.Char(string="API KEY", groups="base.group_user")
     bacenpix_dev_app_key = fields.Char(string="Dev APP KEY", groups="base.group_user")
     bacen_pix_basic = fields.Char(string="Basic", groups="base.group_user")
-    bacen_pix_key = fields.Char(string="PIX Key", groups="base.group_user")
+    bacen_pix_key = fields.Char(
+        string="PIX Key",
+        help="Set your Pix key that you registered with your bank.",
+        groups="base.group_user"
+    )
     bacen_pix_expiration = fields.Integer(
         string="Bacen PIX Expiration",
         default=3600,
@@ -129,12 +132,16 @@ class PaymentAcquirer(models.Model):
         )
         return response
 
-    def _bacenpix_status_transaction(self, tx_bacen_id):
+    def _bacenpix_status_transaction(self, txid):
+        params = {
+            "gw-dev-app-key": self.bacenpix_dev_app_key,
+            # "txid": txid
+        }
         response = requests.request(
             "GET",
             werkzeug.urls.url_join(
-                BACENPIX[self.environment], TRANSACTION_STATUS_V2.format(tx_bacen_id)
-            ),
+                BACENPIX[self.environment], PIX_ENDPOINT_V1) + txid,
+            params=params,    
             headers=self._bacenpix_header(),
             data={},
         )

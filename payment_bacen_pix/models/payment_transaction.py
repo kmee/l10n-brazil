@@ -5,7 +5,9 @@ import hashlib
 import hmac
 import json
 import logging
+import dateutil.parser
 from datetime import datetime
+
 
 from werkzeug.urls import url_join
 
@@ -16,11 +18,13 @@ from odoo.tools import consteq, ustr
 _logger = logging.getLogger(__name__)
 
 
-BACENPIX_STATUS_CREATED = 0
-BACENPIX_STATUS_PAID = 1
-BACENPIX_STATUS_REJECTED = 2
-BACENPIX_STATUS_EXPIRED = 3
-BACENPIX_STATUS_REFUNDED = 4
+BACENPIX_STATUS_CREATED = "ATIVA"
+BACENPIX_STATUS_PAID = "CONCLUIDA"
+BACENPIX_STATUS_PROCESSING = "EM_PROCESSAMENTO"
+BACENPIX_STATUS_UNREALIZED = "NAO_REALIZADO"
+BACENPIX_STATUS_RETURNED = "DEVOLVIDO"
+BACENPIX_STATUS_REMOVED_BY_RECEIVER_USER = "REMOVIDA_PELO_USUARIO_RECEBEDOR"
+BACENPIX_STATUS_REMOVED_BY_PSP = "REMOVIDA_PELO_PSP"
 
 
 class PaymentTransaction(models.Model):
@@ -31,6 +35,13 @@ class PaymentTransaction(models.Model):
     bacenpix_qrcode = fields.Char()
     bacenpix_currency = fields.Char()
     bacenpix_amount = fields.Float()
+
+    bacenpix_creation = fields.Datetime()
+    bacenpix_expiration = fields.Char("Expiration")
+    bacenpix_location = fields.Char("Location")
+    bacenpix_text_image_qr_code = fields.Char("TextImageQRcode")
+    bacenpix_txid = fields.Char("TxId")
+    bacenpix_pix_key = fields.Char("PIX Key")
 
     def _get_processing_info(self):
         # Devolver Dados do QRCODE
@@ -73,7 +84,7 @@ class PaymentTransaction(models.Model):
             _logger.info(post)
 
         response = self.acquirer_id._bacenpix_status_transaction(
-            self.acquirer_reference
+            self.bacenpix_txid
         )
         response_data = response.json()
 
@@ -84,15 +95,16 @@ class PaymentTransaction(models.Model):
             _logger.info("BACENPIX_STATUS_PAID")
             self._set_transaction_done()
             self._post_process_after_done()
-        elif response_data.get("status") == BACENPIX_STATUS_REJECTED:
+        elif response_data.get("status") == BACENPIX_STATUS_UNREALIZED:
             _logger.info("BACENPIX_STATUS_REJECTED")
             self._set_transaction_error()
-        elif response_data.get("status") == BACENPIX_STATUS_EXPIRED:
-            _logger.info("BACENPIX_STATUS_EXPIRED")
+        elif response_data.get("status") in (BACENPIX_STATUS_REMOVED_BY_RECEIVER_USER,
+                                             BACENPIX_STATUS_REMOVED_BY_PSP):            
+            _logger.info("REMOVED_BY_USER_OR_RECEIVING_P2P")            
             self._set_transaction_cancel()
             self.invoice_ids.button_draft()
             self.invoice_ids.button_cancel()
-        elif response_data.get("status") == BACENPIX_STATUS_REFUNDED:
+        elif response_data.get("status") == BACENPIX_STATUS_RETURNED:
             _logger.info("BACENPIX_STATUS_REFUNDED")
 
     def _bacenpix_validate_webhook(self, valid_token, post):
@@ -113,18 +125,18 @@ class PaymentTransaction(models.Model):
         """Compleate the values used to create the payment.transaction"""
 
         partner_id = self.env["res.partner"].browse(values.get("partner_id", []))
-
         acquirer_id = self.env["payment.acquirer"].browse(values.get("acquirer_id", []))
+        currency = self.env["res.currency"].browse(values.get("currency_id", []))
 
         due = fields.Date.context_today(self)
         due = datetime.combine(due, datetime.max.time())
 
-        base_url = acquirer_id.get_base_url()
+        # base_url = acquirer_id.get_base_url()
 
-        callback_hash = self._bacenpix_generate_callback_hash(values.get("reference"))
+        # callback_hash = self._bacenpix_generate_callback_hash(values.get("reference"))
 
-        webhook = url_join(base_url, "/webhook/{}".format(callback_hash))
-        _logger.info(webhook)
+        # webhook = url_join(base_url, "/webhook/{}".format(callback_hash))
+        # _logger.info(webhook)
 
         payload = json.dumps(
             {
@@ -145,24 +157,21 @@ class PaymentTransaction(models.Model):
         response = acquirer_id._bacenpix_new_transaction(txid, payload)
         response_data = response.json()
         if not response.ok:
+            error = response_data.get('errors')[0]
             raise ValidationError(
-                _("Payload Error Code: {codigo}. {mensagem}".format(**response_data['erros'][0]))
+                _("Payload Error Code: {codigo}. {mensagem}".format(
+                    **error))
             )
         else:
             _logger.info(response_data)
             return dict(
-                callback_hash=callback_hash,
-                bacenpix_currency=response_data.get("currency"),
-                bacenpix_amount=response_data.get("amount"),
+                bacenpix_creation=response_data['calendario']['criacao'],
+                bacenpix_expiration=response_data['calendario']['expiracao'],
+                bacenpix_location=response_data.get("location"),
+                bacenpix_text_image_qr_code=response_data.get("textoImagemQRcode"),
+                bacenpix_txid=response_data.get("txid"),
+                bacenpix_pix_key=response_data.get("chave"),
+                bacenpix_amount=response_data['valor']['original'],
                 bacenpix_date_due=due,
-                bacenpix_qrcode=response_data.get("qrcode"),
-                date=datetime.now(),
-                criacao=response_data.get("criacao"),
-                expiracao=response_data.get("expiracao"),
-                location=response_data.get("location"),
-                textoImagemQRcode=response_data.get("textoImagemQRcode"),
-                txid=response_data.get("txid"),
-                chave=response_data.get("chave"),
-                state=response_data.get("ok"),
-                state_message=response_data.get("text"),
+                bacenpix_currency=currency.name
             )

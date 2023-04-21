@@ -71,6 +71,14 @@
                     <field name="bacenpix_qrcode" readonly="1" />
                     <field name="bacenpix_currency" readonly="1" />
                     <field name="bacenpix_amount" readonly="1" />
+
+                    <field name="bacenpix_creation" readonly="1" />
+                    <field name="bacenpix_expiration" readonly="1" />
+                    <field name="bacenpix_location" readonly="1" />
+                    <field name="bacenpix_text_image_qr_code" readonly="1" />
+                    <field name="bacenpix_txid" readonly="1" />
+                    <field name="bacenpix_pix_key" readonly="1" />
+
                 </xpath>
             </field>
         </record>
