@@ -7,6 +7,7 @@ Copyright (C) 2016-Today KMEE (https://kmee.com.br)
 odoo.define("l10n_br_pos.models", function (require) {
     "use strict";
     const core = require("web.core");
+    const rpc = require("web.rpc");
     const utils = require("web.utils");
     const models = require("point_of_sale.models");
     const util = require("l10n_br_pos.util");
@@ -606,8 +607,19 @@ odoo.define("l10n_br_pos.models", function (require) {
         initialize: function (session, attributes) {
             this.last_document_session_number = null;
             this.sat_card_acquirer_list = null;
+            this.get_sat_card_acquirer_list();
 
             return _super_posmodel.initialize.call(this, session, attributes);
+        },
+        get_sat_card_acquirer_list: function () {
+            let self = this;
+            rpc.query({
+                model: "pos.payment.method",
+                method: "get_all_card_accrediting",
+                args: [],
+            }).then(function (result) {
+                self.sat_card_acquirer_list = result;
+            });
         },
         check_card_accrediting: function (accrediting_document) {
             let accrediting_code = "999";
