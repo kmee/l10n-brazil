@@ -1,7 +1,7 @@
 # © 2016 KMEE INFORMATICA LTDA (https://kmee.com.br) - Fernando Marcato
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
-from odoo import fields, models
+from odoo import api, fields, models
 
 CREDENCIADORAS_CARTAO = [
     # Código da credenciadora, CNPJ e Nome
@@ -56,5 +56,6 @@ class PosPaymentMethod(models.Model):
         CREDENCIADORAS_CARTAO, "Credenciadora do Cartão"
     )
 
+    @api.model
     def get_all_card_accrediting(self):
         return CREDENCIADORAS_CARTAO
