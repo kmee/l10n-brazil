@@ -30,8 +30,10 @@ odoo.define("l10n_br_pos.OrderRow", function (require) {
             get customer() {
                 const customer = this.order.get("client");
                 const cnpj_cpf = this.props.order.get_cnpj_cpf();
-                if (customer || cnpj_cpf) {
+                if (customer && cnpj_cpf) {
                     return (customer.name || "N/A") + " (" + cnpj_cpf + ")";
+                } else if (cnpj_cpf) {
+                    return "N/A" + " (" + cnpj_cpf + ")";
                 }
                 return null;
             }
