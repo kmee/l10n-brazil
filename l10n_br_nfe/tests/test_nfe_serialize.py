@@ -26,6 +26,7 @@ class TestNFeExport(TransactionCase):
             "odoo.addons.l10n_br_nfe_spec.models.v4_0.leiaute_nfe_v4_00",
         )
         self.nfe_list = []
+        self.env["ir.translation"].search([("lang", "=", "pt_BR")]).unlink()
 
     def prepare_test_nfe(self, nfe):
         """
@@ -76,7 +77,8 @@ class TestNFeExport(TransactionCase):
                 "2020-01-01T11:00:00", "%Y-%m-%dT%H:%M:%S"
             )
             nfe_id.nfe40_cNF = "06277716"
-            nfe_id.with_context(lang="pt_BR")._document_export()
+            nfe_id.company_id.country_id.name = "Brasil"
+            nfe_id._document_export()
             output = os.path.join(
                 config["data_dir"],
                 "filestore",
@@ -84,7 +86,6 @@ class TestNFeExport(TransactionCase):
                 nfe_id.send_file_id.store_fname,
             )
             _logger.info("XML file saved at %s" % (output,))
-            nfe_id.company_id.country_id.name = "Brazil"  # clean mess
             diff = main.diff_files(output, xml_path)
             _logger.info("Diff with expected XML (if any): %s" % (diff,))
             assert len(diff) == 0
