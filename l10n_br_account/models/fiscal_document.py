@@ -110,8 +110,13 @@ class FiscalDocument(models.Model):
         # force creation of fiscal_document_line only when creating an AML record
         # In order not to affect the creation of the dummy document, a test was included
         # that verifies that the ACTIVE field is not False. As the main characteristic
-        # of the dummy document is the ACTIVE field is False
+        # of the dummy document is the ACTIVE field is False.
+        # Necessary return a False value at values.get as importing invoice by xml comes
+        # without an active attribute.
         for values in vals_list:
-            if values.get("fiscal_line_ids") and values.get("active") is not False:
+            if (
+                values.get("fiscal_line_ids")
+                and values.get("active", False) is not False
+            ):
                 values.update({"fiscal_line_ids": False})
         return super().create(vals_list)
