@@ -77,13 +77,13 @@ msgid "Amount Tax Included"
 msgstr ""
 
 #. module: l10n_br_purchase
-#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order__amount_tax_withholding
-msgid "Amount Tax Withholding"
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__amount_tax_not_included
+msgid "Amount Tax Not Included"
 msgstr ""
 
 #. module: l10n_br_purchase
-#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__amount_tax_not_included
-msgid "Amount Tax not Included"
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order__amount_tax_withholding
+msgid "Amount Tax Withholding"
 msgstr ""
 
 #. module: l10n_br_purchase
@@ -390,6 +390,20 @@ msgid "Default Fiscal Operation for Purchase"
 msgstr ""
 
 #. module: l10n_br_purchase
+#: model:ir.model.fields,help:l10n_br_purchase.field_purchase_order__delivery_costs
+#: model:ir.model.fields,help:l10n_br_purchase.field_purchase_order_line__delivery_costs
+msgid ""
+"Define if costs of Insurance, Freight and Other Costs should be informed by "
+"Line or by Total."
+msgstr ""
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order__delivery_costs
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__delivery_costs
+msgid "Delivery Costs"
+msgstr ""
+
+#. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__ii_customhouse_charges
 msgid "Despesas Aduaneiras"
 msgstr ""
@@ -474,7 +488,6 @@ msgstr ""
 
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order__fiscal_operation_type
-#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__fiscal_operation_type
 msgid "Fiscal Operation Type"
 msgstr ""
 
@@ -506,6 +519,11 @@ msgstr ""
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__fiscal_type
 msgid "Fiscal Type"
+msgstr ""
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order__force_compute_delivery_costs_by_total
+msgid "Force Compute Delivery Costs By Total"
 msgstr ""
 
 #. module: l10n_br_purchase
@@ -878,6 +896,11 @@ msgid "IRPJ RET % Reduction"
 msgstr ""
 
 #. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__irpj_wh_base
+msgid "IRPJ RET Base"
+msgstr ""
+
+#. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__irpj_wh_value
 msgid "IRPJ RET Value"
 msgstr ""
@@ -981,6 +1004,7 @@ msgstr ""
 
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order__amount_issqn_value
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__issqn_value
 msgid "ISSQN Value"
 msgstr ""
 
@@ -1107,12 +1131,12 @@ msgstr ""
 
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order__amount_other_value
-#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__other_value
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase.report_purchaseorder_document_l10n_br_purchase
 msgid "Other Costs"
 msgstr ""
 
 #. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__other_value
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_report__other_value
 msgid "Other Value"
 msgstr ""
@@ -1301,18 +1325,8 @@ msgid "Purchases"
 msgstr ""
 
 #. module: l10n_br_purchase
-#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__irpj_wh_base
-msgid "RPJ RET Base"
-msgstr ""
-
-#. module: l10n_br_purchase
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase.l10n_br_purchase_order_filter
 msgid "Razão Social"
-msgstr ""
-
-#. module: l10n_br_purchase
-#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__issqn_value
-msgid "SSQN Value"
 msgstr ""
 
 #. module: l10n_br_purchase
@@ -1468,7 +1482,12 @@ msgstr ""
 
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_report__total_with_taxes
-msgid "Total with Taxes"
+msgid "Total With Taxes"
+msgstr ""
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__fiscal_operation_type
+msgid "Type"
 msgstr ""
 
 #. module: l10n_br_purchase

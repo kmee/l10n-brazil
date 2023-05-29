@@ -10,7 +10,7 @@ from lxml import etree
 
 from odoo import _, api, fields, models
 
-from .ibpt.taxes import DeOlhoNoImposto
+from .ibpt import DeOlhoNoImposto
 
 _logger = logging.getLogger(__name__)
 
@@ -178,10 +178,7 @@ class DataNcmNbsAbstract(models.AbstractModel):
     def fields_view_get(
         self, view_id=None, view_type="form", toolbar=False, submenu=False
     ):
-        res = super(DataNcmNbsAbstract, self).fields_view_get(
-            view_id, view_type, toolbar, submenu
-        )
-
+        res = super().fields_view_get(view_id, view_type, toolbar, submenu)
         if view_type == "form":
             xml = etree.XML(res["arch"])
             xml_button = xml.xpath("//button[@name='action_ibpt_inquiry']")

@@ -69,7 +69,7 @@ class TestNFeExport(TransactionCase):
                     },
                 ),
             ]
-            nfe_id.with_context(lang="en_US").action_document_confirm()
+            nfe_id.action_document_confirm()
             nfe_id.document_date = datetime.strptime(
                 "2020-01-01T11:00:00", "%Y-%m-%dT%H:%M:%S"
             )

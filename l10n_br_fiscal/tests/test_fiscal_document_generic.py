@@ -8,6 +8,12 @@ from odoo.exceptions import UserError
 from odoo.tests import SavepointCase
 from odoo.tools import mute_logger
 
+from ..constants.fiscal import (
+    SITUACAO_EDOC_A_ENVIAR,
+    SITUACAO_EDOC_AUTORIZADA,
+    SITUACAO_EDOC_CANCELADA,
+    SITUACAO_EDOC_EM_DIGITACAO,
+)
 from ..constants.icms import ICMS_ORIGIN_TAX_IMPORTED
 
 
@@ -33,6 +39,11 @@ class TestFiscalDocumentGeneric(SavepointCase):
             "l10n_br_fiscal.demo_nfe_sn_nao_contribuinte"
         )
         cls.nfe_sn_export = cls.env.ref("l10n_br_fiscal.demo_nfe_sn_export")
+
+        # Compra
+        cls.nfe_purchase_same_state = cls.env.ref(
+            "l10n_br_fiscal.demo_nfe_purchase_same_state"
+        )
 
     def test_nfe_same_state(self):
         """Test NFe same state."""
@@ -151,6 +162,23 @@ class TestFiscalDocumentGeneric(SavepointCase):
             )
 
         self.nfe_same_state.action_document_confirm()
+
+        self.assertEqual(
+            self.nfe_same_state.state_edoc,
+            SITUACAO_EDOC_A_ENVIAR,
+            "Document is not in To Sent state",
+        )
+
+        self.nfe_same_state.action_document_send()
+
+        self.assertEqual(
+            self.nfe_same_state.state_edoc,
+            SITUACAO_EDOC_AUTORIZADA,
+            "Document is not in Authorized state",
+        )
+
+        result = self.nfe_same_state.action_document_cancel()
+        self.assertTrue(result)
 
     def test_nfe_other_state(self):
         """Test NFe other state."""
@@ -1045,6 +1073,19 @@ class TestFiscalDocumentGeneric(SavepointCase):
         with self.assertRaises(UserError):
             dummy_line.unlink()
 
+    def test_create_company_fiscal_dummy(self):
+        """Check Company Consistency in Fiscal Dummy"""
+        company = self.env["res.company"].create(
+            {
+                "name": "Company Test Fiscal BR",
+                "cnpj_cpf": "42.245.642/0001-09",
+                "country_id": self.env.ref("base.br").id,
+                "state_id": self.env.ref("base.state_br_sp").id,
+            }
+        )
+        self.assertEqual(company.fiscal_dummy_id.company_id, company)
+        self.assertEqual(company.fiscal_dummy_id.fiscal_line_ids[0].company_id, company)
+
     def test_nfe_comments(self):
         self.nfe_not_taxpayer._document_comment()
         additional_data = self.nfe_not_taxpayer.fiscal_line_ids[0].additional_data
@@ -1053,4 +1094,114 @@ class TestFiscalDocumentGeneric(SavepointCase):
             "manual comment test - Valor Aprox. dos Tributos: R$ 0,00"
             # TODO FIXME changed 0.00 to 0,00 to get tests pass on v13, but not
             # correct
+        )
+
+    def test_fields_freight_insurance_other_costs(self):
+        """Test fields Freight, Insurance and Other Costs when
+        defined or By Line or By Total.
+        """
+
+        # Teste definindo os valores Por Linha
+        for line in self.nfe_same_state.fiscal_line_ids:
+            line.freight_value = 10.0
+            line.insurance_value = 10.0
+            line.other_value = 10.0
+
+        self.assertEqual(
+            self.nfe_same_state.amount_freight_value,
+            20.0,
+            "Unexpected value for the field" " Amount Freight in Fiscal Document line",
+        )
+        self.assertEqual(
+            self.nfe_same_state.amount_insurance_value,
+            20.0,
+            "Unexpected value for the field"
+            " Amount Insurance in Fiscal Document line",
+        )
+        self.assertEqual(
+            self.nfe_same_state.amount_other_value,
+            20.0,
+            "Unexpected value for the field"
+            " Amount Other Value in Fiscal Document line",
+        )
+
+        # Teste definindo os valores Por Total
+        # Por padrão a definição dos campos está por Linha
+        self.nfe_same_state.company_id.delivery_costs = "total"
+
+        # Caso que os Campos na Linha tem valor
+        self.nfe_same_state.amount_freight_value = 10.0
+        self.nfe_same_state.amount_insurance_value = 10.0
+        self.nfe_same_state.amount_other_value = 10.0
+
+        for line in self.nfe_same_state.fiscal_line_ids:
+            self.assertEqual(
+                line.freight_value,
+                5.0,
+                "Unexpected value for the field" " Freight in Fiscal Document line",
+            )
+            self.assertEqual(
+                line.insurance_value,
+                5.0,
+                "Unexpected value for the field" " Insurance in Fiscal Document line",
+            )
+            self.assertEqual(
+                line.other_value,
+                5.0,
+                "Unexpected value for the field"
+                " Other Values in Fiscal Document line",
+            )
+
+        # Caso que os Campos na Linha não tem valor
+        for line in self.nfe_same_state.fiscal_line_ids:
+            line.freight_value = 0.0
+            line.insurance_value = 0.0
+            line.other_value = 0.0
+
+        self.nfe_same_state.amount_freight_value = 20.0
+        self.nfe_same_state.amount_insurance_value = 20.0
+        self.nfe_same_state.amount_other_value = 20.0
+
+        for line in self.nfe_same_state.fiscal_line_ids:
+            self.assertEqual(
+                line.freight_value,
+                10.0,
+                "Unexpected value for the field" " Freight in Fiscal Document line",
+            )
+            self.assertEqual(
+                line.insurance_value,
+                10.0,
+                "Unexpected value for the field" " Insurance in Fiscal Document line",
+            )
+            self.assertEqual(
+                line.other_value,
+                10.0,
+                "Unexpected value for the field"
+                " Other Values in Fiscal Document line",
+            )
+
+    def test_nfe_purchase_same_state(self):
+
+        self.nfe_purchase_same_state.action_document_confirm()
+
+        self.assertEqual(
+            self.nfe_purchase_same_state.state_edoc,
+            SITUACAO_EDOC_AUTORIZADA,
+            "Document is not in Authorized state",
+        )
+
+        self.nfe_purchase_same_state.action_document_back2draft()
+
+        self.assertEqual(
+            self.nfe_purchase_same_state.state_edoc,
+            SITUACAO_EDOC_EM_DIGITACAO,
+            "Document is not in Draft state",
+        )
+
+        self.nfe_purchase_same_state.action_document_cancel()
+
+        self.assertEqual(
+            self.nfe_purchase_same_state.state_edoc,
+            SITUACAO_EDOC_CANCELADA,
+            "Document is not in Canceled state",
         )

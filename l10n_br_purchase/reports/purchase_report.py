@@ -69,22 +69,18 @@ class PurchaseReport(models.Model):
     )
 
     freight_value = fields.Float(
-        string="Freight Value",
         digits="Account",
     )
 
     insurance_value = fields.Float(
-        string="Insurance Value",
         digits="Account",
     )
 
     other_value = fields.Float(
-        string="Other Value",
         digits="Account",
     )
 
     total_with_taxes = fields.Float(
-        string="Total with Taxes",
         digits="Account",
     )
 
@@ -107,7 +103,7 @@ class PurchaseReport(models.Model):
             , SUM(l.freight_value) as freight_value
             , SUM(l.insurance_value) as insurance_value
             , SUM(l.other_value) as other_value
-            , SUM(l.price_unit / COALESCE(NULLIF(cr.rate, 0), 1.0) * l.product_qty
+            , SUM(l.price_unit / COALESCE(NULLIF(po.currency_rate, 0), 1.0) * l.product_qty
             )::decimal(16,2)
              + SUM(CASE WHEN l.ipi_value IS NULL THEN
               0.00 ELSE l.ipi_value END)

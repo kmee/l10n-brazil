@@ -26,6 +26,8 @@ from ..constants.fiscal import (
     SITUACAO_EDOC_INUTILIZADA,
 )
 
+PRODUCT_CODE_FISCAL_DOCUMENT_TYPES = ["55", "01"]
+
 
 class Document(models.Model):
     """Implementação base dos documentos fiscais
@@ -58,7 +60,6 @@ class Document(models.Model):
     # used mostly to enable _inherits of account.invoice on
     # fiscal_document when existing invoices have no fiscal document.
     active = fields.Boolean(
-        string="Active",
         default=True,
     )
 
@@ -79,7 +80,6 @@ class Document(models.Model):
     )
 
     document_number = fields.Char(
-        string="Document Number",
         copy=False,
         index=True,
     )
@@ -97,7 +97,6 @@ class Document(models.Model):
     )
 
     document_date = fields.Datetime(
-        string="Document Date",
         copy=False,
     )
 
@@ -113,7 +112,6 @@ class Document(models.Model):
     )
 
     operation_name = fields.Char(
-        string="Operation Name",
         copy=False,
     )
 
@@ -124,7 +122,7 @@ class Document(models.Model):
     )
 
     date_in_out = fields.Datetime(
-        string="Date Move",
+        string="Date IN/OUT",
         copy=False,
     )
 
@@ -190,8 +188,6 @@ class Document(models.Model):
         readonly=True,
     )
 
-    close_id = fields.Many2one(comodel_name="l10n_br_fiscal.closing", string="Close ID")
-
     document_type = fields.Char(
         related="document_type_id.code",
         store=True,
@@ -224,6 +220,22 @@ class Document(models.Model):
         default=False,
     )
 
+    @api.constrains("document_type", "state_edoc", "fiscal_line_ids")
+    def _check_product_default_code(self):
+        for rec in self:
+            if (
+                rec.document_type in PRODUCT_CODE_FISCAL_DOCUMENT_TYPES
+                and rec.state_edoc == "a_enviar"
+            ):
+                for line in rec.fiscal_line_ids:
+                    if not line.product_id.default_code:
+                        raise ValidationError(
+                            _(
+                                f"The product {line.product_id.display_name} "
+                                f"must have a default code."
+                            )
+                        )
+
     @api.constrains("document_key")
     def _check_key(self):
         for record in self:
@@ -247,15 +259,15 @@ class Document(models.Model):
                             MODELO_FISCAL_NFSE,
                         ),
                     ),
+                    ("state", "!=", "cancelada"),
                 ]
             )
 
             if documents:
                 raise ValidationError(
                     _(
-                        "There is already a fiscal document with this "
-                        "key: {} !".format(record.document_key)
-                    )
+                        "There is already a fiscal document with this " "key: {} !"
+                    ).format(record.document_key)
                 )
             else:
                 ChaveEdoc(chave=record.document_key, validar=True)
@@ -291,10 +303,8 @@ class Document(models.Model):
                 raise ValidationError(
                     _(
                         "There is already a fiscal document with this "
-                        "Serie: {}, Number: {} !".format(
-                            record.document_serie, record.document_number
-                        )
-                    )
+                        "Serie: {}, Number: {} !"
+                    ).format(record.document_serie, record.document_number)
                 )
 
     def _compute_document_name(self):
@@ -367,13 +377,14 @@ class Document(models.Model):
         "fiscal_line_ids.amount_tax_withholding",
     )
     def _compute_amount(self):
-        super()._compute_amount()
+        return super()._compute_amount()
 
-    @api.model
-    def create(self, values):
-        if not values.get("document_date"):
-            values["document_date"] = self._date_server_format()
-        return super().create(values)
+    @api.model_create_multi
+    def create(self, vals_list):
+        for values in vals_list:
+            if not values.get("document_date"):
+                values["document_date"] = self._date_server_format()
+        return super().create(vals_list)
 
     def unlink(self):
         forbidden_states_unlink = [
@@ -390,8 +401,8 @@ class Document(models.Model):
             raise ValidationError(
                 _(
                     "You cannot delete fiscal document number {} with "
-                    "the status: {}!".format(record.document_number, record.state_edoc)
-                )
+                    "the status: {}!"
+                ).format(record.document_number, record.state_edoc)
             )
 
         return super().unlink()
@@ -409,8 +420,8 @@ class Document(models.Model):
                 raise ValidationError(
                     _(
                         "The fiscal operation {} has no return Fiscal "
-                        "Operation defined".format(record.fiscal_operation_id)
-                    )
+                        "Operation defined"
+                    ).format(record.fiscal_operation_id)
                 )
 
             new_doc = record.copy()
@@ -423,8 +434,8 @@ class Document(models.Model):
                     raise ValidationError(
                         _(
                             "The fiscal operation {} has no return Fiscal "
-                            "Operation defined".format(line.fiscal_operation_id)
-                        )
+                            "Operation defined"
+                        ).format(line.fiscal_operation_id)
                     )
                 line.fiscal_operation_id = fsc_op_line
                 line._onchange_fiscal_operation_id()
@@ -463,16 +474,19 @@ class Document(models.Model):
         self.ensure_one()
         email_template = self._get_email_template(state)
         if email_template:
-            email_template.send_mail(self.id)
+            email_template.with_context(
+                default_attachment_ids=self._get_mail_attachment()
+            ).send_mail(self.id)
 
     def _after_change_state(self, old_state, new_state):
         self.ensure_one()
-        super()._after_change_state(old_state, new_state)
+        result = super()._after_change_state(old_state, new_state)
         self.send_email(new_state)
+        return result
 
     @api.onchange("fiscal_operation_id")
     def _onchange_fiscal_operation_id(self):
-        super()._onchange_fiscal_operation_id()
+        result = super()._onchange_fiscal_operation_id()
         if self.fiscal_operation_id:
             self.fiscal_operation_type = self.fiscal_operation_id.fiscal_operation_type
             self.edoc_purpose = self.fiscal_operation_id.edoc_purpose
@@ -496,6 +510,7 @@ class Document(models.Model):
                 )
             )
         self.document_subsequent_ids = subsequent_documents
+        return result
 
     @api.onchange("document_type_id")
     def _onchange_document_type_id(self):
@@ -558,6 +573,16 @@ class Document(models.Model):
             )
             raise UserWarning(message)
 
+    def _get_mail_attachment(self):
+        self.ensure_one()
+        attachment_ids = []
+        if self.state_edoc == SITUACAO_EDOC_AUTORIZADA:
+            if self.file_report_id:
+                attachment_ids.append(self.file_report_id.id)
+            if self.authorization_file_id:
+                attachment_ids.append(self.authorization_file_id.id)
+        return attachment_ids
+
     def action_send_email(self):
         """Open a window to compose an email, with the fiscal document_type
         template message loaded by default
@@ -573,6 +598,7 @@ class Document(models.Model):
             default_model="l10n_br_fiscal.document",
             default_res_id=self.id,
             default_use_template=bool(template),
+            default_attachment_ids=self._get_mail_attachment(),
             default_template_id=template and template.id or False,
             default_composition_mode="comment",
             model_description=self.document_type_id.name or self._name,

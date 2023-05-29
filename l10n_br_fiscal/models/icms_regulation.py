@@ -40,7 +40,7 @@ class ICMSRegulation(models.Model):
     _inherit = ["mail.thread", "mail.activity.mixin"]
     _description = "Tax ICMS Regulation"
 
-    name = fields.Text(string="Name", required=True, index=True)
+    name = fields.Text(required=True, index=True)
 
     icms_imported_tax_id = fields.Many2one(
         comodel_name="l10n_br_fiscal.tax",
@@ -1236,9 +1236,7 @@ class ICMSRegulation(models.Model):
         self, view_id=None, view_type="form", toolbar=False, submenu=False
     ):
 
-        view_super = super(ICMSRegulation, self).fields_view_get(
-            view_id, view_type, toolbar, submenu
-        )
+        view_super = super().fields_view_get(view_id, view_type, toolbar, submenu)
 
         if view_type == "form":
             doc = etree.fromstring(view_super.get("arch"))

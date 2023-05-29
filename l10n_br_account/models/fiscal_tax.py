@@ -21,11 +21,19 @@ class FiscalTax(models.Model):
     def _account_taxes(self):
         self.ensure_one()
         account_tax_group = self.tax_group_id.account_tax_group()
+        company = self.env.company
+        if self.env.context.get("default_company_id") or self.env.context.get(
+            "allowed_company_ids"
+        ):
+            company = self.env["res.company"].browse(
+                self.env.context.get("default_company_id")
+                or self.env.context.get("allowed_company_ids")[0]
+            )
         return self.env["account.tax"].search(
             [
                 ("tax_group_id", "=", account_tax_group.id),
                 ("active", "=", True),
-                ("company_id", "=", self.env.company.id),
+                ("company_id", "=", company.id),
             ]
         )
 
@@ -49,9 +57,9 @@ class FiscalTax(models.Model):
             else:
                 account_taxes.write({"fiscal_tax_ids": [(4, fiscal_tax.id)]})
 
-    @api.model
-    def create(self, values):
-        fiscal_taxes = super().create(values)
+    @api.model_create_multi
+    def create(self, vals_list):
+        fiscal_taxes = super().create(vals_list)
         fiscal_taxes._create_account_tax()
         return fiscal_taxes
 

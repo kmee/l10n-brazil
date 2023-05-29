@@ -7,8 +7,8 @@
     "license": "AGPL-3",
     "author": "Akretion, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/l10n-brazil",
-    "version": "14.0.1.5.0",
-    "development_status": "Alpha",
+    "version": "14.0.5.8.2",
+    "development_status": "Beta",
     "maintainers": ["renatonlima", "rvalyi"],
     "depends": [
         "l10n_br_coa",
@@ -32,7 +32,7 @@
         "views/fiscal_invoice_view.xml",
         "views/fiscal_invoice_line_view.xml",
         # Wizards
-        #        "wizards/account_invoice_refund_view.xml",
+        "wizards/account_move_reversal_view.xml",
         #        "wizards/wizard_document_status.xml",
         # Actions
         "views/l10n_br_account_action.xml",
@@ -40,6 +40,7 @@
         "views/l10n_br_account_menu.xml",
         # Report
         #        "report/account_invoice_report_view.xml",
+        "views/res_partner_view.xml",
     ],
     "demo": [
         "demo/res_users_demo.xml",

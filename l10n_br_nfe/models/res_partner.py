@@ -11,7 +11,7 @@ _logger = logging.getLogger(__name__)
 
 try:
     from erpbrasil.base.fiscal import cnpj_cpf
-    from erpbrasil.base.misc import punctuation_rm
+    from erpbrasil.base.misc import format_zipcode, punctuation_rm
 except ImportError:
     _logger.error("Biblioteca erpbrasil.base não instalada")
 
@@ -30,13 +30,18 @@ class ResPartner(spec_models.SpecModel):
         "nfe.40.dest",
         "nfe.40.tenderemi",
         "nfe.40.tinfresptec",
+        "nfe.40.transporta",
         "nfe.40.autxml",
     ]
     _nfe_search_keys = ["nfe40_CNPJ", "nfe40_CPF", "nfe40_xNome"]
 
     @api.model
-    def _prepare_import_dict(self, values, model=None):
-        values = super()._prepare_import_dict(values, model)
+    def _prepare_import_dict(
+        self, values, model=None, parent_dict=None, defaults_model=None
+    ):
+        values = super()._prepare_import_dict(
+            values, model, parent_dict, defaults_model
+        )
         if not values.get("name") and values.get("legal_name"):
             values["name"] = values["legal_name"]
         return values
@@ -58,11 +63,21 @@ class ResPartner(spec_models.SpecModel):
     # Char overriding Selection:
     nfe40_UF = fields.Char(related="state_id.code")
 
+    # Emit
+    nfe40_choice6 = fields.Selection(
+        selection=[("nfe40_CNPJ", "CNPJ"), ("nfe40_CPF", "CPF")],
+        string="CNPJ/CPF do Emitente",
+    )
+
     # nfe.40.tendereco
-    nfe40_CEP = fields.Char(related="zip", readonly=False)
+    nfe40_CEP = fields.Char(
+        compute="_compute_nfe_data", inverse="_inverse_nfe40_CEP", compute_sudo=True
+    )
     nfe40_cPais = fields.Char(related="country_id.bc_code")
     nfe40_xPais = fields.Char(related="country_id.name")
-    nfe40_fone = fields.Char(related="phone", readonly=False)  # TODO mobile?
+    nfe40_fone = fields.Char(
+        compute="_compute_nfe_data", inverse="_inverse_nfe40_fone", compute_sudo=True
+    )
 
     # nfe.40.dest
     nfe40_xNome = fields.Char(related="legal_name")
@@ -99,9 +114,19 @@ class ResPartner(spec_models.SpecModel):
         string="CNPJ/CPF/idEstrangeiro",
     )
 
+    # nfe.40.autXML
     nfe40_choice8 = fields.Selection(
         selection=[("nfe40_CNPJ", "CNPJ"), ("nfe40_CPF", "CPF")],
         string="CNPJ/CPF do Parceiro Autorizado",
+    )
+
+    # nfe.40.transporta
+    nfe40_choice19 = fields.Selection(
+        selection=[
+            ("nfe40_CNPJ", "CNPJ"),
+            ("nfe40_CPF", "CPF"),
+        ],
+        string="CNPJ or CPF",
     )
 
     def _compute_nfe40_xEnder(self):
@@ -120,31 +145,60 @@ class ResPartner(spec_models.SpecModel):
     def _compute_nfe_data(self):
         """Set schema data which are not just related fields"""
         for rec in self:
-            if rec.cnpj_cpf:
+            cnpj_cpf = punctuation_rm(rec.cnpj_cpf)
+            if cnpj_cpf:
                 if rec.country_id.code != "BR":
                     rec.nfe40_choice7 = "nfe40_idEstrangeiro"
                 elif rec.is_company:
-                    rec.nfe40_CNPJ = punctuation_rm(rec.cnpj_cpf)
+                    rec.nfe40_choice2 = "nfe40_CNPJ"
+                    rec.nfe40_choice6 = "nfe40_CNPJ"
                     rec.nfe40_choice7 = "nfe40_CNPJ"
+                    rec.nfe40_choice8 = "nfe40_CNPJ"
+                    rec.nfe40_choice19 = "nfe40_CNPJ"
+                    rec.nfe40_CNPJ = cnpj_cpf
                 else:
-                    rec.nfe40_CPF = punctuation_rm(rec.cnpj_cpf)
+                    rec.nfe40_choice2 = "nfe40_CPF"
+                    rec.nfe40_choice6 = "nfe40_CPF"
                     rec.nfe40_choice7 = "nfe40_CPF"
+                    rec.nfe40_choice8 = "nfe40_CPF"
+                    rec.nfe40_choice19 = "nfe40_CPF"
+                    rec.nfe40_CPF = cnpj_cpf
 
             if rec.inscr_est and rec.is_company:
                 rec.nfe40_IE = punctuation_rm(rec.inscr_est)
             else:
                 rec.nfe40_IE = None
 
+            rec.nfe40_CEP = punctuation_rm(rec.zip)
+            rec.nfe40_fone = punctuation_rm(rec.phone or "").replace(" ", "")
+
     def _inverse_nfe40_CNPJ(self):
         for rec in self:
             if rec.nfe40_CNPJ:
                 rec.is_company = True
+                rec.nfe40_choice2 = "nfe40_CPF"
+                rec.nfe40_choice6 = "nfe40_CPF"
+                if rec.country_id.code != "BR":
+                    rec.nfe40_choice7 = "nfe40_idEstrangeiro"
+                else:
+                    rec.nfe40_choice7 = "nfe40_CNPJ"
+                rec.nfe40_choice7 = "nfe40_CPF"
+                rec.nfe40_choice8 = "nfe40_CPF"
+                rec.nfe40_choice19 = "nfe40_CPF"
                 rec.cnpj_cpf = cnpj_cpf.formata(str(rec.nfe40_CNPJ))
 
     def _inverse_nfe40_CPF(self):
         for rec in self:
             if rec.nfe40_CPF:
                 rec.is_company = False
+                rec.nfe40_choice2 = "nfe40_CNPJ"
+                rec.nfe40_choice6 = "nfe40_CNPJ"
+                if rec.country_id.code != "BR":
+                    rec.nfe40_choice7 = "nfe40_idEstrangeiro"
+                else:
+                    rec.nfe40_choice7 = "nfe40_CPF"
+                rec.nfe40_choice8 = "nfe40_CNPJ"
+                rec.nfe40_choice19 = "nfe40_CNPJ"
                 rec.cnpj_cpf = cnpj_cpf.formata(str(rec.nfe40_CPF))
 
     def _inverse_nfe40_IE(self):
@@ -152,26 +206,52 @@ class ResPartner(spec_models.SpecModel):
             if rec.nfe40_IE:
                 rec.inscr_est = str(rec.nfe40_IE)
 
-    def _export_field(self, xsd_field, class_obj, member_spec):
-        if xsd_field == "nfe40_xNome" and class_obj._name == "nfe.40.dest":
-            if self.env.context.get("tpAmb") == "2":
-                return "NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO " "- SEM VALOR FISCAL"
-        if xsd_field == "nfe40_xBairro":
-            if self.country_id.code != "BR":
+    def _inverse_nfe40_CEP(self):
+        for rec in self:
+            if rec.nfe40_CEP:
+                country_code = rec.country_id.code if rec.country_id else "BR"
+                rec.zip = format_zipcode(rec.nfe40_CEP, country_code)
+
+    def _inverse_nfe40_fone(self):
+        for rec in self:
+            if rec.nfe40_fone:
+                rec.phone = rec.nfe40_fone
+
+    def _export_field(self, xsd_field, class_obj, member_spec, export_value=None):
+        # Se a NF-e é emitida em homologação altera o nome do destinatário
+        if (
+            xsd_field == "nfe40_xNome"
+            and class_obj._name == "nfe.40.dest"
+            and self.env.context.get("tpAmb") == "2"
+        ):
+            return "NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
+
+        if xsd_field in ("nfe40_CNPJ", "nfe40_CPF"):
+            # Caso o CNPJ/CPF esteja em branco e o parceiro tenha um parent_id
+            # É exportado o CNPJ/CPF do parent_id é importate para o endereço
+            # de entrega/retirada
+            if not self.cnpj_cpf and self.parent_id:
+                cnpj_cpf = punctuation_rm(self.parent_id.cnpj_cpf)
+            else:
+                cnpj_cpf = punctuation_rm(self.cnpj_cpf)
+
+            if xsd_field == self.nfe40_choice2:
+                return cnpj_cpf
+
+        if self.country_id.code != "BR":
+            if xsd_field == "nfe40_xBairro":
                 return "EX"
 
-        if xsd_field == "nfe40_xMun":
-            if self.country_id.code != "BR":
+            if xsd_field == "nfe40_xMun":
                 return "EXTERIOR"
 
-        if xsd_field == "nfe40_cMun":
-            if self.country_id.code != "BR":
+            if xsd_field == "nfe40_cMun":
                 return "9999999"
 
-        if xsd_field == "nfe40_UF":
-            if self.country_id.code != "BR":
+            if xsd_field == "nfe40_UF":
                 return "EX"
-        if xsd_field == "nfe40_idEstrangeiro":
-            if self.country_id.code != "BR":
+
+            if xsd_field == "nfe40_idEstrangeiro":
                 return self.vat or self.cnpj_cpf or self.rg or "EXTERIOR"
-        return super()._export_field(xsd_field, class_obj, member_spec)
+
+        return super()._export_field(xsd_field, class_obj, member_spec, export_value)

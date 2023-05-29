@@ -28,24 +28,24 @@ class ResCompany(spec_models.SpecModel):
     _inherit = ["res.company", "nfe.40.emit"]
     _nfe_search_keys = ["nfe40_CNPJ", "nfe40_xNome", "nfe40_xFant"]
 
-    def _compute_nfe_data(self):
-        # compute because a simple related field makes the match_record fail
-        for rec in self:
-            if rec.partner_id.is_company:
-                rec.nfe40_choice6 = "nfe40_CNPJ"
-                rec.nfe40_CNPJ = rec.partner_id.cnpj_cpf
-            else:
-                rec.nfe40_choice6 = "nfe40_CPF"
-                rec.nfe40_CPF = rec.partner_id.cnpj_cpf
-
-    nfe40_CNPJ = fields.Char(compute="_compute_nfe_data")
+    nfe40_CNPJ = fields.Char(related="partner_id.nfe40_CNPJ")
+    nfe40_CPF = fields.Char(related="partner_id.nfe40_CPF")
     nfe40_xNome = fields.Char(related="partner_id.legal_name")
     nfe40_xFant = fields.Char(related="partner_id.name")
-    nfe40_IE = fields.Char(related="partner_id.inscr_est")
+    nfe40_IE = fields.Char(related="partner_id.nfe40_IE")
+    nfe40_fone = fields.Char(related="partner_id.nfe40_fone")
     nfe40_CRT = fields.Selection(related="tax_framework")
-    nfe40_enderEmit = fields.Many2one("res.partner", related="partner_id")
 
-    nfe40_choice6 = fields.Selection(string="CNPJ ou CPF?", compute="_compute_nfe_data")
+    nfe40_enderEmit = fields.Many2one(
+        comodel_name="res.partner",
+        related="partner_id",
+    )
+
+    nfe40_choice6 = fields.Selection(
+        [("nfe40_CNPJ", "CNPJ"), ("nfe40_CPF", "CPF")],
+        string="CNPJ ou CPF?",
+        compute="_compute_nfe_data",
+    )
 
     processador_edoc = fields.Selection(
         selection_add=PROCESSADOR,
@@ -112,6 +112,14 @@ class ResCompany(spec_models.SpecModel):
         default=False,
     )
 
+    def _compute_nfe_data(self):
+        # compute because a simple related field makes the match_record fail
+        for rec in self:
+            if rec.partner_id.is_company:
+                rec.nfe40_choice6 = "nfe40_CNPJ"
+            else:
+                rec.nfe40_choice6 = "nfe40_CPF"
+
     def _build_attr(self, node, fields, vals, path, attr):
         if attr.get_name() == "enderEmit" and self.env.context.get("edoc_type") == "in":
             # we don't want to try build a related partner_id for enderEmit
@@ -123,12 +131,14 @@ class ResCompany(spec_models.SpecModel):
         return super()._build_attr(node, fields, vals, path, attr)
 
     @api.model
-    def _prepare_import_dict(self, values, model=None):
+    def _prepare_import_dict(
+        self, values, model=None, parent_dict=None, defaults_model=None
+    ):
         # we disable enderEmit related creation with dry_run=True
         context = self._context.copy()
         context["dry_run"] = True
-        values = super(ResCompany, self.with_context(context))._prepare_import_dict(
-            values, model
+        values = super(ResCompany, self.with_context(**context))._prepare_import_dict(
+            values, model, parent_dict, defaults_model
         )
         if not values.get("name"):
             values["name"] = values.get("nfe40_xFant") or values.get("nfe40_xNome")

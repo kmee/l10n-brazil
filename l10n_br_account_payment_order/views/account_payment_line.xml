@@ -59,7 +59,15 @@
                     name="attrs"
                 >{'readonly': [('payment_method_code', 'not in', ('400', '240', '500'))]}</attribute>
             </field>
-
+            <field name="partner_id" position="after">
+                <field
+                    name="partner_pix_id"
+                    context="{'default_partner_id': partner_id}"
+                    domain="[('partner_id', '=', partner_id)]"
+                    attrs="{'invisible': [('payment_type', '=', 'inbound')]}"
+                />
+                <field name="pix_transfer_type" readonly="1" />
+            </field>
             <xpath expr="//field[@name='currency_id']" position="after">
                 <!-- Os campos não podem ser alterados aqui porque isso precisa
                 ser feito na respectiva account.move.line para ficar registrado para
@@ -73,6 +81,11 @@
                 <group name="cnab" string="Informações do CNAB">
                     <field name="own_number" readonly="1" />
                     <field name="document_number" readonly="1" />
+                    <field name="payment_mode_domain" invisible="1" />
+                    <field
+                        name="barcode"
+                        attrs="{'required': [('payment_type', '=', 'outbound'),('payment_mode_domain', '=', 'boleto')]}"
+                    />
                     <field name="company_title_identification" readonly="1" />
                     <field
                         name="movement_type"
@@ -92,6 +105,7 @@
                         attrs="{'invisible': [('payment_type', '=', 'inbound')]}"
                     />
                     <field name="favored_warning" />
+                    <field name="service_type" />
                     <field name="payment_method_code" invisible="1" />
                 </group>
             </xpath>

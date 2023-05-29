@@ -38,7 +38,7 @@ class AccountTax(models.Model):
         freight_value=None,
         fiscal_price=None,
         fiscal_quantity=None,
-        uot=None,
+        uot_id=None,
         icmssn_range=None,
         icms_origin=None,
         ind_final=FINAL_CUSTOMER_NO,
@@ -79,9 +79,20 @@ class AccountTax(models.Model):
 
         product = product or self.env["product.product"]
 
-        # FIXME Should get company from document?
+        if len(self) == 0:
+            company = self.env.company
+            if self.env.context.get("default_company_id") or self.env.context.get(
+                "allowed_company_ids"
+            ):
+                company = self.env["res.company"].browse(
+                    self.env.context.get("default_company_id")
+                    or self.env.context.get("allowed_company_ids")[0]
+                )
+        else:
+            company = self[0].company_id
+
         fiscal_taxes_results = fiscal_taxes.compute_taxes(
-            company=self.env.company,
+            company=company,
             partner=partner,
             product=product,
             price_unit=price_unit,
@@ -89,7 +100,7 @@ class AccountTax(models.Model):
             uom_id=product.uom_id,
             fiscal_price=fiscal_price or price_unit,
             fiscal_quantity=fiscal_quantity or quantity,
-            uot_id=uot or product.uot_id,
+            uot_id=uot_id or product.uot_id,
             ncm=ncm or product.ncm_id,
             nbs=nbs or product.nbs_id,
             nbm=nbm or product.nbm_id,

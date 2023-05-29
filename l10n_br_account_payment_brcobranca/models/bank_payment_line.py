@@ -4,11 +4,23 @@
 # @author Luis Felipe Mileo <mileo@kmee.com.br>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import logging
+
 from odoo import models
+
+_logger = logging.getLogger(__name__)
 
 
 class BankPaymentLine(models.Model):
     _inherit = "bank.payment.line"
+
+    def _prepare_bank_line_ailos(self, payment_mode_id, linhas_pagamentos):
+        if self.discount_value:
+            # Código adotado pela FEBRABAN para identificação do desconto.
+            # Domínio:
+            # 0 = Isento
+            # 1 = Valor Fixo
+            linhas_pagamentos["cod_desconto"] = "1"
 
     def _prepare_bank_line_unicred(self, payment_mode_id, linhas_pagamentos):
         # TODO - Valores padrões ?
@@ -50,7 +62,7 @@ class BankPaymentLine(models.Model):
 
         linhas_pagamentos["numero"] = doc_number
 
-        if payment_mode_id.boleto_discount_perc:
+        if self.discount_value:
             linhas_pagamentos["cod_desconto"] = "1"
 
     def _prepare_bank_line_banco_brasil(self, payment_mode_id, linhas_pagamentos):
@@ -72,7 +84,7 @@ class BankPaymentLine(models.Model):
             if bank_method:
                 bank_method(payment_mode_id, linhas_pagamentos)
         except Exception:
-            pass
+            _logger.warning("can't prepare paymeny line")
 
         # Cada Banco pode possuir seus Codigos de Instrução
         if (
@@ -112,12 +124,9 @@ class BankPaymentLine(models.Model):
                         "valor_mora"
                     ] = payment_mode_id.boleto_interest_perc
 
-            if payment_mode_id.boleto_discount_perc:
+            if self.discount_value:
                 linhas_pagamentos["data_desconto"] = self.date.strftime("%Y/%m/%d")
-                linhas_pagamentos["valor_desconto"] = round(
-                    self.amount_currency * (payment_mode_id.boleto_discount_perc / 100),
-                    precision_account,
-                )
+                linhas_pagamentos["valor_desconto"] = self.discount_value
 
             # Protesto
             if payment_mode_id.boleto_protest_code:

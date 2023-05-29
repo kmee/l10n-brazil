@@ -7,7 +7,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 from odoo import api, fields, models, tools
-from odoo.osv import expression
+from odoo.osv.expression import AND
 
 from ..constants.fiscal import (
     COMMENT_TYPE,
@@ -23,34 +23,27 @@ class Comment(models.Model):
     _rec_name = "comment"
 
     sequence = fields.Integer(
-        string="Sequence",
         default=10,
     )
 
     name = fields.Char(
-        string="Name",
         required=True,
     )
 
     comment = fields.Text(
-        string="Comment",
         required=True,
     )
 
-    test_comment = fields.Text(
-        string="Test Comment",
-    )
+    test_comment = fields.Text()
 
     comment_type = fields.Selection(
         selection=COMMENT_TYPE,
-        string="Comment Type",
         default=COMMENT_TYPE_COMMERCIAL,
         required=True,
     )
 
     object = fields.Selection(
         selection=FISCAL_COMMENT_OBJECTS,
-        string="Object",
         required=True,
     )
 
@@ -73,18 +66,25 @@ class Comment(models.Model):
         self, name, args=None, operator="ilike", limit=100, name_get_uid=None
     ):
         args = args or []
-        domain = []
         if name:
             domain = [
                 "|",
-                ("name", operator, name),
                 ("comment", "ilike", "%" + name + "%"),
+                ("name", operator, name),
             ]
-        recs = self._search(
-            expression.AND([domain, args]), limit=limit, access_rights_uid=name_get_uid
+            return super()._name_search(
+                args=AND([args, domain]),
+                operator=operator,
+                limit=limit,
+                name_get_uid=name_get_uid,
+            )
+        return super()._name_search(
+            name=name,
+            args=args,
+            operator=operator,
+            limit=limit,
+            name_get_uid=name_get_uid,
         )
-
-        return self.browse(recs).name_get()
 
     def name_get(self):
         def truncate_name(name):
@@ -109,9 +109,9 @@ class Comment(models.Model):
 
         pre = post = ""
         if currency.position == "before":
-            pre = "{symbol}\N{NO-BREAK SPACE}".format(symbol=currency.symbol or "")
+            pre = "{}".format(currency.symbol or "") + "\N{NO-BREAK SPACE}"
         else:
-            post = "\N{NO-BREAK SPACE}{symbol}".format(symbol=currency.symbol or "")
+            post = "\N{NO-BREAK SPACE}" + "{}".format(currency.symbol or "")
 
         return "{pre}{0}{post}".format(formatted_amount, pre=pre, post=post)
 

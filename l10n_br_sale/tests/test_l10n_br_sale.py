@@ -151,14 +151,12 @@ class L10nBrSaleBaseTest(SavepointCase):
         sale_order.onchange_partner_id()
         sale_order.onchange_partner_shipping_id()
         sale_order._onchange_fiscal_operation_id()
-        sale_order.onchange_discount_rate()
 
     def _run_sale_line_onchanges(self, sale_line):
         sale_line._onchange_product_id_fiscal()
         sale_line._onchange_fiscal_operation_id()
         sale_line._onchange_fiscal_operation_line_id()
         sale_line._onchange_fiscal_taxes()
-        sale_line._onchange_discount_percent()
 
     def _invoice_sale_order(self, sale_order):
         sale_order.action_confirm()
@@ -459,3 +457,95 @@ class L10nBrSaleBaseTest(SavepointCase):
         self.so_product_service._create_invoices(final=True)
         # Devem existir duas Faturas/Documentos Fiscais
         self.assertEqual(2, self.so_product_service.invoice_count)
+
+    def test_fields_freight_insurance_other_costs(self):
+        """Test fields Freight, Insurance and Other Costs when
+        defined or By Line or By Total in Sale Order.
+        """
+
+        # Por padrão a definição dos campos está por Linha
+        self.so_products.company_id.delivery_costs = "line"
+        # Teste definindo os valores Por Linha
+        for line in self.so_products.order_line:
+            line.price_unit = 100.0
+            line.freight_value = 10.0
+            line.insurance_value = 10.0
+            line.other_value = 10.0
+
+        self.so_products.action_confirm()
+
+        self.assertEqual(
+            self.so_products.amount_freight_value,
+            20.0,
+            "Unexpected value for the field Amount Freight in Sale Order.",
+        )
+        self.assertEqual(
+            self.so_products.amount_insurance_value,
+            20.0,
+            "Unexpected value for the field Amount Insurance in Sale Order.",
+        )
+        self.assertEqual(
+            self.so_products.amount_other_value,
+            20.0,
+            "Unexpected value for the field Amount Other in Sale Order.",
+        )
+
+        # Teste definindo os valores Por Total
+        # Por padrão a definição dos campos está por Linha
+        self.so_products.company_id.delivery_costs = "total"
+
+        # Caso que os Campos na Linha tem valor
+        self.so_products.amount_freight_value = 10.0
+        self.so_products.amount_insurance_value = 10.0
+        self.so_products.amount_other_value = 10.0
+
+        for line in self.so_products.order_line:
+
+            self.assertEqual(
+                line.freight_value,
+                5.0,
+                "Unexpected value for the field Freight in Sale line.",
+            )
+            self.assertEqual(
+                line.insurance_value,
+                5.0,
+                "Unexpected value for the field Insurance in Sale line.",
+            )
+            self.assertEqual(
+                line.other_value,
+                5.0,
+                "Unexpected value for the field Other Values in Sale line.",
+            )
+
+        # Caso que os Campos na Linha não tem valor
+        for line in self.so_products.order_line:
+            line.price_unit = 100.0
+            line.freight_value = 0.0
+            line.insurance_value = 0.0
+            line.other_value = 0.0
+
+        self.so_products.company_id.delivery_costs = "total"
+
+        self.so_products.amount_freight_value = 20.0
+        self.so_products.amount_insurance_value = 20.0
+        self.so_products.amount_other_value = 20.0
+
+        self.so_products.action_confirm()
+
+        for line in self.so_products.order_line:
+            if line.price_total == 234.29:
+                self.assertEqual(
+                    line.freight_value,
+                    11.43,
+                    "Unexpected value for the field Amount Freight in Sale Order.",
+                )
+                self.assertEqual(
+                    line.insurance_value,
+                    11.43,
+                    "Unexpected value for the field Insurance in Sale line.",
+                )
+                self.assertEqual(
+                    line.other_value,
+                    11.43,
+                    "Unexpected value for the field Other Values in Sale line.",
+                )

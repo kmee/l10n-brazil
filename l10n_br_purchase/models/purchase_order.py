@@ -91,7 +91,7 @@ class PurchaseOrder(models.Model):
 
     @api.depends("order_line")
     def _compute_amount(self):
-        super()._compute_amount()
+        return super()._compute_amount()
 
     @api.depends("order_line.price_total")
     def _amount_all(self):
@@ -102,6 +102,7 @@ class PurchaseOrder(models.Model):
         invoice_vals = super()._prepare_invoice()
         invoice_vals.update(
             {
+                "ind_final": self.ind_final,
                 "fiscal_operation_id": self.fiscal_operation_id.id,
                 "document_type_id": self.company_id.document_type_id.id,
             }

@@ -6,7 +6,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import ValidationError
 
 from ..constants import BR_CODES_PAYMENT_ORDER, FORMA_LANCAMENTO, TIPO_SERVICO
 
@@ -15,10 +15,23 @@ class AccountPaymentMode(models.Model):
     _name = "account.payment.mode"
     _inherit = [
         "account.payment.mode",
-        "mail.thread",
         "l10n_br_cnab.boleto.fields",
         "l10n_br_cnab.payment.fields",
+        "mail.thread",
     ]
+
+    PAYMENT_MODE_DOMAIN = [
+        ("dinheiro", _("Dinheiro")),
+        ("cheque", _("Cheque")),
+        ("pix_transfer", _("PIX Transfer")),
+        ("ted", _("TED")),
+        ("doc", _("DOC")),
+        ("boleto", _("Boleto")),
+    ]
+
+    payment_mode_domain = fields.Selection(
+        selection=PAYMENT_MODE_DOMAIN,
+    )
 
     auto_create_payment_order = fields.Boolean(
         string="Adicionar automaticamente ao validar a fatura",
@@ -52,9 +65,14 @@ class AccountPaymentMode(models.Model):
         related="fixed_journal_id.bank_id.code_bc",
     )
 
-    own_number_type = fields.Selection(
-        related="fixed_journal_id.company_id.own_number_type",
+    cnab_processor = fields.Selection(
+        selection="_selection_cnab_processor",
     )
+
+    @api.model
+    def _selection_cnab_processor(self):
+        # Method to be extended by modules that implement CNAB processors.
+        return []
 
     # Codigos de Retorno do Movimento
 
@@ -91,7 +109,10 @@ class AccountPaymentMode(models.Model):
     )
     def _check_cnab_restriction(self):
         for record in self:
-            if record.payment_method_code not in BR_CODES_PAYMENT_ORDER:
+            if (
+                record.payment_method_code not in BR_CODES_PAYMENT_ORDER
+                or self.payment_type == "outbound"
+            ):
                 return False
             fields_forbidden_cnab = []
             if record.group_lines:
@@ -110,29 +131,12 @@ class AccountPaymentMode(models.Model):
                     % field
                 )
 
-            if self.bank_code_bc == "341" and not self.boleto_wallet:
+            if (
+                self.bank_code_bc == "341"
+                and self.payment_type == "inbound"
+                and not self.boleto_wallet
+            ):
                 raise ValidationError(_("Carteira no banco Itaú é obrigatória"))
-
-    def get_own_number_sequence(self, inv, numero_documento):
-        if inv.company_id.own_number_type == "0":
-            # SEQUENCIAL_EMPRESA
-            sequence = inv.company_id.own_number_sequence_id.next_by_id()
-        elif inv.company_id.own_number_type == "1":
-            # SEQUENCIAL_FATURA
-            sequence = numero_documento.replace("/", "")
-        elif inv.company_id.own_number_type == "2":
-            # SEQUENCIAL_CARTEIRA
-            sequence = inv.payment_mode_id.own_number_sequence_id.next_by_id()
-        else:
-            raise UserError(
-                _(
-                    "Favor acessar aba Cobrança da configuração da"
-                    " sua empresa para determinar o tipo de "
-                    "sequencia utilizada nas cobrancas"
-                )
-            )
-
-        return sequence
 
     @api.constrains("boleto_discount_perc")
     def _check_discount_perc(self):
@@ -168,18 +172,14 @@ class AccountPaymentMode(models.Model):
 
             if already_in_use.own_number_sequence_id:
                 raise ValidationError(
-                    _(
-                        "Sequence Own Number already in use by {}!".format(
-                            already_in_use.name
-                        )
+                    _("Sequence Own Number already in use by {}!").format(
+                        already_in_use.name
                     )
                 )
 
             if already_in_use.cnab_sequence_id:
                 raise ValidationError(
-                    _(
-                        "Sequence CNAB Sequence already in use by {}!".format(
-                            already_in_use.name
-                        )
+                    _("Sequence CNAB Sequence already in use by {}!").format(
+                        already_in_use.name
                     )
                 )

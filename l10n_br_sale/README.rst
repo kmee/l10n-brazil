@@ -7,9 +7,9 @@ Brazilian Localization Sale
    !! changes will be overwritten.                   !!
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-.. |badge1| image:: https://img.shields.io/badge/maturity-Production%2FStable-green.png
+.. |badge1| image:: https://img.shields.io/badge/maturity-Beta-yellow.png
     :target: https://odoo-community.org/page/development-status
-    :alt: Production/Stable
+    :alt: Beta
 .. |badge2| image:: https://img.shields.io/badge/licence-AGPL--3-blue.png
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
@@ -96,10 +96,24 @@ Authors
 Contributors
 ~~~~~~~~~~~~
 
-* Renato Lima <renato.lima@akretion.com.br>
-* Raphaël Valyi <raphael.valyi@akretion.com.br>
-* Luis Felipe Mileo <mileo@kmee.com.br>
-* Michell Stuttgart <michell.stuttgart@kmee.com.br>
+* `AKRETION <https://akretion.com/pt-BR/>`_:
+
+  * Raphaël Valyi <raphael.valyi@akretion.com.br>
+  * Renato Lima <renato.lima@akretion.com.br>
+  * Magno Costa <magno.costa@akretion.com.br>
+
+* `KMEE <https://kmee.com.br>`_:
+
+  * Luis Felipe Mileo <mileo@kmee.com.br>
+  * Michell Stuttgart <michell.stuttgart@kmee.com.br>
+
+* `ESCODOO <https://escodoo.com.br>`_:
+
+  * Marcel Savegnago <marcel.savegnago@escodoo.com.br>
+
+* `ENGENERE <https://engenere.one>`_:
+
+  * Felipe Motter Pereira <felipe@engenere.one>
 
 Other credits
 ~~~~~~~~~~~~~
