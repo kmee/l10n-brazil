@@ -35,9 +35,10 @@ odoo.define("l10n_br_pos_cfe.OrderFooterReceipt", function (require) {
             });
         }
 
-        async _generateQRCode() {
+        _generateQRCode() {
             // eslint-disable-next-line
-            return await new QRCode(document.getElementById("footer__qrcode"), {
+            console.log("🚀 ~ file: OrderFooterReceipt.js:43 ~ OrderFooterReceipt ~ this.getTextForQRCode(): ", this.getTextForQRCode())
+            return new QRCode(document.getElementById("footer__qrcode"), {
                 text: this.getTextForQRCode(),
                 width: 275,
                 height: 275,
