@@ -16,19 +16,19 @@ from ..constants.icms import ICMS_ORIGIN_TAX_IMPORTED
 VIEW = """
 <page name="uf_{0}" string="{1}">
     <notebook>
-        <page name="uf_{0}_internal" string="Interno">
+        <page name="uf_{0}_internal" string="Interno/Externo">
             <group name="icms_internal_{0}" string="Internal">
-            <field name="icms_internal_{0}_ids" context="{{'tree_view_ref': 'l10n_br_fiscal.tax_definition_icms_tree', 'default_icms_regulation_id': id, 'default_tax_group_id': {2}, 'default_state_from_id': {5}}}"/>
+                <field name="icms_internal_{0}_ids" context="{{'tree_view_ref': 'l10n_br_fiscal.tax_definition_icms_tree', 'default_icms_regulation_id': id, 'default_tax_group_id': {2}, 'default_state_from_id': {5}}}" nolabel="1"/>
             </group>
             <group name="icms_external_{0}" string="External">
-            <field name="icms_external_{0}_ids" context="{{'tree_view_ref': 'l10n_br_fiscal.tax_definition_icms_tree', 'default_icms_regulation_id': id, 'default_tax_group_id': {2}, 'default_state_from_id': {5}}}"/>
+                <field name="icms_external_{0}_ids" context="{{'tree_view_ref': 'l10n_br_fiscal.tax_definition_icms_tree', 'default_icms_regulation_id': id, 'default_tax_group_id': {2}, 'default_state_from_id': {5}}}" nolabel="1"/>
             </group>
         </page>
         <page name="uf_{0}_st" string="ST">
-            <field name="icms_st_{0}_ids" context="{{'tree_view_ref': 'l10n_br_fiscal.tax_definition_icms_tree', 'default_icms_regulation_id': id, 'default_tax_group_id': {3}, 'default_state_from_id': {5}}}"/>
+            <field name="icms_st_{0}_ids" context="{{'tree_view_ref': 'l10n_br_fiscal.tax_definition_icms_tree', 'default_icms_regulation_id': id, 'default_tax_group_id': {3}, 'default_state_from_id': {5}}}" nolabel="1"/>
         </page>
         <page name="uf_{0}_others" string="Outros">
-            <field name="icms_fcp_{0}_ids" context="{{'tree_view_ref': 'l10n_br_fiscal.tax_definition_icms_tree', 'default_icms_regulation_id': id, 'default_tax_group_id': {4}, 'default_state_from_id': {5}}}"/>
+            <field name="icms_fcp_{0}_ids" context="{{'tree_view_ref': 'l10n_br_fiscal.tax_definition_icms_tree', 'default_icms_regulation_id': id, 'default_tax_group_id': {4}, 'default_state_from_id': {5}}}" nolabel="1"/>
         </page>
     </notebook>
 </page>
@@ -1303,6 +1303,18 @@ class ICMSRegulation(models.Model):
                 ("tax_group_id", "=", tax_group_icms.id),
                 ("state_from_id", "=", company.state_id.id),
                 ("state_to_ids", "=", partner.state_id.id),
+                "|",
+                ("ncm_ids", "=", False),
+                ("ncm_ids", "=", ncm.id),
+                "|",
+                ("nbm_ids", "=", False),
+                ("nbm_ids", "=", nbm.id),
+                "|",
+                ("cest_ids", "=", False),
+                ("cest_ids", "=", cest.id),
+                "|",
+                ("product_ids", "=", False),
+                ("product_ids", "=", product.id),
             ]
 
             icms_defs = tax_definitions.search(domain)
@@ -1366,13 +1378,21 @@ class ICMSRegulation(models.Model):
         domain = [
             ("icms_regulation_id", "=", self.id),
             ("state", "=", "approved"),
-            ("state_from_id", "=", company.state_id.id),
             ("tax_group_id", "=", tax_group_icmsst.id),
-            "|",
+            ("state_from_id", "=", company.state_id.id),
             ("state_to_ids", "=", partner.state_id.id),
-            ("state_to_ids", "=", company.state_id.id),
+            "|",
+            ("ncm_ids", "=", False),
             ("ncm_ids", "=", ncm.id),
+            "|",
+            ("nbm_ids", "=", False),
+            ("nbm_ids", "=", nbm.id),
+            "|",
+            ("cest_ids", "=", False),
             ("cest_ids", "=", cest.id),
+            "|",
+            ("product_ids", "=", False),
+            ("product_ids", "=", product.id),
         ]
 
         icmsst_defs = tax_definitions.search(domain)

@@ -5,7 +5,8 @@ from copy import deepcopy
 
 from lxml import etree
 
-from odoo import api, models
+from odoo import _, api, models
+from odoo.exceptions import UserError
 
 from ..constants.fiscal import CFOP_DESTINATION_EXPORT, FISCAL_IN
 from ..constants.icms import ICMS_BASE_TYPE_DEFAULT, ICMS_ST_BASE_TYPE_DEFAULT
@@ -319,16 +320,81 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
                 d.__document_comment_vals(), d.manual_additional_data
             )
 
-    @api.onchange("fiscal_operation_id")
+    @api.onchange("fiscal_operation_id", "product_id")
     def _onchange_fiscal_operation_id(self):
-        if self.fiscal_operation_id:
-            if not self.price_unit:
-                self._get_product_price()
-            self._onchange_commercial_quantity()
-            self.fiscal_operation_line_id = self.fiscal_operation_id.line_definition(
-                company=self.company_id,
-                partner=self.partner_id,
-                product=self.product_id,
+        if not self.fiscal_operation_id or not self.product_id:
+            return
+
+        if not self.price_unit:
+            self._get_product_price()
+
+        self._onchange_commercial_quantity()
+
+        icms_regulation_id = self.env["l10n_br_fiscal.icms.regulation"]
+
+        if self.product_id.icms_regulation_id:
+            icms_regulation_id = self.product_id.icms_regulation_id
+
+        if not icms_regulation_id:
+            tax_definition_ids = self.env["l10n_br_fiscal.tax.definition"]
+            if self.product_id.ncm_id and self.product_id.ncm_id.tax_definition_ids:
+                tax_definition_ids |= self.product_id.ncm_id.tax_definition_ids
+            if self.product_id.cest_id and self.product_id.cest_id.tax_definition_ids:
+                tax_definition_ids |= self.product_id.cest_id.tax_definition_ids
+            if self.product_id.nbm_id and self.product_id.nbm_id.tax_definition_ids:
+                tax_definition_ids |= self.product_id.nbm_id.tax_definition_ids
+            if self.product_id and self.product_id.tax_definition_ids:
+                tax_definition_ids |= self.product_id.tax_definition_ids
+            if tax_definition_ids:
+                tax_definition_ids = tax_definition_ids.map_tax_definition(
+                    company=self.company_id,
+                    partner=self.partner_id,
+                    product=self.product_id,
+                    city_taxation_code=self.city_taxation_code_id,
+                )
+                icms_regulation_id |= tax_definition_ids.mapped("icms_regulation_id")
+
+        if not icms_regulation_id and self.company_id.icms_regulation_id:
+            icms_regulation_id |= self.company_id.icms_regulation_id
+
+        if not icms_regulation_id and not self.company_id.icms_regulation_id:
+            icms_regulation_id |= self.env.ref("l10n_br_fiscal.tax_icms_regulation")
+
+        if not icms_regulation_id:
+            raise UserError(
+                _(
+                    """Nenhum regulamento do ICMS encontrado,
+                favor revisar a parametrização fiscal"""
+                )
+            )
+
+        if len(icms_regulation_id) > 1:
+            raise UserError(
+                _(
+                    """Multiplos Regulamentos do ICMS encontrados,
+                favor revisar a parametrização fiscal"""
+                )
+            )
+
+        self.icms_regulation_id = icms_regulation_id
+        self._onchange_icms_regulation_id()
+
+    @api.onchange("fiscal_operation_id", "icms_regulation_id", "product_id")
+    def _onchange_icms_regulation_id(self):
+        if not (
+            self.fiscal_operation_id and self.icms_regulation_id and self.product_id
+        ):
+            return
+        self.fiscal_operation_line_id = self.fiscal_operation_id.line_definition(
+            company=self.company_id,
+            partner=self.partner_id,
+            product=self.product_id,
+            icms_regulation=self.icms_regulation_id,
+        )
+
+        if self.fiscal_operation_line_id.force_icms_regulation_id:
+            self.icms_regulation_id = (
+                self.fiscal_operation_line_id.force_icms_regulation_id
             )
             self._onchange_fiscal_operation_line_id()
 
@@ -347,6 +413,7 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
                 cest=self.cest_id,
                 city_taxation_code=self.city_taxation_code_id,
                 ind_final=self.ind_final,
+                icms_regulation=self.icms_regulation_id,
             )
 
             self.cfop_id = mapping_result["cfop"]

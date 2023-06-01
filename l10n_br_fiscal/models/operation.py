@@ -183,7 +183,7 @@ class Operation(models.Model):
 
         return serie
 
-    def _line_domain(self, company, partner, product):
+    def _line_domain(self, company, partner, product, icms_regulation):
 
         domain = [
             ("fiscal_operation_id", "=", self.id),
@@ -236,14 +236,22 @@ class Operation(models.Model):
             ("icms_origin", "=", False),
         ]
 
+        domain += [
+            "|",
+            ("icms_regulation_id", "=", icms_regulation.id),
+            ("icms_regulation_id", "=", False),
+        ]
+
         return domain
 
-    def line_definition(self, company, partner, product):
+    def line_definition(self, company, partner, product, icms_regulation):
         self.ensure_one()
         if not company:
             company = self.env.company
 
-        lines = self.line_ids.search(self._line_domain(company, partner, product))
+        lines = self.line_ids.search(
+            self._line_domain(company, partner, product, icms_regulation)
+        )
 
         return self._select_best_line(lines)
 
