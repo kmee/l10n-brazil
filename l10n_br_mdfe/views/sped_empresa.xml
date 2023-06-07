@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2018 KMEE INFORMATICA LTDA
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+
+<odoo>
+
+    <record model="ir.ui.view" id="sped_empresa_form_view">
+        <field name="name">res.company.form (in l10n_br_mdfe)</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.fiscal_res_company_form"/>
+        <field name="arch" type="xml">
+             <page name="tax_framework" position="after">
+                <page name="fiscal_mdfe" string="MDF-E">
+                    <group col="4">
+                        <separator string="Ambiente" colspan="4" />
+                        <field name="environment_mdfe" string="Ambiente" />
+                        <field name="emission_type_mdfe" string="Tipo de emissão" />
+                        <newline />
+                        <separator string="Emissão normal" colspan="4" />
+                        <separator string="Produção" colspan="2" />
+                        <separator string="Homologação" colspan="2" />
+                        <field name="serie_mdfe_production" string="Série" />
+                        <field name="serie_mdfe_homologation" string="Série" />
+                        <newline />
+                        <separator string="Emissão em contingência" colspan="4" />
+                        <separator string="Produção" colspan="2" />
+                        <separator string="Homologação" colspan="2" />
+                        <field name="serie_mdfe_production_contingency" string="Série" />
+                        <field name="serie_mdfe_contingency_homologation" string="Série" />
+                    </group>
+                </page>
+            </page>
+        </field>
+    </record>
+</odoo>

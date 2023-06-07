@@ -1,0 +1,562 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2018 KMEE INFORMATICA LTDA, Grupo Zenir
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+
+<odoo>
+
+    <record model="ir.ui.view" id="sped_documento_form_view">
+        <field name="name">l10n_br_fiscal.document.form (in l10n_br_mdfe)</field>
+        <field name="model">l10n_br_fiscal.document</field>
+        <field name="arch" type="xml">
+            <form string="Emissão de MDF-E" duplicate="false">
+                <header>
+                    <field name="status_code" invisible="1" />
+                    <button name="confirma_documento_publico"
+                        title="Confirmar"
+                        type="object"
+                        class="btn-primary"
+                        attrs="{'invisible': [('situation_mdfe', 'in', ['autorizada','cancelada','encerrada','a_enviar'] )] }"
+                    />
+                    <button name="envia_documento_publico"
+                        title="Enviar"
+                        type="object"
+                        class="btn-primary"
+                        attrs="{'invisible': [('situation_mdfe', 'not in', ['a_enviar'] )] }"
+                    />
+                    <button name="encerra_documento"
+                        title="Encerrar"
+                        type="object"
+                        class="btn-primary"
+                        attrs="{'invisible': [('situation_mdfe', 'not in', ['autorizada'] )] }"
+                    />
+                    <button name="consultar_documento"
+                        title="Consultar"
+                        type="object"
+                        class="btn-primary"
+                        attrs="{'invisible': [('situation_mdfe', 'not in', ['autorizada','rejeitada','cancelada'] )] }"
+                    />
+                    <button name="action_send_email"
+                        title="Enviar email"
+                        type="object"
+                        class="btn-default"
+                    />
+                    <button name="gera_pdf"
+                        title="Imprimir"
+                        type="object"
+                        class="btn-default"
+                        attrs="{'invisible': [('situation_mdfe', 'not in', ['autorizada'] )] }"
+                    />
+                    <button name="%(mdfe_cancellation_reason_wizard_action)d"
+                        title="Cancelar"
+                        type="action"
+                        attrs="{'invisible': [('situation_mdfe', 'not in', ['autorizada'] )] }"
+                    />
+                    <!-- mudado os buttons pra title -->
+                </header>
+                <sheet>
+                    <field name="edoc_purpose" invisible="1" />
+                    <field name="document_type" invisible="1" />
+                    <field name="id" invisible="1" />
+                    <field name="currency_id" invisible="1" />
+                    <!-- <field name="amount_tax_included" invisible="1"/> -->
+                    <!-- <field name="importado_xml" invisible="1"/> -->
+                    <field name="document_subsequent_ids" invisible="1" />
+                    <div class="oe_button_box" name="button_box">
+                    </div>
+                    <group>
+                        <group col="4" colspan="4">
+                            <field name="situation_mdfe" readonly="1" colspan="4" string="Situação"
+                                decoration-warning="situation_mdfe == 'denegada' or situation_mdfe == '04'"
+                                decoration-danger="situation_mdfe == 'rejeitada'"
+                            />
+                            <field name="xml_error_message" readonly="1" colspan="4"
+                                decoration-warning="situation_mdfe == 'denegada' or situation_mdfe == '04'"
+                                decoration-danger="situation_mdfe == 'rejeitada'"
+                            />
+                            <field name="company_id" colspan="4"
+                                options="{'no_create': True, 'no_open': True}" required="1"
+                                readonly="1" />
+                            <!--                             <field name="company_id" colspan="4" options="{'no_create': True,
+                            'no_open': True}" required="1" attrs="{'readonly': ['|', ('id', '!=',
+                            False)]}" domain="[('contribuinte', '=', '1')]" /> -->
+                            <field name="partner_cnpj_cpf" colspan="2" readonly="1" />
+                            <newline />
+                            <!-- <field name="fiscal_operation_id" colspan="4"
+                            domain="[('document_type', '=', document_type), ('edoc_purpose', '=',
+                            edoc_purpose), '|', ('company_id', '=', False), ('company_id', '=',
+                            company_id)]" options="{'no_create': True, 'no_open': True}"
+                            attrs="{'readonly': ['|', ('documentos_subsequentes_gerados', '=',
+                            True), '|', '&amp;', ('id', '!=', False)]}" /> -->
+                            <field name="document_subsequent_generated" invisible="True" />
+                            <!--                             <field name="fiscal_operation_id" colspan="4"
+                            domain="[('document_type', '=', document_type), ('edoc_purpose', '=',
+                            edoc_purpose), '|', ('company_id', '=', False), ('company_id', '=',
+                            company_id)]" options="{'no_create': True, 'no_open': True}"
+                            attrs="{'readonly': ['|', ('documentos_subsequentes_gerados', '=',
+                            True), '|', '&amp;', ('id', '!=', False), ('importado_xml', '=',
+                            False)], 'required': [('importado_xml', '=', False)]}" /> -->
+                            <newline />
+                            <field name="document_number" required="1" colspan="2" />
+                            <field name="document_serie" required="1" colspan="2" />
+                            <newline />
+                            <field name="document_date" colspan="2" required="1" />
+                            <field name="date_in_out" colspan="2" required="1" />
+                            <newline />
+                            <field name="document_date" invisible="1" />
+                            <field name="date_in_out" invisible="1" />
+                            <newline />
+                            <field name="document_key" colspan="4" />
+                            <field name="authorization_protocol" colspan="4" />
+                            <newline />
+                            <field name="is_edoc_printed" colspan="2" />
+
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="rodoviario" string="Rodoviário">
+                            <notebook>
+                                <page string="Veiculo de Tração" name="veiculo_tracao">
+                                    <group>
+                                        <group string="Veículo" name="dados_veiculo">
+                                            <field name="vehicle_id" />
+                                            <field name="license_plate"
+                                                readonly="1" />
+                                            <field name="vehicle_estate"
+                                                readonly="1" />
+                                            <field name="wheeled_type_vehicle"
+                                                readonly="1" />
+                                            <field name="vehicle_body_type"
+                                                readonly="1" />
+                                            <field name="vehicle_tare_kg"
+                                                readonly="1" />
+                                            <field name="vehicle_capacity_kg"
+                                                readonly="1" />
+                                            <field name="vehicle_capacity_m3"
+                                                readonly="1" />
+                                            <field name="vehicle_ciot"
+                                                readonly="1" />
+                                        </group>
+                                        <group string="Condutores" name="condutores">
+                                            <!--<field
+                                            name="conductor_id" colspan="2"/>-->
+                                            <field name="conductor_ids" nolabel="1" colspan="2">
+                                                <tree>
+                                                    <field name="conductor_id" invisible="1" />
+                                                    <field name="name" />
+                                                    <field name="cpf" />
+                                                </tree>
+                                                <form>
+                                                    <group>
+                                                        <field name="conductor_id" />
+                                                        <field name="name" required="1" />
+                                                        <field name="cpf" required="1" />
+                                                    </group>
+                                                </form>
+                                            </field>
+                                        </group>
+                                    </group>
+                                </page>
+                                <page string="Reboque" name="reboque">
+                                    <!--TODO:-->
+                                </page>
+                                <page string="CIOT" name="ciot">
+                                    <!--TODO:-->
+                                </page>
+                                <page string="Contratantes" name="contratantes">
+                                    <!--TODO:-->
+                                </page>
+                                <page string="Vale Pedágio" name="vale_pedagio">
+                                    <!--TODO:-->
+                                </page>
+                            </notebook>
+                            <!--<group>-->
+                            <!--<group
+                            colspan="6" col="6">-->
+                            <!--<separator
+                            string="Destinatário" colspan="6" attrs="{'invisible':
+                            [('entrada_saida', '=', '0')]}" />-->
+                            <!--<separator
+                            string="Remetente" colspan="6" attrs="{'invisible': [('entrada_saida',
+                            '=', '1')]}" />-->
+                            <!--<field
+                            name="participante_id" nolabel= "1" colspan="6" required="1"
+                            options="{'no_open': True, 'no_create': True}" domain="[('cnpj_cpf',
+                            '!=', False)]" attrs="{'readonly': [('permite_alteracao', '=', False)]}"
+                            />-->
+                            <!--<newline
+                            />-->
+                            <!--<field
+                            name="participante_razao_social" string="Nome completo Razão Social"
+                            colspan="6" />-->
+                            <!--<newline
+                            />-->
+                            <!--<field
+                            name="participante_fantasia" colspan="6" attrs="{'invisible':
+                            [('participante_tipo_pessoa', '!=', 'J')]}" />-->
+                            <!--<newline
+                            />-->
+                            <!--<field
+                            name="participante_tipo_pessoa" invisible="1" />-->
+                            <!--<newline
+                            />-->
+                            <!--<field
+                            name="participante_cnpj_cpf" colspan="2" />-->
+                            <!--<field
+                            name="participante_contribuinte" colspan="2" />-->
+                            <!--<field
+                            name="participante_ie" colspan="2" attrs="{'invisible':
+                            [('participante_contribuinte', '!=', '1')]}" />-->
+                            <!--<newline
+                            />-->
+                            <!--<separator
+                            string="Contato" colspan="6" />-->
+                            <!--<newline
+                            />-->
+                            <!--<field
+                            name="participante_fone" />-->
+                            <!--<field
+                            name="participante_celular" />-->
+                            <!--<field
+                            name="participante_fone_comercial" />-->
+                            <!--<newline
+                            />-->
+                            <!--<field
+                            name="participante_email" colspan="6" />-->
+                            <!--<newline
+                            />-->
+                            <!--<separator
+                            string="Endereço" colspan="6" />-->
+                            <!--<newline
+                            />-->
+                            <!--<field
+                            name="participante_endereco" colspan="6"/>-->
+                            <!--<newline
+                            />-->
+                            <!--<field
+                            name="participante_numero" />-->
+                            <!--<field
+                            name="participante_complemento" colspan="4" />-->
+                            <!--<newline
+                            />-->
+                            <!--<field
+                            name="participante_bairro" colspan="6" />-->
+                            <!--<newline
+                            />-->
+                            <!--<field
+                            name="participante_municipio_id" options="{'no_open': True, 'no_create':
+                            True}" colspan="6" />-->
+                            <!--<newline
+                            />-->
+                            <!--<field
+                            name="participante_cep" />-->
+                            <!--<newline
+                            />-->
+                            <!--<field
+                            name="participante_estado" invisible="1" />-->
+                            <!--<field
+                            name="participante_eh_orgao_publico" invisible="1" />-->
+                            <!--</group>-->
+                            <!--</group>-->
+                        </page>
+                        <page name="itens_mdfe" string="Percurso">
+                            <group col="6">
+                                <field name="shipment_cities_id" widget="many2many_tags" colspan="2" />
+                                <field name="route_estate_ids" widget="many2many_tags" colspan="2" />
+                                <field name="discharge_estate_id" colspan="2" />
+                            </group>
+                            <field name="item_mdfe_ids" />
+                        </page>
+
+                        <page name="totais" string="Totais">
+                            <group colspan="4" col="4">
+                                <group colspan="4" col="4" string="Valores principais">
+                                    <!-- <field name="vr_produtos" colspan="2"
+                                    string="Produtos/serviços" />
+                                    <field name="vr_nf" colspan="2" string="Total da NF" />
+                                    <newline />
+                                    <field name="vr_frete" colspan="2" string="Frete" />
+                                   <field name="vr_produtos" colspan="2" string="Produtos/serviços" />
+                                     <field name="vr_fatura" colspan="2" string="Total da fatura" />
+                                    <newline />
+                                    <field name="vr_seguro" colspan="2" string="Seguro" />
+                                    <newline />
+                                    <field name="vr_outras" colspan="2" string="Outras" />
+                                    <field name="vr_pagamentos" colspan="2"/>
+                                    <field name="vr_desconto" colspan="2" string="Desconto" />
+                                    <field name="vr_troco" colspan="2"/>
+                                    <field name="vr_operacao" colspan="2" string="Operação" /> -->
+                                </group>
+                                <group name="lacres">
+                                    <field name="seal_ids" nolabel="1">
+                                        <tree editable="top">
+                                            <field name="name" string="Lacres" />
+                                        </tree>
+                                    </field>
+
+                                </group>
+                            </group>
+                        </page>
+                        <page name="mdfe_seguro" string="Seguro">
+                            <field name="insurance_ids">
+                                <tree>
+                                    <field name="document_id" invisible="1" />
+                                    <field name="responsible_insurance" />
+                                    <field name="responsible_cnpj_cpf" />
+                                    <field name="name" />
+                                    <field name="cnpj_cpf" />
+                                    <field name="policy_number" />
+                                </tree>
+                                <form string="Seguro">
+                                    <group>
+                                        <field name="responsible_insurance" />
+                                        <field name="responsible_cnpj_cpf" />
+                                        <field name="insurer_id" />
+                                        <field name="name" />
+                                        <field name="cnpj_cpf" />
+                                        <field name="policy_number" />
+                                    </group>
+                                    <field name="annotation_ids">
+                                        <tree editable="top">
+                                            <field name="insurance_id" invisible="1" />
+                                            <field name="name" />
+                                        </tree>
+                                    </field>
+                                </form>
+                            </field>
+                        </page>
+                        <!--<page
+                        name="transporte" string="Transporte">-->
+                        <!--<group>-->
+                        <!--<group
+                        colspan="4" col="4">-->
+                        <!--<separator
+                        string="Frete e transporte" />-->
+                        <!--<newline
+                        />-->
+                        <!--<field
+                        name="modalidade_frete" attrs="{'required': '1', 'readonly':
+                        [('permite_alteracao', '=', False)]}" />-->
+                        <!--<newline
+                        />-->
+                        <!--<field
+                        name="transportadora_id" colspan="4" options="{'no_create': True, 'no_open':
+                        True}" attrs="{'invisible': ['!', ('modalidade_frete', 'in', ['0', '1',
+                        '2'])], 'readonly': [('permite_alteracao', '=', False)]}" />-->
+                        <!--<newline
+                        />-->
+                        <!--<field
+                        name="veiculo_id" options="{'no_create': True, 'no_open': True}"
+                        attrs="{'readonly': [('permite_alteracao', '=', False)]}" />-->
+                        <!--<field
+                        name="reboque_1_id" attrs="{'invisible': [('veiculo_id', '=', False)],
+                        'readonly': [('permite_alteracao', '=', False)]}" options="{'no_create':
+                        True, 'no_open': True}" domain="['!', ('id', 'in', [veiculo_id])]" />-->
+                        <!--<newline
+                        />-->
+                        <!--<field
+                        name="reboque_2_id" attrs="{'invisible': [('reboque_1_id', '=', False)],
+                        'readonly': [('permite_alteracao', '=', False)]}" options="{'no_create':
+                        True, 'no_open': True}" domain="['!', ('id', 'in', [veiculo_id,
+                        reboque_1_id])]" />-->
+                        <!--<field
+                        name="reboque_3_id" attrs="{'invisible': [('reboque_2_id', '=', False)],
+                        'readonly': [('permite_alteracao', '=', False)]}" options="{'no_create':
+                        True, 'no_open': True}" domain="['!', ('id', 'in', [veiculo_id,
+                        reboque_1_id, reboque_2_id])]" />-->
+                        <!--<newline
+                        />-->
+                        <!--<field
+                        name="reboque_4_id" attrs="{'invisible': [('reboque_3_id', '=', False)],
+                        'readonly': [('permite_alteracao', '=', False)]}" options="{'no_create':
+                        True, 'no_open': True}" domain="['!', ('id', 'in', [veiculo_id,
+                        reboque_1_id, reboque_2_id, reboque_3_id])]" />-->
+                        <!--<field
+                        name="reboque_5_id" attrs="{'invisible': [('reboque_4_id', '=', False)],
+                        'readonly': [('permite_alteracao', '=', False)]}" options="{'no_create':
+                        True, 'no_open': True}" domain="['!', ('id', 'in', [veiculo_id,
+                        reboque_1_id, reboque_2_id, reboque_3_id, reboque_4_id])]" />-->
+                        <!--<newline
+                        />-->
+                        <!--<field
+                        name="endereco_retirada_id" colspan="4" domain="[('participante_id', '=',
+                        participante_id)]" options="{'no_create': True, 'no_open': True}"
+                        attrs="{'invisible': ['!', ('modalidade_frete', 'in', ['0', '1', '2'])],
+                        'readonly': [('permite_alteracao', '=', False)]}" />-->
+                        <!--<newline
+                        />-->
+                        <!--<field
+                        name="endereco_entrega_id" colspan="4" domain="[('participante_id', '=',
+                        participante_id)]" options="{'no_create': True, 'no_open': True}"
+                        attrs="{'invisible': ['!', ('modalidade_frete', 'in', ['0', '1', '2'])],
+                        'readonly': [('permite_alteracao', '=', False)]}" />-->
+                        <!--<newline
+                        />-->
+                        <!--<separator
+                        string="Volumes" />-->
+                        <!--<newline
+                        />-->
+                        <!--<field
+                        name="volume_ids" colspan="4" nolabel="1" attrs="{'readonly':
+                        [('permite_alteracao', '=', False)]}">-->
+                        <!--<tree
+                        string="Volumes" editable="bottom">-->
+                        <!--<field
+                        name="quantity" />-->
+                        <!--<field
+                        name="gross_weight" />-->
+                        <!--<field
+                        name="net_weight" />-->
+                        <!--<field
+                        name="especie" />-->
+                        <!--<field
+                        name="marca" />-->
+                        <!--<field
+                        name="numero" />-->
+                        <!--<field
+                        name="volume" />-->
+                        <!--</tree>-->
+                        <!--</field>-->
+                        <!--<group
+                        name="Exportação" colspan="4" col="4" attrs="{'invisible': ['|',
+                        ('entrada_saida', '!=', '1'), ('participante_estado', '!=', 'EX')]}">-->
+                        <!--<separator
+                        string="Exportação" colspan="4" />-->
+                        <!--<field
+                        name="exportacao_estado_embarque_id" attrs="{'readonly':
+                        [('permite_alteracao', '=', False)]}" />-->
+                        <!--<newline
+                        />-->
+                        <!--<field
+                        name="exportacao_local_embarque" colspan="4" attrs="{'readonly':
+                        [('permite_alteracao', '=', False)]}" />-->
+                        <!--</group>-->
+                        <!--</group>-->
+                        <!--</group>-->
+                        <!--</page>-->
+                        <page name="outras" string="Outras informações">
+                            <group>
+                                <group colspan="4" col="4">
+                                    <!-- <field name="finalidade_nfe" attrs="{'required': '1'}"
+                                        colspan="2" string="Finalidade" /> -->
+                                    <!-- <field name="emission_type_mdfe" attrs="{'required': '1'}"
+                                        colspan="2" string="Tipo de emissão" /> -->
+                                    <newline />
+                                    <field name="emitter_type" attrs="{'required': '1'}" colspan="2" />
+                                    <field name="transporter_type" colspan="2" />
+                                    <field name="transport_modality" attrs="{'required': '1'}"
+                                        colspan="2" />
+                                    <newline />
+                                    <!-- <field name="environment_mdfe" attrs="{'required': '1'}" colspan="2"
+                                        string="Ambiente" /> -->
+                                    <!-- <field name="document_serie_id" colspan="2"
+                                        string="Documento de Origem" domain="([('active', '=', True),('document_type_id', '=', document_type_id)])" /> -->
+                                    <newline />
+                                    <!-- <field name="entrada_saida"
+                                        attrs="{'required': '1', 'readonly': ['|', ('id', '!=', False)]}"
+                                        colspan="2" /> -->
+                                    <!-- <field name="regime_tributario"
+                                        attrs="{'required': '1', 'readonly': ['|', ('id', '!=', False)]}"
+                                        colspan="2" /> -->
+                                    <newline />
+                                    <separator string="Informações complementares" colspan="4" />
+                                    <!-- <field name="infcomplementar" colspan="4" nolabel="1" /> -->
+                                    <separator string="Informações adicionais de interesse do fisco"
+                                        colspan="4" />
+                                    <!-- <field name="infadfisco" colspan="4" nolabel="1" /> -->
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <!-- <field name="message_follower_ids" widget="mail_followers" /> -->
+                    <!-- <field name="message_ids" widget="mail_thread" options='{"thread_level": 1}' /> -->
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="sped_documento_mdfe_tree">
+        <field name="name">l10n_br_fiscal.document.mdfe.tree</field>
+        <field name="model">l10n_br_fiscal.document</field>
+        <field name="priority">9999</field>
+        <field name="arch" type="xml">
+            <tree string="Emissão de MDF-e">
+                <field name="currency_id" invisible="1" />
+                <!-- <field name="amount_tax_included" invisible="1"/> -->
+                <field name="edoc_purpose" invisible="1" />
+                <field name="document_type" invisible="1" />
+                <field name="situation_mdfe" string="Situação" />
+                <field name="company_id" />
+                <field name="fiscal_operation_id" />
+                <field name="document_serie" />
+                <field name="document_number" />
+                <field name="document_date" />
+                <field name="date_in_out" />
+                <!--<field
+                name="participante_id" />-->
+                <!-- <field name="vr_nf" sum="vr_nf" /> -->
+            </tree>
+        </field>
+    </record>
+
+    <!--<record
+    model="ir.ui.view" id="sped_documento_search_view">-->
+    <!--<field
+    name="name">l10n_br_fiscal.document.search (in l10n_br_mdfe)</field>-->
+    <!--<field
+    name="model">l10n_br_fiscal.document</field>-->
+    <!--<field
+    name="inherit_id" ref="TODO othermodule.search_view"/>-->
+    <!--<field
+    name="arch" type="xml">-->
+    <!--&lt;!&ndash;
+    TODO &ndash;&gt;-->
+    <!--</field>-->
+    <!--</record>-->
+
+    <!--<record
+    model="ir.ui.view" id="sped_documento_tree_view">-->
+    <!--<field
+    name="name">l10n_br_fiscal.document.tree (in l10n_br_mdfe)</field>-->
+    <!--<field
+    name="model">l10n_br_fiscal.document</field>-->
+    <!--<field
+    name="inherit_id" ref="TODO othermodule.tree_view"/>-->
+    <!--<field
+    name="arch" type="xml">-->
+    <!--&lt;!&ndash;
+    TODO &ndash;&gt;-->
+    <!--</field>-->
+    <!--</record>-->
+
+    <record model="ir.actions.act_window" id="sped_documento_act_window">
+        <field name="name">Emissão de MDF-e</field>
+        <field name="res_model">l10n_br_fiscal.document</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[('edoc_purpose', '=', '0'), ('document_type', '=', '58')]</field>
+        <field name="context">{'default_emissao': '0', 'default_document_type': '58'}</field>
+    </record>
+
+    <record model="ir.actions.act_window.view" id="sped_documento_emissao_mdfe_form_acao">
+        <field eval="2" name="sequence" />
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="sped_documento_form_view" />
+        <field name="act_window_id" ref="sped_documento_act_window" />
+    </record>
+
+    <record model="ir.actions.act_window.view" id="sped_documento_emissao_mdfe_tree_acao">
+        <field eval="1" name="sequence" />
+        <field name="view_mode">tree</field>
+        <field name="view_id" ref="sped_documento_mdfe_tree" />
+        <field name="act_window_id" ref="sped_documento_act_window" />
+    </record>
+
+    <record model="ir.ui.menu" id="sped_documento_menu">
+        <field name="name">MDF-e</field>
+        <field name="parent_id" ref="l10n_br_fiscal.document_nfe_menu" />
+        <field name="action" ref="sped_documento_act_window" />
+        <field name="sequence" eval="40" />
+    </record>
+
+</odoo>
