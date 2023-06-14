@@ -18,3 +18,4 @@ from . import res_config_settings
 from . import cfop
 from . import invalidate_number
 from . import product_supplierinfo
+from . import document_fiscal_mixin_methods

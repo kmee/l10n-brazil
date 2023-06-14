@@ -11,11 +11,12 @@
     "maintainers": ["rvalyi", "renatonlima"],
     "website": "https://github.com/OCA/l10n-brazil",
     "development_status": "Beta",
-    "version": "14.0.8.1.0",
+    "version": "14.0.8.4.0",
     "depends": [
         "l10n_br_fiscal",
         "l10n_br_nfe_spec",
         "spec_driven_model",
+        "purchase",
     ],
     "data": [
         # Data
@@ -27,6 +28,7 @@
         "views/res_company_view.xml",
         "views/nfe_document_view.xml",
         "views/res_config_settings_view.xml",
+        "views/purchase_order_view.xml",
         # Wizards
         "wizards/import_document.xml",
         # Actions,

@@ -7,6 +7,23 @@
       <field name="priority">5</field>
       <field name="inherit_id" ref="l10n_br_fiscal.document_form" />
       <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <field name="linked_purchase_ids" invisible="1" />
+                <button
+                    type="object"
+                    name="action_open_purchase"
+                    class="oe_stat_button"
+                    icon="fa-folder-open"
+                    attrs="{'invisible':[('linked_purchase_ids','=',[])]}"
+                    options="{}"
+                >
+                    <field
+                        name="linked_purchase_count"
+                        widget="statinfo"
+                        string="Ordens de Compra"
+                    />
+                </button>
+            </xpath>
           <page name="delivery" position="inside">
               <group
                     name="nfe_transport"
@@ -153,6 +170,10 @@
                   <field name="nfe40_qVol" />
                   <field name="nfe40_pesoL" />
                   <field name="nfe40_pesoB" />
+                  <field name="nfe40_esp" />
+                  <field name="nfe40_marca" />
+                  <field name="nfe40_nVol" />
+                  <field name="nfe40_lacres" />
               </group>
           </form>
       </field>

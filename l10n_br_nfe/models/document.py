@@ -22,6 +22,7 @@ from requests import Session
 
 from odoo import _, api, fields
 from odoo.exceptions import UserError, ValidationError
+from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     AUTORIZADO,
@@ -514,6 +515,21 @@ class NFe(spec_models.StackedModel):
         compute="_compute_nfe40_additional_data",
     )
 
+    linked_purchase_ids = fields.Many2many(
+        comodel_name="purchase.order",
+        relation="nfe_purchase_relation_1",
+        column1="document_id",
+        column2="purchase_id",
+        string="Ordens de Compra",
+        copy=False,
+    )
+
+    linked_purchase_count = fields.Integer(compute="_compute_linked_purchase_count")
+
+    def _compute_linked_purchase_count(self):
+        for rec in self:
+            rec.linked_purchase_count = len(rec.linked_purchase_ids)
+
     @api.depends("fiscal_additional_data", "fiscal_additional_data")
     def _compute_nfe40_additional_data(self):
         for record in self:
@@ -791,32 +807,18 @@ class NFe(spec_models.StackedModel):
             self._valida_xml(xml_assinado)
         return result
 
-    def _invert_fiscal_operation_type(self, document, nfe_binding, edoc_type):
-        if edoc_type == "in" and document.company_id.cnpj_cpf != cnpj_cpf.formata(
-            nfe_binding.infNFe.emit.CNPJ
-        ):
-            document.fiscal_operation_type = "in"
-            document.issuer = "partner"
-
-    def _import_xml(self, nfe_binding, dry_run, edoc_type="out"):
-        document = (
-            self.env["nfe.40.infnfe"]
-            .with_context(
-                tracking_disable=True,
-                edoc_type=edoc_type,
-                lang="pt_BR",
-            )
-            .build_from_binding(nfe_binding.infNFe, dry_run=dry_run)
-        )
-        document.imported_document = True
-        self._invert_fiscal_operation_type(document, nfe_binding, edoc_type)
-        return document
-
-    def import_xml(self, nfe_binding, dry_run, edoc_type="out"):
-        return self._import_xml(nfe_binding, dry_run, edoc_type)
-
-    def atualiza_status_nfe(self, infProt, xml_file):
+    def atualiza_status_nfe(self, processo):
         self.ensure_one()
+
+        xml_file = processo.envio_xml.decode("utf-8")
+
+        if hasattr(processo, "protocolo"):
+            # Assincrono
+            infProt = processo.protocolo.infProt
+        else:
+            # Sincrono
+            infProt = processo.resposta.protNFe.infProt
+
         # TODO: Verificar a consulta de notas
         # if not infProt.chNFe == self.key:
         #     self = self.search([
@@ -1090,3 +1092,43 @@ class NFe(spec_models.StackedModel):
                 protocol_number=retevento.infEvento.nProt,
                 file_response_xml=processo.retorno.content.decode("utf-8"),
             )
+
+    def _invert_fiscal_operation_type(self, document, nfe_binding, edoc_type):
+        if edoc_type == "in" and document.company_id.cnpj_cpf != cnpj_cpf.formata(
+            nfe_binding.infNFe.emit.CNPJ
+        ):
+            document.fiscal_operation_type = "in"
+            document.issuer = "partner"
+
+    def _import_xml(self, nfe_binding, dry_run, edoc_type="out"):
+        document = (
+            self.env["nfe.40.infnfe"]
+            .with_context(
+                tracking_disable=True,
+                edoc_type=edoc_type,
+                lang="pt_BR",
+            )
+            .build_from_binding(nfe_binding.infNFe, dry_run=dry_run)
+        )
+        document.imported_document = True
+        self._invert_fiscal_operation_type(document, nfe_binding, edoc_type)
+        return document
+
+    def import_xml(self, nfe_binding, dry_run, edoc_type="out"):
+        return self._import_xml(nfe_binding, dry_run, edoc_type)
+
+    def _process_document_in_contingency(self):
+        copy_invoice = (
+            self.env["account.move"]
+            .search([("fiscal_document_id", "=", self.id)], limit=1)
+            .copy()
+        )
+        vals = {
+            "nfe_transmission": "9",
+            "nfe40_dhCont": fields.Datetime.now().strftime(
+                DEFAULT_SERVER_DATETIME_FORMAT
+            ),
+            "nfe40_xJust": "Sem comunicacao com o servidor da Sefaz.",
+        }
+        copy_invoice.fiscal_document_id.write(vals)
+        copy_invoice.action_post()

@@ -56,6 +56,31 @@ class NfeImport(models.TransientModel):
 
     nat_op = fields.Char(string="Natureza da Operação")
 
+    purchase_id = fields.Many2one(
+        comodel_name="purchase.order",
+        string="Purchase Order",
+        required=False,
+        default=False,
+        domain=False,
+    )
+
+    @api.onchange("partner_cpf_cnpj")
+    def _onchange_partner_cpf_cnpj(self):
+        domain = {}
+        if self.partner_cpf_cnpj:
+            supplyer_id = self.env["res.partner"].search(
+                [("cnpj_cpf", "=", self.partner_cpf_cnpj)]
+            )
+            purchase_order_ids = self.env["purchase.order"].search(
+                [
+                    ("partner_id", "=", supplyer_id.id),
+                    ("state", "not in", ["done", "cancel"]),
+                ]
+            )
+
+            domain = {"purchase_id": [("id", "in", purchase_order_ids.ids)]}
+        return {"domain": domain}
+
     def _parse_xml_import_wizard(self, xml):
         parsed_xml = parse_xml_nfe(xml)
         document = detectar_chave_edoc(parsed_xml.infNFe.Id[3:])
@@ -176,6 +201,10 @@ class NfeImport(models.TransientModel):
 
         self._attach_original_nfe_xml_to_document(edoc)
         self._set_product_supplierinfo(edoc)
+
+        if self.purchase_id:
+            conciliated_obj = self.purchase_id
+            edoc.linked_purchase_ids = conciliated_obj
 
         return {
             "name": _("Documento Importado"),

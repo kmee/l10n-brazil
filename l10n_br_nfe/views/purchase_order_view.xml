@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2022 KMEE (Renan Hiroki Bastos <renan.hiroki@kmee.com.br>)
+     Copyright 2023 KMEE (Luiz Felipe do Divino <luiz.divino@kmee.com.br>)
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+
+<odoo>
+
+    <record id="action_purchase_tree_all" model="ir.actions.act_window">
+        <field name="name">Purchases</field>
+        <field name="res_model">purchase.order</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="view_mode">tree,kanban,form</field>
+        <field name="view_id" ref="purchase.purchase_order_tree" />
+        <field name="domain"></field>
+        <field name="context">{}</field>
+    </record>
+
+    <record id="action_purchase_tree_all" model="ir.actions.act_window">
+        <field name="name">Purchases</field>
+        <field name="res_model">purchase.order</field>
+        <field name="type">form</field>
+        <field name="view_mode">tree,kanban,form</field>
+        <field name="view_id" ref="purchase.purchase_order_tree" />
+        <field name="domain"></field>
+        <field name="context">{}</field>
+    </record>
+
+</odoo>

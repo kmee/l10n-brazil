@@ -34,6 +34,15 @@
                     </group>
                 </group>
                 <separator
+                    string="Conciliar com uma ordem de compra"
+                    attrs="{'invisible': [('nfe_xml', '=', False)]}"
+                />
+                <group attrs="{'invisible': [('nfe_xml', '=', False)]}">
+                    <group>
+                        <field name="purchase_id" />
+                    </group>
+                </group>
+                <separator
                     string="NFe XML Products"
                     attrs="{'invisible': [('nfe_xml', '=', False)]}"
                 />
