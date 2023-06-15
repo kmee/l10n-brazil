@@ -76,7 +76,6 @@ class TestNFeExport(TransactionCase):
                 "leiauteNFe",
                 nfe_data["xml_file"],
             )
-
             output = os.path.join(
                 config["data_dir"],
                 "filestore",
