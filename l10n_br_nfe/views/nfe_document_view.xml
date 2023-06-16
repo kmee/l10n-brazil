@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
 
-  <record id="nfe_document_form_inherit" model="ir.ui.view">
-      <field name="name">l10n_br_nfe.document.form.inherit</field>
-      <field name="model">l10n_br_fiscal.document</field>
-      <field name="priority">5</field>
-      <field name="inherit_id" ref="l10n_br_fiscal.document_form" />
-      <field name="arch" type="xml">
+    <record id="nfe_document_form_inherit" model="ir.ui.view">
+        <field name="name">l10n_br_nfe.document.form.inherit</field>
+        <field name="model">l10n_br_fiscal.document</field>
+        <field name="priority">5</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.document_form" />
+        <field name="arch" type="xml">
             <xpath expr="//div[@name='button_box']" position="inside">
                 <field name="linked_purchase_ids" invisible="1" />
                 <button
@@ -14,8 +14,7 @@
                     name="action_open_purchase"
                     class="oe_stat_button"
                     icon="fa-folder-open"
-                    attrs="{'invisible':[('linked_purchase_ids','=',[])]}"
-                    options="{}"
+                    attrs="{'invisible': [('linked_purchase_ids', '=', [])]}"
                 >
                     <field
                         name="linked_purchase_count"
@@ -24,127 +23,127 @@
                     />
                 </button>
             </xpath>
-          <page name="delivery" position="inside">
-              <group
+            <page name="delivery" position="inside">
+                <group
                     name="nfe_transport"
                     attrs="{'invisible': [('document_type', 'not in', ['55', '65'])]}"
                 >
-                  <field name="nfe40_modFrete" />
-                  <field name="nfe40_transporta" />
-              </group>
-              <group attrs="{'invisible': [('nfe40_idDest', '!=', '3')]}">
-                  <field name="nfe40_idDest" invisible="1" />
-                  <field name="nfe40_UFSaidaPais" />
-                  <field name="nfe40_xLocExporta" />
-                  <field name="nfe40_xLocDespacho" />
-              </group>
-              <group
+                    <field name="nfe40_modFrete" />
+                    <field name="nfe40_transporta" />
+                </group>
+                <group attrs="{'invisible': [('nfe40_idDest', '!=', '3')]}">
+                    <field name="nfe40_idDest" invisible="1" />
+                    <field name="nfe40_UFSaidaPais" />
+                    <field name="nfe40_xLocExporta" />
+                    <field name="nfe40_xLocDespacho" />
+                </group>
+                <group
                     name="nfe_vol"
                     attrs="{'invisible': [('document_type', 'not in', ['55', '65'])]}"
                 >
-                  <field name="nfe40_vol" />
-              </group>
-          </page>
-          <page name="finance" position="inside">
-            <field name="brl_currency_id" invisible="1" />
-              <group
+                    <field name="nfe40_vol" />
+                </group>
+            </page>
+            <page name="finance" position="inside">
+                <field name="brl_currency_id" invisible="1" />
+                <group
                     name="nfe_finance"
                     attrs="{'invisible': [('document_type', 'not in', ['55', '65'])]}"
                     col="1"
                 >
-                    <group
+                        <group
                         name="nfe40_cobr_group"
                         string="Grupo Y. Dados da Cobrança"
                         col="1"
                     >
-                        <group name="nfe40_fat_group" string="Fatura">
-                            <field name="nfe40_nFat" string="Número" />
-                            <field name="nfe40_vOrig" string="Valor Original" />
-                            <field name="nfe40_vLiq" string="Valor Líquido" />
+                            <group name="nfe40_fat_group" string="Fatura">
+                                <field name="nfe40_nFat" string="Número" />
+                                <field name="nfe40_vOrig" string="Valor Original" />
+                                <field name="nfe40_vLiq" string="Valor Líquido" />
+                            </group>
+                            <group name="nfe40_dup_group" string="Parcelas">
+                                <field name="nfe40_dup">
+                                    <tree>
+                                        <field name="brl_currency_id" invisible="1" />
+                                        <field name="nfe40_nDup" string="Número" />
+                                        <field name="nfe40_dVenc" string="Vencimento" />
+                                        <field name="nfe40_vDup" string="Valor" />
+                                    </tree>
+                                </field>
+                            </group>
                         </group>
-                        <group name="nfe40_dup_group" string="Parcelas">
-                            <field name="nfe40_dup">
-                                <tree>
-                                    <field name="brl_currency_id" invisible="1" />
-                                    <field name="nfe40_nDup" string="Número" />
-                                    <field name="nfe40_dVenc" string="Vencimento" />
-                                    <field name="nfe40_vDup" string="Valor" />
-                                </tree>
-                            </field>
-                        </group>
-                    </group>
-                    <group
+                        <group
                         name="nfe_40_pag_group"
                         string="Grupo YA. Informações de Pagamento"
                     >
-                            <field name="nfe40_detPag">
-                                <tree>
-                                    <field name="brl_currency_id" invisible="1" />
-                                    <field
+                                <field name="nfe40_detPag">
+                                    <tree>
+                                        <field name="brl_currency_id" invisible="1" />
+                                        <field
                                     name="nfe40_indPag"
                                     string="Forma de Pagamento"
                                 />
-                                    <field
+                                        <field
                                     name="nfe40_tPag"
                                     string="Meio de Pagamento"
                                 />
-                                    <field
+                                        <field
                                     name="nfe40_vPag"
                                     string="Valor do Pagamento"
                                 />
-                                </tree>
-                            </field>
-                            <field name="nfe40_vTroco" string="Valor do Troco" />
-                    </group>
-            </group>
-          </page>
-          <page name="others" position="inside">
-              <group
+                                    </tree>
+                                </field>
+                                <field name="nfe40_vTroco" string="Valor do Troco" />
+                        </group>
+                </group>
+            </page>
+            <page name="others" position="inside">
+                <group
                     name="nfe_autxml"
                     attrs="{'invisible': [('document_type', 'not in', ['55', '65'])]}"
                 >
-                <field name="nfe40_autXML" widget="many2many" />
-              </group>
-          </page>
+                    <field name="nfe40_autXML" widget="many2many" />
+                </group>
+            </page>
 
-          <!-- Hide confirm button for imported documents -->
-          <xpath expr="//form/field[@name='document_type']" position="after">
-              <field name="imported_document" invisible="1" />
-          </xpath>
-          <xpath
+            <!-- Hide confirm button for imported documents -->
+            <xpath expr="//form/field[@name='document_type']" position="after">
+                <field name="imported_document" invisible="1" />
+            </xpath>
+            <xpath
                 expr="//header/button[@name='action_document_confirm']"
                 position="attributes"
             >
-              <attribute
+                <attribute
                     name="attrs"
                 >{'invisible': ['|', ('state_edoc', '!=', 'em_digitacao'), ('imported_document', '=', True)]}</attribute>
-          </xpath>
+            </xpath>
 
-          <!-- Hide buttons for imported documents -->
-          <xpath
+            <!-- Hide buttons for imported documents -->
+            <xpath
                 expr="//header/button[@name='action_document_correction']"
                 position="attributes"
             >
-              <attribute
+                <attribute
                     name="attrs"
                 >{'invisible': ['|', ('state_edoc', '!=', 'autorizada'), ('imported_document', '=', True)]}</attribute>
-          </xpath>
-          <xpath
+            </xpath>
+            <xpath
                 expr="//header/button[@name='action_create_return']"
                 position="attributes"
             >
-              <attribute
+                <attribute
                     name="attrs"
                 >{'invisible': ['|', ('state_edoc', '!=', 'autorizada'), ('imported_document', '=', True)]}</attribute>
-          </xpath>
-          <xpath
+            </xpath>
+            <xpath
                 expr="//header/button[@name='action_document_cancel']"
                 position="attributes"
             >
-              <attribute
+                <attribute
                     name="attrs"
                 >{'invisible': ['|', '|', ('state_edoc', '!=', 'autorizada'), ('document_electronic', '=', False), ('imported_document', '=', True)]}</attribute>
-          </xpath>
+            </xpath>
 
       </field>
   </record>

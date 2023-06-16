@@ -4,6 +4,7 @@
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
 import base64
+from datetime import datetime
 
 from erpbrasil.base.fiscal.edoc import detectar_chave_edoc
 
@@ -56,6 +57,16 @@ class NfeImport(models.TransientModel):
 
     nat_op = fields.Char(string="Natureza da Operação")
 
+    purchase_link_type = fields.Selection(
+        selection=[
+            ("choose", "Choose"),
+            ("create", "Create"),
+            ("match", "Match (Not Implemented)"),
+        ],
+        default="choose",
+        string="Purchase Link Type",
+    )
+
     purchase_id = fields.Many2one(
         comodel_name="purchase.order",
         string="Purchase Order",
@@ -91,45 +102,43 @@ class NfeImport(models.TransientModel):
     @api.onchange("nfe_xml")
     def _onchange_partner_id(self):
         if self.nfe_xml:
-            parsed_xml, document = self._parse_xml_import_wizard(
-                base64.b64decode(self.nfe_xml)
-            )
+            self.set_fields_data_by_xml()
 
-            nfe_model_code = self.env.ref("l10n_br_fiscal.document_55").code
+            if self.partner_id:
+                self._get_product_supplierinfo()
 
-            if document.modelo_documento != nfe_model_code:
-                raise UserError(
-                    _(
-                        f"Incorrect fiscal document model! "
-                        f"Accepted one is {nfe_model_code}"
-                    )
-                )
-
-            self.document_key = document.chave
-            self.document_number = int(document.numero_documento)
-            self.document_serie = int(document.numero_serie)
-            self.partner_cpf_cnpj = document.cnpj_cpf_emitente
-            self.partner_name = (
-                parsed_xml.infNFe.emit.xFant or parsed_xml.infNFe.emit.xNome
-            )
-            self.partner_id = self.env["res.partner"].search(
-                [
-                    "|",
-                    ("cnpj_cpf", "=", document.cnpj_cpf_emitente),
-                    ("nfe40_xNome", "=", parsed_xml.infNFe.emit.xNome),
-                ],
-                limit=1,
-            )
-            self._check_nfe_xml_products(parsed_xml)
-            if self.nfe_xml:
-                parsed_xml, document = self._parse_xml_import_wizard(
-                    base64.b64decode(self.nfe_xml)
-                )
-                self.nat_op = parsed_xml.infNFe.ide.natOp
-                if self.partner_id:
-                    self._get_product_supplierinfo()
             for line in self.imported_products_ids:
                 line.onchange_product_id()
+
+    def set_fields_data_by_xml(self):
+        parsed_xml, document = self._parse_xml_import_wizard(
+            base64.b64decode(self.nfe_xml)
+        )
+
+        nfe_model_code = self.env.ref("l10n_br_fiscal.document_55").code
+        if document.modelo_documento != nfe_model_code:
+            raise UserError(
+                _(
+                    f"Incorrect fiscal document model! "
+                    f"Accepted one is {nfe_model_code}"
+                )
+            )
+
+        self.document_key = document.chave
+        self.document_number = int(document.numero_documento)
+        self.document_serie = int(document.numero_serie)
+        self.partner_cpf_cnpj = document.cnpj_cpf_emitente
+        self.partner_name = parsed_xml.infNFe.emit.xFant or parsed_xml.infNFe.emit.xNome
+        self.partner_id = self.env["res.partner"].search(
+            [
+                "|",
+                ("cnpj_cpf", "=", document.cnpj_cpf_emitente),
+                ("nfe40_xNome", "=", parsed_xml.infNFe.emit.xNome),
+            ],
+            limit=1,
+        )
+        self.nat_op = parsed_xml.infNFe.ide.natOp
+        self._check_nfe_xml_products(parsed_xml)
 
     def _check_nfe_xml_products(self, parsed_xml):
         product_ids = []
@@ -202,9 +211,8 @@ class NfeImport(models.TransientModel):
         self._attach_original_nfe_xml_to_document(edoc)
         self._set_product_supplierinfo(edoc)
 
-        if self.purchase_id:
-            conciliated_obj = self.purchase_id
-            edoc.linked_purchase_ids = conciliated_obj
+        if not self.purchase_id and self.purchase_link_type == "create":
+            self.purchase_id = self._create_purchase_order(edoc)
 
         return {
             "name": _("Documento Importado"),
@@ -214,6 +222,43 @@ class NfeImport(models.TransientModel):
             "res_id": edoc.id,
             "res_model": "l10n_br_fiscal.document",
         }
+
+    def _create_purchase_order(self, document):
+        self.set_fields_data_by_xml()
+
+        company = self.env.user.company_id
+        purchase = self.env["purchase.order"].create(
+            {
+                "partner_id": self.partner_id.id,
+                "currency_id": company.currency_id.id,
+                "fiscal_operation_id": company.purchase_fiscal_operation_id.id,
+                "date_order": datetime.now(),
+                "origin_nfe_id": document.id,
+                "imported": True,
+            }
+        )
+        document.linked_purchase_ids = [(4, purchase.id)]
+
+        purchase_lines = []
+        for line in document.fiscal_line_ids:
+            product_uom = line.uom_id or line.product_id.uom_id
+            purchase_line = self.env["purchase.order.line"].create(
+                {
+                    "product_id": line.product_id.id,
+                    "origin_nfe_line_id": line.id,
+                    "name": line.product_id.display_name,
+                    "date_planned": datetime.now(),
+                    "product_qty": line.quantity,
+                    "product_uom": product_uom.id,
+                    "price_unit": line.price_unit,
+                    "price_subtotal": line.amount_total,
+                    "order_id": purchase.id,
+                }
+            )
+            purchase_lines.append(purchase_line.id)
+        purchase.write({"order_line": [(6, 0, purchase_lines)]})
+        purchase.button_confirm()
+        return purchase
 
     def _attach_original_nfe_xml_to_document(self, edoc):
         vals = {

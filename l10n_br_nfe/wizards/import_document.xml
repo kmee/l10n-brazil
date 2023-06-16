@@ -39,7 +39,11 @@
                 />
                 <group attrs="{'invisible': [('nfe_xml', '=', False)]}">
                     <group>
-                        <field name="purchase_id" />
+                        <field name="purchase_link_type" />
+                        <field
+                            name="purchase_id"
+                            attrs="{'invisible': [('purchase_link_type', '!=', 'choose')]}"
+                        />
                     </group>
                 </group>
                 <separator
