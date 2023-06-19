@@ -12,7 +12,8 @@ from io import StringIO
 from unicodedata import normalize
 
 from erpbrasil.assinatura import certificado as cert
-from erpbrasil.base import fiscal
+from erpbrasil.base.fiscal.edoc import ChaveEdoc, cnpj_cpf
+from erpbrasil.edoc.nfce import NFCe as edoc_nfce
 from erpbrasil.edoc.nfe import NFe as edoc_nfe
 from erpbrasil.edoc.pdf import base
 from erpbrasil.transmissao import TransmissaoSOAP
@@ -728,7 +729,7 @@ class NFe(spec_models.StackedModel):
         for record in self.filtered(filter_processador_edoc_nfe):
             if record.document_key:
                 try:
-                    chave = fiscal.edoc.ChaveEdoc(record.document_key)
+                    chave = ChaveEdoc(record.document_key)
                     record.nfe40_cNF = chave.codigo_aleatorio
                     record.nfe40_cDV = chave.digito_verificador
                 except Exception as e:
@@ -1095,10 +1096,8 @@ class NFe(spec_models.StackedModel):
         copy_invoice.action_post()
 
     def _invert_fiscal_operation_type(self, document, nfe_binding, edoc_type):
-        if (
-            edoc_type == "in"
-            and document.company_id.cnpj_cpf
-            != fiscal.edoc.cnpj_cpf.formata(nfe_binding.infNFe.emit.CNPJ)
+        if edoc_type == "in" and document.company_id.cnpj_cpf != cnpj_cpf.formata(
+            nfe_binding.infNFe.emit.CNPJ
         ):
             document.fiscal_operation_type = "in"
             document.issuer = "partner"
