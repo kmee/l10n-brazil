@@ -23,7 +23,7 @@ class CarrierVehicle(models.Model):
         size=64,
     )
 
-    rntc_code = fields.Char(
+    rntrc_code = fields.Char(
         string="ANTT Code",
         size=32,
     )

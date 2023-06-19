@@ -45,6 +45,6 @@ class SpedVeiculo(models.Model):
                 name = '['
                 name += record.code
                 name += '] '
-            name += record.placa
+            name += record.plate
             res.append((record.id, name))
         return res
