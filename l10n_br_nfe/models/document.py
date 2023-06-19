@@ -13,6 +13,7 @@ from unicodedata import normalize
 
 from erpbrasil.assinatura import certificado as cert
 from erpbrasil.base.fiscal.edoc import ChaveEdoc, cnpj_cpf
+from erpbrasil.edoc.nfce import NFCe as edoc_nfce
 from erpbrasil.edoc.nfe import NFe as edoc_nfe
 from erpbrasil.edoc.pdf import base
 from erpbrasil.transmissao import TransmissaoSOAP
@@ -271,6 +272,21 @@ class NFe(spec_models.StackedModel):
         .get_param("l10n_br_nfe.version.name", default="Odoo Brasil OCA v14"),
     )
 
+    linked_purchase_ids = fields.Many2many(
+        comodel_name="purchase.order",
+        relation="nfe_purchase_relation_1",
+        column1="document_id",
+        column2="purchase_id",
+        string="Ordens de Compra",
+        copy=False,
+    )
+
+    linked_purchase_count = fields.Integer(compute="_compute_linked_purchase_count")
+
+    def _compute_linked_purchase_count(self):
+        for rec in self:
+            rec.linked_purchase_count = len(rec.linked_purchase_ids)
+
     ##########################
     # NF-e tag: ide
     # Compute Methods
@@ -514,21 +530,6 @@ class NFe(spec_models.StackedModel):
     nfe40_infCpl = fields.Char(
         compute="_compute_nfe40_additional_data",
     )
-
-    linked_purchase_ids = fields.Many2many(
-        comodel_name="purchase.order",
-        relation="nfe_purchase_relation_1",
-        column1="document_id",
-        column2="purchase_id",
-        string="Ordens de Compra",
-        copy=False,
-    )
-
-    linked_purchase_count = fields.Integer(compute="_compute_linked_purchase_count")
-
-    def _compute_linked_purchase_count(self):
-        for rec in self:
-            rec.linked_purchase_count = len(rec.linked_purchase_ids)
 
     @api.depends("fiscal_additional_data", "fiscal_additional_data")
     def _compute_nfe40_additional_data(self):
@@ -1093,6 +1094,22 @@ class NFe(spec_models.StackedModel):
                 file_response_xml=processo.retorno.content.decode("utf-8"),
             )
 
+    def _process_document_in_contingency(self):
+        copy_invoice = (
+            self.env["account.move"]
+            .search([("fiscal_document_id", "=", self.id)], limit=1)
+            .copy()
+        )
+        vals = {
+            "nfe_transmission": "9",
+            "nfe40_dhCont": fields.Datetime.now().strftime(
+                DEFAULT_SERVER_DATETIME_FORMAT
+            ),
+            "nfe40_xJust": "Sem comunicacao com o servidor da Sefaz.",
+        }
+        copy_invoice.fiscal_document_id.write(vals)
+        copy_invoice.action_post()
+
     def _invert_fiscal_operation_type(self, document, nfe_binding, edoc_type):
         if edoc_type == "in" and document.company_id.cnpj_cpf != cnpj_cpf.formata(
             nfe_binding.infNFe.emit.CNPJ
@@ -1116,19 +1133,3 @@ class NFe(spec_models.StackedModel):
 
     def import_xml(self, nfe_binding, dry_run, edoc_type="out"):
         return self._import_xml(nfe_binding, dry_run, edoc_type)
-
-    def _process_document_in_contingency(self):
-        copy_invoice = (
-            self.env["account.move"]
-            .search([("fiscal_document_id", "=", self.id)], limit=1)
-            .copy()
-        )
-        vals = {
-            "nfe_transmission": "9",
-            "nfe40_dhCont": fields.Datetime.now().strftime(
-                DEFAULT_SERVER_DATETIME_FORMAT
-            ),
-            "nfe40_xJust": "Sem comunicacao com o servidor da Sefaz.",
-        }
-        copy_invoice.fiscal_document_id.write(vals)
-        copy_invoice.action_post()
