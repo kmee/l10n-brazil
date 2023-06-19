@@ -12,12 +12,10 @@ from io import StringIO
 from unicodedata import normalize
 
 from erpbrasil.assinatura import certificado as cert
-from erpbrasil.base.fiscal.edoc import ChaveEdoc
-from erpbrasil.edoc.nfce import NFCe as edoc_nfce
+from erpbrasil.base.fiscal.edoc import ChaveEdoc, cnpj_cpf
 from erpbrasil.edoc.nfe import NFe as edoc_nfe
 from erpbrasil.edoc.pdf import base
 from erpbrasil.transmissao import TransmissaoSOAP
-from erpbrasil.base.fiscal.edoc import cnpj_cpf
 from lxml import etree
 from nfelib.v4_00 import leiauteNFe_sub as nfe_sub, retEnviNFe as leiauteNFe
 from requests import Session
@@ -1080,6 +1078,22 @@ class NFe(spec_models.StackedModel):
                 file_response_xml=processo.retorno.content.decode("utf-8"),
             )
 
+    def _process_document_in_contingency(self):
+        copy_invoice = (
+            self.env["account.move"]
+            .search([("fiscal_document_id", "=", self.id)], limit=1)
+            .copy()
+        )
+        vals = {
+            "nfe_transmission": "9",
+            "nfe40_dhCont": fields.Datetime.now().strftime(
+                DEFAULT_SERVER_DATETIME_FORMAT
+            ),
+            "nfe40_xJust": "Sem comunicacao com o servidor da Sefaz.",
+        }
+        copy_invoice.fiscal_document_id.write(vals)
+        copy_invoice.action_post()
+
     def _invert_fiscal_operation_type(self, document, nfe_binding, edoc_type):
         if edoc_type == "in" and document.company_id.cnpj_cpf != cnpj_cpf.formata(
             nfe_binding.infNFe.emit.CNPJ
@@ -1103,19 +1117,3 @@ class NFe(spec_models.StackedModel):
 
     def import_xml(self, nfe_binding, dry_run, edoc_type="out"):
         return self._import_xml(nfe_binding, dry_run, edoc_type)
-
-    def _process_document_in_contingency(self):
-        copy_invoice = (
-            self.env["account.move"]
-            .search([("fiscal_document_id", "=", self.id)], limit=1)
-            .copy()
-        )
-        vals = {
-            "nfe_transmission": "9",
-            "nfe40_dhCont": fields.Datetime.now().strftime(
-                DEFAULT_SERVER_DATETIME_FORMAT
-            ),
-            "nfe40_xJust": "Sem comunicacao com o servidor da Sefaz.",
-        }
-        copy_invoice.fiscal_document_id.write(vals)
-        copy_invoice.action_post()
