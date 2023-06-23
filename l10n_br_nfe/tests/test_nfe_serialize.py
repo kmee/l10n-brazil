@@ -66,23 +66,22 @@ class TestNFeExport(TransactionCase):
         nfe.with_context(lang="pt_BR")._document_export()
 
     def serialize_xml(self, nfe_data):
-        for nfe in self.nfe_list:
-            nfe = nfe_data["nfe"]
-            xml_path = os.path.join(
-                l10n_br_nfe.__path__[0],
-                "tests",
-                "nfe",
-                "v4_00",
-                "leiauteNFe",
-                nfe_data["xml_file"],
-            )
-            output = os.path.join(
-                config["data_dir"],
-                "filestore",
-                self.cr.dbname,
-                nfe.send_file_id.store_fname,
-            )
-            _logger.info("XML file saved at %s" % (output,))
-            nfe.company_id.country_id.name = "Brazil"  # clean mess
-            diff = main.diff_files(output, xml_path)
-            return diff
+        nfe = nfe_data["nfe"]
+        xml_path = os.path.join(
+            l10n_br_nfe.__path__[0],
+            "tests",
+            "nfe",
+            "v4_00",
+            "leiauteNFe",
+            nfe_data["xml_file"],
+        )
+        output = os.path.join(
+            config["data_dir"],
+            "filestore",
+            self.cr.dbname,
+            nfe.send_file_id.store_fname,
+        )
+        _logger.info("XML file saved at %s" % (output,))
+        nfe.company_id.country_id.name = "Brazil"  # clean mess
+        diff = main.diff_files(output, xml_path)
+        return diff

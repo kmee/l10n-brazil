@@ -2,6 +2,8 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 import logging
 
+from erpbrasil.edoc.nfe import NFe
+
 from .test_nfe_serialize import TestNFeExport
 
 _logger = logging.getLogger(__name__)
@@ -19,6 +21,10 @@ class TestNFeExportSN(TestNFeExport):
 
     def test_serialize_xml(self):
         for nfe_data in self.nfe_list:
+            nfe = nfe_data["nfe"]
             diff = self.serialize_xml(nfe_data)
             _logger.info("Diff with expected XML (if any): %s" % (diff,))
+
             assert len(diff) == 0
+            assert nfe.nfe40_dhSaiEnt == nfe.date_in_out
+            assert isinstance(nfe._processador(), NFe)
