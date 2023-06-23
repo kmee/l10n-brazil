@@ -111,6 +111,7 @@ odoo.define("l10n_br_pos.models", function (require) {
 
     var _super_order = models.Order.prototype;
     models.Order = models.Order.extend({
+        /* eslint complexity: ["error", 30]*/
         initialize: function (attributes, options) {
             // CORE METHODS
             _super_order.initialize.apply(this, arguments, options);
@@ -361,7 +362,8 @@ odoo.define("l10n_br_pos.models", function (require) {
             return taxes;
         },
         compute_message: function (templateString, taxes) {
-            /* Compute fiscal message */
+            // Compute fiscal message
+            // eslint-disable-next-line no-new-func
             return new Function(`return \`${templateString}\`;`).call(this, taxes);
         },
         _document_status_popup: function () {
@@ -612,7 +614,7 @@ odoo.define("l10n_br_pos.models", function (require) {
             return _super_posmodel.initialize.call(this, session, attributes);
         },
         get_sat_card_acquirer_list: function () {
-            let self = this;
+            const self = this;
             rpc.query({
                 model: "pos.payment.method",
                 method: "get_all_card_accrediting",
@@ -626,7 +628,7 @@ odoo.define("l10n_br_pos.models", function (require) {
 
             for (const accrediting in this.sat_card_acquirer_list) {
                 if (
-                    accrediting_document ==
+                    accrediting_document ===
                     this.sat_card_acquirer_list[accrediting][1].split(" ")[0]
                 ) {
                     accrediting_code = this.sat_card_acquirer_list[accrediting][0];
