@@ -696,9 +696,9 @@
                                         />
                                     </group>
                  <group
-                                    string="Devolução do IPI"
-                                    attrs="{'invisible': [('operation_fiscal_type', 'in', ['purchase', 'sale'])]}"
-                                >
+                                        string="Devolução do IPI"
+                                        attrs="{'invisible': [('operation_fiscal_type', 'in', ['purchase', 'sale'])]}"
+                                    >
                     <field name="p_devol" />
                     <field name="ipi_devol_value" />
                   </group>
