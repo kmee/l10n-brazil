@@ -6,7 +6,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import ValidationError
 
 from ..constants import BR_CODES_PAYMENT_ORDER, FORMA_LANCAMENTO, TIPO_SERVICO
 
@@ -65,10 +65,6 @@ class AccountPaymentMode(models.Model):
         related="fixed_journal_id.bank_id.code_bc",
     )
 
-    own_number_type = fields.Selection(
-        related="fixed_journal_id.company_id.own_number_type",
-    )
-
     cnab_processor = fields.Selection(
         selection="_selection_cnab_processor",
     )
@@ -108,8 +104,6 @@ class AccountPaymentMode(models.Model):
         "fixed_journal_id",
         "boleto_wallet",
         "group_lines",
-        "generate_move",
-        "post_move",
     )
     def _check_cnab_restriction(self):
         for record in self:
@@ -121,10 +115,6 @@ class AccountPaymentMode(models.Model):
             fields_forbidden_cnab = []
             if record.group_lines:
                 fields_forbidden_cnab.append("Group Lines")
-            if record.generate_move:
-                fields_forbidden_cnab.append("Generated Moves")
-            if record.post_move:
-                fields_forbidden_cnab.append("Post Moves")
 
             for field in fields_forbidden_cnab:
                 raise ValidationError(
@@ -142,27 +132,6 @@ class AccountPaymentMode(models.Model):
             ):
                 raise ValidationError(_("Carteira no banco Itaú é obrigatória"))
 
-    def get_own_number_sequence(self, inv, numero_documento):
-        if inv.company_id.own_number_type == "0":
-            # SEQUENCIAL_EMPRESA
-            sequence = inv.company_id.own_number_sequence_id.next_by_id()
-        elif inv.company_id.own_number_type == "1":
-            # SEQUENCIAL_FATURA
-            sequence = numero_documento.replace("/", "")
-        elif inv.company_id.own_number_type == "2":
-            # SEQUENCIAL_CARTEIRA
-            sequence = inv.payment_mode_id.own_number_sequence_id.next_by_id()
-        else:
-            raise UserError(
-                _(
-                    "Favor acessar aba Cobrança da configuração da"
-                    " sua empresa para determinar o tipo de "
-                    "sequencia utilizada nas cobrancas"
-                )
-            )
-
-        return sequence
-
     @api.constrains("boleto_discount_perc")
     def _check_discount_perc(self):
         for record in self:
@@ -177,8 +146,6 @@ class AccountPaymentMode(models.Model):
             if record.payment_method_code in BR_CODES_PAYMENT_ORDER:
                 # Campos Default que não devem estar marcados no caso CNAB
                 record.group_lines = False
-                record.generate_move = False
-                record.post_move = False
                 # Selecionavel na Ordem de Pagamento
                 record.payment_order_ok = True
 

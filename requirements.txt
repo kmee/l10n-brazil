@@ -1,11 +1,12 @@
 # generated from manifests external_dependencies
-email_validator
+email-validator
 erpbrasil.assinatura
-erpbrasil.base
+erpbrasil.base>=2.3.0
 erpbrasil.edoc
 erpbrasil.edoc.pdf
 erpbrasil.transmissao
 nfelib
+nfselib.paulistana
 num2words
 phonenumbers
 pycep_correios
@@ -13,4 +14,3 @@ pyyaml
 satcomum
 unidecode
 workalendar
-xmldiff

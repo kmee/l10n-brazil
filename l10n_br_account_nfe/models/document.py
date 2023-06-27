@@ -30,6 +30,7 @@ class DocumentNfe(models.Model):
         comodel_name="nfe.40.dup",
         compute="_compute_nfe40_dup",
         store=True,
+        copy=False,
         readonly=False,
     )
 
@@ -94,8 +95,15 @@ class DocumentNfe(models.Model):
                     or "",
                     "nfe40_vPag": rec.amount_financial_total,
                 }
-            rec.nfe40_detPag = [(2, detpag, 0) for detpag in rec.nfe40_detPag.ids]
-            rec.nfe40_detPag = [(0, 0, det_pag_vals)]
+            detpag_current = {
+                field: getattr(detpag, field, None)
+                for detpag in rec.nfe40_detPag
+                for field in det_pag_vals
+            }
+            if det_pag_vals != detpag_current:
+
+                rec.nfe40_detPag = [(2, detpag, 0) for detpag in rec.nfe40_detPag.ids]
+                rec.nfe40_detPag = [(0, 0, det_pag_vals)]
 
     ################################
     # Business Model Methods

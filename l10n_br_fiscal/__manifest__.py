@@ -10,9 +10,8 @@
     "maintainers": ["renatonlima"],
     "website": "https://github.com/OCA/l10n-brazil",
     "development_status": "Production/Stable",
-    "version": "14.0.10.9.2",
+    "version": "14.0.13.0.1",
     "depends": [
-        "uom",
         "product",
         "l10n_br_base",
     ],
@@ -110,7 +109,6 @@
     "auto_install": False,
     "external_dependencies": {
         "python": [
-            "erpbrasil.base",
             "erpbrasil.assinatura",
         ]
     },
