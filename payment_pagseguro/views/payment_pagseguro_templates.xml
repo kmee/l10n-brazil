@@ -136,6 +136,7 @@
                         onchange="onChangePaymentMethod()"
                     >
                         <option value="CREDIT_CARD">Credit Card</option>
+                        <option value="PIX">PIX</option>
                     </select>
                 </div>
                 <div

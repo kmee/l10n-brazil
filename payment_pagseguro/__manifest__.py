@@ -11,12 +11,23 @@
     "depends": [
         "sale",  # Used sale order in currency validation
         "web_tour",
+        "l10n_br_base",
+        "l10n_br_account_payment_order",  # Used for Boleto Payment form
     ],
     "data": [
         "views/payment_pagseguro_templates.xml",
         "data/payment_acquirer_data.xml",
+        "data/payment_method_data.xml",
+        "data/payment_mode.xml",
+        "data/ir_cron_data.xml",        
         "views/payment_acquirer.xml",
+        "views/sale_order.xml",
     ],
     "demo": [],
     "uninstall_hook": "uninstall_hook",
+    "external_dependencies": {
+        "python": [
+            "erpbrasil.base",
+        ],
+    },
 }

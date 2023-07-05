@@ -1,11 +1,16 @@
 # Copyright 2020 KMEE INFORMATICA LTDA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import logging
+
 import requests
 import werkzeug
+import time
 
 from odoo import http
 from odoo.http import request
+
+_logger = logging.getLogger(__name__)
 
 
 class PagseguroController(http.Controller):
@@ -18,6 +23,7 @@ class PagseguroController(http.Controller):
     def pagseguro_s2s_create_json_3ds(self, verify_validity=False, **kwargs):
         if not kwargs.get("partner_id"):
             kwargs = dict(kwargs, partner_id=request.env.user.partner_id.id)
+
         token = (
             request.env["payment.acquirer"]
             .browse(int(kwargs.get("acquirer_id")))
@@ -58,7 +64,7 @@ class PagseguroController(http.Controller):
 
         r = requests.post(
             api_url_public_keys,
-            headers=acquirer._get_pagseguro_api_headers(),
+            headers=acquirer.sudo()._get_pagseguro_api_headers(),
             json={"type": "card"},
         )
 
@@ -71,3 +77,49 @@ class PagseguroController(http.Controller):
         public_key = res.get("public_key")
 
         return public_key
+
+    @http.route(
+        "/notification-pix-url",
+        auth="public",
+        csrf=False,
+        type="json",
+        methods=["POST"],
+    )
+    def notification_pix_url(self):
+        params = request.jsonrequest
+        request.env["payment.transaction"].sudo().pagseguro_search_payment_pix(params)
+
+    @http.route("/notification-url", auth="public", type="json", methods=["POST"])
+    def notification_url(self):
+        """Receives Pagseguro Charge notification.
+        Returns true on success and False on fail.
+        Since this is a sensitive public route no further information is given.
+        """
+        params = request.jsonrequest
+        charge_id = params.get("id")
+        tx_obtained = False
+        try_count = 0
+        while not tx_obtained:
+            tx = (
+                request.env["payment.transaction"]
+                .sudo()
+                .search([("acquirer_reference", "=", charge_id)])
+            )
+            if try_count > 3:
+                break
+            else:
+                try_count += 1
+                time.sleep(1)
+            tx_obtained = len(tx) > 0
+
+        tx.ensure_one()
+
+        # Sends requests to pagseguro to check charge status instead of trusting
+        # notification payload
+        try:
+            tx.pagseguro_check_transaction()
+        except Exception as e:
+            _logger.error(e)
+            return False
+
+        return True

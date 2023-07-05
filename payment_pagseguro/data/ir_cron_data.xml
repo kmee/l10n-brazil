@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  ~ Copyright 2022 KMEE
+  ~ License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+  -->
+<odoo>
+    <data noupdate="1">
+        <record
+            id="check_pagseguro_transactions_cron"
+            forcecreate='True'
+            model="ir.cron"
+        >
+            <field name="name">Check Pagseguro Transactions Status</field>
+            <field eval="True" name="active" />
+            <field name="user_id" ref="base.user_root" />
+            <field name="interval_number">30</field>
+            <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
+            <field name="model_id" ref="model_sale_order" />
+            <field name="state">code</field>
+            <field name="code">model.pagseguro_check_transactions()</field>
+        </record>
+
+    </data>
+</odoo>
