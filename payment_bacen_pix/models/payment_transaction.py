@@ -32,6 +32,14 @@ class PaymentTransaction(models.Model):
     bacenpix_currency = fields.Char()
     bacenpix_amount = fields.Float()
 
+    bacenpix_creation = fields.Char()
+    bacenpix_expiration = fields.Char()
+    bacenpix_location = fields.Char()
+    bacenpix_text_image_qr_code = fields.Char()
+    bacenpix_txid = fields.Char()
+    bacenpix_pix_key = fields.Char()
+
+
     def _get_processing_info(self):
         # Devolver Dados do QRCODE
         res = super()._get_processing_info()
@@ -157,12 +165,12 @@ class PaymentTransaction(models.Model):
                 bacenpix_date_due=due,
                 bacenpix_qrcode=response_data.get("qrcode"),
                 date=datetime.now(),
-                criacao=response_data.get("criacao"),
-                expiracao=response_data.get("expiracao"),
-                location=response_data.get("location"),
-                textoImagemQRcode=response_data.get("textoImagemQRcode"),
-                txid=response_data.get("txid"),
-                chave=response_data.get("chave"),
-                state=response_data.get("ok"),
+                bacenpix_creation=response_data.get("criacao"),
+                bacenpix_expiration=response_data.get("expiracao"),
+                bacenpix_location=response_data.get("location"),
+                bacenpix_text_image_qr_code=response_data.get("textoImagemQRcode"),
+                bacenpix_txid=response_data.get("txid"),
+                bacenpix_pix_key=response_data.get("chave"),
+                #state=response_data.get("ok"),
                 state_message=response_data.get("text"),
             )
