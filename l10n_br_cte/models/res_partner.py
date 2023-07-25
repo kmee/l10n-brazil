@@ -10,7 +10,6 @@ from odoo.addons.spec_driven_model.models import spec_models
 _logger = logging.getLogger(__name__)
 
 try:
-    from erpbrasil.base.fiscal import cnpj_cpf
     from erpbrasil.base.misc import format_zipcode, punctuation_rm
 except ImportError:
     _logger.error("Biblioteca erpbrasil.base não instalada")
@@ -37,7 +36,6 @@ class ResPartner(spec_models.SpecModel):
 
     cte40_CPF = fields.Char(
         compute="_compute_cte_data",
-        inverse="_inverse_cte40_CPF",
         store=True,
     )
 
@@ -64,6 +62,8 @@ class ResPartner(spec_models.SpecModel):
         store=True,
     )
 
+    cte40_IE = fields.Char(related="inscr_est")
+
     cte40_xNome = fields.Char(related="legal_name", store=True)
 
     @api.depends("company_type", "inscr_est", "cnpj_cpf", "country_id")
@@ -77,35 +77,6 @@ class ResPartner(spec_models.SpecModel):
                 else:
                     rec.cte40_CNPJ = None
                     rec.cte40_CPF = cnpj_cpf
-
-    def _inverse_cte40_CNPJ(self):
-        for rec in self:
-            if rec.cte40_CNPJ:
-                rec.is_company = True
-                rec.cte40_choice2 = "cte40_CPF"
-                rec.cte40_choice6 = "cte40_CPF"
-                if rec.country_id.code != "BR":
-                    rec.cte40_choice7 = "cte40_idEstrangeiro"
-                else:
-                    rec.cte40_choice7 = "cte40_CNPJ"
-                rec.cte40_choice7 = "cte40_CPF"
-                rec.cte40_choice8 = "cte40_CPF"
-                rec.cte40_choice19 = "cte40_CPF"
-                rec.cnpj_cpf = cnpj_cpf.formata(str(rec.cte40_CNPJ))
-
-    def _inverse_cte40_CPF(self):
-        for rec in self:
-            if rec.cte40_CPF:
-                rec.is_company = False
-                rec.cte40_choice2 = "cte40_CNPJ"
-                rec.cte40_choice6 = "cte40_CNPJ"
-                if rec.country_id.code != "BR":
-                    rec.cte40_choice7 = "cte40_idEstrangeiro"
-                else:
-                    rec.cte40_choice7 = "cte40_CPF"
-                rec.cte40_choice8 = "cte40_CNPJ"
-                rec.cte40_choice19 = "cte40_CNPJ"
-                rec.cnpj_cpf = cnpj_cpf.formata(str(rec.cte40_CPF))
 
     def _inverse_cte40_CEP(self):
         for rec in self:
