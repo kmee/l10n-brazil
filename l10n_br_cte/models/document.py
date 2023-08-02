@@ -373,31 +373,14 @@ class CTe(spec_models.StackedModel):
     cte40_infCTeNorm = fields.One2many(
         comodel_name="l10n_br_fiscal.document.related",
         inverse_name="document_id",
-        compute="_compute_cte_doc",
         store=True,
     )
 
     cte40_infCTeComp = fields.One2many(
         comodel_name="l10n_br_fiscal.document.related",
         inverse_name="document_id",
-        compute="_compute_cte_doc",
         store=True,
     )
-
-    #####################################
-    # CT-e tag: infCTeNorm and infCteComp
-    # Compute Methods
-    #####################################
-
-    @api.depends("document_type_id")
-    def _compute_cte_doc(self):
-        """Set schema data which are not just related fields"""
-        for rec in self:
-            if rec.document_type_id:
-                if rec.cte40_choice_infcteNorm_infcteComp == "cte40_infCTeNorm":
-                    rec.cte40_infCTeNorm = rec
-                elif rec.cte40_choice_infcteNorm_infcteComp == "infCTeComp":
-                    rec.cte40_infCTeComp = rec
 
     ##########################
     # CT-e tag: autXML
