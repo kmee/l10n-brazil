@@ -39,7 +39,7 @@ class ResPartner(spec_models.SpecModel):
         store=True,
     )
 
-    # Same problem with Tendereco that NFE had, it has to use m2o fields
+    # Same problem with Tendereco that NFE has, it has to use m2o fields
     cte40_enderToma = fields.Many2one(
         comodel_name="res.partner", compute="_compute_cte40_ender"
     )
