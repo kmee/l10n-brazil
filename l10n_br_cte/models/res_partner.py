@@ -39,6 +39,27 @@ class ResPartner(spec_models.SpecModel):
         store=True,
     )
 
+    # Same problem with Tendereco that NFE had, it has to use m2o fields
+    cte40_enderToma = fields.Many2one(
+        comodel_name="res.partner", compute="_compute_cte40_ender"
+    )
+
+    cte40_enderReme = fields.Many2one(
+        comodel_name="res.partner", compute="_compute_cte40_ender"
+    )
+
+    cte40_enderDest = fields.Many2one(
+        comodel_name="res.partner", compute="_compute_cte40_ender"
+    )
+
+    cte40_enderExped = fields.Many2one(
+        comodel_name="res.partner", compute="_compute_cte40_ender"
+    )
+
+    cte40_enderReceb = fields.Many2one(
+        comodel_name="res.partner", compute="_compute_cte40_ender"
+    )
+
     # enderToma/enderEmit/enderReme/enderEmit
     cte40_xLgr = fields.Char(related="street_name", readonly=True, store=True)
     cte40_nro = fields.Char(related="street_number", readonly=True, store=True)
@@ -65,6 +86,14 @@ class ResPartner(spec_models.SpecModel):
     cte40_IE = fields.Char(related="inscr_est")
 
     cte40_xNome = fields.Char(related="legal_name", store=True)
+
+    def _compute_cte40_ender(self):
+        for rec in self:
+            rec.cte40_enderToma = rec.id
+            rec.cte40_enderReme = rec.id
+            rec.cte40_enderDest = rec.id
+            rec.cte40_enderExped = rec.id
+            rec.cte40_enderReceb = rec.id
 
     @api.depends("company_type", "inscr_est", "cnpj_cpf", "country_id")
     def _compute_cte_data(self):
