@@ -469,55 +469,6 @@ class TendeEmi(models.AbstractModel):
     cte40_fone = fields.Char(string="Telefone", xsd_type="TFone")
 
 
-class Tendereco(models.AbstractModel):
-    "Tipo Dados do Endereço"
-    _description = textwrap.dedent("    %s" % (__doc__,))
-    _name = "cte.40.tendereco"
-    _inherit = "spec.mixin.cte"
-    _binding_type = "Tendereco"
-    _generateds_type = "TEndereco"
-
-    cte40_xLgr = fields.Char(string="Logradouro", xsd_required=True)
-
-    cte40_nro = fields.Char(string="Número", xsd_required=True)
-
-    cte40_xCpl = fields.Char(string="Complemento")
-
-    cte40_xBairro = fields.Char(string="Bairro", xsd_required=True)
-
-    cte40_cMun = fields.Char(
-        string="Código do município",
-        xsd_required=True,
-        xsd_type="TCodMunIBGE",
-        help=(
-            "Código do município (utilizar a tabela do IBGE)\nInformar 9999999"
-            " para operações com o exterior."
-        ),
-    )
-
-    cte40_xMun = fields.Char(
-        string="Nome do município",
-        xsd_required=True,
-        help=("Nome do município\nInformar EXTERIOR para operações com o " "exterior."),
-    )
-
-    cte40_CEP = fields.Char(
-        string="CEP", help="CEP\nInformar os zeros não significativos"
-    )
-
-    cte40_UF = fields.Selection(
-        TUF,
-        string="Sigla da UF",
-        xsd_required=True,
-        xsd_type="TUf",
-        help="Sigla da UF\nInformar EX para operações com o exterior.",
-    )
-
-    cte40_cPais = fields.Char(
-        string="Código do país", help="Código do país\nUtilizar a tabela do BACEN"
-    )
-
-    cte40_xPais = fields.Char(string="Nome do país")
 
 
 class Tendernac(models.AbstractModel):
@@ -4964,6 +4915,57 @@ class InfOutros(models.AbstractModel):
             "das unidades de transporte utilizadas."
         ),
     )
+
+
+class TEndereco(models.AbstractModel):
+    "Tipo Dados do Endereço"
+    _description = textwrap.dedent("    %s" % (__doc__,))
+    _name = "cte.40.tendereco"
+    _inherit = "spec.mixin.cte"
+    _binding_type = "TEndereco"
+    # _generateds_type = "TEndereco"
+
+    cte40_xLgr = fields.Char(string="Logradouro", xsd_required=True)
+
+    cte40_nro = fields.Char(string="Número", xsd_required=True)
+
+    cte40_xCpl = fields.Char(string="Complemento")
+
+    cte40_xBairro = fields.Char(string="Bairro", xsd_required=True)
+
+    cte40_cMun = fields.Char(
+        string="Código do município",
+        xsd_required=True,
+        xsd_type="TCodMunIBGE",
+        help=(
+            "Código do município (utilizar a tabela do IBGE)\nInformar 9999999"
+            " para operações com o exterior."
+        ),
+    )
+
+    cte40_xMun = fields.Char(
+        string="Nome do município",
+        xsd_required=True,
+        help=("Nome do município\nInformar EXTERIOR para operações com o " "exterior."),
+    )
+
+    cte40_CEP = fields.Char(
+        string="CEP", help="CEP\nInformar os zeros não significativos"
+    )
+
+    cte40_UF = fields.Selection(
+        TUF,
+        string="Sigla da UF",
+        xsd_required=True,
+        xsd_type="TUf",
+        help="Sigla da UF\nInformar EX para operações com o exterior.",
+    )
+
+    cte40_cPais = fields.Char(
+        string="Código do país", help="Código do país\nUtilizar a tabela do BACEN"
+    )
+
+    cte40_xPais = fields.Char(string="Nome do país")
 
 
 class DocAnt(models.AbstractModel):
