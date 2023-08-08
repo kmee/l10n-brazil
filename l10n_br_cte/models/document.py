@@ -76,11 +76,11 @@ class CTe(spec_models.StackedModel):
         for record in self.filtered(filter_processador_edoc_cte):
             if (
                 record.document_type_id
-                and record.document_type.prefix
+                and record.document_type_id.prefix
                 and record.document_key
             ):
                 record.cte40_Id = "{}{}".format(
-                    record.document_type.prefix, record.document_key
+                    record.document_type_id.prefix, record.document_key
                 )
             else:
                 record.cte40_Id = False
@@ -499,7 +499,7 @@ class CTe(spec_models.StackedModel):
             filter_processador_edoc_cte
         ):
             inf_cte = record.export_ds()[0]
-            cte = Cte(InfCte=inf_cte, infCTeSupl=None, signature=None)
+            cte = Cte(infCte=inf_cte, infCTeSupl=None, signature=None)
             edocs.append(cte)
         return edocs
 
@@ -517,38 +517,16 @@ class CTe(spec_models.StackedModel):
         return Cte(
             transmissao,
             self.company_id.state_id.ibge_code,
-            versao=self.cte40_versao,
-            ambiente=self.cte40_tpAmb,
+            # versao=self.cte40_versao,
+            # ambiente=self.cte40_tpAmb,
         )
-
-    # def _document_export(self, pretty_print=True):
-    #     result = super()._document_export()
-    #     for record in self.filtered(filter_processador_edoc_cte):
-    #         edoc = record.serialize()[0]
-    #         processador = record._processador()
-    #         xml_file = processador.to_xml()[0]
-    #         event_id = self.event_ids.create_event_save_xml(
-    #             company_id=self.company_id,
-    #             environment=(
-    #                 EVENT_ENV_PROD if self.cte40_tpAmb == "1" else EVENT_ENV_HML
-    #             ),
-    #             event_type="0",
-    #             xml_file=xml_file,
-    #             document_id=self,
-    #         )
-    #         record.authorization_event_id = event_id
-    #         xml_assinado = processador.assinar_edoc(edoc, edoc.infCte.Id)
-    #         self._valida_xml(xml_assinado)
-    #     return result
 
     def _document_export(self, pretty_print=True):
         result = super()._document_export()
         for record in self.filtered(filter_processador_edoc_cte):
-            edoc = record.serialize()[0]
+            record.serialize()[0]
             processador = record._processador()
-            xml_file = processador.render_edoc_xsdata(edoc, pretty_print=pretty_print)[
-                0
-            ]
+            xml_file = processador.to_xml()
             event_id = self.event_ids.create_event_save_xml(
                 company_id=self.company_id,
                 environment=(
@@ -559,9 +537,31 @@ class CTe(spec_models.StackedModel):
                 document_id=self,
             )
             record.authorization_event_id = event_id
-            xml_assinado = processador.assina_raiz(edoc, edoc.infNFe.Id)
-            self._valida_xml(xml_assinado)
+            # xml_assinado = processador.assinar_edoc(edoc, edoc.infCte.Id)
+            # self._valida_xml(xml_assinado)
         return result
+
+    # def _document_export(self, pretty_print=True):
+    #     result = super()._document_export()
+    #     for record in self.filtered(filter_processador_edoc_cte):
+    #         edoc = record.serialize()[0]
+    #         processador = record._processador()
+    #         xml_file = processador.render_edoc_xsdata(edoc, pretty_print=pretty_print)[
+    #             0
+    #         ]
+    #         event_id = self.event_ids.create_event_save_xml(
+    #             company_id=self.company_id,
+    #             environment=(
+    #                 EVENT_ENV_PROD if self.cte40_tpAmb == "1" else EVENT_ENV_HML
+    #             ),
+    #             event_type="0",
+    #             xml_file=xml_file,
+    #             document_id=self,
+    #         )
+    #         record.authorization_event_id = event_id
+    #         xml_assinado = processador.assina_raiz(edoc, edoc.infNFe.Id)
+    #         self._valida_xml(xml_assinado)
+    #     return result
 
     def _valida_xml(self, xml_file):
         self.ensure_one()
