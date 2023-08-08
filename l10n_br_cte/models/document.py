@@ -121,15 +121,7 @@ class CTe(spec_models.StackedModel):
 
     cte40_dhEmi = fields.Datetime(related="document_date", store=True)
 
-    cte40_tpImp = fields.Selection(related="tpImp", store=True)
-
-    cte40_tpEmis = fields.Selection(related="cte_transmission", store=True)
-
     cte40_cDV = fields.Char(compute="_compute_cDV", store=True)
-
-    cte40_tpAmb = fields.Selection(related="cte_environment", store=True)
-
-    cte40_tpCTe = fields.Selection(related="tpCTe", store=True)
 
     cte40_procEmi = fields.Selection(default="0", store=True)
 
@@ -147,8 +139,6 @@ class CTe(spec_models.StackedModel):
     cte40_UFEnv = fields.Char(
         compute="_compute_cte40_data", string="cte40_UFEnv", store=True
     )
-
-    cte40_tpServ = fields.Selection(related="tpServ", store=True)
 
     cte40_indIEToma = fields.Char(compute="_compute_toma", store=True)
 
@@ -172,7 +162,47 @@ class CTe(spec_models.StackedModel):
         compute="_compute_cte40_data", string="cte40_cUF", store=True
     )
 
-    cte40_retira = fields.Selection(related="retira", store=True)
+    cte40_retira = fields.Selection(selection=[("0", "Sim"), ("1", "Não")], default="1")
+
+    cte40_tpServ = fields.Selection(
+        selection=[
+            ("6", "Transporte de Pessoas"),
+            ("7", "Transporte de Valores"),
+            ("8", "Excesso de Bagagem"),
+        ],
+        default="6",
+    )
+
+    cte40_tpCTe = fields.Selection(
+        selection=[
+            ("0", "CTe Normal"),
+            ("1", "CTe Complementar"),
+            ("3", "CTe Substituição"),
+        ],
+        default="0",
+    )
+
+    cte40_tpAmb = fields.Selection(
+        selection=[("1", "Produção"), ("2", "Homologação")],
+        string="CTe Environment",
+        copy=False,
+        default="2",
+        store=True,
+    )
+
+    cte40_tpEmis = fields.Selection(
+        selection=[
+            ("1", "Normal"),
+            ("3", "Regime Especial NFF"),
+            ("4", "EPEC pela SVC"),
+        ],
+        default="1",
+        store=True,
+    )
+
+    cte40_tpImp = fields.Selection(
+        selection=[("1", "Retrato"), ("2", "Paisagem")], default="1"
+    )
 
     cte40_toma4 = fields.Many2one(
         comodel_name="res.partner",
@@ -412,47 +442,6 @@ class CTe(spec_models.StackedModel):
 
     cte40_autXML = fields.One2many(default=_default_cte40_autxml, store=True)
 
-    # View
-    retira = fields.Selection(selection=[("0", "Sim"), ("1", "Não")], default="1")
-
-    tpServ = fields.Selection(
-        selection=[
-            ("6", "Transporte de Pessoas"),
-            ("7", "Transporte de Valores"),
-            ("8", "Excesso de Bagagem"),
-        ],
-        default="6",
-    )
-
-    tpCTe = fields.Selection(
-        selection=[
-            ("0", "CTe Normal"),
-            ("1", "CTe Complementar"),
-            ("3", "CTe Substituição"),
-        ],
-        default="0",
-    )
-
-    cte_environment = fields.Selection(
-        selection=[("1", "Produção"), ("2", "Homologação")],
-        string="CTe Environment",
-        copy=False,
-        default="2",
-    )
-
-    cte_transmission = fields.Selection(
-        selection=[
-            ("1", "Normal"),
-            ("3", "Regime Especial NFF"),
-            ("4", "EPEC pela SVC"),
-        ],
-        default="1",
-    )
-
-    tpImp = fields.Selection(
-        selection=[("1", "Retrato"), ("2", "Paisagem")], default="1"
-    )
-
     ##########################
     # CT-e tag: modal
     ##########################
@@ -529,26 +518,48 @@ class CTe(spec_models.StackedModel):
             transmissao,
             self.company_id.state_id.ibge_code,
             versao=self.cte40_versao,
-            ambiente=self.cte_environment,
+            ambiente=self.cte40_tpAmb,
         )
+
+    # def _document_export(self, pretty_print=True):
+    #     result = super()._document_export()
+    #     for record in self.filtered(filter_processador_edoc_cte):
+    #         edoc = record.serialize()[0]
+    #         processador = record._processador()
+    #         xml_file = processador.to_xml()[0]
+    #         event_id = self.event_ids.create_event_save_xml(
+    #             company_id=self.company_id,
+    #             environment=(
+    #                 EVENT_ENV_PROD if self.cte40_tpAmb == "1" else EVENT_ENV_HML
+    #             ),
+    #             event_type="0",
+    #             xml_file=xml_file,
+    #             document_id=self,
+    #         )
+    #         record.authorization_event_id = event_id
+    #         xml_assinado = processador.assinar_edoc(edoc, edoc.infCte.Id)
+    #         self._valida_xml(xml_assinado)
+    #     return result
 
     def _document_export(self, pretty_print=True):
         result = super()._document_export()
         for record in self.filtered(filter_processador_edoc_cte):
             edoc = record.serialize()[0]
             processador = record._processador()
-            xml_file = processador.to_xml()[0]
+            xml_file = processador.render_edoc_xsdata(edoc, pretty_print=pretty_print)[
+                0
+            ]
             event_id = self.event_ids.create_event_save_xml(
                 company_id=self.company_id,
                 environment=(
-                    EVENT_ENV_PROD if self.cte_environment == "1" else EVENT_ENV_HML
+                    EVENT_ENV_PROD if self.cte40_tpAmb == "1" else EVENT_ENV_HML
                 ),
                 event_type="0",
                 xml_file=xml_file,
                 document_id=self,
             )
             record.authorization_event_id = event_id
-            xml_assinado = processador.assinar_edoc(edoc, edoc.infCte.Id)
+            xml_assinado = processador.assina_raiz(edoc, edoc.infNFe.Id)
             self._valida_xml(xml_assinado)
         return result
 
