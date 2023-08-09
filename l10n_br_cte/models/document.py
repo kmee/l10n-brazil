@@ -14,6 +14,11 @@ from odoo.exceptions import UserError
 from odoo.addons.l10n_br_fiscal.constants.fiscal import EVENT_ENV_HML, EVENT_ENV_PROD
 from odoo.addons.spec_driven_model.models import spec_models
 
+try:
+    from erpbrasil.base.misc import format_zipcode, punctuation_rm
+except ImportError:
+    _logger.error("Biblioteca erpbrasil.base não instalada")
+
 
 def filter_processador_edoc_cte(record):
     if record.processador_edoc == "oca" and record.document_type_id.code in [
@@ -159,7 +164,7 @@ class CTe(spec_models.StackedModel):
     )
 
     cte40_UFFim = fields.Char(
-        compute="_compute_cte40_data", string="cte40_cUF", store=True
+        compute="_compute_cte40_data", string="cte40_UFFim", store=True
     )
 
     cte40_retira = fields.Selection(selection=[("0", "Sim"), ("1", "Não")], default="1")
@@ -275,13 +280,28 @@ class CTe(spec_models.StackedModel):
     # CT-e tag: emit
     ##########################
 
+    cte40_xNome = fields.Char(related="company_id.name")
+    cte40_CNPJ = fields.Char(related="company_id.cnpj_cpf")
+    cte40_IE = fields.Char(related="company_id.inscr_est")
     cte40_emit = fields.Many2one(
         comodel_name="res.company",
         compute="_compute_emit_data",
         readonly=True,
         string="Emit",
-        store=True,
     )
+
+    # cte40_xLgr = fields.Char(related="company_id.street")
+    # cte40_nro = fields.Char(related="company_id.street_number")
+    # cte40_xBairro = fields.Char(related="company_id.district")
+    # cte40_cMun = fields.Char(related="company_id.city_id.ibge_code")
+    # cte40_xMun = fields.Char(related="company_id.city_id.name", readonly=True, store=True)
+    # cte40_UF = fields.Char(related="company_id.state_id.code", store=True)
+    # cte40_CEP = fields.Char(
+    #     compute="_compute_cep",
+    #     inverse="_inverse_cte40_CEP",
+    #     compute_sudo=True,
+    #     store=True,
+    # )
 
     cte40_CRT = fields.Selection(
         related="company_tax_framework",
@@ -297,6 +317,18 @@ class CTe(spec_models.StackedModel):
     def _compute_emit_data(self):
         for doc in self:  # TODO if out
             doc.cte40_emit = doc.company_id
+
+    def _inverse_cte40_CEP(self):
+        for rec in self:
+            if rec.cte40_CEP:
+                country_code = (
+                    rec.company_id.country_id.code if rec.country_id else "BR"
+                )
+                rec.zip = format_zipcode(rec.cte40_CEP, country_code)
+
+    def _compute_cep(self):
+        for rec in self:
+            rec.cte40_CEP = punctuation_rm(rec.company_id.zip)
 
     ##########################
     # CT-e tag: rem
@@ -517,16 +549,16 @@ class CTe(spec_models.StackedModel):
         return Cte(
             transmissao,
             self.company_id.state_id.ibge_code,
-            # versao=self.cte40_versao,
-            # ambiente=self.cte40_tpAmb,
+            # versao="4.0",
+            # ambiente="2",
         )
 
     def _document_export(self, pretty_print=True):
         result = super()._document_export()
         for record in self.filtered(filter_processador_edoc_cte):
-            record.serialize()[0]
-            processador = record._processador()
-            xml_file = processador.to_xml()
+            edoc = record.serialize()[0]
+            record._processador()
+            xml_file = edoc.to_xml()
             event_id = self.event_ids.create_event_save_xml(
                 company_id=self.company_id,
                 environment=(
@@ -537,7 +569,7 @@ class CTe(spec_models.StackedModel):
                 document_id=self,
             )
             record.authorization_event_id = event_id
-            # xml_assinado = processador.assinar_edoc(edoc, edoc.infCte.Id)
+            # xml_assinado = processador.assinar_raiz(edoc, edoc.infCte.Id)
             # self._valida_xml(xml_assinado)
         return result
 
@@ -568,3 +600,24 @@ class CTe(spec_models.StackedModel):
         erros = Cte.schema_validation(xml_file)
         erros = "\n".join(erros)
         self.write({"xml_error_message": erros or False})
+
+    # talvez seja necessário
+    # def _build_many2one(self, comodel, vals, new_value, key, value, path):
+    #     if key == "cte40_emit" and self.env.context.get("edoc_type") == "in":
+    #         enderEmit_value = self.env["res.partner"].build_attrs(
+    #             value.enderEmit, path=path
+    #         )
+    #         new_value.update(enderEmit_value)
+    #         company_cnpj = self.env.user.company_id.cnpj_cpf.translate(
+    #             str.maketrans("", "", string.punctuation)
+    #         )
+    #         emit_cnpj = new_value.get("cte40_CNPJ").translate(
+    #             str.maketrans("", "", string.punctuation)
+    #         )
+    #         if company_cnpj != emit_cnpj:
+    #             vals["issuer"] = "partner"
+    #         new_value["is_company"] = True
+    #         new_value["cnpj_cpf"] = emit_cnpj
+    #         super()._build_many2one(
+    #             self.env["res.partner"], vals, new_value, "partner_id", value, path
+    #         )

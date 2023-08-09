@@ -442,28 +442,28 @@ class TendeEmi(models.AbstractModel):
     _name = "cte.40.tendeemi"
     _inherit = "spec.mixin.cte"
     _binding_type = "TendeEmi"
+    _generateds_type = "TEndeEmi"
 
-    cte40_xLgr = fields.Char(string="Logradouro", xsd_required=True)
+    cte40_xLgr = fields.Char(string="Logradouro")
 
-    cte40_nro = fields.Char(string="Número", xsd_required=True)
+    cte40_nro = fields.Char(string="Número")
 
     cte40_xCpl = fields.Char(string="Complemento")
 
-    cte40_xBairro = fields.Char(string="Bairro", xsd_required=True)
+    cte40_xBairro = fields.Char(string="Bairro")
 
     cte40_cMun = fields.Char(
         string="Código do município",
-        xsd_required=True,
         xsd_type="TCodMunIBGE",
         help="Código do município (utilizar a tabela do IBGE)",
     )
 
-    cte40_xMun = fields.Char(string="Nome do município", xsd_required=True)
+    cte40_xMun = fields.Char(string="Nome do município")
 
     cte40_CEP = fields.Char(string="CEP", help="CEP\nInformar zeros não significativos")
 
     cte40_UF = fields.Selection(
-        TUF_SEM_EX, string="Sigla da UF", xsd_required=True, xsd_type="TUF_sem_EX"
+        TUF_SEM_EX, string="Sigla da UF", xsd_type="TUF_sem_EX"
     )
 
     cte40_fone = fields.Char(string="Telefone", xsd_type="TFone")

@@ -61,13 +61,13 @@ class ResPartner(spec_models.SpecModel):
     )
 
     # enderToma/enderEmit/enderReme/enderEmit
-    cte40_xLgr = fields.Char(related="street_name", readonly=True, store=True)
-    cte40_nro = fields.Char(related="street_number", readonly=True, store=True)
-    cte40_xCpl = fields.Char(related="street2", readonly=True, store=True)
-    cte40_xBairro = fields.Char(related="district", readonly=True, store=True)
-    cte40_cMun = fields.Char(related="city_id.ibge_code", readonly=True, store=True)
-    cte40_xMun = fields.Char(related="city_id.name", readonly=True, store=True)
-    cte40_UF = fields.Char(related="state_id.code", store=True)
+    cte40_xLgr = fields.Char(related="street_name", readonly=True)
+    cte40_nro = fields.Char(related="street_number", readonly=True)
+    cte40_xCpl = fields.Char(related="street2", readonly=True)
+    cte40_xBairro = fields.Char(related="district", readonly=True)
+    cte40_cMun = fields.Char(related="city_id.ibge_code", readonly=True)
+    cte40_xMun = fields.Char(related="city_id.name", readonly=True)
+    cte40_UF = fields.Char(related="state_id.code")
     cte40_CEP = fields.Char(
         compute="_compute_cep",
         inverse="_inverse_cte40_CEP",
@@ -116,3 +116,17 @@ class ResPartner(spec_models.SpecModel):
     def _compute_cep(self):
         for rec in self:
             rec.cte40_CEP = punctuation_rm(rec.zip)
+
+    def _export_field(self, xsd_field, class_obj, member_spec, export_value=None):
+        return super()._export_field(xsd_field, class_obj, member_spec, export_value)
+
+    @api.model
+    def _prepare_import_dict(
+        self, values, model=None, parent_dict=None, defaults_model=None
+    ):
+        values = super()._prepare_import_dict(
+            values, model, parent_dict, defaults_model
+        )
+        if not values.get("name") and values.get("legal_name"):
+            values["name"] = values["legal_name"]
+        return values
