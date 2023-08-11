@@ -3,6 +3,7 @@
 
 import logging
 import re
+import string
 
 from erpbrasil.assinatura import certificado as cert
 from erpbrasil.transmissao import TransmissaoSOAP
@@ -518,34 +519,12 @@ class CTe(spec_models.StackedModel):
             # ambiente=self.cte40_tpAmb,
         )
 
-    def _document_export(self, pretty_print=True):
-        result = super()._document_export()
-        for record in self.filtered(filter_processador_edoc_cte):
-            edoc = record.serialize()[0]
-            record._processador()
-            xml_file = edoc.to_xml()
-            event_id = self.event_ids.create_event_save_xml(
-                company_id=self.company_id,
-                environment=(
-                    EVENT_ENV_PROD if self.cte40_tpAmb == "1" else EVENT_ENV_HML
-                ),
-                event_type="0",
-                xml_file=xml_file,
-                document_id=self,
-            )
-            record.authorization_event_id = event_id
-            # xml_assinado = processador.assinar_edoc(edoc, edoc.infCte.Id)
-            # self._valida_xml(xml_assinado)
-        return result
-
     # def _document_export(self, pretty_print=True):
     #     result = super()._document_export()
     #     for record in self.filtered(filter_processador_edoc_cte):
     #         edoc = record.serialize()[0]
-    #         processador = record._processador()
-    #         xml_file = processador.render_edoc_xsdata(edoc, pretty_print=pretty_print)[
-    #             0
-    #         ]
+    #         record._processador()
+    #         xml_file = edoc.to_xml()
     #         event_id = self.event_ids.create_event_save_xml(
     #             company_id=self.company_id,
     #             environment=(
@@ -556,12 +535,113 @@ class CTe(spec_models.StackedModel):
     #             document_id=self,
     #         )
     #         record.authorization_event_id = event_id
-    #         xml_assinado = processador.assina_raiz(edoc, edoc.infNFe.Id)
-    #         self._valida_xml(xml_assinado)
+    #         # xml_assinado = processador.assinar_edoc(edoc, edoc.infCte.Id)
+    #         # self._valida_xml(xml_assinado)
     #     return result
+
+    def _document_export(self, pretty_print=True):
+        result = super()._document_export()
+        for record in self.filtered(filter_processador_edoc_cte):
+            edoc = record.serialize()[0]
+            processador = record._processador()
+            xml_file = processador.render_edoc_xsdata(edoc, pretty_print=pretty_print)[
+                0
+            ]
+            event_id = self.event_ids.create_event_save_xml(
+                company_id=self.company_id,
+                environment=(
+                    EVENT_ENV_PROD if self.cte40_tpAmb == "1" else EVENT_ENV_HML
+                ),
+                event_type="0",
+                xml_file=xml_file,
+                document_id=self,
+            )
+            record.authorization_event_id = event_id
+            # xml_assinado = processador.assina_raiz(edoc, edoc.infNFe.Id)
+            # self._valida_xml(xml_assinado)
+        return result
 
     def _valida_xml(self, xml_file):
         self.ensure_one()
         erros = Cte.schema_validation(xml_file)
         erros = "\n".join(erros)
         self.write({"xml_error_message": erros or False})
+
+    def _export_field(self, xsd_field, class_obj, member_spec, export_value=None):
+        if xsd_field == "cte40_tpAmb":
+            self.env.context = dict(self.env.context)
+            self.env.context.update({"tpAmb": self[xsd_field]})
+        return super()._export_field(xsd_field, class_obj, member_spec, export_value)
+
+    def _export_many2one(self, field_name, xsd_required, class_obj=None):
+        self.ensure_one()
+        if field_name in self._stacking_points.keys():
+            if (not xsd_required) and field_name not in ["cte40_enderDest"]:
+                comodel = self.env[self._stacking_points.get(field_name).comodel_name]
+                fields = [
+                    f
+                    for f in comodel._fields
+                    if f.startswith(self._field_prefix) and f in self._fields.keys()
+                ]
+                sub_tag_read = self.read(fields)[0]
+                if not any(
+                    v
+                    for k, v in sub_tag_read.items()
+                    if k.startswith(self._field_prefix)
+                ):
+                    return False
+
+        return super()._export_many2one(field_name, xsd_required, class_obj)
+
+    def _build_many2one(self, comodel, vals, new_value, key, value, path):
+        if key == "cte40_emit" and self.env.context.get("edoc_type") == "in":
+            enderEmit_value = self.env["res.partner"].build_attrs(
+                value.enderEmit, path=path
+            )
+            new_value.update(enderEmit_value)
+            company_cnpj = self.env.user.company_id.cnpj_cpf.translate(
+                str.maketrans("", "", string.punctuation)
+            )
+            emit_cnpj = new_value.get("cte40_CNPJ").translate(
+                str.maketrans("", "", string.punctuation)
+            )
+            if company_cnpj != emit_cnpj:
+                vals["issuer"] = "partner"
+            new_value["is_company"] = True
+            new_value["cnpj_cpf"] = emit_cnpj
+            super()._build_many2one(
+                self.env["res.partner"], vals, new_value, "partner_id", value, path
+            )
+        elif key == "cte40_entrega" and self.env.context.get("edoc_type") == "in":
+            enderEntreg_value = self.env["res.partner"].build_attrs(value, path=path)
+            new_value.update(enderEntreg_value)
+            parent_domain = [("cte40_CNPJ", "=", new_value.get("cte40_CNPJ"))]
+            parent_partner_match = self.env["res.partner"].search(
+                parent_domain, limit=1
+            )
+            new_vals = {
+                "cte40_CNPJ": False,
+                "type": "delivery",
+                "parent_id": parent_partner_match.id,
+                "company_type": "person",
+            }
+            new_value.update(new_vals)
+            super()._build_many2one(
+                self.env["res.partner"], vals, new_value, key, value, path
+            )
+        elif self.env.context.get("edoc_type") == "in" and key in [
+            "cte40_dest",
+            "cte40_enderDest",
+        ]:
+            # this would be the emit/company data, but we won't update it on
+            # cte import so just do nothing
+            return
+        elif (
+            self._name == "account.invoice"
+            and comodel._name == "l10n_br_fiscal.document"
+        ):
+            # module l10n_br_account_cte
+            # stacked m2o
+            vals.update(new_value)
+        else:
+            super()._build_many2one(comodel, vals, new_value, key, value, path)

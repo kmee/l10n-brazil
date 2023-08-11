@@ -22,6 +22,7 @@ class ResPartner(spec_models.SpecModel):
         "res.partner",
         "cte.40.tendereco",
         "cte.40.tlocal",
+        "cte.40.tcte_emit",
         "cte.40.tendeemi",
         "cte.40.tcte_dest",
         "cte.40.tresptec",
@@ -65,7 +66,10 @@ class ResPartner(spec_models.SpecModel):
         comodel_name="res.partner", compute="_compute_cte40_ender"
     )
 
-    # enderToma/enderEmit/enderReme/enderEmit
+    # enderToma/enderEmit/enderReme
+    cte40_enderEmit = fields.Many2one(
+        comodel_name="res.partner", compute="_compute_cte40_ender"
+    )
     cte40_xLgr = fields.Char(related="street_name", readonly=True)
     cte40_nro = fields.Char(related="street_number", readonly=True)
     cte40_xCpl = fields.Char(related="street2", readonly=True)
@@ -97,6 +101,7 @@ class ResPartner(spec_models.SpecModel):
             rec.cte40_enderDest = rec.id
             rec.cte40_enderExped = rec.id
             rec.cte40_enderReceb = rec.id
+            rec.cte40_enderEmit = rec.id
 
     @api.depends("company_type", "inscr_est", "cnpj_cpf", "country_id")
     def _compute_cte_data(self):
