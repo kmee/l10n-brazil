@@ -442,7 +442,7 @@ class TendeEmi(models.AbstractModel):
     _name = "cte.40.tendeemi"
     _inherit = "spec.mixin.cte"
     _binding_type = "TendeEmi"
-    _generateds_type = "TEndeEmi"
+    _generateds_type = "TendeEmi"
 
     cte40_xLgr = fields.Char(string="Logradouro")
 
@@ -1435,7 +1435,7 @@ class TcteOsEmit(models.AbstractModel):
     cte40_enderEmit = fields.Many2one(
         comodel_name="cte.40.tendeemi",
         string="Endereço do emitente",
-        xsd_type="TEndeEmi",
+        xsd_type="TendeEmi",
     )
 
     cte40_CRT = fields.Selection(
@@ -2094,14 +2094,14 @@ class TgtveInfCte(models.AbstractModel):
     cte40_origem = fields.Many2one(
         comodel_name="cte.40.tendeemi",
         string="Informações do endereço da origem",
-        xsd_type="TEndeEmi",
+        xsd_type="TendeEmi",
         help="Informações do endereço da origem do serviço",
     )
 
     cte40_destino = fields.Many2one(
         comodel_name="cte.40.tendeemi",
         string="Informações do endereço do destino",
-        xsd_type="TEndeEmi",
+        xsd_type="TendeEmi",
         help="Informações do endereço do destino do serviço",
     )
 
@@ -2551,7 +2551,7 @@ class TgtveEmit(models.AbstractModel):
     cte40_enderEmit = fields.Many2one(
         comodel_name="cte.40.tendeemi",
         string="Endereço do emitente",
-        xsd_type="TEndeEmi",
+        xsd_type="TendeEmi",
     )
 
 
@@ -4002,11 +4002,11 @@ class TcteEmit(models.AbstractModel):
 
     cte40_xFant = fields.Char(string="Nome fantasia")
 
-    cte40_enderEmit = fields.Many2one(
-        comodel_name="cte.40.tendeemi",
-        string="Endereço do emitente",
-        xsd_type="TEndeEmi",
-    )
+    # cte40_enderEmit = fields.Many2one(
+    #     comodel_name="cte.40.tendeemi",
+    #     string="Endereço do emitente",
+    #     xsd_type="TendeEmi",
+    # )
 
     cte40_CRT = fields.Selection(
         TCRT,

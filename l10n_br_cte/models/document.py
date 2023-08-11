@@ -1,6 +1,7 @@
 # Copyright 2023 KMEE INFORMATICA LTDA
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+import logging
 import re
 
 from erpbrasil.assinatura import certificado as cert
@@ -14,8 +15,9 @@ from odoo.exceptions import UserError
 from odoo.addons.l10n_br_fiscal.constants.fiscal import EVENT_ENV_HML, EVENT_ENV_PROD
 from odoo.addons.spec_driven_model.models import spec_models
 
+_logger = logging.getLogger(__name__)
 try:
-    from erpbrasil.base.misc import format_zipcode, punctuation_rm
+    pass
 except ImportError:
     _logger.error("Biblioteca erpbrasil.base não instalada")
 
@@ -102,33 +104,30 @@ class CTe(spec_models.StackedModel):
     cte40_cUF = fields.Char(
         related="company_id.partner_id.state_id.ibge_code",
         string="cte40_cUF",
-        store=True,
     )
 
-    cte40_cCT = fields.Char(related="document_key", store=True)
+    cte40_cCT = fields.Char(related="document_key")
 
     cfop_id = fields.Many2one(
         comodel_name="l10n_br_fiscal.cfop",
         string="CFOP",
     )
 
-    cte40_CFOP = fields.Char(related="cfop_id.code", store=True)
+    cte40_CFOP = fields.Char(related="cfop_id.code")
 
-    cte40_natOp = fields.Char(related="operation_name", store=True)
+    cte40_natOp = fields.Char(related="operation_name")
 
-    cte40_mod = fields.Char(
-        related="document_type_id.code", string="cte40_mod", store=True
-    )
+    cte40_mod = fields.Char(related="document_type_id.code", string="cte40_mod")
 
-    cte40_serie = fields.Char(related="document_serie", store=True)
+    cte40_serie = fields.Char(related="document_serie")
 
-    cte40_nCT = fields.Char(related="document_number", store=True)
+    cte40_nCT = fields.Char(related="document_number")
 
-    cte40_dhEmi = fields.Datetime(related="document_date", store=True)
+    cte40_dhEmi = fields.Datetime(related="document_date")
 
     cte40_cDV = fields.Char(compute="_compute_cDV", store=True)
 
-    cte40_procEmi = fields.Selection(default="0", store=True)
+    cte40_procEmi = fields.Selection(default="0")
 
     cte40_verProc = fields.Char(
         copy=False,
@@ -164,7 +163,7 @@ class CTe(spec_models.StackedModel):
     )
 
     cte40_UFFim = fields.Char(
-        compute="_compute_cte40_data", string="cte40_UFFim", store=True
+        compute="_compute_cte40_data", string="cte40_cUF", store=True
     )
 
     cte40_retira = fields.Selection(selection=[("0", "Sim"), ("1", "Não")], default="1")
@@ -192,7 +191,6 @@ class CTe(spec_models.StackedModel):
         string="CTe Environment",
         copy=False,
         default="2",
-        store=True,
     )
 
     cte40_tpEmis = fields.Selection(
@@ -202,7 +200,6 @@ class CTe(spec_models.StackedModel):
             ("4", "EPEC pela SVC"),
         ],
         default="1",
-        store=True,
     )
 
     cte40_tpImp = fields.Selection(
@@ -280,9 +277,6 @@ class CTe(spec_models.StackedModel):
     # CT-e tag: emit
     ##########################
 
-    cte40_xNome = fields.Char(related="company_id.name")
-    cte40_CNPJ = fields.Char(related="company_id.cnpj_cpf")
-    cte40_IE = fields.Char(related="company_id.inscr_est")
     cte40_emit = fields.Many2one(
         comodel_name="res.company",
         compute="_compute_emit_data",
@@ -290,23 +284,9 @@ class CTe(spec_models.StackedModel):
         string="Emit",
     )
 
-    # cte40_xLgr = fields.Char(related="company_id.street")
-    # cte40_nro = fields.Char(related="company_id.street_number")
-    # cte40_xBairro = fields.Char(related="company_id.district")
-    # cte40_cMun = fields.Char(related="company_id.city_id.ibge_code")
-    # cte40_xMun = fields.Char(related="company_id.city_id.name", readonly=True, store=True)
-    # cte40_UF = fields.Char(related="company_id.state_id.code", store=True)
-    # cte40_CEP = fields.Char(
-    #     compute="_compute_cep",
-    #     inverse="_inverse_cte40_CEP",
-    #     compute_sudo=True,
-    #     store=True,
-    # )
-
     cte40_CRT = fields.Selection(
         related="company_tax_framework",
-        string="Código de Regime Tributário (CTe)",
-        store=True,
+        string="Código de Regime Tributário (NFe)",
     )
 
     ##########################
@@ -317,18 +297,6 @@ class CTe(spec_models.StackedModel):
     def _compute_emit_data(self):
         for doc in self:  # TODO if out
             doc.cte40_emit = doc.company_id
-
-    def _inverse_cte40_CEP(self):
-        for rec in self:
-            if rec.cte40_CEP:
-                country_code = (
-                    rec.company_id.country_id.code if rec.country_id else "BR"
-                )
-                rec.zip = format_zipcode(rec.cte40_CEP, country_code)
-
-    def _compute_cep(self):
-        for rec in self:
-            rec.cte40_CEP = punctuation_rm(rec.company_id.zip)
 
     ##########################
     # CT-e tag: rem
@@ -436,19 +404,16 @@ class CTe(spec_models.StackedModel):
         comodel_name="l10n_br_fiscal.document.related",
         string="Informações de quantidades da Carga do CTe",
         inverse_name="document_id",
-        store=True,
     )
 
     cte40_infCTeNorm = fields.One2many(
         comodel_name="l10n_br_fiscal.document.related",
         inverse_name="document_id",
-        store=True,
     )
 
     cte40_infCTeComp = fields.One2many(
         comodel_name="l10n_br_fiscal.document.related",
         inverse_name="document_id",
-        store=True,
     )
 
     ##########################
@@ -472,7 +437,7 @@ class CTe(spec_models.StackedModel):
     # CT-e tag: autXML
     ##########################
 
-    cte40_autXML = fields.One2many(default=_default_cte40_autxml, store=True)
+    cte40_autXML = fields.One2many(default=_default_cte40_autxml)
 
     ##########################
     # CT-e tag: modal
@@ -549,8 +514,8 @@ class CTe(spec_models.StackedModel):
         return Cte(
             transmissao,
             self.company_id.state_id.ibge_code,
-            # versao="4.0",
-            # ambiente="2",
+            # versao=self.cte40_versao,
+            # ambiente=self.cte40_tpAmb,
         )
 
     def _document_export(self, pretty_print=True):
@@ -569,7 +534,7 @@ class CTe(spec_models.StackedModel):
                 document_id=self,
             )
             record.authorization_event_id = event_id
-            # xml_assinado = processador.assinar_raiz(edoc, edoc.infCte.Id)
+            # xml_assinado = processador.assinar_edoc(edoc, edoc.infCte.Id)
             # self._valida_xml(xml_assinado)
         return result
 
@@ -600,24 +565,3 @@ class CTe(spec_models.StackedModel):
         erros = Cte.schema_validation(xml_file)
         erros = "\n".join(erros)
         self.write({"xml_error_message": erros or False})
-
-    # talvez seja necessário
-    # def _build_many2one(self, comodel, vals, new_value, key, value, path):
-    #     if key == "cte40_emit" and self.env.context.get("edoc_type") == "in":
-    #         enderEmit_value = self.env["res.partner"].build_attrs(
-    #             value.enderEmit, path=path
-    #         )
-    #         new_value.update(enderEmit_value)
-    #         company_cnpj = self.env.user.company_id.cnpj_cpf.translate(
-    #             str.maketrans("", "", string.punctuation)
-    #         )
-    #         emit_cnpj = new_value.get("cte40_CNPJ").translate(
-    #             str.maketrans("", "", string.punctuation)
-    #         )
-    #         if company_cnpj != emit_cnpj:
-    #             vals["issuer"] = "partner"
-    #         new_value["is_company"] = True
-    #         new_value["cnpj_cpf"] = emit_cnpj
-    #         super()._build_many2one(
-    #             self.env["res.partner"], vals, new_value, "partner_id", value, path
-    #         )

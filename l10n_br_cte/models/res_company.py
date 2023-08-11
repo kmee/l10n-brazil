@@ -18,27 +18,21 @@ class ResCompany(spec_models.SpecModel):
 
     cte40_CNPJ = fields.Char(
         related="partner_id.cte40_CNPJ",
-        store=True,
     )
     cte40_CPF = fields.Char(
         related="partner_id.cte40_CPF",
-        store=True,
     )
     cte40_IE = fields.Char(
         related="partner_id.cte40_IE",
-        store=True,
     )
     cte40_xNome = fields.Char(
         related="partner_id.legal_name",
-        store=True,
     )
     cte40_xFant = fields.Char(
         related="partner_id.name",
-        store=True,
     )
     cte40_CRT = fields.Selection(
         related="tax_framework",
-        store=True,
     )
 
     cte40_enderEmit = fields.Many2one(
@@ -53,14 +47,12 @@ class ResCompany(spec_models.SpecModel):
     cte_default_serie_id = fields.Many2one(
         comodel_name="l10n_br_fiscal.document.serie",
         string="CT-e Default Serie",
-        store=True,
     )
 
     cte_dacte_layout = fields.Selection(
         selection=[("1", "Paisagem"), ("2", "Retrato")],
         string="CT-e DACTE Layout",
         default="1",
-        store=True,
     )
 
     cte_transmission = fields.Selection(
@@ -74,7 +66,6 @@ class ResCompany(spec_models.SpecModel):
         ],
         string="CT-e Transmission Type",
         default="1",
-        store=True,
     )
 
     cte_type = fields.Selection(
@@ -85,14 +76,12 @@ class ResCompany(spec_models.SpecModel):
         ],
         string="CT-e Type",
         default="0",
-        store=True,
     )
 
     cte_environment = fields.Selection(
         selection=[("1", "Produção"), ("2", "Homologação")],
         string="CT-e Environment",
         default="2",
-        store=True,
     )
 
     cte_version = fields.Selection(
@@ -112,7 +101,7 @@ class ResCompany(spec_models.SpecModel):
     )
 
     def _build_attr(self, node, fields, vals, path, attr):
-        if attr[0] == "TEndeEmi" and self.env.context.get("edoc_type") == "in":
+        if attr[0] == "endeEmit" and self.env.context.get("edoc_type") == "in":
             # we don't want to try build a related partner_id for enderEmit
             # when importing an CTe
             # instead later the emit tag will be imported as the
