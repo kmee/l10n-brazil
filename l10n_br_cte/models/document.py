@@ -3,6 +3,7 @@
 
 import logging
 import re
+from datetime import datetime
 
 from erpbrasil.assinatura import certificado as cert
 from erpbrasil.transmissao import TransmissaoSOAP
@@ -13,9 +14,13 @@ from odoo import _, api, fields
 from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
+    AUTORIZADO,
+    DENEGADO,
     EVENT_ENV_HML,
     EVENT_ENV_PROD,
     LOTE_PROCESSADO,
+    SITUACAO_EDOC_AUTORIZADA,
+    SITUACAO_EDOC_DENEGADA,
     SITUACAO_EDOC_REJEITADA,
 )
 from odoo.addons.spec_driven_model.models import spec_models
@@ -547,6 +552,42 @@ class CTe(spec_models.StackedModel):
     #     erros = "\n".join(erros)
     #     self.write({"xml_error_message": erros or False})
 
+    def atualiza_status_cte(self, infProt, xml_file):
+        self.ensure_one()
+        # TODO: Verificar a consulta de notas
+        # if not infProt.chNFe == self.key:
+        #     self = self.search([
+        #         ('key', '=', infProt.chNFe)
+        #     ])
+        if infProt.cStat in AUTORIZADO:
+            state = SITUACAO_EDOC_AUTORIZADA
+        elif infProt.cStat in DENEGADO:
+            state = SITUACAO_EDOC_DENEGADA
+        else:
+            state = SITUACAO_EDOC_REJEITADA
+        if self.authorization_event_id and infProt.nProt:
+            if type(infProt.dhRecbto) == datetime:
+                protocol_date = fields.Datetime.to_string(infProt.dhRecbto)
+            else:
+                protocol_date = fields.Datetime.to_string(
+                    datetime.fromisoformat(infProt.dhRecbto)
+                )
+
+            self.authorization_event_id.set_done(
+                status_code=infProt.cStat,
+                response=infProt.xMotivo,
+                protocol_date=protocol_date,
+                protocol_number=infProt.nProt,
+                file_response_xml=xml_file,
+            )
+        self.write(
+            {
+                "status_code": infProt.cStat,
+                "status_name": infProt.xMotivo,
+            }
+        )
+        self._change_state(state)
+
     def _eletronic_document_send(self):
         super(Cte, self)._eletronic_document_send()
         for record in self.filtered(filter_processador_edoc_cte):
@@ -563,7 +604,7 @@ class CTe(spec_models.StackedModel):
                         )
 
             if processo.resposta.cStat in LOTE_PROCESSADO + ["100"]:
-                record.atualiza_status_nfe(
+                record.atualiza_status_cte(
                     processo.protocolo.infProt, processo.processo_xml.decode("utf-8")
                 )
             elif processo.resposta.cStat == "225":
