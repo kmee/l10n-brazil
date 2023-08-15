@@ -15,13 +15,19 @@ from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     AUTORIZADO,
+    CANCELADO,
+    CANCELADO_DENTRO_PRAZO,
+    CANCELADO_FORA_PRAZO,
     DENEGADO,
     EVENT_ENV_HML,
     EVENT_ENV_PROD,
     LOTE_PROCESSADO,
     SITUACAO_EDOC_AUTORIZADA,
+    SITUACAO_EDOC_CANCELADA,
     SITUACAO_EDOC_DENEGADA,
     SITUACAO_EDOC_REJEITADA,
+    SITUACAO_FISCAL_CANCELADO,
+    SITUACAO_FISCAL_CANCELADO_EXTEMPORANEO,
 )
 from odoo.addons.spec_driven_model.models import spec_models
 
@@ -396,7 +402,15 @@ class CTe(spec_models.StackedModel):
     # CT-e tag: imp
     ##########################
 
-    cte40_imp = fields.One2many(related="fiscal_line_ids")
+    cte40_ICMS = fields.One2many(
+        comodel_name="l10n_br_fiscal.document.line",
+        inverse_name="document_id",
+        related="fiscal_line_ids",
+    )
+
+    cte40_vTotTrib = fields.Monetary(
+        related="cte40_ICMS.estimate_tax",
+    )
 
     #####################################
     # CT-e tag: infCTeNorm and infCteComp
@@ -554,11 +568,6 @@ class CTe(spec_models.StackedModel):
 
     def atualiza_status_cte(self, infProt, xml_file):
         self.ensure_one()
-        # TODO: Verificar a consulta de notas
-        # if not infProt.chNFe == self.key:
-        #     self = self.search([
-        #         ('key', '=', infProt.chNFe)
-        #     ])
         if infProt.cStat in AUTORIZADO:
             state = SITUACAO_EDOC_AUTORIZADA
         elif infProt.cStat in DENEGADO:
@@ -593,15 +602,15 @@ class CTe(spec_models.StackedModel):
         for record in self.filtered(filter_processador_edoc_cte):
             if self.xml_error_message:
                 return
-            processador = record._processador()
-            for edoc in record.serialize():
+            record._processador()
+            for _edoc in record.serialize():
                 processo = None
-                for p in processador.processar_documento(edoc):
-                    processo = p
-                    if processo.webservice == "cteAutorizacaoLote":
-                        record.authorization_event_id._save_event_file(
-                            processo.envio_xml.decode("utf-8"), "xml"
-                        )
+                # for p in processador.processar_documento(edoc):
+                #     processo = p
+                if processo.webservice == "cteAutorizacaoLote":
+                    record.authorization_event_id._save_event_file(
+                        processo.envio_xml.decode("utf-8"), "xml"
+                    )
 
             if processo.resposta.cStat in LOTE_PROCESSADO + ["100"]:
                 record.atualiza_status_cte(
@@ -619,3 +628,60 @@ class CTe(spec_models.StackedModel):
                     }
                 )
         return
+
+    def _document_cancel(self, justificative):
+        result = super(CTe, self)._document_cancel(justificative)
+        online_event = self.filtered(filter_processador_edoc_cte)
+        if online_event:
+            online_event._cte_cancel()
+        return result
+
+    def _cte_cancel(self):
+        self.ensure_one()
+        processador = self._processador()
+
+        if not self.authorization_protocol:
+            raise UserError(_("Authorization Protocol Not Found!"))
+
+        evento = processador.cancela_documento(
+            chave=self.document_key,
+            protocolo_autorizacao=self.authorization_protocol,
+            justificativa=self.cancel_reason.replace("\n", "\\n"),
+        )
+        processo = processador.enviar_lote_evento(lista_eventos=[evento])
+
+        self.cancel_event_id = self.event_ids.create_event_save_xml(
+            company_id=self.company_id,
+            environment=(
+                EVENT_ENV_PROD if self.cte_environment == "1" else EVENT_ENV_HML
+            ),
+            event_type="2",
+            xml_file=processo.envio_xml.decode("utf-8"),
+            document_id=self,
+        )
+
+        for retevento in processo.resposta.retEvento:
+            if not retevento.infEvento.chCte == self.document_key:
+                continue
+
+            if retevento.infEvento.cStat not in CANCELADO:
+                mensagem = "Erro no cancelamento"
+                mensagem += "\nCódigo: " + retevento.infEvento.cStat
+                mensagem += "\nMotivo: " + retevento.infEvento.xMotivo
+                raise UserError(mensagem)
+
+            if retevento.infEvento.cStat == CANCELADO_FORA_PRAZO:
+                self.state_fiscal = SITUACAO_FISCAL_CANCELADO_EXTEMPORANEO
+            elif retevento.infEvento.cStat == CANCELADO_DENTRO_PRAZO:
+                self.state_fiscal = SITUACAO_FISCAL_CANCELADO
+
+            self.state_edoc = SITUACAO_EDOC_CANCELADA
+            self.cancel_event_id.set_done(
+                status_code=retevento.infEvento.cStat,
+                response=retevento.infEvento.xMotivo,
+                protocol_date=fields.Datetime.to_string(
+                    datetime.fromisoformat(retevento.infEvento.dhRegEvento)
+                ),
+                protocol_number=retevento.infEvento.nProt,
+                file_response_xml=processo.retorno.content.decode("utf-8"),
+            )
