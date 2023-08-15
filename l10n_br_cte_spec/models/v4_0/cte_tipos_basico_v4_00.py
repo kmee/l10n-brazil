@@ -461,10 +461,10 @@ class TendeEmi(models.AbstractModel):
 
     cte40_xMun = fields.Char(string="Nome do município", xsd_required=True)
 
-    cte40_CEP = fields.Char(string="CEP", xsd_required=True, help="CEP\nInformar zeros não significativos")
+    cte40_CEP = fields.Char(string="CEP", help="CEP\nInformar zeros não significativos")
 
     cte40_UF = fields.Selection(
-        TUF_SEM_EX, string="Sigla da UF", xsd_type="TUF_sem_EX", xsd_required=True
+        TUF_SEM_EX, string="Sigla da UF", xsd_required=True, xsd_type="TUF_sem_EX"
     )
 
     cte40_fone = fields.Char(string="Telefone", xsd_type="TFone")
@@ -1503,6 +1503,7 @@ class TcteOsToma(models.AbstractModel):
     cte40_enderToma = fields.Many2one(
         comodel_name="cte.40.tendereco",
         string="Dados do endereço",
+        xsd_required=True,
         xsd_type="TEndereco",
     )
 
@@ -3586,6 +3587,7 @@ class TcteToma4(models.AbstractModel):
     cte40_enderToma = fields.Many2one(
         comodel_name="cte.40.tendereco",
         string="Dados do endereço",
+        xsd_required=True,
         xsd_type="TEndereco",
     )
 

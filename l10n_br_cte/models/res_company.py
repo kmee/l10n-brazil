@@ -1,7 +1,7 @@
 # Copyright 2023 KMEE INFORMATICA LTDA
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-from odoo import api, fields
+from odoo import fields
 
 from odoo.addons.spec_driven_model.models import spec_models
 
@@ -9,7 +9,7 @@ from odoo.addons.spec_driven_model.models import spec_models
 class ResCompany(spec_models.SpecModel):
 
     _name = "res.company"
-    _inherit = ["res.company", "cte.40.tcte_emit"]
+    _inherit = ["res.company", "cte.40.tcte_emit", "cte.40.tendeemi"]
     _cte_search_keys = ["cte40_CNPJ", "cte40_xNome", "cte40_xFant"]
 
     ##########################
@@ -99,27 +99,3 @@ class ResCompany(spec_models.SpecModel):
         "download CTe XML",
         default=False,
     )
-
-    def _build_attr(self, node, fields, vals, path, attr):
-        if attr[0] == "endeEmit" and self.env.context.get("edoc_type") == "in":
-            # we don't want to try build a related partner_id for enderEmit
-            # when importing an CTe
-            # instead later the emit tag will be imported as the
-            # document partner_id (dest) and the enderEmit data will be
-            # injected in the same res.partner record.
-            return
-        return super()._build_attr(node, fields, vals, path, attr)
-
-    @api.model
-    def _prepare_import_dict(
-        self, values, model=None, parent_dict=None, defaults_model=None
-    ):
-        # we disable enderEmit related creation with dry_run=True
-        context = self._context.copy()
-        context["dry_run"] = True
-        values = super(ResCompany, self.with_context(**context))._prepare_import_dict(
-            values, model, parent_dict, defaults_model
-        )
-        if not values.get("name"):
-            values["name"] = values.get("cte40_xFant") or values.get("cte40_xNome")
-        return values

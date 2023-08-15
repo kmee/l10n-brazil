@@ -22,7 +22,6 @@ class ResPartner(spec_models.SpecModel):
         "res.partner",
         "cte.40.tendereco",
         "cte.40.tlocal",
-        "cte.40.tcte_emit",
         "cte.40.tendeemi",
         "cte.40.tcte_dest",
         "cte.40.tresptec",
@@ -147,14 +146,3 @@ class ResPartner(spec_models.SpecModel):
             if xsd_field == "cte40_UF":
                 return "EX"
         return super()._export_field(xsd_field, class_obj, member_spec, export_value)
-
-    @api.model
-    def _prepare_import_dict(
-        self, values, model=None, parent_dict=None, defaults_model=None
-    ):
-        values = super()._prepare_import_dict(
-            values, model, parent_dict, defaults_model
-        )
-        if not values.get("name") and values.get("legal_name"):
-            values["name"] = values["legal_name"]
-        return values
