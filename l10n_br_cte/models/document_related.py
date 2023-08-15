@@ -38,7 +38,6 @@ class CTeRelated(spec_models.StackedModel):
             ("04", "LITROS"),
             ("05", "MMBTU"),
         ],
-        store=True,
     )
 
     # infCarga

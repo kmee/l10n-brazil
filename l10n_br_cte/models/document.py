@@ -396,7 +396,15 @@ class CTe(spec_models.StackedModel):
     # CT-e tag: imp
     ##########################
 
-    cte40_imp = fields.One2many(related="fiscal_line_ids")
+    cte40_ICMS = fields.One2many(
+        comodel_name="l10n_br_fiscal.document.line",
+        inverse_name="document_id",
+        related="fiscal_line_ids",
+    )
+
+    cte40_vTotTrib = fields.Monetary(
+        related="cte40_ICMS.estimate_tax",
+    )
 
     #####################################
     # CT-e tag: infCTeNorm and infCteComp
@@ -492,8 +500,8 @@ class CTe(spec_models.StackedModel):
         comodel_name="l10n_br_cte.ferroviario", inverse_name="document_id"
     )
 
-    cte40_aereo = fields.Many2one(
-        comodel_name="l10n_br_cte.aereo", inverse_name="document_id"
+    tpImp = fields.Selection(
+        selection=[("1", "Retrato"), ("2", "Paisagem")], default="1"
     )
 
     ################################

@@ -56,30 +56,31 @@ class CTeLine(spec_models.StackedModel):
         store=True,
     )
 
-    cte40_vTotTrib = fields.Monetary(
-        related="estimate_tax",
-        store=True,
-    )
+    cte40_CST = fields.Many2one(related="icms_cst_id")
 
-    cte40_pICMS = fields.Float(related="icms_percent", string="pICMS", store=True)
+    cte40_pICMS = fields.Float(related="icms_percent", string="pICMS")
 
-    cte40_vICMS = fields.Monetary(related="icms_value", store=True)
+    cte40_vICMS = fields.Monetary(related="icms_value")
 
     # ICMS20 - ICMS90
-    cte40_pRedBC = fields.Float(related="icms_reduction", store=True)
+    cte40_pRedBC = fields.Float(
+        related="icms_reduction",
+    )
 
-    cte40_vBC = fields.Monetary(related="icms_base", store=True)
+    cte40_vBC = fields.Monetary(related="icms_base")
 
     # ICMS60
-    cte40_vBCSTRet = fields.Monetary(related="icmsst_wh_base", store=True)
+    cte40_vBCSTRet = fields.Monetary(related="icmsst_wh_base")
 
-    cte40_vICMSSTRet = fields.Monetary(related="icmsst_wh_value", store=True)
+    cte40_vICMSSTRet = fields.Monetary(related="icmsst_wh_value")
+
+    # TODO cte40_pICMSTRet = fields.Monetary(related="")
 
     # ICMSSN
-    cte40_indSN = fields.Selection(related="indSN", store=True)
+    cte40_indSN = fields.Selection(related="indSN")
 
     # ICMS NF
-    cte40_vBCST = fields.Monetary(related="icmsst_base", store=True)
+    cte40_vBCST = fields.Monetary(related="icmsst_base")
 
     # ICMSOutraUF
     # TODO
@@ -115,11 +116,54 @@ class CTeLine(spec_models.StackedModel):
         default="0",
     )
 
+    # def _export_fields_icms(self):
+    #     icms = {
+    #         "CST": self.icms_cst_id.code,
+    #         "vBC": str("%.02f" % self.icms_base),
+    #         "pRedBC": str("%.04f" % self.icms_reduction),
+    #         "pICMS": str("%.04f" % self.icms_percent),
+    #         "vICMS": str("%.02f" % self.icms_value),
+    #         "vICMSSubstituto": str("%.02f" % self.icms_substitute),
+    #         "indSN": self.cte40_indSN,
+    #         "vBCSTRet": str("%.02f" % self.icmsst_wh_base),
+    #         "vICMSSTRet": str("%.02f" % self.icmsst_wh_value),
+    #     }
+    #     return icms
+
+    # def _export_fields_cte_40_icms(self, xsd_fields, class_obj, export_dict):
+    #     # TODO Not Implemented
+    #     if "cte40_ICMSPart" in xsd_fields:
+    #         xsd_fields.remove("cte40_ICMSPart")
+
+    #     # TODO Not Implemented
+    #     if "cte40_ICMSST" in xsd_fields:
+    #         xsd_fields.remove("cte40_ICMSST")
+
+    #     xsd_fields = [self.cte40_choice_ICMS]
+    #     icms_tag = (
+    #         self.cte40_choice_ICMS.replace("cte40_", "")
+    #         .replace("ICMS", "Icms")
+    #         .replace("IcmsSN", "Icmssn")
+    #     )
+    #     binding_module = sys.modules[self._binding_module]
+    #     tcte = getattr(binding_module, "Tcte")
+    #     infcte = getattr(tcte, "InfCte")
+    #     imposto = getattr(infcte, "Imp")
+    #     icms = getattr(imposto, "Icms")
+    #     icms_binding = getattr(icms, icms_tag)
+    #     icms_dict = self._export_fields_icms()
+    #     sliced_icms_dict = {
+    #         key: icms_dict.get(key)
+    #         for key in icms_binding.__dataclass_fields__.keys()
+    #         if icms_dict.get(key)
+    #     }
+    #     export_dict[icms_tag.upper()] = icms_binding(**sliced_icms_dict)
+
     ##########################
     # CT-e tag: ICMSUFFim
     ##########################
 
-    cte40_vBCUFFim = fields.Monetary(related="icms_destination_base", store=True)
+    cte40_vBCUFFim = fields.Monetary(related="icms_destination_base")
     cte40_pFCPUFFim = fields.Monetary(compute="_compute_cte40_ICMSUFFim", store=True)
     cte40_pICMSUFFim = fields.Monetary(compute="_compute_cte40_ICMSUFFim", store=True)
     # cte40_pICMSInter = fields.Selection(
@@ -136,9 +180,9 @@ class CTeLine(spec_models.StackedModel):
             record.cte40_pFCPUFFim = record.icmsfcp_percent
             record.cte40_pICMSUFFim = record.icms_destination_percent
 
-    cte40_vFCPUFfim = fields.Monetary(related="icmsfcp_value", store=True)
-    cte40_vICMSUFFim = fields.Monetary(related="icms_destination_value", store=True)
-    cte40_vICMSUFIni = fields.Monetary(related="icms_origin_value", store=True)
+    cte40_vFCPUFfim = fields.Monetary(related="icmsfcp_value")
+    cte40_vICMSUFFim = fields.Monetary(related="icms_destination_value")
+    cte40_vICMSUFIni = fields.Monetary(related="icms_origin_value")
 
     ##########################
     # CT-e tag: natCarga
