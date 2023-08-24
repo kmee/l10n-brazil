@@ -983,6 +983,11 @@
                 <field name="manual_additional_data" />
                 <field name="additional_data" readonly="1" />
             </group>
+            <group>
+                <h3>Stock Unit Cost <span class="text-danger">
+                    <field name="stock_price" /></span>
+                </h3>
+            </group>
           </page>
         </notebook>
       </form>

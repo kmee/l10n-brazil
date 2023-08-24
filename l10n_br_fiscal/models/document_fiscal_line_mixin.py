@@ -857,3 +857,27 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         comodel_name="l10n_br_fiscal.cnae",
         string="CNAE Code",
     )
+
+    stock_price = fields.Float(string="Stock Price", compute="_compute_stock_price")
+
+    @api.depends("amount_total", "fiscal_tax_ids")
+    def _compute_stock_price(self):
+        for record in self:
+            if not hasattr(record, "product_uom_qty") or not record.product_uom_qty:
+                record.stock_price = 0
+                continue
+
+            non_creditable_taxes = (
+                record.fiscal_operation_line_id.non_creditable_tax_definition_ids
+            )
+            price = record.amount_total
+
+            for tax in record.fiscal_tax_ids:
+                if hasattr(record, "%s_tax_id" % (tax.tax_domain,)):
+                    tax_id = getattr(record, "%s_tax_id" % (tax.tax_domain,))
+                    if tax_id.tax_group_id not in non_creditable_taxes:
+                        if not hasattr(record, "%s_value" % (tax.tax_domain)):
+                            continue
+                        price -= getattr(record, "%s_value" % (tax.tax_domain))
+
+            record.stock_price = price / record.product_uom_qty
