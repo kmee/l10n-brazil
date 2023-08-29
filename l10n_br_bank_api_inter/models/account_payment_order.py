@@ -43,7 +43,7 @@ class AccountPaymentOrder(models.Model):
                 bankName=self.company_partner_bank_id.bank_id.name,
             ),
         )
-        for line in self.bank_line_ids:
+        for line in self.payment_ids:
             payer = User(
                 name=line.partner_id.legal_name,
                 identifier=misc.punctuation_rm(line.partner_id.cnpj_cpf),
