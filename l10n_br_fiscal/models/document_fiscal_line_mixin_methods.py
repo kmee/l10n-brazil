@@ -275,6 +275,8 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
 
     def _update_taxes(self):
         for line in self:
+            if not line.fiscal_tax_ids:
+                return self._onchange_product_id_fiscal()
             compute_result = self._compute_taxes(line.fiscal_tax_ids)
             computed_taxes = compute_result.get("taxes", {})
             line.amount_tax_included = compute_result.get("amount_included", 0.0)
