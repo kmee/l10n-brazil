@@ -180,6 +180,10 @@ class PosOrder(models.Model):
         readonly=True,
     )
 
+    authorization_file_name = fields.Char(
+        string="File Name"
+    )
+
     cancel_date = fields.Datetime(
         copy=False,
     )
@@ -190,6 +194,10 @@ class PosOrder(models.Model):
 
     cancel_file = fields.Binary(
         readonly=True,
+    )
+
+    cancel_file_name = fields.Char(
+        string="Cancel File Name"
     )
 
     state_edoc = fields.Selection(
@@ -326,6 +334,7 @@ class PosOrder(models.Model):
             )
         order_fields["authorization_protocol"] = ui_order.get("authorization_protocol")
         order_fields["authorization_file"] = ui_order.get("authorization_file")
+        order_fields["authorization_file_name"] = f"{ui_order.get('document_key')}.xml"
 
         if ui_order.get("cancel_date"):
             order_fields["cancel_date"] = datetime.fromisoformat(
@@ -413,6 +422,7 @@ class PosOrder(models.Model):
         self.cancel_document_session_number = order_vals["numSessao"]
         self.state_edoc = "cancelada"
         self.cancel_file = order_vals["xml"]
+        self.cancel_file_name = f"{order_vals['chave_cfe']}.xml"
 
     def _generate_refund_payments(self, refund_order):
         for payment in self.payment_ids:
