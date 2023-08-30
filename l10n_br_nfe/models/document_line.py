@@ -1113,7 +1113,7 @@ class NFeLine(spec_models.StackedModel):
                     # TODO map icms_tax_id
                     if hasattr(icms, "CST") and icms.CST is not None:
                         icms_vals["icms_cst_id"] = self.env.ref(
-                            "l10n_br_fiscal.cst_icms_%s" % (icms.CST.value,)
+                            "l10n_br_fiscal.cst_icms_%s" % (icms.CST,)
                         ).id
                         # TODO search + log if not found
                     if hasattr(icms, "modBC") and icms.modBC is not None:
