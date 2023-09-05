@@ -1,7 +1,7 @@
 # Copyright 2020 KMEE INFORMATICA LTDA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import _, fields, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 
@@ -51,6 +51,12 @@ class SaleOrder(models.Model):
                 price_unit = order.carrier_id.rate_shipment(order)["price"]
                 order.amount_freight_value = price_unit
         return True
+
+    @api.multi
+    def _remove_delivery_line(self):
+        """Inherit _remove_delivery_line to reset  amount_freight_value"""
+        super(SaleOrder, self)._remove_delivery_line()
+        self.amount_freight_value = 0.0
 
     def _compute_amount_gross_weight(self):
 

@@ -7,30 +7,23 @@ from odoo import api, fields, models
 class PaymentTokenPagSeguro(models.Model):
     _inherit = "payment.token"
 
-    card_holder = fields.Char(
-        string="Holder",
-        required=False,
+    pagseguro_card_holder_name = fields.Char(
+        string="Pagseguro Card Holder"
     )
 
-    pagseguro_card_token = fields.Char(
-        string="Pagseguro card Token",
-        required=False,
-    )
+    pagseguro_card_brand = fields.Char(string="Pagseguro Card Brand")
 
-    pagseguro_payment_method = fields.Char(
-        string="Pagseguro payment method",
-        required=False,
-    )
+    pagseguro_card_token = fields.Char(string="Pagseguro Card Token")
 
-    pagseguro_installments = fields.Integer(
-        string="Pagseguro number of installments",
-        required=False,
-    )
+    pagseguro_payment_method = fields.Char(string="Pagseguro Payment Method")
+
+    pagseguro_installments = fields.Integer(string="Pagseguro Number of Installments")
+
+    pagseguro_tx_id = fields.Char(string="Pagseguro PIX Transaction Id")
 
     @api.model
     def pagseguro_create(self, values):
         """Treats tokenizing data.
-
         Formats the response data to the result and returns a resulting dict
         containing card token, formated name (Customer Name or Card holder name)
         and partner_id will be returned.
