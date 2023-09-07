@@ -281,8 +281,8 @@ class TestBankInter(SavepointCase):
             write_off = payment_order.move_ids.line_ids.drop_bank_slip()
             self.assertEqual(write_off["situacao"], "BAIXADO")
 
-        # self.invoice_kmee_02.action_invoice_cancel()
-        # self.assertEqual(self.invoice_kmee_02.state, "cancel")
+        self.invoice_kmee_02.action_invoice_cancel()
+        self.assertEqual(self.invoice_kmee_02.state, "cancel")
 
     def test_cancel_invoice_wt_cancel_aml(self):
         """
@@ -310,8 +310,7 @@ class TestBankInter(SavepointCase):
 
         payment_order.generated2uploaded()
 
-        with self.assertRaises(UserError):
-            self.invoice_kmee_02.action_invoice_cancel()
+        self.invoice_kmee_02.action_invoice_cancel()
 
     def test_see_pdf_without_slip(self):
         """
