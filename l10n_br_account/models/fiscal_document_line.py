@@ -32,11 +32,6 @@ class FiscalDocumentLine(models.Model):
         related="uom_id",
         readonly=False,
     )
-    fiscal_quantity = fields.Float(
-        string="Fiscal Quantity",
-        related="quantity",
-        readonly=False,
-    )
     fiscal_price_unit = fields.Float(
         string="Fiscal Price Unit",
         related="price_unit",
