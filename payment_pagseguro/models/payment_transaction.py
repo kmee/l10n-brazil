@@ -441,7 +441,7 @@ class PaymentTransactionPagseguro(models.Model):
                     },
                     "holder": {
                         "name": partner.name,
-                        "tax_id": int(punctuation_rm(partner.cnpj_cpf)),
+                        "tax_id": punctuation_rm(partner.cnpj_cpf),
                         "email": partner.email,
                         "address": {
                             "street": partner.street_name,
