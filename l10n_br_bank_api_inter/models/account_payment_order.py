@@ -17,7 +17,7 @@ except ImportError:
     _logger.error("Biblioteca erpbrasil.bank.inter não instalada")
 
 try:
-    from febraban.cnab240.user import User, UserAddress, UserBank
+    from febraban.cnab240.user import User, UserAddress
 except ImportError:
     _logger.error("Biblioteca febraban não instalada")
 
@@ -32,40 +32,40 @@ class AccountPaymentOrder(models.Model):
 
     def _generate_bank_inter_boleto_data(self):
         dados = []
-        myself = User(
-            name=self.company_id.legal_name,
-            identifier=misc.punctuation_rm(self.company_id.cnpj_cpf),
-            bank=UserBank(
-                bankId=self.company_partner_bank_id.bank_id.code_bc,
-                branchCode=self.company_partner_bank_id.bra_number,
-                accountNumber=self.company_partner_bank_id.acc_number,
-                accountVerifier=self.company_partner_bank_id.acc_number_dig,
-                bankName=self.company_partner_bank_id.bank_id.name,
-            ),
-        )
+        # myself = User(
+        #     name=self.company_id.legal_name,
+        #     identifier=misc.punctuation_rm(self.company_id.cnpj_cpf),
+        #     bank=UserBank(
+        #         bankId=self.company_partner_bank_id.bank_id.code_bc,
+        #         branchCode=self.company_partner_bank_id.bra_number,
+        #         accountNumber=self.company_partner_bank_id.acc_number,
+        #         accountVerifier=self.company_partner_bank_id.acc_number_dig,
+        #         bankName=self.company_partner_bank_id.bank_id.name,
+        #     ),
+        # )
         for line in self.payment_ids:
             payer = User(
                 name=line.partner_id.legal_name,
                 identifier=misc.punctuation_rm(line.partner_id.cnpj_cpf),
-                email=line.partner_id.email or "",
+                #  email=line.partner_id.email or "",
                 personType=(
                     "FISICA" if line.partner_id.company_type == "person" else "JURIDICA"
                 ),
-                phone=misc.punctuation_rm(line.partner_id.phone).replace(" ", ""),
+                #  phone=misc.punctuation_rm(line.partner_id.phone).replace(" ", ""),
                 address=UserAddress(
                     streetLine1=line.partner_id.street or "",
                     district=line.partner_id.district or "",
                     city=line.partner_id.city_id.name or "",
                     stateCode=line.partner_id.state_id.code or "",
                     zipCode=misc.punctuation_rm(line.partner_id.zip),
-                    streetNumber=line.partner_id.street_number,
+                    #  streetNumber=line.partner_id.street_number,
                 ),
             )
             slip = BoletoInter(
-                sender=myself,
+                #  sender=myself,
                 amount=line.amount_currency,
                 payer=payer,
-                issue_date=line.create_date,
+                #  issue_date=line.create_date,
                 due_date=line.date,
                 identifier=line.name,
                 instructions=[
