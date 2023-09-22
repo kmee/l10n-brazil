@@ -78,6 +78,8 @@ class AccountMoveLine(models.Model):
                     order_id.company_partner_bank_id.acc_number
                     + order_id.company_partner_bank_id.acc_number_dig
                 ),
+                client_id=order_id.journal_id.client_id,
+                client_secret=order_id.journal_id.client_secret,
             )
             datas = self.api.boleto_pdf(self.own_number)
             self.pdf_boleto_id = self.env["ir.attachment"].create(
@@ -129,6 +131,8 @@ class AccountMoveLine(models.Model):
                                 order_id.company_partner_bank_id.acc_number
                                 + order_id.company_partner_bank_id.acc_number_dig
                             ),
+                            client_id=order_id.journal_id.client_id,
+                            client_secret=order_id.journal_id.client_secret,
                         )
                         self.api.boleto_baixa(self.own_number, codigo_baixa)
                 self.bank_inter_state = "baixado"
@@ -146,6 +150,8 @@ class AccountMoveLine(models.Model):
                             order.order_id.company_partner_bank_id.acc_number
                             + order.order_id.company_partner_bank_id.acc_number_dig
                         ),
+                        client_id=order.order_id.journal_id.client_id,
+                        client_secret=order.order_id.journal_id.client_secret,
                     )
                     resposta = self.api.boleto_consulta(nosso_numero=self.own_number)
 

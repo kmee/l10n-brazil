@@ -18,6 +18,8 @@
                 >
                     <field name="bank_inter_cert" />
                     <field name="bank_inter_key" />
+                    <field name="client_id" />
+                    <field name="client_secret" />
                 </group>
             </group>
         </field>
