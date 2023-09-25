@@ -85,7 +85,7 @@ class SpedDeclaration(models.AbstractModel):
             ._get_top_registers(kind)
         )
         for register in top_registers:
-            register.pull_records_from_odoo(kind, level=2, log_msg=log_msg)
+            register._pull_records_from_odoo(kind, level=2, log_msg=log_msg)
 
         self.message_post(body=log_msg.getvalue())
 
