@@ -256,6 +256,7 @@ class TestSaleStock(SavepointCase):
             "display_name",
             "state",
             "create_date",
+            "stock_price",
         ]
 
         common_fields = list(set(acl_fields) & set(sol_fields) - set(skipped_fields))
