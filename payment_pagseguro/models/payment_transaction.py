@@ -13,6 +13,10 @@ from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 
 _logger = logging.getLogger(__name__)
+try:
+    from erpbrasil.base.misc import punctuation_rm
+except ImportError:
+    _logger.error("Biblioteca erpbrasil.base não instalada")
 
 
 class PaymentTransactionPagseguro(models.Model):
@@ -107,28 +111,29 @@ class PaymentTransactionPagseguro(models.Model):
 
         return res
 
-    def _create_pagseguro_charge(self):
+    def _create_pagseguro_order(self):
         """Creates the s2s payment.
 
         Uses encrypted credit card.
         """
-        api_url_charge = "https://%s/charges" % (
+        api_url_charge = "https://%s/orders" % (
             self.acquirer_id._get_pagseguro_api_url()
         )
 
         self.payment_token_id.active = False
 
         _logger.info(
-            "_create_pagseguro_charge: Sending values to URL %s", api_url_charge
+            "_create_pagseguro_order: Sending values to URL %s", api_url_charge
         )
+        json_param = self._get_pagseguro_order_params()
         r = requests.post(
             api_url_charge,
-            json=self._get_pagseguro_charge_params(),
+            json=json_param,
             headers=self.acquirer_id._get_pagseguro_api_headers(),
         )
         res = r.json()
         _logger.info(
-            "_create_pagseguro_charge: Values received:\n%s",
+            "_create_pagseguro_order: Values received:\n%s",
             self.pprint_filtered_response(res),
         )
         return res
@@ -200,7 +205,7 @@ class PaymentTransactionPagseguro(models.Model):
     @api.multi
     def pagseguro_s2s_do_transaction(self):
         self.ensure_one()
-        result = self._create_pagseguro_charge()
+        result = self._create_pagseguro_order()
 
         return self._pagseguro_s2s_validate_tree(result)
 
@@ -229,14 +234,14 @@ class PaymentTransactionPagseguro(models.Model):
         r = requests.post(
             self.pagseguro_s2s_capture_link,
             headers=self.acquirer_id._get_pagseguro_api_headers(),
-            json=self._get_pagseguro_charge_params(),
+            json=self._get_pagseguro_order_params(),
         )
         res = r.json()
         _logger.info(
             "pagseguro_s2s_capture_transaction: Values received:\n%s",
             self.pprint_filtered_response(res),
         )
-
+        # TODO: verificar se estrutura do retorno do endpoint orders é igual ao do endpoint charges e adaptar
         if (
             type(res) == dict
             and res.get("payment_response")
@@ -255,6 +260,7 @@ class PaymentTransactionPagseguro(models.Model):
     @api.multi
     def pagseguro_s2s_void_transaction(self):
         """Voids an authorized transaction."""
+        # TODO: verificar mudanças e refatorar
         _logger.info(
             "pagseguro_s2s_void_transaction: Sending values to URL %s",
             self.pagseguro_s2s_void_link,
@@ -314,7 +320,13 @@ class PaymentTransactionPagseguro(models.Model):
             )
             return True
 
-        payment = tree.get("payment_response", {})
+        if tree.get("error_messages"):
+            # TODO: Tratar erro
+            _logger.error("Erro na transação: ", tree.get("error_messages"))
+            return False
+
+        # TODO: refatorar para adaptar ao schema de retorno do endpoint /orders
+        payment = tree.get("charges", False) and tree.get("charges", {})[0].get("payment_response")
         if payment:
             code = payment.get("code")
             if code == "20000":
@@ -341,7 +353,8 @@ class PaymentTransactionPagseguro(models.Model):
         return False
 
     def _store_links_credit(self, tree):
-        for link in tree.get("links"):
+
+        for link in tree.get("charges", {})[0].get("links"):
             if link.get("rel") == "SELF":
                 self.pagseguro_s2s_check_link = link.get("href")
             if link.get("rel") == "CHARGE.CAPTURE":
@@ -350,7 +363,7 @@ class PaymentTransactionPagseguro(models.Model):
                 self.pagseguro_s2s_void_link = link.get("href")
 
     def _store_links_boleto(self, tree):
-        for link in tree.get("links"):
+        for link in tree.get("charges", {})[0].get("links"):
             if link.get("media") == "application/json":
                 self.pagseguro_s2s_check_link = link.get("href")
             elif link.get("media") == "application/pdf":
@@ -371,6 +384,7 @@ class PaymentTransactionPagseguro(models.Model):
 
     @api.multi
     def _validate_tree_message(self, tree):
+        # TODO: verificar essa função
         if tree.get("message"):
             error = tree.get("message")
             _logger.warning(error)
@@ -441,7 +455,7 @@ class PaymentTransactionPagseguro(models.Model):
                     },
                     "holder": {
                         "name": partner.name,
-                        "tax_id": int(punctuation_rm(partner.cnpj_cpf)),
+                        "tax_id": punctuation_rm(partner.cnpj_cpf),
                         "email": partner.email,
                         "address": {
                             "street": partner.street_name,
@@ -461,13 +475,84 @@ class PaymentTransactionPagseguro(models.Model):
         return CHARGE_PARAMS
 
     @api.multi
-    def _get_pagseguro_charge_params(self):
+    def _get_pagseguro_items_params(self):
+        items = []
+        for line in self.sale_order_ids[0].order_line:
+            item = {
+                "reference_id": line.product_id.default_code,
+                "name": line.product_id.name,
+                "quantity": int(line.product_uom_qty),
+                "unit_amount": int(line.price_unit * 100),
+            }
+            items.append(item)
+        return items
+
+    @api.multi
+    def _get_phone_params(self):
+        #TODO: tratar phone params
+        return [
+                    {
+                        "country": "55",
+                        "area": "11",
+                        "number": "999999999",
+                        "type": "MOBILE",
+                    }
+                ]
+
+    @api.multi
+    def _get_pagseguro_order_params(self):
         """Returns dict containing the required body information to create a
         charge on Pagseguro."""
+        ORDER_PARAMS = {
+            "reference_id": self.sale_order_ids[0].name,
+            "customer": {
+                "name": self.partner_name,
+                "email": self.partner_email,
+                "tax_id": punctuation_rm(self.partner_id.vat)
+                or punctuation_rm(self.partner_id.cnpj_cpf),
+                "phones": self._get_phone_params(),
+            },
+            "items": self._get_pagseguro_items_params(),
+            "qr_codes": [{"amount": {"value": int(self.amount * 100)}}],
+            "shipping": {
+                "address": {
+                    "street": self.partner_id.street,
+                    "number": self.partner_id.street_number or "S/N",
+                    "complement": self.partner_id.street2 or "N/A",
+                    "locality": self.partner_id.district,
+                    "city": self.partner_id.district,
+                    "region_code": self.partner_id.state_id.code,
+                    "country": "BRA",
+                    "postal_code": punctuation_rm(self.partner_zip),
+                }
+            },
+
+        }
+        charges = self._get_pagseguro_charge_params()
+        if charges:
+            ORDER_PARAMS.update({'charges': charges})
+        else:
+            import pytz
+
+            expiration = str(
+                (
+                    datetime.datetime.now(pytz.timezone('America/Sao_Paulo')) +
+                    datetime.timedelta(days=1)
+                ).replace(microsecond=0).isoformat()
+            )
+            ORDER_PARAMS['qr_codes'][0].update({'expiration_date': expiration})
+            ORDER_PARAMS.update({'notification_urls': ['https://webhook.site/c35c981f-fae5-4ba2-9d5c-05d43fc15fb7']})
+        return ORDER_PARAMS
+
+    def _get_pagseguro_charge_params(self):
+        charges = []
         if self.payment_token_id.pagseguro_payment_method == "CREDIT_CARD":
-            return self._get_pagseguro_credit_card_charge_params()
+            charges.append(self._get_pagseguro_credit_card_charge_params())
         elif self.payment_token_id.pagseguro_payment_method == "BOLETO":
-            return self._get_pagseguro_boleto_charge_params()
+            charges.append(self._get_pagseguro_boleto_charge_params())
+        elif self.payment_token_id.pagseguro_payment_method == "PIX":
+            pass
+        return charges
 
     def log_transaction(self, reference, message):
         """Logs a transaction. It can be either a successful or a failed one."""
@@ -483,17 +568,17 @@ class PaymentTransactionPagseguro(models.Model):
     def pprint_filtered_response(response):
         # Returns response removing payment's sensitive information
         output_response = response.copy()
-        output_response.pop("links", None)
-        output_response.pop("metadata", None)
-        output_response.pop("notification_urls", None)
-        output_response.pop("payment_method", None)
+        # output_response.pop("links", None)
+        # output_response.pop("metadata", None)
+        # output_response.pop("notification_urls", None)
+        # output_response.pop("payment_method", None)
 
         return pprint.pformat(output_response)
 
     @api.multi
     def pagseguro_boleto_do_transaction(self):
         self.ensure_one()
-        result = self._create_pagseguro_charge()
+        result = self._create_pagseguro_order()
         self._pagseguro_s2s_validate_tree(result)
         return result
 
