@@ -513,7 +513,7 @@ class PaymentTransactionPagseguro(models.Model):
                 "phones": self._get_phone_params(),
             },
             "items": self._get_pagseguro_items_params(),
-            "qr_code": {"amount": {"value": int(self.amount * 100)}},
+            "qr_codes": [{"amount": {"value": int(self.amount * 100)}}],
             "shipping": {
                 "address": {
                     "street": self.partner_id.street,
@@ -526,8 +526,22 @@ class PaymentTransactionPagseguro(models.Model):
                     "postal_code": punctuation_rm(self.partner_zip),
                 }
             },
-            "charges": self._get_pagseguro_charge_params()
+
         }
+        charges = self._get_pagseguro_charge_params()
+        if charges:
+            ORDER_PARAMS.update({'charges': charges})
+        else:
+            import pytz
+
+            expiration = str(
+                (
+                    datetime.datetime.now(pytz.timezone('America/Sao_Paulo')) +
+                    datetime.timedelta(days=1)
+                ).replace(microsecond=0).isoformat()
+            )
+            ORDER_PARAMS['qr_codes'][0].update({'expiration_date': expiration})
+            ORDER_PARAMS.update({'notification_urls': ['https://webhook.site/c35c981f-fae5-4ba2-9d5c-05d43fc15fb7']})
         return ORDER_PARAMS
 
     def _get_pagseguro_charge_params(self):
@@ -536,6 +550,8 @@ class PaymentTransactionPagseguro(models.Model):
             charges.append(self._get_pagseguro_credit_card_charge_params())
         elif self.payment_token_id.pagseguro_payment_method == "BOLETO":
             charges.append(self._get_pagseguro_boleto_charge_params())
+        elif self.payment_token_id.pagseguro_payment_method == "PIX":
+            pass
         return charges
 
     def log_transaction(self, reference, message):
