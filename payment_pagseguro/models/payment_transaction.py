@@ -339,10 +339,6 @@ class PaymentTransactionPagseguro(models.Model):
             # store capture and void links for future manual operations
             self.store_links(tree)
             self._set_transaction_state(tree)
-
-            # setting transaction to authorized - must match Pagseguro
-            # payment using the case without automatic capture
-            self._set_transaction_authorized()
             self.execute_callback()
             if self.payment_token_id:
                 self.payment_token_id.verified = True
@@ -376,7 +372,8 @@ class PaymentTransactionPagseguro(models.Model):
                 self.pagseguro_boleto_image_link = link.get("href")
 
     def _save_barcode(self, tree):
-        barcode = tree.get("payment_method", {}).get("boleto", {}).get("barcode")
+        barcode = tree.get("charges") and \
+                  tree.get("charges")[0].get("payment_method", {}).get("boleto", {}).get("barcode")
         self.pagseguro_boleto_barcode = barcode
 
     def store_links(self, tree):

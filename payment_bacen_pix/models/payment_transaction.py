@@ -132,7 +132,7 @@ class PaymentTransaction(models.Model):
         callback_hash = self._bacenpix_generate_callback_hash(values.get("reference"))
 
         webhook = url_join(base_url, "/webhook/{}".format(callback_hash))
-        _logger.info(webhook)
+        _logger.info("webhook: %s" % webhook)
 
         payload = json.dumps(
             {
@@ -149,9 +149,13 @@ class PaymentTransaction(models.Model):
                 "chave": str(acquirer_id.bacen_pix_key),
             }
         )
+        _logger.info("payload: %s" % payload)
+
         txid = values.get("tx_id")
         response = acquirer_id._bacenpix_new_transaction(txid, payload)
         response_data = response.json()
+        _logger.info("response: %s" % response_data)
+
         if not response.ok:
             raise ValidationError(
                 _("Payload Error Code: {codigo}. {mensagem}".format(**response_data['erros'][0]))
