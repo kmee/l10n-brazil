@@ -521,7 +521,7 @@ class PaymentTransactionPagseguro(models.Model):
                     "number": self.partner_id.street_number or "S/N",
                     "complement": self.partner_id.street2 or "N/A",
                     "locality": self.partner_id.district,
-                    "city": self.partner_id.district,
+                    "city": self.partner_id.city_id.name,
                     "region_code": self.partner_id.state_id.code,
                     "country": "BRA",
                     "postal_code": punctuation_rm(self.partner_zip),
