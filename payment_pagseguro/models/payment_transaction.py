@@ -4,6 +4,7 @@
 import datetime
 import logging
 import pprint
+from datetime import timedelta
 from xml.etree import ElementTree
 
 import requests
@@ -44,6 +45,8 @@ class PaymentTransactionPagseguro(models.Model):
     pagseguro_pix_copy_paste = fields.Char(string="Pagseguro PIX copy and paste code")
 
     pagseguro_pix_image_link = fields.Char(string="Pagseguro PIX image link")
+
+    pagseguro_boleto_due_date = fields.Date(string="Pagseguro boleto due date")
 
     def _set_transaction_state(self, res):
         """Change transaction state based on Pagseguro status"""
@@ -338,6 +341,7 @@ class PaymentTransactionPagseguro(models.Model):
 
             # store capture and void links for future manual operations
             self.store_links(tree)
+            self.pagseguro_boleto_due_date = self._get_boleto_due_date(tree)
             self._set_transaction_state(tree)
             self.execute_callback()
             if self.payment_token_id:
@@ -350,6 +354,14 @@ class PaymentTransactionPagseguro(models.Model):
 
         self._validate_tree_message(tree)
 
+        return False
+
+    def _get_boleto_due_date(self, tree):
+        payment_method = tree.get('payment_method')
+        if payment_method:
+            boleto_data = payment_method.get('boleto')
+            if boleto_data:
+                return boleto_data.get('due_date')
         return False
 
     def _store_links_credit(self, tree):
@@ -428,8 +440,9 @@ class PaymentTransactionPagseguro(models.Model):
         Returns pagseguro boleto charge params.
         """
         partner = self.payment_token_id.partner_id
-        # Boleto expires in 3 days
-        due_date = datetime.datetime.now() + datetime.timedelta(days=3)
+        # Boleto expires in 3 days if the value of pagseguro_boleto_due_date_in_days is empty, to prevent errors
+        due_date_in_days = self.acquirer_id.pagseguro_boleto_due_date_in_days or 3
+        due_date = fields.Datetime.now() + timedelta(days=due_date_in_days)
 
         if self.acquirer_id.pagseguro_notification_url:
             notification_url = self.acquirer_id.pagseguro_notification_url

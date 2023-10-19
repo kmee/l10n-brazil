@@ -71,6 +71,12 @@
                         </button>
                     </div>
                 </xpath>
+                <group name="acquirer_config" position="inside">
+                    <div>
+                        <label for="pagseguro_boleto_due_date_in_days" string="Dias de vencimento a partir da criação do boleto"/>
+                        <field name="pagseguro_boleto_due_date_in_days"/>
+                    </div>
+                </group>
             </field>
         </record>
 
