@@ -132,9 +132,10 @@ class Registro0000(models.Model):
             record.fiscal_uom_ids = record.fiscal_document_line_ids.mapped("uom_id")
 
     fiscal_document_ids = fields.One2many(
-        comodel_name="l10n_br_fiscal.document", compute="_compute_fiscal_documents",
+        comodel_name="l10n_br_fiscal.document",
+        compute="_compute_fiscal_documents",
     )
-    
+
     fiscal_document_partner_ids = fields.One2many(
         comodel_name="res.partner", compute="_compute_fiscal_documents"
     )
@@ -391,7 +392,7 @@ class Registro0015(models.Model):
 
     def _odoo_domain(self, parent_record, declaration):
         return [("partner_id", "=", declaration.company_id.partner_id.id)]
-    
+
     # TODO: Deve ser gerado um registro para cada inscrição estadual dos
     # contribuintes pelos quais a empresa é substituta tributária.
     @api.model
@@ -416,9 +417,11 @@ class Registro0100(models.Model):
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         if not record:
-            msg_err = ("Cadastre o contador responsável dentro das configurações da Empresa.")
+            msg_err = (
+                "Cadastre o contador responsável dentro das configurações da Empresa."
+            )
             raise UserError(msg_err)
-        
+
         return {
             "NOME": record.name,
             "CPF": misc.punctuation_rm(record.cnpj_cpf),
@@ -3378,23 +3381,50 @@ class RegistroE110(models.Model):
     _inherit = "l10n_br_sped.efd_icms_ipi.17.e110"
 
     # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "VL_TOT_DEBITOS": 0,  # Valor total dos débitos por "Saídas e prestaç...
-    #         "VL_AJ_DEBITOS": 0,  # Valor total dos ajustes a débito decorrentes d...
-    #         "VL_TOT_AJ_DEBITOS": 0,  # Valor total de "Ajustes a débito"
-    #         "VL_ESTORNOS_CRED": 0,  # Valor total de Ajustes “Estornos de crédito...
-    #         "VL_TOT_CREDITOS": 0,  # Valor total dos créditos por "Entradas e aqu...
-    #         "VL_AJ_CREDITOS": 0,  # Valor total dos ajustes a crédito decorrentes...
-    #         "VL_TOT_AJ_CREDITOS": 0,  # Valor total de "Ajustes a crédito"
-    #         "VL_ESTORNOS_DEB": 0,  # Valor total de Ajustes “Estornos de Débitos”
-    #         "VL_SLD_CREDOR_ANT": 0,  # Valor total de "Saldo credor do período an...
-    #         "VL_SLD_APURADO": 0,  # Valor do saldo devedor apurado
-    #         "VL_TOT_DED": 0,  # Valor total de "Deduções"
-    #         "VL_ICMS_RECOLHER": 0,  # Valor total de "ICMS a recolher (11-12)
-    #         "VL_SLD_CREDOR_TRANSPORTAR": 0,  # Valor total de "Saldo credor a tra...
-    #         "DEB_ESP": 0,  # Valores recolhidos ou a recolher, extra-apuração.
-    #     }
+    # def _odoo_domain(self, parent_record, declaration):
+    #     return [("id", "=", declaration.company_id.id)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        values = {
+            "VL_TOT_DEBITOS": self._compute_vl_tot_debitos(declaration),
+            "VL_AJ_DEBITOS": 0,  # Valor total dos ajustes a débito decorrentes d...
+            "VL_TOT_AJ_DEBITOS": 0,  # Valor total de "Ajustes a débito"
+            "VL_ESTORNOS_CRED": 0,  # Valor total de Ajustes “Estornos de crédito...
+            "VL_TOT_CREDITOS": self._compute_vl_tot_creditos(declaration),
+            "VL_AJ_CREDITOS": 0,  # Valor total dos ajustes a crédito decorrentes...
+            "VL_TOT_AJ_CREDITOS": 0,  # Valor total de "Ajustes a crédito"
+            "VL_ESTORNOS_DEB": 0,  # Valor total de Ajustes “Estornos de Débitos”
+            "VL_SLD_CREDOR_ANT": 0,  # Valor total de "Saldo credor do período an...
+            "VL_SLD_APURADO": 0,  # Valor do saldo devedor apurado
+            "VL_TOT_DED": 0,  # Valor total de "Deduções"
+            "VL_ICMS_RECOLHER": 0,  # Valor total de "ICMS a recolher (11-12)
+            "VL_SLD_CREDOR_TRANSPORTAR": 0,  # Valor total de "Saldo credor a tra...
+            "DEB_ESP": 0,  # Valores recolhidos ou a recolher, extra-apuração.
+        }
+
+        vl_icms_recolher = values["VL_SLD_APURADO"] - values["VL_TOT_DED"]
+
+        if vl_icms_recolher > 0:
+            values["VL_ICMS_RECOLHER"] = vl_icms_recolher
+        if vl_icms_recolher < 0:
+            values["VL_SLD_CREDOR_TRANSPORTAR"] = abs(vl_icms_recolher)
+
+        return values
+
+    def _compute_vl_tot_debitos(self, declaration):
+        out_document_line_ids = declaration.fiscal_document_line_ids.filtered(
+            lambda line: line.fiscal_operation_type == "out"
+        )
+        # TODO: Add validation of documents that should not be considered in the sum
+        return sum(out_document_line_ids.mapped("icms_value"))
+
+    def _compute_vl_tot_creditos(self, declaration):
+        out_document_line_ids = declaration.fiscal_document_line_ids.filtered(
+            lambda line: line.fiscal_operation_type == "in"
+        )
+        # TODO: Add validation of documents that should not be considered in the sum
+        return sum(out_document_line_ids.mapped("icms_value"))
 
 
 class RegistroE111(models.Model):
