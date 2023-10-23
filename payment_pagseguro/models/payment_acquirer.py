@@ -80,6 +80,18 @@ class PaymentAcquirerPagseguro(models.Model):
         "especificado em segundos a partir da data de criação",
     )
 
+    pagseguro_boleto_due_date_in_days = fields.Integer(
+        string="Dias de validade do boleto a partir da data de criação",
+        default=5
+    )
+
+    @api.constrains(
+        'pagseguro_boleto_due_date_in_days'
+    )
+    def _constrains_check_boleto_due_date_in_days(self):
+        if not self.pagseguro_boleto_due_date_in_days or self.pagseguro_boleto_due_date_in_days < 3:
+            self.pagseguro_boleto_due_date_in_days = 3
+
     @api.onchange(
         "pagseguro_client_id",
         "pagseguro_client_secret",
