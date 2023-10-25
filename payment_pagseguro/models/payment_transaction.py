@@ -328,8 +328,9 @@ class PaymentTransactionPagseguro(models.Model):
             return True
 
         if tree.get("error_messages"):
+            for error_message in tree.get('error_messages', []):
             # TODO: Tratar erro
-            _logger.error("Erro na transação: ", tree.get("error_messages"))
+                _logger.error("Erro na transação: ", error_message)
             return False
 
         # TODO: refatorar para adaptar ao schema de retorno do endpoint /orders
