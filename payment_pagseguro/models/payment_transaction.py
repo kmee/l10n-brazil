@@ -383,6 +383,13 @@ class PaymentTransactionPagseguro(models.Model):
             elif link.get("media") == "image/png":
                 self.pagseguro_boleto_image_link = link.get("href")
 
+    def _store_data_credit(self, tree):
+        for charge in tree.get("charges", {}):
+            if charge.get("payment_method", {}).get("type") == "CREDIT_CARD":
+                card = charge["payment_method"].get('card')
+                self.payment_token_id.pagseguro_card_brand = card.get('brand')
+                self.payment_token_id.pagseguro_card_last_digits = card.get('last_digits')
+
     def _save_barcode(self, tree):
         barcode = tree.get("charges") and \
                   tree.get("charges")[0].get("payment_method", {}).get("boleto", {}).get("barcode")
@@ -391,6 +398,7 @@ class PaymentTransactionPagseguro(models.Model):
     def store_links(self, tree):
         if self.payment_token_id.pagseguro_payment_method == "CREDIT_CARD":
             self._store_links_credit(tree)
+            self._store_data_credit(tree)
         elif self.payment_token_id.pagseguro_payment_method == "BOLETO":
             self._store_links_boleto(tree)
             self._save_barcode(tree)

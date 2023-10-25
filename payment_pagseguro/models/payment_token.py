@@ -7,11 +7,11 @@ from odoo import api, fields, models
 class PaymentTokenPagSeguro(models.Model):
     _inherit = "payment.token"
 
-    pagseguro_card_holder_name = fields.Char(
-        string="Pagseguro Card Holder"
-    )
+    pagseguro_card_holder_name = fields.Char(string="Pagseguro Card Holder")
 
     pagseguro_card_brand = fields.Char(string="Pagseguro Card Brand")
+
+    pagseguro_card_last_digits = fields.Char(string="Pagseguro Card Last Digits")
 
     pagseguro_card_token = fields.Char(string="Pagseguro Card Token")
 
