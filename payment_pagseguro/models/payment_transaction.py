@@ -387,7 +387,7 @@ class PaymentTransactionPagseguro(models.Model):
     def _store_data_credit(self, tree):
         for charge in tree.get("charges", {}):
             if charge.get("payment_method", {}).get("type") == "CREDIT_CARD":
-                self.payment_token_id.pagseguro_installments = charge.get('payment_method').get('installment')
+                self.payment_token_id.pagseguro_installments = charge.get('payment_method').get('installments')
                 card = charge["payment_method"].get('card')
                 self.payment_token_id.pagseguro_card_brand = card.get('brand')
                 self.payment_token_id.pagseguro_card_last_digits = card.get('last_digits')
