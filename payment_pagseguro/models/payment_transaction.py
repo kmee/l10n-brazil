@@ -358,11 +358,12 @@ class PaymentTransactionPagseguro(models.Model):
         return False
 
     def _get_boleto_due_date(self, tree):
-        payment_method = tree.get('payment_method')
-        if payment_method:
-            boleto_data = payment_method.get('boleto')
-            if boleto_data:
-                return boleto_data.get('due_date')
+        charges = tree.get('charges')
+        for charge in charges:
+            payment_method = charge.get('payment_method')
+            if payment_method:
+                boleto = payment_method.get("boleto")
+                return boleto.get('due_date', False)
         return False
 
     def _store_links_credit(self, tree):
