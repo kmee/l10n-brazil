@@ -3520,14 +3520,49 @@ class RegistroE200(models.Model):
     _description = textwrap.dedent("    %s" % (__doc__,))
     _name = "l10n_br_sped.efd_icms_ipi.e200"
     _inherit = "l10n_br_sped.efd_icms_ipi.17.e200"
+    _odoo_model = "res.country.state"
 
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "UF": 0,  # Sigla da unidade da federação a que se refere a apuração ...
-    #         "DT_INI": 0,  # Data inicial a que a apuração se refere
-    #         "DT_FIN": 0,  # Data final a que a apuração se refere
-    #     }
+    fiscal_document_ids = fields.One2many(
+        comodel_name="l10n_br_fiscal.document",
+        compute="_compute_fiscal_documents",
+    )
+
+    @api.depends("company_id")
+    def _compute_fiscal_documents(self):
+        self.document_ids = self.env["l10n_br_fiscal.document"].search(
+            [
+                ("document_type", "in", ["55", "1"]),
+                ("state_edoc", "=", "autorizada"),
+                ("amount_icmsst_value", ">", 0),
+                ("document_date", ">=", declaration.DT_INI),
+                ("document_date", "<=", declaration.DT_FIN),
+            ]
+        )
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+
+        self.document_ids = self.env["l10n_br_fiscal.document"].search(
+            [
+                ("document_type", "in", ["55", "1"]),
+                ("state_edoc", "=", "autorizada"),
+                ("amount_icmsst_value", ">", 0),
+                ("document_date", ">=", declaration.DT_INI),
+                ("document_date", "<=", declaration.DT_FIN),
+            ]
+        )
+
+        state_ids = self.document_ids.mapped("partner_id.state_id")
+
+        return [("id", "in", state_ids.ids)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "UF": record.code,  # Sigla da unidade da federação a que se refere a apuração ...
+            "DT_INI": declaration.DT_INI,
+            "DT_FIN": declaration.DT_FIN,
+        }
 
 
 class RegistroE210(models.Model):
@@ -3536,24 +3571,33 @@ class RegistroE210(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.e210"
     _inherit = "l10n_br_sped.efd_icms_ipi.17.e210"
 
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "IND_MOV_ST": 0,  # Indicador de movimento: 0 – Sem operações com ST ...
-    #         "VL_SLD_CRED_ANT_ST": 0,  # Valor do "Saldo credor de período anterio...
-    #         "VL_DEVOL_ST": 0,  # Valor total do ICMS ST de devolução de mercadori...
-    #         "VL_RESSARC_ST": 0,  # Valor total do ICMS ST de ressarcimentos
-    #         "VL_OUT_CRED_ST": 0,  # Valor total de Ajustes "Outros créditos ST" e...
-    #         "VL_AJ_CREDITOS_ST": 0,  # Valor total dos ajustes a crédito de ICMS ...
-    #         "VL_RETENCAO_ST": 0,  # Valor Total do ICMS retido por Substituição T...
-    #         "VL_OUT_DEB_ST": 0,  # Valor Total dos ajustes "Outros débitos ST" " ...
-    #         "VL_AJ_DEBITOS_ST": 0,  # Valor total dos ajustes a débito de ICMS ST...
-    #         "VL_SLD_DEV_ANT_ST": 0,  # Valor total de Saldo devedor antes das ded...
-    #         "VL_DEDUCOES_ST": 0,  # Valor total dos ajustes "Deduções ST"
-    #         "VL_ICMS_RECOL_ST": 0,  # Imposto a recolher ST (11-12)
-    #         "VL_SLD_CRED_ST_TRANSPORTAR": 0,  # Saldo credor de ST a transportar ...
-    #         "DEB_ESP_ST": 0,  # Valores recolhidos ou a recolher, extra-apuração.
-    #     }
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return [
+            ("document_type", "in", ["55", "1"]),
+            ("state_edoc", "=", "autorizada"),
+            ("amount_icmsst_value", ">", 0),
+            ("partner_id.state_id", "=", parent_record.id),
+        ]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "IND_MOV_ST": 1,  # Indicador de movimento: 0 – Sem operações com ST ...
+            "VL_SLD_CRED_ANT_ST": 0,  # Valor do "Saldo credor de período anterio...
+            "VL_DEVOL_ST": 0,  # Valor total do ICMS ST de devolução de mercadori...
+            "VL_RESSARC_ST": 0,  # Valor total do ICMS ST de ressarcimentos
+            "VL_OUT_CRED_ST": 0,  # Valor total de Ajustes "Outros créditos ST" e...
+            "VL_AJ_CREDITOS_ST": 0,  # Valor total dos ajustes a crédito de ICMS ...
+            "VL_RETENCAO_ST": 0,  # Valor Total do ICMS retido por Substituição T...
+            "VL_OUT_DEB_ST": 0,  # Valor Total dos ajustes "Outros débitos ST" " ...
+            "VL_AJ_DEBITOS_ST": 0,  # Valor total dos ajustes a débito de ICMS ST...
+            "VL_SLD_DEV_ANT_ST": 0,  # Valor total de Saldo devedor antes das ded...
+            "VL_DEDUCOES_ST": 0,  # Valor total dos ajustes "Deduções ST"
+            "VL_ICMS_RECOL_ST": 0,  # Imposto a recolher ST (11-12)
+            "VL_SLD_CRED_ST_TRANSPORTAR": 0,  # Saldo credor de ST a transportar ...
+            "DEB_ESP_ST": 0,  # Valores recolhidos ou a recolher, extra-apuração.
+        }
 
 
 class RegistroE220(models.Model):
