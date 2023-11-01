@@ -363,7 +363,8 @@ class PaymentTransactionPagseguro(models.Model):
             payment_method = charge.get('payment_method')
             if payment_method:
                 boleto = payment_method.get("boleto")
-                return boleto.get('due_date', False)
+                if boleto:
+                    return boleto.get('due_date', False)
         return False
 
     def _store_links_credit(self, tree):
