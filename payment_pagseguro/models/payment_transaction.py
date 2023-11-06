@@ -241,7 +241,7 @@ class PaymentTransactionPagseguro(models.Model):
         r = requests.post(
             self.pagseguro_s2s_capture_link,
             headers=self.acquirer_id._get_pagseguro_api_headers(),
-            json=self._get_pagseguro_order_params(),
+            json=self._get_pagseguro_capture_params(),
         )
         res = r.json()
         _logger.info(
@@ -422,6 +422,13 @@ class PaymentTransactionPagseguro(models.Model):
                 }
             )
             self._set_transaction_cancel()
+
+    def _get_pagseguro_capture_params(self):
+        return {
+            'amount': {
+                  'value': int(self.amount * 100)
+            }
+        }
 
     @api.multi
     def _get_pagseguro_credit_card_charge_params(self):
