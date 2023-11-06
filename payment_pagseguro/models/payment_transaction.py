@@ -50,11 +50,12 @@ class PaymentTransactionPagseguro(models.Model):
 
     def _set_transaction_state(self, res):
         """Change transaction state based on Pagseguro status"""
+        pagseguro_status = ''
         if res.get("charges"):
             pagseguro_charge = res.get("charges") and res.get("charges")[0]
             pagseguro_status = pagseguro_charge.get("status")
-        else:
-            pagseguro_status = "AUTHORIZED" if res.get("qr_codes") else "DECLINED"
+        elif res.get("qr_codes"):
+            pagseguro_status = "AUTHORIZED"
 
         if pagseguro_status == "PAID":
             self._set_transaction_done()
