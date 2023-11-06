@@ -58,7 +58,7 @@ class PaymentTransactionPagseguro(models.Model):
 
         if pagseguro_status == "PAID":
             self._set_transaction_done()
-        elif pagseguro_status in ["AUTHORIZED", "WAITING"]:
+        elif pagseguro_status in ["AUTHORIZED", "WAITING", "IN_ANALYSIS"]:
             self._set_transaction_authorized()
         elif pagseguro_status in ["CANCELED", "DECLINED"]:
             self._set_transaction_cancel()
