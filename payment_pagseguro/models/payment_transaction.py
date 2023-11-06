@@ -537,6 +537,12 @@ class PaymentTransactionPagseguro(models.Model):
     def _get_pagseguro_order_params(self):
         """Returns dict containing the required body information to create a
         charge on Pagseguro."""
+        if self.acquirer_id.pagseguro_notification_url:
+            notification_url = self.acquirer_id.pagseguro_notification_url
+        else:
+            base_url = self.env["ir.config_parameter"].get_param("web.base.url")
+            notification_url = base_url + "/notification-url"
+
         ORDER_PARAMS = {
             "reference_id": self.sale_order_ids[0].name,
             "customer": {
@@ -547,6 +553,7 @@ class PaymentTransactionPagseguro(models.Model):
                 "phones": self._get_phone_params(),
             },
             "items": self._get_pagseguro_items_params(),
+            "notification_urls": [notification_url],
             "qr_codes": [{"amount": {"value": int(self.amount * 100)}}],
             "shipping": {
                 "address": {
