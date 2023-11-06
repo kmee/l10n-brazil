@@ -261,7 +261,7 @@ class PaymentTransactionPagseguro(models.Model):
         else:
             self.log_transaction(
                 reference=res["error_messages"][0]["code"],
-                message=res["error_messages"][0]["message"],
+                message=res["error_messages"][0]["description"],
             )
 
     @api.multi
@@ -330,7 +330,7 @@ class PaymentTransactionPagseguro(models.Model):
         if tree.get("error_messages"):
             for error_message in tree.get('error_messages', []):
             # TODO: Tratar erro
-                _logger.error("Erro na transação: ", error_message)
+                _logger.error("Erro na transação:\ncodigo: %s\ndescricao: %s" % (error_message.get('code'), error_message.get('description')))
             return False
 
         # TODO: refatorar para adaptar ao schema de retorno do endpoint /orders
