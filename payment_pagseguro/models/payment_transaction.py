@@ -431,6 +431,15 @@ class PaymentTransactionPagseguro(models.Model):
             }
         }
 
+    def _get_notification_url(self):
+        if self.acquirer_id.pagseguro_notification_url:
+            notification_url = self.acquirer_id.pagseguro_notification_url
+        else:
+            base_url = self.env["ir.config_parameter"].get_param("web.base.url")
+            notification_url = base_url + "/notification-url"
+
+        return notification_url
+
     @api.multi
     def _get_pagseguro_credit_card_charge_params(self):
         """
@@ -454,6 +463,7 @@ class PaymentTransactionPagseguro(models.Model):
                     "encrypted": self.payment_token_id.pagseguro_card_token,
                 },
             },
+            "notification_urls": [self._get_notification_url()]
         }
 
     def _get_pagseguro_boleto_charge_params(self):
@@ -465,12 +475,6 @@ class PaymentTransactionPagseguro(models.Model):
         due_date_in_days = self.acquirer_id.pagseguro_boleto_due_date_in_days or 3
         due_date = fields.Datetime.now() + timedelta(days=due_date_in_days)
 
-        if self.acquirer_id.pagseguro_notification_url:
-            notification_url = self.acquirer_id.pagseguro_notification_url
-        else:
-            base_url = self.env["ir.config_parameter"].get_param("web.base.url")
-            notification_url = base_url + "/notification-url"
-
         CHARGE_PARAMS = {
             "reference_id": self.display_name,
             "description": self.display_name,
@@ -478,7 +482,7 @@ class PaymentTransactionPagseguro(models.Model):
                 "value": int(self.amount * 100),
                 "currency": "BRL",
             },
-            "notification_urls": [notification_url],
+            "notification_urls": [self._get_notification_url()],
             "payment_method": {
                 "soft_descriptor": self.acquirer_id.company_id.name,
                 "type": "BOLETO",
@@ -538,11 +542,6 @@ class PaymentTransactionPagseguro(models.Model):
     def _get_pagseguro_order_params(self):
         """Returns dict containing the required body information to create a
         charge on Pagseguro."""
-        if self.acquirer_id.pagseguro_notification_url:
-            notification_url = self.acquirer_id.pagseguro_notification_url
-        else:
-            base_url = self.env["ir.config_parameter"].get_param("web.base.url")
-            notification_url = base_url + "/notification-url"
 
         ORDER_PARAMS = {
             "reference_id": self.sale_order_ids[0].name,
@@ -554,7 +553,7 @@ class PaymentTransactionPagseguro(models.Model):
                 "phones": self._get_phone_params(),
             },
             "items": self._get_pagseguro_items_params(),
-            "notification_urls": [notification_url],
+            "notification_urls": [self._get_notification_url()],
             "qr_codes": [{"amount": {"value": int(self.amount * 100)}}],
             "shipping": {
                 "address": {
@@ -574,8 +573,8 @@ class PaymentTransactionPagseguro(models.Model):
         if charges:
             ORDER_PARAMS.update({'charges': charges})
         else:
+            # enviar cobrança via pix/qr_code
             import pytz
-
             expiration = str(
                 (
                     datetime.datetime.now(pytz.timezone('America/Sao_Paulo')) +
@@ -583,7 +582,7 @@ class PaymentTransactionPagseguro(models.Model):
                 ).replace(microsecond=0).isoformat()
             )
             ORDER_PARAMS['qr_codes'][0].update({'expiration_date': expiration})
-            ORDER_PARAMS.update({'notification_urls': ['https://webhook.site/c35c981f-fae5-4ba2-9d5c-05d43fc15fb7']})
+
         return ORDER_PARAMS
 
     def _get_pagseguro_charge_params(self):
