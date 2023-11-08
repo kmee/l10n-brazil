@@ -56,6 +56,8 @@ class PaymentTransactionPagseguro(models.Model):
             pagseguro_status = pagseguro_charge.get("status")
         elif res.get("qr_codes"):
             pagseguro_status = "AUTHORIZED"
+        else:
+            pagseguro_status = res.get("status")
 
         if pagseguro_status == "PAID":
             self._set_transaction_done()
