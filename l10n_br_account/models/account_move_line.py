@@ -485,8 +485,6 @@ class AccountMoveLine(models.Model):
                     setattr(self, field, value[0])
                 else:
                     setattr(self, field, value)
-            # override the default product uom (set by the onchange):
-            self.product_uom_id = self.fiscal_document_line_id.uom_id.id
 
     @api.onchange("fiscal_tax_ids")
     def _onchange_fiscal_tax_ids(self):
@@ -662,3 +660,8 @@ class AccountMoveLine(models.Model):
             "debit": balance > 0.0 and balance or 0.0,
             "credit": balance < 0.0 and -balance or 0.0,
         }
+
+    @api.constrains("product_uom_id")
+    def _check_product_uom_category_id(self):
+        not_imported = self.filtered(lambda line: not line._is_imported())
+        return super(AccountMoveLine, not_imported)._check_product_uom_category_id()
