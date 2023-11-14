@@ -486,6 +486,11 @@ class AccountMoveLine(models.Model):
                 else:
                     setattr(self, field, value)
 
+    def _get_computed_taxes(self):
+        if self._is_imported() and self.fiscal_tax_ids and self.tax_ids:
+            return self.tax_ids
+        return super()._get_computed_taxes()
+
     @api.onchange("fiscal_tax_ids")
     def _onchange_fiscal_tax_ids(self):
         """Ao alterar o campo fiscal_tax_ids que contém os impostos fiscais,
