@@ -2,7 +2,7 @@
 # Copyright (C) 2012  Raphaël Valyi - Akretion
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
-from odoo import api, fields, api, models
+from odoo import api, fields, models
 
 
 class PurchaseOrderLine(models.Model):
