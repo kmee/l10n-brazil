@@ -39,17 +39,17 @@
                         <field
                             name="bacenpix_api_key"
                             attrs="{'required':[ ('provider', '=', 'bacenpix')]}"
-                        />                       
-                        
+                        />
+
                     </group>
                 </xpath>
-                
+
                 <xpath expr='//field[@name="journal_id"]' position='before'>
                     <group attrs="{'invisible': [('provider', '!=', 'bacenpix')]}">
                         <field
                             name="bacen_pix_expiration"/>
                         <field
-                            name="bacen_pix_key"/>                       
+                            name="bacen_pix_key"/>
                     </group>
                 </xpath>
 
@@ -61,16 +61,17 @@
             <field name="model">payment.transaction</field>
             <field name="inherit_id" ref="payment.transaction_form" />
             <field name="arch" type="xml">
-                <xpath expr="//field[@name='acquirer_reference']" position="after">
+                <xpath expr="//field[@name='date']" position="after">
                     <button
                         name="action_bacenpix_check_transaction_status"
                         string="Check Status"
                         type="object"
+                        attrs="{'invisible': [('provider', '!=', 'bacenpix')] }"
                     />
-                    <field name="bacenpix_date_due" readonly="1" />
-                    <field name="bacenpix_qrcode" readonly="1" />
-                    <field name="bacenpix_currency" readonly="1" />
-                    <field name="bacenpix_amount" readonly="1" />
+                    <field name="bacenpix_date_due" readonly="1" attrs="{'invisible': [('provider', '!=', 'bacenpix')] }" />
+                    <field name="bacenpix_qrcode" readonly="1" attrs="{'invisible': [('provider', '!=', 'bacenpix')] }"/>
+                    <field name="bacenpix_currency" readonly="1" attrs="{'invisible': [('provider', '!=', 'bacenpix')] }"/>
+                    <field name="bacenpix_amount" readonly="1" attrs="{'invisible': [('provider', '!=', 'bacenpix')] }"/>
                 </xpath>
             </field>
         </record>
