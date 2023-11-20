@@ -24,7 +24,9 @@ PROD_URL = "https://api-pix.bb.com.br/"
 AUTH_ENDPOINT = "oauth/token"
 
 PIX_ENDPOINT_V1 = "pix/v1/cob/"
-TRANSACTION_STATUS_V2 = "v2/transactions/?id={}"
+PIX_ENDPOINT_V2 = "pix/v2/cob/"
+# TRANSACTION_STATUS_V2 = "v2/transactions/?id={}"
+TRANSACTION_STATUS_V2 = "pix/v2/cob/{}"
 
 BACENPIX = {
     "prod": PROD_URL,
@@ -40,7 +42,6 @@ class PaymentAcquirer(models.Model):
 
     provider = fields.Selection(
         selection_add=[(BACENPIX_PROVIDER, "Bacen (pix)")],
-        # ondelete={BACENPIX_PROVIDER: "set default"},
     )
 
     bacenpix_email_account = fields.Char("Email", groups="base.group_user")
@@ -133,26 +134,32 @@ class PaymentAcquirer(models.Model):
             "Content-Type": "application/json",
         }
 
-    def _bacenpix_new_transaction(self, tx_id, payload):
-        params = {
+    def _bacenpix_params(self):
+        return {
             "gw-dev-app-key": self.bacenpix_dev_app_key,
-            "txid": tx_id
         }
+
+    def _bacenpix_new_transaction(self, tx_id, payload):
+        headers = self._bacenpix_header()
+        url = werkzeug.urls.url_join(BACENPIX[self.environment], PIX_ENDPOINT_V2 + tx_id)
+        params = self._bacenpix_params()
         response = requests.request(
             "PUT",
-            werkzeug.urls.url_join(BACENPIX[self.environment], PIX_ENDPOINT_V1),
+            url,
             params=params,
-            headers=self._bacenpix_header(),
+            headers=headers,
             data=payload,
         )
         return response
 
     def _bacenpix_status_transaction(self, tx_bacen_id):
+        url = werkzeug.urls.url_join(
+                BACENPIX[self.environment], TRANSACTION_STATUS_V2.format(tx_bacen_id)
+            )
         response = requests.request(
             "GET",
-            werkzeug.urls.url_join(
-                BACENPIX[self.environment], TRANSACTION_STATUS_V2.format(tx_bacen_id)
-            ),
+            url,
+            params=self._bacenpix_params(),
             headers=self._bacenpix_header(),
             data={},
         )
@@ -162,14 +169,21 @@ class PaymentAcquirer(models.Model):
         # 3. URL callback de feedback
         return "/payment/bacenpix/feedback"
 
-    def _handle_bacenpix_webhook(self, tx_reference, jsonrequest):
+    def _handle_bacenpix_webhook(self, data):
         """Webhook para processamento da transação"""
+        pix = data.get('pix')
+        transaction = pix and pix[0]
+        txid = transaction.get('txid')
+
         transaction_id = self.env["payment.transaction"].search(
             [
-                ("callback_hash", "=", tx_reference),
+                # "&",
+                # "|",
+                ("bacenpix_txid", "=", txid),
+                # ("callback_hash", "=", txid),
                 ("acquirer_id.provider", "=", BACENPIX_PROVIDER),
             ]
         )
         if not transaction_id:
             return False
-        return transaction_id._bacenpix_validate_webhook(tx_reference, jsonrequest)
+        return transaction_id._bacenpix_validate_webhook(txid, data)

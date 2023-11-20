@@ -16,11 +16,11 @@ from odoo.tools import consteq, ustr
 _logger = logging.getLogger(__name__)
 
 
-BACENPIX_STATUS_CREATED = 0
-BACENPIX_STATUS_PAID = 1
-BACENPIX_STATUS_REJECTED = 2
-BACENPIX_STATUS_EXPIRED = 3
-BACENPIX_STATUS_REFUNDED = 4
+BACENPIX_STATUS_CREATED = "ATIVA"
+BACENPIX_STATUS_PAID = "CONCLUIDA"
+BACENPIX_STATUS_REJECTED = "REMOVIDA_PELO_PSP"
+BACENPIX_STATUS_EXPIRED = "REMOVIDA_PELO_USUARIO_RECEBEDOR"
+# BACENPIX_STATUS_REFUNDED = 4
 
 
 class PaymentTransaction(models.Model):
@@ -80,14 +80,16 @@ class PaymentTransaction(models.Model):
         if post:
             _logger.info(post)
 
+        _logger.info("Bacenpix: checando status da transação {}".format(self.reference))
+
         response = self.acquirer_id._bacenpix_status_transaction(
-            self.acquirer_reference
+            self.tx_id
         )
         response_data = response.json()
 
         if response_data.get("status") == BACENPIX_STATUS_CREATED:
             _logger.info("BACENPIX_STATUS_CREATED")
-            self._set_transaction_pending()
+            self._set_transaction_authorized()
         elif response_data.get("status") == BACENPIX_STATUS_PAID:
             _logger.info("BACENPIX_STATUS_PAID")
             self._set_transaction_done()
@@ -100,15 +102,15 @@ class PaymentTransaction(models.Model):
             self._set_transaction_cancel()
             self.invoice_ids.button_draft()
             self.invoice_ids.button_cancel()
-        elif response_data.get("status") == BACENPIX_STATUS_REFUNDED:
-            _logger.info("BACENPIX_STATUS_REFUNDED")
+        # elif response_data.get("status") == BACENPIX_STATUS_REFUNDED:
+        #     _logger.info("BACENPIX_STATUS_REFUNDED")
 
     def _bacenpix_validate_webhook(self, valid_token, post):
         callback_hash = self._bacenpix_generate_callback_hash(self.reference)
         if not consteq(ustr(valid_token), callback_hash):
             _logger.warning("Invalid callback signature for transaction %d" % (self.id))
             return False
-        _logger.info("Invalid callback signature for transaction %d" % (self.id))
+        _logger.info("Valid callback signature for transaction %d" % (self.id))
         return self._bacenpix_check_transaction_status(post)
 
     def _bacenpix_generate_callback_hash(self, reference):
@@ -158,23 +160,23 @@ class PaymentTransaction(models.Model):
 
         if not response.ok:
             raise ValidationError(
-                _("Payload Error Code: {codigo}. {mensagem}".format(**response_data['erros'][0]))
+                _("Payload Error Code: {}".format(str(response_data)))
             )
         else:
             _logger.info(response_data)
             return dict(
                 callback_hash=callback_hash,
                 bacenpix_currency=response_data.get("currency"),
-                bacenpix_amount=response_data.get("amount"),
+                bacenpix_amount=response_data.get('valor', {}).get("original"),
                 bacenpix_date_due=due,
-                bacenpix_qrcode=response_data.get("qrcode"),
+                bacenpix_qrcode=response_data.get("pixCopiaECola"),
                 date=datetime.now(),
-                bacenpix_creation=response_data.get("criacao"),
-                bacenpix_expiration=response_data.get("expiracao"),
+                bacenpix_creation=response_data.get('calendario', {}).get("criacao"),
+                bacenpix_expiration=response_data.get('calendario', {}).get("expiracao"),
                 bacenpix_location=response_data.get("location"),
-                bacenpix_text_image_qr_code=response_data.get("textoImagemQRcode"),
+                bacenpix_text_image_qr_code=response_data.get("pixCopiaECola"),
                 bacenpix_txid=response_data.get("txid"),
                 bacenpix_pix_key=response_data.get("chave"),
                 #state=response_data.get("ok"),
-                state_message=response_data.get("text"),
+                state_message=response_data.get("status"),
             )
