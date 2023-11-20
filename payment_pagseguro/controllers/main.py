@@ -89,7 +89,7 @@ class PagseguroController(http.Controller):
         params = request.jsonrequest
         request.env["payment.transaction"].sudo().pagseguro_search_payment_pix(params)
 
-    @http.route("/notification-url", auth="public", type="json", methods=["POST"])
+    @http.route("/notification-url", auth="public", type="json", csrf=False, methods=["POST"])
     def notification_url(self):
         """Receives Pagseguro Charge notification.
         Returns true on success and False on fail.

@@ -236,6 +236,10 @@ class PaymentTransactionPagseguro(models.Model):
                     "currency (supported by pagseguro)."
                 )
             )
+        if not self.pagseguro_s2s_capture_link:
+            raise ValidationError(
+                _("Please check the transaction capture link")
+            )
 
         _logger.info(
             "pagseguro_s2s_capture_transaction: Sending values to URL %s",
@@ -645,4 +649,5 @@ class PaymentTransactionPagseguro(models.Model):
             "pagseguro_check_transaction: Transaction %s has status %s"
             % (res["id"], res.get("status"))
         )
+        self._pagseguro_s2s_validate_tree(res)
         self._set_transaction_state(res)
