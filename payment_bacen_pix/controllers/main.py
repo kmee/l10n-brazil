@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 import logging
 import pprint
+import json
 
 import werkzeug
 
@@ -31,13 +32,15 @@ class PaymentController(http.Controller):
         return werkzeug.utils.redirect("/payment/process")
 
     @http.route(
-        "/webhook/<string:tx_reference>",
+        "/payment/bacen_pix/webhook",
         type="json",
         auth="public",
         csrf=False,
     )
-    def bacenpix_webhook(self, tx_reference):
+    def bacenpix_webhook(self, **kwargs):
+        data = json.loads(request.httprequest.data)
+
         request.env["payment.acquirer"].sudo()._handle_bacenpix_webhook(
-            tx_reference, request.jsonrequest
+            data
         )
         return "OK"
