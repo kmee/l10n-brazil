@@ -68,6 +68,7 @@
                         type="object"
                         attrs="{'invisible': [('provider', '!=', 'bacenpix')] }"
                     />
+                    <field name="bacenpix_txid" readonly="1" attrs="{'invisible': [('provider', '!=', 'bacenpix')] }" />
                     <field name="bacenpix_date_due" readonly="1" attrs="{'invisible': [('provider', '!=', 'bacenpix')] }" />
                     <field name="bacenpix_qrcode" readonly="1" attrs="{'invisible': [('provider', '!=', 'bacenpix')] }"/>
                     <field name="bacenpix_currency" readonly="1" attrs="{'invisible': [('provider', '!=', 'bacenpix')] }"/>
