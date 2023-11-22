@@ -119,6 +119,20 @@ class PaymentTransaction(models.Model):
             secret.encode("utf-8"), reference.encode("utf-8"), hashlib.sha256
         ).hexdigest()
 
+    def bacenpix_cancel_pix(self):
+        self.ensure_one()
+        acquirer_id = self.acquirer_id
+        payload = json.dumps(
+            {
+                "status": "REMOVIDA_PELO_USUARIO_RECEBEDOR"
+            }
+        )
+        response = acquirer_id._bacenpix_modify_pix(self.bacenpix_txid, payload)
+        response_json = response.json()
+        if not response.ok:
+            return ValidationError(response_json)
+        return response_json
+
     def bacenpix_create(self, values):
         """Compleate the values used to create the payment.transaction"""
 
