@@ -4,20 +4,27 @@
 import datetime
 import logging
 import pprint
+import re
+import json
+import requests
 from datetime import timedelta
 from xml.etree import ElementTree
 
-import requests
-from erpbrasil.base.misc import punctuation_rm
-
 from odoo import _, api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import ValidationError, UserError
 
 _logger = logging.getLogger(__name__)
 try:
     from erpbrasil.base.misc import punctuation_rm
 except ImportError:
     _logger.error("Biblioteca erpbrasil.base não instalada")
+
+try:
+    from pycep_correios import WebService, get_address_from_cep
+except ImportError:
+    _logger.warning("Library PyCEP-Correios not installed !")
+
+URL_VIACEP = "http://www.viacep.com.br/ws/90050003/json"
 
 
 class PaymentTransactionPagseguro(models.Model):
@@ -534,15 +541,71 @@ class PaymentTransactionPagseguro(models.Model):
 
     @api.multi
     def _get_phone_params(self):
-        #TODO: tratar phone params
+        phone = self.check_br_phone_number(self.partner_id)
         return [
                     {
                         "country": "55",
-                        "area": "11",
-                        "number": "999999999",
-                        "type": "MOBILE",
+                        "area": phone['ddd'],
+                        "number": phone['number'],
+                        "type": phone['type'],
                     }
                 ]
+
+    def check_br_phone_number(self, partner):
+        """ Verifica se o número do cliente é valido.
+            Retorna em formato de dicionario o número completo sem pontuação, DDI, DDD, o número do cliente.
+            Caso o número não tenha DDD, é realizada uma busca do DDD a partir do CEP do cliente.
+        """
+        phone_number = partner.phone
+        cep = partner.zip
+        if not phone_number or not cep:
+            raise ValidationError("O Número de telefone ou CEP do cliente não foram preenchidos!")
+        else:
+            regex_check_phone = re.compile(r"(?P<full_number>"
+                                           r"(?P<ddi>\+?55\s?)?"
+                                           r"(?P<ddd>\(?\d{2}\)?\s?\-?\.?)"
+                                           r"?(?P<number>\d{4,5}\-?\.?\d{4})"
+                                           r")")
+            valid_phone_number = regex_check_phone.match(phone_number)
+            if not valid_phone_number:
+                raise ValidationError("O número de telefone não é válido!")
+            else:
+                full_number = re.sub(r'\W', '', valid_phone_number['full_number'] or '')
+                ddi = re.sub(r'\W', '', valid_phone_number['ddi'] or '')
+                ddd = re.sub(r'\W', '', valid_phone_number['ddd'] or '')
+                number = re.sub(r'\W', '', valid_phone_number['number'] or '')
+
+                regex_repeated_numbers = re.compile(r"((\S)\2{5,})")
+                check_repeated_numbers = number if len(number) == 8 else number[1:]
+                if regex_repeated_numbers.match(check_repeated_numbers):
+                    raise ValidationError("O número de telefone não é válido")
+
+                if not ddd:
+                    ddd = self.get_ddd_from_cep(cep)
+
+                return {
+                    'full_number': full_number,
+                    'ddi': ddi,
+                    'ddd': ddd,
+                    'number': number,
+                    'type': 'HOME' if len(number) == 8 else 'MOBILE'
+                }
+
+    @staticmethod
+    def get_ddd_from_cep(cep):
+        """Retorna o DDD a partir do CEP do cliente."""
+        cep_str = punctuation_rm(cep)
+        try:
+            response = requests.get(URL_VIACEP.format(cep_str))
+            if not response.status_code == 200:
+                raise ValidationError("Telefone do cliente sem DDD!")
+            else:
+                address = json.loads(response.text)
+                if address.get("erro"):
+                    raise ValidationError("DDD do cliente não encontrado!")
+                return address.get("ddd")
+        except Exception as e:
+            raise UserError(f"Erro no PyCEP-Correios: {str(e)}")
 
     @api.multi
     def _get_pagseguro_order_params(self):
