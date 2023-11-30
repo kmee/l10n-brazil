@@ -459,7 +459,7 @@ class PaymentTransactionPagseguro(models.Model):
         Returns pagseguro credit card charge params.
         """
         return {
-            "reference_id": str(self.payment_token_id.acquirer_id.id),
+            "reference_id": str(self.display_name[:13]),
             "description": self.display_name[:13],
             "amount": {
                 "value": int(
@@ -564,7 +564,7 @@ class PaymentTransactionPagseguro(models.Model):
             regex_check_phone = re.compile(r"(?P<full_number>"
                                            r"(?P<ddi>\+?55\s?)?"
                                            r"(?P<ddd>\(?\d{2}\)?\s?\-?\.?)"
-                                           r"?(?P<number>\d{4,5}\-?\.?\d{4})"
+                                           r"?(?P<number>\d{4,5}\-?\.?\s?\d{4})"
                                            r")")
             valid_phone_number = regex_check_phone.match(phone_number)
             if not valid_phone_number:
