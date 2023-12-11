@@ -1,8 +1,13 @@
 # Copyright 2022 KMEE
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
-
+import base64
 import json
 import logging
+import os
+import ssl
+
+from uuid import uuid4
+from requests_pkcs12 import Pkcs12Adapter
 
 import requests
 import werkzeug.urls
@@ -32,6 +37,8 @@ BACENPIX = {
     "prod": PROD_URL,
     "test": SANDBOX_URL,
 }
+
+DIRNAME = os.path.dirname(__file__)
 
 # TODO adicionar URLs de outros bancos -> verificar o padrão
 
@@ -139,16 +146,42 @@ class PaymentAcquirer(models.Model):
             "gw-dev-app-key": self.bacenpix_dev_app_key,
         }
 
+    def _bacenpix_send_request(self, method, url, params, headers, data=None):
+        with requests.Session() as session:
+            bundle_path = os.path.join(str(os.path.normpath(DIRNAME + os.sep + os.pardir)), 'ca_certs_bundle')
+            certified_file_name = '/tmp/' + uuid4().hex
+            file_tmp = open(certified_file_name, 'wb')
+            file_tmp.write(base64.b64decode(self.company_id.certificate_ecnpj_id.file))
+            file_tmp.close()
+            session.mount(
+                url,
+                Pkcs12Adapter(
+                    pkcs12_filename=certified_file_name,
+                    pkcs12_password=self.company_id.certificate_ecnpj_id.password,
+                    ssl_protocol=ssl.PROTOCOL_TLSv1_2
+                )
+            )
+            request = session.request(
+                method,
+                url=url,
+                headers=headers,
+                params=params,
+                data=data,
+                verify=bundle_path
+            )
+            os.remove(certified_file_name)
+            return request
+
     def _bacenpix_new_transaction(self, tx_id, payload):
         headers = self._bacenpix_header()
         url = werkzeug.urls.url_join(BACENPIX[self.environment], PIX_ENDPOINT_V2 + tx_id)
         params = self._bacenpix_params()
-        response = requests.request(
+        response = self._bacenpix_send_request(
             "PUT",
             url,
-            params=params,
-            headers=headers,
-            data=payload,
+            params,
+            headers,
+            payload
         )
         return response
 
@@ -156,7 +189,7 @@ class PaymentAcquirer(models.Model):
         url = werkzeug.urls.url_join(
                 BACENPIX[self.environment], TRANSACTION_STATUS_V2.format(tx_bacen_id)
             )
-        response = requests.request(
+        response = self._bacenpix_send_request(
             "GET",
             url,
             params=self._bacenpix_params(),
