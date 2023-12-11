@@ -19,7 +19,7 @@ class StockMove(models.Model):
         if (
             po_line
             and self.product_id == po_line.product_id
-            and not self.fiscal_operation_id.fiscal_operation_type == "out"
+            and self.fiscal_operation_id.fiscal_operation_type != "out"
         ):
             res = po_line.stock_price_br
 
