@@ -191,7 +191,7 @@ class PaymentAcquirer(models.Model):
             "txid": tx_id
         }
         url = werkzeug.urls.url_join(BACENPIX[self.environment], TRANSACTION_STATUS_V2.format(tx_id))
-        response = requests.request(
+        response = self._bacenpix_send_request(
             "PATCH",
             url,
             params=params,
