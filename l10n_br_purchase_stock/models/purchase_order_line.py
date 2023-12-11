@@ -3,6 +3,7 @@
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
 from odoo import api, fields, models
+from odoo.tools.float_utils import float_round
 
 
 class PurchaseOrderLine(models.Model):
@@ -31,7 +32,12 @@ class PurchaseOrderLine(models.Model):
                                 continue
                             price -= getattr(record, "%s_value" % (tax.tax_domain))
 
-                record.stock_price_br = price / record.product_uom_qty
+                price_precision = self.env["decimal.precision"].precision_get(
+                    "Product Price"
+                )
+                record.stock_price_br = float_round(
+                    (price / record.product_uom_qty), precision_digits=price_precision
+                )
 
     def _prepare_stock_moves(self, picking):
         """Prepare the stock moves data for one order line.
