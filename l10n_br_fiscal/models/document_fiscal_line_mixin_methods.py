@@ -594,6 +594,8 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         self.icmsst_reduction = tax_dict.get("percent_reduction")
         self.icmsst_base = tax_dict.get("base")
         self.icmsst_value = tax_dict.get("tax_value")
+        self.icmsst_credit_percent = tax_dict.get("icmsst_credit_percent")
+        self.icmsst_credit_value = tax_dict.get("icmsst_credit_value")
 
         # TODO - OTHER TAX icmsst_wh_tax_id
         # self.icmsst_wh_base
