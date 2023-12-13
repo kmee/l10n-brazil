@@ -210,13 +210,11 @@ class PaymentAcquirer(models.Model):
 
         transaction_id = self.env["payment.transaction"].search(
             [
-                # "&",
-                # "|",
                 ("bacenpix_txid", "=", txid),
-                # ("callback_hash", "=", txid),
                 ("acquirer_id.provider", "=", BACENPIX_PROVIDER),
             ]
         )
         if not transaction_id:
+            _logger.warning("No transaction found for txid %d" % (txid))
             return False
-        return transaction_id._bacenpix_validate_webhook(txid, data)
+        return transaction_id._bacenpix_check_transaction_status(transaction)

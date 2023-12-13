@@ -1,17 +1,12 @@
 # Copyright 2022 KMEE
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-import hashlib
-import hmac
 import json
 import logging
 from datetime import datetime
 
-from werkzeug.urls import url_join
-
 from odoo import _, fields, models
 from odoo.exceptions import ValidationError
-from odoo.tools import consteq, ustr
 
 _logger = logging.getLogger(__name__)
 
@@ -20,7 +15,6 @@ BACENPIX_STATUS_CREATED = "ATIVA"
 BACENPIX_STATUS_PAID = "CONCLUIDA"
 BACENPIX_STATUS_REJECTED = "REMOVIDA_PELO_PSP"
 BACENPIX_STATUS_EXPIRED = "REMOVIDA_PELO_USUARIO_RECEBEDOR"
-# BACENPIX_STATUS_REFUNDED = 4
 
 
 class PaymentTransaction(models.Model):
@@ -102,22 +96,6 @@ class PaymentTransaction(models.Model):
             self._set_transaction_cancel()
             self.invoice_ids.button_draft()
             self.invoice_ids.button_cancel()
-        # elif response_data.get("status") == BACENPIX_STATUS_REFUNDED:
-        #     _logger.info("BACENPIX_STATUS_REFUNDED")
-
-    def _bacenpix_validate_webhook(self, valid_token, post):
-        callback_hash = self._bacenpix_generate_callback_hash(self.reference)
-        if not consteq(ustr(valid_token), callback_hash):
-            _logger.warning("Invalid callback signature for transaction %d" % (self.id))
-            return False
-        _logger.info("Valid callback signature for transaction %d" % (self.id))
-        return self._bacenpix_check_transaction_status(post)
-
-    def _bacenpix_generate_callback_hash(self, reference):
-        secret = self.env["ir.config_parameter"].sudo().get_param("database.secret")
-        return hmac.new(
-            secret.encode("utf-8"), reference.encode("utf-8"), hashlib.sha256
-        ).hexdigest()
 
     def bacenpix_create(self, values):
         """Compleate the values used to create the payment.transaction"""
@@ -128,13 +106,6 @@ class PaymentTransaction(models.Model):
 
         due = fields.Date.context_today(self)
         due = datetime.combine(due, datetime.max.time())
-
-        base_url = acquirer_id.get_base_url()
-
-        callback_hash = self._bacenpix_generate_callback_hash(values.get("reference"))
-
-        webhook = url_join(base_url, "/webhook/{}".format(callback_hash))
-        _logger.info("webhook: %s" % webhook)
 
         payload = json.dumps(
             {
@@ -165,7 +136,6 @@ class PaymentTransaction(models.Model):
         else:
             _logger.info(response_data)
             return dict(
-                callback_hash=callback_hash,
                 bacenpix_currency=response_data.get("currency"),
                 bacenpix_amount=response_data.get('valor', {}).get("original"),
                 bacenpix_date_due=due,
@@ -176,7 +146,7 @@ class PaymentTransaction(models.Model):
                 bacenpix_location=response_data.get("location"),
                 bacenpix_text_image_qr_code=response_data.get("pixCopiaECola"),
                 bacenpix_txid=response_data.get("txid"),
+                acquirer_reference=response_data.get("endToEndId"),
                 bacenpix_pix_key=response_data.get("chave"),
-                #state=response_data.get("ok"),
                 state_message=response_data.get("status"),
             )
