@@ -94,8 +94,8 @@ class PaymentTransaction(models.Model):
         elif response_data.get("status") == BACENPIX_STATUS_EXPIRED:
             _logger.info("BACENPIX_STATUS_EXPIRED")
             self._set_transaction_cancel()
-            self.invoice_ids.button_draft()
-            self.invoice_ids.button_cancel()
+            # self.invoice_ids.button_draft()
+            # self.invoice_ids.button_cancel()
 
     def bacenpix_cancel_pix(self):
         self.ensure_one()
