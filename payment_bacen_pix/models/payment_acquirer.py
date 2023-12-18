@@ -185,6 +185,21 @@ class PaymentAcquirer(models.Model):
         )
         return response
 
+    def _bacenpix_modify_pix(self, tx_id, payload):
+        params = {
+            "gw-dev-app-key": self.bacenpix_dev_app_key,
+            "txid": tx_id
+        }
+        url = werkzeug.urls.url_join(BACENPIX[self.environment], TRANSACTION_STATUS_V2.format(tx_id))
+        response = self._bacenpix_send_request(
+            "PATCH",
+            url,
+            params=params,
+            headers=self._bacenpix_header(),
+            data=payload,
+        )
+        return response
+
     def _bacenpix_status_transaction(self, tx_bacen_id):
         url = werkzeug.urls.url_join(
                 BACENPIX[self.environment], TRANSACTION_STATUS_V2.format(tx_bacen_id)
