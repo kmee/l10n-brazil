@@ -708,9 +708,10 @@ class PaymentTransactionPagseguro(models.Model):
         )
         res = r.json()
 
+        _logger.info(str(res))
         _logger.info(
             "pagseguro_check_transaction: Transaction %s has status %s"
-            % (res["id"], res.get("status"))
+            % (res.get("id"), res.get("status"))
         )
         self._pagseguro_s2s_validate_tree(res)
         self._set_transaction_state(res)
