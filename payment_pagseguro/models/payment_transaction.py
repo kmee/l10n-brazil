@@ -530,13 +530,16 @@ class PaymentTransactionPagseguro(models.Model):
     def _get_pagseguro_items_params(self):
         items = []
         for line in self.sale_order_ids[0].order_line:
-            item = {
-                "reference_id": line.product_id.default_code,
-                "name": line.product_id.name,
-                "quantity": int(line.product_uom_qty),
-                "unit_amount": int(line.price_unit * 100),
-            }
-            items.append(item)
+            if line.pack_ok and line.product_id.pack_type == 'detailed':
+                continue
+            else:
+                item = {
+                    "reference_id": line.product_id.default_code,
+                    "name": line.product_id.name,
+                    "quantity": int(line.product_uom_qty),
+                    "unit_amount": int(line.price_unit * 100),
+                }
+                items.append(item)
         return items
 
     @api.multi
