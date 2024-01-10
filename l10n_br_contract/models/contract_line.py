@@ -37,7 +37,6 @@ class ContractLine(models.Model):
 
     ind_final = fields.Selection(related="contract_id.ind_final")
 
-    @api.multi
     def _prepare_invoice_line(self, invoice_id=False, invoice_values=False):
         self.ensure_one()
         contract = self.contract_id
