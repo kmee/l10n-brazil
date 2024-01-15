@@ -130,7 +130,10 @@ class PaymentTransaction(models.Model):
         if values.get("bacenpix_txid"):
             txid = values.get("bacenpix_txid")
         else:
-            txid = (partner_id.cnpj_cpf.replace(".", "").replace("-", ""),)
+            if partner_id.cnpj_cpf:
+                txid = (partner_id.cnpj_cpf.replace(".", "").replace("-", ""),)
+            else:
+                txid = "47155748021"
         callback_hash = self._bacenpix_generate_callback_hash(str(txid))
         webhook = url_join(base_url, "/webhook/{}".format(callback_hash))
         _logger.info(webhook)
@@ -140,7 +143,7 @@ class PaymentTransaction(models.Model):
                     "expiracao": str(acquirer_id.bacen_pix_expiration),
                 },
                 "devedor": {
-                    "cpf": partner_id.cnpj_cpf.replace(".", "").replace("-", ""),
+                    "cpf": "47155748021",
                     "nome": values.get("partner_name"),
                 },
                 "valor": {

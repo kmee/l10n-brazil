@@ -10,6 +10,7 @@
     "website": "https://github.com/OCA/l10n-brazil",
     "depends": [
         "sale",  # Used sale order in currency validation
+        "payment",
         "web_tour",
         "website_sale",
     ],
@@ -17,6 +18,7 @@
         "views/payment_pagseguro_templates.xml",
         "data/payment_acquirer_data.xml",
         "views/payment_acquirer.xml",
+        "views/sale_order.xml",
     ],
     "demo": [],
     "uninstall_hook": "uninstall_hook",

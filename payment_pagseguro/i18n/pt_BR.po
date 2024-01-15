@@ -66,7 +66,7 @@ msgid "Expires (MM/YY)"
 msgstr "Expira (MM/YY)"
 
 #. module: payment_pagseguro
-#: model:ir.model.fields,field_description:payment_pagseguro.field_payment_token__card_holder
+#: model:ir.model.fields,field_description:payment_pagseguro.field_payment_token__pagseguro_card_holder
 msgid "Holder"
 msgstr "Portador"
 

@@ -7,7 +7,7 @@ from odoo import api, fields, models
 class PaymentTokenPagSeguro(models.Model):
     _inherit = "payment.token"
 
-    card_holder = fields.Char(
+    pagseguro_card_holder = fields.Char(
         string="Holder",
         required=False,
     )
@@ -16,6 +16,12 @@ class PaymentTokenPagSeguro(models.Model):
         string="Pagseguro card Token",
         required=False,
     )
+
+    pagseguro_payment_method = fields.Char(string="Pagseguro Payment Method")
+
+    pagseguro_installments = fields.Integer(string="Pagseguro Number of Installments")
+
+    pagseguro_tx_id = fields.Char(string="Pagseguro PIX Transaction Id")
 
     @api.model
     def pagseguro_create(self, values):
@@ -34,10 +40,13 @@ class PaymentTokenPagSeguro(models.Model):
 
         customer_params = {"description": description}
 
-        res = {
-            "acquirer_ref": partner_id.id,
-            "name": "%s" % (customer_params.get("description")),
-            "pagseguro_card_token": values["pagseguro_card_token"],
-        }
+        payment_method = values.get("pagseguro_payment_method")
 
-        return res
+        if payment_method in "CREDIT_CARD":
+            res = {
+                "acquirer_ref": partner_id.id,
+                "name": "%s" % (customer_params.get("description")),
+                "pagseguro_card_token": values["pagseguro_card_token"],
+            }
+
+            return res
