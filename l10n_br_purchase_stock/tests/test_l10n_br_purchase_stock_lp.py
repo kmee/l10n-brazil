@@ -57,7 +57,6 @@ class L10nBrPurchaseStockBase(L10nBrPurchaseStockBase):
         # line 0 -> 90.03
         line1._compute_stock_price_br()
 
-        # price_precision = self.env["decimal.precision"].precision_get("Product Price")
         price_precision = self.env["decimal.precision"].precision_get("Product Price")
         expected_stock_price = float_round(
             (
