@@ -10,6 +10,7 @@ from odoo import api, fields, models
 
 class PartnerCnpjSearchWizard(models.TransientModel):
     _name = "partner.search.wizard"
+    _description = "CNPJ based search wizard allowing to update partner data."
 
     partner_id = fields.Many2one(comodel_name="res.partner")
     provider_name = fields.Char()
@@ -102,9 +103,11 @@ class PartnerCnpjSearchWizard(models.TransientModel):
             "equity_capital": self.equity_capital,
             "cnae_main_id": self.cnae_main_id,
             "cnae_secondary_ids": self.cnae_secondary_ids,
-            "child_ids": [(6, 0, self.child_ids.ids)],
             "company_type": "company",
         }
+        if self.child_ids:
+            values_to_update["child_ids"] = [(6, 0, self.child_ids.ids)]
+
         non_empty_values = {
             key: value for key, value in values_to_update.items() if value
         }

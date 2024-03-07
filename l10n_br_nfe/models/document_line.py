@@ -3,6 +3,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 import sys
+from enum import Enum
 
 from odoo import api, fields
 
@@ -13,6 +14,44 @@ from odoo.addons.spec_driven_model.models import spec_models
 ICMSSN_CST_CODES_USE_102 = ("102", "103", "300", "400")
 ICMSSN_CST_CODES_USE_202 = ("202", "203")
 ICMS_ST_CST_CODES = ["60", "10"]
+
+ICMS_SUB_TAGS = [
+    "ICMS00",
+    "ICMS10",
+    "ICMS20",
+    "ICMS30",
+    "ICMS40",
+    "ICMS51",
+    "ICMS60",
+    "ICMS70",
+    "ICMS90",
+    "ICMSPart",
+    "ICMSST",
+    "ICMSSN101",
+    "ICMSSN102",
+    "ICMSSN500",
+    "ICMSSN900",
+]
+
+ICMS_SELECTION = list(map(lambda tag: ("nfe40_%s" % (tag,), tag), ICMS_SUB_TAGS))
+
+PIS_SUB_TAGS = [
+    "PISAliq",
+    "PISQtde",
+    "PISNT",
+    "PISOutr",
+]
+
+PIS_SELECTION = list(map(lambda tag: ("nfe40_%s" % (tag,), tag), PIS_SUB_TAGS))
+
+COFINS_SUB_TAGS = [
+    "COFINSAliq",
+    "COFINSQtde",
+    "COFINSNT",
+    "COFINSOutr",
+]
+
+COFINS_SELECTION = list(map(lambda tag: ("nfe40_%s" % (tag,), tag), COFINS_SUB_TAGS))
 
 
 class NFeLine(spec_models.StackedModel):
@@ -177,7 +216,7 @@ class NFeLine(spec_models.StackedModel):
         )
         export_dict["xProd"] = nfe40_xProd[:120].replace("\n", " ").strip()
 
-        nfe40_cEAN = nfe40_cEANTrib = self.product_id.barcode or "SEM GTIN"
+        nfe40_cEAN = self.product_id.barcode or "SEM GTIN"
         export_dict["cEAN"] = export_dict["cEANTrib"] = nfe40_cEAN
 
     ###########################################################
@@ -223,7 +262,7 @@ class NFeLine(spec_models.StackedModel):
     #######################################
 
     # Overriden to define default value for normal product
-    nfe40_choice9 = fields.Selection(
+    nfe40_choice_prod = fields.Selection(
         selection=[
             ("normal", "Produto Normal"),
             ("nfe40_veicProd", "Veículo"),
@@ -280,7 +319,7 @@ class NFeLine(spec_models.StackedModel):
     nfe40_vTotTrib = fields.Monetary(related="estimate_tax")
 
     def _export_fields_nfe_40_imposto(self, xsd_fields, class_obj, export_dict):
-        if self.nfe40_choice10 == "nfe40_ICMS":
+        if self.nfe40_choice_imposto == "nfe40_ICMS":
             xsd_fields.remove("nfe40_ISSQN")
         else:
             xsd_fields.remove("nfe40_ICMS")
@@ -320,28 +359,10 @@ class NFeLine(spec_models.StackedModel):
     # Grupo N10. Grupo Tributação do ICMS= 90
     #################################################
 
-    nfe40_choice11 = fields.Selection(
-        selection=[
-            ("nfe40_ICMS00", "ICMS00"),
-            ("nfe40_ICMS10", "ICMS10"),
-            ("nfe40_ICMS20", "ICMS20"),
-            ("nfe40_ICMS30", "ICMS30"),
-            ("nfe40_ICMS40", "ICMS40"),
-            ("nfe40_ICMS51", "ICMS51"),
-            ("nfe40_ICMS60", "ICMS60"),
-            ("nfe40_ICMS70", "ICMS70"),
-            ("nfe40_ICMS90", "ICMS90"),
-            ("nfe40_ICMSPart", "ICMSPart"),
-            ("nfe40_ICMSST", "ICMSST"),
-            ("nfe40_ICMSSN101", "ICMSSN101"),
-            ("nfe40_ICMSSN102", "ICMSSN102"),
-            ("nfe40_ICMSSN201", "ICMSSN201"),
-            ("nfe40_ICMSSN202", "ICMSSN202"),
-            ("nfe40_ICMSSN500", "ICMSSN500"),
-            ("nfe40_ICMSSN900", "ICMSSN900"),
-        ],
+    nfe40_choice_icms = fields.Selection(
+        selection=ICMS_SELECTION,
         string="Tipo de ICMS",
-        compute="_compute_choice11",
+        compute="_compute_choice_icms",
         store=True,
     )
 
@@ -379,7 +400,7 @@ class NFeLine(spec_models.StackedModel):
     ##########################
 
     @api.depends("icms_cst_id")
-    def _compute_choice11(self):
+    def _compute_choice_icms(self):
         for record in self:
             icms_choice = ""
             if record.icms_cst_id.code in ICMS_CST:
@@ -394,7 +415,7 @@ class NFeLine(spec_models.StackedModel):
             elif record.icms_cst_id.code in ICMS_SN_CST:
                 icms_choice = "{}{}".format("nfe40_ICMSSN", record.icms_cst_id.code)
 
-            record.nfe40_choice11 = icms_choice
+            record.nfe40_choice_icms = icms_choice
 
     ##########################
     # NF-e tag: ICMS
@@ -464,20 +485,21 @@ class NFeLine(spec_models.StackedModel):
         if "nfe40_ICMSST" in xsd_fields:
             xsd_fields.remove("nfe40_ICMSST")
 
-        xsd_fields = [self.nfe40_choice11]
+        xsd_fields = [self.nfe40_choice_icms]
         icms_tag = (
-            self.nfe40_choice11.replace("nfe40_", "")
+            self.nfe40_choice_icms.replace("nfe40_", "")
             .replace("ICMS", "Icms")
             .replace("IcmsSN", "Icmssn")
         )
         binding_module = sys.modules[self._binding_module]
         # Tnfe.InfNfe.Det.Imposto.Icms.Icms00
-        # see https://stackoverflow.com/questions/31174295/getattr-and-setattr-on-nested-subobjects-chained-properties
-        tnfe = getattr(binding_module, "Tnfe")
-        infnfe = getattr(tnfe, "InfNfe")
-        det = getattr(infnfe, "Det")
-        imposto = getattr(det, "Imposto")
-        icms = getattr(imposto, "Icms")
+        # see https://stackoverflow.com/questions/31174295/
+        # getattr-and-setattr-on-nested-subobjects-chained-properties
+        tnfe = binding_module.Tnfe
+        infnfe = tnfe.InfNfe
+        det = infnfe.Det
+        imposto = det.Imposto
+        icms = imposto.Icms
         icms_binding = getattr(icms, icms_tag)
         icms_dict = self._export_fields_icms()
         sliced_icms_dict = {
@@ -533,14 +555,14 @@ class NFeLine(spec_models.StackedModel):
     # Grupo O. Imposto sobre Produtos Industrializados
     ##################################################
 
-    nfe40_choice3 = fields.Selection(
+    nfe40_choice_tipi = fields.Selection(
         selection=[("nfe40_IPITrib", "IPITrib"), ("nfe40_IPINT", "IPINT")],
         string="IPITrib ou IPINT",
-        compute="_compute_choice3",
+        compute="_compute_choice_tipi",
         store=True,
     )
 
-    nfe40_choice20 = fields.Selection(
+    nfe40_choice_ipitrib = fields.Selection(
         selection=[
             ("nfe40_vBC", "vBC"),
             ("nfe40_pIPI", "pIPI"),
@@ -548,7 +570,7 @@ class NFeLine(spec_models.StackedModel):
             ("nfe40_vUnid", "vUnid"),
         ],
         string="Base vBC/pIPI/qUnid/vUnid",
-        compute="_compute_nfe40_choice20",
+        compute="_compute_nfe40_choice_ipitrib",
         store=True,
     )
 
@@ -570,20 +592,20 @@ class NFeLine(spec_models.StackedModel):
     ##########################
 
     @api.depends("ipi_cst_id")
-    def _compute_choice3(self):
+    def _compute_choice_tipi(self):
         for record in self:
             if record.ipi_cst_id.code in ["00", "49", "50", "99"]:
-                record.nfe40_choice3 = "nfe40_IPITrib"
+                record.nfe40_choice_tipi = "nfe40_IPITrib"
             else:
-                record.nfe40_choice3 = "nfe40_IPINT"
+                record.nfe40_choice_tipi = "nfe40_IPINT"
 
     @api.depends("ipi_base_type")
-    def _compute_nfe40_choice20(self):
+    def _compute_nfe40_choice_ipitrib(self):
         for record in self:
             if record.ipi_base_type == "percent":
-                record.nfe40_choice20 = "nfe40_pIPI"
+                record.nfe40_choice_ipitrib = "nfe40_pIPI"
             else:
-                record.nfe40_choice20 = "nfe40_vUnid"
+                record.nfe40_choice_ipitrib = "nfe40_vUnid"
 
     ##########################
     # NF-e tag: IPI
@@ -591,7 +613,7 @@ class NFeLine(spec_models.StackedModel):
     ##########################
 
     def _export_fields_nfe_40_tipi(self, xsd_fields, class_obj, export_dict):
-        if not self.ipi_cst_id.code in ["00", "49", "50", "99"]:
+        if self.ipi_cst_id.code not in ["00", "49", "50", "99"]:
             xsd_fields.remove("nfe40_IPITrib")
         else:
             xsd_fields.remove("nfe40_IPINT")
@@ -603,7 +625,7 @@ class NFeLine(spec_models.StackedModel):
     def _export_fields_nfe_40_ipitrib(self, xsd_fields, class_obj, export_dict):
         self._export_fields_ipi(xsd_fields, class_obj, export_dict)
 
-        if self.nfe40_choice20 == "nfe40_pIPI":
+        if self.nfe40_choice_ipitrib == "nfe40_pIPI":
             xsd_fields.remove("nfe40_qUnid")
             xsd_fields.remove("nfe40_vUnid")
         else:
@@ -631,26 +653,21 @@ class NFeLine(spec_models.StackedModel):
     # Grupo Q. PIS
     ###############
 
-    nfe40_choice12 = fields.Selection(
-        selection=[
-            ("nfe40_PISAliq", "PISAliq"),
-            ("nfe40_PISQtde", "PISQtde"),
-            ("nfe40_PISNT", "PISNT"),
-            ("nfe40_PISOutr", "PISOutr"),
-        ],
-        stringo="PISAliq/PISQtde/PISNT/PISOutr",
-        compute="_compute_choice12",
+    nfe40_choice_pis = fields.Selection(
+        selection=PIS_SELECTION,
+        string="PISAliq/PISQtde/PISNT/PISOutr",
+        compute="_compute_choice_pis",
         store=True,
     )
 
-    nfe40_choice13 = fields.Selection(
+    nfe40_choice_pisoutr = fields.Selection(
         [
             ("nfe40_vBC", "vBC"),
             ("nfe40_pPIS", "pPIS"),
             ("nfe40_qBCProd", "qBCProd"),
             ("nfe40_vAliqProd", "vAliqProd"),
         ],
-        compute="_compute_nfe40_choice13",
+        compute="_compute_nfe40_choice_pisoutr",
         store=True,
         string="Tipo de Tributação do PIS",
     )
@@ -676,24 +693,24 @@ class NFeLine(spec_models.StackedModel):
     ##########################
 
     @api.depends("pis_cst_id")
-    def _compute_choice12(self):
+    def _compute_choice_pis(self):
         for record in self:
             if record.pis_cst_id.code in ["01", "02"]:
-                record.nfe40_choice12 = "nfe40_PISAliq"
+                record.nfe40_choice_pis = "nfe40_PISAliq"
             elif record.pis_cst_id.code == "03":
-                record.nfe40_choice12 = "nfe40_PISQtde"
+                record.nfe40_choice_pis = "nfe40_PISQtde"
             elif record.pis_cst_id.code in ["04", "06", "07", "08", "09"]:
-                record.nfe40_choice12 = "nfe40_PISNT"
+                record.nfe40_choice_pis = "nfe40_PISNT"
             else:
-                record.nfe40_choice12 = "nfe40_PISOutr"
+                record.nfe40_choice_pis = "nfe40_PISOutr"
 
     @api.depends("pis_base_type")
-    def _compute_nfe40_choice13(self):
+    def _compute_nfe40_choice_pisoutr(self):
         for record in self:
             if record.pis_base_type == "percent":
-                record.nfe40_choice13 = "nfe40_pPIS"
+                record.nfe40_choice_pisoutr = "nfe40_pPIS"
             else:
-                record.nfe40_choice13 = "nfe40_vAliqProd"
+                record.nfe40_choice_pisoutr = "nfe40_vAliqProd"
 
     ##########################
     # NF-e tag: PIS
@@ -710,7 +727,7 @@ class NFeLine(spec_models.StackedModel):
             "nfe40_PISOutr": ["nfe40_PISAliq", "nfe40_PISQtde", "nfe40_PISNT"],
         }
 
-        for tag_to_remove in remove_tags.get(self.nfe40_choice12, []):
+        for tag_to_remove in remove_tags.get(self.nfe40_choice_pis, []):
             if tag_to_remove in xsd_fields:
                 xsd_fields.remove(tag_to_remove)
 
@@ -727,11 +744,11 @@ class NFeLine(spec_models.StackedModel):
     def _export_fields_nfe_40_pisoutr(self, xsd_fields, class_obj, export_dict):
         self._export_fields_pis(xsd_fields, class_obj, export_dict)
 
-        if self.nfe40_choice13 == "nfe40_pPIS":
+        if self.nfe40_choice_pisoutr == "nfe40_pPIS":
             xsd_fields.remove("nfe40_qBCProd")
             xsd_fields.remove("nfe40_vAliqProd")
 
-        if self.nfe40_choice13 == "nfe40_vAliqProd":
+        if self.nfe40_choice_pisoutr == "nfe40_vAliqProd":
             xsd_fields.remove("nfe40_vBC")
             xsd_fields.remove("nfe40_pPIS")
 
@@ -750,26 +767,21 @@ class NFeLine(spec_models.StackedModel):
     # Grupo S. COFINS
     ##################
 
-    nfe40_choice15 = fields.Selection(
-        selection=[
-            ("nfe40_COFINSAliq", "COFINSAliq"),
-            ("nfe40_COFINSQtde", "COFINSQtde"),
-            ("nfe40_COFINSNT", "COFINSNT"),
-            ("nfe40_COFINSOutr", "COFINSOutr"),
-        ],
+    nfe40_choice_cofins = fields.Selection(
+        selection=COFINS_SELECTION,
         string="COFINSAliq/COFINSQtde/COFINSNT/COFINSOutr",
-        compute="_compute_choice15",
+        compute="_compute_choice_cofins",
         store=True,
     )
 
-    nfe40_choice16 = fields.Selection(
+    nfe40_choice_cofinsoutr = fields.Selection(
         selection=[
             ("nfe40_vBC", "vBC"),
             ("nfe40_pCOFINS", "pCOFINS"),
             ("nfe40_qBCProd", "qBCProd"),
             ("nfe40_vAliqProd", "vAliqProd"),
         ],
-        compute="_compute_nfe40_choice16",
+        compute="_compute_nfe40_choice_cofinsoutr",
         store=True,
         string="Tipo de Tributação do COFINS",
     )
@@ -797,24 +809,24 @@ class NFeLine(spec_models.StackedModel):
     ##########################
 
     @api.depends("cofins_cst_id")
-    def _compute_choice15(self):
+    def _compute_choice_cofins(self):
         for record in self:
             if record.cofins_cst_id.code in ["01", "02"]:
-                record.nfe40_choice15 = "nfe40_COFINSAliq"
+                record.nfe40_choice_cofins = "nfe40_COFINSAliq"
             elif record.cofins_cst_id.code == "03":
-                record.nfe40_choice15 = "nfe40_COFINSQtde"
+                record.nfe40_choice_cofins = "nfe40_COFINSQtde"
             elif record.cofins_cst_id.code in ["04", "06", "07", "08", "09"]:
-                record.nfe40_choice15 = "nfe40_COFINSNT"
+                record.nfe40_choice_cofins = "nfe40_COFINSNT"
             else:
-                record.nfe40_choice15 = "nfe40_COFINSOutr"
+                record.nfe40_choice_cofins = "nfe40_COFINSOutr"
 
     @api.depends("cofins_base_type")
-    def _compute_nfe40_choice16(self):
+    def _compute_nfe40_choice_cofinsoutr(self):
         for record in self:
             if record.cofins_base_type == "percent":
-                record.nfe40_choice16 = "nfe40_pCOFINS"
+                record.nfe40_choice_cofinsoutr = "nfe40_pCOFINS"
             else:
-                record.nfe40_choice16 = "nfe40_vAliqProd"
+                record.nfe40_choice_cofinsoutr = "nfe40_vAliqProd"
 
     ##########################
     # NF-e tag: COFINS
@@ -847,7 +859,7 @@ class NFeLine(spec_models.StackedModel):
             ],
         }
 
-        for tag_to_remove in remove_tags.get(self.nfe40_choice15, []):
+        for tag_to_remove in remove_tags.get(self.nfe40_choice_cofins, []):
             if tag_to_remove in xsd_fields:
                 xsd_fields.remove(tag_to_remove)
 
@@ -865,11 +877,11 @@ class NFeLine(spec_models.StackedModel):
     def _export_fields_nfe_40_cofinsoutr(self, xsd_fields, class_obj, export_dict):
         self._export_fields_cofins(xsd_fields, class_obj, export_dict)
 
-        if self.nfe40_choice16 == "nfe40_pCOFINS":
+        if self.nfe40_choice_cofinsoutr == "nfe40_pCOFINS":
             xsd_fields.remove("nfe40_qBCProd")
             xsd_fields.remove("nfe40_vAliqProd")
 
-        if self.nfe40_choice16 == "nfe40_vAliqProd":
+        if self.nfe40_choice_cofinsoutr == "nfe40_vAliqProd":
             xsd_fields.remove("nfe40_vBC")
             xsd_fields.remove("nfe40_pCOFINS")
 
@@ -928,7 +940,7 @@ class NFeLine(spec_models.StackedModel):
     # Grupo W. Total da NF-e
     ########################
 
-    nfe40_choice10 = fields.Selection(
+    nfe40_choice_imposto = fields.Selection(
         selection=[
             ("nfe40_ICMS", "ICMS"),
             #            ("nfe40_II", "II"),
@@ -936,7 +948,7 @@ class NFeLine(spec_models.StackedModel):
             ("nfe40_ISSQN", "ISSQN"),
         ],
         string="ICMS/II/IPI ou ISSQN",
-        compute="_compute_nfe40_choice10",
+        compute="_compute_nfe40_choice_imposto",
         store=True,
     )
 
@@ -946,12 +958,12 @@ class NFeLine(spec_models.StackedModel):
     ##########################
 
     @api.depends("tax_icms_or_issqn")
-    def _compute_nfe40_choice10(self):
+    def _compute_nfe40_choice_imposto(self):
         for record in self:
             if record.tax_icms_or_issqn == "issqn":
-                record.nfe40_choice10 = "nfe40_ISSQN"
+                record.nfe40_choice_imposto = "nfe40_ISSQN"
             else:
-                record.nfe40_choice10 = "nfe40_ICMS"
+                record.nfe40_choice_imposto = "nfe40_ICMS"
 
     #######################################################
     # NF-e tag: infAdProd
@@ -991,15 +1003,17 @@ class NFeLine(spec_models.StackedModel):
         return values
 
     def _build_attr(self, node, fields, vals, path, attr):
-        key = "nfe40_%s" % (attr[0])  # TODO schema wise
+        key = "nfe40_%s" % (attr[0])
         value = getattr(node, attr[0])
+        if key in ["nfe40_CST", "nfe40_modBC", "nfe40_CSOSN"]:
+            return  # (dealt with in _build_many2one)
 
         if key.startswith("nfe40_ICMS") and key not in [
             "nfe40_ICMS",
             "nfe40_ICMSTot",
             "nfe40_ICMSUFDest",
         ]:
-            vals["nfe40_choice11"] = key
+            vals["nfe40_choice_icms"] = key
 
         if key == "nfe40_vUnCom":
             vals["price_unit"] = float(value)
@@ -1019,14 +1033,6 @@ class NFeLine(spec_models.StackedModel):
             vals["quantity"] = float(value)
         if key == "nfe40_qTrib":
             vals["fiscal_quantity"] = float(value)
-        if key == "nfe40_pICMS":
-            vals["icms_percent"] = float(value)
-        if key == "nfe40_pIPI":
-            vals["ipi_percent"] = float(value or 0.00)
-        if key == "nfe40_pPIS":
-            vals["pis_percent"] = float(value or 0.00)
-        if key == "nfe40_pCOFINS":
-            vals["cofins_percent"] = float(value or 0.00)
         if key == "nfe40_cEnq":
             vals["ipi_guideline_id"] = (
                 self.env["l10n_br_fiscal.tax.ipi.guideline"]
@@ -1036,192 +1042,81 @@ class NFeLine(spec_models.StackedModel):
 
         return super()._build_attr(node, fields, vals, path, attr)
 
-    def _build_string_not_simple_type(self, key, vals, value, node):
-        # if key not in ["nfe40_CST", "nfe40_modBC", "nfe40_CSOSN", "nfe40_vBC"]:
-        if key not in ["nfe40_CST", "nfe40_modBC", "nfe40_CSOSN"]:
-            return super()._build_string_not_simple_type(key, vals, value, node)
-            # TODO avoid collision with cls prefix
-        elif key == "nfe40_CST":
-            if str(type(node)).startswith("Tnfe.InfNfe.Det.Imposto.Icms"):
-                vals["icms_cst_id"] = (
-                    self.env["l10n_br_fiscal.cst"]
-                    .search([("code", "=", value), ("tax_domain", "=", "icms")])[0]
-                    .id
-                )
-            elif str(type(node)).startswith("Tnfe.InfNfe.Det.Imposto.Ipi"):
-                vals["ipi_cst_id"] = (
-                    self.env["l10n_br_fiscal.cst"]
-                    .search([("code", "=", value), ("tax_domain", "=", "ipi")])[0]
-                    .id
-                )
-            elif str(type(node)).startswith("Tnfe.InfNfe.Det.Imposto.Pis"):
-                vals["pis_cst_id"] = (
-                    self.env["l10n_br_fiscal.cst"]
-                    .search([("code", "=", value), ("tax_domain", "=", "pis")])[0]
-                    .id
-                )
-            elif str(type(node)).startswith("Tnfe.InfNfe.Det.Imposto.Cofins"):
-                vals["cofins_cst_id"] = (
-                    self.env["l10n_br_fiscal.cst"]
-                    .search([("code", "=", value), ("tax_domain", "=", "cofins")])[0]
-                    .id
-                )
-        elif key == "nfe40_modBC":
-            vals["icms_base_type"] = value
-
-    # flake8: noqa: C901
     def _build_many2one(self, comodel, vals, new_value, key, value, path):
-        ICMS_TAGS = [
-            "ICMS00",
-            "ICMS10",
-            "ICMS20",
-            "ICMS30",
-            "ICMS40",
-            "ICMS51",
-            "ICMS60",
-            "ICMS70",
-            "ICMS90",
-            "ICMSPart",
-            "ICMSST",
-            "ICMSSN101",
-            "ICMSSN102",
-            "ICMSSN500",
-            "ICMSSN900",
-        ]
-
+        """
+        Map the tax values from the "imposto" XML bindings into the Odoo
+        Fiscal Document line tax attributes.
+        """
         if key == "nfe40_ISSQN":
-            pass
-            # TODO ISSQN Fields
+            self._import_tax_attrs(
+                key,
+                value,
+                new_value,
+            )
+
         elif key == "nfe40_ICMS":
-            # TODO extract method
-            icms_vals = {}
-            for tag in ICMS_TAGS:
-                if getattr(value, tag) is not None:
-                    icms = getattr(value, tag)
+            self._import_tax_attrs(
+                key,
+                value,
+                new_value,
+                sub_tags=ICMS_SUB_TAGS,
+            )
 
-                    # ICMSxx fields
-                    # TODO map icms_tax_id
-                    if hasattr(icms, "CST") and icms.CST is not None:
-                        icms_vals["icms_cst_id"] = self.env.ref(
-                            "l10n_br_fiscal.cst_icms_%s" % (icms.CST.value,)
-                        ).id
-                        # TODO search + log if not found
-                    if hasattr(icms, "modBC") and icms.modBC is not None:
-                        icms_vals["icms_base_type"] = icms.modBC.value
-                    if hasattr(icms, "orig"):
-                        icms_vals["icms_origin"] = icms.orig.value
-                    if hasattr(icms, "vBC") and icms.vBC is not None:
-                        icms_vals["icms_base"] = float(icms.vBC)
-                    if hasattr(icms, "pICMS") and icms.pICMS is not None:
-                        icms_vals["icms_percent"] = float(icms.pICMS)
-                    if hasattr(icms, "vICMS") and icms.vICMS is not None:
-                        icms_vals["icms_value"] = float(icms.vICMS)
-                    if hasattr(icms, "pRedBC") and icms.pRedBC is not None:
-                        icms_vals["icms_reduction"] = float(icms.pRedBC)
-                    if hasattr(icms, "motDesICMS") and icms.motDesICMS is not None:
-                        icms_vals["icms_relief_id"] = self.env.ref(
-                            "l10n_br_fiscal.icms_relief_%s" % (icms.motDesICMS.value,)
-                        ).id
-                    if hasattr(icms, "vICMSDeson") and icms.vICMSDeson is not None:
-                        icms_vals["icms_relief_value"] = float(icms.vICMSDeson)
-                    if (
-                        hasattr(icms, "vICMSSubstituto")
-                        and icms.vICMSSubstituto is not None
-                    ):
-                        icms_vals["icms_substitute"] = float(icms.vICMSSubstituto)
-
-                    # ICMS ST fields
-                    # TODO map icmsst_tax_id
-                    if hasattr(icms, "modBCST") and icms.modBCST is not None:
-                        icms_vals["icmsst_base_type"] = icms.modBCST.value
-                    if hasattr(icms, "pMVAST") and icms.pMVAST is not None:
-                        icms_vals["icmsst_mva_percent"] = float(icms.pMVAST)
-                    if hasattr(icms, "pRedBCST") and icms.pRedBCST is not None:
-                        icms_vals["icmsst_reduction"] = float(icms.pRedBCST)
-                    if hasattr(icms, "vBCST") and icms.vBCST is not None:
-                        icms_vals["icmsst_base"] = float(icms.vBCST)
-                    if hasattr(icms, "pICMSST") and icms.pICMSST is not None:
-                        icms_vals["icmsst_percent"] = float(icms.pICMSST)
-                    if hasattr(icms, "vICMSST") and icms.vICMSST is not None:
-                        icms_vals["icmsst_value"] = float(icms.vICMSST)
-                    if hasattr(icms, "vBCSTRet") and icms.vBCSTRet is not None:
-                        icms_vals["icmsst_wh_base"] = float(icms.vBCSTRet)
-                    if hasattr(icms, "vICMSSTRet") and icms.vICMSSTRet is not None:
-                        icms_vals["icmsst_wh_value"] = float(icms.vICMSSTRet)
-
-                    # ICMS FCP Fields
-                    # TODO map icmsfcp_tax_id
-                    if hasattr(icms, "pFCPUFDest") and icms.pFCPUFDest is not None:
-                        icms_vals["icmsfcp_percent"] = float(icms.pFCPUFDest)
-                    if hasattr(icms, "vFCPUFDest") and icms.vFCPUFDest is not None:
-                        icms_vals["icmsfcp_value"] = float(icms.vFCPUFDest)
-                    if hasattr(icms, "vBCFCPST") and icms.vBCFCPST is not None:
-                        icms_vals["icmsfcp_base"] = float(icms.vBCFCPST)
-
-                    # ICMS DIFAL Fields
-                    if hasattr(icms, "vBCUFDest") and icms.vBCUFDest is not None:
-                        icms_vals["icms_destination_base"] = float(icms.vBCUFDest)
-                    if hasattr(icms, "pICMSUFDest") and icms.pICMSUFDest is not None:
-                        icms_vals["icms_origin_percent"] = float(icms.pICMSUFDest)
-                    if hasattr(icms, "pICMSInter") and icms.pICMSInter is not None:
-                        icms_vals["icms_destination_percent"] = float(icms.pICMSInter)
-
-                    if (
-                        hasattr(icms, "pICMSInterPart")
-                        and icms.pICMSInterPart is not None
-                    ):
-                        icms_vals["icms_sharing_percent"] = float(icms.pICMSInterPart)
-                    if hasattr(icms, "vICMSUFRemet") and icms.vICMSUFRemet is not None:
-                        icms_vals["icms_origin_value"] = float(icms.vICMSUFRemet)
-                    if hasattr(icms, "vICMSUFDest"):
-                        icms_vals["icms_destination_value"] = float(icms.vICMSUFDest)
-
-                    # ICMS Simples Nacional Fields
-                    # TODO map icmssn_tax_id using CSOSN
-                    if hasattr(icms, "CSOSN") and icms.CSOSN is not None:
-                        icms_vals["icms_cst_id"] = self.env.ref(
-                            "l10n_br_fiscal.cst_icmssn_%s" % (icms.CSOSN.value,)
-                        ).id
-                    if hasattr(icms, "pCredSN") and icms.pCredSN is not None:
-                        icms_vals["icmssn_percent"] = float(icms.pCredSN)
-                    if hasattr(icms, "vCredICMSSN") and icms.vCredICMSSN is not None:
-                        icms_vals["icmssn_credit_value"] = float(icms.vCredICMSSN)
-
-                    # ICMS Retido Anteriormente
-                    if hasattr(icms, "vBCSTRet") and icms.vBCSTRet is not None:
-                        icms_vals["icmsst_wh_base"] = float(icms.vBCSTRet)
-                    if hasattr(icms, "vICMSSTRet") and icms.vICMSSTRet is not None:
-                        icms_vals["icmsst_wh_value"] = float(icms.vICMSSTRet)
-                    if hasattr(icms, "vBCFCPSTRet") and icms.vBCFCPSTRet is not None:
-                        icms_vals["icmsfcp_base_wh"] = float(icms.vBCFCPSTRet)
-                    if hasattr(icms, "vFCPSTRet") and icms.vFCPSTRet is not None:
-                        icms_vals["icmsfcp_value_wh"] = float(icms.vFCPSTRet)
-                    if hasattr(icms, "vFCPST") and icms.vFCPST is not None:
-                        icms_vals["icmsfcpst_value"] = float(icms.vFCPST)
-                    if hasattr(icms, "vBCEfet") and icms.vBCEfet is not None:
-                        icms_vals["effective_base_value"] = float(icms.vBCEfet)
-                    if hasattr(icms, "vICMSEfet") and icms.vICMSEfet is not None:
-                        icms_vals["icms_effective_value"] = float(icms.vICMSEfet)
-            new_value.update(icms_vals)
         elif key == "nfe40_IPI":
-            pass
-            # IPI Fields
+            self._import_tax_attrs(
+                key,
+                value,
+                new_value,
+                sub_tags=[
+                    "IPITrib",
+                    "IPINT",
+                ],
+            )
 
-            # II Fields
+        elif key == "nfe40_II":
+            self._import_tax_attrs(
+                key,
+                value,
+                new_value,
+            )
 
-            # COFINS
+        elif key == "nfe40_PIS":
+            self._import_tax_attrs(
+                key,
+                value,
+                new_value,
+                sub_tags=PIS_SUB_TAGS,
+            )
 
-            # COFINS ST
+        elif key == "nfe40_PISST":
+            self._import_tax_attrs(
+                key,
+                value,
+                new_value,
+            )
 
-            # PIS
+        elif key == "nfe40_COFINS":
+            self._import_tax_attrs(
+                key,
+                value,
+                new_value,
+                sub_tags=COFINS_SUB_TAGS,
+            )
 
-            # PIS ST
+        elif key == "nfe40_COFINSST":
+            self._import_tax_attrs(
+                key,
+                value,
+                new_value,
+            )
 
-            # ICMSPart fields
+        elif key == "nfe40_ICMSUFDest":
+            self._import_tax_attrs(
+                key,
+                value,
+                new_value,
+            )
 
-            # ICMSSN fields
-
-            # TODO
         if (
             self._name == "account.invoice.line"
             and comodel._name == "l10n_br_fiscal.document.line"
@@ -1231,6 +1126,181 @@ class NFeLine(spec_models.StackedModel):
             vals.update(new_value)
         else:
             return super()._build_many2one(comodel, vals, new_value, key, value, path)
+
+    # flake8: noqa: C901
+    def _import_tax_attrs(self, key, value, odoo_attrs, sub_tags=None):
+        """
+        Import tax attributes. First the common
+        like CST, vBC, pICMS, pIPI, vICMS, vIPI...
+        common for ICMS, IPI, PIS, COFINS...
+        and finally the specific ones.
+        """
+        tax_binding = value
+        kind = key.split("_")[1].lower()
+        if sub_tags:
+            for tag in sub_tags:
+                if getattr(value, tag) is not None:
+                    tax_binding = getattr(value, tag)
+
+        def map_binding_attr(attr, odoo_attr=None):
+            """
+            Map binding tax attributes.
+            Cast Enum and Float values.
+            """
+            if hasattr(tax_binding, attr) and getattr(tax_binding, attr) is not None:
+                value = getattr(tax_binding, attr)
+                if isinstance(value, Enum):
+                    casted_value = value.value
+                else:
+                    casted_value = float(value)
+                if odoo_attr:
+                    odoo_attrs[odoo_attr] = casted_value
+                return casted_value
+
+        # common attributes CST, VBC, p*, v*:
+        cst = map_binding_attr("CST")
+        if cst:
+            cst_id = self.env.ref(
+                "l10n_br_fiscal.cst_%s_%s"
+                % (
+                    kind,
+                    cst,
+                )
+            ).id
+            odoo_attrs["%s_cst_id" % (kind,)] = cst_id
+        else:
+            cst_id = None
+
+        map_binding_attr("vBC", "%s_base" % (kind,))
+
+        percent = map_binding_attr(
+            "p%s" % (kind.upper().replace("ST", ""),), "%s_percent" % (kind,)
+        )
+        if kind in ("icms", "icmsufdest"):
+            map_binding_attr("modBC", "icms_base_type")
+            icms_percent_red = map_binding_attr("pRedBC", "icms_reduction")
+        else:
+            map_binding_attr("modBC", "%s_base_type" % (kind,))
+            icms_percent_red = None
+
+        if "ICMSSN" in key:
+            tax_group_kind = "icmssn"
+        elif "ICMSST" in key:
+            tax_group_kind = "icmsst"
+        elif "ICMSUFDest" in key:
+            tax_group_kind = "icms"
+        else:
+            tax_group_kind = kind
+        tax_group_id = self.env.ref(
+            "l10n_br_fiscal.tax_group_%s" % (tax_group_kind,)
+        ).id
+        tax_domain = [("tax_group_id", "=", tax_group_id)]
+        if percent:
+            tax_domain.append(("percent_amount", "=", percent))
+        tax_domain_with_cst = None
+        if cst_id:
+            cst_kind = "cst_%s_id" % (self.env.context.get("edoc_type", "in"),)
+            tax_domain_with_cst = tax_domain + [(cst_kind, "=", cst_id)]
+
+        fiscal_tax_id = None
+        if icms_percent_red:
+            # first we try to match a tax with the proper pRed
+            tax_domain_base = tax_domain_with_cst or tax_domain
+            tax_domain_with_red = tax_domain_base + [
+                ("percent_reduction", "=", icms_percent_red)
+            ]
+            fiscal_tax_id = self.env["l10n_br_fiscal.tax"].search(
+                tax_domain_with_red,
+                limit=1,
+            )
+
+        if not fiscal_tax_id:
+            if tax_domain_with_cst:
+                fiscal_tax_id = self.env["l10n_br_fiscal.tax"].search(
+                    tax_domain_with_cst,
+                    limit=1,
+                )
+            if not fiscal_tax_id:
+                fiscal_tax_id = self.env["l10n_br_fiscal.tax"].search(
+                    tax_domain,
+                    limit=1,
+                )
+
+        if fiscal_tax_id:
+            odoo_attrs["%s_tax_id" % (kind,)] = fiscal_tax_id.id
+            if not odoo_attrs.get("fiscal_tax_ids"):
+                odoo_attrs["fiscal_tax_ids"] = []
+            odoo_attrs["fiscal_tax_ids"].append(fiscal_tax_id.id)
+        elif not odoo_attrs.get("%s_tax_id" % (kind,)):
+            nt_tax_ref = "l10n_br_fiscal.tax_%s_nt" % (kind,)
+            nt_tax = self.env.ref(nt_tax_ref, raise_if_not_found=False)
+            if nt_tax:  # NOTE, can it be isento or something else?
+                odoo_attrs["%s_tax_id" % (kind,)] = nt_tax.id
+
+        map_binding_attr("v%s" % (kind.upper(),), "%s_value" % (kind,))
+
+        if kind in ("icms", "icmsufdest"):
+            map_binding_attr("orig", "icms_origin")
+            mot_des_icms = map_binding_attr("motDesICMS")
+            if mot_des_icms:
+                odoo_attrs["icms_relief_id"] = self.env.ref(
+                    "l10n_br_fiscal.icms_relief_%s" % (mot_des_icms,)
+                ).id
+            map_binding_attr("vICMSDeson", "icms_relief_value")
+            map_binding_attr("vICMSSubstituto", "icms_substitute")
+
+            # ICMS ST fields
+            map_binding_attr("modBCST", "icmsst_base_type")
+            map_binding_attr("pMVAST", "icmsst_mva_percent")
+            map_binding_attr("pRedBCST", "icmsst_reduction")
+            map_binding_attr("vBCST", "icsmst_base")
+            map_binding_attr("pICMSST", "icmsst_percent")
+            map_binding_attr("vICMSST", "icmsst_value")
+            map_binding_attr("vBCSTRet", "icmsst_wh_base")
+            map_binding_attr("vICMSSTRet", "icmsst_wh_value")
+
+            # ICMS FCP Fields
+            map_binding_attr("pFCPUFDest", "icmsfcp_percent")
+            map_binding_attr("vfCPUFDest", "icmsfcp_value")
+            map_binding_attr("vBCFCPST", "icmsfcp_base")
+
+            # ICMS DIFAL Fields
+            map_binding_attr("vBCUFDest", "icms_destination_base")
+            map_binding_attr("pICMSUFDest", "icms_origin_percent")
+            map_binding_attr("vICMSUFDest", "icms_destination_value")
+            map_binding_attr("pICMSInter", "icms_destination_percent")
+
+            map_binding_attr("pICMSInterPart", "icms_sharing_percent")
+            map_binding_attr("pICMSInterPart", "icms_sharing_percent")
+            map_binding_attr("vICMSUFRemet", "icms_origin_value")
+            map_binding_attr("vICMSUFDest", "icms_destination_value")
+
+            # ICMS Simples Nacional Fields
+            # TODO map icmssn_tax_id using CSOSN
+            csosn = map_binding_attr("CSOSN")
+            if csosn:
+                odoo_attrs["icms_cst_id"] = self.env.ref(
+                    "l10n_br_fiscal.cst_icmssn_%s" % (csosn,)
+                ).id
+            map_binding_attr("pCredSN", "icmssn_percent")
+            map_binding_attr("vCredICMSSN", "icmssn_credit_value")
+
+            # ICMS Retido Anteriormente
+            map_binding_attr("vBCSTRet", "icmsst_wh_base")
+            map_binding_attr("vICMSSTRet", "icmsst_wh_value")
+            map_binding_attr("vBCFCPSTRet", "icmsfcp_base_wh")
+            map_binding_attr("vFCPSTRet", "icmsfcp_value_wh")
+            map_binding_attr("vFCPST", "icmsfcpst_value")
+            map_binding_attr("vBCEfet", "effective_base_value")
+            map_binding_attr("vICMSEfet", "icms_effective_value")
+
+        # elif kind == "pis":  # (will also apply to pisst)
+        #     pass
+        #     # TODO  qBCProd, vAliqProd
+        #
+        # elif kind == "cofins":  # (will also apply to cofinsst)
+        #     pass
+        #     # TODO  qBCProd, vAliqProd
 
     def _verify_related_many2ones(self, related_many2ones):
         if (

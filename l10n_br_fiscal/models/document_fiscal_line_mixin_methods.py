@@ -250,6 +250,8 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         return taxes
 
     def _remove_all_fiscal_tax_ids(self):
+        if self._is_imported():
+            return
         for line in self:
             line.fiscal_tax_ids = False
 
@@ -295,6 +297,9 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
             )
             line.amount_tax_withholding = compute_result.get("amount_withholding", 0.0)
             line.estimate_tax = compute_result.get("estimate_tax", 0.0)
+            if self._is_imported():
+                continue
+
             for tax in line.fiscal_tax_ids:
                 computed_tax = computed_taxes.get(tax.tax_domain, {})
                 if hasattr(line, "%s_tax_id" % (tax.tax_domain,)):
@@ -362,6 +367,10 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
             )
 
             self.cfop_id = mapping_result["cfop"]
+
+            if self._is_imported():
+                return
+
             self.ipi_guideline_id = mapping_result["ipi_guideline"]
             self.icms_tax_benefit_id = mapping_result["icms_tax_benefit_id"]
             taxes = self.env["l10n_br_fiscal.tax"]
@@ -841,6 +850,8 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
         if self.city_taxation_code_id:
             self.cnae_id = self.city_taxation_code_id.cnae_id
             self._onchange_fiscal_operation_id()
+            if self.city_taxation_code_id.city_id:
+                self.update({"issqn_fg_city_id": self.city_taxation_code_id.city_id})
 
     @api.model
     def _add_fields_to_amount(self):
@@ -859,3 +870,9 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
     @api.model
     def _rm_fields_to_amount(self):
         return ["icms_relief_value"]
+
+    def _is_imported(self):
+        # When the mixin is used for instance
+        # in a PO line or SO line, there is no document_id
+        # and we consider the document is not imported
+        return hasattr(self, "document_id") and self.document_id.imported_document

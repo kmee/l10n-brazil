@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: L10n-brazil 12.0\n"
 "Report-Msgid-Bugs-To: \n"
-"PO-Revision-Date: 2024-02-09 20:09+0000\n"
+"PO-Revision-Date: 2024-03-04 16:10+0000\n"
 "Last-Translator: Marcel Savegnago <marcel.savegnago@gmail.com>\n"
 "Language-Team: none\n"
 "Language: pt_BR\n"
@@ -2030,6 +2030,7 @@ msgstr "CT-e"
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_cancel_wizard_form
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_correction_wizard_form
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.invalidate_number_wizard
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.l10n_br_fiscal_document_import_wizard_mixin_form
 msgid "Cancel"
 msgstr "Cancelar"
 
@@ -2819,7 +2820,7 @@ msgstr "Data de Entrada/Saída"
 #. module: l10n_br_fiscal
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_search
 msgid "Date In/Out"
-msgstr ""
+msgstr "Data de Entrada/Saída"
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_tax_definition__is_debit_credit
@@ -2994,7 +2995,7 @@ msgstr "Devolver"
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__discount_value
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__discount_value
 msgid "Discount Value"
-msgstr "Valor do desconto"
+msgstr "Valor do Desconto"
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_base_wizard_mixin__display_name
@@ -3101,6 +3102,12 @@ msgstr ""
 #: model:ir.model,name:l10n_br_fiscal.model_l10n_br_fiscal_document_mixin_methods
 msgid "Document Fiscal Mixin Methods"
 msgstr "Métodos de Mixina Fiscal de Documentos"
+
+#. module: l10n_br_fiscal
+#: code:addons/l10n_br_fiscal/wizards/document_import_wizard_mixin.py:0
+#, python-format
+msgid "Document Imported"
+msgstr ""
 
 #. module: l10n_br_fiscal
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_form
@@ -3547,6 +3554,11 @@ msgid "File Path"
 msgstr "Caminho do Arquivo"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard_mixin__file
+msgid "File to Import"
+msgstr ""
+
+#. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__ind_final
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__ind_final
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_mixin__ind_final
@@ -3786,6 +3798,7 @@ msgstr "Resumo de Dados fiscais do NCM e NBS"
 
 #. module: l10n_br_fiscal
 #: model:ir.model,name:l10n_br_fiscal.model_l10n_br_fiscal_operation
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard_mixin__fiscal_operation_id
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.operation_form
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.operation_search
 msgid "Fiscal Operation"
@@ -4057,7 +4070,7 @@ msgstr "Seguidores (Parceiros)"
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_tax_definition__activity_type_icon
 #: model:ir.model.fields,help:l10n_br_fiscal.field_uom_uom__activity_type_icon
 msgid "Font awesome icon e.g. fa-tasks"
-msgstr "Ícone Font Awesome ex. fa-tasks"
+msgstr "Ícone do font awesome ex. fa-task"
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__force_compute_delivery_costs_by_total
@@ -4268,7 +4281,7 @@ msgstr "Base para ICMS"
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__icms_base_type
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__icms_base_type
 msgid "ICMS Base Type"
-msgstr "Tipo base do ICMS"
+msgstr "Tipo da Base do ICMS"
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__icms_cst_code
@@ -5704,13 +5717,19 @@ msgid "Import Document"
 msgstr "Documento de Importação"
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__imported_document
-msgid "Imported"
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.l10n_br_fiscal_document_import_wizard_mixin_form
+msgid "Import Fiscal Document"
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard_mixin__importing_type
-msgid "Importing Type"
+#: code:addons/l10n_br_fiscal/wizards/document_import_wizard_mixin.py:0
+#, python-format
+msgid "Importation not implemented for %s!"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__imported_document
+msgid "Imported"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -5773,7 +5792,7 @@ msgstr "Documento de Entrada"
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__allow_csll_irpj
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__allow_csll_irpj
 msgid "Indicates potential 'CSLL' and 'IRPJ' tax charges."
-msgstr ""
+msgstr "Indica potencial cobrança de imposto 'CSLL' e 'IRPJ' ."
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__partner_is_public_entity
@@ -5787,6 +5806,10 @@ msgid ""
 "municipal governments, state-owned enterprises (where the government is the "
 "largest shareholder), and other government-controlled organizations."
 msgstr ""
+"Indica se a entidade em questão é uma organização pública ou uma entidade "
+"relacionada ao governo. Abrange uma gama de entidades, como governos "
+"municipais, empresas estatais (onde o governo é o maior acionista) e outras "
+"organizações controladas pelo governo."
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_company__industry_type
@@ -5852,6 +5875,12 @@ msgstr "Inutilização"
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.invalidate_number_wizard
 msgid "Inutilização de documento fiscal"
 msgstr "Inutilização de documento fiscal"
+
+#. module: l10n_br_fiscal
+#: code:addons/l10n_br_fiscal/wizards/document_import_wizard_mixin.py:0
+#, python-format
+msgid "Invalid file: %s"
+msgstr ""
 
 #. module: l10n_br_fiscal
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_form
@@ -6373,7 +6402,7 @@ msgstr "Anexo Principal"
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_partner__cnae_main_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_users__cnae_main_id
 msgid "Main CNAE"
-msgstr "CNAE principal"
+msgstr "CNAE Principal"
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_event__type__13
@@ -6587,7 +6616,7 @@ msgstr "Configurações de movimento"
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_partner__inscr_mun
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_users__inscr_mun
 msgid "Municipal Tax Number"
-msgstr "Número de Impostos Municipais"
+msgstr "Número da Inscrição Municipal"
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_icms_regulation__my_activity_date_deadline
@@ -8121,7 +8150,7 @@ msgstr "Número do Protocolo"
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_partner__is_public_entity
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_users__is_public_entity
 msgid "Public Entity"
-msgstr ""
+msgstr "Entidade Pública"
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation__fiscal_type__purchase
@@ -9991,19 +10020,8 @@ msgid "XML"
 msgstr "XML"
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_import_wizard_mixin__importing_type__xml_file
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_nfe_import_xml__importing_type__xml_file
-msgid "XML File"
-msgstr ""
-
-#. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_event__file_response_id
 msgid "XML Response"
-msgstr ""
-
-#. module: l10n_br_fiscal
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard_mixin__xml
-msgid "XML to Import"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -10161,6 +10179,12 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax_group__tax_domain__pis_wh
 msgid "pis_wh"
 msgstr "pis_wh"
+
+#. module: l10n_br_fiscal
+#: code:addons/l10n_br_fiscal/wizards/document_import_wizard_mixin.py:0
+#, python-format
+msgid "xsdata Python lib not installed!"
+msgstr ""
 
 #. module: l10n_br_fiscal
 #: code:addons/l10n_br_fiscal/models/data_ncm_nbs_abstract.py:0
