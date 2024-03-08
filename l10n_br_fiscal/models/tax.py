@@ -521,7 +521,11 @@ class Tax(models.Model):
 
         icmsst_debit_credit_percent = tax["percent_debit_credit"]
         icmsst_debit_credit_value = tax_dict["tax_value"] * (icmsst_debit_credit_percent / 100)
-        tax_withholding = tax_dict["tax_value"] - icmsst_debit_credit_value
+
+        if icmsst_debit_credit_percent != 0:
+            tax_withholding = tax_dict["tax_value"] - icmsst_debit_credit_value
+        else:
+            tax_withholding = 0
 
         tax_dict.update({
             "icmsst_credit_value": icmsst_debit_credit_value,
