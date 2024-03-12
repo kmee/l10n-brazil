@@ -210,7 +210,8 @@ class SaleOrder(models.Model):
 
     @api.depends("order_line")
     def _compute_amount(self):
-        super()._compute_amount()
+        res = super()._compute_amount()
+        return res
 
     @api.depends("order_line.price_total")
     def _amount_all(self):
@@ -267,8 +268,9 @@ class SaleOrder(models.Model):
 
     @api.onchange("fiscal_operation_id")
     def _onchange_fiscal_operation_id(self):
-        super()._onchange_fiscal_operation_id()
+        res = super()._onchange_fiscal_operation_id()
         self.fiscal_position_id = self.fiscal_operation_id.fiscal_position_id
+        return res
 
     def _prepare_invoice(self):
         self.ensure_one()

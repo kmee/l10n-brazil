@@ -122,7 +122,7 @@ class SaleOrderLine(models.Model):
     )
     def _compute_amount(self):
         """Compute the amounts of the SO line."""
-        super()._compute_amount()
+        res = super()._compute_amount()
         for line in self:
             # Update taxes fields
             line._update_taxes()
@@ -137,6 +137,7 @@ class SaleOrderLine(models.Model):
                     "price_total": line.amount_total,
                 }
             )
+        return res
 
     def _prepare_invoice_line(self, qty):
         self.ensure_one()
@@ -160,7 +161,7 @@ class SaleOrderLine(models.Model):
         "analytic_line_ids.product_uom_id",
     )
     def _compute_qty_delivered(self):
-        super()._compute_qty_delivered()
+        res = super()._compute_qty_delivered()
         for line in self:
             line.fiscal_qty_delivered = 0.0
             if line.product_id.invoice_policy == "delivery":
@@ -171,6 +172,7 @@ class SaleOrderLine(models.Model):
                 line.fiscal_qty_delivered = (
                     line.qty_delivered * line.product_id.uot_factor
                 )
+        return res
 
     @api.onchange("discount")
     def _onchange_discount_percent(self):
@@ -189,11 +191,13 @@ class SaleOrderLine(models.Model):
             )
 
     def _compute_tax_id(self):
-        super(SaleOrderLine, self)._compute_tax_id()
+        res = super(SaleOrderLine, self)._compute_tax_id()
         for line in self:
             line.tax_id |= line.fiscal_tax_ids.account_taxes(user_type="sale")
+        return res
 
     @api.onchange("fiscal_tax_ids")
     def _onchange_fiscal_tax_ids(self):
-        super()._onchange_fiscal_tax_ids()
+        res = super()._onchange_fiscal_tax_ids()
         self._compute_tax_id()
+        return res
