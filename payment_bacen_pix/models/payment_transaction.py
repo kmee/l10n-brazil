@@ -121,21 +121,31 @@ class PaymentTransaction(models.Model):
         due = fields.Date.context_today(self)
         due = datetime.combine(due, datetime.max.time())
 
-        payload = json.dumps(
-            {
-                "calendario": {
-                    "expiracao": str(acquirer_id.bacen_pix_expiration),
-                },
-                "devedor": {
-                    "cpf": partner_id.cnpj_cpf.replace('.', '').replace('-', ''),
-                    "nome": values.get("partner_name")
-                },
-                "valor": {
-                    "original": str(values.get("amount")),
-                },
-                "chave": str(acquirer_id.bacen_pix_key),
-            }
-        )
+        payload = {
+            "calendario": {
+                "expiracao": str(acquirer_id.bacen_pix_expiration),
+            },
+            "devedor": {
+                "nome": values.get("partner_name")
+            },
+            "valor": {
+                "original": str(values.get("amount")),
+            },
+            "chave": str(acquirer_id.bacen_pix_key),
+        }
+
+        cpf_cnpj = partner_id.cnpj_cpf.replace('.', '').replace('-', '')
+
+        if len(cpf_cnpj) == 11:
+            payload['devedor']['cpf'] = cpf_cnpj
+        elif len(cpf_cnpj) == 14:
+            payload['devedor']['cnpj'] = cpf_cnpj
+        else:
+            _logger.error(f"CPF ou CNPJ com tamanho diferente do padrão! -> {len(cpf_cnpj)}"
+                          f"\tEra esperado tamanho 11 ou 14!")
+
+        payload = json.dumps(payload)
+
         _logger.info("payload: %s" % payload)
 
         txid = values.get("tx_id")
