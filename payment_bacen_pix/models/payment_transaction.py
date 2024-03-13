@@ -3,6 +3,7 @@
 
 import json
 import logging
+import re
 from datetime import datetime
 
 from odoo import _, fields, models
@@ -134,7 +135,7 @@ class PaymentTransaction(models.Model):
             "chave": str(acquirer_id.bacen_pix_key),
         }
 
-        cpf_cnpj = partner_id.cnpj_cpf.replace('.', '').replace('-', '')
+        cpf_cnpj = re.sub(r'\D', '', partner_id.cnpj_cpf)
 
         if len(cpf_cnpj) == 11:
             payload['devedor']['cpf'] = cpf_cnpj
