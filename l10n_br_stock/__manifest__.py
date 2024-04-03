@@ -6,7 +6,11 @@
     "website": "https://github.com/OCA/l10n-brazil",
     "version": "14.0.2.1.1",
     "depends": ["stock", "l10n_br_base"],
-    "data": ["views/stock_picking_view.xml"],
+    "data": [
+        "views/stock_picking_view.xml",
+        # Wizards
+        "wizards/document_import_wizard_mixin.xml",
+    ],
     "demo": [
         "demo/res_users_demo.xml",
         "demo/stock_location_demo.xml",
