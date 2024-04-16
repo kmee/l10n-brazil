@@ -1,0 +1,14 @@
+# See https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst#oca_dependencies-txt
+currency
+bank-payment
+account-financial-tools
+account-payment
+account-invoicing
+account-reconcile
+mis-builder
+contract
+manufacture
+purchase-workflow
+sale-workflow
+delivery-carrier
+web
