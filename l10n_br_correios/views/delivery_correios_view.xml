@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_delivery_carrier_form" model="ir.ui.view">
+        <field name="model">delivery.carrier</field>
+        <field name="inherit_id" ref="delivery.view_delivery_carrier_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//notebook/page[1]" position='before'>
+                <page
+                    string="Configuração dos correios"
+                    attrs="{'invisible': [('delivery_type', '!=', 'correios')]}"
+                >
+                    <group>
+                        <group string="Connection">
+                            <field
+                                name="correios_user"
+                                attrs="{'required': [('delivery_type', '=', 'correios')]}"
+                            />
+                            <field
+                                name="correios_password"
+                                password="True"
+                                attrs="{'required': [('delivery_type', '=', 'correios')]}"
+                            />                            
+                            <!-- <button
+                                name="action_ctt_validate_user"
+                                type="object"
+                                string="Test connection"
+                                class="oe_link"
+                                icon="fa-plug"
+                            /> -->
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
