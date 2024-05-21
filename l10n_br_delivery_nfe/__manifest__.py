@@ -12,8 +12,12 @@
     "version": "14.0.1.1.0",
     "depends": ["l10n_br_nfe", "l10n_br_account", "l10n_br_delivery"],
     "data": [
+        # Security
+        "security/ir.model.access.csv",
         # Views
-        "views/nfe_document_view.xml"
+        "views/nfe_document_view.xml",
+        # Wizards
+        "wizards/stock_invoice_onshipping_view.xml",
     ],
     "installable": True,
     "auto_install": True,
