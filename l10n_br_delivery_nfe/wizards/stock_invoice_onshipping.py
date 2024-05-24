@@ -38,29 +38,60 @@ class StockInvoiceOnshipping(models.TransientModel):
             "nfe40_pesoB": data.nfe40_pesoB,
         }
 
-    def _get_single_volume_data(self):
-        """Case single volume"""
+    def _get_picking(self):
         active_ids = self.env.context.get("active_ids", [])
         if active_ids:
             active_ids = active_ids[0]
         pick_obj = self.env["stock.picking"]
-        picking_id = pick_obj.browse(active_ids)
+        return pick_obj.browse(active_ids)
+
+    def _get_volume_data_package_level(self):
+        """Generate a single volume for packages"""
+        picking_id = self._get_picking()
+
+        vols_data = []
+        if picking_id.package_ids:
+            for package_level_id in picking_id.package_level_ids:
+                # TODO: consider adding field net_weight in stock.quant.package
+                manual_weight = package_level_id.package_id.shipping_weight
+                vol_data = {
+                    "nfe40_qVol": 0,
+                    "nfe40_esp": "",
+                    "nfe40_marca": "",
+                    "nfe40_pesoL": 0,
+                    "nfe40_pesoB": (manual_weight if manual_weight else 0),
+                }
+                for line in package_level_id.move_line_ids:
+                    vol_data["nfe40_qVol"] += line.qty_done
+                    pesoL = line.qty_done * line.product_id.net_weight
+                    pesoB = line.qty_done * line.product_id.weight
+                    vol_data["nfe40_pesoL"] += pesoL
+                    vol_data["nfe40_pesoB"] += 0 if manual_weight else pesoB
+                vols_data.append(vol_data)
+
+        return vols_data
+
+    def _get_volume_data_wo_package(self):
+        """Generate a single volume for lines without package"""
+        picking_id = self._get_picking()
+        if not picking_id.move_line_ids_without_package:
+            return []
 
         vols_data = [
             {
                 "nfe40_qVol": 0,
                 "nfe40_esp": "",
-                "nfe40_marca": 0,
+                "nfe40_marca": "",
                 "nfe40_pesoL": 0,
                 "nfe40_pesoB": 0,
             }
         ]
-
-        for line in picking_id.move_line_ids:
-            if line.product_id.volume_type == "product_qty":
-                vols_data[0]["nfe40_qVol"] += line.qty_done
-                vols_data[0]["nfe40_pesoL"] += line.product_id.product_nfe40_pesoL
-                vols_data[0]["nfe40_pesoB"] += line.product_id.product_nfe40_pesoB
+        for line in picking_id.move_line_ids_without_package:
+            vols_data[0]["nfe40_qVol"] += line.qty_done
+            pesoL = line.qty_done * line.product_id.net_weight
+            pesoB = line.qty_done * line.product_id.weight
+            vols_data[0]["nfe40_pesoL"] += pesoL
+            vols_data[0]["nfe40_pesoB"] += pesoB
 
         return vols_data
 
@@ -73,7 +104,10 @@ class StockInvoiceOnshipping(models.TransientModel):
         """
         result = super().default_get(fields_list)
 
-        vols_data = self._get_single_volume_data()
+        vols_data = (
+            self._get_volume_data_wo_package() + self._get_volume_data_package_level()
+        )
+
         vol_ids = [(0, 0, vol) for vol in vols_data]
         result["vol_ids"] = vol_ids
         return result
