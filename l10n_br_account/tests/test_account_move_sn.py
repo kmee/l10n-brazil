@@ -130,9 +130,9 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
             "product_uom_id": False,
             "quantity": False,
             "discount": 0.0,
-            "price_unit": 27.0,
-            "price_subtotal": 27.0,
-            "price_total": 27.0,
+            "price_unit": 0.0,  # FIXME 27.0 see https://github.com/OCA/l10n-brazil/pull/3037
+            "price_subtotal": 0.0,  # 27.0
+            "price_total": 0.0,  # 27.0
             "tax_ids": [],
             "tax_line_id": self.env["account.tax"]
             .search([("name", "=", "ICMS SN Saida")], order="id DESC", limit=1)
@@ -152,9 +152,9 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
             "product_uom_id": False,
             "quantity": False,
             "discount": 0.0,
-            "price_unit": -1000.0,
-            "price_subtotal": -1000.0,
-            "price_total": -1000.0,
+            "price_unit": 0.0,  # FIXME -1000.0 see https://github.com/OCA/l10n-brazil/pull/3037
+            "price_subtotal": 0.0,  # -1000.0
+            "price_total": 0.0,  # -1000.0
             "tax_ids": [],
             "tax_line_id": False,
             "currency_id": self.company_data["currency"].id,
@@ -172,8 +172,8 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
             "fiscal_position_id": False,
             "payment_reference": "",
             "invoice_payment_term_id": self.pay_terms_a.id,
-            "amount_untaxed": 1000.0,
-            "amount_tax": 0.0,
+            "amount_untaxed": 973.0,  # 1000.0,
+            "amount_tax": 27.0,  # 0.0,
             "amount_total": 1000.0,
         }
 

@@ -285,11 +285,12 @@ class AccountMoveLine(models.Model):
         for idx in inverted_index:
             sorted_result |= result[idx]
 
-        for line in sorted_result:
-            # Forces the recalculation of price_total and price_subtotal fields which are
-            # recalculated by super
-            if line.move_id.company_id.country_id.code == "BR":
-                line.update(line._get_price_total_and_subtotal())
+        # TODO MIGRATE, see https://github.com/OCA/l10n-brazil/pull/3037
+        # for line in sorted_result:
+        # Forces the recalculation of price_total and price_subtotal fields which are
+        # recalculated by super
+        # if line.move_id.company_id.country_id.code == "BR":
+        #    line.update(line._get_price_total_and_subtotal())
 
         return sorted_result
 
@@ -512,7 +513,8 @@ class AccountMoveLine(models.Model):
             line.price_total += (
                 line.insurance_value + line.other_value + line.freight_value
             )
-            # TODO - icms_relief_value ? (see https://github.com/OCA/l10n-brazil/pull/3037 )
+            # - icms_relief_value ?  TODO MIGRATE
+            # (see https://github.com/OCA/l10n-brazil/pull/3037 )
         return result
 
     @api.depends(
