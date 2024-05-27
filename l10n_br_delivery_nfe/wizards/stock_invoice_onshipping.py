@@ -95,6 +95,13 @@ class StockInvoiceOnshipping(models.TransientModel):
 
         return vols_data
 
+    def prepare_vols_data(self):
+        """Simplify inheritances"""
+        vols_data = (
+            self._get_volume_data_wo_package() + self._get_volume_data_package_level()
+        )
+        return vols_data
+
     @api.model
     def default_get(self, fields_list):
         """
@@ -103,12 +110,7 @@ class StockInvoiceOnshipping(models.TransientModel):
         :return: dict
         """
         result = super().default_get(fields_list)
-
-        vols_data = (
-            self._get_volume_data_wo_package() + self._get_volume_data_package_level()
-        )
-
-        vol_ids = [(0, 0, vol) for vol in vols_data]
+        vol_ids = [(0, 0, vol) for vol in self.prepare_vols_data()]
         result["vol_ids"] = vol_ids
         return result
 
