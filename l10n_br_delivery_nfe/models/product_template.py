@@ -8,18 +8,18 @@ class ProductTemplate(models.Model):
     _inherit = "product.template"
 
     product_nfe40_esp = fields.Char(
-        string="Espécie dos volumes transportados",
+        string="Type of transported volumes",
         related="product_variant_ids.product_nfe40_esp",
         readonly=False,
     )
 
     product_nfe40_marca = fields.Char(
-        string="Marca dos volumes transportados",
+        string="Brand of transported volumes",
         related="product_variant_ids.product_nfe40_marca",
         readonly=False,
     )
 
-    # Manter compatibilidade com módulo: product_net_weight
+    # Preserve compatibility with module: product_net_weight
     net_weight = fields.Float(
         string="Net Weight",
         related="product_variant_ids.net_weight",

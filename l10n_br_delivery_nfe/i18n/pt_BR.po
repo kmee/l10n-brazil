@@ -17,6 +17,12 @@ msgstr ""
 "X-Generator: Weblate 5.6.2\n"
 
 #. module: l10n_br_delivery_nfe
+#: model:ir.model.fields,field_description:l10n_br_delivery_nfe.field_product_product__product_nfe40_marca
+#: model:ir.model.fields,field_description:l10n_br_delivery_nfe.field_product_template__product_nfe40_marca
+msgid "Brand of transported volumes"
+msgstr "Marca dos volumes transportados"
+
+#. module: l10n_br_delivery_nfe
 #: model:ir.model.fields,field_description:l10n_br_delivery_nfe.field_account_bank_statement_line__nfe40_transporta
 #: model:ir.model.fields,field_description:l10n_br_delivery_nfe.field_account_move__nfe40_transporta
 #: model:ir.model.fields,field_description:l10n_br_delivery_nfe.field_account_payment__nfe40_transporta
@@ -74,3 +80,14 @@ msgstr ""
 #: model:ir.model.fields,help:l10n_br_delivery_nfe.field_l10n_br_fiscal_document__nfe40_transporta
 msgid "The partner that is doing the delivery service."
 msgstr "O parceiro que está realizando o serviço de entrega."
+
+#. module: l10n_br_delivery_nfe
+#: model:ir.model.fields,field_description:l10n_br_delivery_nfe.field_stock_invoice_onshipping__vol_ids
+msgid "Volume IDs Data"
+msgstr "Dados dos volumes"
+
+#. module: l10n_br_delivery_nfe
+#: model:ir.model.fields,field_description:l10n_br_delivery_nfe.field_product_product__product_nfe40_esp
+#: model:ir.model.fields,field_description:l10n_br_delivery_nfe.field_product_template__product_nfe40_esp
+msgid "Type of transported volumes"
+msgstr "Espécie dos volumes transportados"
