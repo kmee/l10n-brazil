@@ -79,7 +79,10 @@ class StockInvoiceOnshipping(models.TransientModel):
     def _get_volume_data_wo_package(self):
         """Generate a single volume for lines without package"""
         picking_id = self._get_picking()
-        if not picking_id.move_line_ids_without_package:
+        # Filter out move lines with in a package
+        if not picking_id.move_line_ids_without_package.filtered(
+            lambda ml: not ml.package_level_id
+        ):
             return []
 
         vols_data = [
@@ -91,7 +94,9 @@ class StockInvoiceOnshipping(models.TransientModel):
                 "nfe40_pesoB": 0,
             }
         ]
-        for line in picking_id.move_line_ids_without_package:
+        for line in picking_id.move_line_ids_without_package.filtered(
+            lambda ml: not ml.package_level_id
+        ):
             vols_data[0]["nfe40_qVol"] += line.qty_done
             vols_data[0]["nfe40_esp"] = (
                 vols_data[0]["nfe40_esp"] or line.product_id.product_nfe40_esp
