@@ -14,4 +14,5 @@ class ProductProduct(models.Model):
     # Manter compatibilidade com módulo: product_net_weight
     net_weight = fields.Float(
         string="Net Weight",
+        help="Net Weight of the product, container excluded.",
     )

@@ -52,17 +52,22 @@ class StockInvoiceOnshipping(models.TransientModel):
         vols_data = []
         if picking_id.package_ids:
             for package_level_id in picking_id.package_level_ids:
-                # TODO: consider adding field net_weight in stock.quant.package
                 manual_weight = package_level_id.package_id.shipping_weight
                 vol_data = {
-                    "nfe40_qVol": 0,
+                    "nfe40_qVol": 1,
                     "nfe40_esp": "",
                     "nfe40_marca": "",
                     "nfe40_pesoL": 0,
                     "nfe40_pesoB": (manual_weight if manual_weight else 0),
                 }
+
                 for line in package_level_id.move_line_ids:
-                    vol_data["nfe40_qVol"] += line.qty_done
+                    vol_data["nfe40_esp"] = (
+                        vol_data["nfe40_esp"] or line.product_id.product_nfe40_esp
+                    )
+                    vol_data["nfe40_marca"] = (
+                        vol_data["nfe40_marca"] or line.product_id.product_nfe40_marca
+                    )
                     pesoL = line.qty_done * line.product_id.net_weight
                     pesoB = line.qty_done * line.product_id.weight
                     vol_data["nfe40_pesoL"] += pesoL
@@ -88,6 +93,12 @@ class StockInvoiceOnshipping(models.TransientModel):
         ]
         for line in picking_id.move_line_ids_without_package:
             vols_data[0]["nfe40_qVol"] += line.qty_done
+            vols_data[0]["nfe40_esp"] = (
+                vols_data[0]["nfe40_esp"] or line.product_id.product_nfe40_esp
+            )
+            vols_data[0]["nfe40_marca"] = (
+                vols_data[0]["nfe40_marca"] or line.product_id.product_nfe40_marca
+            )
             pesoL = line.qty_done * line.product_id.net_weight
             pesoB = line.qty_done * line.product_id.weight
             vols_data[0]["nfe40_pesoL"] += pesoL
