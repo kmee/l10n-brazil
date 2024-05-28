@@ -21,6 +21,8 @@
         "security/ir.model.access.csv",
         # Views
         "views/nfe_document_view.xml",
+        "views/view_product_product.xml",
+        "views/view_product_template.xml",
         # Wizards
         "wizards/stock_invoice_onshipping_view.xml",
     ],
