@@ -7,11 +7,15 @@ from odoo import fields, models
 class ProductProduct(models.Model):
     _inherit = "product.product"
 
-    product_nfe40_esp = fields.Char(string="Espécie dos volumes transportados")
+    product_nfe40_esp = fields.Char(
+        string="Type of transported volumes",
+    )
 
-    product_nfe40_marca = fields.Char(string="Marca dos volumes transportados")
+    product_nfe40_marca = fields.Char(
+        string="Brand of transported volumes",
+    )
 
-    # Manter compatibilidade com módulo: product_net_weight
+    # Preserve compatibility with module: product_net_weight
     net_weight = fields.Float(
         string="Net Weight",
         help="Net Weight of the product, container excluded.",

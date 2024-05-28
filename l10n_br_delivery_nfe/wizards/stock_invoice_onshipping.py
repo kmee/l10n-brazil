@@ -8,7 +8,7 @@ class StockInvoiceOnshipping(models.TransientModel):
     _inherit = "stock.invoice.onshipping"
 
     vol_ids = fields.One2many(
-        string="Dados dos volumes",
+        string="Volume IDs Data",
         comodel_name="stock.invoice.onshipping.vol",
         inverse_name="invoice_wizard_id",
     )
