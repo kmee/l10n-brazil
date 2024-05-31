@@ -11,7 +11,8 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='invoice_date']" position="after">
                 <field name="vol_ids">
-                    <tree>
+                    <tree default_order="picking_id">
+                        <field name="picking_id" string="Transfer" />
                         <field name="nfe40_qVol" string="Qt Vol" />
                         <field name="nfe40_esp" string="Esp." />
                         <field name="nfe40_marca" string="Marca" />
