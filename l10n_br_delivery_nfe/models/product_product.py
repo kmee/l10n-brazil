@@ -14,9 +14,3 @@ class ProductProduct(models.Model):
     product_nfe40_marca = fields.Char(
         string="Brand of transported volumes",
     )
-
-    # Preserve compatibility with module: product_net_weight
-    net_weight = fields.Float(
-        string="Net Weight",
-        help="Net Weight of the product, container excluded.",
-    )
