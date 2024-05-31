@@ -18,11 +18,3 @@ class ProductTemplate(models.Model):
         related="product_variant_ids.product_nfe40_marca",
         readonly=False,
     )
-
-    # Preserve compatibility with module: product_net_weight
-    net_weight = fields.Float(
-        string="Net Weight",
-        related="product_variant_ids.net_weight",
-        help="Net Weight of the product, container excluded.",
-        readonly=False,
-    )
