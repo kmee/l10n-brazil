@@ -13,4 +13,4 @@ class StockInvoiceOnshippingVol(models.TransientModel):
         comodel_name="stock.invoice.onshipping",
     )
 
-    picking_id = fields.Many2one("stock.picking", "Transfer", readonly=True)
+    picking_id = fields.Many2one("stock.picking", "Transfer")
