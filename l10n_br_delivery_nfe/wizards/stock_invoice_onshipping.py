@@ -68,9 +68,13 @@ class StockInvoiceOnshipping(models.TransientModel):
                         vol_data["nfe40_esp"] = (
                             vol_data["nfe40_esp"] or line.product_id.product_nfe40_esp
                         )
+                        product_nfe40_marca = (
+                            line.product_id.product_brand_id.name
+                            if line.product_id.product_brand_id
+                            else ""
+                        )
                         vol_data["nfe40_marca"] = (
-                            vol_data["nfe40_marca"]
-                            or line.product_id.product_nfe40_marca
+                            vol_data["nfe40_marca"] or product_nfe40_marca
                         )
                         pesoL = line.qty_done * line.product_id.net_weight
                         pesoB = line.qty_done * line.product_id.weight
@@ -108,9 +112,12 @@ class StockInvoiceOnshipping(models.TransientModel):
                 new_vol["nfe40_esp"] = (
                     new_vol["nfe40_esp"] or line.product_id.product_nfe40_esp
                 )
-                new_vol["nfe40_marca"] = (
-                    new_vol["nfe40_marca"] or line.product_id.product_nfe40_marca
+                product_nfe40_marca = (
+                    line.product_id.product_brand_id.name
+                    if line.product_id.product_brand_id
+                    else ""
                 )
+                new_vol["nfe40_marca"] = new_vol["nfe40_marca"] or product_nfe40_marca
                 pesoL = line.qty_done * line.product_id.net_weight
                 pesoB = line.qty_done * line.product_id.weight
                 new_vol["nfe40_pesoL"] += pesoL

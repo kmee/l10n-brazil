@@ -10,7 +10,3 @@ class ProductProduct(models.Model):
     product_nfe40_esp = fields.Char(
         string="Type of transported volumes",
     )
-
-    product_nfe40_marca = fields.Char(
-        string="Brand of transported volumes",
-    )

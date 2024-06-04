@@ -6,7 +6,6 @@
         <field name="arch" type="xml">
             <xpath expr="//label[@for='net_weight']" position="before">
                 <field name="product_nfe40_esp" />
-                <field name="product_nfe40_marca" />
             </xpath>
         </field>
     </record>

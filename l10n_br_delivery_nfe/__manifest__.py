@@ -15,6 +15,7 @@
         "l10n_br_account",
         "l10n_br_delivery",
         "product_net_weight",
+        "product_brand",
     ],
     "data": [
         # Security

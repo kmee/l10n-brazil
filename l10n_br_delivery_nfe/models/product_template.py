@@ -12,9 +12,3 @@ class ProductTemplate(models.Model):
         related="product_variant_ids.product_nfe40_esp",
         readonly=False,
     )
-
-    product_nfe40_marca = fields.Char(
-        string="Brand of transported volumes",
-        related="product_variant_ids.product_nfe40_marca",
-        readonly=False,
-    )

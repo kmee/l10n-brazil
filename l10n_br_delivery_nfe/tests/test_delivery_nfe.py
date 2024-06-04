@@ -18,12 +18,14 @@ class TestDeliveryNFe(TestBrPickingInvoicingCommon):
         self.prod2 = self.env.ref("product.product_product_16")
         self._change_user_company(self.env.ref("l10n_br_base.empresa_lucro_presumido"))
         picking = self.env.ref("l10n_br_stock_account.lucro_presumido-picking_1")
+        self.brand_id1 = self.env["product.brand"].create({"name": "marca teste"})
+        self.brand_id2 = self.env["product.brand"].create({"name": "marca2 teste"})
 
         # Set product volume data
         self.prod1.product_nfe40_esp = ""
-        self.prod1.product_nfe40_marca = "marca teste"
+        self.prod1.product_brand_id = self.brand_id1
         self.prod2.product_nfe40_esp = "esp2 teste"
-        self.prod2.product_nfe40_marca = "marca2 teste"
+        self.prod2.product_brand_id = self.brand_id2
         self.prod1.weight = 1
         self.prod2.weight = 3
         self.prod1.net_weight = 1
@@ -112,10 +114,11 @@ class TestDeliveryNFe(TestBrPickingInvoicingCommon):
         self.prod2 = self.env.ref("product.product_product_16")
         self._change_user_company(self.env.ref("l10n_br_base.empresa_lucro_presumido"))
         picking = self.env.ref("l10n_br_stock_account.lucro_presumido-picking_2")
+        self.brand_id1 = self.env["product.brand"].create({"name": "marca teste"})
 
         # Set product volume data
         self.prod1.product_nfe40_esp = "esp teste"
-        self.prod1.product_nfe40_marca = "marca teste"
+        self.prod1.product_brand_id = self.brand_id1
         self.prod1.weight = 2
         self.prod2.weight = 4
         self.prod1.net_weight = 3
