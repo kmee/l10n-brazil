@@ -1,0 +1,14 @@
+<odoo>
+    <record id="view_picking_withcarrier_out_form_inherit" model="ir.ui.view">
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="delivery.view_picking_withcarrier_out_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='carrier_data']" position="inside">
+                <field
+                    name="number_of_volumes"
+                    attrs="{'invisible': [('invoice_ids', '=', [])]}"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>

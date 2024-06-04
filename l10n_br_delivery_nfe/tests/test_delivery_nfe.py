@@ -31,6 +31,13 @@ class TestDeliveryNFe(TestBrPickingInvoicingCommon):
         self.prod1.net_weight = 1
         self.prod2.net_weight = 5
 
+        # Number of Volumes - zero before invoice
+        self.assertEqual(
+            picking.number_of_volumes,
+            0,
+            "No of Vols must be zero before invoicing.",
+        )
+
         # Invoice
         picking.set_to_be_invoiced()
         self.picking_move_state(picking)
@@ -105,6 +112,14 @@ class TestDeliveryNFe(TestBrPickingInvoicingCommon):
             "Unexpected value for the field nfe40_qVol in Fiscal Details.",
         )
 
+        # Number of Volumes
+        picking._compute_number_of_volumes()
+        self.assertEqual(
+            picking.number_of_volumes,
+            4,
+            "Wrong number of volumes.",
+        )
+
     # Testing Lucro Presumido - with pack
     def test_invoicing_picking_volume_with_package_lucro_presumido(self):
         """Test Invoicing Picking NFe volume - Lucro Presumido - with package"""
@@ -123,6 +138,13 @@ class TestDeliveryNFe(TestBrPickingInvoicingCommon):
         self.prod2.weight = 4
         self.prod1.net_weight = 3
         self.prod2.net_weight = 6
+
+        # Number of Volumes - zero before invoice
+        self.assertEqual(
+            picking.number_of_volumes,
+            0,
+            "No of Vols must be zero before invoicing.",
+        )
 
         # Invoice
         picking.set_to_be_invoiced()
@@ -202,4 +224,12 @@ class TestDeliveryNFe(TestBrPickingInvoicingCommon):
             volume_ids.mapped("nfe40_qVol"),
             ["1"],
             "Unexpected value for the field nfe40_qVol in Fiscal Details.",
+        )
+
+        # Number of Volumes
+        picking._compute_number_of_volumes()
+        self.assertEqual(
+            picking.number_of_volumes,
+            1,
+            "Wrong number of volumes.",
         )

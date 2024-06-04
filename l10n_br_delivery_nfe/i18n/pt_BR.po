@@ -91,3 +91,8 @@ msgstr "Dados dos volumes"
 #: model:ir.model.fields,field_description:l10n_br_delivery_nfe.field_product_template__product_nfe40_esp
 msgid "Type of transported volumes"
 msgstr "Espécie dos volumes transportados"
+
+#. module: l10n_br_delivery_nfe
+#: model:ir.model.fields,field_description:l10n_br_delivery_nfe.field_stock_picking__number_of_volumes
+msgid "Number of Volumes"
+msgstr "Número de Volumes"
