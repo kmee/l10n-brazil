@@ -13,4 +13,9 @@ class StockInvoiceOnshippingVol(models.TransientModel):
         comodel_name="stock.invoice.onshipping",
     )
 
+    generate_vols_wizard_id = fields.Many2one(
+        string="stock.generate.volumes",
+        comodel_name="stock.generate.volumes",
+    )
+
     picking_id = fields.Many2one("stock.picking", "Transfer")

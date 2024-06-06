@@ -1,2 +1,3 @@
-from . import stock_invoice_onshipping_vol
+from . import vol_stock_invoice_onshipping
 from . import stock_invoice_onshipping
+from . import stock_generate_volumes
