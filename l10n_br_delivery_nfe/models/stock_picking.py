@@ -83,7 +83,7 @@ class StockPicking(models.Model):
             for line in picking_id.move_line_ids_without_package.filtered(
                 lambda ml: not ml.package_level_id and not ml.result_package_id
             ):
-                new_vol["nfe40_qVol"] += f"{line.qty_done:.0f}"
+                new_vol["nfe40_qVol"] += line.qty_done
                 new_vol["nfe40_esp"] = (
                     new_vol["nfe40_esp"] or line.product_id.product_nfe40_esp
                 )
@@ -98,6 +98,7 @@ class StockPicking(models.Model):
                 new_vol["nfe40_pesoL"] += pesoL
                 new_vol["nfe40_pesoB"] += pesoB
 
+            new_vol["nfe40_qVol"] = f"{new_vol['nfe40_qVol']:.0f}"
             vols_data.append(new_vol)
 
         return vols_data
