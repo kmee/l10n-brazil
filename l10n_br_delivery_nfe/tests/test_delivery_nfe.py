@@ -75,7 +75,7 @@ class TestDeliveryNFe(TestBrPickingInvoicingCommon):
         )
         self.assertEqual(
             wizard.vol_ids.mapped("nfe40_qVol"),
-            ["4.0"],
+            ["4"],
             "Unexpected value for the field nfe40_qVol in Stock Invoice Onshipping.",
         )
 
@@ -108,7 +108,7 @@ class TestDeliveryNFe(TestBrPickingInvoicingCommon):
         )
         self.assertEqual(
             volume_ids.mapped("nfe40_qVol"),
-            ["4.0"],
+            ["4"],
             "Unexpected value for the field nfe40_qVol in Fiscal Details.",
         )
 
