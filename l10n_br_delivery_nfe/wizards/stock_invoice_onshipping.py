@@ -55,7 +55,10 @@ class StockInvoiceOnshipping(models.TransientModel):
         """
         result = super().default_get(fields_list)
 
-        picking_ids = self._get_picking()
+        picking_ids = self._load_pickings()
+        if not picking_ids:
+            raise UserError(_("No picking 2binvoiced!"))
+
         vols_data = picking_ids.prepare_vols_data_from_picking()
         vol_ids = [(0, 0, vol) for vol in vols_data]
 

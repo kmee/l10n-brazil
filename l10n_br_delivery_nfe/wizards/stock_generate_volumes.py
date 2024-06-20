@@ -68,4 +68,3 @@ class StockGenerateVolumes(models.TransientModel):
         picking_id.number_of_volumes = sum(
             [float(v) for v in new_picks.mapped("nfe40_qVol")]
         )
-        return
