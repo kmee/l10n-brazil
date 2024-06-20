@@ -6,7 +6,45 @@ from odoo import fields, models
 
 class StockPickingVol(models.Model):
     _name = "stock.picking.vol"
-    _inherit = "nfe.40.vol"
+    _description = "Dados dos volumes"
+    # _inherit = "nfe.40.vol"
+
+    """
+    NFe40 fields start
+    ##################
+    this section copies fields from nfe.40.vol
+    sadly, _name/_inherit breaks spec_model
+    TODO: learn how to inherit nfe mixin (https://github.com/OCA/l10n-brazil/pull/3091)
+    """
+    nfe40_vol_transp_id = fields.Many2one(comodel_name="nfe.40.transp")
+    nfe40_qVol = fields.Char(string="Quantidade de volumes transportados")
+    nfe40_esp = fields.Char(string="Espécie dos volumes transportados")
+    nfe40_marca = fields.Char(string="Marca dos volumes transportados")
+    nfe40_nVol = fields.Char(string="Numeração dos volumes transportados")
+
+    nfe40_pesoL = fields.Float(
+        string="Peso líquido (em kg)",
+        digits=(
+            12,
+            3,
+        ),
+    )
+
+    nfe40_pesoB = fields.Float(
+        string="Peso bruto (em kg)",
+        digits=(
+            12,
+            3,
+        ),
+    )
+
+    nfe40_lacres = fields.One2many(
+        "stock.picking.lacres", "nfe40_lacres_vol_id", string="lacres"
+    )
+    """
+    NFe40 fields end
+    ################
+    """
 
     picking_id = fields.Many2one(
         comodel_name="stock.picking",
