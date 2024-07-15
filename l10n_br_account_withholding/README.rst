@@ -45,12 +45,12 @@ Automatize a conformidade fiscal, reduza erros de entrada manual e
 aprimore seus processos financeiros relacionados à retenção de impostos
 de fornecedores.
 
--  **Automatize a Conformidade Fiscal:** Crie contas a pagar para
-   impostos retidos em compras de fornecedores automaticamente.
--  **Reduza Erros:** Minimize erros manuais e assegure a precisão nas
-   retenções de impostos.
--  **Aprimore a Eficiência:** Melhore seus processos financeiros para
-   lidar com retenções de impostos de fornecedores.
+- **Automatize a Conformidade Fiscal:** Crie contas a pagar para
+  impostos retidos em compras de fornecedores automaticamente.
+- **Reduza Erros:** Minimize erros manuais e assegure a precisão nas
+  retenções de impostos.
+- **Aprimore a Eficiência:** Melhore seus processos financeiros para
+  lidar com retenções de impostos de fornecedores.
 
 Installation
 ============
@@ -60,32 +60,32 @@ Odoo:
 
 1. **Adicione o Repositório:**
 
-   -  Adicione o repositório ``l10n-brazil`` da OCA no seu projeto
-      adicionando a URL: ``https://github.com/OCA/l10n-brazil``.
-   -  Verifique os arquivos requirements.txt e oca_dependencies.txt
-      localizados na raiz do repositório ``l10n-brazil``. Estes arquivos
-      contêm, respectivamente, as dependências Python necessárias para o
-      Odoo e os repositórios da OCA dos quais os módulos da localização
-      brasileira dependem.
+   - Adicione o repositório ``l10n-brazil`` da OCA no seu projeto
+     adicionando a URL: ``https://github.com/OCA/l10n-brazil``.
+   - Verifique os arquivos requirements.txt e oca_dependencies.txt
+     localizados na raiz do repositório ``l10n-brazil``. Estes arquivos
+     contêm, respectivamente, as dependências Python necessárias para o
+     Odoo e os repositórios da OCA dos quais os módulos da localização
+     brasileira dependem.
 
 2. **Configure o Caminho dos Addons:**
 
-   -  Adicione o caminho do repositório na configuração do Odoo em
-      ``addons-path``.
+   - Adicione o caminho do repositório na configuração do Odoo em
+     ``addons-path``.
 
 3. **Atualize a Lista de Módulos:**
 
-   -  Atualize sua lista de módulos para que o Odoo reconheça o novo
-      módulo.
+   - Atualize sua lista de módulos para que o Odoo reconheça o novo
+     módulo.
 
 4. **Busque pelo Módulo:**
 
-   -  Pesquise por ``"L10n Br Account Withholding"`` nos addons do Odoo
-      para localizar o módulo.
+   - Pesquise por ``"L10n Br Account Withholding"`` nos addons do Odoo
+     para localizar o módulo.
 
 5. **Instale o Módulo:**
 
-   -  Prossiga com a instalação do módulo no ambiente Odoo.
+   - Prossiga com a instalação do módulo no ambiente Odoo.
 
 Configuration
 =============
@@ -103,6 +103,9 @@ estes passos:
    se necessário. Se um diário não for especificado, o módulo usará o
    diário da fatura de compra original.
 
+3. **Definir uma Prefeitura para o ISSQN:** Crie ou edite um parceiro,
+   vá até a aba "Fiscal" e marque a opção "É Prefeitura".
+
 Usage
 =====
 
@@ -114,6 +117,12 @@ impostos no Odoo:
 
 2. **Confirmação da Fatura:** Ao confirmar a fatura de compra, o módulo
    gera automaticamente as faturas de retenção de impostos.
+
+3. **Definir uma Prefeitura para o ISSQN:** Ao incluir um imposto de
+   retenção e informar a cidade correspondente para o ISSQN, o módulo
+   busca automaticamente o parceiro marcado como Prefeitura para essa
+   cidade. Caso não o encontre, ele retorna o parceiro padrão definido
+   no Grupo de Impostos.
 
 Bug Tracker
 ===========
@@ -137,13 +146,13 @@ Authors
 Contributors
 ------------
 
--  ``Escodoo <https://www.escodoo.com.br>``\ \_:
+- ``Escodoo <https://www.escodoo.com.br>``\ \_:
 
-   -  Marcel Savegnago marcel.savegnago@escodoo.com.br
+  - Marcel Savegnago marcel.savegnago@escodoo.com.br
 
--  ``Akretion <https://www.akretion.com.br>``\ \_:
+- ``Akretion <https://www.akretion.com.br>``\ \_:
 
-   -  Renato Lima renato.lima@akretion.com.br
+  - Renato Lima renato.lima@akretion.com.br
 
 Maintainers
 -----------
