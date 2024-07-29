@@ -204,6 +204,11 @@ class FiscalDocument(models.Model):
             self.move_ids.button_draft()
         return result
 
+    def _edoc_subscribe(self):
+        if self.move_ids:
+            self.move_ids._edoc_subscribe()
+        return
+
     def action_view_invoice(self):
         self.ensure_one()
         form_view_name = "account.view_move_form"
