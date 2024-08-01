@@ -93,7 +93,15 @@ class PurchaseOrderLine(models.Model):
     def _compute_amount(self):
         """Compute the amounts of the PO line."""
         result = super()._compute_amount()
+
+        discount = self.env["ir.module.module"].search_count(
+            [("name", "=", "purchase_discount")]
+        )
+
         for line in self:
+            if discount:
+                self.discount_value = (self.discount * self.price_unit) / 100
+
             if line.fiscal_operation_id:
                 # Update taxes fields
                 line._update_taxes()
