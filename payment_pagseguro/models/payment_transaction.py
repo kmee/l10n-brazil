@@ -1,12 +1,17 @@
 # Copyright 2020 KMEE INFORMATICA LTDA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import datetime
+import json
 import logging
 import pprint
+from xml.etree import ElementTree
 
+import phonenumbers
 import requests
+from erpbrasil.base.misc import punctuation_rm
 
-from odoo import _, fields, models
+from odoo import _, api, fields, http, models
 from odoo.exceptions import ValidationError
 
 _logger = logging.getLogger(__name__)
@@ -27,6 +32,39 @@ class PaymentTransactionPagseguro(models.Model):
         string="Check Link Pagseguro",
         required=False,
     )
+    pagseguro_pix_copy_paste = fields.Char(string="Pagseguro PIX copy and paste code")
+    pagseguro_pix_image_link = fields.Char(string="Pagseguro PIX image link")
+
+    def _create_pagseguro_order(self, type_payment):
+        """Creates the s2s payment.
+
+        Uses encrypted credit card.
+        """
+        api_url_charge = "https://%s/orders" % (
+            self.acquirer_id._get_pagseguro_api_url()
+        )
+
+        self.payment_token_id.active = False
+
+        _logger.info(
+            "_create_pagseguro_order: Sending values to URL %s", api_url_charge
+        )
+        json_param = self._get_pagseguro_order_params(type_payment)
+
+        r = requests.post(
+            api_url_charge,
+            json=json_param,
+            headers=self.acquirer_id._get_pagseguro_api_headers(),
+        )
+
+        if r.status_code != 201:
+            return http.Response(r.text, r.status_code)
+        else:
+            _logger.info(
+                "_create_pagseguro_order: Values received:\n%s",
+                self.pprint_filtered_response(r.json()),
+            )
+            return r
 
     def _create_pagseguro_charge(self):
         """Creates the s2s payment.
@@ -224,7 +262,7 @@ class PaymentTransactionPagseguro(models.Model):
         #     raise UserError(_("Only BRL currency is allowed."))
         CHARGE_PARAMS = {
             "reference_id": str(self.payment_token_id.acquirer_id.id),
-            "description": self.display_name[:13],
+            "description": self.display_name[:8],
             "amount": {
                 # Charge is in BRL cents -> Multiply by 100
                 "value": int(self.amount * 100),
@@ -263,3 +301,144 @@ class PaymentTransactionPagseguro(models.Model):
         output_response.pop("payment_method", None)
 
         return pprint.pformat(output_response)
+
+    def _set_transaction_state_pix(self, pagseguro_status):
+        """Change transaction state Pix based on Pagseguro status"""
+
+        if pagseguro_status == 4:
+            self.done = self._set_transaction_done()
+        elif pagseguro_status == 3:
+            self._set_transaction_authorized()
+        elif pagseguro_status in [1, 2, 5, 9]:
+            self._set_transaction_pending()
+        elif pagseguro_status in [6, 7, 8]:
+            self._set_transaction_cancel()
+
+    def pagseguro_pix_do_transaction(self, type_payment):
+        self.ensure_one()
+        charge = self._create_pagseguro_order(type_payment)
+
+        return self._pagseguro_pix_validate_tree(charge)
+
+    def _pagseguro_pix_validate_tree(self, charge):
+        self.ensure_one()
+        if charge.status_code == 201:
+            charge = charge.json()
+            # self.log_transaction(
+            #     reference=charge.get("txid"), message=charge.get("status")
+            # )
+            pagseguro_pix_image_link = charge["qr_codes"][0]["links"][0]["href"]
+            self._set_transaction_authorized()
+            self.payment_token_id.verified = True
+            self.pagseguro_pix_image_link = pagseguro_pix_image_link
+            return {"result": True, "location": self.pagseguro_pix_image_link}
+        else:
+            json_content = charge.data.decode("utf-8")
+            data = json.loads(json_content)
+            msg = data["error_messages"][0]["description"]
+            status = str(data["error_messages"][0]["code"])
+            return {"result": False, "error": msg, "status": status}
+
+    @api.model
+    def pagseguro_search_payment_pix(self, params):
+        acquirer_id = self.env.ref(
+            "payment_pagseguro.payment_acquirer_pagseguro"
+        ).sudo()
+        notification_code = params["notificationCode"]
+        url = acquirer_id._get_pagseguro_api_url_pix()
+        auth_token = self.acquirer_id.pagseguro_token
+        params = {"email": acquirer_id.pagseguro_email, "token": auth_token}
+        header = {
+            "Content-Type": "application/xml",
+        }
+        r = requests.get(
+            url + "/v3/transactions/notifications/" + notification_code,
+            headers=header,
+            json=params,
+        )
+        if r.status_code == 200:
+            string_xml = r.content
+            xml_tree = ElementTree.fromstring(string_xml)
+            code = xml_tree.find("code").text
+            status = xml_tree.find("status").text
+            transaction_id = self.search([("acquirer_reference", "=", code)])
+            transaction_id._set_transaction_state_pix(status)
+
+            _logger.info(
+                "pagseguro_search_payment_pix: Transaction %s has status %s"
+                % (code, status)
+            )
+        else:
+            _logger.error("Failed to receive Webhook notification.")
+
+    def _get_pagseguro_order_params(self, type_payment):
+        """Returns dict containing the required body information to create a
+        charge on Pagseguro."""
+        reference_id = self.sale_order_ids.name
+        order_params = {
+            "reference_id": reference_id,
+            "customer": {
+                "name": self.partner_name,
+                "email": self.partner_email,
+                "tax_id": punctuation_rm(self.partner_id.vat)
+                or punctuation_rm(self.partner_id.cnpj_cpf),
+                "phones": self._get_phone_params(),
+            },
+            "items": self._get_pagseguro_items_params(),
+            "qr_codes": [{"amount": {"value": int(self.amount * 100)}}],
+            "shipping": {
+                "address": {
+                    "street": self.partner_id.street,
+                    "number": self.partner_id.street_number or "S/N",
+                    "complement": self.partner_id.street2 or "N/A",
+                    "locality": self.partner_id.district,
+                    "city": self.partner_id.district,
+                    "region_code": self.partner_id.state_id.code,
+                    "country": "BRA",
+                    "postal_code": punctuation_rm(self.partner_zip),
+                }
+            },
+        }
+        if "pix" not in type_payment:
+            charges = self._get_pagseguro_charge_params()
+            order_params.update({"charges": charges})
+        else:
+            import pytz
+
+            expiration = str(
+                (
+                    datetime.datetime.now(pytz.timezone("America/Sao_Paulo"))
+                    + datetime.timedelta(days=1)
+                )
+                .replace(microsecond=0)
+                .isoformat()
+            )
+            order_params["qr_codes"][0].update({"expiration_date": expiration})
+            order_params.update({"notification_urls": []})
+        return order_params
+
+    def _get_phone_params(self):
+        try:
+            phone_number = phonenumbers.parse(self.partner_id.mobile)
+            return [
+                {
+                    "country": str(phone_number.country_code),
+                    "area": str(phone_number.national_number)[:2],
+                    "number": str(phone_number.national_number)[2:],
+                    "type": "MOBILE",
+                }
+            ]
+        except Exception as e:
+            _logger.error(_(str(e)))
+
+    def _get_pagseguro_items_params(self):
+        items = []
+        for line in self.sale_order_ids[0].order_line:
+            item = {
+                "reference_id": line.product_id.default_code,
+                "name": line.product_id.name,
+                "quantity": int(line.product_uom_qty),
+                "unit_amount": int(line.price_unit * 100),
+            }
+            items.append(item)
+        return items
