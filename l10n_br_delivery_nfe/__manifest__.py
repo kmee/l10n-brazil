@@ -15,12 +15,19 @@
         "l10n_br_account",
         "l10n_br_delivery",
         "product_net_weight",
+        "product_brand",
     ],
     "data": [
+        # Security
+        "security/ir.model.access.csv",
+        # Wizards
+        "wizards/stock_invoice_onshipping_view.xml",
+        "wizards/stock_generate_volumes_view.xml",
         # Views
         "views/nfe_document_view.xml",
         "views/view_product_product.xml",
         "views/view_product_template.xml",
+        "views/view_stock_picking.xml",
     ],
     "installable": True,
     "auto_install": True,
