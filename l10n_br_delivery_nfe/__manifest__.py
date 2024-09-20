@@ -10,10 +10,17 @@
     "maintainers": ["mbcosta"],
     "website": "https://github.com/OCA/l10n-brazil",
     "version": "14.0.1.1.0",
-    "depends": ["l10n_br_nfe", "l10n_br_account", "l10n_br_delivery"],
+    "depends": [
+        "l10n_br_nfe",
+        "l10n_br_account",
+        "l10n_br_delivery",
+        "product_net_weight",
+    ],
     "data": [
         # Views
-        "views/nfe_document_view.xml"
+        "views/nfe_document_view.xml",
+        "views/view_product_product.xml",
+        "views/view_product_template.xml",
     ],
     "installable": True,
     "auto_install": True,
