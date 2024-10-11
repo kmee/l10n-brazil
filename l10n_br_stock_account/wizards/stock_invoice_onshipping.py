@@ -1,6 +1,7 @@
 # Copyright (C) 2009  Renato Lima - Akretion
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
@@ -163,6 +164,16 @@ class StockInvoiceOnshipping(models.TransientModel):
         # a quantidade/quantity do dicionario traz a quantidade referente a
         # apenas a essa linha por isso é removido aqui.
         del fiscal_values["quantity"]
+
+        # TODO: this way works to - but its weirder
+        # nfe40_rastro_dict = {
+        #     "nfe40_nLote": "nfe40_nLote",
+        #     "nfe40_qLote": 1,
+        #     "nfe40_dFab": datetime.now(),
+        #     "nfe40_dVal": datetime.now(),
+        #     "nfe40_cAgreg": "nfe40_cAgreg",
+        # }
+        # fiscal_values["nfe40_rastro"] = [(0, 0, nfe40_rastro_dict)]
 
         # Mesmo a quantidade estando errada por ser chamada apenas por uma move
         # no caso das stock.move agrupadas e os valores fiscais e de totais

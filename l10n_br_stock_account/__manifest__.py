@@ -15,8 +15,12 @@
         "stock_picking_invoicing",
         "l10n_br_stock",
         "l10n_br_account",
+        "stock_lot_production_date",
+        "account_invoice_production_lot",
+        "product_expiry",
     ],
     "data": [
+        # 'views/stock_production_lot.xml',
         # Security
         "security/ir.model.access.csv",
         # Data

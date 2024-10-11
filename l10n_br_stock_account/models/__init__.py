@@ -8,3 +8,5 @@ from . import stock_picking
 from . import stock_move
 from . import procurement_group
 from . import account_move
+from . import stock_production_lot
+from . import fiscal_document_line
