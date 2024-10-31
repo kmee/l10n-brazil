@@ -35,7 +35,7 @@ addon | version | maintainers | summary
 [l10n_br_crm](l10n_br_crm/) | 16.0.1.1.1 | [![renatonlima](https://github.com/renatonlima.png?size=30px)](https://github.com/renatonlima) [![rvalyi](https://github.com/rvalyi.png?size=30px)](https://github.com/rvalyi) [![mbcosta](https://github.com/mbcosta.png?size=30px)](https://github.com/mbcosta) | Brazilian Localization CRM
 [l10n_br_crm_cnpj_search](l10n_br_crm_cnpj_search/) | 16.0.1.0.0 | [![corredato](https://github.com/corredato.png?size=30px)](https://github.com/corredato) [![mileo](https://github.com/mileo.png?size=30px)](https://github.com/mileo) | CNPJ search in CRM Lead
 [l10n_br_currency_rate_update](l10n_br_currency_rate_update/) | 16.0.1.1.1 | [![renatonlima](https://github.com/renatonlima.png?size=30px)](https://github.com/renatonlima) | Update exchange rates using OCA modules for Brazil
-[l10n_br_fiscal](l10n_br_fiscal/) | 16.0.2.8.1 | [![renatonlima](https://github.com/renatonlima.png?size=30px)](https://github.com/renatonlima) | Fiscal module/tax engine for Brazil
+[l10n_br_fiscal](l10n_br_fiscal/) | 16.0.2.8.2 | [![renatonlima](https://github.com/renatonlima.png?size=30px)](https://github.com/renatonlima) | Fiscal module/tax engine for Brazil
 [l10n_br_fiscal_certificate](l10n_br_fiscal_certificate/) | 16.0.1.0.1 | [![renatonlima](https://github.com/renatonlima.png?size=30px)](https://github.com/renatonlima) | A1 fiscal certificate management for Brazil
 [l10n_br_fiscal_closing](l10n_br_fiscal_closing/) | 16.0.2.2.0 |  | Period fiscal closing
 [l10n_br_fiscal_dfe](l10n_br_fiscal_dfe/) | 16.0.1.0.2 |  | Distribuição de documentos fiscais
