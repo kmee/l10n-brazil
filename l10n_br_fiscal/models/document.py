@@ -611,3 +611,6 @@ class Document(models.Model):
             "target": "new",
             "context": ctx,
         }
+
+    def action_import_confirm(self):
+        pass
