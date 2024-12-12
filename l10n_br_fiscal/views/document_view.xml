@@ -93,6 +93,7 @@
         <field name="document_electronic" invisible="1" />
         <field name="fiscal_operation_type" invisible="1" />
         <field name="document_type" invisible="1" />
+        <field name="imported_document" invisible="1" />
         <header>
             <!-- Please use state_edoc and attrs to maintain compatibility with invoice -->
             <button
@@ -177,6 +178,13 @@
                         string="Send Email"
                         groups="l10n_br_fiscal.group_user"
                         attrs="{'invisible': [('state_edoc', 'not in', ('autorizada', 'cancelada', 'denegada'))]}"
+                    />
+
+            <button
+                        name="action_import_confirm"
+                        type="object"
+                        string="Confirmar Importação"
+                        attrs="{'invisible': [('imported_document', '=', False)]}"
                     />
             <field
                         name="state_edoc"
