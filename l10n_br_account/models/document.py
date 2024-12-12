@@ -202,3 +202,29 @@ class FiscalDocument(models.Model):
         ):
             self._document_deny()
         return super().exec_after_SITUACAO_EDOC_DENEGADA(old_state, new_state)
+
+    def action_import_confirm(self):
+        """
+        This is the import wizard confirmation action that will
+        trigger the account.move importation for the current file.
+        After the importation, it either redirect for processing
+        the next file if any, either it redirect to the imported
+        account.move(s) at the end of the attachments sequence.
+        """
+        move_type = "%s_invoice" % (self.fiscal_operation_type,)
+        move_id = (
+            self.env["account.move"]
+            .import_fiscal_document(
+                fiscal_document,
+                move_type=move_type,
+            )
+            .id
+        )
+        return {
+            "name": _("Imported Invoices"),
+            "type": "ir.actions.act_window",
+            "target": "current",
+            "views": [[False, "tree"], [False, "form"]],
+            "res_ids": move_id.ids,
+            "res_model": "account.move",
+        }
