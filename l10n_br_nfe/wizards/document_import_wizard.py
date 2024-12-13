@@ -43,23 +43,25 @@ class DocumentImporterWizardMixin(models.TransientModel):
             self.destination_name = binding.NFe.infNFe.dest.xNome
 
     def _create_edoc_from_file(self):
-        binding = self._parse_file()
-        edoc = self.env["l10n_br_fiscal.document"].import_binding_nfe(
-            binding,
-            edoc_type=self.fiscal_operation_type,
-        )
-        # edoc.fiscal_operation_id = self.fiscal_operation_id
-        # for line in edoc.fiscal_line_ids:
-        #     line.fiscal_operation_id = self.fiscal_operation_id
+        if self.document_type == MODELO_FISCAL_NFE:
+            binding = self._parse_file()
+            edoc = self.env["l10n_br_fiscal.document"].import_binding_nfe(
+                binding,
+                edoc_type=self.fiscal_operation_type,
+            )
+            # edoc.fiscal_operation_id = self.fiscal_operation_id
+            # for line in edoc.fiscal_line_ids:
+            #     line.fiscal_operation_id = self.fiscal_operation_id
 
-        # if not self.partner_id:
-        #     self.partner_id = edoc.partner_id
+            # if not self.partner_id:
+            #     self.partner_id = edoc.partner_id
 
-        # self._attach_original_nfe_xml_to_document(edoc)
+            # self._attach_original_nfe_xml_to_document(edoc)
 
-        # if self.fiscal_operation_type == "in":
-        #     self.imported_products_ids._find_or_create_product_supplierinfo()
-        return binding, edoc
+            # if self.fiscal_operation_type == "in":
+            #     self.imported_products_ids._find_or_create_product_supplierinfo()
+            return binding, edoc
+        return super()._create_edoc_from_file()
 
     # def _fill_wizard_from_binding(self):
     #     binding = super()._fill_wizard_from_binding()
