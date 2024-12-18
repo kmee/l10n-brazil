@@ -242,19 +242,14 @@ class FiscalDocument(models.Model):
         account.move(s) at the end of the attachments sequence.
         """
         move_type = "%s_invoice" % (self.fiscal_operation_type,)
-        move_id = (
-            self.env["account.move"]
-            .import_fiscal_document(
-                fiscal_document,
-                move_type=move_type,
-            )
-            .id
+        move_id = self.env["account.move"].import_fiscal_document(
+            self, move_type=move_type
         )
         return {
             "name": _("Imported Invoices"),
             "type": "ir.actions.act_window",
             "target": "current",
             "views": [[False, "tree"], [False, "form"]],
-            "res_ids": move_id.ids,
+            "res_ids": [move_id.id],
             "res_model": "account.move",
         }
