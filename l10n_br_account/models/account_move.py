@@ -728,39 +728,42 @@ class AccountMove(models.Model):
             for subfield in self.env["account.move.line"]._get_integrity_hash_fields()
         ]
 
-    def button_import_fiscal_document(self):
-        """
-        Import move fields and invoice lines from
-        the fiscal_document_id record if there is any new line
-        to import.
-        You can typically set fiscal_document_id to some l10n_br_fiscal.document
-        record that was imported previously and import its lines into the
-        current move.
-        """
-        for move in self:
-            if move.state != "draft":
-                raise UserError(_("Cannot import in non draft Account Move!"))
-            elif (
-                move.partner_id
-                and move.partner_id != move.fiscal_document_id.partner_id
-            ):
-                raise UserError(_("Partner mismatch!"))
-            elif (
-                MOVE_TO_OPERATION[move.move_type]
-                != move.fiscal_document_id.fiscal_operation_type
-            ):
-                raise UserError(_("Fiscal Operation Type mismatch!"))
-            elif move.company_id != move.fiscal_document_id.company_id:
-                raise UserError(_("Company mismatch!"))
+    # def button_import_fiscal_document(self):
+    #     """
+    #     Import move fields and invoice lines from
+    #     the fiscal_document_id record if there is any new line
+    #     to import.
+    #     You can typically set fiscal_document_id to
+    # some l10n_br_fiscal.document
+    #     record that was imported previously and import its lines into the
+    #     current move.
+    #     """
+    #     for move in self:
+    #         if move.state != "draft":
+    #             raise UserError(_("Cannot import in
+    #  non draft Account Move!"))
+    #         elif (
+    #             move.partner_id
+    #             and move.partner_id != move.fiscal_document_id.partner_id
+    #         ):
+    #             raise UserError(_("Partner mismatch!"))
+    #         elif (
+    #             MOVE_TO_OPERATION[move.move_type]
+    #             != move.fiscal_document_id.fiscal_operation_type
+    #         ):
+    #             raise UserError(_("Fiscal Operation Type mismatch!"))
+    #         elif move.company_id != move.fiscal_document_id.company_id:
+    #             raise UserError(_("Company mismatch!"))
 
-            move_fiscal_lines = set(
-                move.invoice_line_ids.mapped("fiscal_document_line_id")
-            )
-            fiscal_doc_lines = set(move.fiscal_document_id.fiscal_line_ids)
-            if move_fiscal_lines == fiscal_doc_lines:
-                raise UserError(_("No new Fiscal Document Line to import!"))
+    #         move_fiscal_lines = set(
+    #             move.invoice_line_ids.mapped("fiscal_document_line_id")
+    #         )
+    #         fiscal_doc_lines = set(move.fiscal_document_id.fiscal_line_ids)
+    #         if move_fiscal_lines == fiscal_doc_lines:
+    #             raise UserError(_("No new Fiscal Document Line to import!"))
 
-            self.import_fiscal_document(move.fiscal_document_id, move_id=move.id)
+    #         self.import_fiscal_document(
+    # move.fiscal_document_id, move_id=move.id)
 
     @api.model
     def import_fiscal_document(
