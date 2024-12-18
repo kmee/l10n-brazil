@@ -372,18 +372,19 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
 
     @api.onchange("fiscal_operation_id")
     def _onchange_fiscal_operation_id(self):
-        if self._is_imported():
-            pass
-        else:
-            if not self.price_unit:
-                self._get_product_price()
-            self._onchange_commercial_quantity()
-        self.fiscal_operation_line_id = self.fiscal_operation_id.line_definition(
-            company=self.company_id,
-            partner=self._get_fiscal_partner(),
-            product=self.product_id,
-        )
-        self._onchange_fiscal_operation_line_id()
+        if self.fiscal_operation_id:
+            if self._is_imported():
+                pass
+            else:
+                if not self.price_unit:
+                    self._get_product_price()
+                self._onchange_commercial_quantity()
+            self.fiscal_operation_line_id = self.fiscal_operation_id.line_definition(
+                company=self.company_id,
+                partner=self._get_fiscal_partner(),
+                product=self.product_id,
+            )
+            self._onchange_fiscal_operation_line_id()
 
     @api.onchange("fiscal_operation_line_id")
     def _onchange_fiscal_operation_line_id(self):
@@ -406,9 +407,9 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
                     ind_final=self.ind_final,
                 )
                 self.cfop_id = mapping_result["cfop"]
-            self._process_fiscal_mapping(mapping_result)
-            if not self.fiscal_operation_line_id:
-                self.cfop_id = False
+                self._process_fiscal_mapping(mapping_result)
+                if not self.fiscal_operation_line_id:
+                    self.cfop_id = False
 
     @api.onchange("cfop_id")
     def _onchange_cfop_id(self):
