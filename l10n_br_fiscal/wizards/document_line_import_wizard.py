@@ -19,8 +19,6 @@ class L10nBrFiscalDocumentLineImportWizard(models.TransientModel):
     document_ncm_id = fields.Many2one("l10n_br_fiscal.ncm")
     document_cfop_id = fields.Many2one("l10n_br_fiscal.cfop")
 
-
-
     import_product_id = fields.Many2one("product.product", string="Product to Import")
     import_qty = fields.Float(string="Quantity to Import")
     import_ncm_id = fields.Many2one("l10n_br_fiscal.ncm")
@@ -131,20 +129,24 @@ class L10nBrFiscalDocumentLineImportWizard(models.TransientModel):
 
     def _check_product_supplierinfo(self):
         if self.import_product_id:
-            product_supplierinfo_id = self.env["product.supplierinfo"].search([
-                ('name', '=', self.document_line_id.partner_id.id),
-                ('product_id', '=', self.import_product_id.id),
-                ('product_name', '=', self.document_name),
-                ('product_code', '=', self.document_code),
-            ])
+            product_supplierinfo_id = self.env["product.supplierinfo"].search(
+                [
+                    ("name", "=", self.document_line_id.partner_id.id),
+                    ("product_id", "=", self.import_product_id.id),
+                    ("product_name", "=", self.document_name),
+                    ("product_code", "=", self.document_code),
+                ]
+            )
             if not product_supplierinfo_id:
-                product_supplierinfo_id = self.env["product.supplierinfo"].create({
-                    "name": self.document_line_id.partner_id.id,
-                    "product_id": self.import_product_id.id,
-                    "product_tmpl_id": self.import_product_id.product_tmpl_id.id,
-                    "product_name": self.document_name,
-                    "product_code": self.document_code,
-                })
+                product_supplierinfo_id = self.env["product.supplierinfo"].create(
+                    {
+                        "name": self.document_line_id.partner_id.id,
+                        "product_id": self.import_product_id.id,
+                        "product_tmpl_id": self.import_product_id.product_tmpl_id.id,
+                        "product_name": self.document_name,
+                        "product_code": self.document_code,
+                    }
+                )
             # TODO: Melhorar a conversão de unidades.
 
     def _check_other_lines_info(self, values):
