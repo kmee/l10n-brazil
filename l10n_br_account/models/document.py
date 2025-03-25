@@ -245,11 +245,11 @@ class FiscalDocument(models.Model):
         move_id = self.env["account.move"].import_fiscal_document(
             self, move_type=move_type
         )
+        move_id.ensure_one()
         return {
             "name": _("Imported Invoices"),
             "type": "ir.actions.act_window",
-            "target": "current",
-            "views": [[False, "tree"], [False, "form"]],
-            "res_ids": [move_id.id],
+            "view_mode": "form",
+            "res_id": move_id.id,
             "res_model": "account.move",
         }
