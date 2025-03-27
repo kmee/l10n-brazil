@@ -126,7 +126,8 @@ class ProductTemplate(models.Model):
     def fields_view_get(
         self, view_id=None, view_type="form", toolbar=False, submenu=False
     ):
-        """Modifica a view para adicionar seller_ids e variant_seller_ids apenas se o módulo purchase NÃO estiver instalado."""
+        """Modifica a view para adicionar seller_ids e variant_seller_ids apenas se o
+        módulo purchase NÃO estiver instalado."""
 
         # Verifica se o módulo purchase está instalado
         purchase_installed = (
@@ -164,7 +165,9 @@ class ProductTemplate(models.Model):
                         name="seller_ids",
                         attrib={
                             "context": """{
-                                'default_product_tmpl_id': context.get('product_tmpl_id', active_id),
+                                'default_product_tmpl_id': context.get(
+                                    'product_tmpl_id', active_id
+                                ),
                                 'product_template_invisible_variant': True,
                                 'tree_view_ref':'purchase.product_supplierinfo_tree_view2'
                                 }""",
