@@ -818,12 +818,16 @@ class AccountMove(models.Model):
         # generate specific payment term
         term_vals = self._prepare_payment_terms_from_nfe40_dup(move_form)
         if term_vals:
-            move_form.invoice_payment_term_id = self.env["account.payment.term"].create(
-                {
-                    "active": False,
-                    "name": f"Custom: {move_form.document_number}",
-                    "line_ids": [(0, 0, term) for term in term_vals],
-                }
+            move_form.invoice_payment_term_id = (
+                self.env["account.payment.term"]
+                .sudo()
+                .create(
+                    {
+                        "active": False,
+                        "name": f"Custom: {move_form.document_number}",
+                        "line_ids": [(0, 0, term) for term in term_vals],
+                    }
+                )
             )
 
         move_form.save()
