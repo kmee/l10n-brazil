@@ -203,6 +203,9 @@ class L10nBrFiscalDocumentLineImportWizard(models.TransientModel):
                 self.product_supplierinfo_id = supplier_info
                 self.import_qty = self.document_qty * supplier_info.partner_uom_factor
             elif create:
+                partner_uom_factor = (
+                    self.import_qty / self.document_qty if self.document_qty else 1
+                )
                 supplier_info = self.env["product.supplierinfo"].create(
                     {
                         "name": self.document_line_id.partner_id.id,
@@ -210,7 +213,7 @@ class L10nBrFiscalDocumentLineImportWizard(models.TransientModel):
                         "product_tmpl_id": self.import_product_id.product_tmpl_id.id,
                         "product_name": self.document_name,
                         "partner_uom": self.document_uom,
-                        "partner_uom_factor": self.import_qty / self.document_qty,
+                        "partner_uom_factor": partner_uom_factor,
                         "product_code": self.document_code,
                     }
                 )
