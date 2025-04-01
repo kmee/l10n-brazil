@@ -837,7 +837,7 @@ class AccountMove(models.Model):
         return move
 
     def _prepare_payment_terms_from_nfe40_dup(self, move_id):
-        if not move_id.fiscal_document_id.nfe40_dup:
+        if not move_id.fiscal_document_id.sudo().nfe40_dup:
             return False
 
         term_vals = []
