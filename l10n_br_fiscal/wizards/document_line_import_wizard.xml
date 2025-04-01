@@ -131,6 +131,7 @@
                             <field
                                 name="import_qty"
                                 required="1"
+                                force_save="1"
                                 attrs="{'readonly': [('product_supplierinfo_id', '!=', False)]}"
                             />
                             <field

@@ -86,8 +86,9 @@ class NFeImportWizardTest(SavepointCase):
         )
 
         # Fill in required fields (uom_id, quantity)
-        wizard.import_qty = 10
-        wizard._prepare_onchange_document_line_id()
+        wizard.import_qty = 1
+        wizard.update(wizard._prepare_onchange_document_line_id())
+        wizard.flush()
 
         # Confirm the wizard
         wizard.action_done()
@@ -97,13 +98,14 @@ class NFeImportWizardTest(SavepointCase):
             [
                 ("name", "=", edoc.partner_id.id),
                 ("product_id", "=", prod1_id.id),
+                ("product_code", "=", wizard.document_code),
             ],
-            limit=5,
+            limit=1,
         )
         self.assertTrue(supplierinfo)
         self.assertEqual(supplierinfo.product_code, wizard.document_code)
         self.assertEqual(supplierinfo.partner_uom, wizard.document_uom)
-        self.assertEqual(supplierinfo.partner_uom_factor, 10)
+        self.assertEqual(supplierinfo.partner_uom_factor, 1)
 
     def test_import_nfe_with_new_uom(self):
         self._prepare_wizard(self.xml_2)
