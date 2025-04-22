@@ -543,8 +543,12 @@ class Tax(models.Model):
         # para o problema de duplicação do frete na base do FCP.
         # Esse problema só é observado na branch:
         # https://github.com/kmee/l10n-brazil/tree/14.0-imp-tax-manual-values
-        taxes_dict["icmsfcp"]["add_to_base"] = 0.00
-        taxes_dict["icmsfcp"]["remove_from_base"] = 0.00
+        icms_add = taxes_dict.get("icms", {}).get("add_to_base", 0.00)
+        icmsfcp_add = taxes_dict.get("icmsfcp", {}).get("add_to_base", 0.00)
+
+        if taxes_dict.get("icmsfcp", False):
+            taxes_dict["icmsfcp"]["add_to_base"] = icms_add - icmsfcp_add
+
         return self._compute_tax(tax, taxes_dict, **kwargs)
 
     @api.model
