@@ -142,6 +142,14 @@ class AccountMove(models.Model):
                         wh_invoice = self.env["account.move"].create(
                             self._prepare_wh_invoice(line, fiscal_group)
                         )
+                        if fiscal_group.wh_payable_account_id:
+                            payable_lines = wh_invoice.line_ids.filtered(
+                                lambda line: line.account_id.internal_type == "payable"
+                            )
+
+                            payable_lines.write(
+                                {"account_id": fiscal_group.wh_payable_account_id.id}
+                            )
                         wh_invoice.message_post_with_view(
                             "mail.message_origin_link",
                             values={"self": wh_invoice, "origin": move},
