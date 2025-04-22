@@ -10,6 +10,10 @@
             <field name='partner_id' position='before'>
                 <field name='generate_wh_invoice' />
                 <field name='journal_id' />
+                <field
+                    name="wh_payable_account_id"
+                    attrs="{'invisible': [('generate_wh_invoice', '=', False)]}"
+                />
             </field>
         </field>
     </record>

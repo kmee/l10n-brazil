@@ -19,3 +19,11 @@ class FiscalTaxGroup(models.Model):
         default=False,
         company_dependent=True,
     )
+
+    wh_payable_account_id = fields.Many2one(
+        comodel_name="account.account",
+        string="WH Payable Account",
+        help="Special account payable for withholding invoices",
+        domain="[('internal_type', '=', 'payable')]",
+        company_dependent=True,
+    )
