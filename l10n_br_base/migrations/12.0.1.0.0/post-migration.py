@@ -15,17 +15,24 @@ _table_renames = [
 @openupgrade.migrate()
 def migrate(env, version):
     cr = env.cr
-    openupgrade.rename_models(cr, _model_renames)
-    openupgrade.rename_tables(cr, _table_renames)
+    # Check if res.city model already exists before attempting rename
+    cr.execute("SELECT COUNT(*) FROM ir_model WHERE model = 'res.city'")
+    if not cr.fetchone()[0]:
+        openupgrade.rename_models(cr, _model_renames)
+        openupgrade.rename_tables(cr, _table_renames)
+
     cr.execute(
         """INSERT INTO state_tax_numbers(id, inscr_est, partner_id, state_id)
         SELECT nextval('state_tax_numbers_id_seq'), inscr_est, partner_id,
         state_id FROM other_inscricoes_estaduais;
         """
     )
+
+    # Update city_id references only if the l10n_br_city_id field exists and is not null
     cr.execute(
         """UPDATE res_partner rp SET city_id=(
         SELECT id FROM res_city WHERE ibge_code=(
         SELECT ibge_code FROM l10n_br_base_city WHERE id=rp.l10n_br_city_id))
+        WHERE rp.l10n_br_city_id IS NOT NULL
         """
     )
