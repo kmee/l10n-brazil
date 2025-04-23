@@ -55,6 +55,36 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
         cls.env.ref("l10n_br_fiscal.tax_group_pis_wh").generate_wh_invoice = True
         cls.env.ref("l10n_br_fiscal.tax_group_cofins_wh").generate_wh_invoice = True
 
+        cls.service_test = cls.env["product.product"].create(
+            {
+                "name": "Serviço de Testes",
+                "type": "service",
+                "standard_price": 1000.0,
+                "tax_icms_or_issqn": "issqn",
+                "ncm_id": cls.env.ref("l10n_br_fiscal.ncm_00000000").id,
+                "fiscal_type": "09",
+                "fiscal_genre_id": cls.env.ref("l10n_br_fiscal.product_genre_00").id,
+                "service_type_id": cls.env.ref("l10n_br_fiscal.service_type_1009").id,
+                "taxes_id": False,
+            }
+        )
+
+        cls.test_partner = cls.env["res.partner"].create(
+            {
+                "name": "Test Company Brasil",
+                "legal_name": "Test Company Brasil Ltda",
+                "cnpj_cpf": "32.680.221/0001-44",
+                "state_id": cls.env.ref("base.state_br_sp").id,
+                "city_id": cls.env.ref("l10n_br_base.city_3550308").id,
+                "zip": "04576-060",
+                "country_id": cls.env.ref("base.br").id,
+                "inscr_est": "621.240.850.633",
+                "is_company": True,
+                "active": True,
+            }
+        )
+        cls.test_partner._onchange_city_id()
+
     @classmethod
     def setup_company_data(cls, company_name, chart_template=None, **kwargs):
         if company_name == "company_1_data":
@@ -307,24 +337,14 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
         "Test move with Partner defined and no ISSQN City Partner"
         self.env.ref("l10n_br_fiscal.tax_group_pis_wh").generate_wh_invoice = False
         self.env.ref("l10n_br_fiscal.tax_group_cofins_wh").generate_wh_invoice = False
-        product = self.env.ref("l10n_br_sale_commission.service_commission")
-        product.write(
-            {
-                "standard_price": 1000.0,
-                "tax_icms_or_issqn": "issqn",
-                "ncm_id": self.env.ref("l10n_br_fiscal.ncm_00000000").id,
-                "fiscal_genre_id": self.env.ref("l10n_br_fiscal.product_genre_00").id,
-                "fiscal_type": "09",
-                "taxes_id": False,
-            }
-        )
+        product = self.service_test
         tax_group = self.env.ref("l10n_br_fiscal.tax_group_issqn_wh")
         tax_group.generate_wh_invoice = True
         tax_group.journal_id = self.company_data["default_journal_purchase"].id
         move_issqn = self.init_invoice(
             "in_invoice",
             products=[product],
-            partner=self.env.ref("l10n_br_base.res_partner_amd"),
+            partner=self.test_partner,
             document_type=self.env.ref("l10n_br_fiscal.document_55"),
             fiscal_operation=self.env.ref("l10n_br_fiscal.fo_compras"),
             fiscal_operation_lines=[self.env.ref("l10n_br_fiscal.fo_compras_servico")],
@@ -373,17 +393,7 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
         "Test move with Partner and ISSQN City Partner"
         self.env.ref("l10n_br_fiscal.tax_group_pis_wh").generate_wh_invoice = False
         self.env.ref("l10n_br_fiscal.tax_group_cofins_wh").generate_wh_invoice = False
-        product = self.env.ref("l10n_br_sale_commission.service_commission")
-        product.write(
-            {
-                "standard_price": 1000.0,
-                "tax_icms_or_issqn": "issqn",
-                "ncm_id": self.env.ref("l10n_br_fiscal.ncm_00000000").id,
-                "fiscal_genre_id": self.env.ref("l10n_br_fiscal.product_genre_00").id,
-                "fiscal_type": "09",
-                "taxes_id": False,
-            }
-        )
+        product = self.service_test
         tax_group = self.env.ref("l10n_br_fiscal.tax_group_issqn_wh")
         tax_group.generate_wh_invoice = True
         tax_group.journal_id = self.company_data["default_journal_purchase"]
