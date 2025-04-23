@@ -76,7 +76,7 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
             document_type_id=cls.env.ref("l10n_br_fiscal.document_55").id,
             **kwargs,
         )
-        res["company"].partner_id.state_id = cls.env.ref("base.state_br_sp").id
+        res["company"].partner_id.state_id = cls.env.ref("base.state_br_sp")
         chart_template.load_fiscal_taxes()
         return res
 
@@ -335,14 +335,22 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
         for line_ids in move_issqn.invoice_line_ids:
             line_ids.issqn_tax_id = None
             line_ids.issqn_fg_city_id = self.env.ref("l10n_br_base.city_3550308")
-            line_ids.issqn_wh_tax_id = (
-                self.env["l10n_br_fiscal.tax"]
-                .search([("name", "=", "ISSQN RET 5%")], order="id DESC", limit=1)
-                .id
-            )
+            line_ids.issqn_wh_tax_id = self.env.ref("l10n_br_fiscal.tax_issqn_wh_5")
+
+        move_issqn.invoice_line_ids._onchange_fiscal_taxes()
+        move_issqn.invoice_line_ids._onchange_fiscal_tax_ids()
+        move_issqn.with_context(check_move_validity=False)._recompute_dynamic_lines(
+            recompute_all_taxes=True
+        )
 
         move_issqn.action_post()
         move_issqn._compute_wh_invoice_ids()
+
+        self.assertEqual(
+            move_issqn.wh_invoice_count,
+            1,
+            "The invoice should have 1 withholding invoice (ISSQN).",
+        )
 
         partner_wh = self.env["res.partner"].search(
             [
@@ -378,7 +386,7 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
         )
         tax_group = self.env.ref("l10n_br_fiscal.tax_group_issqn_wh")
         tax_group.generate_wh_invoice = True
-        tax_group.journal_id = self.company_data["default_journal_purchase"].id
+        tax_group.journal_id = self.company_data["default_journal_purchase"]
         partner_cityhall = self.env["res.partner"].create(
             {
                 "name": "Prefeitura de São Paulo",
@@ -402,18 +410,25 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
         for line_ids in move_issqn.invoice_line_ids:
             line_ids.issqn_tax_id = None
             line_ids.issqn_fg_city_id = self.env.ref("l10n_br_base.city_3550308")
-            line_ids.issqn_wh_tax_id = (
-                self.env["l10n_br_fiscal.tax"]
-                .search([("name", "=", "ISSQN RET 5%")], order="id DESC", limit=1)
-                .id
-            )
+            line_ids.issqn_wh_tax_id = self.env.ref("l10n_br_fiscal.tax_issqn_wh_5")
+
+        move_issqn.invoice_line_ids._onchange_fiscal_taxes()
+        move_issqn.invoice_line_ids._onchange_fiscal_tax_ids()
+        move_issqn.with_context(check_move_validity=False)._recompute_dynamic_lines(
+            recompute_all_taxes=True
+        )
 
         move_issqn.action_post()
         move_issqn._compute_wh_invoice_ids()
 
+        self.assertEqual(
+            move_issqn.wh_invoice_count,
+            1,
+            "The invoice should have 1 withholding invoice (ISSQN).",
+        )
         self.assertTrue(
             all(
-                wh_inv.partner_id == partner_cityhall.id
+                wh_inv.partner_id == partner_cityhall
                 for wh_inv in move_issqn.wh_invoice_ids
             )
         )
