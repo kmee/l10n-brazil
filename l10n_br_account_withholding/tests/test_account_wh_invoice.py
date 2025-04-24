@@ -394,9 +394,24 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
         self.env.ref("l10n_br_fiscal.tax_group_pis_wh").generate_wh_invoice = False
         self.env.ref("l10n_br_fiscal.tax_group_cofins_wh").generate_wh_invoice = False
         product = self.service_test
+        wh_payable_account = self.env["account.account"].create(
+            {
+                "name": "Withholding Payable",
+                "code": "WHT210",
+                "user_type_id": self.env.ref("account.data_account_type_payable").id,
+                "reconcile": True,
+                "company_id": self.company_data["company"].id,
+            }
+        )
+
         tax_group = self.env.ref("l10n_br_fiscal.tax_group_issqn_wh")
-        tax_group.generate_wh_invoice = True
-        tax_group.journal_id = self.company_data["default_journal_purchase"]
+        tax_group.write(
+            {
+                "generate_wh_invoice": True,
+                "journal_id": self.company_data["default_journal_purchase"].id,
+                "wh_payable_account_id": wh_payable_account.id,
+            }
+        )
         partner_cityhall = self.env["res.partner"].create(
             {
                 "name": "Prefeitura de São Paulo",
@@ -440,5 +455,14 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
             all(
                 wh_inv.partner_id == partner_cityhall
                 for wh_inv in move_issqn.wh_invoice_ids
+            )
+        )
+        payable_line_ids = move_issqn.wh_invoice_ids.line_ids.filtered(
+            lambda line: line.account_id.internal_type == "payable"
+        )
+        self.assertTrue(
+            all(
+                pay_line.account_id == wh_payable_account
+                for pay_line in payable_line_ids
             )
         )
