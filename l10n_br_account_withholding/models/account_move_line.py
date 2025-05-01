@@ -4,10 +4,6 @@
 from odoo import _, fields, models
 from odoo.exceptions import UserError
 
-from odoo.addons.l10n_br_account.models.account_move_line import (
-    AccountMoveLine as AccountMoveLineBR,
-)
-
 
 class AccountMoveLine(models.Model):
     _inherit = "account.move.line"
@@ -19,7 +15,7 @@ class AccountMoveLine(models.Model):
     )
 
     def write(self, values):
-        res = super(AccountMoveLineBR, self).write(values)
+        res = super().write(values)
         for line in self:
             if line.wh_move_line_id and (
                 "quantity" in values or "price_unit" in values
