@@ -6,7 +6,7 @@
     "summary": "Plano de Contas ITG 1000 para Microempresas e Empresa de Pequeno Porte",
     "category": "Accounting/Localizations/Account Charts",
     "license": "AGPL-3",
-    "author": "Akretion, " "Odoo Community Association (OCA)",
+    "author": "Akretion, Odoo Community Association (OCA)",
     "maintainers": ["renatonlima"],
     "development_status": "Production/Stable",
     "website": "https://github.com/OCA/l10n-brazil",
