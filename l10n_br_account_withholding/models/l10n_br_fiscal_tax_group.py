@@ -24,6 +24,6 @@ class FiscalTaxGroup(models.Model):
         comodel_name="account.account",
         string="WH Payable Account",
         help="Special account payable for withholding invoices",
-        domain="[('internal_type', '=', 'payable')]",
+        domain="[('account_type', 'in', ('asset_receivable', 'liability_payable'))]",
         company_dependent=True,
     )
