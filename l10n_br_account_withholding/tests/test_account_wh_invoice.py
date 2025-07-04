@@ -124,31 +124,43 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
             "discount": 0.0,
             "price_unit": 1000.0,
             "price_subtotal": 1000.0,
-            "price_total": 1050.0,
+            "price_total": 1032.5,
             "tax_line_id": False,
             "currency_id": self.company_data["currency"].id,
-            "amount_currency": 1050.0,
-            "debit": 1050.0,
+            "amount_currency": 1032.5,
+            "debit": 1032.5,
             "credit": 0.0,
             "date_maturity": False,
         }
 
         tax_line_vals_cofins_wh = {
-            "name": "COFINS WH Entrada",
+            "name": "COFINS RET",
             "product_id": False,
             "account_id": self.env["account.account"]
-            .search([("name", "=", "COFINS a Recolher")], order="id DESC", limit=1)
+            .search(
+                [
+                    ("name", "=", "COFINS a Recolher"),
+                    ("company_id", "=", self.company_data["company"].id),
+                ],
+                limit=1,
+            )
             .id,
             "partner_id": self.partner_a.id,
             "product_uom_id": False,
-            "quantity": 1.0,
+            "quantity": False,
             "discount": 0.0,
-            "price_unit": -30.0,
-            "price_subtotal": -30.0,
-            "price_total": -30.0,
+            "price_unit": 0.0,
+            "price_subtotal": 0.0,
+            "price_total": 0.0,
             "tax_ids": [],
             "tax_line_id": self.env["account.tax"]
-            .search([("name", "=", "COFINS WH Entrada")], order="id DESC", limit=1)
+            .search(
+                [
+                    ("name", "=", "COFINS WH Entrada"),
+                    ("company_id", "=", self.company_data["company"].id),
+                ],
+                limit=1,
+            )
             .id,
             "currency_id": self.company_data["currency"].id,
             "amount_currency": -30.0,
@@ -157,46 +169,34 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
             "date_maturity": False,
         }
 
-        tax_line_vals_icms = {
-            "name": "ICMS Entrada",
-            "product_id": False,
-            "account_id": self.env["account.account"]
-            .search([("name", "=", "ICMS a Compensar")], order="id DESC", limit=1)
-            .id,
-            "partner_id": self.partner_a.id,
-            "product_uom_id": False,
-            "quantity": 1.0,
-            "discount": 0.0,
-            "price_unit": 120.0,
-            "price_subtotal": 120.0,
-            "price_total": 120.0,
-            "tax_ids": [],
-            "tax_line_id": self.env["account.tax"]
-            .search([("name", "=", "ICMS Entrada")], order="id DESC", limit=1)
-            .id,
-            "currency_id": self.company_data["currency"].id,
-            "amount_currency": 120.0,
-            "debit": 120.0,
-            "credit": 0.0,
-            "date_maturity": False,
-        }
-
         tax_line_vals_icms_comp = {
-            "name": "ICMS Entrada Dedutível",
+            "name": "ICMS",
             "product_id": False,
             "account_id": self.env["account.account"]
-            .search([("name", "=", "ICMS s/ Vendas")], order="id DESC", limit=1)
+            .search(
+                [
+                    ("name", "=", "ICMS s/ Vendas"),
+                    ("company_id", "=", self.company_data["company"].id),
+                ],
+                limit=1,
+            )
             .id,
             "partner_id": self.partner_a.id,
             "product_uom_id": False,
-            "quantity": 1.0,
+            "quantity": False,
             "discount": 0.0,
-            "price_unit": -120.0,
-            "price_subtotal": -120.0,
-            "price_total": -120.0,
+            "price_unit": 0.0,
+            "price_subtotal": 0.0,
+            "price_total": 0.0,
             "tax_ids": [],
             "tax_line_id": self.env["account.tax"]
-            .search([("name", "=", "ICMS Entrada Dedutível")], order="id desc", limit=1)
+            .search(
+                [
+                    ("name", "=", "ICMS Entrada Dedutível"),
+                    ("company_id", "=", self.company_data["company"].id),
+                ],
+                limit=1,
+            )
             .id,
             "currency_id": self.company_data["currency"].id,
             "amount_currency": -120.0,
@@ -205,70 +205,142 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
             "date_maturity": False,
         }
 
-        tax_line_vals_ipi = {
-            "name": "IPI Entrada",
+        tax_line_vals_icms = {
+            "name": "ICMS",
             "product_id": False,
             "account_id": self.env["account.account"]
-            .search([("name", "=", "IPI a Compensar")], order="id DESC", limit=1)
+            .search(
+                [
+                    ("name", "=", "ICMS a Compensar"),
+                    ("company_id", "=", self.company_data["company"].id),
+                ],
+                limit=1,
+            )
             .id,
             "partner_id": self.partner_a.id,
             "product_uom_id": False,
-            "quantity": 1.0,
+            "quantity": False,
             "discount": 0.0,
-            "price_unit": 50.0,
-            "price_subtotal": 50.0,
-            "price_total": 50.0,
+            "price_unit": 0.0,
+            "price_subtotal": 0.0,
+            "price_total": 0.0,
             "tax_ids": [],
             "tax_line_id": self.env["account.tax"]
-            .search([("name", "=", "IPI Entrada")], order="id desc", limit=1)
+            .search(
+                [
+                    ("name", "=", "ICMS Entrada"),
+                    ("company_id", "=", self.company_data["company"].id),
+                ],
+                limit=1,
+            )
             .id,
             "currency_id": self.company_data["currency"].id,
-            "amount_currency": 50.0,
-            "debit": 50.0,
+            "amount_currency": 120.0,
+            "debit": 120.0,
             "credit": 0.0,
             "date_maturity": False,
         }
 
         tax_line_vals_ipi_comp = {
-            "name": "IPI Entrada Dedutível",
+            "name": "IPI",
             "product_id": False,
             "account_id": self.env["account.account"]
-            .search([("name", "=", "IPI s/ Vendas")], order="id DESC", limit=1)
+            .search(
+                [
+                    ("name", "=", "IPI s/ Vendas"),
+                    ("company_id", "=", self.company_data["company"].id),
+                ],
+                limit=1,
+            )
             .id,
             "partner_id": self.partner_a.id,
             "product_uom_id": False,
-            "quantity": 1.0,
+            "quantity": False,
             "discount": 0.0,
-            "price_unit": -50.0,
-            "price_subtotal": -50.0,
-            "price_total": -50.0,
+            "price_unit": 0.0,
+            "price_subtotal": 0.0,
+            "price_total": 0.0,
             "tax_ids": [],
             "tax_line_id": self.env["account.tax"]
-            .search([("name", "=", "IPI Entrada Dedutível")], order="id desc", limit=1)
+            .search(
+                [
+                    ("name", "=", "IPI Entrada Dedutível"),
+                    ("company_id", "=", self.company_data["company"].id),
+                ],
+                limit=1,
+            )
             .id,
             "currency_id": self.company_data["currency"].id,
-            "amount_currency": -50.0,
+            "amount_currency": -32.5,
             "debit": 0.0,
-            "credit": 50.0,
+            "credit": 32.5,
+            "date_maturity": False,
+        }
+
+        tax_line_vals_ipi = {
+            "name": "IPI",
+            "product_id": False,
+            "account_id": self.env["account.account"]
+            .search(
+                [
+                    ("name", "=", "IPI a Compensar"),
+                    ("company_id", "=", self.company_data["company"].id),
+                ],
+                limit=1,
+            )
+            .id,
+            "partner_id": self.partner_a.id,
+            "product_uom_id": False,
+            "quantity": False,
+            "discount": 0.0,
+            "price_unit": 0.0,
+            "price_subtotal": 0.0,
+            "price_total": 0.0,
+            "tax_ids": [],
+            "tax_line_id": self.env["account.tax"]
+            .search(
+                [
+                    ("name", "=", "IPI Entrada"),
+                    ("company_id", "=", self.company_data["company"].id),
+                ],
+                limit=1,
+            )
+            .id,
+            "currency_id": self.company_data["currency"].id,
+            "amount_currency": 32.5,
+            "debit": 32.5,
+            "credit": 0.0,
             "date_maturity": False,
         }
 
         tax_line_vals_pis_wh = {
-            "name": "PIS WH Entrada",
+            "name": "PIS RET",
             "product_id": False,
             "account_id": self.env["account.account"]
-            .search([("name", "=", "PIS a Recolher")], order="id DESC", limit=1)
+            .search(
+                [
+                    ("name", "=", "PIS a Recolher"),
+                    ("company_id", "=", self.company_data["company"].id),
+                ],
+                limit=1,
+            )
             .id,
             "partner_id": self.partner_a.id,
             "product_uom_id": False,
-            "quantity": 1.0,
+            "quantity": False,
             "discount": 0.0,
-            "price_unit": -6.5,
-            "price_subtotal": -6.5,
-            "price_total": -6.5,
+            "price_unit": 0.0,
+            "price_subtotal": 0.0,
+            "price_total": 0.0,
             "tax_ids": [],
             "tax_line_id": self.env["account.tax"]
-            .search([("name", "=", "PIS WH Entrada")], order="id desc", limit=1)
+            .search(
+                [
+                    ("name", "=", "PIS WH Entrada"),
+                    ("company_id", "=", self.company_data["company"].id),
+                ],
+                limit=1,
+            )
             .id,
             "currency_id": self.company_data["currency"].id,
             "amount_currency": -6.5,
@@ -283,17 +355,17 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
             "account_id": self.company_data["default_account_payable"].id,
             "partner_id": self.partner_a.id,
             "product_uom_id": False,
-            "quantity": 1.0,
+            "quantity": False,
             "discount": 0.0,
-            "price_unit": -1013.5,
-            "price_subtotal": -1013.5,
-            "price_total": -1013.5,
+            "price_unit": 0.0,
+            "price_subtotal": 0.0,
+            "price_total": 0.0,
             "tax_ids": [],
             "tax_line_id": False,
             "currency_id": self.company_data["currency"].id,
-            "amount_currency": -1013.5,
+            "amount_currency": -996.0,
             "debit": 0.0,
-            "credit": 1013.5,
+            "credit": 996.0,
             "date_maturity": fields.Date.from_string("2019-01-01"),
         }
 
@@ -301,13 +373,13 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
             "partner_id": self.partner_a.id,
             "currency_id": self.company_data["currency"].id,
             "journal_id": self.company_data["default_journal_purchase"].id,
-            "date": fields.Date.from_string("2019-01-01"),
+            "date": fields.Date.from_string("2019-01-31"),
             "fiscal_position_id": False,
             "payment_reference": "",
             "invoice_payment_term_id": self.pay_terms_a.id,
             "amount_untaxed": 1000.0,
-            "amount_tax": 50.0,
-            "amount_total": 1013.5,
+            "amount_tax": 32.5,
+            "amount_total": 996.0,
         }
 
         self.assertInvoiceValues(
@@ -315,10 +387,10 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
             [
                 product_line_vals_1,
                 tax_line_vals_cofins_wh,
-                tax_line_vals_icms,
                 tax_line_vals_icms_comp,
-                tax_line_vals_ipi,
+                tax_line_vals_icms,
                 tax_line_vals_ipi_comp,
+                tax_line_vals_ipi,
                 tax_line_vals_pis_wh,
                 term_line_vals_1,
             ],
@@ -359,10 +431,6 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
 
         move_issqn.invoice_line_ids._onchange_fiscal_taxes()
         move_issqn.invoice_line_ids._onchange_fiscal_tax_ids()
-        move_issqn.with_context(check_move_validity=False)._recompute_dynamic_lines(
-            recompute_all_taxes=True
-        )
-
         move_issqn.action_post()
         move_issqn._compute_wh_invoice_ids()
 
@@ -398,7 +466,7 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
             {
                 "name": "Withholding Payable",
                 "code": "WHT210",
-                "user_type_id": self.env.ref("account.data_account_type_payable").id,
+                "account_type": "liability_payable",
                 "reconcile": True,
                 "company_id": self.company_data["company"].id,
             }
@@ -439,10 +507,6 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
 
         move_issqn.invoice_line_ids._onchange_fiscal_taxes()
         move_issqn.invoice_line_ids._onchange_fiscal_tax_ids()
-        move_issqn.with_context(check_move_validity=False)._recompute_dynamic_lines(
-            recompute_all_taxes=True
-        )
-
         move_issqn.action_post()
         move_issqn._compute_wh_invoice_ids()
 
@@ -458,7 +522,7 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
             )
         )
         payable_line_ids = move_issqn.wh_invoice_ids.line_ids.filtered(
-            lambda line: line.account_id.internal_type == "payable"
+            lambda line: line.account_id.account_type == "liability_payable"
         )
         self.assertTrue(
             all(
