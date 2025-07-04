@@ -4,7 +4,7 @@
 
 from dateutil.relativedelta import relativedelta
 
-from odoo import api, fields, models
+from odoo import Command, api, fields, models
 
 
 class AccountMove(models.Model):
@@ -100,15 +100,13 @@ class AccountMove(models.Model):
             "journal_id": fiscal_group.journal_id.id or move_line.journal_id.id,
             "invoice_origin": move_line.move_id.name,
             "invoice_line_ids": [
-                (
-                    0,
-                    0,
+                Command.create(
                     {
                         "name": move_line.name,
                         "price_unit": abs(move_line.balance),
                         "account_id": move_line.account_id.id,
                         "wh_move_line_id": move_line.id,
-                        "analytic_account_id": move_line.analytic_account_id.id,
+                        "analytic_distribution": move_line.analytic_distribution,
                     },
                 )
             ],
@@ -144,7 +142,8 @@ class AccountMove(models.Model):
                         )
                         if fiscal_group.wh_payable_account_id:
                             payable_lines = wh_invoice.line_ids.filtered(
-                                lambda line: line.account_id.internal_type == "payable"
+                                lambda line: line.account_id.account_type
+                                == "liability_payable"
                             )
 
                             payable_lines.write(
