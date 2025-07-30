@@ -32,6 +32,7 @@ class PartnerCnpjSearchWizard(models.TransientModel):
                 "inscr_est": self.inscr_est,
                 "zip": self.zip,
                 "street_name": self.street_name,
+                "street": self.street_name,
                 "street_number": self.street_number,
                 "street2": self.street2,
                 "district": self.district,
