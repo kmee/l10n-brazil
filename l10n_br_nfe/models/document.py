@@ -770,13 +770,21 @@ class NFe(spec_models.StackedModel):
         )
         session = Session()
         session.verify = False
-        transmissao = TransmissaoSOAP(certificado, session)
-        return edoc_nfe(
-            transmissao,
-            self.company_id.state_id.ibge_code,
-            versao=self.nfe_version,
-            ambiente=self.nfe_environment,
-        )
+
+        params = {
+            "transmissao": TransmissaoSOAP(certificado, session),
+            "uf": self.company_id.state_id.ibge_code,
+            "versao": self.nfe_version,
+            "ambiente": self.nfe_environment,
+        }
+
+        if self.document_type == MODELO_FISCAL_NFE:
+            params.update(
+                envio_sincrono=self.company_id.nfe_enable_sync_transmission,
+            )
+        _logger.debug(f"Params: {params}")
+        return edoc_nfe(**params)
+
 
     def _check_nfe_environment(self):
         self.ensure_one()
@@ -896,6 +904,7 @@ class NFe(spec_models.StackedModel):
             if self.xml_error_message:
                 return
             processador = record._processador()
+
             for edoc in record.serialize():
                 processo = None
                 for p in processador.processar_documento(edoc):

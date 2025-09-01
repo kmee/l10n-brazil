@@ -67,3 +67,8 @@ class ResConfigSettings(models.TransientModel):
         related="company_id.nfe_authorize_technical_download_xml",
         readonly=False,
     )
+
+    nfe_enable_sync_transmission = fields.Boolean(
+         related="company_id.nfe_enable_sync_transmission",
+         readonly=False,
+    )
