@@ -4,35 +4,37 @@
 
 /* eslint-disable sort-imports */
 
-import {onWillStart} from "@odoo/owl";
-import {patch} from "@web/core/utils/patch";
-import {ListRenderer} from "@web/views/list/list_renderer";
-import {ViewButton} from "@web/views/view_button/view_button";
+import { useBus } from "@web/core/utils/hooks"; // Import the useBus hook
+import { patch } from "@web/core/utils/patch";
+import { ListRenderer } from "@web/views/list/list_renderer";
+import { ViewButton } from "@web/views/view_button/view_button";
 
-patch(ViewButton.prototype, "l10n_br_fiscal.ViewButton", {
+patch(ViewButton.prototype, {
     onClick() {
-        if (this.props.className && this.props.className.includes("edit-line-popup")) {
+        if (this.props.className?.includes("edit-line-popup")) {
             if (this.props.record) {
-                this.env.bus.trigger("OPEN_LINE_IN_POPUP", {
+                // Trigger the event on the record's model bus
+                this.props.record.model.bus.trigger("OPEN_LINE_IN_POPUP", {
                     record: this.props.record,
                 });
             }
             return;
         }
-        this._super.apply(this, arguments);
+        return super.onClick(...arguments);
     },
 });
 
-patch(ListRenderer.prototype, "l10n_br_fiscal.ListRenderer", {
+patch(ListRenderer.prototype, {
     setup() {
-        this._super.apply(this, arguments);
+        super.setup(...arguments);
 
-        onWillStart(() => {
-            this.env.bus.on("OPEN_LINE_IN_POPUP", this, ({record}) => {
-                if (this.props.list.records.includes(record)) {
-                    this.props.openRecord(record);
-                }
-            });
+        // Use the 'useBus' hook to listen for the event on the list's model bus.
+        // The hook automatically handles cleaning up the listener when the component is destroyed.
+        useBus(this.props.list.model.bus, "OPEN_LINE_IN_POPUP", (ev) => {
+            const { record } = ev.detail; // The payload is in the 'detail' property of the event
+            if (this.props.list.records.includes(record)) {
+                this.props.openRecord(record);
+            }
         });
     },
 });
