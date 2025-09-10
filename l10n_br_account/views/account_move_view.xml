@@ -58,7 +58,7 @@
                     type="object"
                     class="oe_stat_button"
                     icon="fa-pencil-square-o"
-                    invisible="not document_type_id">
+                    >
                     <span>Fiscal Details</span>
                 </button>
             </div>
@@ -153,12 +153,7 @@
                 expr="//field[@name='invoice_line_ids']/tree/field[@name='product_id']"
                 position="before"
             >
-                <button
-                    name="dummy_button_for_js"
-                    icon="fa-external-link"
-                    title="Edit in Form"
-                    class="btn-sm btn-link p-0 edit-line-popup"
-                />
+                <widget name="line_view_popup_button" />
             </xpath>
             <xpath
                 expr="//field[@name='invoice_line_ids']/tree/field[@name='tax_ids']"
@@ -206,7 +201,6 @@
                 />
                 <field
                     name="fiscal_tax_ids"
-                    column_invisible="not document_type_id"
                     widget="many2many_tags"
                     options="{'no_create': True}"
                 />
@@ -278,7 +272,6 @@
                 <field name="product_id" optional="hide" />
                 <field
                     name="fiscal_tax_ids"
-                    invisible="not document_type_id"
                     column_invisible="True"
                     widget="many2many_tags"
                     options="{'no_create': True}"
