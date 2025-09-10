@@ -114,7 +114,11 @@
     ],
     "assets": {
         "web.assets_backend": [
-            #    "l10n_br_fiscal/static/src/js/list_renderer_with_button.esm.js",
+#            "l10n_br_fiscal/static/src/js/list_renderer_with_button.esm.js",
+            "l10n_br_fiscal/static/src/xml/line_view_popup_button.xml",
+            "l10n_br_fiscal/static/src/js/line_view_popup_button.js",
+            "l10n_br_fiscal/static/src/js/x2many_field_patch.js",
+            "l10n_br_fiscal/static/src/js/list_renderer_patch.js",
         ],
     },
     "demo": [
