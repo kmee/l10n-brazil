@@ -8,10 +8,10 @@ from odoo import api, fields, models
 _logger = logging.getLogger(__name__)
 
 
-class PaymentAcquirerCielo(models.Model):
-    _inherit = "payment.acquirer"
+class PaymentProviderCielo(models.Model):
+    _inherit = "payment.provider"
 
-    provider = fields.Selection(
+    code = fields.Selection(
         selection_add=[("cielo", "Cielo")], ondelete={"cielo": "set default"}
     )
     cielo_merchant_key = fields.Char(
@@ -55,7 +55,7 @@ class PaymentAcquirerCielo(models.Model):
                     "cc_expiry": data["cc_expiry"],
                     "cc_brand": data["cc_brand"],
                     "cvc": data["cvc"],
-                    "acquirer_id": int(data["acquirer_id"]),
+                    "provider_id": int(data["provider_id"]),
                     "partner_id": int(data["partner_id"]),
                 }
             )
@@ -104,7 +104,7 @@ class PaymentAcquirerCielo(models.Model):
             * tokenize: support saving payment data in a payment.tokenize
                         object
         """
-        res = super(PaymentAcquirerCielo, self)._get_feature_support()
+        res = super(PaymentProviderCielo, self)._get_feature_support()
         res["tokenize"].append("cielo")
         res["authorize"].append("cielo")
         return res

@@ -50,8 +50,8 @@ class PaymentTokenCielo(models.Model):
         Send card data to Cielo and get back a token. Return the response
         dict, which still contains all credit card data.
         """
-        aquirer_id = self.env.ref("payment_cielo.payment_acquirer_cielo")
-        api_url_create_card = "https://%s/1/card" % (aquirer_id._get_cielo_api_url())
+        provider_id = self.env.ref("payment_cielo.payment_provider_cielo")
+        api_url_create_card = "https://%s/1/card" % (provider_id._get_cielo_api_url())
 
         partner_id = self.env["res.partner"].browse(values["partner_id"])
         cielo_expiry = (
@@ -76,7 +76,7 @@ class PaymentTokenCielo(models.Model):
         r = requests.post(
             api_url_create_card,
             json=tokenize_params,
-            headers=aquirer_id._get_cielo_api_headers(),
+            headers=provider_id._get_cielo_api_headers(),
         )
         res = r.json()
         return res
@@ -105,7 +105,7 @@ class PaymentTokenCielo(models.Model):
         customer_params = {"description": description or token["card"]["name"]}
 
         res = {
-            "acquirer_ref": partner_id.id,
+            "provider_ref": partner_id.id,
             "name": "XXXXXXXXXXXX%s - %s"
             % (values["cc_number"][-4:], customer_params["description"]),
             "card_number": values["cc_number"].replace(" ", ""),

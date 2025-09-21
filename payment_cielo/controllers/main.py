@@ -9,7 +9,7 @@ import werkzeug
 from odoo import http
 from odoo.http import request
 
-from odoo.addons.payment.controllers.portal import PaymentProcessing
+# from odoo.addons.payment.controllers.portal import PaymentProcessing
 
 _logger = logging.getLogger(__name__)
 
@@ -100,5 +100,5 @@ class CieloController(http.Controller):
             ).form_feedback(response, "cielo")
         # Add the payment transaction into the session to let the page
         # /payment/process handle it.
-        PaymentProcessing.add_payment_transaction(tx)
+        # PaymentProcessing.add_payment_transaction(tx)
         return "/payment/process"

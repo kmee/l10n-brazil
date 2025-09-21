@@ -47,15 +47,26 @@ class PaymentTransactionCielo(models.Model):
         required=False,
     )
 
-    def _create_cielo_charge(self, acquirer_ref=None, tokenid=None, email=None):
+    def _get_specific_rendering_values(self, processing_values):
+        res = super()._get_specific_rendering_values(processing_values)
+        if self.provider_code != 'cielo':
+            return res
+        api_url = self._create_cielo_charge()
+
+        rendering_values = {
+            'api_url': api_url,
+        }
+        return rendering_values
+
+    def _create_cielo_charge(self, provider_ref=None, tokenid=None, email=None):
         """Create the s2s payment.
         Use credit card token instead of secret info.
         """
-        api_url_charge = "https://%s/1/sales" % (self.acquirer_id._get_cielo_api_url())
+        api_url_charge = "https://%s/1/sales" % (self.provider_id._get_cielo_api_url())
 
         # Odoo uses 'mastercard' name, cielo uses 'master'
-        if self.payment_token_id.card_brand == "mastercard":
-            self.payment_token_id.card_brand = "master"
+        if self.token_id.card_brand == "mastercard":
+            self.token_id.card_brand = "master"
 
         charge_params = {
             "MerchantOrderId": str(self.id),
@@ -63,24 +74,26 @@ class PaymentTransactionCielo(models.Model):
             "Payment": {
                 "Type": "CreditCard",
                 # Charge is in BRL cents -> Multiply by 100
-                "Amount": self.amount * 100,
+                "Amount": int(self.amount * 100),
                 "Installments": 1,
                 "SoftDescriptor": self.display_name[:13],
                 "CreditCard": {
-                    "CardToken": self.payment_token_id.cielo_token,
-                    "Brand": self.payment_token_id.card_brand,
-                    "SaveCard": "true",
+                    "CardToken": self.token_id.cielo_token,
+                    "Brand": self.token_id.card_brand,
+                    "SaveCard": True,
                 },
             },
         }
+        
+        _logger.info("DEBUG: Payload completo: %s", pprint.pformat(charge_params))
 
-        self.payment_token_id.active = False
+        self.token_id.active = False
 
         _logger.info("_create_cielo_charge: Sending values to URL %s", api_url_charge)
         r = requests.post(
             api_url_charge,
             json=charge_params,
-            headers=self.acquirer_id._get_cielo_api_headers(),
+            headers=self.provider_id._get_cielo_api_headers(),
         )
         res = r.json()
         _logger.info("_create_cielo_charge: Values received:\n%s", pprint.pformat(res))
@@ -89,7 +102,7 @@ class PaymentTransactionCielo(models.Model):
     def cielo_s2s_do_transaction(self, **kwargs):
         self.ensure_one()
         result = self._create_cielo_charge(
-            acquirer_ref=self.payment_token_id.acquirer_ref, email=self.partner_email
+            provider_ref=self.token_id.provider_ref, email=self.partner_email
         )
         return self._cielo_s2s_validate_tree(result)
 
@@ -101,7 +114,7 @@ class PaymentTransactionCielo(models.Model):
         )
         r = requests.put(
             self.cielo_s2s_capture_link,
-            headers=self.acquirer_id._get_cielo_api_headers(),
+            headers=self.provider_id._get_cielo_api_headers(),
         )
         res = r.json()
         _logger.info(
@@ -117,7 +130,7 @@ class PaymentTransactionCielo(models.Model):
             self.write(
                 {
                     "date": fields.datetime.now(),
-                    "acquirer_reference": res,
+                    "provider_reference": res,
                 }
             )
             self._set_transaction_done()
@@ -126,7 +139,7 @@ class PaymentTransactionCielo(models.Model):
             self.sudo().write(
                 {
                     "state_message": res,
-                    "acquirer_reference": res,
+                    "provider_reference": res,
                     "date": fields.datetime.now(),
                 }
             )
@@ -138,7 +151,7 @@ class PaymentTransactionCielo(models.Model):
             self.cielo_s2s_void_link,
         )
         r = requests.put(
-            self.cielo_s2s_void_link, headers=self.acquirer_id._get_cielo_api_headers()
+            self.cielo_s2s_void_link, headers=self.provider_id._get_cielo_api_headers()
         )
         res = r.json()
         _logger.info(
@@ -154,7 +167,7 @@ class PaymentTransactionCielo(models.Model):
             self.write(
                 {
                     "date": fields.datetime.now(),
-                    "acquirer_reference": res,
+                    "provider_reference": res,
                 }
             )
             self._set_transaction_cancel()
@@ -162,7 +175,7 @@ class PaymentTransactionCielo(models.Model):
             self.sudo().write(
                 {
                     "state_message": res,
-                    "acquirer_reference": res,
+                    "provider_reference": res,
                     "date": fields.datetime.now(),
                 }
             )
@@ -188,7 +201,7 @@ class PaymentTransactionCielo(models.Model):
                 self.write(
                     {
                         "date": fields.datetime.now(),
-                        "acquirer_reference": tree.get("id"),
+                        "provider_reference": tree.get("id"),
                     }
                 )
                 # store capture and void links for future manual operations
@@ -205,8 +218,8 @@ class PaymentTransactionCielo(models.Model):
                 # payment using the case without automatic capture
                 self._set_transaction_authorized()
                 self.execute_callback()
-                if self.payment_token_id:
-                    self.payment_token_id.verified = True
+                if self.token_id:
+                    self.token_id.verified = True
                 return True
             else:
                 error = tree.get("Payment").get("ReturnMessage")
@@ -214,7 +227,7 @@ class PaymentTransactionCielo(models.Model):
                 self.sudo().write(
                     {
                         "state_message": error,
-                        "acquirer_reference": tree.get("id"),
+                        "provider_reference": tree.get("id"),
                         "date": fields.datetime.now(),
                     }
                 )
