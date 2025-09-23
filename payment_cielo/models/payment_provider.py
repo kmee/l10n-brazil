@@ -25,86 +25,81 @@ class PaymentProviderCielo(models.Model):
     cielo_image_url = fields.Char("Checkout Image URL", groups="base.group_user")
 
     def cielo_s2s_form_validate(self, data):
-        """Validate user input"""
         self.ensure_one()
-        # mandatory fields
-        for field_name in [
+        _logger.debug("Validating Cielo S2S form data: keys=%s", list(data.keys()))
+        required = [
             "cc_number",
             "cvc",
             "cc_holder_name",
             "cc_expiry",
             "cc_brand",
-        ]:
-            if not data.get(field_name):
-                return False
+            "provider_id",
+            "partner_id",
+        ]
+        missing = [f for f in required if not data.get(f)]
+        if missing:
+            _logger.warning("Cielo S2S missing fields: %s", missing)
+            return False
         return True
 
     @api.model
     def cielo_s2s_form_process(self, data):
-        """Save the payment.token object with data from Cielo server
+        """Processa os dados do formulário S2S e cria um payment.token com o token recebido.
 
-        Secret card info should be empty by this point.
+        Espera `data` contendo os dados do cartão ou um token já gerado.
         """
-        payment_token = (
-            self.env["payment.token"]
-            .sudo()
-            .create(
-                {
-                    "cc_number": data["cc_number"],
-                    "cc_holder_name": data["cc_holder_name"],
-                    "cc_expiry": data["cc_expiry"],
-                    "cc_brand": data["cc_brand"],
-                    "cvc": data["cvc"],
-                    "provider_id": int(data["provider_id"]),
-                    "partner_id": int(data["partner_id"]),
-                }
-            )
-        )
-        return payment_token
+        Token = self.env["payment.token"].sudo()
+        vals = {
+            "acquirer_id": int(data.get("provider_id"))
+            if data.get("provider_id")
+            else None,
+            "partner_id": int(data.get("partner_id"))
+            if data.get("partner_id")
+            else None,
+        }
+        if data.get("cielo_token"):
+            vals["cielo_token"] = data.get("cielo_token")
+            return Token.create(vals)
 
-    @api.model
+        token = None
+        if data.get("provider_id"):
+            try:
+                token = (
+                    self.env["payment.acquirer"]
+                    .browse(int(data.get("provider_id")))
+                    .s2s_process(data)
+                )
+            except Exception:
+                _logger.exception("Error calling acquirer.s2s_process for tokenization")
+                raise
+        return token
+
     def _get_cielo_api_url(self):
-        """Get Cielo API URLs used in all S2S communication
-
-        Consider state.
-        """
         if self.state == "test":
             return "apisandbox.cieloecommerce.cielo.com.br"
-        if self.state == "prod":
-            return "api.cieloecommerce.cielo.com.br"
+        return "api.cieloecommerce.cielo.com.br"
 
     def _get_cielo_api_headers(self):
-        """Get Cielo API headers used in all S2S communication
-
-        Consider state. If state is production, merchant_id
-        and merchant_key need to be defined.
-        """
         if self.state == "test":
-            CIELO_HEADERS = {
+            return {
                 "MerchantId": "be87a4be-a40d-4a2d-b2c8-b8b6cc19cddd",
                 "MerchantKey": "POHAWRXFBSIXTMTFVBCYSKNWZBMOATDNYUQDGBUE",
                 "Content-Type": "application/json",
             }
-        if self.state == "prod":
-            CIELO_HEADERS = {
-                "MerchantId": self.cielo_merchant_id,
-                "MerchantKey": self.cielo_merchant_key,
-                "Content-Type": "application/json",
-            }
-        return CIELO_HEADERS
+        if not self.cielo_merchant_id or not self.cielo_merchant_key:
+            raise ValueError(
+                "Cielo merchant credentials are required in production state"
+            )
+        return {
+            "MerchantId": self.cielo_merchant_id,
+            "MerchantKey": self.cielo_merchant_key,
+            "Content-Type": "application/json",
+        }
 
     def _get_feature_support(self):
-        """Get advanced feature support by provider
-
-        Each provider should add its technical in the corresponding
-        key for the following features:
-            * fees: support payment fees computations
-            * authorize: support authorizing payment (separates
-                         authorization and capture)
-            * tokenize: support saving payment data in a payment.tokenize
-                        object
-        """
-        res = super(PaymentProviderCielo, self)._get_feature_support()
-        res["tokenize"].append("cielo")
-        res["authorize"].append("cielo")
+        res = super()._get_feature_support()
+        if "tokenize" in res:
+            res["tokenize"].append("cielo")
+        if "authorize" in res:
+            res["authorize"].append("cielo")
         return res
