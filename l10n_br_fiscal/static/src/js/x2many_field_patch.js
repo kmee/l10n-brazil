@@ -1,7 +1,7 @@
 /** @odoo-module **/
 
-import { patch } from "@web/core/utils/patch";
-import { X2ManyField } from "@web/views/fields/x2many/x2many_field";
+import {patch} from "@web/core/utils/patch";
+import {X2ManyField} from "@web/views/fields/x2many/x2many_field";
 
 // This patch adds the complete 'views' object to the props passed to the ListRenderer.
 patch(X2ManyField.prototype, {

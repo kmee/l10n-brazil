@@ -1,12 +1,12 @@
 /** @odoo-module **/
 
-import { registry } from "@web/core/registry";
-import { Component } from "@odoo/owl";
-import { standardFieldProps } from "@web/views/fields/standard_field_props";
+import {registry} from "@web/core/registry";
+import {Component} from "@odoo/owl";
+import {standardFieldProps} from "@web/views/fields/standard_field_props";
 
 class LineViewPopupButton extends Component {
     static template = "l10n_br_account.LineViewPopupButton";
-    static props = { ...standardFieldProps };
+    static props = {...standardFieldProps};
 
     setup() {
         // This log will confirm the widget is being created for each row.
@@ -15,7 +15,10 @@ class LineViewPopupButton extends Component {
 
     onClick() {
         // This log will now appear thanks to ".stop" in the template.
-        console.log("LineViewPopupButton onClick triggered for record:", this.props.record.resId);
+        console.log(
+            "LineViewPopupButton onClick triggered for record:",
+            this.props.record.resId
+        );
         if (this.props.record) {
             this.env.bus.trigger("OPEN_LINE_IN_POPUP", {
                 record: this.props.record,
