@@ -7,7 +7,7 @@
             class="btn-sm btn-link p-0"
             t-on-click.stop="onClick"
         >
-            <i class="fa fa-external-link"/>
+            <i class="fa fa-external-link" />
         </button>
     </t>
 </templates>

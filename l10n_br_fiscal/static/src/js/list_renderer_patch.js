@@ -1,9 +1,9 @@
 /** @odoo-module **/
 
-import { useBus, useService } from "@web/core/utils/hooks";
-import { patch } from "@web/core/utils/patch";
-import { ListRenderer } from "@web/views/list/list_renderer";
-import { FormViewDialog } from "@web/views/view_dialogs/form_view_dialog";
+import {useBus, useService} from "@web/core/utils/hooks";
+import {patch} from "@web/core/utils/patch";
+import {ListRenderer} from "@web/views/list/list_renderer";
+import {FormViewDialog} from "@web/views/view_dialogs/form_view_dialog";
 
 patch(ListRenderer.prototype, {
     setup() {
@@ -11,7 +11,7 @@ patch(ListRenderer.prototype, {
         this.dialogService = useService("dialog");
 
         useBus(this.env.bus, "OPEN_LINE_IN_POPUP", (ev) => {
-            const { record: receivedRecord } = ev.detail;
+            const {record: receivedRecord} = ev.detail;
             const recordInList = this.props.list.records.find(
                 (r) => r.id === receivedRecord.id
             );
@@ -27,11 +27,13 @@ patch(ListRenderer.prototype, {
      */
     openRecordInDialog(record) {
         const list = this.props.list;
-        
+
         // This now works because of the X2ManyField patch.
         const formView = this.props.views.form;
         if (!formView) {
-            console.error("No inline form view defined for this list. Cannot open popup.");
+            console.error(
+                "No inline form view defined for this list. Cannot open popup."
+            );
             return;
         }
 
@@ -40,7 +42,7 @@ patch(ListRenderer.prototype, {
             resId: record.resId || false,
             context: record.context,
             title: record.resId ? "Edit Line" : "New Line",
-            
+
             // THE KEY FIX: Use the fields and models from the FORM VIEW definition,
             // not from the list. This prevents the RPC error.
             fields: formView.fields,
