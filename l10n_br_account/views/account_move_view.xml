@@ -153,7 +153,8 @@
                 expr="//field[@name='invoice_line_ids']/tree/field[@name='product_id']"
                 position="before"
             >
-                <widget name="line_view_popup_button" />
+                <!--widget name="line_view_popup_button" TODO make it work in l10n_br_fiscal
+                /-->
             </xpath>
             <xpath
                 expr="//field[@name='invoice_line_ids']/tree/field[@name='tax_ids']"
@@ -169,7 +170,7 @@
                     domain here that is checked before the dynamic fiscal
                     placeholders kick in.
                 -->
-                <field name="proxy_product_id" invisible="1" />
+                <field name="proxy_product_id" column_invisible="True" />
                 <field name="proxy_company_id" invisible="1" />
                 <field name="proxy_partner_id" invisible="1" />
                 <field name="proxy_name" invisible="1" />
