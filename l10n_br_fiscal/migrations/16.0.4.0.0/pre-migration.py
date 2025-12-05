@@ -200,10 +200,25 @@ def rename_columns(cr, column_spec):
             continue
 
         for old, new in columns:
+            # Check if the old column exists before renaming
+            cr.execute(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_name = %s AND column_name = %s
+                """,
+                (table, old),
+            )
+            if not cr.fetchone():
+                _logger.info(
+                    f"Column {table}.{old} not found – skipping rename to {new}"
+                )
+                continue
+
             _logger.info(f"Renaming {table}.{old} → {new}")
             openupgrade.logged_query(
                 cr,
-                f"ALTER TABLE {table} RENAME {old} TO {new}",
+                f"ALTER TABLE {table} RENAME COLUMN {old} TO {new}",
             )
 
 
