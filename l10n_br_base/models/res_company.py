@@ -25,6 +25,31 @@ class Company(models.Model):
             "street_name",
         ]
 
+    def _get_company_address_update(self, partner):
+        """Override to safely handle fields that may not exist on partner yet.
+
+        This method safely handles cases where fields may not exist on the partner
+        model yet during module installation, preventing KeyError exceptions.
+        """
+        result = {}
+        field_names = self._get_company_address_field_names()
+        for fname in field_names:
+            # Check if field exists on partner model before accessing
+            if fname in partner._fields:
+                try:
+                    # Access field using Odoo's field accessor
+                    result[fname] = partner[fname]
+                except (KeyError, AttributeError):
+                    # Field might not be accessible yet during module installation
+                    result[fname] = False
+                except Exception:
+                    # Catch any other exceptions that might occur during installation
+                    result[fname] = False
+            else:
+                # Field doesn't exist on partner model yet (e.g., during module installation)
+                result[fname] = False
+        return result
+
     def _inverse_legal_name(self):
         for company in self:
             company.partner_id.legal_name = company.legal_name
@@ -131,6 +156,14 @@ class Company(models.Model):
         compute="_compute_address",
         inverse="_inverse_l10n_br_isuf_code",
     )
+
+    def _compute_address(self):
+        """Override to use our safe _get_company_address_update method."""
+        for company in self.filtered(lambda company: company.partner_id):
+            address_data = company.partner_id.sudo().address_get(adr_pref=['contact'])
+            if address_data['contact']:
+                partner = company.partner_id.browse(address_data['contact']).sudo()
+                company.update(company._get_company_address_update(partner))
 
     @api.model
     def _fields_view_get(

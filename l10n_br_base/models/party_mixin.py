@@ -74,6 +74,22 @@ class PartyMixin(models.AbstractModel):
         size=32,
     )
 
+    l10n_br_ie_code = fields.Char(
+        string="State Tax Number",
+        size=17,
+        unaccent=False,
+    )
+
+    l10n_br_im_code = fields.Char(
+        string="Municipal Tax Number",
+        unaccent=False,
+    )
+
+    l10n_br_isuf_code = fields.Char(
+        string="SUFRAMA Code",
+        unaccent=False,
+    )
+
     @api.depends("cnpj_cpf")
     def _compute_cnpj_cpf_stripped(self):
         for record in self:

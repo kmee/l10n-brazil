@@ -38,6 +38,24 @@ class Partner(models.Model):
 
     l10n_br_rg_code = fields.Char(string="RG", unaccent=False)
 
+    # These fields are also defined in party_mixin, but we define them here
+    # to ensure they exist during module installation before views are validated
+    l10n_br_ie_code = fields.Char(
+        string="State Tax Number",
+        size=17,
+        unaccent=False,
+    )
+
+    l10n_br_im_code = fields.Char(
+        string="Municipal Tax Number",
+        unaccent=False,
+    )
+
+    l10n_br_isuf_code = fields.Char(
+        string="SUFRAMA Code",
+        unaccent=False,
+    )
+
     pix_key_ids = fields.One2many(
         string="Pix Keys",
         comodel_name="res.partner.pix",
