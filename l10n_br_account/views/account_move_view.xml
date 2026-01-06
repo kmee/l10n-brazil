@@ -171,17 +171,17 @@
                     placeholders kick in.
                 -->
                 <field name="proxy_product_id" column_invisible="True" />
-                <field name="proxy_company_id" invisible="1" />
-                <field name="proxy_partner_id" invisible="1" />
-                <field name="proxy_name" invisible="1" />
-                <field name="proxy_quantity" invisible="1" />
-                <field name="proxy_price_unit" invisible="1" />
+                <field name="proxy_company_id" column_invisible="True" />
+                <field name="proxy_partner_id" column_invisible="True" />
+                <field name="proxy_name" column_invisible="True" />
+                <field name="proxy_quantity" column_invisible="True" />
+                <field name="proxy_price_unit" column_invisible="True" />
                 <field name="fiscal_operation_id" column_invisible="True" />
                 <field name="document_type_id" column_invisible="True" />
                 <field name="fiscal_operation_type" column_invisible="True" />
                 <field name="tax_icms_or_issqn" column_invisible="True" />
-                <field name="price_subtotal" force_save="1" invisible="1" />
-                <field name="price_total" force_save="1" invisible="1" />
+                <field name="price_subtotal" force_save="1" column_invisible="True" />
+                <field name="price_total" force_save="1" column_invisible="True" />
                 <field name="ind_final" />
                 <field name="account_id" optional="hide" />
                 <field
@@ -256,14 +256,14 @@
                 <field name="document_type_id" column_invisible="True" />
                 <field name="fiscal_operation_type" column_invisible="True" />
                 <field name="tax_icms_or_issqn" column_invisible="True" />
-                <field name="proxy_company_id" force_save="1" invisible="1" />
-                <field name="proxy_partner_id" force_save="1" invisible="1" />
-                <field name="proxy_product_id" force_save="1" invisible="1" />
-                <field name="proxy_name" force_save="1" invisible="1" />
-                <field name="proxy_quantity" force_save="1" invisible="1" />
-                <field name="proxy_price_unit" force_save="1" invisible="1" />
-                <field name="price_subtotal" force_save="1" invisible="1" />
-                <field name="price_total" force_save="1" invisible="1" />
+                <field name="proxy_company_id" force_save="1" column_invisible="True" />
+                <field name="proxy_partner_id" force_save="1" column_invisible="True" />
+                <field name="proxy_product_id" force_save="1" column_invisible="True" />
+                <field name="proxy_name" force_save="1" column_invisible="True" />
+                <field name="proxy_quantity" force_save="1" column_invisible="True" />
+                <field name="proxy_price_unit" force_save="1" column_invisible="True" />
+                <field name="price_subtotal" force_save="1" column_invisible="True" />
+                <field name="price_total" force_save="1" column_invisible="True" />
                 <field
                     name="tax_ids"
                     optional="hide"
