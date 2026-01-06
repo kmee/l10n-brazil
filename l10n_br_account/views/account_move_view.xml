@@ -58,7 +58,7 @@
                     type="object"
                     class="oe_stat_button"
                     icon="fa-pencil-square-o"
-                    >
+                >
                     <span>Fiscal Details</span>
                 </button>
             </div>
