@@ -3,3 +3,4 @@ nfelib
 xsdata
 signxml==3.2.2
 xmldiff
+odoo-addon-l10n_br_coa @ git+https://github.com/OCA/l10n-brazil.git@refs/pull/4018/head#subdirectory=l10n_br_coa
