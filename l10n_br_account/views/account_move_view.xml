@@ -144,7 +144,8 @@
                         'default_proxy_company_id': company_id,
                         'default_currency_id': currency_id or company_currency_id,
                         'default_fiscal_operation_id': fiscal_operation_id,
-                        'default_document_type_id': document_type_id
+                        'default_document_type_id': document_type_id,
+                        'default_document_id': fiscal_document_id
 
                     }
                 </attribute>
@@ -192,6 +193,7 @@
                     column_invisible="parent.fiscal_operation_id"
                 />
                 <field name="fiscal_document_line_id" column_invisible="True" />
+                <field name="document_id" column_invisible="True" />
                 <field name="document_type_id" column_invisible="True" />
                 <field name="fiscal_operation_id" optional="hide" />
                 <field name="cfop_id" optional="hide" />
@@ -221,6 +223,7 @@
                         'default_currency_id': currency_id or company_currency_id,
                         'default_fiscal_operation_id': fiscal_operation_id,
                         'default_document_type_id': document_type_id,
+                        'default_document_id': fiscal_document_id,
                         'default_exclude_from_invoice_tab': 1
                     }
                     </attribute>
@@ -253,6 +256,7 @@
                     placeholders kick in.
                 -->
                 <field name="fiscal_operation_id" column_invisible="True" />
+                <field name="document_id" column_invisible="True" />
                 <field name="document_type_id" column_invisible="True" />
                 <field name="fiscal_operation_type" column_invisible="True" />
                 <field name="tax_icms_or_issqn" column_invisible="True" />

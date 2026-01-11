@@ -37,6 +37,8 @@ class TestMoveEdition(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.company = cls.env.ref("l10n_br_base.empresa_lucro_presumido")
+        cls.env = cls.env(context=dict(cls.env.context, allowed_company_ids=cls.company.ids))
+        cls.env.user.company_id = cls.company
         cls.out_invoice_account_id = cls.env["account.account"].create(
             {
                 "company_id": cls.company.id,
@@ -155,6 +157,7 @@ class TestMoveEdition(TransactionCase):
             self.env["account.move"].with_context(
                 default_move_type="out_invoice",
                 no_fiscal_recompute_on_create=True,
+                default_company_id=self.company.id,
             )
         )
         move_form.partner_id = self.env.ref("l10n_br_base.res_partner_cliente5_pe")
