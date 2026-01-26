@@ -47,7 +47,6 @@ class AccountChartTemplate(models.AbstractModel):
             "name": _("Plano de Contas Base"),
             "visible": True,  # TODO
             "code_digits": "2",
-            "use_anglo_saxon": True,
         }
 
     @template("br_oca", "account.tax.group")
@@ -89,6 +88,7 @@ class AccountChartTemplate(models.AbstractModel):
                 "transfer_account_code_prefix": "1.1.1.2.0",
                 "account_sale_tax_id": False,
                 "account_purchase_tax_id": False,
+                "anglo_saxon_accounting": True,
             },
         }
 

@@ -15,6 +15,7 @@ class AccountChartTemplate(models.AbstractModel):
         return {
             "name": _("Plano de Contas Genérico para Empresas do Regime normal"),
             "parent": "br_oca",
+            "visible": True,
             "use_anglo_saxon": True,
             "property_account_receivable_id": "coa_generic_112101",
             "property_account_payable_id": "coa_generic_211101",
