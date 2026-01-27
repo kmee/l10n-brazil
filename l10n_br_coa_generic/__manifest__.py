@@ -13,13 +13,6 @@
     "website": "https://github.com/OCA/l10n-brazil",
     "version": "17.0.1.0.0",
     "depends": ["l10n_br_coa"],
-    "data": [
-        # "data/l10n_br_coa_generic_template.xml",
-        # "data/account_group.xml",
-        # "data/account.account.template.csv",
-        # "data/l10n_br_coa.account.tax.group.account.template.csv",
-        # "data/account_fiscal_position_template.xml",
-        # "data/l10n_br_coa_generic_template_post.xml",
-    ],
+    "data": [],
     "post_init_hook": "_post_init_hook",
 }
