@@ -1,0 +1,38 @@
+id,code_prefix_start,name,parent_id
+coa_simple_1,1,Ativo,
+coa_simple_11,1.1,Ativo Circulante,coa_simple_1
+coa_simple_111,1.1.1,Caixa e Equivalentes de Caixa,coa_simple_11
+coa_simple_112,1.1.2,Contas a Receber,coa_simple_11
+coa_simple_113,1.1.3,Estoque,coa_simple_11
+coa_simple_114,1.1.4,Outros Créditos,coa_simple_11
+coa_simple_13,1.3,Ativo Não Circulante,coa_simple_1
+coa_simple_131,1.3.1,Realizável a Longo Prazo,coa_simple_13
+coa_simple_132,1.3.2,Investimentos,coa_simple_13
+coa_simple_133,1.3.3,Imobilizado,coa_simple_13
+coa_simple_134,1.3.4,Intangível,coa_simple_13
+coa_simple_2,2,Passivo e Patrimônio Líquido,
+coa_simple_21,2.1,Passivo Circulante,coa_simple_2
+coa_simple_211,2.1.1,Fornecedores Nacionais,coa_simple_21
+coa_simple_212,2.1.2,Empréstimos e Financiamentos,coa_simple_21
+coa_simple_213,2.1.3,Obrigações Fiscais,coa_simple_21
+coa_simple_214,2.1.4,Obrigações Trabalhistas e Sociais,coa_simple_21
+coa_simple_215,2.1.5,Contas a Pagar,coa_simple_21
+coa_simple_216,2.1.6,Provisões,coa_simple_21
+coa_simple_22,2.2,Passivo Não Circulante,coa_simple_2
+coa_simple_221,2.2.1,Financiamentos,coa_simple_22
+coa_simple_222,2.2.2,Outras Contas a Pagar,coa_simple_22
+coa_simple_23,2.3,Patrimônio Líquido,coa_simple_2
+coa_simple_231,2.3.1,Capital Social,coa_simple_23
+coa_simple_232,2.3.2,Reservas,coa_simple_23
+coa_simple_233,2.3.3,Passivo Circulante,coa_simple_23
+coa_simple_3,3,"Receitas, Custos e Despesas (Contas de Resultado)",
+coa_simple_31,3.1,Receita,coa_simple_3
+coa_simple_311,3.1.1,Receitas de Venda,coa_simple_31
+coa_simple_312,3.1.2,Receitas Financeiras,coa_simple_31
+coa_simple_313,3.1.3,Outras Receitas Operacionais,coa_simple_31
+coa_simple_32,3.2,Custos e Despesas,coa_simple_3
+coa_simple_321,3.2.1,"Custos dos Produtos, Mercadorias e Serviços Vendidos",coa_simple_32
+coa_simple_322,3.2.2,Despesas Operacionais,coa_simple_32
+coa_simple_323,3.2.3,Despesas Financeiras,coa_simple_32
+coa_simple_324,3.2.4,Outras Despesas Operacionais,coa_simple_32
+coa_simple_325,3.2.5,Provisão para Imposto de Renda Pessoa Jurídica e Contribuição Social sobre o Lucro Líquido,coa_simple_32
