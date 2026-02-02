@@ -4,7 +4,7 @@
 {
     "name": "Plano de Contas do Simples ITG 1000",
     "summary": "Plano de Contas ITG 1000 para Microempresas e Empresa de Pequeno Porte",
-    "category": "Accounting",
+    "category": "Accounting/Localizations/Account Charts",
     "license": "AGPL-3",
     "author": "Akretion, " "Odoo Community Association (OCA)",
     "maintainers": ["renatonlima"],
@@ -12,12 +12,6 @@
     "website": "https://github.com/OCA/l10n-brazil",
     "version": "17.0.1.0.0",
     "depends": ["l10n_br_coa"],
-    "data": [
-        "data/l10n_br_coa_simple_template.xml",
-        "data/account_group.xml",
-        "data/account.account.template.csv",
-        "data/l10n_br_coa.account.tax.group.account.template.csv",
-        "data/l10n_br_coa_simple_template_post.xml",
-    ],
+    "data": [],
     "post_init_hook": "post_init_hook",
 }
