@@ -9,7 +9,7 @@ from erpbrasil.edoc.provedores.cidades import NFSeFactory
 from erpbrasil.transmissao import TransmissaoSOAP
 from requests import Session
 
-from odoo import fields, models
+from odoo import api, fields, models
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     EVENT_ENV_HML,
@@ -20,7 +20,6 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
 )
 
 from ..constants.nfse import (
-    ISSQN_TO_TRIBUTACAO_ISS,
     NFSE_ENVIRONMENTS,
     OPERATION_NATURE,
     RPS_TYPE,
@@ -72,11 +71,57 @@ class Document(models.Model):
         string="Civil Construction ART",
     )
 
+    amount_untaxed = fields.Monetary(
+        string="Untaxed Amount",
+        compute="_compute_amount_from_moves",
+        store=False,
+        currency_field="currency_id",
+        help="Untaxed amount from related account moves",
+    )
+
+    currency_id = fields.Many2one(
+        related="company_id.currency_id",
+        string="Currency",
+        store=True,
+        readonly=True,
+    )
+
+    @api.depends("amount_price_gross", "currency_id")
+    def _compute_amount_from_moves(self):
+        """Compute amount fields from related account moves for template compatibility.
+
+        Note: move_ids is not included in @api.depends because it's defined in
+        l10n_br_account module which may not be installed. The method checks for
+        move_ids existence at runtime to avoid KeyError during module upgrade.
+        """
+        for record in self:
+            # Check if move_ids exists in the model and has values
+            # This handles the case where l10n_br_account module may not be installed
+            if "move_ids" in record._fields and record.move_ids:
+                # Sum amounts from all related moves
+                # Use the currency from the first move for consistency
+                record.amount_untaxed = sum(record.move_ids.mapped("amount_untaxed"))
+            else:
+                # Fallback to fiscal document amounts if no moves
+                record.amount_untaxed = record.amount_price_gross or 0.0
+
     def make_pdf(self):
         if not self.filtered(filter_processador_edoc_nfse):
             return super().make_pdf()
-        pdf = self.env.ref("l10n_br_nfse.report_br_nfse_danfe")._render_qweb_pdf(
-            self.ids
+
+        def to_text(value):
+            """Convert binary data to base64 string for use in templates.
+            In Odoo, binary fields are stored as base64 strings, so we return as-is.
+            """
+            if not value:
+                return ""
+            if isinstance(value, bytes):
+                return base64.b64encode(value).decode("utf-8")
+            # Odoo binary fields are already base64 strings
+            return str(value) if value else ""
+
+        pdf = self.env["ir.actions.report"]._render_qweb_pdf(
+            "l10n_br_nfse.report_br_nfse_danfe", self.ids, data={"to_text": to_text}
         )[0]
 
         if self.document_number:
@@ -168,8 +213,6 @@ class Document(models.Model):
         cbs_aliquota = 0
         ibs_uf_valor = 0
         cbs_valor = 0
-        base_calculo_pis = 0
-        base_calculo_cofins = 0
 
         for line in lines:
             result_line.update(line._prepare_line_service())
@@ -198,15 +241,6 @@ class Document(models.Model):
             cbs_aliquota += result_line.get("cbs_aliquota") or 0
             ibs_uf_valor += result_line.get("ibs_uf_valor") or 0
             cbs_valor += result_line.get("cbs_valor") or 0
-            situacao_tributaria_pis = result_line.get("situacao_tributaria_pis")
-            situacao_tributaria_cofins = result_line.get("situacao_tributaria_cofins")
-            base_calculo_pis += result_line.get("base_calculo_pis", 0)
-            base_calculo_cofins += result_line.get("base_calculo_cofins", 0)
-            aliquota_pis = result_line.get("aliquota_pis") or 0
-            aliquota_cofins = result_line.get("aliquota_cofins") or 0
-            tipo_retencao_pis_cofins = (
-                result_line.get("tipo_retencao_pis_cofins") or "2"
-            )
 
         result = {
             "valor_servicos": valor_servicos,
@@ -231,14 +265,10 @@ class Document(models.Model):
             "valor_liquido_nfse": valor_liquido_nfse,
             "item_lista_servico": self.fiscal_line_ids[0].service_type_id.code
             and self.fiscal_line_ids[0].service_type_id.code.replace(".", ""),
-            "codigo_tributacao_nacional": self.fiscal_line_ids[
-                0
-            ].national_taxation_code_id.code
-            or None,
             "codigo_tributacao_municipio": self.fiscal_line_ids[
                 0
             ].city_taxation_code_id.code
-            or None,
+            or "",
             "municipio_prestacao_servico": self.fiscal_line_ids[
                 0
             ].issqn_fg_city_id.ibge_code
@@ -262,16 +292,6 @@ class Document(models.Model):
             "ibs_uf_valor": ibs_uf_valor if ibs_uf_valor else None,
             "ibs_mun_valor": 0.0,
             "cbs_valor": cbs_valor if cbs_valor else None,
-            "situacao_tributaria_pis": situacao_tributaria_pis,
-            "situacao_tributaria_cofins": situacao_tributaria_cofins,
-            "base_calculo_pis": round(base_calculo_pis, 2),
-            "base_calculo_cofins": round(base_calculo_cofins, 2),
-            "aliquota_pis": round(aliquota_pis, 2),
-            "aliquota_cofins": round(aliquota_cofins, 2),
-            "tipo_retencao_pis_cofins": tipo_retencao_pis_cofins,
-            "codigo_tributacao_iss": ISSQN_TO_TRIBUTACAO_ISS[
-                self.fiscal_line_ids[0].issqn_eligibility
-            ],
         }
 
         result.update(self.company_id._prepare_company_service())
