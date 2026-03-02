@@ -8,11 +8,11 @@ import logging
 from contextlib import contextmanager
 
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError
-from odoo.tests.common import Form
-from odoo.tools import frozendict
 
 _logger = logging.getLogger(__name__)
+from odoo.exceptions import UserError
+from odoo.tests import Form
+from odoo.tools import frozendict
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_ISSUER_COMPANY,
@@ -27,7 +27,6 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
 from .constants import (
     MOVE_TO_OPERATION,
 )
-
 
 class AccountMove(models.Model):
     _name = "account.move"
@@ -169,19 +168,19 @@ class AccountMove(models.Model):
             tax_totals_node.set("attrs", "{'invisible': True}")
 
         if view_type == "form" and (
-            self.user_has_groups("l10n_br_account.group_line_fiscal_detail")
+            self.env.user.has_group("l10n_br_account.group_line_fiscal_detail")
             or self.env.context.get("force_line_fiscal_detail")
         ):
-            for sub_tree_node in arch.xpath("//field[@name='invoice_line_ids']/tree"):
+            for sub_tree_node in arch.xpath("//field[@name='invoice_line_ids']/list"):
                 sub_tree_node.attrib["editable"] = ""
 
         return arch, view
 
     @api.depends(
-        "line_ids.matched_debit_ids.debit_move_id.move_id.payment_id.is_matched",
+        "line_ids.matched_debit_ids.debit_move_id.move_id.origin_payment_id.is_matched",
         "line_ids.matched_debit_ids.debit_move_id.move_id.line_ids.amount_residual",
         "line_ids.matched_debit_ids.debit_move_id.move_id.line_ids.amount_residual_currency",
-        "line_ids.matched_credit_ids.credit_move_id.move_id.payment_id.is_matched",
+        "line_ids.matched_credit_ids.credit_move_id.move_id.origin_payment_id.is_matched",
         "line_ids.matched_credit_ids.credit_move_id.move_id.line_ids.amount_residual",
         "line_ids.matched_credit_ids.credit_move_id.move_id.line_ids.amount_residual_currency",
         "line_ids.balance",
@@ -341,6 +340,34 @@ class AccountMove(models.Model):
                     }
         return res
 
+    @contextmanager
+    def _check_balanced(self, container):
+        """Override to log line balances when balance check fails for fiscal moves."""
+        try:
+            with super()._check_balanced(container):
+                yield
+        except Exception as e:
+            # Log the line balances to diagnose the imbalance
+            for move in container["records"].filtered(
+                lambda m: m.fiscal_operation_id and m.line_ids
+            ):
+                total = sum(move.line_ids.mapped("balance"))
+                _logger.warning(
+                    "BR BALANCE FAIL move=%s type=%s total_balance=%.4f lines:",
+                    move.id,
+                    move.move_type,
+                    total,
+                )
+                for line in move.line_ids:
+                    _logger.warning(
+                        "  line=%s name=%s account=%s balance=%.4f",
+                        line.id,
+                        line.name or line.account_id.code,
+                        line.account_id.code,
+                        line.balance,
+                    )
+            raise
+
     def _get_protected_vals(self, vals, records):
         """
         Overriden to deal with _inherits and the fiscal document(.line)
@@ -411,8 +438,19 @@ class AccountMove(models.Model):
             and move.fiscal_operation_id.journal_id
         )
         for move in fisc_operation_driven:
-            move.journal_id = self.fiscal_operation_id.journal_id
-        return super(AccountMove, self - fisc_operation_driven)._compute_journal_id()
+            move.journal_id = move.fiscal_operation_id.journal_id
+        remaining = self - fisc_operation_driven
+        if not remaining:
+            return
+        try:
+            return super(AccountMove, remaining)._compute_journal_id()
+        except UserError:
+            # Brazilian companies may have no default sale/purchase/general
+            # journals because journals are driven by fiscal operations.
+            # In v18, _search_default_journal() raises UserError when no
+            # journal is found. We suppress this so the form can initialize;
+            # the journal will be set once a fiscal operation is selected.
+            pass
 
     def open_fiscal_document(self):
         """
@@ -537,46 +575,57 @@ class AccountMove(models.Model):
 
     def copy_data(self, default=None):
         res = super().copy_data(default=default)
-        for move, values in zip(self, res):
+        for move, values in zip(self, res, strict=False):
             if not values.get("fiscal_operation_id"):
                 values["fiscal_operation_id"] = move.fiscal_operation_id.id
             if not values.get("document_type_id"):
                 values["document_type_id"] = move.document_type_id.id
-            _logger.info("DEBUG copy_data values: %s", values)
         return res
 
-    def _reverse_moves(self, default_values_list=None, cancel=False):
-        _logger.info("DEBUG _reverse_moves starting")
-        new_moves = super()._reverse_moves(
-            default_values_list=default_values_list, cancel=cancel
-        )
-        _logger.info("DEBUG _reverse_moves new_moves: %s", new_moves.mapped("name"))
+    def _reverse_moves(self, default_values_list=None, cancel=False):  # noqa: C901
         force_fiscal_operation_id = False
         if self.env.context.get("force_fiscal_operation_id"):
             force_fiscal_operation_id = self.env["l10n_br_fiscal.operation"].browse(
                 self.env.context.get("force_fiscal_operation_id")
             )
+        # Validar documentos de origem antes de criar estornos (para levantar
+        # erro na 1ª chamada quando documento não tem operação fiscal).
+        to_validate = self
+        if not to_validate and self.env.context.get("active_model") == "account.move":
+            active_ids = self.env.context.get("active_ids")
+            if not active_ids and self.env.context.get("active_id"):
+                active_ids = [self.env.context["active_id"]]
+            to_validate = self.env["account.move"].browse(active_ids or [])
+        for source_move in to_validate:
+            if not source_move.document_type_id:
+                continue
+            source_op = source_move.fiscal_operation_id
+            if not source_op:
+                raise UserError(
+                    _("""Document without Fiscal Operation! \n Force one!""")
+                )
+            if (
+                not force_fiscal_operation_id
+                and not source_op.return_fiscal_operation_id
+            ):
+                raise UserError(
+                    _("""Document without Return Fiscal Operation! \n Force one!""")
+                )
+
+        new_moves = super()._reverse_moves(
+            default_values_list=default_values_list, cancel=cancel
+        )
         for record in new_moves:
-            _logger.info(
-                "DEBUG processing record %s document_type_id %s",
-                record.name,
-                record.document_type_id,
-            )
             if not record.document_type_id:
                 continue
 
             source_move = record.reversed_entry_id
-            _logger.info(
-                "DEBUG source_move: %s", source_move.name if source_move else "None"
-            )
             if not source_move:
                 continue
 
             # Fallback to source move's operation if not copied
             source_op = source_move.fiscal_operation_id
-            _logger.info("DEBUG source_op: %s", source_op)
             if not source_op:
-                _logger.info("DEBUG RAISING Document without Fiscal Operation")
                 raise UserError(
                     _("""Document without Fiscal Operation! \n Force one!""")
                 )
@@ -593,41 +642,52 @@ class AccountMove(models.Model):
                 force_fiscal_operation_id or source_op.return_fiscal_operation_id
             )
 
-            _logger.info(
-                "DEBUG record.invoice_line_ids count: %s", len(record.invoice_line_ids)
+            # Parear apenas linhas de produto (por ordem), para não depender da
+            # ordem total (tax/payment podem alterar).
+            def product_line_filter(aml):
+                return getattr(aml, "display_type", None) in (None, False, "product")
+
+            record_product_lines = record.invoice_line_ids.filtered(product_line_filter)
+            source_product_lines = source_move.invoice_line_ids.filtered(
+                product_line_filter
             )
-            # Match lines between reversed move and source move
-            # In reversal, order is usually preserved.
-            if len(record.invoice_line_ids) == len(source_move.invoice_line_ids):
-                matched_lines = zip(
-                    record.invoice_line_ids, source_move.invoice_line_ids
-                )
-            else:
-                # Fallback to empty source lines if count mismatch (unlikely)
-                matched_lines = [
-                    (line, self.env["account.move.line"])
-                    for line in record.invoice_line_ids
-                ]
+            if len(record_product_lines) != len(source_product_lines):
+                record_product_lines = record.invoice_line_ids
+                source_product_lines = source_move.invoice_line_ids
+            matched_lines = zip(
+                record_product_lines, source_product_lines, strict=False
+            )
 
             for line, source_line in matched_lines:
-                line_source_op = source_line.fiscal_operation_id
-
-                if (
-                    not force_fiscal_operation_id
-                    and not line_source_op.return_fiscal_operation_id
-                ):
-                    raise UserError(
-                        _(
-                            """Line without Return Fiscal Operation! \n
-                            Please force one! \n%(name)s""",
-                            name=line.name,
+                if force_fiscal_operation_id:
+                    line_return_op = force_fiscal_operation_id
+                else:
+                    line_source_op = source_line.fiscal_operation_id
+                    # Permitir usar return do cabeçalho quando a linha não tem
+                    # operação (ex.: write em linhas postadas pode não persistir).
+                    line_return_op = (
+                        line_source_op.return_fiscal_operation_id
+                        if line_source_op
+                        else None
+                    ) or source_op.return_fiscal_operation_id
+                    if not line_return_op:
+                        if not line_source_op:
+                            raise UserError(
+                                _(
+                                    """Line without Fiscal Operation! \n
+                                    Please force one! \n%(name)s""",
+                                    name=line.name,
+                                )
+                            )
+                        raise UserError(
+                            _(
+                                """Line without Return Fiscal Operation! \n
+                                Please force one! \n%(name)s""",
+                                name=line.name,
+                            )
                         )
-                    )
 
-                line.fiscal_operation_id = (
-                    force_fiscal_operation_id
-                    or line_source_op.return_fiscal_operation_id
-                )
+                line.fiscal_operation_id = line_return_op
 
             # This method is in l10n_br_fiscal_subsequent_document module, the IF
             # is necessary to avoid a 'glue module' or direct dependence.

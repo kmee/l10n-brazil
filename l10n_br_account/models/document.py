@@ -69,14 +69,24 @@ class FiscalDocument(models.Model):
         "move_ids.partner_id",
         "move_ids.user_id",
         "move_ids.partner_shipping_id",
+        "move_ids.company_id",
     )
     def _compute_shadowed_fields(self):
         for doc in self:
             if doc.move_ids:
-                doc.partner_id = doc.move_ids.partner_id
-                doc.company_id = doc.move_ids.company_id
-                doc.user_id = doc.move_ids.user_id
-                doc.partner_shipping_id = doc.move_ids.partner_shipping_id
+                move = doc.move_ids
+                doc.partner_id = move.partner_id
+                # For new (unsaved) Form records, accessing move.company_id triggers
+                # _compute_company_id → _compute_journal_id → UserError cascade
+                # (company_id is locked mid-computation when the cascade starts,
+                # so _search_default_journal() receives company_id=False and fails).
+                # For new records, use env.company; for saved records, read normally.
+                if move._origin:
+                    doc.company_id = move.company_id
+                else:
+                    doc.company_id = move.env.company
+                doc.user_id = move.user_id
+                doc.partner_shipping_id = move.partner_shipping_id
 
     @api.onchange("company_id")
     def _inverse_company_id(self):

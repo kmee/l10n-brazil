@@ -66,6 +66,7 @@ class AccountChartTemplate(models.AbstractModel):
                 else:
                     tax_vals = {
                         "name": value["name"],
+                        "invoice_label": value.get("invoice_label", ""),
                         "company_id": company.id,
                         "tax_group_id": self.env.ref(
                             f"l10n_br_coa.{company.id}_{value['tax_group_id']}"
