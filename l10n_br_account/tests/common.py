@@ -2,7 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
 from odoo import fields
-from odoo.tests.common import Form
+from odoo.tests import Form
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
@@ -13,9 +13,16 @@ class AccountMoveBRCommon(AccountTestInvoicingCommon):
     Charts of Accounts and Brazilian data.
     """
 
+    # v18: chart_template is a class attribute used by _create_company for
+    # additional test companies. The main company's CoA must be pre-installed.
+    chart_template = "generic_coa"
+
     @classmethod
     def setUpClass(cls, chart_template_ref=None):
-        super().setUpClass(chart_template_ref="generic_coa")
+        # v18: AccountTestInvoicingCommon.setUpClass() no longer accepts
+        # chart_template_ref. The generic_coa chart template is expected to
+        # be pre-installed in the test database.
+        super().setUpClass()
         cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
 
         # Remove default Odoo demo taxes if they conflict or are not needed
@@ -32,37 +39,13 @@ class AccountMoveBRCommon(AccountTestInvoicingCommon):
                 "standard_price": 1000.0,
                 "ncm_id": cls.env.ref("l10n_br_fiscal.ncm_94033000").id,
                 "fiscal_genre_id": cls.env.ref("l10n_br_fiscal.product_genre_94").id,
-                "fiscal_type": "00",
+                # v18: company_dependent fields are written directly (ir.property removed)
+                # The ir.property override previously set fiscal_type to "04"
+                "fiscal_type": "04",
                 "icms_origin": "5",
                 "taxes_id": False,
                 "tax_icms_or_issqn": "icms",
                 "uoe_id": cls.env.ref("uom.product_uom_kgm").id,
-            }
-        )
-        cls.fiscal_type_product_product_a = cls.env["ir.property"].create(
-            {
-                "name": "fiscal_type",
-                "fields_id": cls.env["ir.model.fields"]
-                .search(
-                    [("model", "=", "product.template"), ("name", "=", "fiscal_type")]
-                )
-                .id,
-                "value": "04",
-                "type": "selection",
-                "res_id": cls.product_a.id,
-            }
-        )
-        cls.fiscal_origin_product_product_a = cls.env["ir.property"].create(
-            {
-                "name": "fiscal_origin",
-                "fields_id": cls.env["ir.model.fields"]
-                .search(
-                    [("model", "=", "product.template"), ("name", "=", "icms_origin")]
-                )
-                .id,
-                "value": "5",
-                "type": "selection",
-                "res_id": cls.product_a.id,
             }
         )
 
@@ -77,32 +60,6 @@ class AccountMoveBRCommon(AccountTestInvoicingCommon):
                 "taxes_id": False,
                 "tax_icms_or_issqn": "icms",
                 "uoe_id": cls.env.ref("uom.product_uom_kgm").id,
-            }
-        )
-        cls.fiscal_type_product_product_b = cls.env["ir.property"].create(
-            {
-                "name": "fiscal_type",
-                "fields_id": cls.env["ir.model.fields"]
-                .search(
-                    [("model", "=", "product.template"), ("name", "=", "fiscal_type")]
-                )
-                .id,
-                "value": "00",
-                "type": "selection",
-                "res_id": cls.product_b.id,
-            }
-        )
-        cls.fiscal_origin_product_product_b = cls.env["ir.property"].create(
-            {
-                "name": "fiscal_origin",
-                "fields_id": cls.env["ir.model.fields"]
-                .search(
-                    [("model", "=", "product.template"), ("name", "=", "icms_origin")]
-                )
-                .id,
-                "value": "0",
-                "type": "selection",
-                "res_id": cls.product_b.id,
             }
         )
 
@@ -336,6 +293,32 @@ class AccountMoveBRCommon(AccountTestInvoicingCommon):
         if document_serie_id is not None:
             move_form.document_serie_id = document_serie_id
         move_form.fiscal_operation_id = fiscal_operation
+
+        # When l10n_br (core Odoo 18) is installed, l10n_latam_document_type_id
+        # becomes required in Form view (required="partner_id and l10n_latam_use_documents").
+        # Match it to the OCA document type by code so both systems are in sync.
+        if document_type:
+            LatamDocType = cls.env.get("l10n_latam.document.type")
+            if LatamDocType is not None:
+                latam_doc_type = LatamDocType.search(
+                    [
+                        ("code", "=", document_type.code),
+                        ("country_id.code", "=", "BR"),
+                    ],
+                    limit=1,
+                )
+                if latam_doc_type:
+                    move_form.l10n_latam_document_type_id = latam_doc_type
+                    # l10n_latam_document_number is required for purchase invoices
+                    # (l10n_latam_manual_document_number=True when journal type='purchase').
+                    # Only set it when the field is visible/required to avoid AssertionError.
+                    if move_form.l10n_latam_manual_document_number:
+                        latam_number = (
+                            str(document_number)
+                            if document_number is not None
+                            else "000000001"
+                        )
+                        move_form.l10n_latam_document_number = latam_number
         if document_number is not None:
             move_form.document_number = document_number
         if document_serie is not None:

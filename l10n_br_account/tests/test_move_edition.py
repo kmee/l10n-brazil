@@ -7,7 +7,8 @@ from unittest import mock
 from odoo import Command, fields
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase
-from odoo.tests.common import Form, tagged
+from odoo.tests import Form
+from odoo.tests.common import tagged
 
 _logger = logging.getLogger(__name__)
 
@@ -67,9 +68,136 @@ class TestMoveEdition(TransactionCase):
             context=dict(cls.env.context, allowed_company_ids=cls.company.ids)
         )
         cls.env.user.company_id = cls.company
+
+        # empresa_lucro_presumido may not have a chart of accounts installed.
+        # In v18, _search_default_journal() raises if no journal exists and
+        # _onchange_partner_id raises if no accounts exist. Create the
+        # minimum required journals and accounts for the test forms to work.
+        Journal = cls.env["account.journal"]
+        Account = cls.env["account.account"]
+
+        # Create required accounts first
+        def _ensure_account(account_type, code, name, reconcile=False):
+            acc = Account.search(
+                [
+                    ("company_ids", "in", [cls.company.id]),
+                    ("account_type", "=", account_type),
+                ],
+                limit=1,
+            )
+            if not acc:
+                acc = Account.create(
+                    {
+                        "company_ids": [Command.link(cls.company.id)],
+                        "account_type": account_type,
+                        "code": code,
+                        "name": name,
+                        "reconcile": reconcile,
+                    }
+                )
+            return acc
+
+        receivable = _ensure_account("asset_receivable", "TREC", "Test Receivable", True)
+        payable = _ensure_account("liability_payable", "TPAY", "Test Payable", True)
+        income = _ensure_account("income", "TINC", "Test Income")
+        expense = _ensure_account("expense", "TEXP", "Test Expense")
+
+        # Create journals with default accounts
+        company_domain = [("company_id", "=", cls.company.id)]
+        if not Journal.search(company_domain + [("type", "=", "general")], limit=1):
+            Journal.create(
+                {
+                    "name": "Miscellaneous",
+                    "code": "TMISC",
+                    "type": "general",
+                    "company_id": cls.company.id,
+                    "default_account_id": income.id,
+                }
+            )
+        sale_journal = Journal.search(
+            company_domain + [("type", "=", "sale")], limit=1
+        )
+        if not sale_journal:
+            sale_journal = Journal.create(
+                {
+                    "name": "Customer Invoices",
+                    "code": "TINV",
+                    "type": "sale",
+                    "company_id": cls.company.id,
+                    "default_account_id": income.id,
+                }
+            )
+        elif not sale_journal.default_account_id:
+            sale_journal.default_account_id = income
+        purchase_journal = Journal.search(
+            company_domain + [("type", "=", "purchase")], limit=1
+        )
+        if not purchase_journal:
+            purchase_journal = Journal.create(
+                {
+                    "name": "Vendor Bills",
+                    "code": "TBILL",
+                    "type": "purchase",
+                    "company_id": cls.company.id,
+                    "default_account_id": expense.id,
+                }
+            )
+        elif not purchase_journal.default_account_id:
+            purchase_journal.default_account_id = expense
+
+        # Set property_account_receivable_id/payable_id on partners for this
+        # company. Without a chart of accounts, these company-dependent fields
+        # are empty and _onchange_partner_id raises RedirectWarning.
+        # Set defaults for newly created partners
+        cls.env["ir.default"].set(
+            "res.partner",
+            "property_account_receivable_id",
+            receivable.id,
+            company_id=cls.company.id,
+        )
+        cls.env["ir.default"].set(
+            "res.partner",
+            "property_account_payable_id",
+            payable.id,
+            company_id=cls.company.id,
+        )
+        # Set on existing partners used by tests
+        for ref in [
+            "l10n_br_base.res_partner_cliente5_pe",
+            "l10n_br_base.res_partner_cliente1_sp",
+        ]:
+            partner = cls.env.ref(ref, raise_if_not_found=False)
+            if partner:
+                partner.with_company(cls.company).write(
+                    {
+                        "property_account_receivable_id": receivable.id,
+                        "property_account_payable_id": payable.id,
+                    }
+                )
+
+        # Set product accounts for test products (income/expense)
+        for ref in ["product.product_product_7", "product.product_product_6"]:
+            product = cls.env.ref(ref, raise_if_not_found=False)
+            if product:
+                product.with_company(cls.company).write(
+                    {
+                        "property_account_income_id": income.id,
+                        "property_account_expense_id": expense.id,
+                    }
+                )
+        # Also set defaults for product categories
+        categ = cls.env.ref("product.product_category_all", raise_if_not_found=False)
+        if categ:
+            categ.with_company(cls.company).write(
+                {
+                    "property_account_income_categ_id": income.id,
+                    "property_account_expense_categ_id": expense.id,
+                }
+            )
+
         cls.out_invoice_account_id = cls.env["account.account"].create(
             {
-                "company_id": cls.company.id,
+                "company_ids": [Command.link(cls.company.id)],
                 "account_type": "asset_receivable",
                 "code": "RECTEST",
                 "name": "Test receivable account",

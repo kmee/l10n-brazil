@@ -30,6 +30,39 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
                 "falling back to l10n_generic_coa.configurable_chart_template."
             )
             super().setUpClass()
+
+            # In Odoo 18, AccountTestInvoicingCommon uses cls.env.company directly
+            # (no setup_company_data hook). Configure the company for Lucro Presumido
+            # (normal tax framework) before loading fiscal taxes and creating invoices.
+            company = cls.company_data["company"]
+            company.write(
+                {
+                    "country_id": cls.env.ref("base.br").id,
+                    "currency_id": cls.env.ref("base.BRL").id,
+                    "tax_framework": "3",
+                    "profit_calculation": "presumed",
+                    "ripi": True,
+                    "piscofins_id": cls.env.ref(
+                        "l10n_br_fiscal.tax_pis_cofins_columativo"
+                    ).id,
+                    "icms_regulation_id": cls.env.ref(
+                        "l10n_br_fiscal.tax_icms_regulation"
+                    ).id,
+                    "cnae_main_id": cls.env.ref("l10n_br_fiscal.cnae_3101200").id,
+                    "document_type_id": cls.env.ref(
+                        "l10n_br_fiscal.document_55"
+                    ).id,
+                    "is_industry": True,
+                }
+            )
+            company.partner_id.write(
+                {
+                    "state_id": cls.env.ref("base.state_br_sp").id,
+                    "cnpj_cpf": "62.128.834/0001-34",
+                    "country_id": cls.env.ref("base.br").id,
+                }
+            )
+
             cls.env["account.chart.template"].load_fiscal_taxes(
                 companies=[cls.company_data["company"]]
             )
@@ -189,7 +222,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "COFINS a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -225,7 +258,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "ICMS a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -262,7 +295,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "IPI a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 order="id ASC",
                 limit=1,
@@ -293,7 +326,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "PIS a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -317,7 +350,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
         }
 
         term_line_vals_1 = {
-            "name": "",
+            "name": False,
             "product_id": False,
             "account_id": self.company_data["default_account_receivable"].id,
             "partner_id": self.partner_a.id,
@@ -342,7 +375,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             "journal_id": self.company_data["default_journal_sale"].id,
             "date": fields.Date.from_string("2019-01-01"),
             "fiscal_position_id": False,
-            "payment_reference": "",
+            "payment_reference": False,
             "invoice_payment_term_id": self.pay_terms_a.id,
             "amount_untaxed": 1000.0,
             "amount_tax": 32.5,
@@ -388,7 +421,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "COFINS a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -424,7 +457,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "ICMS a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -461,7 +494,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "IPI a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 order="id ASC",
                 limit=1,
@@ -492,7 +525,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "PIS a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -523,7 +556,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
         }
 
         term_line_vals_1 = {
-            "name": "",
+            "name": False,
             "product_id": False,
             "account_id": self.company_data["default_account_receivable"].id,
             "partner_id": self.partner_a.id,
@@ -548,7 +581,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             "journal_id": self.company_data["default_journal_sale"].id,
             "date": fields.Date.from_string("2019-01-01"),
             "fiscal_position_id": False,
-            "payment_reference": "",
+            "payment_reference": False,
             "invoice_payment_term_id": self.pay_terms_a.id,
             "amount_untaxed": 1000.0,
             "amount_tax": 32.5,
@@ -571,7 +604,14 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
     def test_venda_with_icms_reduction_with_relief(self):
         # Testando com Alivio do ICMS
         prod_line = self.move_out_venda_with_icms_reduction.invoice_line_ids[0]
-        prod_line.icms_relief_id = self.env.ref("l10n_br_fiscal.icms_relief_1")
+        # Setting icms_relief_id changes fiscal calculations (adds ICMS
+        # desoneracao) which temporarily unbalances the move before
+        # _sync_dynamic_lines runs. Use check_move_validity=False to allow
+        # the write to proceed; the assertInvoiceValues below will verify
+        # the final balanced state.
+        prod_line.with_context(
+            check_move_validity=False
+        ).icms_relief_id = self.env.ref("l10n_br_fiscal.icms_relief_1")
 
         # Foi setado essa linha manualmente na criação do account.move.
         self.assertEqual(
@@ -609,7 +649,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "COFINS a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -645,7 +685,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "ICMS a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -682,7 +722,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "IPI a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 order="id ASC",
                 limit=1,
@@ -720,7 +760,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "PIS a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -751,7 +791,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
         }
 
         term_line_vals_1 = {
-            "name": "",
+            "name": False,
             "product_id": False,
             "account_id": self.company_data["default_account_receivable"].id,
             "partner_id": self.partner_a.id,
@@ -776,7 +816,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             "journal_id": self.company_data["default_journal_sale"].id,
             "date": fields.Date.from_string("2019-01-01"),
             "fiscal_position_id": False,
-            "payment_reference": "",
+            "payment_reference": False,
             "invoice_payment_term_id": self.pay_terms_a.id,
             "amount_untaxed": 963.77,
             "amount_tax": 32.5,
@@ -823,7 +863,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "COFINS a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -859,7 +899,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "ICMS a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -896,7 +936,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "IPI a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 order="id ASC",
                 limit=1,
@@ -934,7 +974,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "PIS a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -967,7 +1007,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
         # Remessa não gera financeiro, as linhas das condições de pagamento
         # devem estar zeradas!
         term_line_vals_1 = {
-            "name": "",
+            "name": False,
             "product_id": False,
             "account_id": self.company_data["default_account_receivable"].id,
             "partner_id": self.partner_a.id,
@@ -992,7 +1032,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             "journal_id": self.company_data["default_journal_sale"].id,
             "date": fields.Date.from_string("2019-01-01"),
             "fiscal_position_id": False,
-            "payment_reference": "",
+            "payment_reference": False,
             "invoice_payment_term_id": self.pay_terms_a.id,
             "amount_untaxed": 0.0,
             "amount_tax": 0.0,
@@ -1042,7 +1082,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "COFINS a Compensar"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -1078,7 +1118,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "COFINS s/ Vendas"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -1115,7 +1155,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "ICMS a Compensar"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -1151,7 +1191,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "ICMS s/ Vendas"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -1188,7 +1228,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "IPI a Compensar"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -1225,7 +1265,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "IPI s/ Vendas"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -1262,7 +1302,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "PIS a Compensar"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -1299,7 +1339,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "PIS s/ Vendas"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -1355,7 +1395,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             "journal_id": self.company_data["default_journal_purchase"].id,
             "date": fields.Date.from_string("2019-01-31"),
             "fiscal_position_id": False,
-            "payment_reference": "",
+            "payment_reference": False,
             "invoice_payment_term_id": self.pay_terms_a.id,
             "amount_untaxed": 1000.0,
             "amount_tax": 32.5,
@@ -1418,7 +1458,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "COFINS a Compensar"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -1454,7 +1494,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "ICMS a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -1491,7 +1531,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "IPI a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 order="id ASC",
                 limit=1,
@@ -1529,7 +1569,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "PIS a Compensar"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -1560,7 +1600,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
         }
 
         term_line_vals_1 = {
-            "name": "",
+            "name": False,
             "product_id": False,
             "account_id": self.company_data["default_account_receivable"].id,
             "partner_id": self.partner_a.id,
@@ -1585,7 +1625,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             "journal_id": self.company_data["default_journal_sale"].id,
             "date": fields.Date.from_string("2019-01-01"),
             "fiscal_position_id": False,
-            "payment_reference": "",
+            "payment_reference": False,
             "invoice_payment_term_id": self.pay_terms_a.id,
             "amount_untaxed": 1000.0,
             "amount_tax": 32.5,
@@ -1632,7 +1672,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "COFINS a Compensar"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -1668,7 +1708,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "ICMS a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -1705,7 +1745,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "IPI a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 order="id ASC",
                 limit=1,
@@ -1743,7 +1783,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "PIS a Compensar"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -1774,7 +1814,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
         }
 
         term_line_vals_1 = {
-            "name": "",
+            "name": False,
             "product_id": False,
             "account_id": self.company_data["default_account_receivable"].id,
             "partner_id": self.partner_a.id,
@@ -1799,7 +1839,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             "journal_id": self.company_data["default_journal_sale"].id,
             "date": fields.Date.from_string("2019-01-01"),
             "fiscal_position_id": False,
-            "payment_reference": "",
+            "payment_reference": False,
             "invoice_payment_term_id": self.pay_terms_a.id,
             "amount_untaxed": 0.0,
             "amount_tax": 0.0,
@@ -1849,7 +1889,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "COFINS a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -1885,7 +1925,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "ICMS a Compensar"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -1921,7 +1961,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "ICMS s/ Vendas"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -1958,7 +1998,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "IPI a Compensar"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -1995,7 +2035,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "IPI s/ Vendas"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -2032,7 +2072,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "PIS a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -2088,7 +2128,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
             "journal_id": self.company_data["default_journal_purchase"].id,
             "date": fields.Date.from_string("2019-01-31"),
             "fiscal_position_id": False,
-            "payment_reference": "",
+            "payment_reference": False,
             "invoice_payment_term_id": self.pay_terms_a.id,
             "amount_untaxed": 1000.0,
             "amount_tax": 32.5,

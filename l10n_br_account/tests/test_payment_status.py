@@ -3,7 +3,8 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import fields
-from odoo.tests.common import Form, tagged
+from odoo.tests import Form
+from odoo.tests.common import tagged
 
 from odoo.addons.mail.tests.common import MailCommon
 
@@ -47,7 +48,7 @@ class TestPaymentStatusBR(AccountMoveBRCommon, MailCommon):
             return line.account_id.account_type == "asset_receivable"
 
         inv_recv = invoice.line_ids.filtered(_is_receivable)
-        pay_recv = pmt2.line_ids.filtered(_is_receivable)
+        pay_recv = pmt2.move_id.line_ids.filtered(_is_receivable)
         partial_to_remove = inv_recv.matched_credit_ids & pay_recv.matched_debit_ids
         invoice.js_remove_outstanding_partial(partial_to_remove.id)
 

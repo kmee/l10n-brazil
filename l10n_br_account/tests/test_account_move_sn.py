@@ -28,6 +28,45 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
                 "falling back to l10n_generic_coa.configurable_chart_template."
             )
             super().setUpClass()
+
+            # In Odoo 18, AccountTestInvoicingCommon uses cls.env.company
+            # directly (no setup_company_data hook). Configure the company
+            # for Simples Nacional before loading fiscal taxes.
+            company = cls.company_data["company"]
+            company.write(
+                {
+                    "country_id": cls.env.ref("base.br").id,
+                    "currency_id": cls.env.ref("base.BRL").id,
+                    "tax_framework": "1",
+                    "is_industry": True,
+                    "coefficient_r": False,
+                    "ripi": True,
+                    "piscofins_id": cls.env.ref(
+                        "l10n_br_fiscal.tax_pis_cofins_simples_nacional"
+                    ).id,
+                    "tax_ipi_id": cls.env.ref(
+                        "l10n_br_fiscal.tax_ipi_outros"
+                    ).id,
+                    "tax_icms_id": cls.env.ref(
+                        "l10n_br_fiscal.tax_icms_sn_com_credito"
+                    ).id,
+                    "cnae_main_id": cls.env.ref(
+                        "l10n_br_fiscal.cnae_3101200"
+                    ).id,
+                    "document_type_id": cls.env.ref(
+                        "l10n_br_fiscal.document_55"
+                    ).id,
+                    "annual_revenue": 815000.0,
+                }
+            )
+            company.partner_id.write(
+                {
+                    "state_id": cls.env.ref("base.state_br_sp").id,
+                    "cnpj_cpf": "62.128.834/0001-34",
+                    "country_id": cls.env.ref("base.br").id,
+                }
+            )
+
             cls.env["account.chart.template"].load_fiscal_taxes(
                 companies=[cls.company_data["company"]]
             )
@@ -145,7 +184,7 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
             .search(
                 [
                     ("name", "=", "ICMS SN a Recolher"),
-                    ("company_id", "=", self.company_data["company"].id),
+                    ("company_ids", "in", [self.company_data["company"].id]),
                 ],
                 limit=1,
             )
@@ -175,7 +214,7 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
         }
 
         term_line_vals_1 = {
-            "name": "",
+            "name": False,
             "product_id": False,
             "account_id": self.company_data["default_account_receivable"].id,
             "partner_id": self.partner_a.id,
@@ -200,7 +239,7 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
             "journal_id": self.company_data["default_journal_sale"].id,
             "date": fields.Date.from_string("2019-01-01"),
             "fiscal_position_id": False,
-            "payment_reference": "",
+            "payment_reference": False,
             "invoice_payment_term_id": self.pay_terms_a.id,
             "amount_untaxed": 1000.0,
             "amount_tax": 0.0,
