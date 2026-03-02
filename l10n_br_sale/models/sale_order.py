@@ -34,16 +34,11 @@ class SaleOrder(models.Model):
 
     fiscal_operation_id = fields.Many2one(
         comodel_name="l10n_br_fiscal.operation",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
         default=_default_fiscal_operation,
         domain=lambda self: self._fiscal_operation_domain(),
     )
 
-    ind_pres = fields.Selection(
-        readonly=True,
-        states={"draft": [("readonly", False)]},
-    )
+    ind_pres = fields.Selection()
 
     copy_note = fields.Boolean(
         string="Copy Sale note on invoice",
@@ -52,8 +47,6 @@ class SaleOrder(models.Model):
 
     discount_rate = fields.Float(
         string="Discount",
-        readonly=True,
-        states={"draft": [("readonly", False)], "sent": [("readonly", False)]},
     )
 
     comment_ids = fields.Many2many(

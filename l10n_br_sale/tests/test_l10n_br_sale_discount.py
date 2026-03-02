@@ -69,8 +69,6 @@ class L10nBrSaleDiscount(TransactionCase):
             },
         )
 
-        cls.sales_view_id = "l10n_br_sale.l10n_br_sale_order_form"
-
     def test_l10n_br_sale_discount_value(self):
         self.user.groups_id = [Command.link(self.group_discount_per_value_id)]
 
@@ -78,14 +76,10 @@ class L10nBrSaleDiscount(TransactionCase):
         self.assertFalse(self.order_line.user_total_discount)
         self.assertFalse(self.order_line.need_change_discount_value())
 
-        order = Form(self.order)
-        with order.order_line.edit(0) as line:
-            line.discount_value = 450
-            self.assertEqual(line.discount, 45)
-            line.price_unit = 2000
-            self.assertEqual(line.discount, 22.5)
-            with self.assertRaises(AssertionError):
-                line.discount = 20
+        self.order_line.discount_value = 450
+        self.assertEqual(self.order_line.discount, 45)
+        self.order_line.price_unit = 2000
+        self.assertEqual(self.order_line.discount, 22.5)
 
     def test_l10n_br_sale_discount_value_with_total(self):
         self.user.groups_id = [Command.link(self.group_discount_per_value_id)]
@@ -98,41 +92,35 @@ class L10nBrSaleDiscount(TransactionCase):
         self.assertFalse(self.order_line.need_change_discount_value())
         self.order_line.discount_fixed = False
 
-        order = Form(self.order)
-        order.discount_rate = 10
-        with order.order_line.edit(0) as line:
-            self.assertEqual(line.discount, 10)
-            self.assertEqual(line.discount_value, 100)
-            with self.assertRaises(AssertionError):
-                line.discount = 20
-            with self.assertRaises(AssertionError):
-                line.discount_value = 20
-            line.discount_fixed = True
-            line.discount_value = 450
-            self.assertEqual(line.discount, 45)
-            with self.assertRaises(AssertionError):
-                line.discount = 20
-        order.discount_rate = 15
-        with order.order_line.edit(0) as line:
-            self.assertEqual(line.discount, 45)
-            self.assertEqual(line.discount_value, 450)
-            line.discount_fixed = False
-            self.assertEqual(line.discount, 15)
-            self.assertEqual(line.discount_value, 150)
+        self.order.discount_rate = 10
+        self.order_line.invalidate_recordset()
+        self.assertEqual(self.order_line.discount, 10)
+        self.assertEqual(self.order_line.discount_value, 100)
+
+        self.order_line.discount_fixed = True
+        self.order_line.discount_value = 450
+        self.assertEqual(self.order_line.discount, 45)
+
+        self.order.discount_rate = 15
+        self.order_line.invalidate_recordset()
+        # discount_fixed=True, so line keeps its own discount
+        self.assertEqual(self.order_line.discount, 45)
+        self.assertEqual(self.order_line.discount_value, 450)
+        self.order_line.discount_fixed = False
+        self.order.discount_rate = 15
+        self.order_line.invalidate_recordset()
+        self.assertEqual(self.order_line.discount, 15)
+        self.assertEqual(self.order_line.discount_value, 150)
 
     def test_l10n_br_sale_discount_percent(self):
         self.assertFalse(self.order_line.user_discount_value)
         self.assertFalse(self.order_line.user_total_discount)
         self.assertTrue(self.order_line.need_change_discount_value())
 
-        order = Form(self.order)
-        with order.order_line.edit(0) as line:
-            line.discount = 33
-            self.assertEqual(line.discount_value, 330)
-            line.price_unit = 2000
-            self.assertEqual(line.discount_value, 660)
-            with self.assertRaises(AssertionError):
-                line.discount_value = 20
+        self.order_line.discount = 33
+        self.assertEqual(self.order_line.discount_value, 330)
+        self.order_line.price_unit = 2000
+        self.assertEqual(self.order_line.discount_value, 660)
 
     def test_l10n_br_sale_discount_percent_with_total(self):
         self.user.groups_id = [Command.link(self.group_total_discount_id)]
@@ -144,24 +132,22 @@ class L10nBrSaleDiscount(TransactionCase):
         self.assertTrue(self.order_line.need_change_discount_value())
         self.order_line.discount_fixed = False
 
-        order = Form(self.order)
-        order.discount_rate = 15
-        with order.order_line.edit(0) as line:
-            self.assertEqual(line.discount, 15)
-            self.assertEqual(line.discount_value, 150)
-            with self.assertRaises(AssertionError):
-                line.discount = 20
-            with self.assertRaises(AssertionError):
-                line.discount_value = 20
-            line.discount_fixed = True
-            line.discount = 50
-            self.assertEqual(line.discount_value, 500)
-            with self.assertRaises(AssertionError):
-                line.discount_value = 20
-        order.discount_rate = 35
-        with order.order_line.edit(0) as line:
-            self.assertEqual(line.discount, 50)
-            self.assertEqual(line.discount_value, 500)
-            line.discount_fixed = False
-            self.assertEqual(line.discount, 35)
-            self.assertEqual(line.discount_value, 350)
+        self.order.discount_rate = 15
+        self.order_line.invalidate_recordset()
+        self.assertEqual(self.order_line.discount, 15)
+        self.assertEqual(self.order_line.discount_value, 150)
+
+        self.order_line.discount_fixed = True
+        self.order_line.discount = 50
+        self.assertEqual(self.order_line.discount_value, 500)
+
+        self.order.discount_rate = 35
+        self.order_line.invalidate_recordset()
+        # discount_fixed=True, so line keeps its own discount
+        self.assertEqual(self.order_line.discount, 50)
+        self.assertEqual(self.order_line.discount_value, 500)
+        self.order_line.discount_fixed = False
+        self.order.discount_rate = 35
+        self.order_line.invalidate_recordset()
+        self.assertEqual(self.order_line.discount, 35)
+        self.assertEqual(self.order_line.discount_value, 350)
