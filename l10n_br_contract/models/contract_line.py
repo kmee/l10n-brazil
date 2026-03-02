@@ -55,7 +55,7 @@ class ContractLine(models.Model):
         contract = self.contract_id
 
         if contract.contract_recalculate_taxes_before_invoice:
-            self._onchange_fiscal_operation_id()
+            self._compute_fiscal_tax_ids()
 
         invoice_line_vals = super()._prepare_invoice_line()
 
@@ -65,7 +65,7 @@ class ContractLine(models.Model):
             {"company_currency_id": contract.company_id.currency_id.id}
         )
 
-        self._onchange_fiscal_tax_ids()
+        self._onchange_fiscal_taxes()
         quantity = invoice_line_vals.get("quantity")
 
         tax_ids = self.fiscal_tax_ids.account_taxes(user_type=contract.contract_type)

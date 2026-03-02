@@ -108,12 +108,6 @@ class ContractContract(models.Model):
 
     def _recurring_create_invoice(self, date_ref=False):
         moves = super()._recurring_create_invoice(date_ref)
-
-        for move in moves:
-            move.fiscal_document_id._onchange_document_serie_id()
-            move.fiscal_document_id._onchange_company_id()
-            #move._onchange_invoice_line_ids()
-
         return moves
 
     def _prepare_recurring_invoices_values(self, date_ref=False):

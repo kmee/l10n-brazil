@@ -1,8 +1,7 @@
 # Copyright 2020 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo.tests.common import Form
-from odoo.tests.common import tagged
+from odoo.tests import Form, tagged
 from odoo.addons.l10n_br_account.tests.common import AccountMoveBRCommon
 
 
@@ -126,14 +125,20 @@ class TestL10nBrContract(AccountMoveBRCommon):
     def test_fiscal_operation_assignment_on_creation(self):
         """
         Test that fiscal operation is automatically assigned when creating
-        a contract based on contract type and company defaults
+        a contract based on contract type and company defaults.
+        The default_get reads contract_type from context defaults,
+        which is how Odoo action windows set it.
         """
-        # Test sale contract
-        sale_contract_form = Form(self.env["contract.contract"])
-        sale_contract_form.name = "Sale Contract Test"
-        sale_contract_form.partner_id = self.partner_a
-        sale_contract_form.contract_type = "sale"
-        sale_contract = sale_contract_form.save()
+        # Test sale contract — contract_type comes from context default
+        Contract = self.env["contract.contract"]
+        sale_contract = Contract.with_context(
+            default_contract_type="sale"
+        ).create(
+            {
+                "name": "Sale Contract Test",
+                "partner_id": self.partner_a.id,
+            }
+        )
 
         self.assertEqual(
             sale_contract.fiscal_operation_id.id,
@@ -142,11 +147,14 @@ class TestL10nBrContract(AccountMoveBRCommon):
         )
 
         # Test purchase contract
-        purchase_contract_form = Form(self.env["contract.contract"])
-        purchase_contract_form.name = "Purchase Contract Test"
-        purchase_contract_form.partner_id = self.partner_a
-        purchase_contract_form.contract_type = "purchase"
-        purchase_contract = purchase_contract_form.save()
+        purchase_contract = Contract.with_context(
+            default_contract_type="purchase"
+        ).create(
+            {
+                "name": "Purchase Contract Test",
+                "partner_id": self.partner_a.id,
+            }
+        )
 
         self.assertEqual(
             purchase_contract.fiscal_operation_id.id,
@@ -187,11 +195,13 @@ class TestL10nBrContract(AccountMoveBRCommon):
         """
         Test contract behavior when fiscal operation is not set
         """
-        contract_form = Form(self.env["contract.contract"])
-        contract_form.name = "Contract Without Fiscal Operation"
-        contract_form.partner_id = self.partner_a
-        contract_form.fiscal_operation_id = False
-        contract = contract_form.save()
+        contract = self.env["contract.contract"].create(
+            {
+                "name": "Contract Without Fiscal Operation",
+                "partner_id": self.partner_a.id,
+                "fiscal_operation_id": False,
+            }
+        )
 
         # Add a line
         with Form(contract) as contract_form:
