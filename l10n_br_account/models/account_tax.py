@@ -280,7 +280,7 @@ class AccountTax(models.Model):
                     ind_final=line.ind_final,
                 )
                 for tax_res, new_taxes_res in zip(
-                    taxes_res["taxes"], new_taxes_res["taxes"]
+                    taxes_res["taxes"], new_taxes_res["taxes"], strict=False
                 ):
                     delta_tax = new_taxes_res["amount"] - tax_res["amount"]
                     tax_res["amount"] += delta_tax
@@ -317,6 +317,199 @@ class AccountTax(models.Model):
             tax_values_list = []
 
         return to_update_vals, tax_values_list
+
+    @api.model
+    def _add_tax_details_in_base_line(self, base_line, company, rounding_method=None):
+        """
+        Override to inject Brazilian fiscal tax amounts into the tax details.
+
+        In Odoo 18, _sync_tax_lines uses _add_tax_details_in_base_line to compute
+        tax line amounts via the standard _get_tax_details path, which does NOT know
+        about Brazilian fiscal specifics (ICMS 'por dentro', PIS/COFINS computed by
+        the fiscal module, etc.).
+
+        The BR module overrides _sync_invoice and _compute_needed_terms to use BR
+        fiscal amounts. For the journal entry to balance, the tax lines must also use
+        the same BR fiscal amounts. This override replaces the standard Odoo amounts
+        with the Brazilian fiscal computation results.
+        """
+        super()._add_tax_details_in_base_line(base_line, company, rounding_method)
+
+        line = base_line.get("record")
+        if not line or not hasattr(line, "fiscal_operation_line_id"):
+            return
+        if not line.fiscal_operation_line_id:
+            return
+
+        # Obtain the fiscal taxes via map_fiscal_taxes (same as _compute_fiscal_tax_ids).
+        # We avoid line.fiscal_tax_ids because it may be stale/empty for stored records
+        # when precompute ran before partner_id was resolved via account.move.line._inherits.
+        mapping_result = line.fiscal_operation_line_id.map_fiscal_taxes(
+            company=company,
+            partner=line.partner_id,
+            product=line.product_id,
+            ncm=line.ncm_id,
+            nbm=line.nbm_id,
+            nbs=line.nbs_id,
+            cest=line.cest_id,
+            city_taxation_code=line.city_taxation_code_id,
+            service_type=line.service_type_id,
+            ind_final=line.ind_final,
+        )
+        fiscal_taxes_set = self.env["l10n_br_fiscal.tax"]
+        for tax in mapping_result.get("taxes", {}).values():
+            fiscal_taxes_set |= tax
+
+        if not fiscal_taxes_set:
+            return
+
+        account_taxes_by_domain = {
+            tax.id: tax.tax_group_id.fiscal_tax_group_id.tax_domain
+            for tax in base_line["tax_ids"]._origin
+        }
+        rate = base_line["rate"]
+        is_refund = base_line.get("is_refund", False)
+        repartition_field = (
+            "refund_repartition_line_ids" if is_refund else "invoice_repartition_line_ids"
+        )
+
+        # Map tax domains to their stored value/base field names.
+        # Most domains follow the pattern {domain}_value / {domain}_base, but some
+        # (e.g. icmssn) use non-standard names like icmssn_credit_value.
+        DOMAIN_VALUE_FIELD = {"icmssn": "icmssn_credit_value"}
+
+        # Track which domains have already had their amount set to avoid double-counting
+        # when multiple Odoo account taxes map to the same BR fiscal domain.
+        domains_set = set()
+
+        # Replace each standard Odoo tax amount with the BR fiscal amount.
+        # We use stored line fields (e.g. line.icms_value, line.pis_value) instead of
+        # calling compute_taxes() again, because compute_taxes() may return incorrect
+        # amounts (e.g. ICMS without reduction when the operation line has no reduction
+        # tax definition). The stored fields are computed by _compute_fiscal_amounts
+        # using the correct per-operation-line tax definitions.
+        for tax_data in base_line["tax_details"]["taxes_data"]:
+            tax = tax_data["tax"]
+            tax_domain = account_taxes_by_domain.get(tax.id)
+            if not tax_domain:
+                continue
+            # Only set amounts for taxes that have repartition lines with type='tax'
+            # and factor >= 0 (non-reverse-charge). Taxes without such lines would
+            # cause IndexError in _distribute_delta_amount_smoothly.
+            tax_reps = tax[repartition_field].filtered(
+                lambda x: x.repartition_type == "tax" and x.factor >= 0.0
+            )
+            if not tax_reps:
+                continue
+            # Only the first Odoo tax per domain gets the BR fiscal amount.
+            # Additional taxes for the same domain (e.g. reporting-only taxes) get 0.
+            if tax_domain not in domains_set:
+                domains_set.add(tax_domain)
+                value_field = DOMAIN_VALUE_FIELD.get(
+                    tax_domain, f"{tax_domain}_value"
+                )
+                fiscal_amount = getattr(line, value_field, 0.0)
+                fiscal_base = getattr(line, f"{tax_domain}_base", 0.0)
+            else:
+                fiscal_amount = 0.0
+                fiscal_base = 0.0
+            tax_data["raw_tax_amount_currency"] = fiscal_amount
+            tax_data["raw_tax_amount"] = (
+                company.currency_id.round(fiscal_amount / rate) if rate else 0.0
+            )
+            tax_data["raw_base_amount_currency"] = fiscal_base
+            tax_data["raw_base_amount"] = (
+                company.currency_id.round(fiscal_base / rate) if rate else 0.0
+            )
+
+        # Handle reverse_charge entries for BR deductible taxes.
+        # Deductible taxes (e.g. icms_entrada_deductivel) have amount=0 in their
+        # account.tax config and rely on the fiscal module for the actual amount.
+        # _get_tax_details negates the regular entry's raw_tax_amount_currency for the
+        # reverse_charge entry, but since the deductible tax's regular entry = 0, the
+        # reverse_charge also stays 0. We set it here so that the standard
+        # _add_accounting_data_to_base_line_tax_details mechanism creates the credit line.
+        for tax_data in base_line["tax_details"]["taxes_data"]:
+            if not tax_data.get("is_reverse_charge"):
+                continue
+            tax = tax_data["tax"]
+            tax_domain = account_taxes_by_domain.get(tax.id)
+            if not tax_domain:
+                continue
+            value_field = DOMAIN_VALUE_FIELD.get(
+                tax_domain, f"{tax_domain}_value"
+            )
+            fiscal_amount = getattr(line, value_field, 0.0)
+            tax_data["raw_tax_amount_currency"] = -fiscal_amount
+            tax_data["raw_tax_amount"] = (
+                company.currency_id.round(-fiscal_amount / rate) if rate else 0.0
+            )
+
+        # Update total_excluded and total_included to match the BR fiscal amounts.
+        # Use stored line fields for consistency with _sync_invoice and _compute_fiscal_amounts.
+        # br_net = price minus all taxes that create separate journal lines (included taxes)
+        # and minus withholding taxes (which reduce the receivable but don't create lines).
+        # ICMS relief (desoneração) also reduces both net and total amounts.
+        price = line.price_unit * line.quantity - line.discount_value
+        icms_relief = getattr(line, "icms_relief_value", 0.0) or 0.0
+        br_net = price - line.amount_tax_included - line.amount_tax_withholding - icms_relief
+        br_total = price + line.amount_tax_not_included - icms_relief
+
+        base_line["tax_details"]["raw_total_excluded_currency"] = br_net
+        base_line["tax_details"]["raw_total_excluded"] = (
+            company.currency_id.round(br_net / rate) if rate else 0.0
+        )
+        base_line["tax_details"]["raw_total_included_currency"] = br_total
+        base_line["tax_details"]["raw_total_included"] = (
+            company.currency_id.round(br_total / rate) if rate else 0.0
+        )
+
+    @api.model
+    def _prepare_tax_lines(self, base_lines, company, tax_lines=None):
+        """Override to use fiscal tax group name for Brazilian tax lines.
+
+        In v17, compute_all() was overridden to return fiscal_group.name
+        (e.g. 'COFINS') instead of account.tax.name (e.g. 'COFINS Saída').
+        In v18, _prepare_tax_lines sets tax_line['name'] = tax.name directly.
+        This override restores the v17 naming by using fiscal_tax_group_id.name.
+        """
+        result = super()._prepare_tax_lines(base_lines, company, tax_lines)
+
+        # Collect all repartition line IDs from both add and update lists
+        rep_ids = set()
+        for item in result.get("tax_lines_to_add", []):
+            rep_id = item.get("tax_repartition_line_id")
+            if rep_id:
+                rep_ids.add(rep_id)
+        for _tl, grouping_key, _amounts in result.get("tax_lines_to_update", []):
+            rep_id = grouping_key.get("tax_repartition_line_id")
+            if rep_id:
+                rep_ids.add(rep_id)
+        if not rep_ids:
+            return result
+
+        # Build map: rep_line_id -> fiscal tax group name
+        rep_lines = self.env["account.tax.repartition.line"].browse(list(rep_ids))
+        name_by_rep_id = {}
+        for rep_line in rep_lines:
+            group_name = rep_line.tax_id.tax_group_id.fiscal_tax_group_id.name
+            if group_name:
+                name_by_rep_id[rep_line.id] = group_name
+
+        if not name_by_rep_id:
+            return result
+
+        for item in result.get("tax_lines_to_add", []):
+            rep_id = item.get("tax_repartition_line_id")
+            if rep_id in name_by_rep_id:
+                item["name"] = name_by_rep_id[rep_id]
+
+        for _tl, grouping_key, amounts in result.get("tax_lines_to_update", []):
+            rep_id = grouping_key.get("tax_repartition_line_id")
+            if rep_id in name_by_rep_id:
+                amounts["name"] = name_by_rep_id[rep_id]
+
+        return result
 
     @api.model
     def _prepare_tax_totals(
