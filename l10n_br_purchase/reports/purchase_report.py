@@ -3,6 +3,7 @@
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
 from odoo import fields, models
+from odoo.tools import SQL
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import PRODUCT_FISCAL_TYPE
 
@@ -84,9 +85,9 @@ class PurchaseReport(models.Model):
         digits="Account",
     )
 
-    def _select(self):
-        select_str = super()._select()
-        select_str += """
+    def _select(self) -> SQL:
+        return SQL(
+            """%s
             , l.fiscal_operation_id as fiscal_operation_id
             , l.fiscal_operation_line_id as fiscal_operation_line_id
             , l.cfop_id
@@ -117,12 +118,13 @@ class PurchaseReport(models.Model):
              + SUM(CASE WHEN l.other_value IS NULL THEN
               0.00 ELSE l.other_value END)
             as total_with_taxes
-        """
-        return select_str
+            """,
+            super()._select(),
+        )
 
-    def _group_by(self):
-        group_by_str = super()._group_by()
-        group_by_str += """
+    def _group_by(self) -> SQL:
+        return SQL(
+            """%s
             , l.fiscal_operation_id
             , l.fiscal_operation_line_id
             , l.cfop_id
@@ -130,5 +132,6 @@ class PurchaseReport(models.Model):
             , l.ncm_id
             , l.nbm_id
             , l.cest_id
-        """
-        return group_by_str
+            """,
+            super()._group_by(),
+        )
