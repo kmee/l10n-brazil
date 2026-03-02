@@ -3,6 +3,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import api, fields, models
+from odoo.tools import SQL
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_ISSUER,
@@ -84,9 +85,9 @@ class AccountInvoiceReport(models.Model):
     nbm_id = fields.Many2one(comodel_name="l10n_br_fiscal.nbm", string="NBM")
 
     @api.model
-    def _select(self):
-        select_str = super()._select()
-        select_str += """
+    def _select(self) -> SQL:
+        return SQL(
+            """%s
             , fd.issuer
             , fd.document_type_id
             , fd.document_serie_id
@@ -112,16 +113,18 @@ class AccountInvoiceReport(models.Model):
             , fdl.insurance_value
             , fdl.other_value
             , fdl.discount_value
-        """
-        return select_str
+            """,
+            super()._select(),
+        )
 
     @api.model
-    def _from(self):
-        from_str = super()._from()
-        from_str += """
+    def _from(self) -> SQL:
+        return SQL(
+            """%s
             LEFT JOIN l10n_br_fiscal_document fd ON
              fd.id = move.fiscal_document_id
             LEFT JOIN l10n_br_fiscal_document_line fdl ON
              fdl.id = line.fiscal_document_line_id
-        """
-        return from_str
+            """,
+            super()._from(),
+        )
