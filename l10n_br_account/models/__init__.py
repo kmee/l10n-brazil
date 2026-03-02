@@ -1,7 +1,6 @@
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 from . import account_tax_group
 from . import fiscal_tax_group
-from . import template_br_oca
 from . import account_tax
 from . import fiscal_tax
 from . import fiscal_operation
@@ -13,4 +12,7 @@ from . import document
 from . import document_line
 from . import account_incoterms
 from . import ir_model_data
+from . import account_journal
+from . import template_br_oca
+from . import ir_rule
 from . import res_company

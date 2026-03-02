@@ -1,29 +1,10 @@
 # Copyright 2023 - TODAY Akretion - Raphael Valyi <raphael.valyi@akretion.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
-from freezegun import freeze_time
-
 from odoo import fields
 from odoo.tests.common import Form
 
-from odoo.addons.account.tests import common
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
-
-instantiate_accountman_orig = common.instantiate_accountman
-
-
-def instantiate_accountman(cls):
-    def get_group(xmlid):
-        return cls.env.ref(xmlid, False) or cls.env["res.groups"]
-
-    # Copiado para adicionar grupos da localização necessários
-    instantiate_accountman_orig(cls)
-    cls.user.groups_id |= (
-        get_group("l10n_br_fiscal.group_manager")
-        | get_group("l10n_br_fiscal.group_data_maintenance")
-        | get_group("analytic.group_analytic_accounting")
-        | get_group("account.group_account_invoice")
-    )
 
 
 class AccountMoveBRCommon(AccountTestInvoicingCommon):
@@ -33,17 +14,18 @@ class AccountMoveBRCommon(AccountTestInvoicingCommon):
     """
 
     @classmethod
-    def setUpClass(cls, chart_template_ref="br_oca_generic"):
-        common.instantiate_accountman = instantiate_accountman
-        super().setUpClass(chart_template_ref)
+    def setUpClass(cls, chart_template_ref=None):
+        super().setUpClass(chart_template_ref="generic_coa")
         cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
 
-        # super().setUpClass() would duplicate some random IPI tax
-        # we need to delete these duplicates to avoid errors:
-        cls.tax_sale_b.unlink()
-        cls.tax_purchase_b.unlink()
+        # Remove default Odoo demo taxes if they conflict or are not needed
+        if hasattr(cls, "tax_sale_b") and cls.tax_sale_b.exists():
+            cls.tax_sale_b.unlink()
+        if hasattr(cls, "tax_purchase_b") and cls.tax_purchase_b.exists():
+            cls.tax_purchase_b.unlink()
 
         cls.env.user.groups_id |= cls.env.ref("l10n_br_fiscal.group_manager")
+
         cls.product_a.write(
             {
                 "default_code": "prod_a",
@@ -181,45 +163,58 @@ class AccountMoveBRCommon(AccountTestInvoicingCommon):
             }
         )
 
-        cls.payment_mode = cls.env["account.payment.mode"].create(
+    @classmethod
+    def setup_company_data(cls, company_name, chart_template=None, **kwargs):
+        # Determine company specifics for LC vs SN for kwargs
+        if "Lucro Presumido" in company_name:
+            kwargs.update(
+                {
+                    "tax_framework": "3",
+                    "profit_calculation": "presumed",
+                    "ripi": True,
+                    "piscofins_id": cls.env.ref(
+                        "l10n_br_fiscal.tax_pis_cofins_columativo"
+                    ).id,
+                    "icms_regulation_id": cls.env.ref(
+                        "l10n_br_fiscal.tax_icms_regulation"
+                    ).id,
+                }
+            )
+        elif "Simples Nacional" in company_name:
+            kwargs.update(
+                {
+                    "tax_framework": "1",
+                    "coefficient_r": False,  # Example
+                    "ripi": True,
+                    "piscofins_id": cls.env.ref(
+                        "l10n_br_fiscal.tax_pis_cofins_simples_nacional"
+                    ).id,
+                    "tax_ipi_id": cls.env.ref("l10n_br_fiscal.tax_ipi_outros").id,
+                    "tax_icms_id": cls.env.ref(
+                        "l10n_br_fiscal.tax_icms_sn_com_credito"
+                    ).id,
+                    "annual_revenue": 815000.0,
+                }
+            )
+
+        kwargs.update(
             {
-                "name": "Money",
-                "company_id": cls.company_data["company"].id,
-                "payment_method_id": cls.env.ref(
-                    "account.account_payment_method_manual_in"
-                ).id,
-                "bank_account_link": "variable",
+                "country_id": cls.env.ref("base.br").id,
+                "currency_id": cls.env.ref("base.BRL").id,
+                "is_industry": True,  # Assuming this for tests
+                "cnae_main_id": cls.env.ref(
+                    "l10n_br_fiscal.cnae_3101200"
+                ).id,  # Example
+                "document_type_id": cls.env.ref(
+                    "l10n_br_fiscal.document_55"
+                ).id,  # Example
             }
         )
 
-    @classmethod
-    def setup_company_data(cls, company_name, chart_template=None, **kwargs):
-        """
-        You might want to override it to force a single chart_template.
-        The default behavior here is to load one for the SN and another for the LC.
-        """
-        cnpj_cpf = False
-        if company_name == "company_2_data":
-            company_name = "empresa 2 Simples Nacional"
-            chart_template = "br_oca_simple"
-            cnpj_cpf = "30.360.463/0001-25"
-        elif company_name == "company_1_data":
-            company_name = "empresa 1 Lucro Presumido"
-            chart_template = "br_oca_generic"
-            cnpj_cpf = "18.751.708/0001-40"
-        chart_template = "br_oca_generic"
-        args = dict(
-            country_id=cls.env.ref("base.br").id,
-            state_id=cls.env.ref("base.state_br_sp").id,
-            currency_id=cls.env.ref("base.BRL").id,
-            is_industry=True,
-            cnpj_cpf=cnpj_cpf,
-            processador_edoc="oca",
+        company_data_dict = super().setup_company_data(
+            company_name, chart_template=chart_template, **kwargs
         )
-
-        return super().setup_company_data(
-            company_name, chart_template, **dict(args, **kwargs)
-        )
+        return company_data_dict
 
     @classmethod
     def configure_normal_company_taxes(cls):
@@ -296,12 +291,12 @@ class AccountMoveBRCommon(AccountTestInvoicingCommon):
                 "code": "1",
                 "name": "Série 1",
                 "document_type_id": cls.env.ref("l10n_br_fiscal.document_55").id,
+                "company_id": cls.company_data["company"].id,
                 "active": True,
             }
         )
 
     @classmethod
-    @freeze_time("2019-01-01")
     def init_invoice(
         cls,
         move_type,
@@ -320,22 +315,19 @@ class AccountMoveBRCommon(AccountTestInvoicingCommon):
         document_number=None,
     ):
         """
-        We could not override the super one because we need to inject extra
-        BR fiscal fields.
+        We could not override the super one because we need to inject extra BR fiscal
+        fields.
         """
         products = [] if products is None else products
         amounts = [] if amounts is None else amounts
         move_form = Form(
-            cls.env["account.move"]
-            .with_company(cls.company_data["company"])
-            .with_context(
+            cls.env["account.move"].with_context(
                 default_move_type=move_type,
                 account_predictive_bills_disable_prediction=True,
             )
         )
         move_form.invoice_date = invoice_date or fields.Date.from_string("2019-01-01")
-        if not move_form._get_modifier("date", "invisible"):
-            move_form.date = move_form.invoice_date
+        #        move_form.date = move_form.invoice_date
         move_form.partner_id = partner or cls.partner_a
         move_form.currency_id = currency if currency else cls.company_data["currency"]
 
@@ -400,23 +392,7 @@ class AccountMoveBRCommon(AccountTestInvoicingCommon):
         """
         lines = cls.sort_lines(lines.sorted())
         log = (
-            f"LINE {index} "
-            f"{lines[index].name} "
-            f"{lines[index].debit} "
-            f"{lines[index].credit} "
-            f"{lines[index].account_id.name}"
+            f"LINE {index} {lines[index].name} {lines[index].debit}"
+            f" {lines[index].credit} {lines[index].account_id.name}"
         )
         return log
-
-    def _get_record_by_name(self, model, name):
-        return (
-            self.env[model]
-            .search(
-                [
-                    ("name", "=ilike", name),
-                    ("company_id", "=", self.env.company.id),
-                ],
-                limit=1,
-            )
-            .ensure_one()
-        )

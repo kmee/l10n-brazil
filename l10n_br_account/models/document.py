@@ -32,34 +32,79 @@ class FiscalDocument(models.Model):
         readonly=True,
     )
 
-    # proxy fields to enable writing the related (shadowed) fields
-    # to the fiscal document from the account.move through the _inherits system
-    # despite they have the same names.
-    fiscal_proxy_partner_id = fields.Many2one(
-        string="Fiscal Partner",
-        related="partner_id",
+    # -------------------------------------------------------------------------
+    # SHADOWED FIELDS SYNC
+    # -------------------------------------------------------------------------
+
+    company_id = fields.Many2one(
+        compute="_compute_shadowed_fields",
+        inverse="_inverse_company_id",
+        store=True,
+        precompute=True,
         readonly=False,
     )
-    fiscal_proxy_company_id = fields.Many2one(
-        string="Fiscal Company",
-        related="company_id",
+    partner_id = fields.Many2one(
+        compute="_compute_shadowed_fields",
+        inverse="_inverse_partner_id",
+        store=True,
+        precompute=True,
         readonly=False,
     )
-    fiscal_proxy_currency_id = fields.Many2one(
-        string="Fiscal Currency",
-        related="currency_id",
+    user_id = fields.Many2one(
+        compute="_compute_shadowed_fields",
+        inverse="_inverse_user_id",
+        store=True,
+        precompute=True,
         readonly=False,
     )
-    fiscal_proxy_user_id = fields.Many2one(
-        string="Fiscal User",
-        related="user_id",
+    partner_shipping_id = fields.Many2one(
+        compute="_compute_shadowed_fields",
+        inverse="_inverse_partner_shipping_id",
+        store=True,
+        precompute=True,
         readonly=False,
     )
 
-    # commented out because of badly written TestInvoiceDiscount.test_date_in_out
-    #    def write(self, vals):
-    #        if self.document_type_id:
-    #            return super().write(vals)
+    @api.depends(
+        "move_ids.partner_id",
+        "move_ids.user_id",
+        "move_ids.partner_shipping_id",
+    )
+    def _compute_shadowed_fields(self):
+        for doc in self:
+            if doc.move_ids:
+                doc.partner_id = doc.move_ids.partner_id
+                doc.company_id = doc.move_ids.company_id
+                doc.user_id = doc.move_ids.user_id
+                doc.partner_shipping_id = doc.move_ids.partner_shipping_id
+
+    @api.onchange("company_id")
+    def _inverse_company_id(self):
+        for doc in self:
+            for move in doc.move_ids:
+                if move.company_id != doc.company_id:
+                    move.company_id = doc.company_id
+
+    @api.onchange("partner_id")
+    def _inverse_partner_id(self):
+        for doc in self:
+            for move in doc.move_ids:
+                if move.partner_id != doc.partner_id:
+                    move.partner_id = doc.partner_id
+
+    @api.onchange("user_id")
+    def _inverse_user_id(self):
+        for doc in self:
+            for move in doc.move_ids:
+                if move.user_id != doc.user_id:
+                    move.user_id = doc.user_id
+
+    @api.onchange("partner_shipping_id")
+    def _inverse_partner_shipping_id(self):
+        for doc in self:
+            for move in doc.move_ids:
+                if move.partner_shipping_id != doc.partner_shipping_id:
+                    move.partner_shipping_id = doc.partner_shipping_id
 
     fiscal_line_ids = fields.One2many(
         copy=False,
@@ -68,8 +113,10 @@ class FiscalDocument(models.Model):
     # For some reason, perhaps limitation of _inhertis,
     # the related directly in the account.move does not work correctly.
     incoterm_id = fields.Many2one(
+        comodel_name="account.incoterms",
         string="Fiscal Inconterm",
-        related="move_ids.invoice_incoterm_id",
+        compute="_compute_incoterm_id",
+        inverse="_inverse_incoterm_id",
     )
 
     document_date = fields.Datetime(
@@ -80,12 +127,20 @@ class FiscalDocument(models.Model):
         compute="_compute_date_in_out", inverse="_inverse_date_in_out", store=True
     )
 
-    document_type_id = fields.Many2one(inverse="_inverse_document_type_id")
+    proxy_user_id = fields.Many2one(
+        comodel_name="res.users",
+        string="User (proxy)",
+        help="Technical Field.",
+    )
 
-    def _inverse_document_type_id(self):
-        pass  # (meant to be overriden in account.move)
+    user_id = fields.Many2one(
+        related="proxy_user_id",
+        store=True,
+        precompute=True,
+        readonly=False,
+    )
 
-    @api.depends("move_ids", "move_ids.invoice_date")
+    @api.depends("issuer", "move_ids.invoice_date")
     def _compute_document_date(self):
         for record in self:
             if record.move_ids and record.issuer == DOCUMENT_ISSUER_PARTNER:
@@ -104,7 +159,7 @@ class FiscalDocument(models.Model):
                 if record.document_date:
                     move_id.invoice_date = record.document_date.date()
 
-    @api.depends("move_ids", "move_ids.date")
+    @api.depends("issuer", "move_ids.date")
     def _compute_date_in_out(self):
         for record in self:
             if record.move_ids and record.issuer == DOCUMENT_ISSUER_PARTNER:
@@ -122,6 +177,20 @@ class FiscalDocument(models.Model):
                 move_id = record.move_ids[0]
                 if record.date_in_out:
                     move_id.date = record.date_in_out.date()
+
+    @api.depends("move_ids.invoice_incoterm_id")
+    def _compute_incoterm_id(self):
+        for record in self:
+            for move in record.move_ids:
+                if move.invoice_incoterm_id:
+                    record.incoterm_id = move.invoice_incoterm_id
+                else:
+                    record.incoterm_id = False
+
+    def _inverse_incoterm_id(self):
+        for record in self:
+            if record.move_ids:
+                record.move_ids.invoice_incoterm_id = record.incoterm_id
 
     @api.depends("move_ids")
     def _compute_move_count(self):
@@ -148,7 +217,7 @@ class FiscalDocument(models.Model):
         fiscal_document_id despite the _inherits system:
         Odoo will write NULL as the value in this case.
         """
-        if self._context.get("create_from_move"):
+        if self._context.get("create_from_account"):
             filtered_vals_list = []
             for values in vals_list:
                 if values.get("document_type_id") or values.get("document_serie_id"):
@@ -177,9 +246,11 @@ class FiscalDocument(models.Model):
         messages in a fiscal document chatter are visible in the
         related account moves.
         """
+        res = super().message_post(**kwargs)
         for doc in self:
             for move in doc.move_ids:
                 move.message_post(**kwargs)
+        return res
 
     def cancel_move_ids(self):
         for record in self:

@@ -1,17 +1,36 @@
 # Copyright 2023 - TODAY Akretion - Raphael Valyi <raphael.valyi@akretion.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
+import logging
+
 from odoo import fields
 from odoo.tests.common import tagged
 
 from .common import AccountMoveBRCommon
 
+_logger = logging.getLogger(__name__)
+
 
 @tagged("post_install", "-at_install")
 class AccountMoveSimpleNacional(AccountMoveBRCommon):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpClass(
+        cls, chart_template_ref="l10n_br_coa_simple.l10n_br_coa_simple_chart_template"
+    ):
+        # try:
+        if False:
+            super().setUpClass(chart_template_ref=chart_template_ref)
+            _logger.info(f"using {chart_template_ref}")
+            # except Exception as e:
+        else:
+            _logger.info(
+                f"it seems {chart_template_ref} is not available, "
+                "falling back to l10n_generic_coa.configurable_chart_template."
+            )
+            super().setUpClass()
+            cls.env["account.chart.template"].load_fiscal_taxes(
+                companies=[cls.company_data["company"]]
+            )
 
         cls.icms_tax_definition_empresa_simples_nacional = cls.env[
             "l10n_br_fiscal.tax.definition"
@@ -35,6 +54,7 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
                 "code": "1",
                 "name": "Série 1",
                 "document_type_id": cls.env.ref("l10n_br_fiscal.document_55").id,
+                "company_id": cls.company_data["company"].id,
                 "active": True,
             }
         )
@@ -51,10 +71,11 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
     def setup_company_data(cls, company_name, chart_template=None, **kwargs):
         if company_name == "company_1_data":
             company_name = "empresa 1 Simples Nacional"
-        else:
+
+        elif company_name == "company_2_data":
             company_name = "empresa 2 Simples Nacional"
-        chart_template = "br_oca_simple"
-        return super().setup_company_data(
+
+        res = super().setup_company_data(
             company_name,
             chart_template,
             tax_framework="1",
@@ -71,6 +92,7 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
             annual_revenue=815000.0,
             **kwargs,
         )
+        return res
 
     def test_company_sn_config(self):
         self.assertEqual(
@@ -119,9 +141,15 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
         tax_line_vals_icms = {
             "name": "ICMS - Simples Nacional",
             "product_id": False,
-            "account_id": self._get_record_by_name(
-                "account.account", "ICMS a Recolher"
-            ).id,
+            "account_id": self.env["account.account"]
+            .search(
+                [
+                    ("name", "=", "ICMS SN a Recolher"),
+                    ("company_id", "=", self.company_data["company"].id),
+                ],
+                limit=1,
+            )
+            .id,
             "partner_id": self.partner_a.id,
             "product_uom_id": False,
             "quantity": False,
@@ -130,7 +158,15 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
             "price_subtotal": 0.0,
             "price_total": 0.0,
             "tax_ids": [],
-            "tax_line_id": self._get_record_by_name("account.tax", "ICMS SN Saída").id,
+            "tax_line_id": self.env["account.tax"]
+            .search(
+                [
+                    ("name", "=", "ICMS SN Saída"),
+                    ("company_id", "=", self.company_data["company"].id),
+                ],
+                limit=1,
+            )
+            .id,
             "currency_id": self.company_data["currency"].id,
             "amount_currency": -27.0,
             "debit": 0.0,

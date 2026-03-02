@@ -2,6 +2,7 @@
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
 from odoo import Command, api, fields, models
+from odoo.tools.misc import formatLang
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import FINAL_CUSTOMER_NO
 
@@ -9,11 +10,9 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import FINAL_CUSTOMER_NO
 class AccountTax(models.Model):
     _inherit = "account.tax"
 
-    fiscal_tax_ids = fields.Many2many(
+    fiscal_tax_ids = fields.One2many(
         comodel_name="l10n_br_fiscal.tax",
-        relation="fiscal_account_tax_rel",
-        column1="account_tax_id",
-        column2="fiscal_tax_id",
+        related="tax_group_id.fiscal_tax_group_id.tax_ids",
         string="Fiscal Taxes",
     )
 
@@ -80,14 +79,8 @@ class AccountTax(models.Model):
             fixed_multiplicator,
         )
 
-        line = self._context.get(
-            "taxes_compute_origin_document_line_mixin",
-            self.env["l10n_br_fiscal.document.line.mixin"],
-        )
-        # line may be any model with fiscal properties,
-        # like account.move.line, sale.order.line, etc
-        if "fiscal_tax_ids" not in line._fields:
-            return taxes_results
+        if not fiscal_taxes:
+            fiscal_taxes = self.env["l10n_br_fiscal.tax"]
 
         product = product or self.env["product.product"]
 
@@ -103,7 +96,7 @@ class AccountTax(models.Model):
         else:
             company = self[0].company_id
 
-        fiscal_taxes_results = line.fiscal_tax_ids.compute_taxes(
+        fiscal_taxes_results = fiscal_taxes.compute_taxes(
             company=company,
             partner=partner,
             product=product,
@@ -178,12 +171,10 @@ class AccountTax(models.Model):
                 fiscal_group = tax.tax_group_id.fiscal_tax_group_id
                 tax_amount = fiscal_tax.get("tax_value", 0.0) * sum_repartition_factor
                 tax_base = fiscal_tax.get("base") * sum_repartition_factor
-
-                # TODO: Migracao 17.0
-                # if tax.deductible or fiscal_group.tax_withholding:
-                #     tax_amount = (
-                #         fiscal_tax.get("tax_value", 0.0) * sum_repartition_factor
-                #     )
+                if tax.deductible or fiscal_group.tax_withholding:
+                    tax_amount = (
+                        fiscal_tax.get("tax_value", 0.0) * sum_repartition_factor
+                    )
 
                 account_tax.update(
                     {
@@ -213,13 +204,23 @@ class AccountTax(models.Model):
         Similar to the _compute_taxes_for_single_line super method in the account module
         but overriden to pass extra parameters to the account.tax compule_all method
         to compute taxes properly in Brazil.
-        WARNING: it seems we might not be able to call the super method here...
         """
+        taxes = base_line["taxes"]._origin
+        line = base_line.get("record")
+        if not taxes or not line or not line.fiscal_tax_ids:
+            return super()._compute_taxes_for_single_line(
+                base_line,
+                handle_price_include=True,
+                include_caba_tags=False,
+                early_pay_discount_computation=None,
+                early_pay_discount_percentage=None,
+            )
+
         orig_price_unit_after_discount = base_line["price_unit"] * (
             1 - (base_line["discount"] / 100.0)
         )
         price_unit_after_discount = orig_price_unit_after_discount
-        taxes = base_line["taxes"]._origin
+        # taxes = base_line["taxes"]._origin
         currency = base_line["currency"] or self.env.company.currency_id
         rate = base_line["rate"]
 
@@ -230,7 +231,6 @@ class AccountTax(models.Model):
             )
 
         if taxes:
-            line = base_line["record"]
             taxes_res = taxes.with_context(**base_line["extra_context"]).compute_all(
                 price_unit_after_discount,
                 currency=currency,
@@ -240,24 +240,6 @@ class AccountTax(models.Model):
                 is_refund=base_line["is_refund"],
                 handle_price_include=base_line["handle_price_include"],
                 include_caba_tags=include_caba_tags,
-                fiscal_taxes=line.fiscal_tax_ids,
-                operation_line=line.fiscal_operation_line_id,
-                cfop=line.cfop_id or None,
-                ncm=line.ncm_id,
-                nbs=line.nbs_id,
-                nbm=line.nbm_id,
-                cest=line.cest_id,
-                discount_value=line.discount_value,
-                insurance_value=line.insurance_value,
-                other_value=line.other_value,
-                ii_customhouse_charges=line.ii_customhouse_charges,
-                freight_value=line.freight_value,
-                fiscal_price=line.fiscal_price,
-                fiscal_quantity=line.fiscal_quantity,
-                uot_id=line.uot_id,
-                icmssn_range=line.icmssn_range_id,
-                icms_origin=line.icms_origin,
-                ind_final=line.ind_final,
             )
 
             to_update_vals = {
@@ -278,11 +260,29 @@ class AccountTax(models.Model):
                     is_refund=base_line["is_refund"],
                     handle_price_include=base_line["handle_price_include"],
                     include_caba_tags=include_caba_tags,
+                    fiscal_taxes=line.fiscal_tax_ids,
+                    operation_line=line.fiscal_operation_line_id,
+                    cfop=line.cfop_id or None,
+                    ncm=line.ncm_id,
+                    nbs=line.nbs_id,
+                    nbm=line.nbm_id,
+                    cest=line.cest_id,
+                    discount_value=line.discount_value,
+                    insurance_value=line.insurance_value,
+                    other_value=line.other_value,
+                    ii_customhouse_charges=line.ii_customhouse_charges,
+                    freight_value=line.freight_value,
+                    fiscal_price=line.fiscal_price,
+                    fiscal_quantity=line.fiscal_quantity,
+                    uot_id=line.uot_id,
+                    icmssn_range=line.icmssn_range_id,
+                    icms_origin=line.icms_origin,
+                    ind_final=line.ind_final,
                 )
-                for tax_res, _new_taxes_res in zip(
-                    taxes_res["taxes"], new_taxes_res["taxes"], strict=True
+                for tax_res, new_taxes_res in zip(
+                    taxes_res["taxes"], new_taxes_res["taxes"]
                 ):
-                    delta_tax = _new_taxes_res["amount"] - tax_res["amount"]
+                    delta_tax = new_taxes_res["amount"] - tax_res["amount"]
                     tax_res["amount"] += delta_tax
                     to_update_vals["price_total"] += delta_tax
 
@@ -317,3 +317,27 @@ class AccountTax(models.Model):
             tax_values_list = []
 
         return to_update_vals, tax_values_list
+
+    @api.model
+    def _prepare_tax_totals(
+        self, base_lines, currency, tax_lines=None, is_company_currency_requested=False
+    ):
+        res = super()._prepare_tax_totals(
+            base_lines, currency, tax_lines, is_company_currency_requested
+        )
+        amount_total = res["amount_total"]
+
+        for line in base_lines:
+            if line.get("record") and hasattr(
+                line["record"], "fiscal_operation_line_id"
+            ):
+                amount_total = line["record"]._get_total_for_tax_totals()
+                break
+
+        res["formatted_amount_total"] = formatLang(
+            self.env,
+            amount_total,
+            currency_obj=currency,
+        )
+
+        return res
