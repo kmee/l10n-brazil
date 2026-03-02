@@ -2,10 +2,13 @@
 # Copyright (C) 2019 - TODAY Raphaël Valyi - Akretion
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
+import logging
 from contextlib import contextmanager
 
 from odoo import Command, _, api, fields, models
 from odoo.tools import frozendict
+
+_logger = logging.getLogger(__name__)
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import FISCAL_TAX_ID_FIELDS
 
@@ -177,9 +180,23 @@ class AccountMoveLine(models.Model):
                 continue
 
             move_id = self.env["account.move"].browse(values["move_id"])
-            fiscal_doc = move_id.fiscal_document_id
-            if not fiscal_doc:
+            # Check fiscal_operation_id (not fiscal_document_id) because every
+            # account.move has a linked l10n_br_fiscal.document via _inherits,
+            # so fiscal_document_id is never False. Only invoices with a BR fiscal
+            # operation should have document_id set on their lines.
+            if not move_id.fiscal_operation_id:
+                # Remove ALL proxy_* fields from vals for non-BR moves. These fields
+                # are defined in l10n_br_fiscal.document.line (via document_line.py)
+                # and inherited by account.move.line. If left in vals when
+                # fiscal_document_line_id is not set, the ORM's _inherits mechanism
+                # auto-creates an orphaned l10n_br_fiscal.document.line for every
+                # line (including tax/payment-term lines), corrupting the invoice
+                # (clearing tax_ids, removing tax lines, etc.).
+                for key in list(values.keys()):
+                    if key.startswith("proxy_"):
+                        values.pop(key)
                 continue
+            fiscal_doc = move_id.fiscal_document_id
             values["document_id"] = fiscal_doc.id or fiscal_doc
         # This reordering bellow is crucial to ensure accurate linkage between
         # account.move.line (aml) and the fiscal document line. In the fiscal create a
@@ -218,15 +235,57 @@ class AccountMoveLine(models.Model):
         for idx in inverted_index:
             sorted_result |= result[idx]
 
-        # Force recompute of fiscal taxes to ensure they pick up the correct company_id
-        # which depends on document_id (linked above)
-        sorted_result.mapped("fiscal_document_line_id")._compute_fiscal_tax_ids()
+        # Force recompute of fiscal taxes so they pick up the correct company_id
+        # (which depends on document_id, linked above) and any regulation-based
+        # overrides. The Form framework may pass pre-computed (but incorrect) tax
+        # values in vals via onchange, so we always recompute here to correct them.
+        # Skip this when the caller explicitly requests no recomputation (e.g.
+        # test_move_edition where manual tax selections should be preserved).
+        if not self.env.context.get("no_fiscal_recompute_on_create"):
+            fiscal_lines_to_recompute = self.env["l10n_br_fiscal.document.line"]
+            for vals, aml in zip(vals_list, result, strict=False):
+                if aml.fiscal_document_line_id and aml.fiscal_document_line_id.fiscal_operation_line_id:
+                    fiscal_lines_to_recompute |= aml.fiscal_document_line_id
+            fiscal_lines_to_recompute._compute_fiscal_tax_ids()
+
+        # Re-sync product line balances after correcting fiscal taxes.
+        # _sync_invoice ran inside super().create() with stale tax values (from
+        # Form onchanges). Now that fiscal_tax_ids is corrected, recompute the
+        # product line amount_currency using the updated amount_tax_included.
+        for aml in result:
+            if (
+                aml.display_type == "product"
+                and aml.fiscal_document_line_id
+                and aml.fiscal_document_line_id.fiscal_operation_line_id
+                and aml.move_id.fiscal_operation_id
+                and aml.cfop_id
+                and aml.cfop_id.finance_move
+                and aml.tax_ids
+                and not self.env.is_protected(self._fields["amount_currency"], aml)
+            ):
+                if aml.move_id.fiscal_operation_id.deductible_taxes:
+                    unsigned_amount_currency = aml.currency_id.round(
+                        aml.fiscal_amount_total
+                    )
+                else:
+                    unsigned_amount_currency = aml.currency_id.round(
+                        aml.fiscal_amount_total
+                        - aml.amount_tax_included
+                        - aml.amount_tax_not_included
+                        + aml.amount_tax_withholding
+                    )
+                amount_currency = unsigned_amount_currency * aml.move_id.direction_sign
+                if aml.amount_currency != amount_currency:
+                    resync_vals = {"amount_currency": amount_currency}
+                    if aml.currency_id == aml.company_id.currency_id:
+                        resync_vals["balance"] = amount_currency
+                    aml.with_context(skip_invoice_line_sync=True).write(resync_vals)
 
         return sorted_result
 
     def copy_data(self, default=None):
         res = super().copy_data(default=default)
-        for line, values in zip(self, res):
+        for line, values in zip(self, res, strict=False):
             if not values.get("fiscal_operation_id"):
                 values["fiscal_operation_id"] = line.fiscal_operation_id.id
             if not values.get("fiscal_operation_line_id"):
@@ -287,30 +346,37 @@ class AccountMoveLine(models.Model):
                     if line.cfop_id and not line.cfop_id.finance_move:
                         unsigned_amount_currency = 0
                         if not line.move_id.fiscal_operation_id.deductible_taxes:
-                            # When there is no financial amount but there are non
-                            # dectutible taxes, then we should take the total tax
-                            # amount into account here to keep the move balanced.
-                            # (In v14 that was done automatically in the payment terms)
+                            # When there is no financial amount (simples remessa etc.),
+                            # the term line is 0 and the product line must offset all
+                            # tax lines. WH taxes create debit entries that reduce the
+                            # absolute value of the product line.
                             unsigned_amount_currency = -(
                                 line.amount_tax_included
                                 + line.amount_tax_not_included
                                 - line.amount_tax_withholding
                             )
                     else:
-                        if line.move_id.fiscal_operation_id.deductible_taxes:
-                            unsigned_amount_currency = (
-                                line.fiscal_amount_total + line.amount_tax_withholding
+                        # fiscal_amount_total = price + not_included - withholding
+                        # product + tax_lines + term = 0
+                        # For deductible purchases, each tax creates paired debit+credit
+                        # entries that net to zero, so the product carries the full
+                        # fiscal_amount_total (matching the payable/term line).
+                        if line.move_id.fiscal_operation_id.deductible_taxes and line.tax_ids:
+                            unsigned_amount_currency = line.currency_id.round(
+                                line.fiscal_amount_total
                             )
                         else:
-                            amount_total = (
-                                line.fiscal_amount_total + line.amount_tax_withholding
-                            )
+                            # product = fiscal_amount_total - included - not_included
+                            #         + withholding
+                            # (withholding was already subtracted from fiscal_amount_total
+                            #  so adding it back gives: price - included taxes only)
                             unsigned_amount_currency = line.currency_id.round(
-                                amount_total
+                                line.fiscal_amount_total
                                 - line.amount_tax_included
                                 - line.amount_tax_not_included
+                                + line.amount_tax_withholding
                                 if line.tax_ids
-                                else amount_total
+                                else line.fiscal_amount_total
                             )
 
                 amount_currency = unsigned_amount_currency * line.move_id.direction_sign
