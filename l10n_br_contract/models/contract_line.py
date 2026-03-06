@@ -8,6 +8,37 @@ class ContractLine(models.Model):
     _name = "contract.line"
     _inherit = [_name, "l10n_br_fiscal.document.line.mixin"]
 
+    # Keep fiscal tax fields precompute-compatible on contract.line.
+    # These overrides preserve original compute/inverse/store behavior
+    # from contract.template.line and only add precompute.
+    uom_id = fields.Many2one(
+        comodel_name="uom.uom",
+        compute="_compute_uom_id",
+        store=True,
+        readonly=False,
+        precompute=True,
+        string="Unit of Measure",
+        domain="[('category_id', '=', product_uom_category_id)]",
+    )
+    automatic_price = fields.Boolean(
+        string="Auto-price?",
+        compute="_compute_automatic_price",
+        store=True,
+        readonly=False,
+        precompute=True,
+        help=(
+            "If checked, the price will be taken from the pricelist. "
+            "Otherwise, it must be set manually."
+        ),
+    )
+    price_unit = fields.Float(
+        string="Unit Price",
+        compute="_compute_price_unit",
+        inverse="_inverse_price_unit",
+        store=True,
+        precompute=True,
+    )
+
     company_id = fields.Many2one(
         related="contract_id.company_id",
     )
