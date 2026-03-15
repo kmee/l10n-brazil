@@ -248,6 +248,12 @@
             <xpath expr="//field[@name='tax_totals']" position="after">
                 <field name="delivery_costs" invisible="1" />
                 <field
+                    name="amount_tax_withholding"
+                    widget='monetary'
+                    options="{'currency_field': 'currency_id'}"
+                    invisible="[('fiscal_operation_id', '=', False), ('amount_tax_withholding', '=', 0)]"
+                />
+                <field
                     name="amount_freight_value"
                     widget='monetary'
                     options="{'currency_field': 'currency_id'}"
