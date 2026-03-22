@@ -85,8 +85,8 @@ class PurchaseOrderLine(models.Model):
             if line.fiscal_operation_id:
                 line.update(
                     {
-                        "price_tax": line.amount_tax,
-                        "price_total": line.amount_total,
+                        "price_tax": line.fiscal_amount_tax,
+                        "price_total": line.fiscal_amount_total,
                     }
                 )
         return result
