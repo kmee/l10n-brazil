@@ -67,6 +67,13 @@ class TestMoveEdition(TransactionCase):
             context=dict(cls.env.context, allowed_company_ids=cls.company.ids)
         )
         cls.env.user.company_id = cls.company
+
+        # When l10n_br_account_payment_order is installed, it creates demo bank
+        # accounts that need to be marked as trusted to allow posting invoices
+        cls.env["res.partner.bank"].sudo().search(
+            [("company_id", "=", cls.company.id)]
+        ).write({"allow_out_payment": True})
+
         cls.out_invoice_account_id = cls.env["account.account"].create(
             {
                 "company_id": cls.company.id,
