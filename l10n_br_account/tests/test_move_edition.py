@@ -76,7 +76,7 @@ class TestMoveEdition(TransactionCase):
 
         cls.out_invoice_account_id = cls.env["account.account"].create(
             {
-                "company_id": cls.company.id,
+                "company_ids": [(6, 0, cls.company.ids)],
                 "account_type": "asset_receivable",
                 "code": "RECTEST",
                 "name": "Test receivable account",
