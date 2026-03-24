@@ -4,8 +4,7 @@
 
 from contextlib import contextmanager
 
-from odoo import Command, _, api, fields, models
-from odoo.tools import frozendict
+from odoo import api, fields, models
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import FISCAL_TAX_ID_FIELDS
 
@@ -463,14 +462,14 @@ class AccountMoveLine(models.Model):
     def _compute_all_tax(self):
         """
         DISABLED for Odoo 18.0+
-        
+
         This method was overriding the core _compute_all_tax which computed
         taxes and stored results in compute_all_tax field. In Odoo 18,
         this field and method no longer exist in the core account module.
-        
+
         Brazilian tax computation is now handled through the new tax details
         system via _compute_totals hook.
-        
+
         Overriden to pass all the extra Brazilian parameters we need
         to the account.tax#compute_all method.
         """

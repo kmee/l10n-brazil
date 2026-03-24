@@ -133,30 +133,36 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
         We override it to create a Lucro Presumido company.
         """
         # Get the name we want and remove it from kwargs
-        company_name = kwargs.pop('name', 'empresa 1 Lucro Presumido')
-        cnpj = kwargs.pop('cnpj', '62.128.834/0001-34')
+        company_name = kwargs.pop("name", "empresa 1 Lucro Presumido")
+        cnpj = kwargs.pop("cnpj", "62.128.834/0001-34")
 
         # Update kwargs with Lucro Presumido configuration
-        kwargs.update({
-            'tax_framework': '3',
-            'is_industry': True,
-            'industry_type': '00',
-            'profit_calculation': 'presumed',
-            'ripi': True,
-            'piscofins_id': cls.env.ref('l10n_br_fiscal.tax_pis_cofins_columativo').id,
-            'icms_regulation_id': cls.env.ref('l10n_br_fiscal.tax_icms_regulation').id,
-            'cnae_main_id': cls.env.ref('l10n_br_fiscal.cnae_3101200').id,
-            'document_type_id': cls.env.ref('l10n_br_fiscal.document_55').id,
-            'country_id': cls.env.ref('base.br').id,
-            'currency_id': cls.env.ref('base.BRL').id,
-        })
+        kwargs.update(
+            {
+                "tax_framework": "3",
+                "is_industry": True,
+                "industry_type": "00",
+                "profit_calculation": "presumed",
+                "ripi": True,
+                "piscofins_id": cls.env.ref(
+                    "l10n_br_fiscal.tax_pis_cofins_columativo"
+                ).id,
+                "icms_regulation_id": cls.env.ref(
+                    "l10n_br_fiscal.tax_icms_regulation"
+                ).id,
+                "cnae_main_id": cls.env.ref("l10n_br_fiscal.cnae_3101200").id,
+                "document_type_id": cls.env.ref("l10n_br_fiscal.document_55").id,
+                "country_id": cls.env.ref("base.br").id,
+                "currency_id": cls.env.ref("base.BRL").id,
+            }
+        )
 
         # Call parent - it will create company with name='company_1_data'
         company = super().setup_independent_company(**kwargs)
 
         # Rename the company and set additional fields
         company.name = company_name
-        company.partner_id.state_id = cls.env.ref('base.state_br_sp').id
+        company.partner_id.state_id = cls.env.ref("base.state_br_sp").id
         company.partner_id.vat = cnpj
 
         return company

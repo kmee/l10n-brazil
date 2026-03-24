@@ -64,54 +64,60 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
     @classmethod
     def setup_independent_company(cls, **kwargs):
         """Override to create Simples Nacional company for tests.
-        
+
         In Odoo 18+, this is called by BaseCommon.setUpClass.
         We override it to create a Simples Nacional company.
         """
         # Get the name we want and remove it from kwargs
         # The parent has name='company_1_data' hardcoded
-        company_name = kwargs.pop('name', 'empresa 1 Simples Nacional')
-        
+        company_name = kwargs.pop("name", "empresa 1 Simples Nacional")
+
         # Update kwargs with Simples Nacional configuration
-        kwargs.update({
-            'tax_framework': '1',
-            'is_industry': True,
-            'coefficient_r': False,
-            'ripi': True,
-            'piscofins_id': cls.env.ref('l10n_br_fiscal.tax_pis_cofins_simples_nacional').id,
-            'tax_ipi_id': cls.env.ref('l10n_br_fiscal.tax_ipi_outros').id,
-            'tax_icms_id': cls.env.ref('l10n_br_fiscal.tax_icms_sn_com_credito').id,
-            'cnae_main_id': cls.env.ref('l10n_br_fiscal.cnae_3101200').id,
-            'document_type_id': cls.env.ref('l10n_br_fiscal.document_55').id,
-            'annual_revenue': 815000.0,
-            'country_id': cls.env.ref('base.br').id,
-            'currency_id': cls.env.ref('base.BRL').id,
-        })
-        
+        kwargs.update(
+            {
+                "tax_framework": "1",
+                "is_industry": True,
+                "coefficient_r": False,
+                "ripi": True,
+                "piscofins_id": cls.env.ref(
+                    "l10n_br_fiscal.tax_pis_cofins_simples_nacional"
+                ).id,
+                "tax_ipi_id": cls.env.ref("l10n_br_fiscal.tax_ipi_outros").id,
+                "tax_icms_id": cls.env.ref("l10n_br_fiscal.tax_icms_sn_com_credito").id,
+                "cnae_main_id": cls.env.ref("l10n_br_fiscal.cnae_3101200").id,
+                "document_type_id": cls.env.ref("l10n_br_fiscal.document_55").id,
+                "annual_revenue": 815000.0,
+                "country_id": cls.env.ref("base.br").id,
+                "currency_id": cls.env.ref("base.BRL").id,
+            }
+        )
+
         # Call parent - it will create company with name='company_1_data'
         company = super().setup_independent_company(**kwargs)
-        
+
         # Rename the company to our desired name
         company.name = company_name
-        
+
         return company
 
     def test_company_sn_config(self):
         company = self.company_data["company"]
-        _logger.info(f"Test company from company_data: {company.name} (ID: {company.id})")
+        _logger.info(
+            f"Test company from company_data: {company.name} (ID: {company.id})"
+        )
         _logger.info(f"  Tax framework: {company.tax_framework}")
-        _logger.info(f"  CNAE main: {company.cnae_main_id.code if company.cnae_main_id else 'None'}")
+        cnae = company.cnae_main_id
+        _logger.info(f"  CNAE main: {cnae.code if cnae else 'None'}")
         _logger.info(f"  Annual revenue: {company.annual_revenue}")
-        _logger.info(f"  Simplified tax ID: {company.simplified_tax_id.name if company.simplified_tax_id else 'False'}")
-        
+        tax_id = company.simplified_tax_id
+        _logger.info(f"  Simplified tax ID: {tax_id.name if tax_id else 'False'}")
+
         # Check env.company
         env_company = self.env.company
         _logger.info(f"env.company: {env_company.name} (ID: {env_company.id})")
         _logger.info(f"  Same as company_data? {company.id == env_company.id}")
-        
-        self.assertEqual(
-            company.simplified_tax_id.name, "Anexo 2 - Indústria"
-        )
+
+        self.assertEqual(company.simplified_tax_id.name, "Anexo 2 - Indústria")
         self.assertEqual(self.company_data["company"].simplified_tax_percent, 8.44)
         self.assertEqual(
             self.company_data["company"].simplified_tax_range_id.name, "Faixa 4"

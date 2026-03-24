@@ -176,13 +176,16 @@ class AccountMoveBRCommon(AccountTestInvoicingCommon):
         # In Odoo 18+, setup_company_data was removed from AccountTestInvoicingCommon.
         # We need to create the company ourselves.
         import logging
+
         _logger = logging.getLogger(__name__)
         _logger.info(f"Creating company: {company_name} with kwargs: {kwargs}")
 
-        company = cls.env["res.company"].create({
-            "name": company_name,
-            **kwargs,
-        })
+        company = cls.env["res.company"].create(
+            {
+                "name": company_name,
+                **kwargs,
+            }
+        )
         cls.env.user.company_ids |= company
 
         # Install the chart template
@@ -245,44 +248,58 @@ class AccountMoveBRCommon(AccountTestInvoicingCommon):
         configuration based on the test class needs.
         """
         # Get the company name from kwargs or use default
-        company_name = kwargs.get('name', 'company_1_data')
+        company_name = kwargs.get("name", "company_1_data")
 
         # Apply Brazilian configuration based on company name
         if "Lucro Presumido" in company_name:
-            kwargs.update({
-                "tax_framework": "3",
-                "profit_calculation": "presumed",
-                "ripi": True,
-                "piscofins_id": cls.env.ref("l10n_br_fiscal.tax_pis_cofins_columativo").id,
-                "icms_regulation_id": cls.env.ref("l10n_br_fiscal.tax_icms_regulation").id,
-                "country_id": cls.env.ref("base.br").id,
-                "currency_id": cls.env.ref("base.BRL").id,
-                "is_industry": True,
-                "cnae_main_id": cls.env.ref("l10n_br_fiscal.cnae_3101200").id,
-                "document_type_id": cls.env.ref("l10n_br_fiscal.document_55").id,
-            })
+            kwargs.update(
+                {
+                    "tax_framework": "3",
+                    "profit_calculation": "presumed",
+                    "ripi": True,
+                    "piscofins_id": cls.env.ref(
+                        "l10n_br_fiscal.tax_pis_cofins_columativo"
+                    ).id,
+                    "icms_regulation_id": cls.env.ref(
+                        "l10n_br_fiscal.tax_icms_regulation"
+                    ).id,
+                    "country_id": cls.env.ref("base.br").id,
+                    "currency_id": cls.env.ref("base.BRL").id,
+                    "is_industry": True,
+                    "cnae_main_id": cls.env.ref("l10n_br_fiscal.cnae_3101200").id,
+                    "document_type_id": cls.env.ref("l10n_br_fiscal.document_55").id,
+                }
+            )
         elif "Simples Nacional" in company_name:
-            kwargs.update({
-                "tax_framework": "1",
-                "coefficient_r": False,
-                "ripi": True,
-                "piscofins_id": cls.env.ref("l10n_br_fiscal.tax_pis_cofins_simples_nacional").id,
-                "tax_ipi_id": cls.env.ref("l10n_br_fiscal.tax_ipi_outros").id,
-                "tax_icms_id": cls.env.ref("l10n_br_fiscal.tax_icms_sn_com_credito").id,
-                "annual_revenue": 815000.0,
-                "country_id": cls.env.ref("base.br").id,
-                "currency_id": cls.env.ref("base.BRL").id,
-                "is_industry": True,
-                "cnae_main_id": cls.env.ref("l10n_br_fiscal.cnae_3101200").id,
-                "document_type_id": cls.env.ref("l10n_br_fiscal.document_55").id,
-            })
+            kwargs.update(
+                {
+                    "tax_framework": "1",
+                    "coefficient_r": False,
+                    "ripi": True,
+                    "piscofins_id": cls.env.ref(
+                        "l10n_br_fiscal.tax_pis_cofins_simples_nacional"
+                    ).id,
+                    "tax_ipi_id": cls.env.ref("l10n_br_fiscal.tax_ipi_outros").id,
+                    "tax_icms_id": cls.env.ref(
+                        "l10n_br_fiscal.tax_icms_sn_com_credito"
+                    ).id,
+                    "annual_revenue": 815000.0,
+                    "country_id": cls.env.ref("base.br").id,
+                    "currency_id": cls.env.ref("base.BRL").id,
+                    "is_industry": True,
+                    "cnae_main_id": cls.env.ref("l10n_br_fiscal.cnae_3101200").id,
+                    "document_type_id": cls.env.ref("l10n_br_fiscal.document_55").id,
+                }
+            )
         else:
             # Default Brazilian configuration
-            kwargs.update({
-                "country_id": cls.env.ref("base.br").id,
-                "currency_id": cls.env.ref("base.BRL").id,
-                "cnae_main_id": cls.env.ref("l10n_br_fiscal.cnae_3101200").id,
-            })
+            kwargs.update(
+                {
+                    "country_id": cls.env.ref("base.br").id,
+                    "currency_id": cls.env.ref("base.BRL").id,
+                    "cnae_main_id": cls.env.ref("l10n_br_fiscal.cnae_3101200").id,
+                }
+            )
 
         # Call parent to create company with chart template
         company = super().setup_independent_company(**kwargs)
