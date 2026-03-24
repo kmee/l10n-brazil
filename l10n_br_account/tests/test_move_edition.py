@@ -7,7 +7,7 @@ from unittest import mock
 from odoo import Command, fields
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase
-from odoo.tests.common import Form, tagged
+from odoo.tests import Form, tagged
 
 _logger = logging.getLogger(__name__)
 

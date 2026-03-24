@@ -2,7 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
 from odoo import fields
-from odoo.tests.common import Form
+from odoo.tests import Form
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
@@ -70,7 +70,7 @@ class AccountMoveBRCommon(AccountTestInvoicingCommon):
 
         cls.partner_a.write(
             {
-                "cnpj_cpf": "49.190.159/0001-05",
+                "vat": "49.190.159/0001-05",
                 "is_company": "1",
                 "ind_ie_dest": "1",
                 "tax_framework": "3",
@@ -86,7 +86,7 @@ class AccountMoveBRCommon(AccountTestInvoicingCommon):
         )
         cls.partner_b.write(
             {
-                "cnpj_cpf": "42.591.651/0001-43",
+                "vat": "42.591.651/0001-43",
                 "is_company": "0",
                 "legal_name": "partner B",
                 "country_id": cls.env.ref("base.br").id,
@@ -102,7 +102,7 @@ class AccountMoveBRCommon(AccountTestInvoicingCommon):
         cls.partner_c = cls.partner_a.copy(
             {
                 "name": "partner_c",
-                "cnpj_cpf": "67.405.936/0001-73",
+                "vat": "67.405.936/0001-73",
                 "legal_name": "partner C",
                 "fiscal_profile_id": cls.env.ref(
                     "l10n_br_fiscal.partner_fiscal_profile_ncn"
@@ -173,10 +173,124 @@ class AccountMoveBRCommon(AccountTestInvoicingCommon):
             }
         )
 
-        company_data_dict = super().setup_company_data(
-            company_name, chart_template=chart_template, **kwargs
+        # In Odoo 18+, setup_company_data was removed from AccountTestInvoicingCommon.
+        # We need to create the company ourselves.
+        import logging
+        _logger = logging.getLogger(__name__)
+        _logger.info(f"Creating company: {company_name} with kwargs: {kwargs}")
+
+        company = cls.env["res.company"].create({
+            "name": company_name,
+            **kwargs,
+        })
+        cls.env.user.company_ids |= company
+
+        # Install the chart template
+        chart_template = chart_template or cls.chart_template or "generic_coa"
+        cls.env["account.chart.template"].try_loading(
+            chart_template, company=company, install_demo=False
         )
+        if not company.account_fiscal_country_id:
+            company.account_fiscal_country_id = cls.env.ref("base.br")
+
+        # The currency could be different after the installation of the chart template.
+        if kwargs.get("currency_id"):
+            company.write({"currency_id": kwargs["currency_id"]})
+
+        # Build company_data dict similar to Odoo 17
+        company_data_dict = {
+            "company": company,
+            "currency": company.currency_id,
+            "default_account_revenue": cls.env["account.account"].search(
+                [
+                    ("company_ids", "in", company.id),
+                    ("account_type", "=", "income"),
+                    ("deprecated", "=", False),
+                ],
+                limit=1,
+            ),
+            "default_account_expense": cls.env["account.account"].search(
+                [
+                    ("company_ids", "in", company.id),
+                    ("account_type", "=", "expense"),
+                    ("deprecated", "=", False),
+                ],
+                limit=1,
+            ),
+            "default_account_receivable": cls.env["account.account"].search(
+                [
+                    ("company_ids", "in", company.id),
+                    ("account_type", "=", "asset_receivable"),
+                    ("deprecated", "=", False),
+                ],
+                limit=1,
+            ),
+            "default_account_payable": cls.env["account.account"].search(
+                [
+                    ("company_ids", "in", company.id),
+                    ("account_type", "=", "liability_payable"),
+                    ("deprecated", "=", False),
+                ],
+                limit=1,
+            ),
+        }
         return company_data_dict
+
+    @classmethod
+    def setup_independent_company(cls, **kwargs):
+        """Override to create Brazilian-configured company for tests.
+
+        In Odoo 18+, this is called by BaseCommon.setUpClass to create
+        the independent company. We override it to apply Brazilian fiscal
+        configuration based on the test class needs.
+        """
+        # Get the company name from kwargs or use default
+        company_name = kwargs.get('name', 'company_1_data')
+
+        # Apply Brazilian configuration based on company name
+        if "Lucro Presumido" in company_name:
+            kwargs.update({
+                "tax_framework": "3",
+                "profit_calculation": "presumed",
+                "ripi": True,
+                "piscofins_id": cls.env.ref("l10n_br_fiscal.tax_pis_cofins_columativo").id,
+                "icms_regulation_id": cls.env.ref("l10n_br_fiscal.tax_icms_regulation").id,
+                "country_id": cls.env.ref("base.br").id,
+                "currency_id": cls.env.ref("base.BRL").id,
+                "is_industry": True,
+                "cnae_main_id": cls.env.ref("l10n_br_fiscal.cnae_3101200").id,
+                "document_type_id": cls.env.ref("l10n_br_fiscal.document_55").id,
+            })
+        elif "Simples Nacional" in company_name:
+            kwargs.update({
+                "tax_framework": "1",
+                "coefficient_r": False,
+                "ripi": True,
+                "piscofins_id": cls.env.ref("l10n_br_fiscal.tax_pis_cofins_simples_nacional").id,
+                "tax_ipi_id": cls.env.ref("l10n_br_fiscal.tax_ipi_outros").id,
+                "tax_icms_id": cls.env.ref("l10n_br_fiscal.tax_icms_sn_com_credito").id,
+                "annual_revenue": 815000.0,
+                "country_id": cls.env.ref("base.br").id,
+                "currency_id": cls.env.ref("base.BRL").id,
+                "is_industry": True,
+                "cnae_main_id": cls.env.ref("l10n_br_fiscal.cnae_3101200").id,
+                "document_type_id": cls.env.ref("l10n_br_fiscal.document_55").id,
+            })
+        else:
+            # Default Brazilian configuration
+            kwargs.update({
+                "country_id": cls.env.ref("base.br").id,
+                "currency_id": cls.env.ref("base.BRL").id,
+                "cnae_main_id": cls.env.ref("l10n_br_fiscal.cnae_3101200").id,
+            })
+
+        # Call parent to create company with chart template
+        company = super().setup_independent_company(**kwargs)
+
+        # Load fiscal taxes for the company
+        cls.env["account.chart.template"].load_fiscal_taxes(companies=[company])
+
+        return company
 
     @classmethod
     def configure_normal_company_taxes(cls):

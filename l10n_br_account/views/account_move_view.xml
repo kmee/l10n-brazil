@@ -458,10 +458,8 @@
                     invisible="not document_type_id or tax_icms_or_issqn == 'icms'"
                 />
             </xpath>
-            <!-- xpath
-                expr="//field[@name='invoice_line_ids']/form/sheet/field[@name='name']"
-                position="after"
-            >
+            <!-- Fiscal fields for invoice lines (inline form) -->
+            <xpath expr="//field[@name='invoice_line_ids']/form/sheet/group/field[@name='name']" position="after">
                 <group name="fiscal_fields" invisible="1" />
                 <field name="tax_icms_or_issqn" invisible="1" />
                 <notebook invisible="not document_type_id">
@@ -510,7 +508,7 @@
                         </group>
                     </page>
                 </notebook>
-            </xpath-->
+            </xpath>
             <field name="fiscal_position_id" position="after">
                 <field
                     name="fiscal_document_id"
