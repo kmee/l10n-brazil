@@ -98,7 +98,7 @@
         "demo/account_invoice.xml",
         "demo/res_users.xml",
     ],
-    "installable": True,
+    "installable": False,
     "external_dependencies": {
         "python": [
             "erpbrasil.base",
