@@ -16,5 +16,6 @@
         "views/res_company_view.xml",
     ],
     "post_init_hook": "post_init_hook",
-    "auto_install": True,
+    "auto_install": False,
+    "installable": False,  # FIXME fix l10n_br_account compat!
 }
