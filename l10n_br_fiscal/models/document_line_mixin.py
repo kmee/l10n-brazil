@@ -398,7 +398,7 @@ class FiscalDocumentLineMixin(models.AbstractModel):
             return self.company_id
         if hasattr(self, "account_line_ids") and self.account_line_ids:
             return self.account_line_ids.move_id.company_id
-        return self.env.company_id
+        return self.env.company.id
 
     @api.onchange(*FISCAL_TAX_ID_FIELDS)
     def _onchange_fiscal_taxes(self):
