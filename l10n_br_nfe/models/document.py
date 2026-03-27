@@ -1196,26 +1196,8 @@ class NFe(spec_models.StackedModel):
         return result
 
     def _fix_ibscbs_xml_order(self, xml_file):
-        """Remove grupos IBS/CBS do XML enquanto o schema da SEFAZ não os suporta."""
-        try:
-            parser = etree.XMLParser(remove_blank_text=False)
-            root = etree.fromstring(
-                xml_file.encode("utf-8") if isinstance(xml_file, str) else xml_file,
-                parser=parser,
-            )
-        except Exception:
-            return xml_file
-
-        ns = {"nfe": "http://www.portalfiscal.inf.br/nfe"}
-
-        # Remove IBSCBS (item) e IBSCBSTot (total) do XML antes do envio,
-        # pois o schema atual (ex.: SP_NFE_PL_008i2) ainda não os aceita.
-        for node in root.xpath(".//nfe:IBSCBS | .//nfe:IBSCBSTot", namespaces=ns):
-            parent = node.getparent()
-            if parent is not None:
-                parent.remove(node)
-
-        return etree.tostring(root, encoding="unicode")
+        """Não altera o XML: ``IBSCBS``/``IBSCBSTot`` seguem no envio (PL com RTC)."""
+        return xml_file
 
     def _nfe_update_status_and_save_data(self, process):
         """
@@ -1488,11 +1470,16 @@ class NFe(spec_models.StackedModel):
             if record.state_edoc == "a_enviar":
                 record._nfe_send_for_authorization()
 
+    def _strip_ibscbs_from_binding(self, serialized_nfe):
+        """Não remove grupos do binding; herdeiros podem retirar
+        IBSCBS se necessário."""
+
     def _nfe_send_for_authorization(self):
         """
         Serialize and send a NFe for authorizaion
         """
         serialized_nfe = self.serialize()[0]
+        self._strip_ibscbs_from_binding(serialized_nfe)
         nfe_manager = self._edoc_processor()
         authorization_response = None
         for service_response in nfe_manager.processar_documento(serialized_nfe):
