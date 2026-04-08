@@ -8,8 +8,12 @@ def post_init_hook(env):
     """Inject Brazilian taxes in the CoA and related them to the account taxes."""
 
     br_demo_companies = [
-        env.ref("l10n_br_base.empresa_simples_nacional"),
-        env.ref("l10n_br_base.empresa_lucro_presumido"),
+        c
+        for c in (
+            env.ref("l10n_br_base.empresa_simples_nacional", raise_if_not_found=False),
+            env.ref("l10n_br_base.empresa_lucro_presumido", raise_if_not_found=False),
+        )
+        if c
     ]
     todo_companies = []
     for company in env["res.company"].with_context(active_test=False).search([]):
