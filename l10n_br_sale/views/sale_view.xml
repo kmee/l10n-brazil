@@ -5,6 +5,18 @@
   License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 -->
 <odoo>
+    <record id="view_l10n_br_sale_partner_filter" model="ir.ui.view">
+        <field name="name">l10n_br_sale.partner.filter.compat</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sales_order_filter" />
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <separator string="Brazil Fiscal" />
+            </xpath>
+        </field>
+    </record>
+
     <record id="l10n_br_sale_quotation_tree" model="ir.ui.view">
         <field name="name">l10n_br_sale.quotation.form</field>
         <field name="model">sale.order</field>
