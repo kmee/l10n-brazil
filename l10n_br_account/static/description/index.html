@@ -496,14 +496,14 @@ flexibilidade é garantida por três campos-chave:</p>
 <li><strong>account.move.fiscal_document_id</strong>: O campo <tt class="docutils literal">Many2one</tt> que
 implementa o <tt class="docutils literal">_inherits</tt>. Representa o documento fiscal “principal”
 ou em edição na interface da fatura.</li>
-<li><strong>account.move.line.fiscal_document_line_id</strong>: O pilar da
-arquitetura. Permite que <strong>cada linha</strong> da fatura aponte para uma
-linha de um documento fiscal distinto. É isso que possibilita agregar
-múltiplos documentos em um único <tt class="docutils literal">account.move</tt>.</li>
-<li><strong>account.move.fiscal_document_ids</strong>: Campo <tt class="docutils literal">One2many</tt> computado
-que agrega todos os documentos fiscais vinculados às linhas da
-fatura, oferecendo uma visão completa e consolidada quando o
-lançamento tem mais de um documento fiscal.</li>
+<li><strong>account.move.line.fiscal_document_line_id</strong>: O pilar da arquitetura.
+Permite que <strong>cada linha</strong> da fatura aponte para uma linha de um
+documento fiscal distinto. É isso que possibilita agregar múltiplos
+documentos em um único <tt class="docutils literal">account.move</tt>.</li>
+<li><strong>account.move.fiscal_document_ids</strong>: Campo <tt class="docutils literal">One2many</tt> computado que
+agrega todos os documentos fiscais vinculados às linhas da fatura,
+oferecendo uma visão completa e consolidada quando o lançamento tem
+mais de um documento fiscal.</li>
 </ul>
 <p>A flexibilidade do design é bidirecional. O sistema também gerencia
 nativamente cenários onde <strong>um lançamento contábil (``account.move``)
@@ -656,9 +656,8 @@ etc.). Nos dados de demonstração, a <strong>AMD do Brasil</strong> é um excel
 exemplo.</li>
 <li><strong>Preencha os Dados Fiscais do Cabeçalho</strong> Com a instalação do
 módulo, novos campos fiscais aparecerão no cabeçalho da fatura.<ul>
-<li><strong>Tipo de Documento</strong>: Selecione o modelo do documento fiscal.
-Para uma NF-e, por exemplo, escolha
-<strong>``55 - Nota Fiscal Eletrônica``</strong>.</li>
+<li><strong>Tipo de Documento</strong>: Selecione o modelo do documento fiscal. Para
+uma NF-e, por exemplo, escolha <strong>``55 - Nota Fiscal Eletrônica``</strong>.</li>
 <li><strong>Operação Fiscal</strong>: Este é um campo chave. Ele define a natureza
 da transação. Selecione uma operação compatível, como
 <strong>``Venda de Mercadoria``</strong>.</li>
