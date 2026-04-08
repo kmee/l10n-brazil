@@ -58,9 +58,7 @@
                 <group>
                     <group>
                         <field name="type" />
-                        <field
-                            name="segment_code"
-                        />
+                        <field name="segment_code" />
                         <field
                             name="batch_id"
                             context="{'default_cnab_structure_id': cnab_structure_id}"
@@ -97,18 +95,9 @@
                             string="Map Return"
                             class="oe_highlight mx-1"
                         />
-                        <separator
-                            name="general_infos"
-                            string="Structure"
-                        />
-                        <separator
-                            name="sending_infos"
-                            string="Map Sending"
-                        />
-                        <separator
-                            name="return_infos"
-                            string="Map Return"
-                        />
+                        <separator name="general_infos" string="Structure" />
+                        <separator name="sending_infos" string="Map Sending" />
+                        <separator name="return_infos" string="Map Return" />
                         <field
                             name="field_ids"
                             mode='tree'
@@ -118,55 +107,29 @@
                             <list default_order="start_pos" editable="bottom">
                                 <field name="state" invisible="True" />
                                 <field name="ref_name" invisible="True" />
-                                <field
-                                    name="computed_name"
-                                />
-                                <field
-                                    name="name"
-                                />
-                                <field
-                                    name="meaning"
-                                />
-                                <field
-                                    name="start_pos"
-                                />
-                                <field
-                                    name="end_pos"
-                                />
-                                <field
-                                    name="assumed_comma"
-                                />
-                                <field
-                                    name="type"
-                                />
+                                <field name="computed_name" />
+                                <field name="name" />
+                                <field name="meaning" />
+                                <field name="start_pos" />
+                                <field name="end_pos" />
+                                <field name="assumed_comma" />
+                                <field name="type" />
                                 <field
                                     name="content_source_model_id"
                                     invisible="True"
                                 />
-                                <field
-                                    name="default_value"
-                                />
-                                <field
-                                    name="content_source_field"
-                                />
+                                <field name="default_value" />
+                                <field name="content_source_field" />
                                 <button
                                     name="action_change_field"
                                     type="object"
                                     string="Change Field"
                                     class="oe_highlight oe_edit_only"
                                 />
-                                <field
-                                    name="sending_dynamic_content"
-                                />
-                                <field
-                                    name="preview_field"
-                                />
-                                <field
-                                    name="content_dest_field"
-                                />
-                                <field
-                                    name="return_dynamic_content"
-                                />
+                                <field name="sending_dynamic_content" />
+                                <field name="preview_field" />
+                                <field name="content_dest_field" />
+                                <field name="return_dynamic_content" />
                                 <field name="content_dest_model_id" invisible="True" />
                                 <field name="notes" />
                                 <field name="cnab_group_id" />
@@ -174,10 +137,7 @@
                             </list>
                         </field>
                     </page>
-                    <page
-                        name="optional_rules"
-                        string="Optional Rules"
-                    >
+                    <page name="optional_rules" string="Optional Rules">
                         <span class="o_form_label" modifiers="{}">Payment Ways</span>
                         <div
                             class="text-muted"

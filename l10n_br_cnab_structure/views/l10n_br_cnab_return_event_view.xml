@@ -10,9 +10,7 @@
         <field name="name">l10n_br_cnab.return.event.form.view.structure</field>
         <field name="model">l10n_br_cnab.return.event</field>
         <field name="arch" type="xml">
-            <form
-                edit="false"
-            >
+            <form edit="false">
                 <header>
                     <button
                         name="action_ignore_event"

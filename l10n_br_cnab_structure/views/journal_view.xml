@@ -28,10 +28,7 @@
                         <field name="default_outbound_cnab_structure_id" />
                     </group>
                 </page>
-                <page
-                    name="cnab_accounts"
-                    string="CNAB Accounts"
-                >
+                <page name="cnab_accounts" string="CNAB Accounts">
                     <group>
                         <field name="tariff_charge_account_id" />
                     </group>

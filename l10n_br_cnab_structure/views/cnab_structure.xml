@@ -94,9 +94,7 @@
                                     <field name="sequence" widget="handle" />
                                     <field name="type" />
                                     <field name="name" />
-                                    <field
-                                        name="batch_id"
-                                    />
+                                    <field name="batch_id" />
                                     <field name="cnab_structure_id" />
                                 </list>
                             </field>
@@ -104,10 +102,7 @@
                         <page name="conf_fields" string="Configuration Fields">
                             <group>
                                 <group name="conf_positions" string="Positions">
-                                    <label
-                                        for="conf_bank_start_pos"
-                                        string="Bank"
-                                    />
+                                    <label for="conf_bank_start_pos" string="Bank" />
                                     <div>
                                         <field
                                             name="conf_bank_start_pos"
@@ -134,10 +129,7 @@
                                             required="1"
                                         />
                                     </div>
-                                    <label
-                                        for="conf_batch_start_pos"
-                                        string="Batch"
-                                    />
+                                    <label for="conf_batch_start_pos" string="Batch" />
                                     <div>
                                         <field
                                             name="conf_batch_start_pos"
@@ -203,20 +195,13 @@
                                         name="record_type_file_trailer_id"
                                         required="1"
                                     />
-                                    <field
-                                        name="record_type_batch_header_id"
-                                    />
-                                    <field
-                                        name="record_type_batch_trailer_id"
-                                    />
+                                    <field name="record_type_batch_header_id" />
+                                    <field name="record_type_batch_trailer_id" />
                                     <field name="record_type_detail_id" required="1" />
                                 </group>
                             </group>
                         </page>
-                        <page
-                            name="payements_ways"
-                            string="Payments Ways"
-                        >
+                        <page name="payements_ways" string="Payments Ways">
                             <field
                                 name="cnab_payment_way_ids"
                                 mode='tree'
@@ -230,10 +215,7 @@
                                 </list>
                             </field>
                         </page>
-                        <page
-                            name="payment_rules"
-                            string="Payment Rules"
-                        >
+                        <page name="payment_rules" string="Payment Rules">
                             <field
                                 name="cnab_payment_rule_ids"
                                 mode='tree'
@@ -250,10 +232,7 @@
                                 </list>
                             </field>
                         </page>
-                        <page
-                            name="pix_config"
-                            string="PIX"
-                        >
+                        <page name="pix_config" string="PIX">
                             <span class="o_form_label" modifiers="{}">Key Types</span>
                             <field
                                 name="cnab_pix_key_type_ids"

@@ -18,12 +18,8 @@
             <group name="main" position="after">
                 <group name="cnab_structure">
                     <field name="cnab_structure_ok" />
-                    <field
-                        name="cnab_structure_id"
-                    />
-                    <field
-                        name="cnab_payment_way_ids"
-                    >
+                    <field name="cnab_structure_id" />
+                    <field name="cnab_payment_way_ids">
                         <list>
                             <field name="name" />
                             <field name="cnab_structure_id" />
