@@ -1,0 +1,110 @@
+# Brazilian Portuguese translation of l10n_br_account_service_type_by_partner
+# This file contains the translation of the following modules:
+# 	* l10n_br_account_service_type_by_partner
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: l10n_br_account_service_type_by_partner
+#: model:ir.model.constraint,message:l10n_br_account_service_type_by_partner.constraint_res_partner_service_type_unique_product_service_type_partner
+msgid "A product can only have one service type per partner."
+msgstr "A product can only have one service type per partner."
+
+#. module: l10n_br_account_service_type_by_partner
+#: model:ir.model.fields,field_description:l10n_br_account_service_type_by_partner.field_l10n_br_fiscal_service_type__can_be_selected_on_partner
+msgid "Can be selected on Partner"
+msgstr "Can be selected on Partner"
+
+#. module: l10n_br_account_service_type_by_partner
+#: model:ir.model,name:l10n_br_account_service_type_by_partner.model_res_partner
+msgid "Contact"
+msgstr "Contact"
+
+#. module: l10n_br_account_service_type_by_partner
+#: model:ir.model.fields,field_description:l10n_br_account_service_type_by_partner.field_res_partner_service_type__create_uid
+msgid "Created by"
+msgstr "Created by"
+
+#. module: l10n_br_account_service_type_by_partner
+#: model:ir.model.fields,field_description:l10n_br_account_service_type_by_partner.field_res_partner_service_type__create_date
+msgid "Created on"
+msgstr "Created on"
+
+#. module: l10n_br_account_service_type_by_partner
+#: model:ir.model.fields,field_description:l10n_br_account_service_type_by_partner.field_res_partner_service_type__display_name
+msgid "Display Name"
+msgstr "Display Name"
+
+#. module: l10n_br_account_service_type_by_partner
+#: model:ir.model.fields,field_description:l10n_br_account_service_type_by_partner.field_res_partner_service_type__service_type_id
+msgid "Fiscal Service Type"
+msgstr "Fiscal Service Type"
+
+#. module: l10n_br_account_service_type_by_partner
+#: model:ir.model.fields,field_description:l10n_br_account_service_type_by_partner.field_res_partner_service_type__id
+msgid "ID"
+msgstr "ID"
+
+#. module: l10n_br_account_service_type_by_partner
+#: model:ir.model,name:l10n_br_account_service_type_by_partner.model_account_move
+msgid "Journal Entry"
+msgstr "Journal Entry"
+
+#. module: l10n_br_account_service_type_by_partner
+#: model:ir.model,name:l10n_br_account_service_type_by_partner.model_account_move_line
+msgid "Journal Item"
+msgstr "Journal Item"
+
+#. module: l10n_br_account_service_type_by_partner
+#: model:ir.model.fields,field_description:l10n_br_account_service_type_by_partner.field_res_partner_service_type__write_uid
+msgid "Last Updated by"
+msgstr "Last Updated by"
+
+#. module: l10n_br_account_service_type_by_partner
+#: model:ir.model.fields,field_description:l10n_br_account_service_type_by_partner.field_res_partner_service_type__write_date
+msgid "Last Updated on"
+msgstr "Last Updated on"
+
+#. module: l10n_br_account_service_type_by_partner
+#: model:ir.model.fields,field_description:l10n_br_account_service_type_by_partner.field_res_partner_service_type__partner_id
+msgid "Partner"
+msgstr "Partner"
+
+#. module: l10n_br_account_service_type_by_partner
+#: model:ir.model.fields,field_description:l10n_br_account_service_type_by_partner.field_res_partner__partner_service_type_ids
+#: model:ir.model.fields,field_description:l10n_br_account_service_type_by_partner.field_res_users__partner_service_type_ids
+msgid "Partner LC"
+msgstr "Partner LC"
+
+#. module: l10n_br_account_service_type_by_partner
+#: model:ir.model,name:l10n_br_account_service_type_by_partner.model_res_partner_service_type
+msgid "Partner Service Type"
+msgstr "Partner Service Type"
+
+#. module: l10n_br_account_service_type_by_partner
+#: model:ir.model.fields,field_description:l10n_br_account_service_type_by_partner.field_res_partner_service_type__product_id
+msgid "Product"
+msgstr "Product"
+
+#. module: l10n_br_account_service_type_by_partner
+#: model_terms:ir.ui.view,arch_db:l10n_br_account_service_type_by_partner.partner_form_view
+msgid "Service Type"
+msgstr "Service Type"
+
+#. module: l10n_br_account_service_type_by_partner
+#: model:ir.model,name:l10n_br_account_service_type_by_partner.model_l10n_br_fiscal_service_type
+msgid "Service Type LC 166"
+msgstr "Service Type LC 166"
+
+#. module: l10n_br_account_service_type_by_partner
+#: model_terms:ir.ui.view,arch_db:l10n_br_account_service_type_by_partner.partner_form_view
+msgid "Service Type by Partner"
+msgstr "Service Type by Partner"
