@@ -1,0 +1,121 @@
+id,code_prefix_start,name,parent_id
+account_group_1_,1.,ATIVO,
+account_group_1_1_,1.1.,ATIVO CIRCULANTE,account_group_1_
+account_group_1_1_1_,1.1.1.,DISPONIVEL,account_group_1_1_
+account_group_1_1_1_01_,1.1.1.01.,CAIXA,account_group_1_1_1_
+account_group_1_1_1_02_,1.1.1.02.,BANCOS CONTA DEPÓSITO NO PAÍS,account_group_1_1_1_
+account_group_1_1_1_03_,1.1.1.03.,APLICAÇÕES FINANCEIRAS,account_group_1_1_1_
+account_group_1_1_2_,1.1.2.,CRÉDITOS DAS OPERAÇÕES,account_group_1_1_
+account_group_1_1_2_01_,1.1.2.01.,CONTAS A RECEBER - CLIENTES NO PAIS,account_group_1_1_2_
+account_group_1_1_2_02_,1.1.2.02.,CONTAS A RECEBER - CLIENTES NO EXTERIOR,account_group_1_1_2_
+account_group_1_1_2_03_,1.1.2.03.,CONTAS A RECEBER - PARCEIROS DE NEGÓCIOS,account_group_1_1_2_
+account_group_1_1_2_09_,1.1.2.09.,REDUÇÃO DO VALOR RECUPERÁVEL,account_group_1_1_2_
+account_group_1_1_3_,1.1.3.,TÍTULOS E CRÉDITOS A RECEBER,account_group_1_1_
+account_group_1_1_3_01_,1.1.3.01.,CRÉDITOS TRIBUTÁRIOS E PREVIDENCIÁRIOS,account_group_1_1_3_
+account_group_1_1_3_02_,1.1.3.02.,ADIANTAMENTOS,account_group_1_1_3_
+account_group_1_1_3_03_,1.1.3.03.,CRÉDITOS A RECEBER,account_group_1_1_3_
+account_group_1_1_3_04_,1.1.3.04.,ADIANTAMENTOS A FUNCIONÁRIOS,account_group_1_1_3_
+account_group_1_1_3_05_,1.1.3.05.,DEPÓSITOS JUDICIAIS,account_group_1_1_3_
+account_group_1_1_3_06_,1.1.3.06.,CRÉDITOS À RECEBER EMPRESAS GRUPO,account_group_1_1_3_
+account_group_1_1_3_09_,1.1.3.09.,REDUÇÃO DO VALOR RECUPERÁVEL,account_group_1_1_3_
+account_group_1_1_4_,1.1.4.,OUTROS CRÉDITOS,account_group_1_1_
+account_group_1_1_4_01_,1.1.4.01.,OUTROS CRÉDITOS,account_group_1_1_4_
+account_group_1_1_4_02_,1.1.4.02.,OUTROS CRÉDITOS DE FUNCIONÁRIOS,account_group_1_1_4_
+account_group_1_1_5_,1.1.5.,DESPESAS ANTECIPADAS,account_group_1_1_
+account_group_1_1_5_01_,1.1.5.01.,DESPESAS ANTECIPADAS,account_group_1_1_5_
+account_group_1_2_,1.2.,ATIVO NÃO CIRCULANTE,account_group_1_
+account_group_1_2_2_,1.2.2.,INVESTIMENTOS,account_group_1_2_
+account_group_1_2_2_01_,1.2.2.01.,PARTICIPAÇÕES SOCIETÁRIAS NO PAÍS,account_group_1_2_2_
+account_group_1_2_3_,1.2.3.,IMOBILIZADO,account_group_1_2_
+account_group_1_2_3_01_,1.2.3.01.,BENS EM OPERAÇÃO,account_group_1_2_3_
+account_group_1_2_3_02_,1.2.3.02.,(-) DEPRECIAÇÃO ACUMULADA,account_group_1_2_3_
+account_group_1_2_4_,1.2.4.,INTANGÍVEL,account_group_1_2_
+account_group_1_2_4_01_,1.2.4.01.,INTANGÍVEL,account_group_1_2_4_
+account_group_1_2_4_02_,1.2.4.02.,(-)AMORTIZAÇÃO ACUMULADA,account_group_1_2_4_
+account_group_2_,2.,PASSIVO,
+account_group_2_1_,2.1.,PASSIVO CIRCULANTE,account_group_2_
+account_group_2_1_1_,2.1.1.,OBRIGAÇÕES A PAGAR,account_group_2_1_
+account_group_2_1_1_01_,2.1.1.01.,CONTAS A PAGAR,account_group_2_1_1_
+account_group_2_1_1_02_,2.1.1.02.,SALÁRIOS E ENCARGOS SOCIAIS A PAGAR,account_group_2_1_1_
+account_group_2_1_1_03_,2.1.1.03.,OBRIGAÇÕES FISCAIS E TRIBUTÁRIAS,account_group_2_1_1_
+account_group_2_1_1_04_,2.1.1.04.,IMPOSTOS E CONTRIBUIÇÕES S/ LUCRO,account_group_2_1_1_
+account_group_2_1_1_05_,2.1.1.05.,DEPÓSITO DE TERCEIROS,account_group_2_1_1_
+account_group_2_1_1_06_,2.1.1.06.,EMPRÉSTIMOS E FINANCIAMENTOS,account_group_2_1_1_
+account_group_2_2_,2.2.,PASSIVO NÃO CIRCULANTE,account_group_2_
+account_group_2_2_1_,2.2.1.,OBRIGAÇÕES A PAGAR,account_group_2_2_
+account_group_2_2_1_01_,2.2.1.01.,CONTAS A PAGAR,account_group_2_2_1_
+account_group_2_2_1_02_,2.2.1.02.,PROVISÕES PARA CONTINGENCIAS JUDICIAIS,account_group_2_2_1_
+account_group_2_2_1_06_,2.2.1.06.,EMPRÉSTIMOS E FINANCIAMENTOS,account_group_2_2_1_
+account_group_2_3_,2.3.,PATRIMÔNIO LÍQUIDO,account_group_2_
+account_group_2_3_1_,2.3.1.,PATRIMÔNIO LÍQUIDO,account_group_2_3_
+account_group_2_3_1_01_,2.3.1.01.,CAPITAL SOCIAL,account_group_2_3_1_
+account_group_2_3_1_02_,2.3.1.02.,RESERVAS DE CAPITAL,account_group_2_3_1_
+account_group_2_3_1_03_,2.3.1.03.,AÇÕES EM TESOURARIA,account_group_2_3_1_
+account_group_2_3_1_09_,2.3.1.09.,LUCROS OU PREJUÍZOS ACUMULADOS,account_group_2_3_1_
+account_group_3_,3.,RECEITAS,
+account_group_3_1_,3.1.,RECEITAS LÍQUIDAS,account_group_3_
+account_group_3_1_1_,3.1.1.,RECEITAS BRUTAS,account_group_3_1_
+account_group_3_1_1_01_,3.1.1.01.,RECEITAS COM PRESTAÇÃO DE SERVIÇOS,account_group_3_1_1_
+account_group_3_1_1_09_,3.1.1.09.,OUTRAS RECEITAS OPERACIONAIS,account_group_3_1_1_
+account_group_3_1_2_,3.1.2.,(-) DEDUÇÕES RECEITA BRUTA,account_group_3_1_
+account_group_3_1_2_01_,3.1.2.01.,IMPOSTOS S/ FATURAMENTO,account_group_3_1_2_
+account_group_4_,4.,DESPESAS,
+account_group_4_1_,4.1.,DESPESAS ADMINISTRATIVAS,account_group_4_
+account_group_4_1_1_,4.1.1.,DESPESAS COM PESSOAL,account_group_4_1_
+account_group_4_1_1_01_,4.1.1.01.,DESPESAS COM ADMINISTRAÇÃO,account_group_4_1_1_
+account_group_4_1_1_02_,4.1.1.02.,DESPESAS COM EMPREGADOS,account_group_4_1_1_
+account_group_4_1_1_03_,4.1.1.03.,DESPESAS COM PESSOAL TERCEIRIZADO,account_group_4_1_1_
+account_group_4_1_1_04_,4.1.1.04.,BENEFICIOS,account_group_4_1_1_
+account_group_4_1_1_05_,4.1.1.05.,TREINAMENTO E DESENVOLVIMENTO,account_group_4_1_1_
+account_group_4_1_1_09_,4.1.1.09.,OUTRAS DESPESAS COM PESSOAL,account_group_4_1_1_
+account_group_4_1_2_,4.1.2.,DESPESAS COM SERVIÇOS DE TERCEIROS,account_group_4_1_
+account_group_4_1_2_01_,4.1.2.01.,CONSULTORIA E ASSESSORIA,account_group_4_1_2_
+account_group_4_1_2_02_,4.1.2.02.,SISTEMAS E TECNOLOGIA,account_group_4_1_2_
+account_group_4_1_3_,4.1.3.,DESPESAS COM OCUPAÇÃO E FUNCIONAMENTO,account_group_4_1_
+account_group_4_1_3_01_,4.1.3.01.,DESPESAS COM OCUPAÇÃO,account_group_4_1_3_
+account_group_4_1_3_02_,4.1.3.02.,"DESPESAS COM LOCOMOÇÃO, VIAGENS E OUTROS",account_group_4_1_3_
+account_group_4_1_3_04_,4.1.3.04.,DEPRECIAÇÃO E AMORTIZAÇÃO,account_group_4_1_3_
+account_group_4_1_4_,4.1.4.,DESPESAS COM MARKETING,account_group_4_1_
+account_group_4_1_4_01_,4.1.4.01.,PUBLICIDADE E PROPAGANDA,account_group_4_1_4_
+account_group_4_1_5_,4.1.5.,DESPESAS COM SEGUROS,account_group_4_1_
+account_group_4_1_5_01_,4.1.5.01.,DESPESAS COM SEGUROS,account_group_4_1_5_
+account_group_4_1_9_,4.1.9.,OUTRAS DESPESAS OPERACIONAIS,account_group_4_1_
+account_group_4_1_9_01_,4.1.9.01.,PROVISÕES E PERDAS ESTIMADAS,account_group_4_1_9_
+account_group_4_1_9_02_,4.1.9.02.,DESPESAS COM PROGRAMAS FILANTROPICOS,account_group_4_1_9_
+account_group_4_2_,4.2.,CUSTOS E DESPESAS OPERACIONAIS,account_group_4_
+account_group_4_2_1_,4.2.1.,DESPESAS COM PESSOAL,account_group_4_2_
+account_group_4_2_1_02_,4.2.1.02.,DESPESAS COM EMPREGADOS,account_group_4_2_1_
+account_group_4_2_1_03_,4.2.1.03.,DESPESAS COM PESSOAL TERCEIRIZADO,account_group_4_2_1_
+account_group_4_2_1_04_,4.2.1.04.,BENEFICIOS,account_group_4_2_1_
+account_group_4_2_1_05_,4.2.1.05.,TREINAMENTO E DESENVOLVIMENTO,account_group_4_2_1_
+account_group_4_2_1_09_,4.2.1.09.,OUTRAS DESPESAS COM PESSOAL,account_group_4_2_1_
+account_group_4_2_2_,4.2.2.,DESPESAS COM COMISSÕES SOBRE VENDAS,account_group_4_2_
+account_group_4_2_2_01_,4.2.2.01.,COMISSÕES SOBRE VENDAS,account_group_4_2_2_
+account_group_4_2_3_,4.2.3.,CUSTO DE PROCESSAMENTO DE DADOS,account_group_4_2_
+account_group_4_2_3_02_,4.2.3.02.,SISTEMAS E TECNOLOGIA,account_group_4_2_3_
+account_group_4_2_4_,4.2.4.,DESPESAS COM OCUPAÇÃO E FUNCIONAMENTO,account_group_4_2_
+account_group_4_2_4_01_,4.2.4.01.,DESPESAS COM OCUPAÇÃO,account_group_4_2_4_
+account_group_4_2_4_02_,4.2.4.02.,DESPESAS COM LOCOMOÇÃO E VIAGENS,account_group_4_2_4_
+account_group_4_2_4_04_,4.2.4.04.,DEPRECIAÇÃO E AMORTIZAÇÃO,account_group_4_2_4_
+account_group_4_2_5_,4.2.5.,DESPESAS COM MARKETING,account_group_4_2_
+account_group_4_2_5_01_,4.2.5.01.,PUBLICIDADE E PROPAGANDA,account_group_4_2_5_
+account_group_4_2_6_,4.2.6.,DESPESAS COM CLIENTES,account_group_4_2_
+account_group_4_2_6_01_,4.2.6.01.,DESPESAS COM A REDE CREDENCIADA,account_group_4_2_6_
+account_group_4_2_6_02_,4.2.6.02.,DESPESAS COM REEMBOLSOS A CLIENTES,account_group_4_2_6_
+account_group_4_2_6_03_,4.2.6.03.,DESPESAS COM VISITAS DE CLIENTES,account_group_4_2_6_
+account_group_4_2_9_,4.2.9.,OUTRAS DESPESAS OPERACIONAIS,account_group_4_2_
+account_group_4_2_9_01_,4.2.9.01.,PROVISÕES E PERDAS ESTIMADAS,account_group_4_2_9_
+account_group_4_2_9_09_,4.2.9.09.,OUTRAS DESPESAS,account_group_4_2_9_
+account_group_5_,5.,RESULTADOS FINANCEIROS LÍQUIDOS,
+account_group_5_1_,5.1.,RESULTADOS FINANCEIROS LÍQUIDOS,account_group_5_
+account_group_5_1_1_,5.1.1.,RECEITAS E DESPESAS FINANCEIRAS,account_group_5_1_
+account_group_5_1_1_01_,5.1.1.01.,DESPESAS FINANCEIRAS,account_group_5_1_1_
+account_group_5_1_1_02_,5.1.1.02.,RECEITAS FINANCEIRAS,account_group_5_1_1_
+account_group_6_,6.,IMPOSTOS E CONTRIBUIÇÕES,
+account_group_6_1_,6.1.,IMPOSTOS E CONTRIBUIÇÕES,account_group_6_
+account_group_6_1_1_,6.1.1.,IMPOSTOS E CONTRIBUIÇÕES,account_group_6_1_
+account_group_6_1_1_01_,6.1.1.01.,IMPOSTO DE RENDA,account_group_6_1_1_
+account_group_6_1_1_02_,6.1.1.02.,CONTRIBUIÇÃO SOCIAL,account_group_6_1_1_
+account_group_6_2_,6.2.,PARTICIPAÇÕES,account_group_6_
+account_group_6_2_1_,6.2.1.,PARTICIPAÇÕES SOBRE O LUCRO E RESULTADOS,account_group_6_2_
+account_group_6_2_1_01_,6.2.1.01.,PARTICIPAÇÕES SOBRE O LUCRO E RESULTADOS,account_group_6_2_1_
