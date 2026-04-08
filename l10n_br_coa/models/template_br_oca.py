@@ -166,7 +166,10 @@ class AccountChartTemplate(models.AbstractModel):
         """
         Populate a default Brazilian tax accounts and configure tax repartition lines.
         """
-        Account = self.env["account.account"]
+        # Use with_company so code_store is keyed per company's root and searches
+        # are scoped to that company's context, preventing conflicts between
+        # independent root companies when processing multiple companies in sequence.
+        Account = self.env["account.account"].with_company(company)
         IrModelData = self.env["ir.model.data"].sudo()
         created_accounts_refs = {}
 
@@ -186,8 +189,11 @@ class AccountChartTemplate(models.AbstractModel):
             # DEFAULT_TAX_TEMPLATES_ACCOUNTS.items()
             # and if xml_id_name_part is related to a tax template for which the tax
             # repartion_line_ids have accounts already, then skip account creation
-            existing_account = Account.search(
-                [("code", "=", code), ("company_ids", "in", [company.id])], limit=1
+            # In Odoo 18, account codes must be unique within each company's
+            # root hierarchy. Using with_company(company) above ensures the
+            # code search uses the correct JSONB key for this company.
+            existing_account = Account.sudo().search(
+                [("code", "=", code)], limit=1
             )
             if not existing_account:
                 account = Account.create(
@@ -200,6 +206,9 @@ class AccountChartTemplate(models.AbstractModel):
                 )
             else:
                 account = existing_account
+                # Ensure this company is linked to the shared account
+                if company not in account.company_ids:
+                    account.write({"company_ids": [Command.link(company.id)]})
                 # Ensure account type and reconcile status match for tests
                 if account.account_type != acc_type:
                     account.write({"account_type": acc_type})
