@@ -1,3 +1,5 @@
 - [Engenere](https://engenere.one):
-  - Antônio S. Pereira Neto \<<neto@engenere.one>\>
-  - Felipe Motter Pereira \<<felipe@engenere.one>\>
+  - Antônio S. Pereira Neto \<neto@engenere.one\>
+  - Felipe Motter Pereira \<felipe@engenere.one\>
+- [Xipp Tech](https://xipp.com.br/):
+  - Ravi do Valle Luz \<raviluz@xipptech.com.br\>

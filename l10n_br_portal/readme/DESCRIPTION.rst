@@ -1,1 +1,0 @@
-Localização do módulo portal
