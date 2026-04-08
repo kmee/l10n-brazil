@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="operation_form_subsequent" model="ir.ui.view">
+        <field name="name">l10n_br_fiscal.operation.form.subsequent</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.operation_form" />
+        <field name="model">l10n_br_fiscal.operation</field>
+        <field name="arch" type="xml">
+            <page name="operation_document_type" position="after">
+                <page name="subsequent_operation" string="Operations">
+                    <group>
+                        <field name="return_fiscal_operation_id" />
+                        <field name="inverse_fiscal_operation_id" />
+                    </group>
+                    <field name="operation_subsequent_ids" />
+                </page>
+            </page>
+        </field>
+    </record>
+</odoo>
