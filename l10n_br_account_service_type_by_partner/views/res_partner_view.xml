@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2024 - TODAY, Kaynnan Lemes <kaynnan.lemes@escodoo.com.br>
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record model="ir.ui.view" id="partner_form_view">
+        <field
+            name="name"
+        >l10n_br_base.res.partner.form (in l10n_br_account_service_type_by_partner)</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="l10n_br_base.l10n_br_base_partner_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='other_infos']" position="after">
+                <group string="Service Type" name="service_type_partner">
+                    <field
+                        name="partner_service_type_ids"
+                        string="Service Type by Partner"
+                    >
+                        <list editable="bottom">
+                            <field name="partner_id" column_invisible="True" />
+                            <field name="service_type_id" />
+                            <field name="product_id" />
+                        </list>
+                    </field>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

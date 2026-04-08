@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2024 - TODAY, Kaynnan Lemes <kaynnan.lemes@escodoo.com.br>
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record model="ir.ui.view" id="service_type_form_view">
+        <field
+            name="name"
+        >l10n_br_fiscal.service.type.form (in l10n_br_account_service_type_by_partner)</field>
+        <field name="model">l10n_br_fiscal.service.type</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.service_type_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//group/field[@name='withholding_possible']" position="after">
+                <field name="can_be_selected_on_partner" />
+            </xpath>
+        </field>
+    </record>
+</odoo>
