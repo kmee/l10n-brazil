@@ -166,9 +166,11 @@ class AccountChartTemplate(models.AbstractModel):
         """
         Populate a default Brazilian tax accounts and configure tax repartition lines.
         """
-        Account = self.env["account.account"]
+        Account = self.env["account.account"].sudo()
         IrModelData = self.env["ir.model.data"].sudo()
         created_accounts_refs = {}
+        # Local cache: code → account (handles duplicate codes in CSV)
+        accounts_by_code = {}
 
         # 1. Create or find accounts and their XMLIDs
         for xml_id_name_part, (
@@ -182,13 +184,12 @@ class AccountChartTemplate(models.AbstractModel):
             code = code_cfc if flavor == "cfc" else code_itg
             code = f"{code}{review_suffix}"
 
-            # TODO: would be better to 1st search for the taxes related to all templates
-            # DEFAULT_TAX_TEMPLATES_ACCOUNTS.items()
-            # and if xml_id_name_part is related to a tax template for which the tax
-            # repartion_line_ids have accounts already, then skip account creation
-            existing_account = Account.search(
-                [("code", "=", code), ("company_ids", "in", [company.id])], limit=1
-            )
+            # Check local cache first (multiple CSV rows may share a code)
+            if code in accounts_by_code:
+                created_accounts_refs[xml_id_name_part] = accounts_by_code[code]
+                continue
+
+            existing_account = Account.search([("code", "=", code)], limit=1)
             if not existing_account:
                 account = Account.create(
                     {
@@ -200,9 +201,14 @@ class AccountChartTemplate(models.AbstractModel):
                 )
             else:
                 account = existing_account
-                # Ensure account type and reconcile status match for tests
+                # In Odoo 18 account codes are globally unique;
+                # just link the company if not yet linked.
+                if company not in account.company_ids:
+                    account.write({"company_ids": [Command.link(company.id)]})
+                # Ensure account type matches for tests
                 if account.account_type != acc_type:
                     account.write({"account_type": acc_type})
+            accounts_by_code[code] = account
 
             created_accounts_refs[xml_id_name_part] = account
 
