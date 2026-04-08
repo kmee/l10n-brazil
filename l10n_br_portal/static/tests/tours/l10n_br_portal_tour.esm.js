@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { registry } from "@web/core/registry";
+import {registry} from "@web/core/registry";
 
 registry.category("web_tour.tours").add("l10n_br_portal_tour", {
     url: "/my/account",

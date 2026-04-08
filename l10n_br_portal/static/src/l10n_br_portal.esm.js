@@ -1,7 +1,9 @@
 /** @odoo-module **/
+/* eslint-disable sort-imports */
+/* global Cleave */
 
 import publicWidget from "@web/legacy/js/public/public_widget";
-import { _t } from "@web/core/l10n/translation";
+import {_t} from "@web/core/l10n/translation";
 
 const portalDetails = publicWidget.registry.portalDetails;
 
@@ -63,10 +65,9 @@ portalDetails.include({
     },
 
     async _onChangeZip() {
-        const data = await this.rpc(
-            "/l10n_br/zip_search", 
-            {zipcode: this.$('input[name="zipcode"]').val()}
-        );
+        const data = await this.rpc("/l10n_br/zip_search", {
+            zipcode: this.$('input[name="zipcode"]').val(),
+        });
         if (data.error) {
             this.notification.add(_t("Zip is invalid or ."));
         } else {
@@ -79,5 +80,4 @@ portalDetails.include({
             this.$city.val(data.city_id);
         }
     },
-
 });

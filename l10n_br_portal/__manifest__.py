@@ -22,9 +22,11 @@
     ],
     "assets": {
         "web.assets_frontend": [
-            "/l10n_br_portal/static/src/js/l10n_br_portal.js",
-            "/l10n_br_portal/static/src/js/l10n_br_portal_tour.js",
+            "/l10n_br_portal/static/src/l10n_br_portal.esm.js",
             "/l10n_br_portal/static/lib/cleave/cleave.min.js",
+        ],
+        "web_tour.assets_tour": [
+            "/l10n_br_portal/static/tests/tours/l10n_br_portal_tour.esm.js",
         ],
     },
     "auto_install": True,
