@@ -8,9 +8,9 @@ from contextlib import contextmanager
 from odoo import Command, _, api, fields, models
 from odoo.tools import frozendict
 
-_logger = logging.getLogger(__name__)
-
 from odoo.addons.l10n_br_fiscal.constants.fiscal import FISCAL_TAX_ID_FIELDS
+
+_logger = logging.getLogger(__name__)
 
 
 class AccountMoveLine(models.Model):
@@ -243,8 +243,11 @@ class AccountMoveLine(models.Model):
         # test_move_edition where manual tax selections should be preserved).
         if not self.env.context.get("no_fiscal_recompute_on_create"):
             fiscal_lines_to_recompute = self.env["l10n_br_fiscal.document.line"]
-            for vals, aml in zip(vals_list, result, strict=False):
-                if aml.fiscal_document_line_id and aml.fiscal_document_line_id.fiscal_operation_line_id:
+            for _vals, aml in zip(vals_list, result, strict=False):
+                if (
+                    aml.fiscal_document_line_id
+                    and aml.fiscal_document_line_id.fiscal_operation_line_id
+                ):
                     fiscal_lines_to_recompute |= aml.fiscal_document_line_id
             fiscal_lines_to_recompute._compute_fiscal_tax_ids()
 
@@ -361,15 +364,19 @@ class AccountMoveLine(models.Model):
                         # For deductible purchases, each tax creates paired debit+credit
                         # entries that net to zero, so the product carries the full
                         # fiscal_amount_total (matching the payable/term line).
-                        if line.move_id.fiscal_operation_id.deductible_taxes and line.tax_ids:
+                        if (
+                            line.move_id.fiscal_operation_id.deductible_taxes
+                            and line.tax_ids
+                        ):
                             unsigned_amount_currency = line.currency_id.round(
                                 line.fiscal_amount_total
                             )
                         else:
                             # product = fiscal_amount_total - included - not_included
                             #         + withholding
-                            # (withholding was already subtracted from fiscal_amount_total
-                            #  so adding it back gives: price - included taxes only)
+                            # (withholding was already subtracted from
+                            # fiscal_amount_total so adding it back gives:
+                            # price - included taxes only)
                             unsigned_amount_currency = line.currency_id.round(
                                 line.fiscal_amount_total
                                 - line.amount_tax_included

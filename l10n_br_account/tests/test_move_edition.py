@@ -6,8 +6,7 @@ from unittest import mock
 
 from odoo import Command, fields
 from odoo.exceptions import UserError
-from odoo.tests import TransactionCase
-from odoo.tests import Form
+from odoo.tests import Form, TransactionCase
 from odoo.tests.common import tagged
 
 _logger = logging.getLogger(__name__)
@@ -97,7 +96,9 @@ class TestMoveEdition(TransactionCase):
                 )
             return acc
 
-        receivable = _ensure_account("asset_receivable", "TREC", "Test Receivable", True)
+        receivable = _ensure_account(
+            "asset_receivable", "TREC", "Test Receivable", True
+        )
         payable = _ensure_account("liability_payable", "TPAY", "Test Payable", True)
         income = _ensure_account("income", "TINC", "Test Income")
         expense = _ensure_account("expense", "TEXP", "Test Expense")
@@ -114,9 +115,7 @@ class TestMoveEdition(TransactionCase):
                     "default_account_id": income.id,
                 }
             )
-        sale_journal = Journal.search(
-            company_domain + [("type", "=", "sale")], limit=1
-        )
+        sale_journal = Journal.search(company_domain + [("type", "=", "sale")], limit=1)
         if not sale_journal:
             sale_journal = Journal.create(
                 {

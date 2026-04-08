@@ -44,18 +44,12 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
                     "piscofins_id": cls.env.ref(
                         "l10n_br_fiscal.tax_pis_cofins_simples_nacional"
                     ).id,
-                    "tax_ipi_id": cls.env.ref(
-                        "l10n_br_fiscal.tax_ipi_outros"
-                    ).id,
+                    "tax_ipi_id": cls.env.ref("l10n_br_fiscal.tax_ipi_outros").id,
                     "tax_icms_id": cls.env.ref(
                         "l10n_br_fiscal.tax_icms_sn_com_credito"
                     ).id,
-                    "cnae_main_id": cls.env.ref(
-                        "l10n_br_fiscal.cnae_3101200"
-                    ).id,
-                    "document_type_id": cls.env.ref(
-                        "l10n_br_fiscal.document_55"
-                    ).id,
+                    "cnae_main_id": cls.env.ref("l10n_br_fiscal.cnae_3101200").id,
+                    "document_type_id": cls.env.ref("l10n_br_fiscal.document_55").id,
                     "annual_revenue": 815000.0,
                 }
             )

@@ -279,10 +279,10 @@ class AccountTax(models.Model):
                     icms_origin=line.icms_origin,
                     ind_final=line.ind_final,
                 )
-                for tax_res, new_taxes_res in zip(
+                for tax_res, new_tax_res in zip(
                     taxes_res["taxes"], new_taxes_res["taxes"], strict=False
                 ):
-                    delta_tax = new_taxes_res["amount"] - tax_res["amount"]
+                    delta_tax = new_tax_res["amount"] - tax_res["amount"]
                     tax_res["amount"] += delta_tax
                     to_update_vals["price_total"] += delta_tax
 
@@ -341,9 +341,10 @@ class AccountTax(models.Model):
         if not line.fiscal_operation_line_id:
             return
 
-        # Obtain the fiscal taxes via map_fiscal_taxes (same as _compute_fiscal_tax_ids).
-        # We avoid line.fiscal_tax_ids because it may be stale/empty for stored records
-        # when precompute ran before partner_id was resolved via account.move.line._inherits.
+        # Obtain the fiscal taxes via map_fiscal_taxes (same as
+        # _compute_fiscal_tax_ids). We avoid line.fiscal_tax_ids because it
+        # may be stale/empty for stored records when precompute ran before
+        # partner_id was resolved via account.move.line._inherits.
         mapping_result = line.fiscal_operation_line_id.map_fiscal_taxes(
             company=company,
             partner=line.partner_id,
@@ -370,7 +371,9 @@ class AccountTax(models.Model):
         rate = base_line["rate"]
         is_refund = base_line.get("is_refund", False)
         repartition_field = (
-            "refund_repartition_line_ids" if is_refund else "invoice_repartition_line_ids"
+            "refund_repartition_line_ids"
+            if is_refund
+            else "invoice_repartition_line_ids"
         )
 
         # Map tax domains to their stored value/base field names.
@@ -405,9 +408,7 @@ class AccountTax(models.Model):
             # Additional taxes for the same domain (e.g. reporting-only taxes) get 0.
             if tax_domain not in domains_set:
                 domains_set.add(tax_domain)
-                value_field = DOMAIN_VALUE_FIELD.get(
-                    tax_domain, f"{tax_domain}_value"
-                )
+                value_field = DOMAIN_VALUE_FIELD.get(tax_domain, f"{tax_domain}_value")
                 fiscal_amount = getattr(line, value_field, 0.0)
                 fiscal_base = getattr(line, f"{tax_domain}_base", 0.0)
             else:
@@ -423,12 +424,14 @@ class AccountTax(models.Model):
             )
 
         # Handle reverse_charge entries for BR deductible taxes.
-        # Deductible taxes (e.g. icms_entrada_deductivel) have amount=0 in their
-        # account.tax config and rely on the fiscal module for the actual amount.
-        # _get_tax_details negates the regular entry's raw_tax_amount_currency for the
-        # reverse_charge entry, but since the deductible tax's regular entry = 0, the
-        # reverse_charge also stays 0. We set it here so that the standard
-        # _add_accounting_data_to_base_line_tax_details mechanism creates the credit line.
+        # Deductible taxes (e.g. icms_entrada_deductivel) have amount=0 in
+        # their account.tax config and rely on the fiscal module for the actual
+        # amount. _get_tax_details negates the regular entry's
+        # raw_tax_amount_currency for the reverse_charge entry, but since the
+        # deductible tax's regular entry = 0, the reverse_charge also stays 0.
+        # We set it here so that the standard
+        # _add_accounting_data_to_base_line_tax_details mechanism creates the
+        # credit line.
         for tax_data in base_line["tax_details"]["taxes_data"]:
             if not tax_data.get("is_reverse_charge"):
                 continue
@@ -436,23 +439,24 @@ class AccountTax(models.Model):
             tax_domain = account_taxes_by_domain.get(tax.id)
             if not tax_domain:
                 continue
-            value_field = DOMAIN_VALUE_FIELD.get(
-                tax_domain, f"{tax_domain}_value"
-            )
+            value_field = DOMAIN_VALUE_FIELD.get(tax_domain, f"{tax_domain}_value")
             fiscal_amount = getattr(line, value_field, 0.0)
             tax_data["raw_tax_amount_currency"] = -fiscal_amount
             tax_data["raw_tax_amount"] = (
                 company.currency_id.round(-fiscal_amount / rate) if rate else 0.0
             )
 
-        # Update total_excluded and total_included to match the BR fiscal amounts.
-        # Use stored line fields for consistency with _sync_invoice and _compute_fiscal_amounts.
-        # br_net = price minus all taxes that create separate journal lines (included taxes)
-        # and minus withholding taxes (which reduce the receivable but don't create lines).
+        # Update total_excluded and total_included to match the BR fiscal
+        # amounts. Use stored line fields for consistency with _sync_invoice
+        # and _compute_fiscal_amounts. br_net = price minus all taxes that
+        # create separate journal lines (included taxes) and minus withholding
+        # taxes (which reduce the receivable but don't create lines).
         # ICMS relief (desoneração) also reduces both net and total amounts.
         price = line.price_unit * line.quantity - line.discount_value
         icms_relief = getattr(line, "icms_relief_value", 0.0) or 0.0
-        br_net = price - line.amount_tax_included - line.amount_tax_withholding - icms_relief
+        br_net = (
+            price - line.amount_tax_included - line.amount_tax_withholding - icms_relief
+        )
         br_total = price + line.amount_tax_not_included - icms_relief
 
         base_line["tax_details"]["raw_total_excluded_currency"] = br_net

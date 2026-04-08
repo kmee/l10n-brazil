@@ -49,9 +49,7 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
                         "l10n_br_fiscal.tax_icms_regulation"
                     ).id,
                     "cnae_main_id": cls.env.ref("l10n_br_fiscal.cnae_3101200").id,
-                    "document_type_id": cls.env.ref(
-                        "l10n_br_fiscal.document_55"
-                    ).id,
+                    "document_type_id": cls.env.ref("l10n_br_fiscal.document_55").id,
                     "is_industry": True,
                 }
             )
@@ -609,9 +607,9 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
         # _sync_dynamic_lines runs. Use check_move_validity=False to allow
         # the write to proceed; the assertInvoiceValues below will verify
         # the final balanced state.
-        prod_line.with_context(
-            check_move_validity=False
-        ).icms_relief_id = self.env.ref("l10n_br_fiscal.icms_relief_1")
+        prod_line.with_context(check_move_validity=False).icms_relief_id = self.env.ref(
+            "l10n_br_fiscal.icms_relief_1"
+        )
 
         # Foi setado essa linha manualmente na criação do account.move.
         self.assertEqual(

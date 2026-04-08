@@ -39,8 +39,8 @@ class AccountMoveBRCommon(AccountTestInvoicingCommon):
                 "standard_price": 1000.0,
                 "ncm_id": cls.env.ref("l10n_br_fiscal.ncm_94033000").id,
                 "fiscal_genre_id": cls.env.ref("l10n_br_fiscal.product_genre_94").id,
-                # v18: company_dependent fields are written directly (ir.property removed)
-                # The ir.property override previously set fiscal_type to "04"
+                # v18: company_dependent fields are written directly
+                # (ir.property removed). Previously set fiscal_type to "04"
                 "fiscal_type": "04",
                 "icms_origin": "5",
                 "taxes_id": False,
@@ -295,8 +295,8 @@ class AccountMoveBRCommon(AccountTestInvoicingCommon):
         move_form.fiscal_operation_id = fiscal_operation
 
         # When l10n_br (core Odoo 18) is installed, l10n_latam_document_type_id
-        # becomes required in Form view (required="partner_id and l10n_latam_use_documents").
-        # Match it to the OCA document type by code so both systems are in sync.
+        # becomes required in Form view. Match it to the OCA document type by
+        # code so both systems are in sync.
         if document_type:
             LatamDocType = cls.env.get("l10n_latam.document.type")
             if LatamDocType is not None:
@@ -309,9 +309,10 @@ class AccountMoveBRCommon(AccountTestInvoicingCommon):
                 )
                 if latam_doc_type:
                     move_form.l10n_latam_document_type_id = latam_doc_type
-                    # l10n_latam_document_number is required for purchase invoices
-                    # (l10n_latam_manual_document_number=True when journal type='purchase').
-                    # Only set it when the field is visible/required to avoid AssertionError.
+                    # l10n_latam_document_number is required for purchase
+                    # invoices (l10n_latam_manual_document_number=True when
+                    # journal type='purchase'). Only set it when the field is
+                    # visible/required to avoid AssertionError.
                     if move_form.l10n_latam_manual_document_number:
                         latam_number = (
                             str(document_number)

@@ -217,9 +217,7 @@ class MultiLocalizationsInvoice(TestAccountMoveOutInvoiceOnchanges):
 
         def _patched(move, lines, move_vals=None):
             if move_vals and "fiscal_position_id" in move_vals:
-                move_vals["fiscal_position_id"] = (
-                    move.fiscal_position_id.id or False
-                )
+                move_vals["fiscal_position_id"] = move.fiscal_position_id.id or False
             _orig(move, lines, move_vals)
 
         self.assertInvoiceValues = _patched

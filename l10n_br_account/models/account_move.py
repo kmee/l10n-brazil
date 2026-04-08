@@ -8,8 +8,6 @@ import logging
 from contextlib import contextmanager
 
 from odoo import _, api, fields, models
-
-_logger = logging.getLogger(__name__)
 from odoo.exceptions import UserError
 from odoo.tests import Form
 from odoo.tools import frozendict
@@ -27,6 +25,9 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
 from .constants import (
     MOVE_TO_OPERATION,
 )
+
+_logger = logging.getLogger(__name__)
+
 
 class AccountMove(models.Model):
     _name = "account.move"
@@ -346,7 +347,7 @@ class AccountMove(models.Model):
         try:
             with super()._check_balanced(container):
                 yield
-        except Exception as e:
+        except Exception:
             # Log the line balances to diagnose the imbalance
             for move in container["records"].filtered(
                 lambda m: m.fiscal_operation_id and m.line_ids
@@ -450,7 +451,7 @@ class AccountMove(models.Model):
             # In v18, _search_default_journal() raises UserError when no
             # journal is found. We suppress this so the form can initialize;
             # the journal will be set once a fiscal operation is selected.
-            pass
+            _logger.debug("No default journal found; will be set via fiscal operation.")
 
     def open_fiscal_document(self):
         """
