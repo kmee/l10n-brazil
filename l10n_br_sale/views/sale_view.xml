@@ -306,17 +306,13 @@
                 expr="//field[@name='order_line']/form//field[@name='tax_id']"
                 position="attributes"
             >
-                <attribute
-                    name="invisible"
-                >parent.fiscal_operation_id</attribute>
+                <attribute name="invisible">parent.fiscal_operation_id</attribute>
             </xpath>
             <xpath
                 expr="//field[@name='order_line']/form/div[@groups='base.group_no_one' and field/@name='invoice_lines']"
                 position="attributes"
             >
-                <attribute
-                    name="invisible"
-                >parent.fiscal_operation_id</attribute>
+                <attribute name="invisible">parent.fiscal_operation_id</attribute>
             </xpath>
             <xpath
                 expr="//field[@name='order_line']/form//field[@name='price_unit']"
@@ -327,9 +323,7 @@
                     string="Fiscal Quantity"
                     invisible="not parent.fiscal_operation_id"
                 />
-                <div
-                    invisible="not parent.fiscal_operation_id"
-                >
+                <div invisible="not parent.fiscal_operation_id">
                     <field
                         context="{'partner_id':parent.partner_id, 'quantity':fiscal_quantity, 'pricelist':parent.pricelist_id, 'uom':uot_id, 'uom_qty_change':True, 'company_id': parent.company_id}"
                         name="fiscal_quantity"
@@ -345,18 +339,13 @@
                         required="not display_type"
                     />
                 </div>
-                <field
-                    name="fiscal_price"
-                    invisible="not parent.fiscal_operation_id"
-                />
+                <field name="fiscal_price" invisible="not parent.fiscal_operation_id" />
             </xpath>
             <xpath
                 expr="//field[@name='order_line']/form/field[@name='name']"
                 position="after"
             >
-                <notebook
-                    invisible="display_type or not parent.fiscal_operation_id"
-                >
+                <notebook invisible="display_type or not parent.fiscal_operation_id">
                     <page name="fiscal_taxes" string="Taxes" />
                     <!-- this is a dynamic fiscal fields placeholder-->
                     <page
@@ -422,9 +411,7 @@
             </xpath>
             <!-- order bottom form view extensions: -->
             <field name="note" position="attributes">
-                <attribute
-                    name="invisible"
-                >fiscal_operation_id</attribute>
+                <attribute name="invisible">fiscal_operation_id</attribute>
             </field>
             <field name="note" position="after">
                 <group invisible="not fiscal_operation_id">
