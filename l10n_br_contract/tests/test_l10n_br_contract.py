@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo.tests import Form, tagged
+
 from odoo.addons.l10n_br_account.tests.common import AccountMoveBRCommon
 
 
@@ -9,16 +10,19 @@ from odoo.addons.l10n_br_account.tests.common import AccountMoveBRCommon
 class TestL10nBrContract(AccountMoveBRCommon):
     @classmethod
     def setUpClass(cls):
-        super(TestL10nBrContract, cls).setUpClass()
+        super().setUpClass()
 
-        cls.env.company.write(dict(
-            contract_sale_fiscal_operation_id=
-                cls.env.ref("l10n_br_fiscal.fo_venda").id,
-            contract_purchase_fiscal_operation_id=
-                cls.env.ref("l10n_br_fiscal.fo_compras").id,
-            document_type_id=
-                cls.env.ref("l10n_br_fiscal.document_55").id
-        ))
+        cls.env.company.write(
+            dict(
+                contract_sale_fiscal_operation_id=cls.env.ref(
+                    "l10n_br_fiscal.fo_venda"
+                ).id,
+                contract_purchase_fiscal_operation_id=cls.env.ref(
+                    "l10n_br_fiscal.fo_compras"
+                ).id,
+                document_type_id=cls.env.ref("l10n_br_fiscal.document_55").id,
+            )
+        )
 
         # Create contract with 3 lines, two resale products and one service
         contract_form = Form(cls.env["contract.contract"])
@@ -95,7 +99,6 @@ class TestL10nBrContract(AccountMoveBRCommon):
         according to the Fiscal Operation of their lines
         """
         for invoice in self.contract_id._get_related_invoices():
-
             if len(invoice.invoice_line_ids) == 1:
                 service_product_id = self.env.ref(
                     "l10n_br_fiscal.customized_development_sale"
@@ -131,9 +134,7 @@ class TestL10nBrContract(AccountMoveBRCommon):
         """
         # Test sale contract — contract_type comes from context default
         Contract = self.env["contract.contract"]
-        sale_contract = Contract.with_context(
-            default_contract_type="sale"
-        ).create(
+        sale_contract = Contract.with_context(default_contract_type="sale").create(
             {
                 "name": "Sale Contract Test",
                 "partner_id": self.partner_a.id,
