@@ -96,9 +96,7 @@
                 <attribute
                     name="readonly"
                 >[('id', '!=', False),('state', 'in', ('purchase', 'to approve','done', 'cancel'))]</attribute>
-                <attribute
-                    name="required"
-                >[('display_type', '=', False)]</attribute>
+                <attribute name="required">[('display_type', '=', False)]</attribute>
                 <attribute
                     name="context"
                 >{ 'partner_id':parent.partner_id, 'quantity':product_qty, 'uom':product_uom, 'company_id': parent.company_id }</attribute>
@@ -110,9 +108,7 @@
                 <attribute
                     name="readonly"
                 >[('id', '!=', False),('state', 'in', ('purchase', 'done', 'cancel'))]</attribute>
-                <attribute
-                    name="required"
-                >[('display_type', '=', False)]</attribute>
+                <attribute name="required">[('display_type', '=', False)]</attribute>
             </xpath>
             <xpath
                 expr="//field[@name='order_line']/form//field[@name='taxes_id']"
@@ -162,9 +158,7 @@
                 expr="//field[@name='order_line']/form/field[@name='name']"
                 position="after"
             >
-                <notebook
-                    invisible="[('parent.fiscal_operation_id', '=', False)]"
-                >
+                <notebook invisible="[('parent.fiscal_operation_id', '=', False)]">
                     <page
                         name="fiscal_taxes"
                         string="Taxes"

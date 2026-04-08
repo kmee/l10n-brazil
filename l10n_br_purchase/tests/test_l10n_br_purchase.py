@@ -2,12 +2,11 @@
 #   Magno Costa <magno.costa@akretion.com.br>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
-from odoo.tests import Form, TransactionCase
+from odoo.tests import TransactionCase
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     CFOP_DESTINATION_EXTERNAL,
     CFOP_DESTINATION_INTERNAL,
-    DOCUMENT_ISSUER_PARTNER,
     TAX_FRAMEWORK_NORMAL,
     TAX_FRAMEWORK_SIMPLES,
     TAX_FRAMEWORK_SIMPLES_ALL,
@@ -380,15 +379,15 @@ class L10nBrPurchaseBaseTest(TransactionCase):
         self._change_user_company(self.company)
         # Use direct record creation to avoid v18 Form invisible field issues
         # (fiscal_operation_id visibility depends on company country context)
-        purchase = self.env["purchase.order"].with_company(self.company).create(
-            {
-                "partner_id": self.env.ref(
-                    "l10n_br_base.res_partner_akretion"
-                ).id,
-                "fiscal_operation_id": self.env.ref(
-                    "l10n_br_fiscal.fo_compras"
-                ).id,
-            }
+        purchase = (
+            self.env["purchase.order"]
+            .with_company(self.company)
+            .create(
+                {
+                    "partner_id": self.env.ref("l10n_br_base.res_partner_akretion").id,
+                    "fiscal_operation_id": self.env.ref("l10n_br_fiscal.fo_compras").id,
+                }
+            )
         )
         self.env["purchase.order.line"].create(
             {
