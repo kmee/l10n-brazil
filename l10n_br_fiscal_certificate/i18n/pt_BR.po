@@ -316,11 +316,6 @@ msgid "Name"
 msgstr "Nome"
 
 #. module: l10n_br_fiscal_certificate
-#: model:ir.model.fields,field_description:l10n_br_fiscal_certificate.field_l10n_br_fiscal_certificate__activity_calendar_event_id
-msgid "Next Activity Calendar Event"
-msgstr "Próximo Evento do Calendário de Atividades"
-
-#. module: l10n_br_fiscal_certificate
 #: model:ir.model.fields,field_description:l10n_br_fiscal_certificate.field_l10n_br_fiscal_certificate__activity_date_deadline
 msgid "Next Activity Deadline"
 msgstr "Prazo Final da Próxima Atividade"
@@ -421,30 +416,3 @@ msgstr "Histórico de comunicação do website"
 #: model:ir.model.fields,field_description:l10n_br_fiscal_certificate.field_l10n_br_fiscal_certificate__file
 msgid "file"
 msgstr "arquivo"
-
-#~ msgid "Alert certificate expiration."
-#~ msgstr "Alerta de expiração do certificado."
-
-#~ msgid "Days Before"
-#~ msgstr "Dias Antes"
-
-#~ msgid "Last Modified on"
-#~ msgstr "Última Modificação em"
-
-#~ msgid "Main Attachment"
-#~ msgstr "Anexo Principal"
-
-#~ msgid "Followers (Channels)"
-#~ msgstr "Seguidores (Canais)"
-
-#~ msgid "Number of messages which requires an action"
-#~ msgstr "Número de mensagens que requer uma ação"
-
-#~ msgid "Number of unread messages"
-#~ msgstr "Quantidade de mensagens não lidas"
-
-#~ msgid "Unread Messages"
-#~ msgstr "Mensagens Não Lidas"
-
-#~ msgid "Unread Messages Counter"
-#~ msgstr "Contador de Mensagens Não Lidas"

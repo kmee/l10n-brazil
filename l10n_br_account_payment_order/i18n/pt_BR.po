@@ -1897,11 +1897,6 @@ msgid "Diário de Banco - Empresa Principal"
 msgstr ""
 
 #. module: l10n_br_account_payment_order
-#: model:account.journal,name:l10n_br_account_payment_order.lucro_presumido_bank_journal
-msgid "Diário de Banco - Lucro Presumido"
-msgstr ""
-
-#. module: l10n_br_account_payment_order
 #: model:account.journal,name:l10n_br_account_payment_order.simples_nacional_bank_journal
 msgid "Diário de Banco - Simples Nacional"
 msgstr ""
@@ -2408,22 +2403,17 @@ msgstr "Nome"
 #. odoo-python
 #: code:addons/l10n_br_account_payment_order/models/l10n_br_cnab_change_methods.py:0
 msgid ""
-"New Date Maturity %(new_date)s is equal to actual Date Maturity %"
-"(date_maturity)s"
+"New Date Maturity %(new_date)s is equal to actual Date Maturity "
+"%(date_maturity)s"
 msgstr ""
 
 #. module: l10n_br_account_payment_order
 #. odoo-python
 #: code:addons/l10n_br_account_payment_order/models/l10n_br_cnab_change_methods.py:0
 msgid ""
-"New Discount Date %(new_date)s is equal to current Discount Date %"
-"(date_discount)s"
+"New Discount Date %(new_date)s is equal to current Discount Date "
+"%(date_discount)s"
 msgstr ""
-
-#. module: l10n_br_account_payment_order
-#: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_l10n_br_cnab_return_log__activity_calendar_event_id
-msgid "Next Activity Calendar Event"
-msgstr "Próximo Evento do Calendário de Atividades"
 
 #. module: l10n_br_account_payment_order
 #: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_l10n_br_cnab_return_log__activity_date_deadline
@@ -2976,8 +2966,8 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_br_account_payment_order/models/l10n_br_cnab_code.py:0
 msgid ""
-"The Code %(code)s %(name)s already exists for Bank %(bank)s and CNAB %"
-"(type_code)s type."
+"The Code %(code)s %(name)s already exists for Bank %(bank)s and CNAB "
+"%(type_code)s type."
 msgstr ""
 
 #. module: l10n_br_account_payment_order
@@ -3022,8 +3012,9 @@ msgstr ""
 #: code:addons/l10n_br_account_payment_order/models/account_payment_order.py:0
 msgid ""
 "The payment mode '%(payment_mode)s' has the option 'Disallow Debit Before "
-"Maturity Date'. The payment line '%(payline)s' has a maturity date %"
-"(maturity_date)s which is after the computed payment date %(requested_date)s."
+"Maturity Date'. The payment line '%(payline)s' has a maturity date "
+"%(maturity_date)s which is after the computed payment date "
+"%(requested_date)s."
 msgstr ""
 
 #. module: l10n_br_account_payment_order
@@ -3281,87 +3272,3 @@ msgstr "Você não pode Cancelar ordem CNAB."
 #: code:addons/l10n_br_account_payment_order/models/account_payment_order.py:0
 msgid "You cannot delete CNAB order."
 msgstr "Você não pode excluir ordem CNAB."
-
-#~ msgid "CNAB Movement Instruction Code"
-#~ msgstr "Código de Instrução de Movimento CNAB"
-
-#~ msgid "CNAB Return Move Code"
-#~ msgstr "Código de Movimento de Retorno CNAB"
-
-#~ msgid "Last Modified on"
-#~ msgstr "Última Modificação em"
-
-#~ msgid "Main Attachment"
-#~ msgstr "Anexo Principal"
-
-#, python-format
-#~ msgid "The field Code should have two characters."
-#~ msgstr "A campo Código deve ter dois caracteres."
-
-#~ msgid "Followers (Channels)"
-#~ msgstr "Seguidores (Canais)"
-
-#~ msgid "Number of messages which requires an action"
-#~ msgstr "Número de mensagens que requerem uma ação"
-
-#~ msgid "Number of unread messages"
-#~ msgstr "Número de mensagens não lidas"
-
-#~ msgid "Partner"
-#~ msgstr "Parceiro"
-
-#, python-format
-#~ msgid ""
-#~ "Payment Mode {} don't has {} for making CNAB change, check if should have."
-#~ msgstr ""
-#~ "Modo de Pagamento {} não contém {} para fazer mudança de CNAB, verifique "
-#~ "se deveria."
-
-#, python-format
-#~ msgid ""
-#~ "Payment line added to the existing draft order {} to send CNAB "
-#~ "Instruction {} for OWN NUMBER {}.\n"
-#~ "Justification: {}"
-#~ msgstr ""
-#~ "Linha de pagamento adicionada a ordem em rascunho existente {} para "
-#~ "enviar Instrução CNAB {} para NOSSO NUMERO {}.\n"
-#~ "Justificativa: {}"
-
-#, python-format
-#~ msgid ""
-#~ "Payment line added to the the new draft payment order {} which has been "
-#~ "automatically created, to send CNAB Instruction {} for OWN NUMBER {}.\n"
-#~ "Justification: {}"
-#~ msgstr ""
-#~ "Linha de pagamento adicionada a uma nova ordem {} que foi criado "
-#~ "automaticamente, para enviar Instrução CNAB {} para NOSSO NUMERO {}.\n"
-#~ "Justificativa: {}"
-
-#, python-format
-#~ msgid "Sequence Own Number already in use by {}!"
-#~ msgstr "Sequência Nosso Número já está em uso por {}!"
-
-#, python-format
-#~ msgid ""
-#~ "There is a CNAB Payment Order {} in status {} related to invoice {} "
-#~ "created, the CNAB file should be sent to bank, because only after that it "
-#~ "is possible make another CNAB Instruction."
-#~ msgstr ""
-#~ "Há uma Ordem de Pagamento CNAB {} no status {} relacionado a fatura {} "
-#~ "criada, o arquivo CNAB deve ser enviado ao banco, pois somente após isso "
-#~ "é possível executar outra Instrução CNAB."
-
-#~ msgid "Unread Messages"
-#~ msgstr "Mensagens Não Lidas"
-
-#~ msgid "Unread Messages Counter"
-#~ msgstr "Contador de Mensagens Não Lidas"
-
-#~ msgid "Journal Entry Ref"
-#~ msgstr "Referência de Lançamento Contábil"
-
-#~ msgid "SMS Delivery error"
-#~ msgstr "Erro de Entrega de SMS"
-
-#~ msgid "pix transfer type identification"
-#~ msgstr "identificação do tipo de transferência pix"

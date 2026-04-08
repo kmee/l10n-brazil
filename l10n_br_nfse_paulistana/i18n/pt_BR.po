@@ -22,27 +22,9 @@ msgid "Companies"
 msgstr "Empresas"
 
 #. module: l10n_br_nfse_paulistana
-#: model:ir.model.fields,field_description:l10n_br_nfse_paulistana.field_l10n_br_fiscal_document__display_name
-#: model:ir.model.fields,field_description:l10n_br_nfse_paulistana.field_res_company__display_name
-msgid "Display Name"
-msgstr "Nome Exibido"
-
-#. module: l10n_br_nfse_paulistana
 #: model:ir.model,name:l10n_br_nfse_paulistana.model_l10n_br_fiscal_document
 msgid "Fiscal Document"
 msgstr "Documento Fiscal"
-
-#. module: l10n_br_nfse_paulistana
-#: model:ir.model.fields,field_description:l10n_br_nfse_paulistana.field_l10n_br_fiscal_document__id
-#: model:ir.model.fields,field_description:l10n_br_nfse_paulistana.field_res_company__id
-msgid "ID"
-msgstr "ID"
-
-#. module: l10n_br_nfse_paulistana
-#: model:ir.model.fields,field_description:l10n_br_nfse_paulistana.field_l10n_br_fiscal_document____last_update
-#: model:ir.model.fields,field_description:l10n_br_nfse_paulistana.field_res_company____last_update
-msgid "Last Modified on"
-msgstr "Última Modificação em"
 
 #. module: l10n_br_nfse_paulistana
 #: model:ir.model.fields,field_description:l10n_br_nfse_paulistana.field_res_company__provedor_nfse
@@ -55,13 +37,13 @@ msgid "Paulistana"
 msgstr "Paulistana"
 
 #. module: l10n_br_nfse_paulistana
+#. odoo-python
 #: code:addons/l10n_br_nfse_paulistana/models/document.py:0
-#, python-format
 msgid "Procesado com Erro"
 msgstr "Processado com Erro"
 
 #. module: l10n_br_nfse_paulistana
+#. odoo-python
 #: code:addons/l10n_br_nfse_paulistana/models/document.py:0
-#, python-format
 msgid "Procesado com Sucesso"
 msgstr "Processado com Sucesso"

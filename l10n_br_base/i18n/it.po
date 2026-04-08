@@ -155,19 +155,16 @@ msgid "Acauã"
 msgstr ""
 
 #. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__acc_number_dig
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__acc_number_dig
 msgid "Account Digit"
 msgstr ""
 
 #. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__acc_number
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__acc_number
 msgid "Account Number"
 msgstr ""
 
 #. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__transactional_acc_type
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__transactional_acc_type
 msgid "Account Type"
 msgstr ""
@@ -2079,7 +2076,6 @@ msgid "BIC/Swift Code"
 msgstr ""
 
 #. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__bra_bank_bic
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__bra_bank_bic
 msgid "BIC/Swift Final Code."
 msgstr ""
@@ -2276,7 +2272,6 @@ msgid "Bank Account"
 msgstr ""
 
 #. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__bank_account_type
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__bank_account_type
 msgid "Bank Account Type"
 msgstr ""
@@ -2287,13 +2282,11 @@ msgid "Bank Accounts"
 msgstr ""
 
 #. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__bra_number
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__bra_number
 msgid "Bank Branch"
 msgstr ""
 
 #. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__bra_number_dig
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__bra_number_dig
 msgid "Bank Branch Digit"
 msgstr ""
@@ -6353,7 +6346,6 @@ msgid "Company"
 msgstr ""
 
 #. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__company_country_id
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__company_country_id
 msgid "Company Country"
 msgstr ""
@@ -10217,18 +10209,8 @@ msgid "ID"
 msgstr ""
 
 #. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_company__l10n_br_ie_code
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__l10n_br_ie_code
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_users__l10n_br_ie_code
 #: model_terms:ir.ui.view,arch_db:l10n_br_base.l10n_br_base_partner_form
 msgid "IE"
-msgstr ""
-
-#. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_company__l10n_br_im_code
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__l10n_br_im_code
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_users__l10n_br_im_code
-msgid "IM"
 msgstr ""
 
 #. module: l10n_br_base
@@ -10544,19 +10526,6 @@ msgstr ""
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_2305407
 msgid "Icó"
-msgstr ""
-
-#. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__vat
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_users__vat
-msgid "Identification Number"
-msgstr ""
-
-#. module: l10n_br_base
-#: model:ir.model.fields,help:l10n_br_base.field_res_company__vat
-#: model:ir.model.fields,help:l10n_br_base.field_res_partner__vat
-#: model:ir.model.fields,help:l10n_br_base.field_res_users__vat
-msgid "Identification Number for selected type"
 msgstr ""
 
 #. module: l10n_br_base
@@ -13571,7 +13540,6 @@ msgid "Last Updated on"
 msgstr ""
 
 #. module: l10n_br_base
-#: model:ir.model.fields,help:l10n_br_base.field_account_setup_bank_manual_config__bra_bank_bic
 #: model:ir.model.fields,help:l10n_br_base.field_res_partner_bank__bra_bank_bic
 msgid "Last part of BIC/Swift Code."
 msgstr ""
@@ -15883,14 +15851,10 @@ msgid "Munhoz de Melo"
 msgstr ""
 
 #. module: l10n_br_base
-#: model:ir.model.fields,help:l10n_br_base.field_res_company__l10n_br_im_code
-#: model:ir.model.fields,help:l10n_br_base.field_res_partner__l10n_br_im_code
-#: model:ir.model.fields,help:l10n_br_base.field_res_users__l10n_br_im_code
-msgid "Municipal Tax Identification Number"
-msgstr ""
-
-#. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_l10n_br_base_party_mixin__l10n_br_im_code
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_company__l10n_br_im_code
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__l10n_br_im_code
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_users__l10n_br_im_code
 msgid "Municipal Tax Number"
 msgstr ""
 
@@ -19043,7 +19007,6 @@ msgid "Piumhi"
 msgstr ""
 
 #. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__partner_pix_ids
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__pix_key_ids
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__partner_pix_ids
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_users__pix_key_ids
@@ -21132,18 +21095,6 @@ msgstr ""
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_city__siafi_code
 msgid "SIAFI Code"
-msgstr ""
-
-#. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__l10n_br_isuf_code
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_users__l10n_br_isuf_code
-msgid "SUFRAMA code"
-msgstr ""
-
-#. module: l10n_br_base
-#: model:ir.model.fields,help:l10n_br_base.field_res_partner__l10n_br_isuf_code
-#: model:ir.model.fields,help:l10n_br_base.field_res_users__l10n_br_isuf_code
-msgid "SUFRAMA registration number."
 msgstr ""
 
 #. module: l10n_br_base
@@ -23301,14 +23252,10 @@ msgid "State"
 msgstr ""
 
 #. module: l10n_br_base
-#: model:ir.model.fields,help:l10n_br_base.field_res_company__l10n_br_ie_code
-#: model:ir.model.fields,help:l10n_br_base.field_res_partner__l10n_br_ie_code
-#: model:ir.model.fields,help:l10n_br_base.field_res_users__l10n_br_ie_code
-msgid "State Tax Identification Number. Should contain 9-14 digits."
-msgstr ""
-
-#. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_l10n_br_base_party_mixin__l10n_br_ie_code
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_company__l10n_br_ie_code
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__l10n_br_ie_code
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_users__l10n_br_ie_code
 #: model:ir.model.fields,field_description:l10n_br_base.field_state_tax_numbers__l10n_br_ie_code
 msgid "State Tax Number"
 msgstr ""
@@ -23379,6 +23326,8 @@ msgstr ""
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_l10n_br_base_party_mixin__l10n_br_isuf_code
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_company__l10n_br_isuf_code
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__l10n_br_isuf_code
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_users__l10n_br_isuf_code
 #: model_terms:ir.ui.view,arch_db:l10n_br_base.l10n_br_base_res_company_form
 msgid "Suframa"
 msgstr ""
@@ -25480,6 +25429,8 @@ msgstr ""
 
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_company__vat
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__vat
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_users__vat
 msgid "Tax ID"
 msgstr ""
 
@@ -25667,6 +25618,16 @@ msgid "The Partner already has a State Tax Number for that State!"
 msgstr ""
 
 #. module: l10n_br_base
+#: model:ir.model.fields,help:l10n_br_base.field_res_company__vat
+#: model:ir.model.fields,help:l10n_br_base.field_res_partner__vat
+#: model:ir.model.fields,help:l10n_br_base.field_res_users__vat
+msgid ""
+"The Tax Identification Number. Values here will be validated based on the "
+"country format. You can use '/' to indicate that the partner is not subject "
+"to tax."
+msgstr ""
+
+#. module: l10n_br_base
 #. odoo-python
 #: code:addons/l10n_br_base/models/res_partner_pix.py:0
 msgid ""
@@ -25699,16 +25660,16 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_br_base/models/res_partner.py:0
 msgid ""
-"There is already a partner %(name)s (ID %(partner_id)s) with this CNPJ %"
-"(vat)s!"
+"There is already a partner %(name)s (ID %(partner_id)s) with this CNPJ "
+"%(vat)s!"
 msgstr ""
 
 #. module: l10n_br_base
 #. odoo-python
 #: code:addons/l10n_br_base/models/res_partner.py:0
 msgid ""
-"There is already a partner %(name)s (ID %(partner_id)s) with this CPF/RG! %"
-"(vat)s"
+"There is already a partner %(name)s (ID %(partner_id)s) with this CPF/RG! "
+"%(vat)s"
 msgstr ""
 
 #. module: l10n_br_base
@@ -26291,7 +26252,6 @@ msgid "Type"
 msgstr ""
 
 #. module: l10n_br_base
-#: model:ir.model.fields,help:l10n_br_base.field_account_setup_bank_manual_config__transactional_acc_type
 #: model:ir.model.fields,help:l10n_br_base.field_res_partner_bank__transactional_acc_type
 msgid ""
 "Type of transactional account, classification used in the Brazilian instant "

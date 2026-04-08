@@ -1874,11 +1874,6 @@ msgid "Diário de Banco - Empresa Principal"
 msgstr ""
 
 #. module: l10n_br_account_payment_order
-#: model:account.journal,name:l10n_br_account_payment_order.lucro_presumido_bank_journal
-msgid "Diário de Banco - Lucro Presumido"
-msgstr ""
-
-#. module: l10n_br_account_payment_order
 #: model:account.journal,name:l10n_br_account_payment_order.simples_nacional_bank_journal
 msgid "Diário de Banco - Simples Nacional"
 msgstr ""
@@ -2392,11 +2387,6 @@ msgstr ""
 msgid ""
 "New Discount Date %(new_date)s is equal to current Discount Date "
 "%(date_discount)s"
-msgstr ""
-
-#. module: l10n_br_account_payment_order
-#: model:ir.model.fields,field_description:l10n_br_account_payment_order.field_l10n_br_cnab_return_log__activity_calendar_event_id
-msgid "Next Activity Calendar Event"
 msgstr ""
 
 #. module: l10n_br_account_payment_order

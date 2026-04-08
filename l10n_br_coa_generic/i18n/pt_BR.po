@@ -1,0 +1,10 @@
+#. module: l10n_br_coa_generic
+#: model:ir.model,name:l10n_br_coa_generic.model_account_chart_template
+msgid "Account Chart Template"
+msgstr ""
+
+#. module: l10n_br_coa_generic
+#. odoo-python
+#: code:addons/l10n_br_coa_generic/models/template_br_oca_generic.py:0
+msgid "Plano de Contas para empresas do Regime normal"
+msgstr ""

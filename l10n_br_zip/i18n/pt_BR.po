@@ -98,14 +98,12 @@ msgstr "Bairro"
 #. module: l10n_br_zip
 #. odoo-python
 #: code:addons/l10n_br_zip/models/l10n_br_zip.py:0
-#, python-format
 msgid "Error in BrazilCEP: "
 msgstr "Erro no BrazilCEP: "
 
 #. module: l10n_br_zip
 #. odoo-python
 #: code:addons/l10n_br_zip/models/l10n_br_zip.py:0
-#, python-format
 msgid "Error loading attribute: "
 msgstr "Erro Lendo Atributo: "
 
@@ -123,15 +121,8 @@ msgstr "Id do objeto"
 #. module: l10n_br_zip
 #. odoo-python
 #: code:addons/l10n_br_zip/models/l10n_br_zip.py:0
-#, python-format
 msgid "It is necessary to inform the State, municipality and public place"
 msgstr "É necessário informar o Estado, município e logradouro"
-
-#. module: l10n_br_zip
-#: model:ir.model.fields,field_description:l10n_br_zip.field_l10n_br_zip____last_update
-#: model:ir.model.fields,field_description:l10n_br_zip.field_l10n_br_zip_search____last_update
-msgid "Last Modified on"
-msgstr "Última Modificação em"
 
 #. module: l10n_br_zip
 #: model:ir.model.fields,field_description:l10n_br_zip.field_l10n_br_zip__write_uid
@@ -239,25 +230,3 @@ msgstr "init"
 #: model:ir.model.fields,field_description:l10n_br_zip.field_l10n_br_zip_search__state
 msgid "state"
 msgstr "estado"
-
-#~ msgid "Correios"
-#~ msgstr "Correios"
-
-#, python-format
-#~ msgid "Error in PyCEP-Correios: "
-#~ msgstr "Erro no PyCEP-Correios: "
-
-#, python-format
-#~ msgid "Erro a Carregar Atributo: "
-#~ msgstr "Erro a Carga a Atributo: "
-
-#, python-format
-#~ msgid "Erro no PyCEP-Correios : "
-#~ msgstr "Erro no PyCEP-Correios : "
-
-#~ msgid "Fomat Address"
-#~ msgstr "Endereço fomat"
-
-#, python-format
-#~ msgid "Necessário informar Estado, município e logradouro"
-#~ msgstr "Necessário informar Estado, município e logradouro"

@@ -28,7 +28,7 @@ msgid "<option value=\"\">select...</option>"
 msgstr "<option value=\"\">selecione...</option>"
 
 #. module: l10n_br_portal
-#: model:ir.model.fields,field_description:l10n_br_portal.field_res_partner__cnpj_cpf
+#: model_terms:ir.ui.view,arch_db:l10n_br_portal.portal_my_details
 msgid "CNPJ/CPF"
 msgstr "CNPJ/CPF"
 
@@ -41,16 +41,6 @@ msgstr ""
 #: model:ir.model.fields,help:l10n_br_portal.field_res_partner__cnpj_cpf_stripped
 msgid "CNPJ/CPF without special characters"
 msgstr ""
-
-#. module: l10n_br_portal
-#: model_terms:ir.ui.view,arch_db:l10n_br_portal.portal_my_details
-msgid "CNPJ/VAT"
-msgstr "CNPJ/VAT"
-
-#. module: l10n_br_portal
-#: model_terms:ir.ui.view,arch_db:l10n_br_portal.portal_my_details
-msgid "CPF"
-msgstr "CPF"
 
 #. module: l10n_br_portal
 #: model_terms:ir.ui.view,arch_db:l10n_br_portal.portal_my_details
@@ -69,8 +59,8 @@ msgstr "Cidade"
 
 #. module: l10n_br_portal
 #: model:ir.model.fields,field_description:l10n_br_portal.field_res_partner__city_id
-msgid "City of Address"
-msgstr "Endereço da Cidade"
+msgid "City ID"
+msgstr ""
 
 #. module: l10n_br_portal
 #: model_terms:ir.ui.view,arch_db:l10n_br_portal.portal_my_details
@@ -79,8 +69,10 @@ msgstr "Nome da Empresa"
 
 #. module: l10n_br_portal
 #: model_terms:ir.ui.view,arch_db:l10n_br_portal.portal_my_details
-msgid "Confirm<span class=\"fa fa-long-arrow-right\"/>"
-msgstr "Confirmar<span class=\"fa fa-long-arrow-right\"/>"
+msgid ""
+"Confirm\n"
+"                            <span class=\"fa fa-long-arrow-right\"/>"
+msgstr ""
 
 #. module: l10n_br_portal
 #: model:ir.model,name:l10n_br_portal.model_res_partner
@@ -94,11 +86,6 @@ msgid "Country"
 msgstr "País"
 
 #. module: l10n_br_portal
-#: model:ir.model.fields,field_description:l10n_br_portal.field_res_partner__display_name
-msgid "Display Name"
-msgstr "Nome Exibido"
-
-#. module: l10n_br_portal
 #: model:ir.model.fields,field_description:l10n_br_portal.field_res_partner__district
 #: model_terms:ir.ui.view,arch_db:l10n_br_portal.portal_my_details
 msgid "District"
@@ -108,16 +95,6 @@ msgstr "Bairro"
 #: model_terms:ir.ui.view,arch_db:l10n_br_portal.portal_my_details
 msgid "Email"
 msgstr "E-mail"
-
-#. module: l10n_br_portal
-#: model:ir.model.fields,field_description:l10n_br_portal.field_res_partner__id
-msgid "ID"
-msgstr "ID"
-
-#. module: l10n_br_portal
-#: model:ir.model.fields,field_description:l10n_br_portal.field_res_partner____last_update
-msgid "Last Modified on"
-msgstr "Última Modificação em"
 
 #. module: l10n_br_portal
 #: model:ir.model.fields,field_description:l10n_br_portal.field_res_partner__legal_name
@@ -152,11 +129,6 @@ msgid "Phone"
 msgstr "Telefone"
 
 #. module: l10n_br_portal
-#: model:ir.model.fields,field_description:l10n_br_portal.field_res_partner__l10n_br_rg_code
-msgid "RG"
-msgstr "RG"
-
-#. module: l10n_br_portal
 #: model_terms:ir.ui.view,arch_db:l10n_br_portal.portal_my_details
 msgid "State / Province"
 msgstr "Estado / Província"
@@ -178,9 +150,22 @@ msgid "Street2"
 msgstr "Complemento"
 
 #. module: l10n_br_portal
-#: model:ir.model.fields,field_description:l10n_br_portal.field_res_partner__suframa
+#: model:ir.model.fields,field_description:l10n_br_portal.field_res_partner__l10n_br_isuf_code
 msgid "Suframa"
 msgstr "Suframa"
+
+#. module: l10n_br_portal
+#: model:ir.model.fields,field_description:l10n_br_portal.field_res_partner__vat
+msgid "Tax ID"
+msgstr ""
+
+#. module: l10n_br_portal
+#: model:ir.model.fields,help:l10n_br_portal.field_res_partner__vat
+msgid ""
+"The Tax Identification Number. Values here will be validated based on the "
+"country format. You can use '/' to indicate that the partner is not subject "
+"to tax."
+msgstr ""
 
 #. module: l10n_br_portal
 #: model:ir.model.fields,help:l10n_br_portal.field_res_partner__legal_name
@@ -197,32 +182,8 @@ msgstr "Seu Nome"
 msgid "Zip / Postal Code"
 msgstr "CEP"
 
-#~ msgid "Bairro"
-#~ msgstr "Bairro"
-
-#~ msgid "Cidade"
-#~ msgstr "Cidade"
-
-#~ msgid "Complemento"
-#~ msgstr "Complemento"
-
-#~ msgid "IE/RG"
-#~ msgstr "IE/RG"
-
-#~ msgid "Inscrição Municipal"
-#~ msgstr "Inscrição Municipal"
-
-#~ msgid "Razão Social / Nome Completo"
-#~ msgstr "Razão Social / Nome Completo"
-
-#~ msgid "Brazil"
-#~ msgstr "Brasil"
-
-#~ msgid "Itajubá"
-#~ msgstr "Itajubá"
-
-#~ msgid "Country..."
-#~ msgstr "País…"
-
-#~ msgid "select..."
-#~ msgstr "selecione..."
+#. module: l10n_br_portal
+#. odoo-javascript
+#: code:addons/l10n_br_portal/static/src/l10n_br_portal.esm.js:0
+msgid "Zip is invalid or ."
+msgstr ""

@@ -41,10 +41,13 @@ msgid "%(name)s Tax Estimate Updated"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__icms_origin__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__icms_origin__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_origin__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__icms_origin__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__icms_origin__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_origin__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_origin__0
 msgid "0 - Nacional, exceto as indicadas nos códigos 3, 4, 5 e 8"
 msgstr "0 - Nacional, Exceto as indicadas nos códigos 3, 4, 5 e 8"
 
@@ -124,10 +127,13 @@ msgid "1 - Contribuinte do ICMS"
 msgstr "1 - Contribuinte do ICMS"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__icms_origin__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__icms_origin__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_origin__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__icms_origin__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__icms_origin__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_origin__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_origin__1
 msgid "1 - Estrangeira – importação direta, exceto a indicada no código 6"
 msgstr "1 - Estrangeira – importação direta, exceto a indicada no código 6"
 
@@ -204,10 +210,13 @@ msgid "2 - redução de base de cálculo"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__icms_origin__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__icms_origin__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_origin__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__icms_origin__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__icms_origin__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_origin__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_origin__2
 msgid ""
 "2 – Estrangeira – adquirida no mercado interno, exceto a indicada no código 7"
 msgstr ""
@@ -233,10 +242,13 @@ msgid "3 - diferimento"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__icms_origin__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__icms_origin__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_origin__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__icms_origin__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__icms_origin__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_origin__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_origin__3
 msgid ""
 "3 – Nacional – mercadoria ou bem com Conteúdo de Importação superior a 40% "
 "(quarenta por cento) e inferior ou igual a 70% (setenta por cento)"
@@ -255,10 +267,13 @@ msgid "4 - suspensão"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__icms_origin__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__icms_origin__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_origin__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__icms_origin__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__icms_origin__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_origin__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_origin__4
 msgid ""
 "4 – Nacional – cuja produção tenha sido feita em conformidade com os "
 "processos produtivos básicos de que tratam o Decreto-lei n° 288/67 e as Leis "
@@ -279,10 +294,13 @@ msgid "5 - Uniforme Setorial"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__icms_origin__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__icms_origin__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_origin__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__icms_origin__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__icms_origin__5
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_origin__5
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_origin__5
 msgid ""
 "5 – Nacional – mercadoria ou bem com Conteúdo de Importação inferior ou "
 "igual a 40% (quarenta por cento)"
@@ -291,10 +309,13 @@ msgstr ""
 "igual a 40% (quarenta por cento)"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__icms_origin__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__icms_origin__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_origin__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__icms_origin__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__icms_origin__6
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_origin__6
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_origin__6
 msgid ""
 "6 – Estrangeira – importação direta, sem similar nacional, constante em "
 "lista de Resolução CAMEX e gás natural"
@@ -303,10 +324,13 @@ msgstr ""
 "lista de Resolução CAMEX e gás natural"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__icms_origin__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__icms_origin__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_origin__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__icms_origin__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__icms_origin__7
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_origin__7
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_origin__7
 msgid ""
 "7 – Estrangeira – adquirida no mercado interno, sem similar nacional, "
 "constante em lista de Resolução CAMEX e gás natural"
@@ -315,10 +339,13 @@ msgstr ""
 "constante em lista de Resolução CAMEX e gás natural"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__icms_origin__8
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__icms_origin__8
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_origin__8
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__icms_origin__8
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__icms_origin__8
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_origin__8
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_origin__8
 msgid ""
 "8 – Nacional – mercadoria ou bem com Conteúdo de Importação superior a 70% "
 "(setenta por cento). (cf. Ajuste SINIEF 15/2013)"
@@ -951,10 +978,13 @@ msgid "Assent Move?"
 msgstr "Movimento Consentido?"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__fiscal_type__08
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__fiscal_type__08
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__08
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__08
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__08
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__08
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__08
 msgid "Ativo Imobilizado"
 msgstr "Ativo Imobilizado"
 
@@ -1859,9 +1889,12 @@ msgstr "Empresas"
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_operation_document_type__company_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_tax_definition__company_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_tax_estimate__company_id
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_contract__issuer__company
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__issuer__company
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_mixin__issuer__company
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax_pis_cofins__piscofins_type__company
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__issuer__company
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order__issuer__company
 #: model:ir.ui.menu,name:l10n_br_fiscal.company_menu
 msgid "Company"
 msgstr "Empresa"
@@ -2468,11 +2501,6 @@ msgid "Distrito Federal"
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__document_id
-msgid "Document"
-msgstr "Documento"
-
-#. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__document_date
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_search
 msgid "Document Date"
@@ -2636,10 +2664,13 @@ msgid "Em digitação"
 msgstr "Em digitação"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__fiscal_type__02
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__fiscal_type__02
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__02
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__02
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__02
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__02
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__02
 msgid "Embalagem"
 msgstr "Embalagem"
 
@@ -2722,20 +2753,29 @@ msgid "Exemption from NIF"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__issqn_eligibility__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__issqn_eligibility__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__issqn_eligibility__6
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__issqn_eligibility__6
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__issqn_eligibility__6
 msgid "Exigibilidade Suspensa por Decisão Judicial"
 msgstr "Exigibilidade Suspensa por Decisão Judicial"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__issqn_eligibility__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__issqn_eligibility__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__issqn_eligibility__7
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__issqn_eligibility__7
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__issqn_eligibility__7
 msgid "Exigibilidade Suspensa por Processo Administrativo"
 msgstr "Exigibilidade Suspensa por Processo Administrativo"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__issqn_eligibility__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__issqn_eligibility__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__issqn_eligibility__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__issqn_eligibility__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__issqn_eligibility__1
 msgid "Exigível"
 msgstr "Exigível"
 
@@ -2765,8 +2805,11 @@ msgid "Export UoM Factor"
 msgstr "Fator UoM de exportação"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__issqn_eligibility__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__issqn_eligibility__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__issqn_eligibility__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__issqn_eligibility__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__issqn_eligibility__4
 msgid "Exportação"
 msgstr "Exportação"
 
@@ -2971,6 +3014,7 @@ msgstr "Resumo do Produto de Dados Fiscais"
 #: model:ir.model,name:l10n_br_fiscal.model_l10n_br_fiscal_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_base_wizard_mixin__document_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard__document_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__document_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_related__document_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_serie__document_type_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_status_wizard__document_id
@@ -3187,6 +3231,15 @@ msgid "Fiscal User"
 msgstr "Usuário Fiscal"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__cbs_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__cofins_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__cofins_wh_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__cofinsst_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__ibs_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__ipi_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__pis_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__pis_wh_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__pisst_base_type__fixed
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__cbs_base_type__fixed
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__cofins_base_type__fixed
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__cofins_wh_base_type__fixed
@@ -3206,6 +3259,24 @@ msgstr "Usuário Fiscal"
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__pis_wh_base_type__fixed
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__pisst_base_type__fixed
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax__tax_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__cbs_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__cofins_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__cofins_wh_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__cofinsst_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__ibs_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__ipi_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__pis_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__pis_wh_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__pisst_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__cbs_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__cofins_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__cofins_wh_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__cofinsst_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__ibs_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__ipi_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__pis_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__pis_wh_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__pisst_base_type__fixed
 msgid "Fixed"
 msgstr "Fixo"
 
@@ -3454,11 +3525,14 @@ msgid "IBS/CBS Tax Classification"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__tax_icms_or_issqn__icms
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__tax_icms_or_issqn__icms
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__tax_icms_or_issqn__icms
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_type__type__icms
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__tax_icms_or_issqn__icms
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__tax_icms_or_issqn__icms
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__tax_icms_or_issqn__icms
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__tax_icms_or_issqn__icms
 #: model:ir.ui.menu,name:l10n_br_fiscal.tax_icms_config_menu
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_fiscal_line_mixin_form
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_form
@@ -4544,12 +4618,6 @@ msgid "ID"
 msgstr "ID"
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_partner__l10n_br_ie_code
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_users__l10n_br_ie_code
-msgid "IE"
-msgstr ""
-
-#. module: l10n_br_fiscal
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax_group__tax_domain__ii
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_fiscal_line_mixin_form
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_form
@@ -4578,12 +4646,6 @@ msgstr "Base do II"
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_mixin__amount_ii_value
 msgid "II Value"
 msgstr "Valor do II"
-
-#. module: l10n_br_fiscal
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_partner__l10n_br_im_code
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_users__l10n_br_im_code
-msgid "IM"
-msgstr ""
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax_group__tax_domain__inss
@@ -4861,11 +4923,14 @@ msgid "ISS National Taxation Code"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__tax_icms_or_issqn__issqn
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__tax_icms_or_issqn__issqn
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__tax_icms_or_issqn__issqn
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__tax_icms_or_issqn__issqn
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax_group__tax_domain__issqn
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__tax_icms_or_issqn__issqn
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__tax_icms_or_issqn__issqn
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__tax_icms_or_issqn__issqn
 #: model:ir.ui.menu,name:l10n_br_fiscal.tax_issqn_config_menu
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_fiscal_line_mixin_form
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_form
@@ -5019,19 +5084,6 @@ msgid "Icon to indicate an exception activity."
 msgstr "Ícone para indicar uma atividade excepcional."
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_partner__vat
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_users__vat
-msgid "Identification Number"
-msgstr ""
-
-#. module: l10n_br_fiscal
-#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document__partner_cnpj_cpf
-#: model:ir.model.fields,help:l10n_br_fiscal.field_res_partner__vat
-#: model:ir.model.fields,help:l10n_br_fiscal.field_res_users__vat
-msgid "Identification Number for selected type"
-msgstr ""
-
-#. module: l10n_br_fiscal
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_cfop__destination
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__cfop_destination
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__cfop_destination
@@ -5114,9 +5166,12 @@ msgid "Impostos Municipais Nacional"
 msgstr "Impostos Municipais Nacional"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__issqn_eligibility__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__issqn_eligibility__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__issqn_eligibility__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax_ipi_guideline__cst_group__imunidade
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__issqn_eligibility__5
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__issqn_eligibility__5
 msgid "Imunidade"
 msgstr "Imunidade"
 
@@ -5285,9 +5340,12 @@ msgid "Is a Company"
 msgstr "É uma Empresa"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__issqn_eligibility__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__issqn_eligibility__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__issqn_eligibility__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax_ipi_guideline__cst_group__isencao
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__issqn_eligibility__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__issqn_eligibility__3
 msgid "Isenção"
 msgstr "Isenção"
 
@@ -5477,23 +5535,32 @@ msgid "Legal Nature already exists with this code!"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__icmsst_base_type__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__icmsst_base_type__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icmsst_base_type__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax__icmsst_base_type__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icmsst_base_type__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icmsst_base_type__1
 msgid "Lista Negativa (valor)"
 msgstr "Lista Negativa (valor)"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__icmsst_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__icmsst_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icmsst_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax__icmsst_base_type__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icmsst_base_type__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icmsst_base_type__3
 msgid "Lista Neutra (valor)"
 msgstr "Lista Neutra (valor)"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__icmsst_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__icmsst_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icmsst_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax__icmsst_base_type__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icmsst_base_type__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icmsst_base_type__2
 msgid "Lista Positiva (valor)"
 msgstr "Lista Positiva (valor)"
 
@@ -5565,12 +5632,18 @@ msgid "Manual Fiscal Additional Data"
 msgstr "Dado Adicional Fiscal Manual"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__icms_base_type__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__icmsst_base_type__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__icms_base_type__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__icmsst_base_type__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_base_type__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icmsst_base_type__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax__icms_base_type__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax__icmsst_base_type__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_base_type__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icmsst_base_type__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_base_type__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icmsst_base_type__4
 msgid "Margem Valor Agregado (%)"
 msgstr "Margem Valor Agregado (%)"
 
@@ -5590,18 +5663,24 @@ msgid "Materiais elétricos"
 msgstr "Materiais elétricos"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__fiscal_type__07
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__fiscal_type__07
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__07
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__07
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__07
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__07
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__07
 msgid "Material de Uso e Consumo"
 msgstr "Material de Uso e Consumo"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__fiscal_type__01
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__fiscal_type__01
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__01
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__01
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__01
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__01
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__01
 msgid "Matéria-prima"
 msgstr "Matéria-prima"
 
@@ -5625,10 +5704,13 @@ msgid "Mercadoria não recebida"
 msgstr "Mercadoria não recebida"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__fiscal_type__00
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__fiscal_type__00
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__00
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__00
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__00
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__00
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__00
 msgid "Mercadoria para Revenda"
 msgstr "Mercadoria para Revenda"
 
@@ -5687,10 +5769,10 @@ msgid "Multimodal"
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields,help:l10n_br_fiscal.field_res_partner__l10n_br_im_code
-#: model:ir.model.fields,help:l10n_br_fiscal.field_res_users__l10n_br_im_code
-msgid "Municipal Tax Identification Number"
-msgstr ""
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_partner__l10n_br_im_code
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_users__l10n_br_im_code
+msgid "Municipal Tax Number"
+msgstr "Número de Impostos Municipais"
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__public_entity_type__4
@@ -5833,8 +5915,11 @@ msgid "NF-e/NFC-e"
 msgstr "NF-e/NFC-e"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_contract__ind_pres__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__ind_pres__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_mixin__ind_pres__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__ind_pres__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order__ind_pres__4
 msgid "NFC-e entrega em domicílio"
 msgstr "NFC-e entrega em domicílio"
 
@@ -5943,18 +6028,6 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.tax_definition_form
 msgid "National Taxation Codes"
 msgstr ""
-
-#. module: l10n_br_fiscal
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__activity_calendar_event_id
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_icms_regulation__activity_calendar_event_id
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_nbs__activity_calendar_event_id
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_ncm__activity_calendar_event_id
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_operation__activity_calendar_event_id
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_operation_line__activity_calendar_event_id
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_service_type__activity_calendar_event_id
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_tax_definition__activity_calendar_event_id
-msgid "Next Activity Calendar Event"
-msgstr "Próximo Evento do Calendário de Atividades"
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__activity_date_deadline
@@ -6124,6 +6197,7 @@ msgid "Numeração inutilizada"
 msgstr "Numeração inutilizada"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__issqn_incentive__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__ind_final__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__ind_final__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__issqn_incentive__2
@@ -6131,7 +6205,11 @@ msgstr "Numeração inutilizada"
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__issqn_incentive__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_mixin__ind_final__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax_definition__ind_final__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__ind_final__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__issqn_incentive__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__res_partner__ind_final__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order__ind_final__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__issqn_incentive__2
 msgid "Não"
 msgstr "Não"
 
@@ -6141,32 +6219,47 @@ msgid "Não Implementado"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__issqn_eligibility__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__issqn_eligibility__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__issqn_eligibility__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__issqn_eligibility__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__issqn_eligibility__2
 msgid "Não incidência"
 msgstr "Não incidência"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_contract__ind_pres__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__ind_pres__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_mixin__ind_pres__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__ind_pres__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order__ind_pres__2
 msgid "Não presencial, internet"
 msgstr "Não presencial, internet"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_contract__ind_pres__9
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__ind_pres__9
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_mixin__ind_pres__9
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__ind_pres__9
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order__ind_pres__9
 msgid "Não presencial, outros"
 msgstr "Não presencial, outros"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_contract__ind_pres__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__ind_pres__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_mixin__ind_pres__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__ind_pres__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order__ind_pres__3
 msgid "Não presencial, teleatendimento"
 msgstr "Não presencial, teleatendimento"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_contract__ind_pres__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__ind_pres__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_mixin__ind_pres__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__ind_pres__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order__ind_pres__0
 msgid "Não se aplica"
 msgstr "Não se aplica"
 
@@ -6174,6 +6267,11 @@ msgstr "Não se aplica"
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_comment__object
 msgid "Object"
 msgstr "Objeto"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__res_company__processador_edoc__oca
+msgid "Odoo Community"
+msgstr ""
 
 #. module: l10n_br_fiscal
 #: model_terms:ir.actions.act_window,help:l10n_br_fiscal.comment_action
@@ -6320,14 +6418,20 @@ msgid "Operação com Exterior"
 msgstr "Operação com Exterior"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_contract__ind_pres__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__ind_pres__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_mixin__ind_pres__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__ind_pres__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order__ind_pres__1
 msgid "Operação presencial"
 msgstr "Operação presencial"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_contract__ind_pres__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__ind_pres__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_mixin__ind_pres__5
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__ind_pres__5
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order__ind_pres__5
 msgid "Operação presencial, fora do estabelecimento"
 msgstr "Operação presencial, para um estabelecimento"
 
@@ -6384,10 +6488,13 @@ msgid "Output"
 msgstr "Saída"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__fiscal_type__99
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__fiscal_type__99
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__99
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__99
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__99
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__99
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__99
 msgid "Outras"
 msgstr "Outros"
 
@@ -6399,10 +6506,13 @@ msgid "Outros"
 msgstr "Outros"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__fiscal_type__10
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__fiscal_type__10
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__10
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__10
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__10
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__10
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__10
 msgid "Outros insumos"
 msgstr "Outros insumos"
 
@@ -6637,8 +6747,11 @@ msgstr "Tipo de Serviço Pai"
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_mixin__partner_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_status_wizard__partner_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_partner_profile__partner_ids
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_contract__issuer__partner
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__issuer__partner
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_mixin__issuer__partner
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__issuer__partner
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order__issuer__partner
 #: model:ir.ui.menu,name:l10n_br_fiscal.partner_menu
 msgid "Partner"
 msgstr "Parceiro"
@@ -6680,17 +6793,32 @@ msgid "Partners"
 msgstr "Parceiros"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__icms_base_type__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__icmsst_base_type__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__icms_base_type__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__icmsst_base_type__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_base_type__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icmsst_base_type__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax__icms_base_type__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax__icmsst_base_type__5
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_base_type__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icmsst_base_type__5
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_base_type__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icmsst_base_type__5
 msgid "Pauta (valor)"
 msgstr "Pauta (valor)"
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_tax__percent_amount
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__cbs_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__cofins_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__cofins_wh_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__cofinsst_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__ibs_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__ipi_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__pis_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__pis_wh_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__pisst_base_type__percent
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__cbs_base_type__percent
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__cofins_base_type__percent
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__cofins_wh_base_type__percent
@@ -6710,6 +6838,24 @@ msgstr "Pauta (valor)"
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__pis_wh_base_type__percent
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__pisst_base_type__percent
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax__tax_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__cbs_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__cofins_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__cofins_wh_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__cofinsst_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__ibs_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__ipi_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__pis_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__pis_wh_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__pisst_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__cbs_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__cofins_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__cofins_wh_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__cofinsst_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__ibs_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__ipi_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__pis_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__pis_wh_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__pisst_base_type__percent
 msgid "Percent"
 msgstr "Percentual"
 
@@ -6775,16 +6921,22 @@ msgid "Preview Data"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__icms_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__icms_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax__icms_base_type__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_base_type__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_base_type__2
 msgid "Preço Tabelado Máximo (valor)"
 msgstr "Preço Tabelado Máximo (valor)"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__icmsst_base_type__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__icmsst_base_type__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icmsst_base_type__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax__icmsst_base_type__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icmsst_base_type__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icmsst_base_type__0
 msgid "Preço tabelado ou máximo  sugerido"
 msgstr "Preço tabelado ou máximo sugerido"
 
@@ -6893,26 +7045,35 @@ msgid "Products and Services"
 msgstr "Produtos e Serviços"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__fiscal_type__04
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__fiscal_type__04
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__04
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__04
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__04
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__04
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__04
 msgid "Produto Acabado"
 msgstr "Produto Acabado"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__fiscal_type__06
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__fiscal_type__06
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__06
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__06
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__06
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__06
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__06
 msgid "Produto Intermediário"
 msgstr "Produto Intermediário"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__fiscal_type__03
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__fiscal_type__03
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__03
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__03
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__03
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__03
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__03
 msgid "Produto em Processo"
 msgstr "Produto em Processo"
 
@@ -7013,6 +7174,15 @@ msgstr "QUILATE"
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__quantity
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__cbs_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__cofins_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__cofins_wh_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__cofinsst_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__ibs_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__ipi_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__pis_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__pis_wh_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__pisst_base_type__quantity
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__cbs_base_type__quantity
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__cofins_base_type__quantity
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__cofins_wh_base_type__quantity
@@ -7032,6 +7202,24 @@ msgstr "QUILATE"
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__pis_wh_base_type__quantity
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__pisst_base_type__quantity
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax__tax_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__cbs_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__cofins_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__cofins_wh_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__cofinsst_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__ibs_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__ipi_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__pis_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__pis_wh_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__pisst_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__cbs_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__cofins_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__cofins_wh_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__cofinsst_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__ibs_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__ipi_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__pis_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__pis_wh_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__pisst_base_type__quantity
 msgid "Quantity"
 msgstr "Quantidade"
 
@@ -7417,6 +7605,7 @@ msgstr "Tipo de Serviço Filho"
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__service_type_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_product_product__service_type_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_product_template__service_type_id
+#: model:ir.ui.menu,name:l10n_br_fiscal.service_type_menu
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.product_search
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.product_template_search
 msgid "Service Type LC 166"
@@ -7434,10 +7623,13 @@ msgid "Serviço Municipal"
 msgstr "Serviço Municipal"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__fiscal_type__09
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__fiscal_type__09
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__09
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__09
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__09
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__09
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__09
 msgid "Serviços"
 msgstr "Serviços"
 
@@ -7458,6 +7650,7 @@ msgid "Shipping Address"
 msgstr "Endereço de Entrega"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__issqn_incentive__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__ind_final__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__ind_final__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__issqn_incentive__1
@@ -7465,7 +7658,11 @@ msgstr "Endereço de Entrega"
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__issqn_incentive__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_mixin__ind_final__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax_definition__ind_final__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__ind_final__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__issqn_incentive__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__res_partner__ind_final__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order__ind_final__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__issqn_incentive__1
 msgid "Sim"
 msgstr "Sim"
 
@@ -7569,14 +7766,9 @@ msgid "State"
 msgstr "Estado"
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document__partner_l10n_br_ie_code
-#: model:ir.model.fields,help:l10n_br_fiscal.field_res_partner__l10n_br_ie_code
-#: model:ir.model.fields,help:l10n_br_fiscal.field_res_users__l10n_br_ie_code
-msgid "State Tax Identification Number. Should contain 9-14 digits."
-msgstr ""
-
-#. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__partner_l10n_br_ie_code
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_partner__l10n_br_ie_code
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_users__l10n_br_ie_code
 msgid "State Tax Number"
 msgstr "Número do Imposto Estadual/RG"
 
@@ -7624,10 +7816,13 @@ msgid "Subject to withholding tax"
 msgstr "Sujeito a imposto de renda retido na parte"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__fiscal_type__05
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__fiscal_type__05
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__05
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__05
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__05
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__05
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__05
 msgid "Subproduto"
 msgstr "Subproduto"
 
@@ -8069,6 +8264,12 @@ msgid "Tax ICMS ST"
 msgstr "Imposto ICMS ST"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_partner__vat
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_users__vat
+msgid "Tax ID"
+msgstr ""
+
+#. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__ii_tax_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__ii_tax_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_ncm__tax_ii_id
@@ -8286,6 +8487,13 @@ msgid "Taxes Settings"
 msgstr "Configuração de Impostos"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document__user_id
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__company_id
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__quantity
+msgid "Technical Field."
+msgstr ""
+
+#. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_company__technical_support_id
 msgid "Technical Support"
 msgstr "Suporte Técnico"
@@ -8308,6 +8516,16 @@ msgstr "Mensagem de teste"
 #. module: l10n_br_fiscal
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.l10n_br_fiscal_res_config_settings_form
 msgid "The Delivery Costs should be informed by Line or by Total ?"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document__partner_cnpj_cpf
+#: model:ir.model.fields,help:l10n_br_fiscal.field_res_partner__vat
+#: model:ir.model.fields,help:l10n_br_fiscal.field_res_users__vat
+msgid ""
+"The Tax Identification Number. Values here will be validated based on the "
+"country format. You can use '/' to indicate that the partner is not subject "
+"to tax."
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -8360,8 +8578,8 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_br_fiscal/models/document.py:0
 msgid ""
-"There is already a fiscal document with this Serie: %(serie)s, Number: %"
-"(number)s!"
+"There is already a fiscal document with this Serie: %(serie)s, Number: "
+"%(number)s!"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -8639,9 +8857,12 @@ msgid "Valor Total"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__icms_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__icms_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax__icms_base_type__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_base_type__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_base_type__3
 msgid "Valor da Operação"
 msgstr "Valor da Operação"
 
@@ -8806,8 +9027,8 @@ msgstr "Você não pode excluir uma Definição de Imposto que não é rascunho 
 #. odoo-python
 #: code:addons/l10n_br_fiscal/models/document.py:0
 msgid ""
-"You cannot delete fiscal document number %(number)s with the status: %"
-"(state)s!"
+"You cannot delete fiscal document number %(number)s with the status: "
+"%(state)s!"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -8860,11 +9081,6 @@ msgid "done"
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__res_company__processador_edoc__oca
-msgid "erpbrasil.edoc"
-msgstr "erpbrasil.edoc"
-
-#. module: l10n_br_fiscal
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_base_wizard_mixin__state__init
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_cancel_wizard__state__init
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_correction_wizard__state__init
@@ -8897,1969 +9113,3 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax_group__tax_domain__pis_wh
 msgid "pis_wh"
 msgstr "pis_wh"
-
-#~ msgid "IBPT Service Unavailable - {!r}"
-#~ msgstr "Indisponível Serviço IBPT - {!r}"
-
-#~ msgid "IBPT URL not found - {!r}"
-#~ msgstr "Não encontrado URL IBPT - {!r}"
-
-#~ msgid ""
-#~ "Mantenha apenas um tipo fiscal padrão para Pessoa Física ou para Pessoa "
-#~ "Jurídica!"
-#~ msgstr ""
-#~ "Manter apenas um tipo fiscal padrão para Pessoa Física ou para Pessoa "
-#~ "Jurídica!"
-
-#~ msgid "Scheduled {} estimate taxes update complete."
-#~ msgstr ""
-#~ "Agendado {} estimativa de impostos atualizados atualização completa."
-
-#~ msgid "Scheduled {} estimate taxes update..."
-#~ msgstr "Agendado {} estimativa de impostos atualizado..."
-
-#~ msgid "{} Tax Estimate Updated"
-#~ msgstr "{} Estimativa de Imposto Atualizada"
-
-#~ msgid "Amount Tax"
-#~ msgstr "Total de Imposto"
-
-#~ msgid "Amount Total"
-#~ msgstr "Valor Total"
-
-#~ msgid "Amount Untaxed"
-#~ msgstr "Total sem Impostos"
-
-#~ msgid "Municipal Tax Number"
-#~ msgstr "Número de Impostos Municipais"
-
-#~ msgid "<i class=\"fa fa-arrow-right\"/> Generate an Access Key"
-#~ msgstr "<i class=\"fa fa-arrow-right\"/> Gerar uma chave de acesso"
-
-#~ msgid ""
-#~ "<i class=\"fa fa-ellipsis-v\" role=\"img\" aria-label=\"Manage\" "
-#~ "title=\"Manage\"/>"
-#~ msgstr ""
-#~ "<i class=\"fa fa-ellipsis-v\" role=\"img\" aria-label=\"Gerenciar\" "
-#~ "title=\"Gerenciar\"/>"
-
-#~ msgid ""
-#~ "A CEST is necessary to create\n"
-#~ "              fiscal operations for your fiscal moves."
-#~ msgstr ""
-#~ "Um CEST é necessário para criar\n"
-#~ "              operações fiscais para seus movimentos fiscais."
-
-#~ msgid ""
-#~ "A CFOP is necessary to determine the\n"
-#~ "              fiscal operations for your fiscal moves."
-#~ msgstr ""
-#~ "Uma CFOP é necessária para determinar a\n"
-#~ "              operação fiscal para seus movimentos fiscais."
-
-#~ msgid ""
-#~ "A CNAE is necessary to determine the\n"
-#~ "              fiscal definitions for your company."
-#~ msgstr ""
-#~ "Um CNAE é necessário para determinar\n"
-#~ "              as definições fiscais para sua empresa."
-
-#~ msgid ""
-#~ "A CST is necessary to create\n"
-#~ "              fiscal operations for your fiscal moves."
-#~ msgstr ""
-#~ "Um CST é necessário para criar\n"
-#~ "              operações fiscais para seus movimentos fiscais."
-
-#~ msgid ""
-#~ "A NBM is necessary to create\n"
-#~ "              fiscal operations for your fiscal moves."
-#~ msgstr ""
-#~ "Um NCM é necessário para criar\n"
-#~ "              operações fiscais para seus movimentos fiscais."
-
-#~ msgid ""
-#~ "A NBS is necessary to create\n"
-#~ "              fiscal operations for your fiscal moves."
-#~ msgstr ""
-#~ "Um NBS é necessário para criar\n"
-#~ "              operações fiscais para seus movimentos fiscais."
-
-#~ msgid ""
-#~ "A NCM is necessary to create\n"
-#~ "              fiscal operations for your fiscal moves."
-#~ msgstr ""
-#~ "Um NCM é necessário para criar\n"
-#~ "              operações fiscais para seus movimentos fiscais."
-
-#~ msgid ""
-#~ "A Service Type is necessary to create\n"
-#~ "              fiscal operations for your fiscal moves."
-#~ msgstr ""
-#~ "Um Tipo de Serviço é necessário para criar\n"
-#~ "              operações fiscais para seus movimentos fiscais."
-
-#~ msgid ""
-#~ "A Simplified Tax is necessary to determine the\n"
-#~ "              fiscal definitions for your company."
-#~ msgstr ""
-#~ "Um Imposto Simplificado é necessário para determinar as\n"
-#~ "              definições fiscais para sua empresa."
-
-#~ msgid ""
-#~ "A Tax Group is necessary to create\n"
-#~ "              fiscal operations for your fiscal moves."
-#~ msgstr ""
-#~ "Um Grupo de Imposto é necessário para criar\n"
-#~ "              operações fiscais para seus movimentos fiscais."
-
-#~ msgid ""
-#~ "A Tax IPI control seal is necessary to create\n"
-#~ "              fiscal operations for your fiscal moves."
-#~ msgstr ""
-#~ "Um selo de controle de IPI é necessário para criar\n"
-#~ "              operações fiscais para seus movimentos fiscais."
-
-#~ msgid ""
-#~ "A Tax IPI guideline Class is necessary to create\n"
-#~ "              fiscal operations for your fiscal moves."
-#~ msgstr ""
-#~ "Uma Classe de Diretriz de IPI é necessária para criar\n"
-#~ "              operações fiscais para seus movimentos fiscais."
-
-#~ msgid ""
-#~ "A Tax IPI guideline is necessary to create\n"
-#~ "              fiscal operations for your fiscal moves."
-#~ msgstr ""
-#~ "Uma Diretriz de IPI é necessária para criar\n"
-#~ "              operações fiscais para seus movimentos fiscais."
-
-#~ msgid ""
-#~ "A Tax is necessary to create\n"
-#~ "              fiscal operations for your fiscal moves."
-#~ msgstr ""
-#~ "Um imposto é necessário para criar\n"
-#~ "              operações fiscais para seus movimentos fiscais."
-
-#~ msgid "Add a new Fiscal Document Email Definition"
-#~ msgstr "Adicionar uma nova Definição de E-mail de Documento Fiscal"
-
-#~ msgid ""
-#~ "All Document Email Definitions supported by the Brazilian\n"
-#~ "              Fiscal module for Odoo."
-#~ msgstr ""
-#~ "Todas as definições de e-mail de documentos suportadas pelo módulo\n"
-#~ "              Fiscal Brasileiro para Odoo."
-
-#~ msgid ""
-#~ "All Documents supported by Brazilian\n"
-#~ "              Fiscal modulo for Odoo."
-#~ msgstr ""
-#~ "Todos os documentos suportados pelo Módulo\n"
-#~ "              Fiscal Brasileiro para Odoo."
-
-#~ msgid ""
-#~ "All Serie for Documents supported by\n"
-#~ "              Brazilian Fiscal modulo for Odoo."
-#~ msgstr ""
-#~ "Todas as Séries para documentos suportadas pelo módulo\n"
-#~ "              Fiscal Brasileiro para Odoo."
-
-#, python-format
-#~ msgid "Already exists with this code !"
-#~ msgstr "Já existe com este código !"
-
-#~ msgid "Alternative UOM"
-#~ msgstr "UdM Alternativa"
-
-#~ msgid "Alternative names"
-#~ msgstr "Nomes Alternativos"
-
-#~ msgid ""
-#~ "An Fiscal Product Genre is necessary to create\n"
-#~ "              EFD operations for your fiscal moves."
-#~ msgstr ""
-#~ "Um Gênero de Produto Fiscal é necessário para criar\n"
-#~ "              operações EFD para seus movimentos fiscais."
-
-#~ msgid "CAIXA"
-#~ msgstr "CAIXA"
-
-#~ msgid "CAIXA COM 10 UNIDADES"
-#~ msgstr "CAIXA COM 10 UNIDADES"
-
-#~ msgid "CAIXA COM 100 UNIDADES"
-#~ msgstr "CAIXA COM 100 UNIDADES"
-
-#~ msgid "CAIXA COM 15 UNIDADES"
-#~ msgstr "CAIXA COM 15 UNIDADES"
-
-#~ msgid "CAIXA COM 2 UNIDADES"
-#~ msgstr "CAIXA COM 2 UNIDADES"
-
-#~ msgid "CAIXA COM 20 UNIDADES"
-#~ msgstr "CAIXA COM 20 UNIDADES"
-
-#~ msgid "CAIXA COM 25 UNIDADES"
-#~ msgstr "CAIXA COM 25 UNIDADES"
-
-#~ msgid "CAIXA COM 3 UNIDADES"
-#~ msgstr "CAIXA COM 3 UNIDADES"
-
-#~ msgid "CAIXA COM 5 UNIDADES"
-#~ msgstr "CAIXA COM 5 UNIDADES"
-
-#~ msgid "CAIXA COM 50 UNIDADES"
-#~ msgstr "CAIXA COM 50 UNIDADES"
-
-#~ msgid "CENTIMETRO QUADRADO"
-#~ msgstr "CENTIMETRO QUADRADO"
-
-#~ msgid "CFOP already exists with this code !"
-#~ msgstr "CFOP já existe com este código !"
-
-#, python-format
-#~ msgid "CNAE already exists with this code !"
-#~ msgstr "CNAE já existe com este código !"
-
-#~ msgid "CONJUNTO"
-#~ msgstr "CONJUNTO"
-
-#, python-format
-#~ msgid "CST already exists with this code !"
-#~ msgstr "CST já existe com este código !"
-
-#, python-format
-#~ msgid ""
-#~ "Canceling the document is not allowed: one or more associated documents "
-#~ "have already been authorized."
-#~ msgstr ""
-#~ "O cancelamento do documento não é permitido: um ou mais documentos "
-#~ "associados já foram autorizados."
-
-#~ msgid "Company CNPJ"
-#~ msgstr "CNPJ"
-
-#~ msgid "Company City"
-#~ msgstr "Cidade da empresa"
-
-#~ msgid "Company Country"
-#~ msgstr "País da Empresa"
-
-#~ msgid "Company District"
-#~ msgstr "Bairro da Empresa"
-
-#~ msgid "Company Legal Name"
-#~ msgstr "Nome Legal da Empresa"
-
-#~ msgid "Company Main CNAE"
-#~ msgstr "CNAE Principal da Empresa"
-
-#~ msgid "Company Municipal Tax Number"
-#~ msgstr "Número de Impostos Municipais da Empresa"
-
-#~ msgid "Company Name"
-#~ msgstr "Nome da Empresa"
-
-#~ msgid "Company Number"
-#~ msgstr "Número"
-
-#~ msgid "Company Phone"
-#~ msgstr "Telefone da Empresa"
-
-#~ msgid "Company State"
-#~ msgstr "Estado da Empresa"
-
-#~ msgid "Company State Tax Number"
-#~ msgstr "Número da Inscrição Estadual"
-
-#~ msgid "Company Street"
-#~ msgstr "Rua da Empresa"
-
-#~ msgid "Company Street2"
-#~ msgstr "Empresa Rua2"
-
-#~ msgid "Company Suframa"
-#~ msgstr "Empresa Suframa"
-
-#~ msgid "Company ZIP"
-#~ msgstr "Cep da Empresa"
-
-#~ msgid "Create a new Subsequent Document"
-#~ msgstr "Crie um novo Documento Subsequente"
-
-#~ msgid "Create a new Subsequent operation"
-#~ msgstr "Criar uma nova operação subsequente"
-
-#~ msgid "Document Info"
-#~ msgstr "Informações do Documento"
-
-#~ msgid "Document Subsequent"
-#~ msgstr "Documento subsequente"
-
-#~ msgid "Email Template Definition"
-#~ msgstr "Definição de modelo de e-mail"
-
-#~ msgid "Email Templates"
-#~ msgstr "Modelos de e-mail"
-
-#, python-format
-#~ msgid "Error in the request: {}"
-#~ msgstr "Erro na solicitação: {}"
-
-#~ msgid "Faturas canceladas"
-#~ msgstr "Faturas canceladas"
-
-#~ msgid "Fiscal Document E-mail Template"
-#~ msgstr "Modelo de e-mail de documentos fiscais"
-
-#~ msgid "Fiscal Document Email"
-#~ msgstr "E-mail de Documentos Fiscais"
-
-#, python-format
-#~ msgid "Fiscal Operation Line already exists with this name !"
-#~ msgstr "Linha de Operação Fiscal já existe com esse nome !"
-
-#, python-format
-#~ msgid "Fiscal Operation already exists with this code !"
-#~ msgstr "Operação Fiscal já existe com este código !"
-
-#~ msgid "Fiscal Partner Profile already exists with this code !"
-#~ msgstr "Perfil de Parceiro Fiscal já existe com esse código !"
-
-#~ msgid "GARRAFA"
-#~ msgstr "GARRAFA"
-
-#~ msgid "Generation Situation"
-#~ msgstr "Situação de Geração"
-
-#~ msgid "Gerar Nota Fiscal de Cupons Fiscais"
-#~ msgstr "Gerar Nota Fiscal de Cupons Fiscais"
-
-#~ msgid "Gerar Nota Fiscal de Remessa"
-#~ msgstr "Gerar Nota Fiscal de Remessa"
-
-#~ msgid "Gives the sequence order when displaying a list"
-#~ msgstr "Dá a ordem da sequência ao exibir uma lista"
-
-#~ msgid "Last Modified on"
-#~ msgstr "Última Modificação em"
-
-#, python-format
-#~ msgid "Loading l10n_br_fiscal demo files."
-#~ msgstr "Carregando arquivos de demonstração l10n_br_fiscal."
-
-#, python-format
-#~ msgid "Loading l10n_br_fiscal fiscal files. It may take a minute..."
-#~ msgstr "Carregando l10n_br_fiscal arquivos fiscais. Pode levar um minuto..."
-
-#, python-format
-#~ msgid "Loading l10n_br_fiscal post demo files. It may take a minute..."
-#~ msgstr ""
-#~ "Carregando os arquivos de demo do l10n_br_fiscal. Pode levar um minuto..."
-
-#, python-format
-#~ msgid "Loading l10n_br_fiscal post init files. It may take a minute..."
-#~ msgstr ""
-#~ "Carregando l10n_br_fiscal postar arquivos init. Pode levar um minuto..."
-
-#, python-format
-#~ msgid ""
-#~ "Loading l10n_br_fiscal production files. It may take at least 3 minutes..."
-#~ msgstr ""
-#~ "Carregando arquivos de produção l10n_br_fiscal. Pode levar pelo menos 3 "
-#~ "minutos..."
-
-#~ msgid "MEGAWATT HORA"
-#~ msgstr "MEGAWATT HORA"
-
-#~ msgid "METRO CUBICO"
-#~ msgstr "METRO CUBICO"
-
-#~ msgid "METRO QUADRADO"
-#~ msgstr "METRO QUADRADO"
-
-#~ msgid "MILILITRO"
-#~ msgstr "MILILITRO"
-
-#~ msgid "Main Attachment"
-#~ msgstr "Anexo Principal"
-
-#~ msgid "Manualmente"
-#~ msgstr "Manualmente"
-
-#, python-format
-#~ msgid "NBS already exists with this code !"
-#~ msgstr "NBS já existe com este código !"
-
-#, python-format
-#~ msgid "NCM already exists with this code !"
-#~ msgstr "NCM já existe com este código !"
-
-#~ msgid ""
-#~ "Odoo helps you easily track all activities\n"
-#~ "            related to a fiscal comment."
-#~ msgstr ""
-#~ "Odoo ajuda você a acompanhar facilmente todas as atividades\n"
-#~ "            relacionados a um comentário fiscal."
-
-#~ msgid ""
-#~ "Odoo helps you easily track all activities\n"
-#~ "            related to a fiscal operation."
-#~ msgstr ""
-#~ "Odoo ajuda você a acompanhar facilmente todas as atividades\n"
-#~ "            relacionados a uma operação fiscal."
-
-#~ msgid "Operation Performed"
-#~ msgstr "Operação Realizada"
-
-#~ msgid "Operation to be performed"
-#~ msgstr "Operação a ser realizada"
-
-#~ msgid "Origin operation"
-#~ msgstr "Operação de origem"
-
-#~ msgid "PEÇA"
-#~ msgstr "PEÇA"
-
-#~ msgid "Partner City"
-#~ msgstr "Cidade do Parceiro"
-
-#~ msgid "Partner Country"
-#~ msgstr "País Parceiro"
-
-#~ msgid "Partner District"
-#~ msgstr "Bairro do Parceiro"
-
-#~ msgid "Partner Is Company?"
-#~ msgstr "Parceiro é Empresa?"
-
-#~ msgid "Partner Name"
-#~ msgstr "Nome do Parceiro"
-
-#~ msgid "Partner Number"
-#~ msgstr "Número do parceiro"
-
-#~ msgid "Partner Phone"
-#~ msgstr "Telefone Parceiro"
-
-#~ msgid "Partner State"
-#~ msgstr "Estado do Parceiro"
-
-#~ msgid "Partner Street"
-#~ msgstr "Rua do Parceiro"
-
-#~ msgid "Partner Street2"
-#~ msgstr "Rua2 do Parceiro"
-
-#~ msgid "Partner Zip"
-#~ msgstr "Parceiro Zip"
-
-#~ msgid "Recipient"
-#~ msgstr "Destinatário"
-
-#~ msgid "Referencing source document"
-#~ msgstr "Referenciando documento de origem"
-
-#~ msgid "Related operation"
-#~ msgstr "Operação relacionada"
-
-#~ msgid ""
-#~ "Select the email template that will be sent when this document state "
-#~ "change."
-#~ msgstr ""
-#~ "Selecione o modelo de e-mail que será enviado quando este documento "
-#~ "enviar alteração."
-
-#~ msgid ""
-#~ "Select the type of document that will be applied to the email templates "
-#~ "definitions."
-#~ msgstr ""
-#~ "Selecione o tipo de documento que será aplicado às definições de modelos "
-#~ "de e-mail."
-
-#~ msgid "Send Email"
-#~ msgstr "Enviar E-mail"
-
-#, python-format
-#~ msgid "Send Fiscal Document Email Notification"
-#~ msgstr "Enviar notificação de e-mail de documentos fiscais"
-
-#~ msgid "Show Document"
-#~ msgstr "Mostrar documento"
-
-#~ msgid "Source Operation"
-#~ msgstr "Operação fonte"
-
-#~ msgid "Source document"
-#~ msgstr "Documento de Origem"
-
-#~ msgid "Subsequent Document"
-#~ msgstr "Documento subsequente"
-
-#~ msgid "Subsequent Operation"
-#~ msgstr "Operação subsequente"
-
-#~ msgid "Subsequent documents generated?"
-#~ msgstr "Documentos subsequentes gerados?"
-
-#~ msgid "Subsequents Documents"
-#~ msgstr "Documentos subsequentes"
-
-#~ msgid "Suframa"
-#~ msgstr "Suframa"
-
-#, python-format
-#~ msgid "Tax Group already exists with this name !"
-#~ msgstr "Grupo Fiscal já existe com esse nome !"
-
-#~ msgid "Tax already exists with this name !"
-#~ msgstr "Imposto já existe com esse nome!"
-
-#~ msgid "This name is already used by another email definition !"
-#~ msgstr "Este nome já é usado por outra definição de e-mail !"
-
-#~ msgid "Uom"
-#~ msgstr "UOM"
-
-#~ msgid "You can note repeat the alternative name"
-#~ msgstr "Você pode notar repetir o nome alternativo"
-
-#, python-format
-#~ msgid "You need set a default fiscal document in your company !"
-#~ msgstr "Você precisa definir um documento fiscal padrão em sua empresa !"
-
-#~ msgid "Document Fiscal Mixin Methods"
-#~ msgstr "Métodos de Mixina Fiscal de Documentos"
-
-#~ msgid "<strong style=\"font-size:18px;\">CNPJ:</strong>"
-#~ msgstr "<strong style=\"font-size:18px;\">CNPJ:</strong>"
-
-#~ msgid "<strong style=\"font-size:18px;\">Document Key:</strong>"
-#~ msgstr "<strong style=\"font-size:18px;\">Chave do Documento:</strong>"
-
-#~ msgid "<strong style=\"font-size:18px;\">Document Number:</strong>"
-#~ msgstr "<strong style=\"font-size:18px;\">Número do Documento:</strong>"
-
-#~ msgid "<strong style=\"font-size:18px;\">Document Serie:</strong>"
-#~ msgstr "<strong style=\"font-size:18px;\">Série do Documento:</strong>"
-
-#~ msgid "<strong style=\"font-size:18px;\">Environment:</strong>"
-#~ msgstr "<strong style=\"font-size:18px;\">Ambiente SEFAZ:</strong>"
-
-#~ msgid "<strong style=\"font-size:18px;\">Justification:</strong>"
-#~ msgstr "<strong style=\"font-size:18px;\">Justificativa:</strong>"
-
-#~ msgid "<strong style=\"font-size:18px;\">Protocol Date:</strong>"
-#~ msgstr "<strong style=\"font-size:18px;\">Data do Protocolo:</strong>"
-
-#~ msgid "<strong style=\"font-size:18px;\">Protocol Number:</strong>"
-#~ msgstr "<strong style=\"font-size:18px;\">Número do Protocolo:</strong>"
-
-#~ msgid ""
-#~ "A Carta de Correção é disciplinada pelo parágrafo 1o-A do artigo 7o do "
-#~ "Convênio S/N, de 15 de dezembro de 1970 e pode ser utilizada para "
-#~ "regularização de erro ocorrido na emissão de documento fiscal, desde que "
-#~ "o erro não seja relacionado com:<br/>\n"
-#~ "                  <br/>\n"
-#~ "                  I - as variáveis que determinam o valor do imposto tais "
-#~ "como: base de cálculo, alíquota, diferença de preço, quantidade, valor da "
-#~ "operação ou da prestação;<br/>\n"
-#~ "                  II - a correção de dados cadastrais que impliquem "
-#~ "mudança do remetente ou do destinatário;<br/>\n"
-#~ "                  III - a data de emissão ou de saída.<br/>"
-#~ msgstr ""
-#~ "A Carta de Correção é disciplinada pelo parágrafo 1o-A do artigo 7o do "
-#~ "Convênio S/N, de 15 de dezembro de 1970 e pode ser utilizada para "
-#~ "regularização de erro ocorrido na emissão de documento fiscal, desde que "
-#~ "o erro não seja relacionado com:<br/>\n"
-#~ "                  <br/>\n"
-#~ "                  I - as variáveis que determinam o valor do imposto tais "
-#~ "como: base de cálculo, alíquota, diferença de preço, quantidade, valor da "
-#~ "operação ou da prestação;<br/>\n"
-#~ "                  II - a correção de dados cadastrais que impliquem "
-#~ "mudança do remetente ou do destinatário;<br/>\n"
-#~ "                  III - a data de emissão ou de saída.<br/>"
-
-#~ msgid "Authorization"
-#~ msgstr "Autorização"
-
-#~ msgid "Authorization Date"
-#~ msgstr "Data da Autorização"
-
-#~ msgid "Authorization Event"
-#~ msgstr "Evento de Autorização"
-
-#~ msgid "Authorization File XML"
-#~ msgstr "Arquivo XML de Autorização"
-
-#~ msgid "Authorization Protocol"
-#~ msgstr "Protocolo de Autorização"
-
-#~ msgid "Cancel Event"
-#~ msgstr "Evento de Cancelamento"
-
-#~ msgid "Cancel File XML"
-#~ msgstr "Arquivo XML de Cancelamento"
-
-#~ msgid "Cancel Reason"
-#~ msgstr "Motivo do Cancelamento"
-
-#~ msgid "Cancelamento"
-#~ msgstr "Cancelamento"
-
-#~ msgid "Cancelamento de documento fiscal"
-#~ msgstr "Cancelamento de documento fiscal"
-
-#~ msgid "Carta de Correção"
-#~ msgstr "Carta de Correção"
-
-#~ msgid "Close"
-#~ msgstr "Fechar"
-
-#~ msgid "Consulta Cadastro"
-#~ msgstr "Consulta Cadastro"
-
-#~ msgid "Consulta Destinadas"
-#~ msgstr "Consulta Destinadas"
-
-#~ msgid "Consulta NFE"
-#~ msgstr "Consulta NFE"
-
-#~ msgid "Consulta Recibo"
-#~ msgstr "Consulta Recibo"
-
-#~ msgid "Consulta Situação"
-#~ msgstr "Consulta Situação"
-
-#~ msgid "Correction Events"
-#~ msgstr "Eventos de Correção"
-
-#~ msgid "Correction Reason"
-#~ msgstr "Razão de correção"
-
-#~ msgid "Corrections"
-#~ msgstr "Correções"
-
-#~ msgid "DPEC Consulta"
-#~ msgstr "DPEC Consulta"
-
-#~ msgid "DPEC Recepção"
-#~ msgstr "DPEC Recepção"
-
-#~ msgid "Distribuição DFe"
-#~ msgstr "Distribuição DFe"
-
-#~ msgid "Document Event"
-#~ msgstr "Evento do Documento"
-
-#~ msgid "Document Report"
-#~ msgstr "Relatório de Documento"
-
-#~ msgid "Document Status"
-#~ msgstr "Status do Documento"
-
-#~ msgid "Document reference that generated this event."
-#~ msgstr "Referencia do documento que gerou este evento."
-
-#~ msgid "Download"
-#~ msgstr "Download"
-
-#~ msgid "Environment"
-#~ msgstr "Ambiente"
-
-#, python-format
-#~ msgid "Erro!"
-#~ msgstr "Erro, erro!"
-
-#~ msgid "Eventos Eletronicos"
-#~ msgstr "Eventos Eletronicos"
-
-#~ msgid "Events"
-#~ msgstr "Eventos"
-
-#~ msgid "File Path"
-#~ msgstr "Caminho do Arquivo"
-
-#~ msgid "Fiscal Document Cancel Wizard"
-#~ msgstr "Assistente de cancelamento de documento fiscal"
-
-#~ msgid "Fiscal Document Correction Wizard"
-#~ msgstr "Assistente de correção de documentos fiscais"
-
-#~ msgid "Fiscal Document Event"
-#~ msgstr "Evento de Documento Fiscal"
-
-#~ msgid "Fiscal Document Event Sequence"
-#~ msgstr "Sequencia de Evento de Documento Fiscal"
-
-#~ msgid "Fiscal Document Workflow"
-#~ msgstr "Fluxo de trabalho do documento fiscal"
-
-#~ msgid "Fiscal Eletronic Document"
-#~ msgstr "Documento Fiscal Eletrônico"
-
-#~ msgid "Fiscal Event"
-#~ msgstr "Evento Fiscal"
-
-#~ msgid "Get Status"
-#~ msgstr "Obter Status"
-
-#~ msgid "Homologation"
-#~ msgstr "Homologação"
-
-#~ msgid "Inutilização"
-#~ msgstr "Inutilização"
-
-#~ msgid "Inutilização de documento fiscal"
-#~ msgstr "Inutilização de documento fiscal"
-
-#~ msgid "Invalidate Event"
-#~ msgstr "Evento Invalidado"
-
-#~ msgid "Invalidate File XML"
-#~ msgstr "Invalidar Arquivo XML"
-
-#~ msgid "Invalidate Number Wizard"
-#~ msgstr "Assistente para Invalidar Número"
-
-#~ msgid "Is Printed?"
-#~ msgstr "É Impresso?"
-
-#, python-format
-#~ msgid "Justification must be at least 15 characters."
-#~ msgstr "Justificativa deve ter pelo menos 15 caracteres."
-
-#~ msgid "Manifestação"
-#~ msgstr "Manifestação"
-
-#~ msgid "Message"
-#~ msgstr "Mensagem"
-
-#, python-format
-#~ msgid "No PDF file generated!"
-#~ msgstr "Não gerado arquivo PDF!"
-
-#, python-format
-#~ msgid "No XML file generated!"
-#~ msgstr "Não gerado arquivo XML!"
-
-#, python-format
-#~ msgid ""
-#~ "Não foi possível salvar o arquivo\n"
-#~ "                    em disco, verifique as permissões de escrita\n"
-#~ "                    e o caminho da pasta"
-#~ msgstr ""
-#~ "Não foi possível salvar o arquivo\n"
-#~ "                    em disco, verifique como permissões de escrita\n"
-#~ "                    e o caminho da massa"
-
-#, python-format
-#~ msgid ""
-#~ "Não é possível realizar esta operação,\n"
-#~ "esta transição não é permitida:\n"
-#~ "\n"
-#~ "De: {old_state}\n"
-#~ "\n"
-#~ " Para: {new_state}"
-#~ msgstr ""
-#~ "Não é possível realizar esta operação,\n"
-#~ "esta transição não é permitida:\n"
-#~ "\n"
-#~ "De: {old_state}\n"
-#~ "\n"
-#~ "Pará: {new_state}"
-
-#~ msgid "OK"
-#~ msgstr "OK"
-
-#~ msgid ""
-#~ "Odoo helps you easily track all activities\n"
-#~ "              related to a fiscal operation."
-#~ msgstr ""
-#~ "Odoo ajuda você a acompanhar facilmente todas as atividades\n"
-#~ "              relacionados a uma operação fiscal."
-
-#~ msgid "Production"
-#~ msgstr "Produção"
-
-#~ msgid "Protocol Date"
-#~ msgstr "Data do Protocolo"
-
-#~ msgid "Protocol Number"
-#~ msgstr "Número do Protocolo"
-
-#~ msgid "Recepção Evento"
-#~ msgstr "Recepção Evento"
-
-#~ msgid "Response Message"
-#~ msgstr "Mensagem de resposta"
-
-#, python-format
-#~ msgid "Response received"
-#~ msgstr "Resposta recebida"
-
-#, python-format
-#~ msgid "Sending"
-#~ msgstr "Enviando"
-
-#~ msgid "Service"
-#~ msgstr "Serviço"
-
-#~ msgid "Source Document"
-#~ msgstr "Documento de Origem"
-
-#~ msgid "Status Code"
-#~ msgstr "Código de Status"
-
-#~ msgid "Write Date"
-#~ msgstr "Data de gravação"
-
-#~ msgid "XML"
-#~ msgstr "XML"
-
-#, python-format
-#~ msgid ""
-#~ "You cannot create a fiscal correction document if this fical document you "
-#~ "are not the document issuer"
-#~ msgstr ""
-#~ "Não é possível criar um documento de correção não sendo o emissor deste "
-#~ "documento fiscal"
-
-#~ msgid "Cancelation"
-#~ msgstr "Cancelamento"
-
-#~ msgid "Envio Lote"
-#~ msgstr "Envio Lote"
-
-#~ msgid "(-) Amount Tax Withholding"
-#~ msgstr "(-) Valor Retido na Fonte"
-
-#~ msgid "Amount Tax Withholding"
-#~ msgstr "Total de Imposto Retido na Fonte"
-
-#~ msgid ""
-#~ "${object.document_type_id.name}: ${object.document_number} Serie: $"
-#~ "{object.document_serie} is: $"
-#~ "{dict(object.fields_get('state').get('state').get('selection')).get(object.state, "
-#~ "'')}"
-#~ msgstr ""
-#~ "${object.document_type_id.name}: ${object.document_number} Série: $"
-#~ "{object.document_serie} é: $"
-#~ "{dict(object.fields_get('state').get('state').get('selection')).get(object.state, "
-#~ "'')}"
-
-#~ msgid ""
-#~ "<html>\n"
-#~ "                <head></head>\n"
-#~ "                <body style=\"margin: 0; padding: 0;\">\n"
-#~ "                <table border=\"0\" width=\"100%\" cellpadding=\"0\" "
-#~ "bgcolor=\"#ededed\" style=\"padding: 20px; background-color: #ededed; "
-#~ "border-collapse:separate;\">\n"
-#~ "                    <tbody>\n"
-#~ "                      <!-- HEADER -->\n"
-#~ "                      <tr>\n"
-#~ "                        <td align=\"center\" style=\"min-width: 590px;"
-#~ "\">\n"
-#~ "                          <table width=\"590\" border=\"0\" "
-#~ "cellpadding=\"0\" bgcolor=\"#875A7B\" style=\"min-width: 590px; "
-#~ "background-color: rgb(135,90,123); padding: 20px; border-"
-#~ "collapse:separate;\">\n"
-#~ "                            <tr>\n"
-#~ "                              <td valign=\"middle\" align=\"right\">\n"
-#~ "                                <img src=\"/logo.png?company=$"
-#~ "{object.company_id}\" style=\"padding: 0px; margin: 0px; height: auto; "
-#~ "width: 80px;\" alt=\"${object.company_id.name}\">\n"
-#~ "                              </td>\n"
-#~ "                            </tr>\n"
-#~ "                          </table>\n"
-#~ "                        </td>\n"
-#~ "                      </tr>\n"
-#~ "                      <!-- CONTENT -->\n"
-#~ "                      <tr>\n"
-#~ "                        <td align=\"center\" style=\"min-width: 590px;"
-#~ "\">\n"
-#~ "                          <table width=\"590\" border=\"0\" "
-#~ "cellpadding=\"0\" bgcolor=\"#ffffff\" style=\"min-width: 590px; "
-#~ "background-color: rgb(255, 255, 255); padding: 20px; border-"
-#~ "collapse:separate;\">\n"
-#~ "                            <tbody>\n"
-#~ "                              <tr>\n"
-#~ "                                <td valign=\"top\" style=\"font-"
-#~ "family:Arial,Helvetica,sans-serif; color: #555; font-size: 14px;\">\n"
-#~ "                                  <p>Hello ${object.partner_id.name},</"
-#~ "p>\n"
-#~ "                                  <p>The Fiscal Document $"
-#~ "{object.document_number} has changed.</p>\n"
-#~ "                                </td>\n"
-#~ "                              </tr>\n"
-#~ "                              <tr>\n"
-#~ "                                <td style=\"font-"
-#~ "family:Arial,Helvetica,sans-serif; color: #555; font-size: 14px;\" "
-#~ "valign=\"top\">\n"
-#~ "                                  Document Number: $"
-#~ "{object.document_number}\n"
-#~ "                                </td>\n"
-#~ "                              </tr>\n"
-#~ "                              <tr>\n"
-#~ "                                <td style=\"font-"
-#~ "family:Arial,Helvetica,sans-serif; color: #555; font-size: 14px;\" "
-#~ "valign=\"top\">\n"
-#~ "                                  Document Serie: $"
-#~ "{object.document_serie}\n"
-#~ "                                </td>\n"
-#~ "                              </tr>\n"
-#~ "                              <tr>\n"
-#~ "                                <td style=\"font-"
-#~ "family:Arial,Helvetica,sans-serif; color: #555; font-size: 14px;\" "
-#~ "valign=\"top\">\n"
-#~ "                                  Document Key: ${object.document_key}\n"
-#~ "                                </td>\n"
-#~ "                              </tr>\n"
-#~ "                              <tr>\n"
-#~ "                                <td style=\"font-"
-#~ "family:Arial,Helvetica,sans-serif; color: #555; font-size: 14px;\" "
-#~ "valign=\"top\">\n"
-#~ "                                  Document Status: $"
-#~ "{dict(object.fields_get('state').get('state').get('selection')).get(object.state, "
-#~ "'')}\n"
-#~ "                                </td>\n"
-#~ "                              </tr>\n"
-#~ "                            </tbody>\n"
-#~ "                          </table>\n"
-#~ "                        </td>\n"
-#~ "                      </tr>\n"
-#~ "                      <!-- FOOTER -->\n"
-#~ "                      <tr>\n"
-#~ "                        <td align=\"center\" style=\"min-width: 590px;"
-#~ "\">\n"
-#~ "                          <table width=\"590\" border=\"0\" "
-#~ "cellpadding=\"0\" bgcolor=\"#875A7B\" style=\"min-width: 590px; "
-#~ "background-color: rgb(135,90,123); padding: 20px; border-"
-#~ "collapse:separate;\">\n"
-#~ "                            <tr>\n"
-#~ "                              <td valign=\"middle\" align=\"left\" "
-#~ "style=\"color: #fff; padding-top: 10px; padding-bottom: 10px; font-size: "
-#~ "12px;\">\n"
-#~ "                                ${object.company_id.phone}\n"
-#~ "                              </td>\n"
-#~ "                              <td valign=\"middle\" align=\"left\" "
-#~ "style=\"color: #fff; padding-top: 10px; padding-bottom: 10px; font-size: "
-#~ "12px;\">\n"
-#~ "                                ${object.company_id.email}\n"
-#~ "                              </td>\n"
-#~ "                              <td valign=\"middle\" align=\"left\" "
-#~ "style=\"color: #fff; padding-top: 10px; padding-bottom: 10px; font-size: "
-#~ "12px;\">\n"
-#~ "                                ${object.company_id.website}\n"
-#~ "                              </td>\n"
-#~ "                            </tr>\n"
-#~ "                          </table>\n"
-#~ "                        </td>\n"
-#~ "                      </tr>\n"
-#~ "                    </tbody>\n"
-#~ "                </table>\n"
-#~ "                </body>\n"
-#~ "                </html>\n"
-#~ "            "
-#~ msgstr ""
-#~ "<html>\n"
-#~ "                <head></head>\n"
-#~ "                <body style=\"margin: 0; padding: 0;\">\n"
-#~ "                <table border=\"0\" width=\"100%\" cellpadding=\"0\" "
-#~ "bgcolor=\"#ededed\" style=\"padding: 20px; background-color: #ededed; "
-#~ "border-collapse:separate;\">\n"
-#~ "                    <tbody>\n"
-#~ "                      <!-- HEADER -->\n"
-#~ "                      <tr>\n"
-#~ "                        <td align=\"center\" style=\"min-width: 590px;"
-#~ "\">\n"
-#~ "                          <table width=\"590\" border=\"0\" "
-#~ "cellpadding=\"0\" bgcolor=\"#875A7B\" style=\"min-width: 590px; "
-#~ "background-color: rgb(135,90,123); padding: 20px; border-"
-#~ "collapse:separate;\">\n"
-#~ "                            <tr>\n"
-#~ "                              <td valign=\"middle\" align=\"right\">\n"
-#~ "                                <img src=\"/logo.png?company=$"
-#~ "{object.company_id}\" style=\"padding: 0px; margin: 0px; height: auto; "
-#~ "width: 80px;\" alt=\"${object.company_id.name}\">\n"
-#~ "                              </td>\n"
-#~ "                            </tr>\n"
-#~ "                          </table>\n"
-#~ "                        </td>\n"
-#~ "                      </tr>\n"
-#~ "                      <!-- CONTENT -->\n"
-#~ "                      <tr>\n"
-#~ "                        <td align=\"center\" style=\"min-width: 590px;"
-#~ "\">\n"
-#~ "                          <table width=\"590\" border=\"0\" "
-#~ "cellpadding=\"0\" bgcolor=\"#ffffff\" style=\"min-width: 590px; "
-#~ "background-color: rgb(255, 255, 255); padding: 20px; border-"
-#~ "collapse:separate;\">\n"
-#~ "                            <tbody>\n"
-#~ "                              <tr>\n"
-#~ "                                <td valign=\"top\" style=\"font-"
-#~ "family:Arial,Helvetica,sans-serif; color: #555; font-size: 14px;\">\n"
-#~ "                                  <p>Olá ${object.partner_id.name},</p>\n"
-#~ "                                  <p>O Documento Fiscal $"
-#~ "{object.document_number} foi alterado.</p>\n"
-#~ "                                </td>\n"
-#~ "                              </tr>\n"
-#~ "                              <tr>\n"
-#~ "                                <td style=\"font-"
-#~ "family:Arial,Helvetica,sans-serif; color: #555; font-size: 14px;\" "
-#~ "valign=\"top\">\n"
-#~ "                                  Número do Documento: $"
-#~ "{object.document_number}\n"
-#~ "                                </td>\n"
-#~ "                              </tr>\n"
-#~ "                              <tr>\n"
-#~ "                                <td style=\"font-"
-#~ "family:Arial,Helvetica,sans-serif; color: #555; font-size: 14px;\" "
-#~ "valign=\"top\">\n"
-#~ "                                  Série do Documento: $"
-#~ "{object.document_serie}\n"
-#~ "                                </td>\n"
-#~ "                              </tr>\n"
-#~ "                              <tr>\n"
-#~ "                                <td style=\"font-"
-#~ "family:Arial,Helvetica,sans-serif; color: #555; font-size: 14px;\" "
-#~ "valign=\"top\">\n"
-#~ "                                  Chave do Documento: $"
-#~ "{object.document_key}\n"
-#~ "                                </td>\n"
-#~ "                              </tr>\n"
-#~ "                              <tr>\n"
-#~ "                                <td style=\"font-"
-#~ "family:Arial,Helvetica,sans-serif; color: #555; font-size: 14px;\" "
-#~ "valign=\"top\">\n"
-#~ "                                  Status do Documento: $"
-#~ "{dict(object.fields_get('state').get('state').get('selection')).get(object.state, "
-#~ "'')}\n"
-#~ "                                </td>\n"
-#~ "                              </tr>\n"
-#~ "                            </tbody>\n"
-#~ "                          </table>\n"
-#~ "                        </td>\n"
-#~ "                      </tr>\n"
-#~ "                      <!-- FOOTER -->\n"
-#~ "                      <tr>\n"
-#~ "                        <td align=\"center\" style=\"min-width: 590px;"
-#~ "\">\n"
-#~ "                          <table width=\"590\" border=\"0\" "
-#~ "cellpadding=\"0\" bgcolor=\"#875A7B\" style=\"min-width: 590px; "
-#~ "background-color: rgb(135,90,123); padding: 20px; border-"
-#~ "collapse:separate;\">\n"
-#~ "                            <tr>\n"
-#~ "                              <td valign=\"middle\" align=\"left\" "
-#~ "style=\"color: #fff; padding-top: 10px; padding-bottom: 10px; font-size: "
-#~ "12px;\">\n"
-#~ "                                ${object.company_id.phone}\n"
-#~ "                              </td>\n"
-#~ "                              <td valign=\"middle\" align=\"left\" "
-#~ "style=\"color: #fff; padding-top: 10px; padding-bottom: 10px; font-size: "
-#~ "12px;\">\n"
-#~ "                                ${object.company_id.email}\n"
-#~ "                              </td>\n"
-#~ "                              <td valign=\"middle\" align=\"left\" "
-#~ "style=\"color: #fff; padding-top: 10px; padding-bottom: 10px; font-size: "
-#~ "12px;\">\n"
-#~ "                                ${object.company_id.website}\n"
-#~ "                              </td>\n"
-#~ "                            </tr>\n"
-#~ "                          </table>\n"
-#~ "                        </td>\n"
-#~ "                      </tr>\n"
-#~ "                    </tbody>\n"
-#~ "                </table>\n"
-#~ "                </body>\n"
-#~ "                </html>\n"
-#~ "            "
-
-#~ msgid "City of Address"
-#~ msgstr "Cidade do Endereço"
-
-#~ msgid "Followers (Channels)"
-#~ msgstr "Seguidores (Canais)"
-
-#~ msgid "Hours"
-#~ msgstr "Horas"
-
-#~ msgid "Number of messages which requires an action"
-#~ msgstr "Número de mensagens que requer uma ação"
-
-#~ msgid "Number of unread messages"
-#~ msgstr "Quantidade de mensagens não lidas"
-
-#~ msgid "Product Template"
-#~ msgstr "Modelo de Produto"
-
-#~ msgid "Unread Messages"
-#~ msgstr "Mensagens não lidas"
-
-#~ msgid "Unread Messages Counter"
-#~ msgstr "Contador de Mensagens Não Lidas"
-
-#, python-format
-#~ msgid "IBPT Forbidden - token={!r}, cnpj={!r}, UF={!r}"
-#~ msgstr "IBPT Proibido - token={!r}, cnpj={!r}, UF={!r}"
-
-#, fuzzy, python-format
-#~ msgid ""
-#~ "Não é possível retornar o documento para em \n"
-#~ "digitação, quando o mesmo esta na situação: \n"
-#~ "{}, {}"
-#~ msgstr ""
-#~ "Não é possível retornar o documento para em \n"
-#~ "digitação, quando o mesmo esta na situação: \n"
-#~ "{}, {}"
-
-#, python-format
-#~ msgid "{0} Tax Estimate Failure: {1}"
-#~ msgstr "Falha na estimativa de impostos {0}: {1}"
-
-#, python-format
-#~ msgid "{} Tax Estimate Failure"
-#~ msgstr "{} Falha na Estimativa de Imposto"
-
-#~ msgid "SMS Delivery error"
-#~ msgstr "Erro de Entrega de SMS"
-
-#, python-format
-#~ msgid "Estadual Inscription Invalid !"
-#~ msgstr "Inscrição Estadual Inválida !"
-
-#, python-format
-#~ msgid "{} Invalid!"
-#~ msgstr "{} Inválido!"
-
-#~ msgid "Cancellation Date"
-#~ msgstr "Data de cancelamento"
-
-#~ msgid "Cancellation Protocol"
-#~ msgstr "Protocolo de cancelamento"
-
-#~ msgid "Ciente da Operação"
-#~ msgstr "Ciente da Operação"
-
-#~ msgid "Confirmada operação"
-#~ msgstr "Operação confirmada"
-
-#~ msgid "Consult DF-e"
-#~ msgstr "Consulte DF-e"
-
-#~ msgid "DF-e"
-#~ msgstr "DF-e"
-
-#~ msgid "DF-e Consult"
-#~ msgstr "Consultar DF-e"
-
-#~ msgid "DF-e XML Document"
-#~ msgstr "Documento DF-e XML"
-
-#~ msgid "Desconhecimento"
-#~ msgstr "Desconhecimento"
-
-#~ msgid "Digest Value"
-#~ msgstr "Valor de digestão"
-
-#~ msgid "Document State"
-#~ msgstr "Estado documental"
-
-#~ msgid "Document Total Value"
-#~ msgstr "Valor Total do Documento"
-
-#, python-format
-#~ msgid "Download Attachment"
-#~ msgstr "Baixar anexo"
-
-#~ msgid "Download new documents automatically"
-#~ msgstr "Baixe novos documentos automaticamente"
-
-#~ msgid "Emission Date"
-#~ msgstr "Data de emissão"
-
-#~ msgid "Emitter"
-#~ msgstr "Emissor"
-
-#~ msgid "Entrada"
-#~ msgstr "Entrada"
-
-#~ msgid "Envio"
-#~ msgstr "Envio"
-
-#~ msgid ""
-#~ "If activated, allows new manifestations to be automatically searched with "
-#~ "a Cron"
-#~ msgstr ""
-#~ "Se ativado, permite que novas manifestações sejam automaticamente "
-#~ "pesquisadas com um Cron"
-
-#~ msgid "Imported Documents"
-#~ msgstr "Documentos importados"
-
-#~ msgid "Inclusion Date"
-#~ msgstr "Data de Inclusão"
-
-#~ msgid "Inclusion Mode"
-#~ msgstr "Modo de Inclusão"
-
-#~ msgid "Inscrição estadual"
-#~ msgstr "Inscrição estadual"
-
-#~ msgid "Last NSU"
-#~ msgstr "Último NSU"
-
-#~ msgid "Last Query"
-#~ msgstr "Última Consulta"
-
-#~ msgid "Manifestation State"
-#~ msgstr "Estado de Manifestação"
-
-#~ msgid "Manifestações do Destinatário Importadas"
-#~ msgstr "Manifestações do Destinatário Importadas"
-
-#~ msgid "NSU"
-#~ msgstr "Nsu"
-
-#~ msgid "Não realizado"
-#~ msgstr "Não realizado"
-
-#~ msgid "Pendente"
-#~ msgstr "Pendente"
-
-#~ msgid "Recipient Manifestation"
-#~ msgstr "Manifestação do Destinatário"
-
-#~ msgid "Resposta"
-#~ msgstr "Resposta"
-
-#~ msgid "Resposta-LoteDistDFeInt"
-#~ msgstr "Resposta-LoteDistDFeint"
-
-#~ msgid "Resposta-LoteDistDFeInt-DocZip(NFe)"
-#~ msgstr "Resposta-LoteDistDFeInt-DocZip(NFe)"
-
-#~ msgid "Saída"
-#~ msgstr "Saída"
-
-#~ msgid "Supplier"
-#~ msgstr "Fornecedor"
-
-#~ msgid "Supplier (partner)"
-#~ msgstr "Fornecedor (parceiro)"
-
-#~ msgid "XML Documents"
-#~ msgstr "Documentos XML"
-
-#~ msgid "XML Type"
-#~ msgstr "Tipo XML"
-
-#~ msgid "Brazil"
-#~ msgstr "Brasil"
-
-#~ msgid "Fiscal Dummy Document"
-#~ msgstr "Documento Fictício Fiscal"
-
-#~ msgid "A1"
-#~ msgstr "A1"
-
-#~ msgid "A3"
-#~ msgstr "A3"
-
-#~ msgid "Add a new Certificate"
-#~ msgstr "Adicionar um novo Certificado"
-
-#~ msgid "Alert certificate expiration."
-#~ msgstr "Alerta de expiração de certificado."
-
-#~ msgid ""
-#~ "All Certificate by\n"
-#~ "              Brazilian Fiscal modulo for Odoo."
-#~ msgstr ""
-#~ "Todos os certificados do\n"
-#~ "              Módulo Fiscal Brasileiro para Odoo."
-
-#, python-format
-#~ msgid "Cannot load Certificate !"
-#~ msgstr "Não é possível carregar certificado!"
-
-#, python-format
-#~ msgid ""
-#~ "Cannot load Certificate ! \n"
-#~ "\n"
-#~ " {}"
-#~ msgstr ""
-#~ "Não é possível carregar certificado! \n"
-#~ "\n"
-#~ "{}"
-
-#~ msgid "Certificate"
-#~ msgstr "Certificado"
-
-#~ msgid "Certificate Expired Alert"
-#~ msgstr "Alerta expirado do certificado"
-
-#~ msgid "Certificate Infos"
-#~ msgstr "Informações do Certificado"
-
-#~ msgid "Certificate Type"
-#~ msgstr "Tipo de certificado"
-
-#~ msgid "Certificates"
-#~ msgstr "Certificados"
-
-#~ msgid "Date Expiration"
-#~ msgstr "Expiração da Data"
-
-#~ msgid "Date Start"
-#~ msgstr "Data Inicial"
-
-#~ msgid "Days Before"
-#~ msgstr "Dias Antes"
-
-#~ msgid "Document SubType"
-#~ msgstr "Subtipo de documento"
-
-#~ msgid "E-CNPJ"
-#~ msgstr "E-CNPJ"
-
-#~ msgid "E-CPF"
-#~ msgstr "E-CPF"
-
-#~ msgid "File"
-#~ msgstr "Arquivo"
-
-#~ msgid "File Name"
-#~ msgstr "Nome do Arquivo"
-
-#~ msgid "Is Valid?"
-#~ msgstr "É válido?"
-
-#~ msgid "Issuer Name"
-#~ msgstr "Nome do Emissor"
-
-#~ msgid "NFe"
-#~ msgstr "NFe"
-
-#~ msgid "Owner"
-#~ msgstr "Proprietário"
-
-#~ msgid "Password"
-#~ msgstr "Senha"
-
-#, python-format
-#~ msgid ""
-#~ "Python Library erpbrasil.assinatura not installed, please install ex: pip "
-#~ "install erpbrasil.assinatura."
-#~ msgstr ""
-#~ "Python Library erpbrasil.assinatura não instalada, por favor instale ex: "
-#~ "pip install erpbrasil.assinatura."
-
-#~ msgid "file"
-#~ msgstr "arquivo"
-
-#~ msgid "Simplifed Tax Percent"
-#~ msgstr "Percentual de impostos simplified"
-
-#~ msgid "Date Move"
-#~ msgstr "Movimento de data"
-
-#~ msgid " NFe Documents"
-#~ msgstr " Documentos NFe"
-
-#~ msgid "Accountant Fee"
-#~ msgstr "Taxa de Contador"
-
-#~ msgid "Accountant notes"
-#~ msgstr "Notas de Contador"
-
-#~ msgid "Avoid new fiscal moves"
-#~ msgstr "Ignorar novos movimentos fiscais"
-
-#~ msgid "Block period"
-#~ msgstr "Período de Bloqueio"
-
-#~ msgid "CFe"
-#~ msgstr "Cfe"
-
-#~ msgid "CFe Documents"
-#~ msgstr "Documentos CFe"
-
-#~ msgid "CFe ECF"
-#~ msgstr "CFe ECF"
-
-#~ msgid "CFe ECF Documents"
-#~ msgstr "Documentos ECF CFe"
-
-#, python-format
-#~ msgid "Check write permissions in your system temp folder"
-#~ msgstr "Verifique as permissões de gravação na pasta temporária do sistema"
-
-#~ msgid "Close ID"
-#~ msgstr "ID próximo"
-
-#~ msgid "Closed"
-#~ msgstr "Fechado"
-
-#~ msgid "Enviar por email:"
-#~ msgstr "Enviar por e-mail:"
-
-#, python-format
-#~ msgid "Error!"
-#~ msgstr "Erro!"
-
-#~ msgid "Export"
-#~ msgstr "Exportar"
-
-#~ msgid "Fazer o download:"
-#~ msgstr "Fazer o download:"
-
-#~ msgid "Fechamento"
-#~ msgstr "Fechamento"
-
-#~ msgid "Fiscal Closing"
-#~ msgstr "Fechamento Fiscal"
-
-#~ msgid "Fiscal Closing Period"
-#~ msgstr "Período de Fechamento Fiscal"
-
-#~ msgid "Folder structure path"
-#~ msgstr "Caminho da estrutura da pasta"
-
-#~ msgid "Group documents"
-#~ msgstr "Documentos em grupo"
-
-#, python-format
-#~ msgid "I/O Error"
-#~ msgstr "Erro de I/O"
-
-#~ msgid "ISS"
-#~ msgstr "Iss"
-
-#~ msgid "NFCe"
-#~ msgstr "NFCe"
-
-#~ msgid "NFCe Documents"
-#~ msgstr "Documentos NFCe"
-
-#~ msgid "NFSe"
-#~ msgstr "NFSe"
-
-#~ msgid "NFSe Documents"
-#~ msgstr "Documentos NFSe"
-
-#~ msgid "Open"
-#~ msgstr "Aberto"
-
-#~ msgid "Other accountant files"
-#~ msgstr "Outros arquivos de contador"
-
-#~ msgid "Period"
-#~ msgstr "Período"
-
-#~ msgid "Por período"
-#~ msgstr "Por período"
-
-#~ msgid "Processamento Periodico"
-#~ msgstr "Processamento Periodico"
-
-#~ msgid "RL"
-#~ msgstr "Rl"
-
-#~ msgid "RL Documents"
-#~ msgstr "Documentos RL"
-
-#~ msgid "Simples"
-#~ msgstr "Simples"
-
-#~ msgid "The closing must be unique for the company in a period of time."
-#~ msgstr "O fechamento deve ser único para a empresa em um período de tempo."
-
-#~ msgid "Tudo"
-#~ msgstr "Tudo"
-
-#~ msgid "Year"
-#~ msgstr "Ano"
-
-#~ msgid "state"
-#~ msgstr "estado"
-
-#~ msgid "Access Key"
-#~ msgstr "Chave de Acesso"
-
-#~ msgid "Amount Tax not Included"
-#~ msgstr "Total de Impostos Não Incluídos no Preço"
-
-#~ msgid "Authorization protocol"
-#~ msgstr "Protocolo de Autorização"
-
-#~ msgid "Cancel Date"
-#~ msgstr "Data de Cancelamento"
-
-#~ msgid "Cancel Protocol Number"
-#~ msgstr "Número de Protocolo de Cancelamento"
-
-#~ msgid "Cancellation protocol"
-#~ msgstr "Protocolo de cancelamento"
-
-#~ msgid "Expiration Date"
-#~ msgstr "Data de Expiração"
-
-#~ msgid "Initial Revenue"
-#~ msgstr "Receita Inicial"
-
-#~ msgid "Last query"
-#~ msgstr "Última consulta"
-
-#, python-format
-#~ msgid ""
-#~ "Replication failed: document attachments [id =% s] is not present in the "
-#~ "database."
-#~ msgstr ""
-#~ "Falha na replicação: os anexos do documento [id =% s] não estão presentes "
-#~ "no banco de dados."
-
-#~ msgid "Simplified Tax ID"
-#~ msgstr "ID de imposto simplificado"
-
-#~ msgid "Zip Files"
-#~ msgstr "Arquivos Zip"
-
-#~ msgid "01 - Dinheiro"
-#~ msgstr "01 - Dinheiro"
-
-#~ msgid "02 - Cheque"
-#~ msgstr "02 - Cheque"
-
-#~ msgid "03 - Cartão de Crédito"
-#~ msgstr "03 - Cartão de Crédito"
-
-#~ msgid "04 - Cartão de Débito"
-#~ msgstr "04 - Cartão de Débito"
-
-#~ msgid "05 - Crédito Loja"
-#~ msgstr "05 - Crédito Loja"
-
-#~ msgid "10 - Vale Alimentação"
-#~ msgstr "10 - Vale Alimentação"
-
-#~ msgid "11 - Vale Refeição"
-#~ msgstr "11 - Vale Refeição"
-
-#~ msgid "12 - Vale Presente"
-#~ msgstr "12 - Vale Presente"
-
-#~ msgid "13 - Vale Combustível"
-#~ msgstr "13 - Vale Combustível"
-
-#~ msgid "14 - Duplicata Mercantil"
-#~ msgstr "14 - Duplicata Mercantil"
-
-#~ msgid "15 - Boleto Bancário"
-#~ msgstr "15 - Boleto Bancário"
-
-#~ msgid "90 - Sem pagamento"
-#~ msgstr "90 - Sem pagamento"
-
-#~ msgid "99 - Outros"
-#~ msgstr "99 - Outros"
-
-#~ msgid "Fiscal Payment"
-#~ msgstr "Pagamento Fiscal"
-
-#~ msgid "Indicador de Pagamento"
-#~ msgstr "Indicador de Pagamento"
-
-#~ msgid ""
-#~ "Obrigatório o preenchimento do Grupo Informações de Pagamento para NF-e e "
-#~ "NFC-e. Para as notas com finalidade de Ajuste ou Devolução o campo Forma "
-#~ "de Pagamento deve ser preenchido com 90 - Sem Pagamento."
-#~ msgstr ""
-#~ "Obrigatório o preenchimento do Grupo Informações de Pagamento para NF-e e "
-#~ "NFC-e. Para as notas com finalidade de Ajuste ou Devolução o campo Forma "
-#~ "de Pagamento deve ser preenchido com 90 - Sem Pagamento."
-
-#~ msgid "Pagamento à Prazo"
-#~ msgstr "Pagamento à Prazo"
-
-#~ msgid "Pagamento à Vista"
-#~ msgstr "Pagamento à Vista"
-
-#~ msgid "Tipo de Pagamento da NF"
-#~ msgstr "Tipo de Pagamento da NF"
-
-#~ msgid "CFOPs"
-#~ msgstr "CFOPs"
-
-#~ msgid "Copmpany Tax Framework"
-#~ msgstr "Estrutura Tributária copmpany"
-
-#~ msgid "Subsequent Operations"
-#~ msgstr "Operações subsequentes"
-
-#~ msgid ""
-#~ "AVISO - Ao baixar as Notas você estará dando ciência da emissão aos "
-#~ "manifestos correspondentes."
-#~ msgstr ""
-#~ "AVISO - Ao baixar as Notas você estará dando ciência da emissão aos "
-#~ "manifestos correspondentes."
-
-#~ msgid ""
-#~ "AVISO - Esta ação será realizada diretamente com o servidor da Receita "
-#~ "Federal."
-#~ msgstr ""
-#~ "AVISO - Esta ação será realizada diretamente com o servidor da Receita "
-#~ "Federal."
-
-#~ msgid "Aguardando Retorno"
-#~ msgstr "Aguardando Retorno"
-
-#~ msgid "Amount Estimate Total"
-#~ msgstr "Montante Total Estimado"
-
-#~ msgid "Amount Fiscal Operation"
-#~ msgstr "Montante da Operação Fiscal"
-
-#~ msgid "Amount Operation"
-#~ msgstr "Montante da Operação"
-
-#~ msgid "Attachment"
-#~ msgstr "Anexo"
-
-#~ msgid "Attachments"
-#~ msgstr "Anexos"
-
-#~ msgid "Autorização"
-#~ msgstr "Autorização"
-
-#~ msgid "Aware"
-#~ msgstr "Ciente"
-
-#~ msgid "Ciência da Emissão"
-#~ msgstr "Ciência da Emissão"
-
-#~ msgid "Cnpj supplier"
-#~ msgstr "Fornecedor do CNPJ"
-
-#~ msgid "Completion Date"
-#~ msgstr "Data de conclusão"
-
-#~ msgid "Concluído"
-#~ msgstr "Concluído"
-
-#~ msgid "Confirmar Operação"
-#~ msgstr "Confirmar Operação"
-
-#~ msgid "Confirmed"
-#~ msgstr "Confirmado"
-
-#~ msgid "Consultar"
-#~ msgstr "Consultar"
-
-#~ msgid "Código situação"
-#~ msgstr "Código situação"
-
-#~ msgid "Data Hora"
-#~ msgstr "Data/Hora"
-
-#~ msgid "Data Hora Autorização"
-#~ msgstr "Data Hora Autorização"
-
-#~ msgid "Desconhecer Operação"
-#~ msgstr "Desconhecer Operação"
-
-#~ msgid "Destined Documents"
-#~ msgstr "Documentos destinados"
-
-#~ msgid "Dispatch File"
-#~ msgstr "Arquivo de despacho"
-
-#~ msgid "Document fiscal cancel wizard"
-#~ msgstr "Assistente de cancelamento fiscal de documentos"
-
-#~ msgid "Documento"
-#~ msgstr "Documento"
-
-#~ msgid "Download Document's XML"
-#~ msgstr "Baixar XML do Documento"
-
-#~ msgid "Enviado"
-#~ msgstr "Enviado"
-
-#~ msgid "Error"
-#~ msgstr "Erro"
-
-#~ msgid "Evento Abstrato"
-#~ msgstr "Evento Abstrato"
-
-#~ msgid "Eventos"
-#~ msgstr "Eventos"
-
-#~ msgid "Filename"
-#~ msgstr "Nome de arquivo"
-
-#~ msgid "Filter"
-#~ msgstr "Filtro"
-
-#~ msgid "Fiscal Attachment"
-#~ msgstr "Penhora Fiscal"
-
-#~ msgid "Fiscal Document Cancel Record"
-#~ msgstr "Registro de Cancelamento de Documento Fiscal"
-
-#~ msgid "Fiscal Document Correction Record"
-#~ msgstr "Registro de correção de documentos fiscais"
-
-#~ msgid "Fiscal Document Inquiry"
-#~ msgstr "Consulta de Documentos Fiscais"
-
-#~ msgid "Fiscal Document Inquiry on SEFAZ"
-#~ msgstr "Consulta de Documento Fiscal na SEFAZ"
-
-#~ msgid "Fiscal Document Invalidate Number Record"
-#~ msgstr "Registro de número de invalidez do documento fiscal"
-
-#~ msgid "Fiscal Document Status"
-#~ msgstr "Situação do Documento Fiscal"
-
-#~ msgid "Hour(s)"
-#~ msgstr "Hora(s)"
-
-#~ msgid "House Number"
-#~ msgstr "Número da casa"
-
-#~ msgid "ICMSSN Value"
-#~ msgstr "Valor do ICMSN"
-
-#~ msgid "If checked new messages require your attention."
-#~ msgstr "Se marcado, novas mensagens solicitarão sua atenção."
-
-#~ msgid "Import all available NF-e"
-#~ msgstr "Importe todos os NF-e disponíveis"
-
-#~ msgid "Imported Manifestations"
-#~ msgstr "Manifestações importadas"
-
-#~ msgid "Impresso"
-#~ msgstr "Impresso"
-
-#~ msgid "Indica a sequência da carta de correcão"
-#~ msgstr "Indica a sequência da carta de correcão"
-
-#~ msgid "Init"
-#~ msgstr "Início"
-
-#~ msgid "Invalidar"
-#~ msgstr "Invalidar"
-
-#~ msgid "Invalidate Document"
-#~ msgstr "Documento invalidado"
-
-#~ msgid "Justificativa"
-#~ msgstr "Justificativa"
-
-#~ msgid "Justificativa deve ter o tamanho mínimo de 15 caracteres."
-#~ msgstr "Justificativa deve ter o tamanho mínimo de 15 caracteres."
-
-#~ msgid "Justificativa deve ter tamanho minimo de 15 caracteres."
-#~ msgstr "Justificativa deve ter tamanho minimo de 15 caracteres."
-
-#~ msgid "Length"
-#~ msgstr "Comprimento"
-
-#~ msgid "Manage"
-#~ msgstr "Gerenciar"
-
-#~ msgid "Manage Selected"
-#~ msgstr "Gerenciar selecionados"
-
-#~ msgid "Manifestation"
-#~ msgstr "Manifestação"
-
-#~ msgid "Mensagem"
-#~ msgstr "Message"
-
-#~ msgid "Motivo situação"
-#~ msgstr "Motivo situação"
-
-#~ msgid "Nenhum"
-#~ msgstr "Nenhum"
-
-#~ msgid "No attachment to download"
-#~ msgstr "Nenhum anexo para baixar"
-
-#~ msgid "Nome"
-#~ msgstr "Nome"
-
-#~ msgid "Number of error"
-#~ msgstr "Número do erro"
-
-#~ msgid "Não é permitido faixas sobrepostas!"
-#~ msgstr "Não é permitido faixas sobrepostas!"
-
-#~ msgid ""
-#~ "Não é possível retornar o documento para em \n"
-#~ "digitação, quando o mesmo esta na situação: \n"
-#~ "{0}, {1]"
-#~ msgstr ""
-#~ "Não é possível retornar o documento para em \n"
-#~ "digitação, quando o mesmo esta na situação: \n"
-#~ "{0}, {1]"
-
-#~ msgid "Número Final"
-#~ msgstr "Número Final"
-
-#~ msgid "Número Inicial"
-#~ msgstr "Número Inicial"
-
-#~ msgid "Operação não Realizada"
-#~ msgstr "Operação não Realizada"
-
-#~ msgid "Overdue"
-#~ msgstr "Vencido(a)"
-
-#~ msgid "PDF"
-#~ msgstr "PDF"
-
-#~ msgid "Pending"
-#~ msgstr "Pendente"
-
-#~ msgid "Pesquisar Chave"
-#~ msgstr "Pesquisar Chave"
-
-#~ msgid "Planned"
-#~ msgstr "Planejado"
-
-#~ msgid "Printed"
-#~ msgstr "Impresso"
-
-#~ msgid "Processador"
-#~ msgstr "Processador"
-
-#~ msgid "Product UoM Categories"
-#~ msgstr "Categorias UoM de produtos"
-
-#~ msgid "Protocolo"
-#~ msgstr "Protocolo"
-
-#~ msgid "Protocolo Autorização"
-#~ msgstr "Protocolo Autorização"
-
-#~ msgid "Rascunho"
-#~ msgstr "Rascunho"
-
-#~ msgid "Razão Social"
-#~ msgstr "Razão Social"
-
-#~ msgid "Recebido Retorno"
-#~ msgstr "Recebido Retorno"
-
-#~ msgid "Referência ao documento que gerou o evento."
-#~ msgstr "Referência ao documento que gerou o evento."
-
-#~ msgid "Return file"
-#~ msgstr "Arquivo de devolução"
-
-#~ msgid "Save XML"
-#~ msgstr "Salvar XML"
-
-#~ msgid "Search Documents"
-#~ msgstr "Pesquisar Documentos"
-
-#~ msgid "Sequência"
-#~ msgstr "Sequência"
-
-#~ msgid "Sequência existente!"
-#~ msgstr "Sequência existente!"
-
-#~ msgid "Situação"
-#~ msgstr "Situação"
-
-#~ msgid "Stock Picking"
-#~ msgstr "Separação de Estoque"
-
-#~ msgid "Série"
-#~ msgstr "Série"
-
-#~ msgid ""
-#~ "There is already a fiscal document with this Serie: {0}, Number: {1} !"
-#~ msgstr "Já existe um documento fiscal com esta Série: {0}, Número: {1} !"
-
-#~ msgid "Time"
-#~ msgstr "Hora"
-
-#~ msgid "Today"
-#~ msgstr "Hoje"
-
-#~ msgid "Type of Measure"
-#~ msgstr "Tipo de Medida"
-
-#~ msgid "Units"
-#~ msgstr "Unidades"
-
-#~ msgid "Unknown"
-#~ msgstr "Desconhecido(a)"
-
-#~ msgid "Unrealized"
-#~ msgstr "Unrealized"
-
-#~ msgid "Upload"
-#~ msgstr "Enviar"
-
-#~ msgid ""
-#~ "Verifique as permissões de escrita\n"
-#~ "                    e o caminho da pasta"
-#~ msgstr ""
-#~ "Verifique como permissões de escrita\n"
-#~ "                    e o caminho da massa"
-
-#~ msgid "Versão"
-#~ msgstr "Versão"
-
-#~ msgid "Você não pode excluir uma sequência concluída."
-#~ msgstr "Você não pode excluir uma sequência concluída."
-
-#~ msgid "Volume"
-#~ msgstr "Volume"
-
-#~ msgid ""
-#~ "WARNING - When importing a document, you will be informing the issuance "
-#~ "of the corresponding manifest. Do you wish to continue?"
-#~ msgstr ""
-#~ "AVISO - Ao importar um documento, você estará informando a emissão do "
-#~ "manifesto correspondente. Você deseja continuar?"
-
-#~ msgid ""
-#~ "WARNING - When saving the XML of a document, you will be informing the "
-#~ "corresponding manifest about the issue. Do you wish to continue?"
-#~ msgstr ""
-#~ "AVISO - Ao salvar o XML de um documento, você estará informando o "
-#~ "manifesto correspondente sobre o problema. Você deseja continuar?"
-
-#~ msgid "Weight"
-#~ msgstr "Peso"
-
-#~ msgid "XML de autorização"
-#~ msgstr "XML de autorização"
-
-#~ msgid "XML de autorização de cancelamento"
-#~ msgstr "XML de autorização de cancelamento"
-
-#~ msgid "XML de cancelamento"
-#~ msgstr "XML de cancelamento"
-
-#~ msgid "XML envio"
-#~ msgstr "XML envio"
-
-#~ msgid "XML's"
-#~ msgstr "<strong>ID XML</strong>"
-
-#~ msgid "key"
-#~ msgstr "chave"
-
-#~ msgid "kg"
-#~ msgstr "kg"
-
-#~ msgid "Àrea / Superfície"
-#~ msgstr "Àrea / Superfície"

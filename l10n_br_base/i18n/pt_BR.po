@@ -160,19 +160,16 @@ msgid "Acauã"
 msgstr "Acauã"
 
 #. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__acc_number_dig
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__acc_number_dig
 msgid "Account Digit"
 msgstr "Dígito da Conta"
 
 #. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__acc_number
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__acc_number
 msgid "Account Number"
 msgstr "Número da Conta"
 
 #. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__transactional_acc_type
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__transactional_acc_type
 msgid "Account Type"
 msgstr "Tipo de Conta"
@@ -2086,7 +2083,6 @@ msgid "BIC/Swift Code"
 msgstr "BIC/Swift Code"
 
 #. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__bra_bank_bic
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__bra_bank_bic
 msgid "BIC/Swift Final Code."
 msgstr "BIC/Swift Final Code."
@@ -2283,7 +2279,6 @@ msgid "Bank Account"
 msgstr "Conta Bancária"
 
 #. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__bank_account_type
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__bank_account_type
 msgid "Bank Account Type"
 msgstr "Tipo de conta bancária"
@@ -2294,13 +2289,11 @@ msgid "Bank Accounts"
 msgstr "Contas Bancárias"
 
 #. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__bra_number
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__bra_number
 msgid "Bank Branch"
 msgstr "Número da Agência"
 
 #. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__bra_number_dig
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__bra_number_dig
 msgid "Bank Branch Digit"
 msgstr "Dígito da Agência Bancária"
@@ -6361,7 +6354,6 @@ msgid "Company"
 msgstr "Empresa"
 
 #. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__company_country_id
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__company_country_id
 msgid "Company Country"
 msgstr "País da Empresa"
@@ -10225,19 +10217,9 @@ msgid "ID"
 msgstr "ID"
 
 #. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_company__l10n_br_ie_code
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__l10n_br_ie_code
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_users__l10n_br_ie_code
 #: model_terms:ir.ui.view,arch_db:l10n_br_base.l10n_br_base_partner_form
 msgid "IE"
 msgstr "IE"
-
-#. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_company__l10n_br_im_code
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__l10n_br_im_code
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_users__l10n_br_im_code
-msgid "IM"
-msgstr ""
 
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_bank__ispb_number
@@ -10553,19 +10535,6 @@ msgstr "Icém"
 #: model:res.city,name:l10n_br_base.city_2305407
 msgid "Icó"
 msgstr "Icó"
-
-#. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__vat
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_users__vat
-msgid "Identification Number"
-msgstr ""
-
-#. module: l10n_br_base
-#: model:ir.model.fields,help:l10n_br_base.field_res_company__vat
-#: model:ir.model.fields,help:l10n_br_base.field_res_partner__vat
-#: model:ir.model.fields,help:l10n_br_base.field_res_users__vat
-msgid "Identification Number for selected type"
-msgstr ""
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_2404606
@@ -13579,7 +13548,6 @@ msgid "Last Updated on"
 msgstr "Última Atualização em"
 
 #. module: l10n_br_base
-#: model:ir.model.fields,help:l10n_br_base.field_account_setup_bank_manual_config__bra_bank_bic
 #: model:ir.model.fields,help:l10n_br_base.field_res_partner_bank__bra_bank_bic
 msgid "Last part of BIC/Swift Code."
 msgstr "Last part of BIC/Swift Code."
@@ -15891,14 +15859,10 @@ msgid "Munhoz de Melo"
 msgstr "Munhoz de Melo"
 
 #. module: l10n_br_base
-#: model:ir.model.fields,help:l10n_br_base.field_res_company__l10n_br_im_code
-#: model:ir.model.fields,help:l10n_br_base.field_res_partner__l10n_br_im_code
-#: model:ir.model.fields,help:l10n_br_base.field_res_users__l10n_br_im_code
-msgid "Municipal Tax Identification Number"
-msgstr ""
-
-#. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_l10n_br_base_party_mixin__l10n_br_im_code
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_company__l10n_br_im_code
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__l10n_br_im_code
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_users__l10n_br_im_code
 msgid "Municipal Tax Number"
 msgstr "Número da Inscrição Municipal"
 
@@ -19051,7 +19015,6 @@ msgid "Piumhi"
 msgstr "Piumhi"
 
 #. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__partner_pix_ids
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__pix_key_ids
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__partner_pix_ids
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_users__pix_key_ids
@@ -21141,18 +21104,6 @@ msgstr "Ruy Barbosa"
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_city__siafi_code
 msgid "SIAFI Code"
 msgstr "SIAFI Code"
-
-#. module: l10n_br_base
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__l10n_br_isuf_code
-#: model:ir.model.fields,field_description:l10n_br_base.field_res_users__l10n_br_isuf_code
-msgid "SUFRAMA code"
-msgstr ""
-
-#. module: l10n_br_base
-#: model:ir.model.fields,help:l10n_br_base.field_res_partner__l10n_br_isuf_code
-#: model:ir.model.fields,help:l10n_br_base.field_res_users__l10n_br_isuf_code
-msgid "SUFRAMA registration number."
-msgstr ""
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_3156700
@@ -23309,14 +23260,10 @@ msgid "State"
 msgstr "Estado"
 
 #. module: l10n_br_base
-#: model:ir.model.fields,help:l10n_br_base.field_res_company__l10n_br_ie_code
-#: model:ir.model.fields,help:l10n_br_base.field_res_partner__l10n_br_ie_code
-#: model:ir.model.fields,help:l10n_br_base.field_res_users__l10n_br_ie_code
-msgid "State Tax Identification Number. Should contain 9-14 digits."
-msgstr ""
-
-#. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_l10n_br_base_party_mixin__l10n_br_ie_code
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_company__l10n_br_ie_code
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__l10n_br_ie_code
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_users__l10n_br_ie_code
 #: model:ir.model.fields,field_description:l10n_br_base.field_state_tax_numbers__l10n_br_ie_code
 msgid "State Tax Number"
 msgstr "Número da Inscrição Estadual"
@@ -23387,6 +23334,8 @@ msgstr "Sud Mennucci"
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_l10n_br_base_party_mixin__l10n_br_isuf_code
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_company__l10n_br_isuf_code
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__l10n_br_isuf_code
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_users__l10n_br_isuf_code
 #: model_terms:ir.ui.view,arch_db:l10n_br_base.l10n_br_base_res_company_form
 msgid "Suframa"
 msgstr "Suframa"
@@ -25488,6 +25437,8 @@ msgstr "Tavares"
 
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_company__vat
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__vat
+#: model:ir.model.fields,field_description:l10n_br_base.field_res_users__vat
 msgid "Tax ID"
 msgstr "ID do Imposto"
 
@@ -25675,6 +25626,16 @@ msgid "The Partner already has a State Tax Number for that State!"
 msgstr "O Parceiro já possui um número de Inscrição Estadual para esse Estado!"
 
 #. module: l10n_br_base
+#: model:ir.model.fields,help:l10n_br_base.field_res_company__vat
+#: model:ir.model.fields,help:l10n_br_base.field_res_partner__vat
+#: model:ir.model.fields,help:l10n_br_base.field_res_users__vat
+msgid ""
+"The Tax Identification Number. Values here will be validated based on the "
+"country format. You can use '/' to indicate that the partner is not subject "
+"to tax."
+msgstr ""
+
+#. module: l10n_br_base
 #. odoo-python
 #: code:addons/l10n_br_base/models/res_partner_pix.py:0
 msgid ""
@@ -25708,16 +25669,16 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_br_base/models/res_partner.py:0
 msgid ""
-"There is already a partner %(name)s (ID %(partner_id)s) with this CNPJ %"
-"(vat)s!"
+"There is already a partner %(name)s (ID %(partner_id)s) with this CNPJ "
+"%(vat)s!"
 msgstr ""
 
 #. module: l10n_br_base
 #. odoo-python
 #: code:addons/l10n_br_base/models/res_partner.py:0
 msgid ""
-"There is already a partner %(name)s (ID %(partner_id)s) with this CPF/RG! %"
-"(vat)s"
+"There is already a partner %(name)s (ID %(partner_id)s) with this CPF/RG! "
+"%(vat)s"
 msgstr ""
 
 #. module: l10n_br_base
@@ -26300,7 +26261,6 @@ msgid "Type"
 msgstr "Tipo"
 
 #. module: l10n_br_base
-#: model:ir.model.fields,help:l10n_br_base.field_account_setup_bank_manual_config__transactional_acc_type
 #: model:ir.model.fields,help:l10n_br_base.field_res_partner_bank__transactional_acc_type
 msgid ""
 "Type of transactional account, classification used in the Brazilian instant "
@@ -27608,260 +27568,3 @@ msgstr "Óbidos"
 #: model:res.city,name:l10n_br_base.city_3533809
 msgid "Óleo"
 msgstr "Óleo"
-
-#~ msgid "CNPJ/CPF"
-#~ msgstr "CNPJ/CPF"
-
-#~ msgid "State Tax Number already used {}"
-#~ msgstr "Insc. Estadual já utilizada {}"
-
-#~ msgid "CEI Code"
-#~ msgstr "Código CEI"
-
-#~ msgid "CRC Code"
-#~ msgstr "Código CRC"
-
-#~ msgid "CRC State"
-#~ msgstr "Status CRC"
-
-#~ msgid "Is accountant?"
-#~ msgstr "É contador?"
-
-#~ msgid "RNTRC Code"
-#~ msgstr "Código do RNTRC"
-
-#~ msgid "Union Entity code"
-#~ msgstr "Código do Sindicato"
-
-#, python-format
-#~ msgid "Bank branch code must be four caracteres."
-#~ msgstr "O código da agência bancária deve ter quatro caracteres."
-
-#~ msgid "CNPJ..."
-#~ msgstr "CNPJ..."
-
-#~ msgid "Indicates if Brazilian localization fields should be displayed."
-#~ msgstr "Indica se os campos de localização brasileira devem ser exibidos."
-
-#~ msgid "Last Modified on"
-#~ msgstr "Última Modificação em"
-
-#~ msgid ""
-#~ "The Tax Identification Number. Complete it if the contact is subjected to "
-#~ "government taxes. Used in some legal statements."
-#~ msgstr ""
-#~ "O número de identificação fiscal. Preencha-o se o contato estiver sujeito "
-#~ "a impostos governamentais. Usado em algumas declarações legais."
-
-#, python-format
-#~ msgid "There is already a partner record with this CNPJ !"
-#~ msgstr "Já existe um parceiro com este CNPJ !"
-
-#, python-format
-#~ msgid "There is already a partner record with this CPF/RG!"
-#~ msgstr "Já existe cadastro de parceiro com este CPF/RG!"
-
-#, python-format
-#~ msgid "There is already a partner record with this Estadual Inscription !"
-#~ msgstr "Já existe um parceiro com esta Inscrição Estadual !"
-
-#~ msgid "Amparo de São Francisco"
-#~ msgstr "Amparo de São Francisco"
-
-#~ msgid "Araças"
-#~ msgstr "Araças"
-
-#~ msgid "Atilio Vivacqua"
-#~ msgstr "Atilio Vivacqua"
-
-#~ msgid "Biritiba-Mirim"
-#~ msgstr "Biritiba-Mirim"
-
-#~ msgid "Dona Eusébia"
-#~ msgstr "Dona Eusébia"
-
-#~ msgid "Ererê"
-#~ msgstr "Ererê"
-
-#~ msgid "Florínia"
-#~ msgstr "Florínia"
-
-#~ msgid "Fortaleza do Tabocão"
-#~ msgstr "Fortaleza do Tabocão"
-
-#~ msgid "Grão Pará"
-#~ msgstr "Grão Pará"
-
-#~ msgid "Itaóca"
-#~ msgstr "Itaóca"
-
-#~ msgid "Iuiú"
-#~ msgstr "Iuiú"
-
-#~ msgid "Lauro Muller"
-#~ msgstr "Lauro Muller"
-
-#~ msgid "Muquém de São Francisco"
-#~ msgstr "Muquém de São Francisco"
-
-#~ msgid "Olho-d'Água do Borges"
-#~ msgstr "Olho-d'Água do Borges"
-
-#~ msgid "Olhos d'Água"
-#~ msgstr "Olhos d'Água"
-
-#~ msgid "Passa-Vinte"
-#~ msgstr "Passa-Vinte"
-
-#~ msgid "Quixabá"
-#~ msgstr "Quixabá"
-
-#~ msgid "Santo Antônio do Leverger"
-#~ msgstr "Santo Antônio do Leverger"
-
-#~ msgid "São Cristovão do Sul"
-#~ msgstr "São Cristovão do Sul"
-
-#~ msgid "São Domingos de Pombal"
-#~ msgstr "São Domingos de Pombal"
-
-#~ msgid "São Thomé das Letras"
-#~ msgstr "São Thomé das Letras"
-
-#, python-format
-#~ msgid "Estadual Inscription Invalid !"
-#~ msgstr "Inscrição Estadual Inválida !"
-
-#, python-format
-#~ msgid "Invalid State Tax Number!"
-#~ msgstr "Número da Inscrição Estadual Inválido!"
-
-#, python-format
-#~ msgid "{} Invalid!"
-#~ msgstr "{} Inválido!"
-
-#, python-format
-#~ msgid "State Tax Number already used %s"
-#~ msgstr "Inscrição Estadual %s já utilizada"
-
-#~ msgid "Amambaí"
-#~ msgstr "Amambaí"
-
-#~ msgid "Augusto Severo"
-#~ msgstr "Augusto Severo"
-
-#~ msgid "Belém de São Francisco"
-#~ msgstr "Belém de São Francisco"
-
-#~ msgid "Brasópolis"
-#~ msgstr "Brasópolis"
-
-#~ msgid "Campo de Santana"
-#~ msgstr "Campo de Santana"
-
-#~ msgid "Couto de Magalhães"
-#~ msgstr "Couto de Magalhães"
-
-#~ msgid "Eldorado dos Carajás"
-#~ msgstr "Eldorado dos Carajás"
-
-#~ msgid "Embu"
-#~ msgstr "Embu"
-
-#~ msgid "Iguaraci"
-#~ msgstr "Iguaraci"
-
-#~ msgid "Itapagé"
-#~ msgstr "Itapagé"
-
-#~ msgid "Lagoa do Itaenga"
-#~ msgstr "Lagoa do Itaenga"
-
-#~ msgid "Luciára"
-#~ msgstr "Luciára"
-
-#~ msgid "Maçambara"
-#~ msgstr "Maçambara"
-
-#~ msgid "Moji Mirim"
-#~ msgstr "Moji Mirim"
-
-#~ msgid "Parati"
-#~ msgstr "Parati"
-
-#~ msgid "Poxoréo"
-#~ msgstr "Poxoréo"
-
-#~ msgid "Restinga Seca"
-#~ msgstr "Restinga Seca"
-
-#~ msgid "Santa Isabel do Pará"
-#~ msgstr "Santa Isabel do Pará"
-
-#~ msgid "Santana do Livramento"
-#~ msgstr "Santana do Livramento"
-
-#~ msgid "Seridó"
-#~ msgstr "Seridó"
-
-#~ msgid "São Luís do Paraitinga"
-#~ msgstr "São Luís do Paraitinga"
-
-#~ msgid "São Luíz do Norte"
-#~ msgstr "São Luíz do Norte"
-
-#~ msgid "São Valério da Natividade"
-#~ msgstr "São Valério da Natividade"
-
-#~ msgid "Trajano de Morais"
-#~ msgstr "Trajano de Morais"
-
-#~ msgid "Vespasiano Correa"
-#~ msgstr "Vespasiano Correa"
-
-#~ msgid "Westfalia"
-#~ msgstr "Westfalia"
-
-#~ msgid "CNPJ"
-#~ msgstr "CNPJ"
-
-#~ msgid ""
-#~ "Dear Sir/Madam,\n"
-#~ "\n"
-#~ "Our records indicate that some payments on your account are still due. "
-#~ "Please find details below.\n"
-#~ "If the amount has already been paid, please disregard this notice. "
-#~ "Otherwise, please forward us the total amount stated below.\n"
-#~ "If you have any queries regarding your account, Please contact us.\n"
-#~ "\n"
-#~ "Thank you in advance for your cooperation.\n"
-#~ "Best Regards,"
-#~ msgstr ""
-#~ "Dear Sir/Madam,\n"
-#~ "\n"
-#~ "Our records indicate that some payments on your account are still due. "
-#~ "Please find details below.\n"
-#~ "If the amount has already been paid, please disregard this notice. "
-#~ "Otherwise, please forward us the total amount stated below.\n"
-#~ "If you have any queries regarding your account, Please contact us.\n"
-#~ "\n"
-#~ "Thank you in advance for your cooperation.\n"
-#~ "Best Regards,"
-
-#~ msgid "Number..."
-#~ msgstr "Número..."
-
-#~ msgid "State Tax Number/RG"
-#~ msgstr "Número da Inscrição Estadual/RG"
-
-#~ msgid "Zip..."
-#~ msgstr "CEP..."
-
-#~ msgid "CNPJ/Id Estrangeiro"
-#~ msgstr "CNPJ/Identificação Estrangeira"
-
-#~ msgid "Multiplos parceiros com mesmo CNPJ"
-#~ msgstr "Múltiplos parceiros com mesmo CNPJ"
-
-#~ msgid "Utilizar consulta de CEP dos Correios"
-#~ msgstr "Utilizar consulta de CEP dos Correios"

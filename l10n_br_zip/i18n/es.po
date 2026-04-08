@@ -98,14 +98,12 @@ msgstr "Distrito"
 #. module: l10n_br_zip
 #. odoo-python
 #: code:addons/l10n_br_zip/models/l10n_br_zip.py:0
-#, python-format
 msgid "Error in BrazilCEP: "
 msgstr "Error en BrasilCEP: "
 
 #. module: l10n_br_zip
 #. odoo-python
 #: code:addons/l10n_br_zip/models/l10n_br_zip.py:0
-#, python-format
 msgid "Error loading attribute: "
 msgstr "Error al cargar el atributo: "
 
@@ -123,15 +121,8 @@ msgstr "Id del objeto"
 #. module: l10n_br_zip
 #. odoo-python
 #: code:addons/l10n_br_zip/models/l10n_br_zip.py:0
-#, python-format
 msgid "It is necessary to inform the State, municipality and public place"
 msgstr "Es necesario informar al Estado, municipio y lugar público"
-
-#. module: l10n_br_zip
-#: model:ir.model.fields,field_description:l10n_br_zip.field_l10n_br_zip____last_update
-#: model:ir.model.fields,field_description:l10n_br_zip.field_l10n_br_zip_search____last_update
-msgid "Last Modified on"
-msgstr "Última Modificación el"
 
 #. module: l10n_br_zip
 #: model:ir.model.fields,field_description:l10n_br_zip.field_l10n_br_zip__write_uid
@@ -239,6 +230,3 @@ msgstr "Inicio"
 #: model:ir.model.fields,field_description:l10n_br_zip.field_l10n_br_zip_search__state
 msgid "state"
 msgstr "estado"
-
-#~ msgid "Correios"
-#~ msgstr "Correos"

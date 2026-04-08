@@ -81,12 +81,16 @@ msgid "Authorization Date"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__authorization_event_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__authorization_event_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__authorization_event_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_invalidate_number__authorization_event_id
 msgid "Authorization Event"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__authorization_file_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__authorization_file_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__authorization_file_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_invalidate_number__authorization_file_id
 msgid "Authorization File XML"
@@ -98,11 +102,15 @@ msgid "Authorization Protocol"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__authorization_date
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__authorization_date
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__authorization_date
 msgid "Authorization Protocol Date"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__authorization_protocol
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__authorization_protocol
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__authorization_protocol
 msgid "Authorization Protocol Number"
 msgstr ""
@@ -120,26 +128,36 @@ msgid "Cancel"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__cancel_event_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__cancel_event_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__cancel_event_id
 msgid "Cancel Event"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__cancel_file_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__cancel_file_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__cancel_file_id
 msgid "Cancel File XML"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__cancel_date
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__cancel_date
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__cancel_date
 msgid "Cancel Protocol Date"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__cancel_protocol_number
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__cancel_protocol_number
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__cancel_protocol_number
 msgid "Cancel Protocol Protocol"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__cancel_reason
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__cancel_reason
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__cancel_reason
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_workflow__cancel_reason
 msgid "Cancel Reason"
@@ -212,11 +230,15 @@ msgid "Consulta Situação"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__correction_event_ids
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__correction_event_ids
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__correction_event_ids
 msgid "Correction Events"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__correction_reason
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__correction_reason
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__correction_reason
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_workflow__correction_reason
 msgid "Correction Reason"
@@ -300,6 +322,8 @@ msgid "Document Number"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__file_report_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__file_report_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__file_report_id
 msgid "Document Report"
 msgstr ""
@@ -362,6 +386,8 @@ msgid "Eventos Eletronicos"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__event_ids
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__event_ids
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__event_ids
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_invalidate_number__event_ids
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.invalidate_number_form
@@ -479,11 +505,15 @@ msgid "Inutilização de documento fiscal"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__invalidate_event_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__invalidate_event_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__invalidate_event_id
 msgid "Invalidate Event"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__invalidate_file_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__invalidate_file_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__invalidate_file_id
 msgid "Invalidate File XML"
 msgstr ""
@@ -504,21 +534,29 @@ msgid "Invalidate Number Wizard"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__invalidate_date
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__invalidate_date
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__invalidate_date
 msgid "Invalidate Protocol Date"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__invalidate_protocol_number
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__invalidate_protocol_number
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__invalidate_protocol_number
 msgid "Invalidate Protocol Number"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__is_edoc_printed
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__is_edoc_printed
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__is_edoc_printed
 msgid "Is Printed?"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__issuer
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__issuer
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__issuer
 msgid "Issuer"
 msgstr ""
@@ -682,6 +720,8 @@ msgid "Rps Number"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__send_file_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__send_file_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__send_file_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_invalidate_number__send_file_id
 msgid "Send Document File XML"
@@ -723,17 +763,23 @@ msgid "Status"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__status_code
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__status_code
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__status_code
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_event__status_code
 msgid "Status Code"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__status_description
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__status_description
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__status_description
 msgid "Status Description"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__status_name
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__status_name
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__status_name
 msgid "Status Name"
 msgstr ""
@@ -745,6 +791,8 @@ msgid "The field 'Issuer' is required for brazilian electronic documents!"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_bank_statement_line__document_version
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_account_move__document_version
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__document_version
 msgid "Version"
 msgstr ""
