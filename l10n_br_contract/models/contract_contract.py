@@ -3,6 +3,8 @@
 
 from odoo import api, fields, models
 
+from odoo.addons.l10n_br_fiscal.constants.fiscal import FINAL_CUSTOMER
+
 
 class ContractContract(models.Model):
     _name = "contract.contract"
@@ -56,6 +58,16 @@ class ContractContract(models.Model):
     ie = fields.Char(
         string="State Tax Number/RG",
         related="partner_id.inscr_est",
+    )
+
+    ind_final = fields.Selection(
+        selection=FINAL_CUSTOMER,
+        string="Final Consumption Operation",
+        compute="_compute_ind_final",
+        inverse="_inverse_ind_final",
+        store=True,
+        precompute=True,
+        readonly=False,
     )
 
     fiscal_operation_id = fields.Many2one(

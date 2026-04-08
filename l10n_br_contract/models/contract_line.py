@@ -8,6 +8,14 @@ class ContractLine(models.Model):
     _name = "contract.line"
     _inherit = [_name, "l10n_br_fiscal.document.line.mixin"]
 
+    document_id = fields.Many2one(
+        comodel_name="contract.contract",
+        related="contract_id",
+        string="Fiscal Document",
+        store=True,
+        readonly=True,
+    )
+
     # Keep fiscal tax fields precompute-compatible on contract.line.
     # These overrides preserve original compute/inverse/store behavior
     # from contract.template.line and only add precompute.
@@ -63,7 +71,7 @@ class ContractLine(models.Model):
         string="Partner",
     )
 
-    ind_final = fields.Selection(related="contract_id.ind_final")
+    ind_final = fields.Selection(related="contract_id.ind_final", store=True)
 
     comment_ids = fields.Many2many(
         comodel_name="l10n_br_fiscal.comment",
@@ -79,6 +87,9 @@ class ContractLine(models.Model):
         store=True,
         readonly=False,
     )
+
+    def _is_imported(self):
+        return False
 
     def _prepare_invoice_line(self):
         self.ensure_one()
