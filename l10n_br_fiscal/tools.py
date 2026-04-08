@@ -93,42 +93,13 @@ def remove_non_ascii_characters(value):
 
 def set_journal_in_fiscal_operation(cr, company, values):
     """
-    Set Journal in Fiscal Operation by 'ir.property'
+    Set Journal in Fiscal Operation.
+    NOTE: ir.property was removed in Odoo 17. This function is a no-op in Odoo 18+.
+    The journal_id per-company association is no longer supported via ir.property.
     :param company: Company Object
     :param values: Dict with Journal and Fiscal Operation
     """
     _logger.info(
-        f"Create or Inform Journal in Fiscal Operation for {company.name} Property ..."
+        f"set_journal_in_fiscal_operation: skipped for {company.name}"
+        " (ir.property removed in Odoo 17+)"
     )
-    env = api.Environment(cr, SUPERUSER_ID, {})
-    for value in values:
-        fiscal_operation = value.get("fiscal_operation")
-        journal = value.get("journal")
-        data_op_fiscal = "l10n_br_fiscal.operation," + str(env.ref(fiscal_operation).id)
-        property_fiscal_op = env["ir.property"].search(
-            [
-                ("res_id", "=", data_op_fiscal),
-                ("company_id", "=", company.id),
-            ]
-        )
-
-        data_journal = "account.journal," + str(env.ref(journal).id)
-        if property_fiscal_op:
-            property_fiscal_op.value_reference = data_journal
-        else:
-            env["ir.property"].create(
-                {
-                    "name": f"{fiscal_operation}_{journal}",
-                    "fields_id": env["ir.model.fields"]
-                    .search(
-                        [
-                            ("model", "=", "l10n_br_fiscal.operation"),
-                            ("name", "=", "journal_id"),
-                        ]
-                    )
-                    .id,
-                    "value": data_journal,
-                    "res_id": data_op_fiscal,
-                    "company_id": company.id,
-                }
-            )

@@ -47,7 +47,7 @@ class ContractContract(models.Model):
 
     cnpj_cpf = fields.Char(
         string="CNPJ/CPF",
-        related="partner_id.cnpj_cpf",
+        related="partner_id.vat",
     )
 
     legal_name = fields.Char(
@@ -57,7 +57,7 @@ class ContractContract(models.Model):
 
     ie = fields.Char(
         string="State Tax Number/RG",
-        related="partner_id.inscr_est",
+        related="partner_id.l10n_br_ie_code",
     )
 
     ind_final = fields.Selection(

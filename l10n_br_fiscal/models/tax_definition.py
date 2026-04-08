@@ -467,6 +467,15 @@ class TaxDefinition(models.Model):
         if not cest:
             cest = product.cest_id
 
+        if not city_taxation_code:
+            city_taxation_code = self.env["l10n_br_fiscal.city.taxation.code"]
+
+        if not national_taxation_code:
+            national_taxation_code = self.env["l10n_br_fiscal.national.taxation.code"]
+
+        if not service_type:
+            service_type = self.env["l10n_br_fiscal.service.type"]
+
         domain = [
             ("state", "!=", "expired"),
             ("id", "in", self.ids),
