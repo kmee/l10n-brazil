@@ -258,13 +258,13 @@
         sequence="10"
     />
     <!-- Service Type -->
-    <!--menuitem
+    <menuitem
         id="service_type_menu"
         action="service_type_action"
         groups="l10n_br_fiscal.group_manager"
         parent="products_config_menu"
         sequence="20"
-    /-->
+    />
     <!-- NCM -->
     <menuitem
         id="ncm_menu"

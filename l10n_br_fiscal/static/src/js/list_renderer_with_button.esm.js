@@ -4,12 +4,12 @@
 
 /* eslint-disable sort-imports */
 
-import {onWillStart} from "@odoo/owl";
 import {patch} from "@web/core/utils/patch";
+import {useBus} from "@web/core/utils/hooks";
 import {ListRenderer} from "@web/views/list/list_renderer";
 import {ViewButton} from "@web/views/view_button/view_button";
 
-patch(ViewButton.prototype, "l10n_br_fiscal.ViewButton", {
+patch(ViewButton.prototype, {
     onClick() {
         if (this.props.className && this.props.className.includes("edit-line-popup")) {
             if (this.props.record) {
@@ -19,20 +19,18 @@ patch(ViewButton.prototype, "l10n_br_fiscal.ViewButton", {
             }
             return;
         }
-        this._super.apply(this, arguments);
+        super.onClick(...arguments);
     },
 });
 
-patch(ListRenderer.prototype, "l10n_br_fiscal.ListRenderer", {
+patch(ListRenderer.prototype, {
     setup() {
-        this._super.apply(this, arguments);
-
-        onWillStart(() => {
-            this.env.bus.on("OPEN_LINE_IN_POPUP", this, ({record}) => {
-                if (this.props.list.records.includes(record)) {
-                    this.props.openRecord(record);
-                }
-            });
+        super.setup(...arguments);
+        useBus(this.env.bus, "OPEN_LINE_IN_POPUP", (ev) => {
+            const record = ev.detail.record;
+            if (this.props.list.records.includes(record)) {
+                this.props.openRecord(record);
+            }
         });
     },
 });
