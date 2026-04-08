@@ -119,7 +119,7 @@ msgstr "Gerar Nota Fiscal de Remessa"
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,help:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_operation__sequence
 msgid "Gives the sequence order when displaying a list"
-msgstr "Gives the sequence order when displaying a list"
+msgstr "Define a ordem de sequência ao exibir uma lista"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_document__id
