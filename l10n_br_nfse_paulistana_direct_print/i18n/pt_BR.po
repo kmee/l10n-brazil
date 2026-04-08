@@ -16,14 +16,14 @@ msgstr ""
 #. module: l10n_br_nfse_paulistana_direct_print
 #: model:ir.model,name:l10n_br_nfse_paulistana_direct_print.model_l10n_br_fiscal_document
 msgid "Fiscal Document"
-msgstr "Fiscal Document"
+msgstr "Documento Fiscal"
 
 #. module: l10n_br_nfse_paulistana_direct_print
 #: model:ir.model.fields,field_description:l10n_br_nfse_paulistana_direct_print.field_account_bank_statement_line__is_nfse_paulistana
 #: model:ir.model.fields,field_description:l10n_br_nfse_paulistana_direct_print.field_account_move__is_nfse_paulistana
 #: model:ir.model.fields,field_description:l10n_br_nfse_paulistana_direct_print.field_l10n_br_fiscal_document__is_nfse_paulistana
 msgid "Is NFSe Paulistana?"
-msgstr "Is NFSe Paulistana?"
+msgstr "É NFSe Paulistana?"
 
 #. module: l10n_br_nfse_paulistana_direct_print
 #: model:ir.model,name:l10n_br_nfse_paulistana_direct_print.model_account_move
@@ -35,14 +35,14 @@ msgstr "Journal Entry"
 #: model:ir.model.fields,help:l10n_br_nfse_paulistana_direct_print.field_account_move__is_nfse_paulistana
 #: model:ir.model.fields,help:l10n_br_nfse_paulistana_direct_print.field_l10n_br_fiscal_document__is_nfse_paulistana
 msgid "Technical field to identify if the document is a NFSe Paulistana."
-msgstr "Technical field to identify if the document is a NFSe Paulistana."
+msgstr "Campo técnico para identificar se o documento é uma NFSe Paulistana."
 
 #. module: l10n_br_nfse_paulistana_direct_print
 #: model:ir.model.fields,field_description:l10n_br_nfse_paulistana_direct_print.field_account_bank_statement_line__url_nfse_paulistana
 #: model:ir.model.fields,field_description:l10n_br_nfse_paulistana_direct_print.field_account_move__url_nfse_paulistana
 #: model:ir.model.fields,field_description:l10n_br_nfse_paulistana_direct_print.field_l10n_br_fiscal_document__url_nfse_paulistana
 msgid "URL of NFSe Paulistana"
-msgstr "URL of NFSe Paulistana"
+msgstr "URL da NFSe Paulistana"
 
 #. module: l10n_br_nfse_paulistana_direct_print
 #: model:ir.model.fields,help:l10n_br_nfse_paulistana_direct_print.field_account_bank_statement_line__url_nfse_paulistana

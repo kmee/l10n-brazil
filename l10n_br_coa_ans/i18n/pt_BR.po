@@ -16,7 +16,7 @@ msgstr ""
 #. module: l10n_br_coa_ans
 #: model:ir.model,name:l10n_br_coa_ans.model_account_chart_template
 msgid "Account Chart Template"
-msgstr "Account Chart Template"
+msgstr "Modelo do Plano de Contas"
 
 #. module: l10n_br_coa_ans
 #. odoo-python

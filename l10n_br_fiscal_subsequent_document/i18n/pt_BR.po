@@ -46,12 +46,12 @@ msgstr ""
 #. module: l10n_br_fiscal_subsequent_document
 #: model_terms:ir.actions.act_window,help:l10n_br_fiscal_subsequent_document.subsequent_document_action
 msgid "Create a new Subsequent Document"
-msgstr "Create a new Subsequent Document"
+msgstr "Criar um novo Documento Subsequente"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model_terms:ir.actions.act_window,help:l10n_br_fiscal_subsequent_document.subsequent_operation_action
 msgid "Create a new Subsequent operation"
-msgstr "Create a new Subsequent operation"
+msgstr "Criar uma nova Operação Subsequente"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_document__create_uid
@@ -79,7 +79,7 @@ msgstr "Display Name"
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_document__document_subsequent_ids
 msgid "Document Subsequent"
-msgstr "Document Subsequent"
+msgstr "Documento Subsequente"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_operation__operation_document_type_id
@@ -217,12 +217,12 @@ msgstr "Source document"
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_document__subsequent_document_id
 #: model:ir.ui.menu,name:l10n_br_fiscal_subsequent_document.subsequent_document_menu
 msgid "Subsequent Document"
-msgstr "Subsequent Document"
+msgstr "Documento Subsequente"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_subsequent_document.document_form_subsequent
 msgid "Subsequent Documents"
-msgstr "Subsequent Documents"
+msgstr "Documentos Subsequentes"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.actions.act_window,name:l10n_br_fiscal_subsequent_document.subsequent_operation_action
@@ -231,12 +231,12 @@ msgstr "Subsequent Documents"
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_document__subsequent_operation_id
 #: model:ir.ui.menu,name:l10n_br_fiscal_subsequent_document.subsequent_operation_menu
 msgid "Subsequent Operation"
-msgstr "Subsequent Operation"
+msgstr "Operação Subsequente"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_document__document_subsequent_generated
 msgid "Subsequent documents generated?"
-msgstr "Subsequent documents generated?"
+msgstr "Documentos subsequentes gerados?"
 
 #. module: l10n_br_fiscal_subsequent_document
 #. odoo-python
