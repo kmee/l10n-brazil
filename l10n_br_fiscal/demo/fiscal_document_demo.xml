@@ -92,7 +92,7 @@
     <record id="demo_nfe_line_other_state_3-3" model="l10n_br_fiscal.document.line">
         <field name="document_id" ref="demo_nfe_other_state" />
         <field name="name">Teste</field>
-        <field name="product_id" ref="product.product_product_25" />
+        <field name="product_id" ref="product.product_product_27" />
         <field name="uom_id" ref="uom.product_uom_unit" />
         <field name="price_unit">2400</field>
         <field name="quantity">1</field>

@@ -8,7 +8,6 @@
         <field name="partner_invoice_id" ref="l10n_br_base.res_partner_akretion" />
         <field name="partner_shipping_id" ref="l10n_br_base.res_partner_akretion" />
         <field name="user_id" ref="base.user_admin" />
-        <field name="pricelist_id" ref="product.list0" />
         <field name="team_id" ref="sales_team.crm_team_1" />
         <field name="state">draft</field>
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda" />
@@ -52,7 +51,6 @@
         />
         <field name="partner_shipping_id" ref="l10n_br_base.res_partner_cliente7_rs" />
         <field name="user_id" ref="base.user_admin" />
-        <field name="pricelist_id" ref="product.list0" />
         <field name="team_id" ref="sales_team.crm_team_1" />
         <field name="state">draft</field>
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda" />
@@ -94,7 +92,6 @@
             ref="l10n_br_base.res_partner_cliente2_sp_end_entrega"
         />
         <field name="user_id" ref="base.user_admin" />
-        <field name="pricelist_id" ref="product.list0" />
         <field name="team_id" ref="sales_team.crm_team_1" />
         <field name="state">draft</field>
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda" />
@@ -133,7 +130,6 @@
         <field name="partner_invoice_id" ref="l10n_br_base.res_partner_akretion" />
         <field name="partner_shipping_id" ref="l10n_br_base.res_partner_akretion" />
         <field name="user_id" ref="base.user_admin" />
-        <field name="pricelist_id" ref="product.list0" />
         <field name="team_id" ref="sales_team.crm_team_1" />
         <field name="state">draft</field>
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda" />
@@ -172,7 +168,6 @@
         <field name="partner_invoice_id" ref="l10n_br_base.res_partner_akretion" />
         <field name="partner_shipping_id" ref="l10n_br_base.res_partner_akretion" />
         <field name="user_id" ref="base.user_admin" />
-        <field name="pricelist_id" ref="product.list0" />
         <field name="team_id" ref="sales_team.crm_team_1" />
         <field name="state">draft</field>
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda" />
@@ -215,7 +210,6 @@
         <field name="partner_invoice_id" ref="l10n_br_base.res_partner_akretion" />
         <field name="partner_shipping_id" ref="l10n_br_base.res_partner_akretion" />
         <field name="user_id" ref="l10n_br_base.user_demo_simples" />
-        <field name="pricelist_id" ref="product.list0" />
         <field name="team_id" ref="sales_team.crm_team_1" />
         <field name="state">draft</field>
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda" />
@@ -254,7 +248,6 @@
         <field name="partner_invoice_id" ref="l10n_br_base.res_partner_akretion" />
         <field name="partner_shipping_id" ref="l10n_br_base.res_partner_akretion" />
         <field name="user_id" ref="l10n_br_base.user_demo_simples" />
-        <field name="pricelist_id" ref="product.list0" />
         <field name="team_id" ref="sales_team.crm_team_1" />
         <field name="state">draft</field>
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda" />
@@ -293,7 +286,6 @@
         <field name="partner_invoice_id" ref="l10n_br_base.res_partner_akretion" />
         <field name="partner_shipping_id" ref="l10n_br_base.res_partner_akretion" />
         <field name="user_id" ref="l10n_br_base.user_demo_simples" />
-        <field name="pricelist_id" ref="product.list0" />
         <field name="team_id" ref="sales_team.crm_team_1" />
         <field name="state">draft</field>
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda" />
@@ -349,7 +341,6 @@
         <field name="partner_invoice_id" ref="l10n_br_base.res_partner_akretion" />
         <field name="partner_shipping_id" ref="l10n_br_base.res_partner_akretion" />
         <field name="user_id" ref="l10n_br_base.user_demo_presumido" />
-        <field name="pricelist_id" ref="product.list0" />
         <field name="team_id" ref="sales_team.crm_team_1" />
         <field name="state">draft</field>
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda" />
@@ -388,7 +379,6 @@
         <field name="partner_invoice_id" ref="l10n_br_base.res_partner_akretion" />
         <field name="partner_shipping_id" ref="l10n_br_base.res_partner_akretion" />
         <field name="user_id" ref="l10n_br_base.user_demo_presumido" />
-        <field name="pricelist_id" ref="product.list0" />
         <field name="team_id" ref="sales_team.crm_team_1" />
         <field name="state">draft</field>
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda" />
@@ -427,7 +417,6 @@
         <field name="partner_invoice_id" ref="l10n_br_base.res_partner_akretion" />
         <field name="partner_shipping_id" ref="l10n_br_base.res_partner_akretion" />
         <field name="user_id" ref="l10n_br_base.user_demo_presumido" />
-        <field name="pricelist_id" ref="product.list0" />
         <field name="team_id" ref="sales_team.crm_team_1" />
         <field name="state">draft</field>
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda" />
