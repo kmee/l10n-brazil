@@ -13,6 +13,7 @@
     "website": "https://github.com/OCA/l10n-brazil",
     "version": "18.0.1.0.0",
     "depends": ["l10n_br_coa"],
+    "installable": False,
     "data": [],
     "post_init_hook": "_post_init_hook",
 }
