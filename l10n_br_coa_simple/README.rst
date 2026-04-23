@@ -1,6 +1,6 @@
-===================================
-Plano de Contas do Simples ITG 1000
-===================================
+===============================================
+Plano de Contas para Pequena Empresa (ITG 1000)
+===============================================
 
 .. 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -93,8 +93,8 @@ Authors
 Contributors
 ------------
 
-- Renato Lima <renato.lima@akretion.com.br>
-- Luis Felipe Mileo <mileo@kmee.com.br>
+-  Renato Lima <renato.lima@akretion.com.br>
+-  Luis Felipe Mileo <mileo@kmee.com.br>
 
 Maintainers
 -----------
