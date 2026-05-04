@@ -98,7 +98,6 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
             company_name = "empresa 1 Lucro Presumido"
         else:
             company_name = "empresa 2 Lucro Presumido"
-        chart_template = cls.env.ref("l10n_br_coa_generic.l10n_br_coa_generic_template")
         res = super().setup_company_data(
             company_name,
             chart_template,
@@ -114,7 +113,6 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
             **kwargs,
         )
         res["company"].partner_id.state_id = cls.env.ref("base.state_br_sp")
-        chart_template.load_fiscal_taxes()
         return res
 
     def test_compra_para_revenda(self):
