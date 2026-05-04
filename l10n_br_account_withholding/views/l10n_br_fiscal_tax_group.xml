@@ -11,7 +11,7 @@
                 <field name='journal_id' />
                 <field
                     name="wh_payable_account_id"
-                    attrs="{'invisible': [('generate_wh_invoice', '=', False)]}"
+                    invisible="not generate_wh_invoice"
                 />
             </field>
         </field>

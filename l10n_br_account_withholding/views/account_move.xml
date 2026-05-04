@@ -15,7 +15,7 @@
                     name="action_view_wh_invoice"
                     class="oe_stat_button"
                     icon="fa-pencil-square-o"
-                    attrs="{'invisible': [('wh_invoice_count', '=', 0)]}"
+                    invisible="wh_invoice_count == 0"
                     groups="base.group_user"
                 >
                     <field
