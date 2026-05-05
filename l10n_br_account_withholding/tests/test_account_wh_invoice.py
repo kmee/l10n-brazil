@@ -13,6 +13,10 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
     def setUpClass(cls):
         super().setUpClass()
 
+        cls.env["account.chart.template"].load_fiscal_taxes(
+            companies=[cls.company_data["company"]]
+        )
+
         # Ensure the NFe user group is enabled so fiscal fields are available
         # on invoices when the l10n_br_nfe module is installed.
         nfe_user_group = cls.env.ref("l10n_br_nfe.group_user", raise_if_not_found=False)
