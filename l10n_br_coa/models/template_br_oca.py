@@ -102,6 +102,10 @@ class AccountChartTemplate(models.AbstractModel):
                     "account_purchase_tax_id": False,
                 }
             )
+            flavor = "itg"
+            if template_code == "br_oca_generic" or company.tax_framework == "3":
+                flavor = "cfc"
+            self._populate_default_br_tax_accounts(company, flavor=flavor)
         return result
 
     def _set_tax_group_accs(self, template_code, tax_data):
@@ -172,6 +176,7 @@ class AccountChartTemplate(models.AbstractModel):
         Account = self.env["account.account"].with_company(company)
         IrModelData = self.env["ir.model.data"].sudo()
         created_accounts_refs = {}
+        created_accounts_by_code = {}
 
         # 1. Create or find accounts and their XMLIDs
         for xml_id_name_part, (
@@ -183,22 +188,26 @@ class AccountChartTemplate(models.AbstractModel):
             # Use fixed codes. Ensure they don't clash with base CoA or handle it.
             # We assume these codes are specific enough.
             code = code_cfc if flavor == "cfc" else code_itg
-            code = f"{code}{review_suffix}"
+            code_gen = f"{code}{review_suffix}"
+
+            # Reuse account if same code was already processed in this loop
+            # (some tax accounts share the same code in the CSV)
+            if code in created_accounts_by_code:
+                created_accounts_refs[xml_id_name_part] = created_accounts_by_code[code]
+                continue
 
             # TODO: would be better to 1st search for the taxes related to all templates
             # DEFAULT_TAX_TEMPLATES_ACCOUNTS.items()
             # and if xml_id_name_part is related to a tax template for which the tax
             # repartion_line_ids have accounts already, then skip account creation
-            # In Odoo 18, account codes must be unique within each company's
-            # root hierarchy. Using with_company(company) above ensures the
-            # code search uses the correct JSONB key for this company.
-            existing_account = Account.sudo().search(
-                [("code", "=", code)], limit=1
+            existing_account = Account.search(
+                [("code", "in", [code, code_gen]), ("company_ids", "in", [company.id])],
+                limit=1,
             )
             if not existing_account:
                 account = Account.create(
                     {
-                        "code": code,
+                        "code": code_gen,
                         "name": name,
                         "account_type": acc_type,
                         "company_ids": [Command.link(company.id)],
@@ -214,6 +223,7 @@ class AccountChartTemplate(models.AbstractModel):
                     account.write({"account_type": acc_type})
 
             created_accounts_refs[xml_id_name_part] = account
+            created_accounts_by_code[code] = account
 
             # Ensure ir.model.data exists for easy reference
             imd_module = self._get_chart_template_mapping().get(company.chart_template)[
@@ -261,8 +271,12 @@ class AccountChartTemplate(models.AbstractModel):
             )
             company_tax = self.env.ref(tax_xmlid, raise_if_not_found=False)
             if not company_tax:
-                _logger.warning(f"tax {tax_xmlid} not found! Skipping it...")
-                continue
+                tax_xmlid = f"account.{company.id}_{tax_template_xmlid.split('.')[1]}"
+                company_tax = self.env.ref(tax_xmlid, raise_if_not_found=False)
+
+                if not company_tax:
+                    _logger.info(f"tax {tax_xmlid} not found! Skipping it...")
+                    continue
 
             inv_rep_acc_key, ref_rep_acc_key = acc_mapping_keys
             invoice_account = (
