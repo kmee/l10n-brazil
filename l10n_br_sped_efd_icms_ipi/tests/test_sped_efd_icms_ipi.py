@@ -1,6 +1,9 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+import base64
+import tempfile
+
 from odoo.tests.common import TransactionCase
 
 
@@ -408,3 +411,62 @@ class TestSpedEFDICMSIPI(TransactionCase):
         self.assertEqual(vals["CST_ICMS"], "060")
         self.assertEqual(vals["CFOP"], "1252")
         self.assertEqual(vals["VL_ICMS_ST"], 75.0)
+
+    # ------------------------------------------------------------------
+    # End-to-end / round-trip
+    # ------------------------------------------------------------------
+    def test_generate_then_import_round_trip(self):
+        """Generate a file, import it back, regenerate: must be identical.
+
+        Validates the symmetry between the writer (_generate_sped_text) and
+        the reader (_import_file): field order, line format and the control
+        block (9900/9990/9999) must round-trip exactly.
+        """
+        declaration = self.env["l10n_br_sped.efd_icms_ipi.0000"].create(
+            {"company_id": self.env.company.id}
+        )
+        # A few level-2 registers covering char fields.
+        self.env["l10n_br_sped.efd_icms_ipi.0005"].create(
+            {"declaration_id": declaration.id, "FANTASIA": "ACME", "BAIRRO": "Centro"}
+        )
+        self.env["l10n_br_sped.efd_icms_ipi.0190"].create(
+            {"declaration_id": declaration.id, "UNID": "UN", "DESCR": "Unidade"}
+        )
+        sped_1 = declaration._generate_sped_text()
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".txt", delete=False
+        ) as tmp:
+            tmp.write(sped_1)
+            tmp_path = tmp.name
+
+        imported = self.env["l10n_br_sped.mixin"]._import_file(
+            tmp_path, "efd_icms_ipi"
+        )
+        sped_2 = imported._generate_sped_text()
+        self.assertEqual(sped_1.strip(), sped_2.strip())
+
+    def test_full_pipeline_headless(self):
+        """Pull from Odoo and generate the file with no UI interaction.
+
+        Exercises _odoo_domain/_odoo_query, recursive register creation and the
+        whole file generation, and asserts the 0000 self-population fix.
+        """
+        declaration = self.env["l10n_br_sped.efd_icms_ipi.0000"].create(
+            {"company_id": self.env.company.id, "CLAS_ESTAB_IND": "00"}
+        )
+        declaration.button_populate_sped_from_odoo()
+        # 0000 self-fields populated by the pull (not only by the form onchange).
+        self.assertEqual(declaration.COD_VER, "020")
+        declaration.button_create_sped_files()
+        attachment = self.env["ir.attachment"].search(
+            [("res_model", "=", declaration._name), ("res_id", "=", declaration.id)],
+            limit=1,
+        )
+        self.assertTrue(attachment)
+        content = base64.b64decode(attachment.datas).decode()
+        self.assertIn("|0000|", content)
+        self.assertIn("|9999|", content)
+        # COD_VER (020) must be on the 0000 line.
+        opening = content.splitlines()[0]
+        self.assertEqual(opening.split("|")[2], "020")
