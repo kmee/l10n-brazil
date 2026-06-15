@@ -152,3 +152,24 @@ class TestSpedEFDICMSIPI(TransactionCase):
         self.assertEqual(vals["NOME"], "Contador Y")
         self.assertEqual(vals["CRC"], "SP-123456")
         self.assertEqual(vals["BAIRRO"], "Centro")
+
+    def test_map_c100_document(self):
+        """Register C100 (Bloco C) maps a fiscal document header."""
+        partner = self.env["res.partner"].create(
+            {"name": "Cliente C", "is_company": True}
+        )
+        document = self.env["l10n_br_fiscal.document"].new(
+            {
+                "partner_id": partner.id,
+                "document_serie": "1",
+                "document_number": "123",
+            }
+        )
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_icms_ipi.c100"]._map_from_odoo(
+            document, declaration, declaration
+        )
+        self.assertEqual(vals["COD_PART"], str(partner.id))
+        self.assertEqual(vals["SER"], "1")
+        self.assertEqual(vals["NUM_DOC"], "123")
+        self.assertIn("VL_BC_ICMS", vals)

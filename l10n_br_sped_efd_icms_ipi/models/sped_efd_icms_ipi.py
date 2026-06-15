@@ -452,6 +452,44 @@ class Registrob510(models.Model):
 class Registroc100(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.c100"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.c100"]
+    _odoo_model = "l10n_br_fiscal.document"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return [("id", "in", declaration.fiscal_document_ids.ids)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        # Reform note (layout 020): C100 carries ICMS/IPI only; CBS/IBS/IS are
+        # excluded from the EFD amounts, so only the fiscal totals are mapped.
+        return {
+            "IND_OPER": "0" if record.fiscal_operation_type == "in" else "1",
+            "IND_EMIT": "0" if record.issuer == "company" else "1",
+            "COD_PART": str(record.partner_id.id),
+            "COD_MOD": record.document_type_id.code,
+            "COD_SIT": record.state_fiscal,
+            "SER": record.document_serie,
+            "NUM_DOC": misc.punctuation_rm(str(record.document_number or "")),
+            "CHV_NFE": record.document_key or "",
+            "DT_DOC": record.document_date,
+            "DT_E_S": record.date_in_out,
+            "VL_DOC": record.fiscal_amount_total,
+            "IND_PGTO": "",
+            "VL_DESC": record.amount_discount_value,
+            "VL_ABAT_NT": record.amount_financial_discount_value,
+            "VL_MERC": record.amount_price_gross,
+            "IND_FRT": "9",
+            "VL_FRT": record.amount_freight_value,
+            "VL_SEG": record.amount_insurance_value,
+            "VL_OUT_DA": record.amount_other_value,
+            "VL_BC_ICMS": record.amount_icms_base,
+            "VL_ICMS": record.amount_icms_value,
+            "VL_BC_ICMS_ST": record.amount_icmsst_base,
+            "VL_ICMS_ST": record.amount_icmsst_value,
+            "VL_IPI": record.amount_ipi_value,
+            "VL_PIS": record.amount_pis_value,
+            "VL_COFINS": record.amount_cofins_value,
+        }
 
 
 class Registroc101(models.Model):
