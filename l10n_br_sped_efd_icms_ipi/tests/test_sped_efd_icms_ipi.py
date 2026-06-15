@@ -296,3 +296,33 @@ class TestSpedEFDICMSIPI(TransactionCase):
         self.assertEqual(vals["DT_EST"], declaration.DT_FIN)
         self.assertEqual(vals["IND_EST"], "0")
         self.assertIn("QTD", vals)
+
+    def test_map_k230_production(self):
+        """Register K230 maps a finished production order (mrp soft dependency)."""
+        declaration = self._declaration()
+        row = {"cod_doc_op": "MO/001", "cod_item": "PRD1", "qtd_enc": 10.0}
+        vals = self.env["l10n_br_sped.efd_icms_ipi.k230"]._map_from_odoo(
+            row, None, declaration
+        )
+        self.assertEqual(vals["COD_DOC_OP"], "MO/001")
+        self.assertEqual(vals["COD_ITEM"], "PRD1")
+        self.assertEqual(vals["QTD_ENC"], 10.0)
+
+    def test_map_k235_consumption(self):
+        """Register K235 maps a consumed raw-material move of a production."""
+        declaration = self._declaration()
+        row = {"cod_item": "INS-K", "qtd": 5.0}
+        vals = self.env["l10n_br_sped.efd_icms_ipi.k235"]._map_from_odoo(
+            row, {"id": 1}, declaration
+        )
+        self.assertEqual(vals["COD_ITEM"], "INS-K")
+        self.assertEqual(vals["QTD"], 5.0)
+
+    def test_k230_query_without_mrp(self):
+        """K230 yields an empty query when mrp is not installed (soft dep)."""
+        declaration = self._declaration()
+        reg = self.env["l10n_br_sped.efd_icms_ipi.k230"]
+        query, params = reg._odoo_query(None, declaration)
+        if "mrp.production" not in self.env:
+            self.assertIn("FALSE", query)
+            self.assertEqual(params, [])

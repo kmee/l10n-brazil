@@ -1524,10 +1524,70 @@ class Registrok230(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.k230"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.k230"]
 
+    @api.model
+    def _odoo_query(self, parent_record, declaration):
+        # Production orders finished in the period. mrp is a soft dependency:
+        # the data is read by SQL and yields nothing when mrp is not installed,
+        # so the base module stays installable without manufacturing.
+        if "mrp.production" not in self.env:
+            return "SELECT NULL AS id WHERE FALSE", []
+        query = """
+            SELECT
+                mo.id AS id,
+                mo.name AS cod_doc_op,
+                mo.date_start AS dt_ini_op,
+                mo.date_finished AS dt_fin_op,
+                COALESCE(NULLIF(mo.qty_producing, 0), mo.product_qty) AS qtd_enc,
+                COALESCE(pp.default_code, mo.product_id::text) AS cod_item
+            FROM mrp_production mo
+            JOIN product_product pp ON pp.id = mo.product_id
+            WHERE mo.state = 'done'
+              AND mo.company_id = %s
+              AND mo.date_finished >= %s
+              AND mo.date_finished <= %s
+        """
+        return query, [declaration.company_id.id, declaration.DT_INI, declaration.DT_FIN]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "DT_INI_OP": record.get("dt_ini_op"),
+            "DT_FIN_OP": record.get("dt_fin_op"),
+            "COD_DOC_OP": record.get("cod_doc_op") or "",
+            "COD_ITEM": record.get("cod_item") or "",
+            "QTD_ENC": record.get("qtd_enc") or 0.0,
+        }
+
 
 class Registrok235(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.k235"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.k235"]
+
+    @api.model
+    def _odoo_query(self, parent_record, declaration):
+        # Raw materials consumed by the parent production order (K230 row).
+        if "mrp.production" not in self.env or not parent_record:
+            return "SELECT NULL AS id WHERE FALSE", []
+        query = """
+            SELECT
+                sm.date AS dt_saida,
+                sm.quantity AS qtd,
+                COALESCE(pp.default_code, sm.product_id::text) AS cod_item
+            FROM stock_move sm
+            JOIN product_product pp ON pp.id = sm.product_id
+            WHERE sm.raw_material_production_id = %s
+              AND sm.state = 'done'
+        """
+        return query, [parent_record["id"]]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "DT_SAIDA": record.get("dt_saida"),
+            "COD_ITEM": record.get("cod_item") or "",
+            "QTD": record.get("qtd") or 0.0,
+            "COD_INS_SUBST": "",
+        }
 
 
 class Registrok250(models.Model):
