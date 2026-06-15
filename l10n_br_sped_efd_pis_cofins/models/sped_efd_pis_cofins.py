@@ -18,6 +18,47 @@ LAYOUT_VERSION_CODE = "006"
 CTE_MODELS = ["57", "67"]  # transport
 UTILITY_MODELS = ["06", "28", "29", "66"]  # energy/water/gas
 
+_PERIOD_WHERE = (
+    "doc.company_id = %s AND doc.document_date >= %s "
+    "AND doc.document_date <= %s AND doc.state_edoc = 'autorizada'"
+)
+
+
+def _contrib_params(declaration):
+    return [declaration.company_id.id, declaration.DT_INI, declaration.DT_FIN]
+
+
+def _consolidation_query(value_col):
+    """Period debit (sales) and credit (purchases) of a PIS/COFINS value column.
+
+    Baseline assessment: the precise PIS/COFINS rules are CST-driven; the
+    accountant refines per-CST. value_col is a fixed identifier, not user input.
+    """
+    return f"""
+        SELECT
+            COALESCE(SUM(line.{value_col})
+                FILTER (WHERE doc.fiscal_operation_type = 'out'), 0) AS deb,
+            COALESCE(SUM(line.{value_col})
+                FILTER (WHERE doc.fiscal_operation_type = 'in'), 0) AS cred
+        FROM l10n_br_fiscal_document_line line
+        JOIN l10n_br_fiscal_document doc ON doc.id = line.document_id
+        WHERE {_PERIOD_WHERE}
+    """
+
+
+def _contrib_detail_query(base_col, aliq_col, value_col, direction):
+    """Aggregate a PIS/COFINS contribution by rate for one operation direction."""
+    return f"""
+        SELECT
+            line.{aliq_col} AS aliq,
+            SUM(line.{base_col}) AS vl_bc,
+            SUM(line.{value_col}) AS vl_cont
+        FROM l10n_br_fiscal_document_line line
+        JOIN l10n_br_fiscal_document doc ON doc.id = line.document_id
+        WHERE {_PERIOD_WHERE} AND doc.fiscal_operation_type = '{direction}'
+        GROUP BY line.{aliq_col}
+    """
+
 
 class Registro0000(models.Model):
     "Abertura do Arquivo Digital e Identificação da Pessoa Jurídica"
@@ -908,6 +949,32 @@ class Registrom100(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.m100"
     _inherit = ["l10n_br_sped.efd_pis_cofins.6.m100"]
 
+    @api.model
+    def _odoo_query(self, parent_record, declaration):
+        query = _contrib_detail_query("pis_base", "pis_percent", "pis_value", "in")
+        return query, _contrib_params(declaration)
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        bc = record.get("vl_bc") or 0.0
+        cred = record.get("vl_cont") or 0.0
+        return {
+            "COD_CRED": "101",
+            "IND_CRED_ORI": "0",
+            "VL_BC_PIS": bc,
+            "ALIQ_PIS": record.get("aliq") or 0.0,
+            "QUANT_BC_PIS": 0.0,
+            "ALIQ_PIS_QUANT": 0.0,
+            "VL_CRED": cred,
+            "VL_AJUS_ACRES": 0.0,
+            "VL_AJUS_REDUC": 0.0,
+            "VL_CRED_DIF": 0.0,
+            "VL_CRED_DISP": cred,
+            "IND_DESC_CRED": "0",
+            "VL_CRED_DESC": cred,
+            "SLD_CRED": 0.0,
+        }
+
 
 class Registrom105(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.m105"
@@ -928,6 +995,30 @@ class Registrom200(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.m200"
     _inherit = ["l10n_br_sped.efd_pis_cofins.6.m200"]
 
+    @api.model
+    def _odoo_query(self, parent_record, declaration):
+        return _consolidation_query("pis_value"), _contrib_params(declaration)
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        deb = record.get("deb") or 0.0
+        cred = record.get("cred") or 0.0
+        rec = max(deb - cred, 0.0)
+        return {
+            "VL_TOT_CONT_NC_PER": deb,
+            "VL_TOT_CRED_DESC": cred,
+            "VL_TOT_CRED_DESC_ANT": 0.0,
+            "VL_TOT_CONT_NC_DEV": rec,
+            "VL_RET_NC": 0.0,
+            "VL_OUT_DED_NC": 0.0,
+            "VL_CONT_NC_REC": rec,
+            "VL_TOT_CONT_CUM_PER": 0.0,
+            "VL_RET_CUM": 0.0,
+            "VL_OUT_DED_CUM": 0.0,
+            "VL_CONT_CUM_REC": 0.0,
+            "VL_TOT_CONT_REC": rec,
+        }
+
 
 class Registrom205(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.m205"
@@ -937,6 +1028,30 @@ class Registrom205(models.Model):
 class Registrom210(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.m210"
     _inherit = ["l10n_br_sped.efd_pis_cofins.6.m210"]
+
+    @api.model
+    def _odoo_query(self, parent_record, declaration):
+        query = _contrib_detail_query("pis_base", "pis_percent", "pis_value", "out")
+        return query, _contrib_params(declaration)
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        bc = record.get("vl_bc") or 0.0
+        cont = record.get("vl_cont") or 0.0
+        return {
+            "COD_CONT": "01",
+            "VL_REC_BRT": bc,
+            "VL_BC_CONT": bc,
+            "ALIQ_PIS": record.get("aliq") or 0.0,
+            "QUANT_BC_PIS": 0.0,
+            "ALIQ_PIS_QUANT": 0.0,
+            "VL_CONT_APUR": cont,
+            "VL_AJUS_ACRES": 0.0,
+            "VL_AJUS_REDUC": 0.0,
+            "VL_CONT_DIFER": 0.0,
+            "VL_CONT_DIFER_ANT": 0.0,
+            "VL_CONT_PER": cont,
+        }
 
 
 class Registrom211(models.Model):
@@ -988,6 +1103,34 @@ class Registrom500(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.m500"
     _inherit = ["l10n_br_sped.efd_pis_cofins.6.m500"]
 
+    @api.model
+    def _odoo_query(self, parent_record, declaration):
+        query = _contrib_detail_query(
+            "cofins_base", "cofins_percent", "cofins_value", "in"
+        )
+        return query, _contrib_params(declaration)
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        bc = record.get("vl_bc") or 0.0
+        cred = record.get("vl_cont") or 0.0
+        return {
+            "COD_CRED": "101",
+            "IND_CRED_ORI": "0",
+            "VL_BC_COFINS": bc,
+            "ALIQ_COFINS": record.get("aliq") or 0.0,
+            "QUANT_BC_COFINS": 0.0,
+            "ALIQ_COFINS_QUANT": 0.0,
+            "VL_CRED": cred,
+            "VL_AJUS_ACRES": 0.0,
+            "VL_AJUS_REDUC": 0.0,
+            "VL_CRED_DIFER": 0.0,
+            "VL_CRED_DISP": cred,
+            "IND_DESC_CRED": "0",
+            "VL_CRED_DESC": cred,
+            "SLD_CRED": 0.0,
+        }
+
 
 class Registrom505(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.m505"
@@ -1008,6 +1151,30 @@ class Registrom600(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.m600"
     _inherit = ["l10n_br_sped.efd_pis_cofins.6.m600"]
 
+    @api.model
+    def _odoo_query(self, parent_record, declaration):
+        return _consolidation_query("cofins_value"), _contrib_params(declaration)
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        deb = record.get("deb") or 0.0
+        cred = record.get("cred") or 0.0
+        rec = max(deb - cred, 0.0)
+        return {
+            "VL_TOT_CONT_NC_PER": deb,
+            "VL_TOT_CRED_DESC": cred,
+            "VL_TOT_CRED_DESC_ANT": 0.0,
+            "VL_TOT_CONT_NC_DEV": rec,
+            "VL_RET_NC": 0.0,
+            "VL_OUT_DED_NC": 0.0,
+            "VL_CONT_NC_REC": rec,
+            "VL_TOT_CONT_CUM_PER": 0.0,
+            "VL_RET_CUM": 0.0,
+            "VL_OUT_DED_CUM": 0.0,
+            "VL_CONT_CUM_REC": 0.0,
+            "VL_TOT_CONT_REC": rec,
+        }
+
 
 class Registrom605(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.m605"
@@ -1017,6 +1184,32 @@ class Registrom605(models.Model):
 class Registrom610(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.m610"
     _inherit = ["l10n_br_sped.efd_pis_cofins.6.m610"]
+
+    @api.model
+    def _odoo_query(self, parent_record, declaration):
+        query = _contrib_detail_query(
+            "cofins_base", "cofins_percent", "cofins_value", "out"
+        )
+        return query, _contrib_params(declaration)
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        bc = record.get("vl_bc") or 0.0
+        cont = record.get("vl_cont") or 0.0
+        return {
+            "COD_CONT": "01",
+            "VL_REC_BRT": bc,
+            "VL_BC_CONT": bc,
+            "ALIQ_COFINS": record.get("aliq") or 0.0,
+            "QUANT_BC_COFINS": 0.0,
+            "ALIQ_COFINS_QUANT": 0.0,
+            "VL_CONT_APUR": cont,
+            "VL_AJUS_ACRES": 0.0,
+            "VL_AJUS_REDUC": 0.0,
+            "VL_CONT_DIFER": 0.0,
+            "VL_CONT_DIFER_ANT": 0.0,
+            "VL_CONT_PER": cont,
+        }
 
 
 class Registrom611(models.Model):

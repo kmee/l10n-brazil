@@ -131,3 +131,53 @@ class TestSpedEFDPISCOFINS(TransactionCase):
         self.assertEqual(vals["COD_ITEM"], "IPC")
         self.assertIn("CST_PIS", vals)
         self.assertIn("CST_COFINS", vals)
+
+    # ------------------------------------------------------------------
+    # Bloco M (PIS/COFINS assessment)
+    # ------------------------------------------------------------------
+    def test_map_m200_pis_consolidation(self):
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_pis_cofins.m200"]._map_from_odoo(
+            {"deb": 1000.0, "cred": 300.0}, None, declaration
+        )
+        self.assertEqual(vals["VL_TOT_CONT_NC_PER"], 1000.0)
+        self.assertEqual(vals["VL_TOT_CRED_DESC"], 300.0)
+        self.assertEqual(vals["VL_TOT_CONT_REC"], 700.0)
+
+    def test_map_m210_pis_detail(self):
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_pis_cofins.m210"]._map_from_odoo(
+            {"aliq": 1.65, "vl_bc": 1000.0, "vl_cont": 16.5}, None, declaration
+        )
+        self.assertEqual(vals["ALIQ_PIS"], 1.65)
+        self.assertEqual(vals["VL_CONT_PER"], 16.5)
+
+    def test_map_m100_pis_credit(self):
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_pis_cofins.m100"]._map_from_odoo(
+            {"aliq": 1.65, "vl_bc": 500.0, "vl_cont": 8.25}, None, declaration
+        )
+        self.assertEqual(vals["COD_CRED"], "101")
+        self.assertEqual(vals["VL_CRED"], 8.25)
+
+    def test_map_m600_cofins_consolidation(self):
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_pis_cofins.m600"]._map_from_odoo(
+            {"deb": 2000.0, "cred": 500.0}, None, declaration
+        )
+        self.assertEqual(vals["VL_TOT_CONT_REC"], 1500.0)
+
+    def test_map_m610_cofins_detail(self):
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_pis_cofins.m610"]._map_from_odoo(
+            {"aliq": 7.6, "vl_bc": 1000.0, "vl_cont": 76.0}, None, declaration
+        )
+        self.assertEqual(vals["ALIQ_COFINS"], 7.6)
+        self.assertEqual(vals["VL_CONT_PER"], 76.0)
+
+    def test_map_m500_cofins_credit(self):
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_pis_cofins.m500"]._map_from_odoo(
+            {"aliq": 7.6, "vl_bc": 500.0, "vl_cont": 38.0}, None, declaration
+        )
+        self.assertEqual(vals["VL_CRED"], 38.0)
