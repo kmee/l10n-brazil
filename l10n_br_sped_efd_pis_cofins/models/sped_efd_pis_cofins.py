@@ -688,11 +688,54 @@ class Registroc890(models.Model):
 class Registrod010(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.d010"
     _inherit = ["l10n_br_sped.efd_pis_cofins.6.d010"]
+    _odoo_model = "res.company"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        # Open the services block only when there are transport documents.
+        cte = declaration.fiscal_document_ids.filtered(
+            lambda d: d.document_type_id.code in CTE_MODELS
+        )
+        return [("id", "=", declaration.company_id.id)] if cte else [("id", "in", [])]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {"CNPJ": misc.punctuation_rm(record.vat or "")}
 
 
 class Registrod100(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.d100"
     _inherit = ["l10n_br_sped.efd_pis_cofins.6.d100"]
+    _odoo_model = "l10n_br_fiscal.document"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return [
+            ("id", "in", declaration.fiscal_document_ids.ids),
+            ("document_type_id.code", "in", CTE_MODELS),
+        ]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "IND_OPER": "0" if record.fiscal_operation_type == "in" else "1",
+            "IND_EMIT": "0" if record.issuer == "company" else "1",
+            "COD_PART": str(record.partner_id.id),
+            "COD_MOD": record.document_type_id.code,
+            "COD_SIT": record.state_fiscal,
+            "SER": record.document_serie or "",
+            "NUM_DOC": misc.punctuation_rm(str(record.document_number or "")),
+            "CHV_CTE": record.document_key or "",
+            "DT_DOC": record.document_date,
+            "DT_A_P": record.document_date,
+            "VL_DOC": record.fiscal_amount_total,
+            "VL_DESC": record.amount_discount_value,
+            "IND_FRT": "9",
+            "VL_SERV": record.amount_price_gross,
+            "VL_BC_ICMS": record.amount_icms_base,
+            "VL_ICMS": record.amount_icms_value,
+            "VL_NT": 0.0,
+        }
 
 
 class Registrod101(models.Model):

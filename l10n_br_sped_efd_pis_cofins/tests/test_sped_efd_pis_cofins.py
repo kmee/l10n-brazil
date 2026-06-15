@@ -181,3 +181,28 @@ class TestSpedEFDPISCOFINS(TransactionCase):
             {"aliq": 7.6, "vl_bc": 500.0, "vl_cont": 38.0}, None, declaration
         )
         self.assertEqual(vals["VL_CRED"], 38.0)
+
+    # ------------------------------------------------------------------
+    # Bloco D (transport services)
+    # ------------------------------------------------------------------
+    def test_map_d010_establishment(self):
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_pis_cofins.d010"]._map_from_odoo(
+            self.env.company, None, declaration
+        )
+        self.assertIn("CNPJ", vals)
+
+    def test_map_d100_cte(self):
+        partner = self.env["res.partner"].create(
+            {"name": "Transp PC", "is_company": True}
+        )
+        document = self.env["l10n_br_fiscal.document"].new(
+            {"partner_id": partner.id, "document_serie": "1", "document_number": "9"}
+        )
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_pis_cofins.d100"]._map_from_odoo(
+            document, None, declaration
+        )
+        self.assertEqual(vals["COD_PART"], str(partner.id))
+        self.assertEqual(vals["NUM_DOC"], "9")
+        self.assertIn("CHV_CTE", vals)
