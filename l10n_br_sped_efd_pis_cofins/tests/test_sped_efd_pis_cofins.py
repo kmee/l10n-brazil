@@ -89,3 +89,45 @@ class TestSpedEFDPISCOFINS(TransactionCase):
         )
         self.assertEqual(vals["COD_ITEM"], "PP")
         self.assertEqual(vals["DESCR_ITEM"], "Produto P")
+
+    def test_map_c010_establishment(self):
+        """Register C010 opens the goods block for the establishment."""
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_pis_cofins.c010"]._map_from_odoo(
+            self.env.company, None, declaration
+        )
+        self.assertEqual(vals["IND_ESCRI"], "1")
+        self.assertIn("CNPJ", vals)
+
+    def test_map_c100_document(self):
+        """Register C100 maps a fiscal document (NF-e) header."""
+        partner = self.env["res.partner"].create(
+            {"name": "Cliente PC", "is_company": True}
+        )
+        document = self.env["l10n_br_fiscal.document"].new(
+            {"partner_id": partner.id, "document_serie": "1", "document_number": "77"}
+        )
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_pis_cofins.c100"]._map_from_odoo(
+            document, None, declaration
+        )
+        self.assertEqual(vals["COD_PART"], str(partner.id))
+        self.assertEqual(vals["NUM_DOC"], "77")
+        self.assertIn("VL_PIS", vals)
+
+    def test_map_c170_line(self):
+        """Register C170 maps a document line with PIS/COFINS fields."""
+        product = self.env["product.product"].create(
+            {"name": "Item PC", "default_code": "IPC"}
+        )
+        line = self.env["l10n_br_fiscal.document.line"].new(
+            {"product_id": product.id, "name": "Item PC desc"}
+        )
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_pis_cofins.c170"]._map_from_odoo(
+            line, None, declaration, index=0
+        )
+        self.assertEqual(vals["NUM_ITEM"], 1)
+        self.assertEqual(vals["COD_ITEM"], "IPC")
+        self.assertIn("CST_PIS", vals)
+        self.assertIn("CST_COFINS", vals)

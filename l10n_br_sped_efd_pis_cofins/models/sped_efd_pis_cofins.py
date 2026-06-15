@@ -14,6 +14,10 @@ from odoo import api, fields, models
 
 LAYOUT_VERSION_CODE = "006"
 
+# Fiscal document model codes routed to other blocks (kept out of Bloco C).
+CTE_MODELS = ["57", "67"]  # transport
+UTILITY_MODELS = ["06", "28", "29", "66"]  # energy/water/gas
+
 
 class Registro0000(models.Model):
     "Abertura do Arquivo Digital e Identificação da Pessoa Jurídica"
@@ -316,11 +320,62 @@ class Registroa170(models.Model):
 class Registroc010(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.c010"
     _inherit = ["l10n_br_sped.efd_pis_cofins.6.c010"]
+    _odoo_model = "res.company"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return [("id", "=", declaration.company_id.id)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "CNPJ": misc.punctuation_rm(record.vat or ""),
+            "IND_ESCRI": "1",
+        }
 
 
 class Registroc100(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.c100"
     _inherit = ["l10n_br_sped.efd_pis_cofins.6.c100"]
+    _odoo_model = "l10n_br_fiscal.document"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return [
+            ("id", "in", declaration.fiscal_document_ids.ids),
+            ("document_type_id.code", "not in", CTE_MODELS + UTILITY_MODELS),
+        ]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "IND_OPER": "0" if record.fiscal_operation_type == "in" else "1",
+            "IND_EMIT": "0" if record.issuer == "company" else "1",
+            "COD_PART": str(record.partner_id.id),
+            "COD_MOD": record.document_type_id.code,
+            "COD_SIT": record.state_fiscal,
+            "SER": record.document_serie or "",
+            "NUM_DOC": misc.punctuation_rm(str(record.document_number or "")),
+            "CHV_NFE": record.document_key or "",
+            "DT_DOC": record.document_date,
+            "DT_E_S": record.date_in_out,
+            "VL_DOC": record.fiscal_amount_total,
+            "IND_PGTO": "",
+            "VL_DESC": record.amount_discount_value,
+            "VL_ABAT_NT": record.amount_financial_discount_value,
+            "VL_MERC": record.amount_price_gross,
+            "IND_FRT": "9",
+            "VL_FRT": record.amount_freight_value,
+            "VL_SEG": record.amount_insurance_value,
+            "VL_OUT_DA": record.amount_other_value,
+            "VL_BC_ICMS": record.amount_icms_base,
+            "VL_ICMS": record.amount_icms_value,
+            "VL_BC_ICMS_ST": record.amount_icmsst_base,
+            "VL_ICMS_ST": record.amount_icmsst_value,
+            "VL_IPI": record.amount_ipi_value,
+            "VL_PIS": record.amount_pis_value,
+            "VL_COFINS": record.amount_cofins_value,
+        }
 
 
 class Registroc110(models.Model):
@@ -341,6 +396,52 @@ class Registroc120(models.Model):
 class Registroc170(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.c170"
     _inherit = ["l10n_br_sped.efd_pis_cofins.6.c170"]
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return [("document_id", "=", parent_record.id)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        cst_icms = f"{record.icms_origin or '0'}{record.icms_cst_code or '00'}"
+        return {
+            "NUM_ITEM": index + 1,
+            "COD_ITEM": record.product_id.default_code or str(record.product_id.id),
+            "DESCR_COMPL": record.name or "",
+            "QTD": record.fiscal_quantity,
+            "UNID": record.uom_id.code or record.uom_id.name,
+            "VL_ITEM": record.price_gross or 0.0,
+            "VL_DESC": record.discount_value,
+            "IND_MOV": "0" if record.cfop_id.stock_move else "1",
+            "CST_ICMS": cst_icms,
+            "CFOP": str(record.cfop_id.code or ""),
+            "COD_NAT": record.fiscal_operation_id.code or "",
+            "VL_BC_ICMS": record.icms_base,
+            "ALIQ_ICMS": record.icms_percent,
+            "VL_ICMS": record.icms_value,
+            "VL_BC_ICMS_ST": record.icmsst_base,
+            "ALIQ_ST": record.icmsst_percent,
+            "VL_ICMS_ST": record.icmsst_value,
+            "IND_APUR": "0",
+            "CST_IPI": record.ipi_cst_code or "",
+            "COD_ENQ": record.ipi_guideline_id.code or "",
+            "VL_BC_IPI": record.ipi_base,
+            "ALIQ_IPI": record.ipi_percent,
+            "VL_IPI": record.ipi_value,
+            "CST_PIS": record.pis_cst_code or "",
+            "VL_BC_PIS": record.pis_base,
+            "ALIQ_PIS": record.pis_percent,
+            "QUANT_BC_PIS": 0.0,
+            "ALIQ_PIS_QUANT": 0.0,
+            "VL_PIS": record.pis_value,
+            "CST_COFINS": record.cofins_cst_code or "",
+            "VL_BC_COFINS": record.cofins_base,
+            "ALIQ_COFINS": record.cofins_percent,
+            "QUANT_BC_COFINS": 0.0,
+            "ALIQ_COFINS_QUANT": 0.0,
+            "VL_COFINS": record.cofins_value,
+            "COD_CTA": "",
+        }
 
 
 class Registroc175(models.Model):
