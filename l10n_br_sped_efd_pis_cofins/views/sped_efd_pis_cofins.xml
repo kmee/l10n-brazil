@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="action_efd_pis_cofins_0000" model="ir.actions.act_window">
+        <field name="name">EFD Contribuições (PIS/COFINS)</field>
+        <field name="res_model">l10n_br_sped.efd_pis_cofins.0000</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem
+        id="menu_efd_pis_cofins"
+        name="EFD Contribuições (PIS/COFINS)"
+        parent="l10n_br_sped_base.menu_root"
+        action="action_efd_pis_cofins_0000"
+        sequence="30"
+        groups="l10n_br_fiscal.group_user,l10n_br_fiscal.group_manager"
+    />
+</odoo>
