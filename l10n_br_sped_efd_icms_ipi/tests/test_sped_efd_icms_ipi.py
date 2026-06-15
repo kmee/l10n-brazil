@@ -502,3 +502,54 @@ class TestSpedEFDICMSIPI(TransactionCase):
         # COD_VER (020) must be on the 0000 line.
         opening = content.splitlines()[0]
         self.assertEqual(opening.split("|")[2], "020")
+
+    # ------------------------------------------------------------------
+    # Conditional registers
+    # ------------------------------------------------------------------
+    def test_map_e510_ipi_consolidation(self):
+        """Register E510 maps the IPI consolidation by CFOP/CST."""
+        declaration = self._declaration()
+        row = {
+            "cfop": "5101",
+            "cst_ipi": "50",
+            "vl_cont_ipi": 1000.0,
+            "vl_bc_ipi": 1000.0,
+            "vl_ipi": 50.0,
+        }
+        vals = self.env["l10n_br_sped.efd_icms_ipi.e510"]._map_from_odoo(
+            row, None, declaration
+        )
+        self.assertEqual(vals["CFOP"], "5101")
+        self.assertEqual(vals["CST_IPI"], "50")
+        self.assertEqual(vals["VL_IPI"], 50.0)
+
+    def test_map_e200_st_period(self):
+        """Register E200 maps an ICMS-ST assessment period per UF."""
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_icms_ipi.e200"]._map_from_odoo(
+            {"uf": "SP"}, None, declaration
+        )
+        self.assertEqual(vals["UF"], "SP")
+        self.assertEqual(vals["DT_INI"], declaration.DT_INI)
+
+    def test_map_e210_st_assessment(self):
+        """Register E210 maps the ICMS-ST balance for a UF."""
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_icms_ipi.e210"]._map_from_odoo(
+            {"vl_st": 120.0}, {"uf": "SP"}, declaration
+        )
+        self.assertEqual(vals["IND_MOV_ST"], "1")
+        self.assertEqual(vals["VL_RETENCAO_ST"], 120.0)
+        self.assertEqual(vals["VL_ICMS_RECOL_ST"], 120.0)
+
+    def test_map_c110_complementary(self):
+        """Register C110 references a complementary-information code."""
+        comment = self.env["l10n_br_fiscal.comment"].new(
+            {"name": "Info", "comment": "Texto"}
+        )
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_icms_ipi.c110"]._map_from_odoo(
+            comment, None, declaration
+        )
+        self.assertEqual(vals["TXT_COMPL"], "")
+        self.assertIn("COD_INF", vals)
