@@ -209,3 +209,31 @@ class TestSpedEFDICMSIPI(TransactionCase):
         self.assertEqual(vals["CFOP"], "5102")
         self.assertEqual(vals["ALIQ_ICMS"], 18.0)
         self.assertEqual(vals["VL_ICMS"], 18.0)
+
+    def test_map_e100_period(self):
+        """Register E100 maps the ICMS assessment period from the declaration."""
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_icms_ipi.e100"]._map_from_odoo(
+            None, None, declaration
+        )
+        self.assertEqual(vals["DT_INI"], declaration.DT_INI)
+        self.assertEqual(vals["DT_FIN"], declaration.DT_FIN)
+
+    def test_map_e110_icms_assessment(self):
+        """Register E110 computes the ICMS balance (debits vs credits)."""
+        declaration = self._declaration()
+        reg = self.env["l10n_br_sped.efd_icms_ipi.e110"]
+        debtor = reg._map_from_odoo(
+            {"vl_debitos": 1000.0, "vl_creditos": 300.0}, None, declaration
+        )
+        self.assertEqual(debtor["VL_TOT_DEBITOS"], 1000.0)
+        self.assertEqual(debtor["VL_TOT_CREDITOS"], 300.0)
+        self.assertEqual(debtor["VL_SLD_APURADO"], 700.0)
+        self.assertEqual(debtor["VL_ICMS_RECOLHER"], 700.0)
+        self.assertEqual(debtor["VL_SLD_CREDOR_TRANSPORTAR"], 0.0)
+        creditor = reg._map_from_odoo(
+            {"vl_debitos": 200.0, "vl_creditos": 500.0}, None, declaration
+        )
+        self.assertEqual(creditor["VL_SLD_APURADO"], 0.0)
+        self.assertEqual(creditor["VL_ICMS_RECOLHER"], 0.0)
+        self.assertEqual(creditor["VL_SLD_CREDOR_TRANSPORTAR"], 300.0)

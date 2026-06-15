@@ -1208,10 +1208,58 @@ class Registroe100(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.e100"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.e100"]
 
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        # ICMS assessment period: one record per declaration period.
+        return {"DT_INI": declaration.DT_INI, "DT_FIN": declaration.DT_FIN}
+
 
 class Registroe110(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.e110"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.e110"]
+
+    @api.model
+    def _odoo_query(self, parent_record, declaration):
+        # ICMS assessment: debits from outgoing documents, credits from incoming
+        # ones, over the period. Adjustments (E111/E116) and prior balances are
+        # entered manually.
+        query = """
+            SELECT
+                COALESCE(SUM(line.icms_value)
+                    FILTER (WHERE doc.fiscal_operation_type = 'out'), 0) AS vl_debitos,
+                COALESCE(SUM(line.icms_value)
+                    FILTER (WHERE doc.fiscal_operation_type = 'in'), 0) AS vl_creditos
+            FROM l10n_br_fiscal_document_line line
+            JOIN l10n_br_fiscal_document doc ON doc.id = line.document_id
+            WHERE doc.company_id = %s
+              AND doc.document_date >= %s
+              AND doc.document_date <= %s
+              AND doc.state_edoc = 'autorizada'
+        """
+        params = [declaration.company_id.id, declaration.DT_INI, declaration.DT_FIN]
+        return query, params
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        debits = record.get("vl_debitos") or 0.0
+        credits = record.get("vl_creditos") or 0.0
+        balance = debits - credits
+        return {
+            "VL_TOT_DEBITOS": debits,
+            "VL_AJ_DEBITOS": 0.0,
+            "VL_TOT_AJ_DEBITOS": 0.0,
+            "VL_ESTORNOS_CRED": 0.0,
+            "VL_TOT_CREDITOS": credits,
+            "VL_AJ_CREDITOS": 0.0,
+            "VL_TOT_AJ_CREDITOS": 0.0,
+            "VL_ESTORNOS_DEB": 0.0,
+            "VL_SLD_CREDOR_ANT": 0.0,
+            "VL_SLD_APURADO": balance if balance > 0 else 0.0,
+            "VL_TOT_DED": 0.0,
+            "VL_ICMS_RECOLHER": balance if balance > 0 else 0.0,
+            "VL_SLD_CREDOR_TRANSPORTAR": -balance if balance < 0 else 0.0,
+            "DEB_ESP": 0.0,
+        }
 
 
 class Registroe111(models.Model):
