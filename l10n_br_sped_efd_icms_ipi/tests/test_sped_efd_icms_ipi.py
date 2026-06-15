@@ -379,3 +379,32 @@ class TestSpedEFDICMSIPI(TransactionCase):
         self.assertEqual(vals["CST_ICMS"], "000")
         self.assertEqual(vals["CFOP"], "1352")
         self.assertEqual(vals["VL_ICMS"], 6.0)
+
+    def test_map_c500_utility(self):
+        """Register C500 maps an energy/water/gas utility document."""
+        partner = self.env["res.partner"].create(
+            {"name": "Concessionaria", "is_company": True}
+        )
+        document = self.env["l10n_br_fiscal.document"].new(
+            {"partner_id": partner.id, "document_serie": "U", "document_number": "900"}
+        )
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_icms_ipi.c500"]._map_from_odoo(
+            document, declaration, declaration
+        )
+        self.assertEqual(vals["COD_PART"], str(partner.id))
+        self.assertEqual(vals["NUM_DOC"], "900")
+        self.assertIn("VL_FORN", vals)
+
+    def test_map_c590_analytic(self):
+        """Register C590 maps a utility analytical aggregation row."""
+        declaration = self._declaration()
+        row = {"cst_icms": "060", "cfop": "1252", "aliq_icms": 25.0,
+               "vl_opr": 300.0, "vl_bc_icms": 0.0, "vl_icms": 0.0,
+               "vl_bc_icms_st": 300.0, "vl_icms_st": 75.0}
+        vals = self.env["l10n_br_sped.efd_icms_ipi.c590"]._map_from_odoo(
+            row, None, declaration
+        )
+        self.assertEqual(vals["CST_ICMS"], "060")
+        self.assertEqual(vals["CFOP"], "1252")
+        self.assertEqual(vals["VL_ICMS_ST"], 75.0)

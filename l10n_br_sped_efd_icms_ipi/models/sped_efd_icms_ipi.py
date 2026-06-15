@@ -876,6 +876,38 @@ class Registroc495(models.Model):
 class Registroc500(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.c500"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.c500"]
+    _odoo_model = "l10n_br_fiscal.document"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        # Energy/water/gas utility documents acquired in the period.
+        return [
+            ("id", "in", declaration.fiscal_document_ids.ids),
+            ("document_type_id.code", "in", UTILITY_MODELS),
+        ]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "IND_OPER": "0" if record.fiscal_operation_type == "in" else "1",
+            "IND_EMIT": "0" if record.issuer == "company" else "1",
+            "COD_PART": str(record.partner_id.id),
+            "COD_MOD": record.document_type_id.code,
+            "COD_SIT": record.state_fiscal,
+            "SER": record.document_serie or "",
+            "NUM_DOC": misc.punctuation_rm(str(record.document_number or "")),
+            "DT_DOC": record.document_date,
+            "DT_E_S": record.date_in_out,
+            "VL_DOC": record.fiscal_amount_total,
+            "VL_DESC": record.amount_discount_value,
+            "VL_FORN": record.amount_price_gross,
+            "VL_BC_ICMS": record.amount_icms_base,
+            "VL_ICMS": record.amount_icms_value,
+            "VL_BC_ICMS_ST": record.amount_icmsst_base,
+            "VL_ICMS_ST": record.amount_icmsst_value,
+            "VL_PIS": record.amount_pis_value,
+            "VL_COFINS": record.amount_cofins_value,
+        }
 
 
 class Registroc510(models.Model):
@@ -886,6 +918,42 @@ class Registroc510(models.Model):
 class Registroc590(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.c590"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.c590"]
+
+    @api.model
+    def _odoo_query(self, parent_record, declaration):
+        # Analytic record of the utility document, grouped by CST/CFOP/rate.
+        query = """
+            SELECT
+                CONCAT(COALESCE(line.icms_origin, '0'), cst.code) AS cst_icms,
+                cfop.code AS cfop,
+                line.icms_percent AS aliq_icms,
+                SUM(line.price_gross) AS vl_opr,
+                SUM(line.icms_base) AS vl_bc_icms,
+                SUM(line.icms_value) AS vl_icms,
+                SUM(line.icmsst_base) AS vl_bc_icms_st,
+                SUM(line.icmsst_value) AS vl_icms_st
+            FROM l10n_br_fiscal_document_line line
+            LEFT JOIN l10n_br_fiscal_cst cst ON cst.id = line.icms_cst_id
+            LEFT JOIN l10n_br_fiscal_cfop cfop ON cfop.id = line.cfop_id
+            WHERE line.document_id = %s
+            GROUP BY cst.code, cfop.code, line.icms_percent, line.icms_origin
+        """
+        return query, [parent_record.id]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "CST_ICMS": record.get("cst_icms") or "",
+            "CFOP": record.get("cfop") or "",
+            "ALIQ_ICMS": record.get("aliq_icms") or 0.0,
+            "VL_OPR": record.get("vl_opr") or 0.0,
+            "VL_BC_ICMS": record.get("vl_bc_icms") or 0.0,
+            "VL_ICMS": record.get("vl_icms") or 0.0,
+            "VL_BC_ICMS_ST": record.get("vl_bc_icms_st") or 0.0,
+            "VL_ICMS_ST": record.get("vl_icms_st") or 0.0,
+            "VL_RED_BC": 0.0,
+            "COD_OBS": "",
+        }
 
 
 class Registroc591(models.Model):
