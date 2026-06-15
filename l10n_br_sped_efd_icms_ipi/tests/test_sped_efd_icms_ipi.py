@@ -43,9 +43,20 @@ class TestSpedEFDICMSIPI(TransactionCase):
         vals = reg._map_from_odoo(company, declaration, declaration)
         self.assertEqual(vals["FANTASIA"], "ACME Industria")
         self.assertEqual(vals["BAIRRO"], "Centro")
-        self.assertEqual(set(vals), {
-            "FANTASIA", "CEP", "END", "NUM", "COMPL", "BAIRRO", "FONE", "FAX", "EMAIL",
-        })
+        self.assertEqual(
+            set(vals),
+            {
+                "FANTASIA",
+                "CEP",
+                "END",
+                "NUM",
+                "COMPL",
+                "BAIRRO",
+                "FONE",
+                "FAX",
+                "EMAIL",
+            },
+        )
 
     def test_map_0190_uom(self):
         """Register 0190 maps the unit of measure code and description."""
@@ -134,9 +145,12 @@ class TestSpedEFDICMSIPI(TransactionCase):
         reg = self.env["l10n_br_sped.efd_icms_ipi.0002"]
         vals = reg._map_from_odoo(self.env.company, declaration, declaration)
         self.assertEqual(vals["CLAS_ESTAB_IND"], "00")
-        self.assertEqual(reg._odoo_domain(None, declaration), [
-            ("id", "=", self.env.company.id),
-        ])
+        self.assertEqual(
+            reg._odoo_domain(None, declaration),
+            [
+                ("id", "=", self.env.company.id),
+            ],
+        )
 
     def test_map_0100_accountant(self):
         """Register 0100 (mandatory) maps the accountant configured on 0000."""
@@ -288,8 +302,12 @@ class TestSpedEFDICMSIPI(TransactionCase):
     def test_map_k200_stock(self):
         """Register K200 maps the end-of-period stock balance of an item."""
         product = self.env["product.product"].create(
-            {"name": "Insumo", "default_code": "INS1", "type": "consu",
-             "is_storable": True}
+            {
+                "name": "Insumo",
+                "default_code": "INS1",
+                "type": "consu",
+                "is_storable": True,
+            }
         )
         declaration = self._declaration()
         vals = self.env["l10n_br_sped.efd_icms_ipi.k200"]._map_from_odoo(
@@ -343,8 +361,13 @@ class TestSpedEFDICMSIPI(TransactionCase):
     def test_map_h010_inventory_item(self):
         """Register H010 maps an inventory item with quantity and cost."""
         product = self.env["product.product"].create(
-            {"name": "Estoque", "default_code": "EST1", "type": "consu",
-             "is_storable": True, "standard_price": 7.0}
+            {
+                "name": "Estoque",
+                "default_code": "EST1",
+                "type": "consu",
+                "is_storable": True,
+                "standard_price": 7.0,
+            }
         )
         declaration = self._declaration()
         vals = self.env["l10n_br_sped.efd_icms_ipi.h010"]._map_from_odoo(
@@ -374,8 +397,14 @@ class TestSpedEFDICMSIPI(TransactionCase):
     def test_map_d190_analytic(self):
         """Register D190 maps a transport analytical aggregation row."""
         declaration = self._declaration()
-        row = {"cst_icms": "000", "cfop": "1352", "aliq_icms": 12.0,
-               "vl_opr": 50.0, "vl_bc_icms": 50.0, "vl_icms": 6.0}
+        row = {
+            "cst_icms": "000",
+            "cfop": "1352",
+            "aliq_icms": 12.0,
+            "vl_opr": 50.0,
+            "vl_bc_icms": 50.0,
+            "vl_icms": 6.0,
+        }
         vals = self.env["l10n_br_sped.efd_icms_ipi.d190"]._map_from_odoo(
             row, None, declaration
         )
@@ -402,9 +431,16 @@ class TestSpedEFDICMSIPI(TransactionCase):
     def test_map_c590_analytic(self):
         """Register C590 maps a utility analytical aggregation row."""
         declaration = self._declaration()
-        row = {"cst_icms": "060", "cfop": "1252", "aliq_icms": 25.0,
-               "vl_opr": 300.0, "vl_bc_icms": 0.0, "vl_icms": 0.0,
-               "vl_bc_icms_st": 300.0, "vl_icms_st": 75.0}
+        row = {
+            "cst_icms": "060",
+            "cfop": "1252",
+            "aliq_icms": 25.0,
+            "vl_opr": 300.0,
+            "vl_bc_icms": 0.0,
+            "vl_icms": 0.0,
+            "vl_bc_icms_st": 300.0,
+            "vl_icms_st": 75.0,
+        }
         vals = self.env["l10n_br_sped.efd_icms_ipi.c590"]._map_from_odoo(
             row, None, declaration
         )
@@ -434,15 +470,11 @@ class TestSpedEFDICMSIPI(TransactionCase):
         )
         sped_1 = declaration._generate_sped_text()
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".txt", delete=False
-        ) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as tmp:
             tmp.write(sped_1)
             tmp_path = tmp.name
 
-        imported = self.env["l10n_br_sped.mixin"]._import_file(
-            tmp_path, "efd_icms_ipi"
-        )
+        imported = self.env["l10n_br_sped.mixin"]._import_file(tmp_path, "efd_icms_ipi")
         sped_2 = imported._generate_sped_text()
         self.assertEqual(sped_1.strip(), sped_2.strip())
 

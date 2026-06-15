@@ -137,7 +137,9 @@ class Registro0000(models.Model):
         for declaration in self:
             if declaration.company_id:
                 declaration.write(
-                    declaration._map_from_odoo(declaration.company_id, None, declaration)
+                    declaration._map_from_odoo(
+                        declaration.company_id, None, declaration
+                    )
                 )
         return super().button_populate_sped_from_odoo()
 
@@ -147,6 +149,7 @@ class Registro0000(models.Model):
 # relations resolve). Mappings are added block by block by overriding
 # _odoo_model + _odoo_domain/_odoo_query and _map_from_odoo.
 # ---------------------------------------------------------------------------
+
 
 class Registro0002(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.0002"
@@ -1738,7 +1741,11 @@ class Registrok230(models.Model):
               AND mo.date_finished >= %s
               AND mo.date_finished <= %s
         """
-        return query, [declaration.company_id.id, declaration.DT_INI, declaration.DT_FIN]
+        return query, [
+            declaration.company_id.id,
+            declaration.DT_INI,
+            declaration.DT_FIN,
+        ]
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
@@ -2037,4 +2044,3 @@ class Registro1975(models.Model):
 class Registro1980(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.1980"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.1980"]
-
