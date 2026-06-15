@@ -130,6 +130,17 @@ class Registro0000(models.Model):
             "IND_ATIV": "0",
         }
 
+    def button_populate_sped_from_odoo(self):
+        # Populate the declaration's own 0000 fields from the company before
+        # pulling the child registers, so the file header is complete without
+        # relying on the form onchange (which does not fire on create/headless).
+        for declaration in self:
+            if declaration.company_id:
+                declaration.write(
+                    declaration._map_from_odoo(declaration.company_id, None, declaration)
+                )
+        return super().button_populate_sped_from_odoo()
+
 
 # ---------------------------------------------------------------------------
 # Concrete register stubs (one per spec register so the inter-register
@@ -1834,6 +1845,23 @@ class Registrok302(models.Model):
 class Registro1010(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.1010"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.1010"]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        # Obligation indicators for the 1xxx sub-blocks. Defaults to "N" (none);
+        # the user enables the specific ones that apply to the establishment.
+        return {
+            "IND_EXP": "N",
+            "IND_CCRF": "N",
+            "IND_COMB": "N",
+            "IND_USINA": "N",
+            "IND_VA": "N",
+            "IND_EE": "N",
+            "IND_CART": "N",
+            "IND_FORM": "N",
+            "IND_AER": "N",
+            "IND_REST_RESSARC_COMPL_ICMS": "N",
+        }
 
 
 class Registro1100(models.Model):
