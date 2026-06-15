@@ -545,6 +545,16 @@ class Registroc105(models.Model):
 class Registroc110(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.c110"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.c110"]
+    _odoo_model = "l10n_br_fiscal.comment"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        # Complementary information referenced by the document (Bloco 0450 codes).
+        return [("id", "in", parent_record.comment_ids.ids)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {"COD_INF": str(record.id), "TXT_COMPL": ""}
 
 
 class Registroc111(models.Model):
@@ -736,7 +746,7 @@ class Registroc190(models.Model):
                 CONCAT(COALESCE(line.icms_origin, '0'), cst.code) AS cst_icms,
                 cfop.code AS cfop,
                 line.icms_percent AS aliq_icms,
-                SUM(line.price_gross) AS vl_opr,
+                SUM(line.price_unit * line.quantity) AS vl_opr,
                 SUM(line.icms_base) AS vl_bc_icms,
                 SUM(line.icms_value) AS vl_icms,
                 SUM(line.icmsst_base) AS vl_bc_icms_st,
@@ -941,7 +951,7 @@ class Registroc590(models.Model):
                 CONCAT(COALESCE(line.icms_origin, '0'), cst.code) AS cst_icms,
                 cfop.code AS cfop,
                 line.icms_percent AS aliq_icms,
-                SUM(line.price_gross) AS vl_opr,
+                SUM(line.price_unit * line.quantity) AS vl_opr,
                 SUM(line.icms_base) AS vl_bc_icms,
                 SUM(line.icms_value) AS vl_icms,
                 SUM(line.icmsst_base) AS vl_bc_icms_st,
@@ -1180,7 +1190,7 @@ class Registrod190(models.Model):
                 CONCAT(COALESCE(line.icms_origin, '0'), cst.code) AS cst_icms,
                 cfop.code AS cfop,
                 line.icms_percent AS aliq_icms,
-                SUM(line.price_gross) AS vl_opr,
+                SUM(line.price_unit * line.quantity) AS vl_opr,
                 SUM(line.icms_base) AS vl_bc_icms,
                 SUM(line.icms_value) AS vl_icms
             FROM l10n_br_fiscal_document_line line
@@ -1457,10 +1467,80 @@ class Registroe200(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.e200"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.e200"]
 
+    @api.model
+    def _odoo_query(self, parent_record, declaration):
+        # One ICMS-ST assessment period per destination UF that has ST in the
+        # period (naturally conditional: nothing is emitted when there is no ST).
+        query = """
+            SELECT DISTINCT state.code AS uf
+            FROM l10n_br_fiscal_document_line line
+            JOIN l10n_br_fiscal_document doc ON doc.id = line.document_id
+            JOIN res_partner p ON p.id = doc.partner_id
+            JOIN res_country_state state ON state.id = p.state_id
+            WHERE doc.company_id = %s
+              AND doc.document_date >= %s
+              AND doc.document_date <= %s
+              AND doc.state_edoc = 'autorizada'
+              AND line.icmsst_value > 0
+        """
+        params = [declaration.company_id.id, declaration.DT_INI, declaration.DT_FIN]
+        return query, params
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "UF": record.get("uf") or "",
+            "DT_INI": declaration.DT_INI,
+            "DT_FIN": declaration.DT_FIN,
+        }
+
 
 class Registroe210(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.e210"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.e210"]
+
+    @api.model
+    def _odoo_query(self, parent_record, declaration):
+        # ICMS-ST balance for the parent UF (E200). Adjustments are manual.
+        query = """
+            SELECT COALESCE(SUM(line.icmsst_value), 0) AS vl_st
+            FROM l10n_br_fiscal_document_line line
+            JOIN l10n_br_fiscal_document doc ON doc.id = line.document_id
+            JOIN res_partner p ON p.id = doc.partner_id
+            JOIN res_country_state state ON state.id = p.state_id
+            WHERE doc.company_id = %s
+              AND doc.document_date >= %s
+              AND doc.document_date <= %s
+              AND doc.state_edoc = 'autorizada'
+              AND state.code = %s
+        """
+        params = [
+            declaration.company_id.id,
+            declaration.DT_INI,
+            declaration.DT_FIN,
+            parent_record["uf"],
+        ]
+        return query, params
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        st = record.get("vl_st") or 0.0
+        return {
+            "IND_MOV_ST": "0" if not st else "1",
+            "VL_SLD_CRED_ANT_ST": 0.0,
+            "VL_DEVOL_ST": 0.0,
+            "VL_RESSARC_ST": 0.0,
+            "VL_OUT_CRED_ST": 0.0,
+            "VL_AJ_CREDITOS_ST": 0.0,
+            "VL_RETENCAO_ST": st,
+            "VL_OUT_DEB_ST": 0.0,
+            "VL_AJ_DEBITOS_ST": 0.0,
+            "VL_SLD_DEV_ANT_ST": 0.0,
+            "VL_DEDUCOES_ST": 0.0,
+            "VL_ICMS_RECOL_ST": st,
+            "VL_SLD_CRED_ST_TRANSPORTAR": 0.0,
+            "DEB_ESP_ST": 0.0,
+        }
 
 
 class Registroe230(models.Model):
@@ -1525,6 +1605,39 @@ class Registroe500(models.Model):
 class Registroe510(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.e510"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.e510"]
+
+    @api.model
+    def _odoo_query(self, parent_record, declaration):
+        # IPI consolidation of the period grouped by CFOP and IPI CST.
+        query = """
+            SELECT
+                cfop.code AS cfop,
+                ipicst.code AS cst_ipi,
+                SUM(line.price_unit * line.quantity) AS vl_cont_ipi,
+                SUM(line.ipi_base) AS vl_bc_ipi,
+                SUM(line.ipi_value) AS vl_ipi
+            FROM l10n_br_fiscal_document_line line
+            JOIN l10n_br_fiscal_document doc ON doc.id = line.document_id
+            LEFT JOIN l10n_br_fiscal_cfop cfop ON cfop.id = line.cfop_id
+            LEFT JOIN l10n_br_fiscal_cst ipicst ON ipicst.id = line.ipi_cst_id
+            WHERE doc.company_id = %s
+              AND doc.document_date >= %s
+              AND doc.document_date <= %s
+              AND doc.state_edoc = 'autorizada'
+            GROUP BY cfop.code, ipicst.code
+        """
+        params = [declaration.company_id.id, declaration.DT_INI, declaration.DT_FIN]
+        return query, params
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "CFOP": record.get("cfop") or "",
+            "CST_IPI": record.get("cst_ipi") or "",
+            "VL_CONT_IPI": record.get("vl_cont_ipi") or 0.0,
+            "VL_BC_IPI": record.get("vl_bc_ipi") or 0.0,
+            "VL_IPI": record.get("vl_ipi") or 0.0,
+        }
 
 
 class Registroe520(models.Model):

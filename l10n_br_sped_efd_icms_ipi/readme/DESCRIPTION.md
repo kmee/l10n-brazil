@@ -18,6 +18,20 @@ completed manually inside Odoo or by importing an existing SPED file.
 reform taxes (CBS, IBS, IS) are explicitly excluded from the EFD amounts; this
 module therefore maps ICMS/IPI values only.
 
-Status: the full layout-020 register structure (all blocks) is in place. Only
-register 0000 has its Odoo mapping so far; the remaining registers are concrete
-stubs whose mappings are added block by block, starting with Bloco 0, C, E and K.
+## Coverage
+
+The full layout-020 register structure (all blocks) is in place. The following
+registers are populated automatically from Odoo:
+
+- **Bloco 0**: 0000, 0002, 0005, 0100, 0150, 0190, 0200, 0220, 0400, 0450
+- **Bloco C**: C100, C110, C170, C190 (goods); C500, C590 (energy/utilities)
+- **Bloco D**: D100, D190 (CT-e transport)
+- **Bloco E**: E100/E110 (ICMS), E200/E210 (ICMS-ST per UF), E500/E510/E520 (IPI)
+- **Bloco H**: H005, H010 (inventory)
+- **Bloco K**: K010, K100, K200; K230/K235 (production — soft dependency on `mrp`)
+- **Bloco 1**: 1010
+- **Bloco 9**: generated automatically by the framework
+
+Registers that depend on data Odoo does not model are kept as concrete stubs to
+be filled in manually (or via SPED file import): the assessment adjustments
+(E111/E116, E220-E250, E530), Bloco G (CIAP) and C113 (referenced documents).
