@@ -326,3 +326,56 @@ class TestSpedEFDICMSIPI(TransactionCase):
         if "mrp.production" not in self.env:
             self.assertIn("FALSE", query)
             self.assertEqual(params, [])
+
+    def test_map_h005_inventory_totals(self):
+        """Register H005 maps the period-end inventory totals (Bloco H)."""
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_icms_ipi.h005"]._map_from_odoo(
+            None, None, declaration
+        )
+        self.assertEqual(vals["DT_INV"], declaration.DT_FIN)
+        self.assertEqual(vals["MOT_INV"], "01")
+        self.assertIn("VL_INV", vals)
+
+    def test_map_h010_inventory_item(self):
+        """Register H010 maps an inventory item with quantity and cost."""
+        product = self.env["product.product"].create(
+            {"name": "Estoque", "default_code": "EST1", "type": "consu",
+             "is_storable": True, "standard_price": 7.0}
+        )
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_icms_ipi.h010"]._map_from_odoo(
+            product, None, declaration
+        )
+        self.assertEqual(vals["COD_ITEM"], "EST1")
+        self.assertEqual(vals["VL_UNIT"], 7.0)
+        self.assertEqual(vals["IND_PROP"], "0")
+
+    def test_map_d100_cte(self):
+        """Register D100 maps a transport document (CT-e)."""
+        partner = self.env["res.partner"].create(
+            {"name": "Transportadora", "is_company": True}
+        )
+        document = self.env["l10n_br_fiscal.document"].new(
+            {"partner_id": partner.id, "document_serie": "1", "document_number": "55"}
+        )
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_icms_ipi.d100"]._map_from_odoo(
+            document, declaration, declaration
+        )
+        self.assertEqual(vals["COD_PART"], str(partner.id))
+        self.assertEqual(vals["SER"], "1")
+        self.assertEqual(vals["NUM_DOC"], "55")
+        self.assertIn("CHV_CTE", vals)
+
+    def test_map_d190_analytic(self):
+        """Register D190 maps a transport analytical aggregation row."""
+        declaration = self._declaration()
+        row = {"cst_icms": "000", "cfop": "1352", "aliq_icms": 12.0,
+               "vl_opr": 50.0, "vl_bc_icms": 50.0, "vl_icms": 6.0}
+        vals = self.env["l10n_br_sped.efd_icms_ipi.d190"]._map_from_odoo(
+            row, None, declaration
+        )
+        self.assertEqual(vals["CST_ICMS"], "000")
+        self.assertEqual(vals["CFOP"], "1352")
+        self.assertEqual(vals["VL_ICMS"], 6.0)

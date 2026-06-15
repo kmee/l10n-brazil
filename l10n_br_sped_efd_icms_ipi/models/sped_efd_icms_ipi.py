@@ -18,6 +18,10 @@ from odoo import api, fields, models
 
 LAYOUT_VERSION_CODE = "020"
 
+# Fiscal document model codes routed to specific blocks.
+CTE_MODELS = ["57", "67"]  # transport (Bloco D)
+UTILITY_MODELS = ["06", "28", "29", "66"]  # energy/water/gas (Bloco C500)
+
 
 class Registro0000(models.Model):
     "Abertura do Arquivo Digital e Identificação da entidade"
@@ -474,7 +478,11 @@ class Registroc100(models.Model):
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):
-        return [("id", "in", declaration.fiscal_document_ids.ids)]
+        # Goods documents only: transport (Bloco D) and utilities (C500) excluded.
+        return [
+            ("id", "in", declaration.fiscal_document_ids.ids),
+            ("document_type_id.code", "not in", CTE_MODELS + UTILITY_MODELS),
+        ]
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
@@ -993,6 +1001,39 @@ class Registroc897(models.Model):
 class Registrod100(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.d100"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.d100"]
+    _odoo_model = "l10n_br_fiscal.document"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        # Transport documents (CT-e) received/issued in the period.
+        return [
+            ("id", "in", declaration.fiscal_document_ids.ids),
+            ("document_type_id.code", "in", CTE_MODELS),
+        ]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "IND_OPER": "0" if record.fiscal_operation_type == "in" else "1",
+            "IND_EMIT": "0" if record.issuer == "company" else "1",
+            "COD_PART": str(record.partner_id.id),
+            "COD_MOD": record.document_type_id.code,
+            "COD_SIT": record.state_fiscal,
+            "SER": record.document_serie or "",
+            "NUM_DOC": misc.punctuation_rm(str(record.document_number or "")),
+            "CHV_CTE": record.document_key or "",
+            "DT_DOC": record.document_date,
+            "DT_A_P": record.document_date,
+            "VL_DOC": record.fiscal_amount_total,
+            "VL_DESC": record.amount_discount_value,
+            "IND_FRT": "9",
+            "VL_SERV": record.amount_price_gross,
+            "VL_BC_ICMS": record.amount_icms_base,
+            "VL_ICMS": record.amount_icms_value,
+            "VL_NT": 0.0,
+            "COD_MUN_ORIG": record.partner_id.city_id.ibge_code or "",
+            "COD_MUN_DEST": record.company_id.city_id.ibge_code or "",
+        }
 
 
 class Registrod110(models.Model):
@@ -1048,6 +1089,38 @@ class Registrod180(models.Model):
 class Registrod190(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.d190"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.d190"]
+
+    @api.model
+    def _odoo_query(self, parent_record, declaration):
+        # Analytic record of the transport document, grouped by CST/CFOP/rate.
+        query = """
+            SELECT
+                CONCAT(COALESCE(line.icms_origin, '0'), cst.code) AS cst_icms,
+                cfop.code AS cfop,
+                line.icms_percent AS aliq_icms,
+                SUM(line.price_gross) AS vl_opr,
+                SUM(line.icms_base) AS vl_bc_icms,
+                SUM(line.icms_value) AS vl_icms
+            FROM l10n_br_fiscal_document_line line
+            LEFT JOIN l10n_br_fiscal_cst cst ON cst.id = line.icms_cst_id
+            LEFT JOIN l10n_br_fiscal_cfop cfop ON cfop.id = line.cfop_id
+            WHERE line.document_id = %s
+            GROUP BY cst.code, cfop.code, line.icms_percent, line.icms_origin
+        """
+        return query, [parent_record.id]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "CST_ICMS": record.get("cst_icms") or "",
+            "CFOP": record.get("cfop") or "",
+            "ALIQ_ICMS": record.get("aliq_icms") or 0.0,
+            "VL_OPR": record.get("vl_opr") or 0.0,
+            "VL_BC_ICMS": record.get("vl_bc_icms") or 0.0,
+            "VL_ICMS": record.get("vl_icms") or 0.0,
+            "VL_RED_BC": 0.0,
+            "COD_OBS": "",
+        }
 
 
 class Registrod195(models.Model):
@@ -1446,10 +1519,50 @@ class Registroh005(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.h005"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.h005"]
 
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        # Period-end inventory totals (one record per declaration).
+        products = (
+            self.env["product.product"]
+            .with_context(to_date=declaration.DT_FIN)
+            .search([("is_storable", "=", True)])
+        )
+        vl_inv = sum(p.qty_available * p.standard_price for p in products)
+        return {
+            "DT_INV": declaration.DT_FIN,
+            "VL_INV": vl_inv,
+            "MOT_INV": "01",
+        }
+
 
 class Registroh010(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.h010"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.h010"]
+    _odoo_model = "product.product"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return [("is_storable", "=", True)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        product = record.with_context(to_date=declaration.DT_FIN)
+        qty = product.qty_available or 0.0
+        # standard_price is the current cost, not the historical one at DT_FIN.
+        vl_unit = record.standard_price or 0.0
+        vl_item = qty * vl_unit
+        return {
+            "COD_ITEM": record.default_code or str(record.id),
+            "UNID": record.uom_id.code or record.uom_id.name,
+            "QTD": qty,
+            "VL_UNIT": vl_unit,
+            "VL_ITEM": vl_item,
+            "IND_PROP": "0",
+            "COD_PART": "",
+            "TXT_COMPL": "",
+            "COD_CTA": "",
+            "VL_ITEM_IR": vl_item,
+        }
 
 
 class Registroh020(models.Model):
