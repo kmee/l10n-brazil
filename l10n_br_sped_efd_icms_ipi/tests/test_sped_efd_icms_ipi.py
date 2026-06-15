@@ -28,3 +28,18 @@ class TestSpedEFDICMSIPI(TransactionCase):
         vals = declaration._map_from_odoo(self.env.company, None, declaration)
         self.assertEqual(vals["COD_VER"], "020")
         self.assertEqual(vals["IND_ATIV"], "0")
+
+    def test_map_0005_company_complementary(self):
+        """Register 0005 maps the company complementary data (Bloco 0)."""
+        company = self.env.company
+        company.write({"name": "ACME Industria", "district": "Centro"})
+        declaration = self.env["l10n_br_sped.efd_icms_ipi.0000"].create(
+            {"company_id": company.id}
+        )
+        reg = self.env["l10n_br_sped.efd_icms_ipi.0005"]
+        vals = reg._map_from_odoo(company, declaration, declaration)
+        self.assertEqual(vals["FANTASIA"], "ACME Industria")
+        self.assertEqual(vals["BAIRRO"], "Centro")
+        self.assertEqual(set(vals), {
+            "FANTASIA", "CEP", "END", "NUM", "COMPL", "BAIRRO", "FONE", "FAX", "EMAIL",
+        })

@@ -90,6 +90,25 @@ class Registro0002(models.Model):
 class Registro0005(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.0005"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.0005"]
+    _odoo_model = "res.company"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return [("id", "=", declaration.company_id.id)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "FANTASIA": record.name,
+            "CEP": misc.punctuation_rm(record.zip or ""),
+            "END": record.street_name or "",
+            "NUM": record.street_number or "",
+            "COMPL": record.street2 or "",
+            "BAIRRO": record.district or "",
+            "FONE": misc.punctuation_rm(record.phone or "") if record.phone else "",
+            "FAX": "",
+            "EMAIL": record.email or "",
+        }
 
 
 class Registro0015(models.Model):
