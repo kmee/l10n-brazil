@@ -18,6 +18,6 @@ completed manually inside Odoo or by importing an existing SPED file.
 reform taxes (CBS, IBS, IS) are explicitly excluded from the EFD amounts; this
 module therefore maps ICMS/IPI values only.
 
-> Bootstrap status: only register 0000 is wired so far, to validate the module
-> against `l10n_br_sped_base` on Odoo 18.0. The full layout-020 spec and the
-> block mappings are added in the following phases.
+Status: the full layout-020 register structure (all blocks) is in place. Only
+register 0000 has its Odoo mapping so far; the remaining registers are concrete
+stubs whose mappings are added block by block, starting with Bloco 0, C, E and K.
