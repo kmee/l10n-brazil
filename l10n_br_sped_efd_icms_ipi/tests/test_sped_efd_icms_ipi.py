@@ -43,3 +43,15 @@ class TestSpedEFDICMSIPI(TransactionCase):
         self.assertEqual(set(vals), {
             "FANTASIA", "CEP", "END", "NUM", "COMPL", "BAIRRO", "FONE", "FAX", "EMAIL",
         })
+
+    def test_map_0190_uom(self):
+        """Register 0190 maps the unit of measure code and description."""
+        uom = self.env.ref("uom.product_uom_unit")
+        uom.write({"code": "UN", "description": "Unidade"})
+        declaration = self.env["l10n_br_sped.efd_icms_ipi.0000"].create(
+            {"company_id": self.env.company.id}
+        )
+        reg = self.env["l10n_br_sped.efd_icms_ipi.0190"]
+        vals = reg._map_from_odoo(uom, declaration, declaration)
+        self.assertEqual(vals["UNID"], "UN")
+        self.assertEqual(vals["DESCR"], "Unidade")

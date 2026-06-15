@@ -134,6 +134,18 @@ class Registro0175(models.Model):
 class Registro0190(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.0190"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.0190"]
+    _odoo_model = "uom.uom"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return [("id", "in", declaration.fiscal_uom_ids.ids)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "UNID": record.code or record.name,
+            "DESCR": record.description or record.name,
+        }
 
 
 class Registro0200(models.Model):
