@@ -1346,6 +1346,15 @@ class Registroe500(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.e500"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.e500"]
 
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        # IPI assessment period: one record per declaration period.
+        return {
+            "IND_APUR": declaration.ind_apur,
+            "DT_INI": declaration.DT_INI,
+            "DT_FIN": declaration.DT_FIN,
+        }
+
 
 class Registroe510(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.e510"
@@ -1355,6 +1364,41 @@ class Registroe510(models.Model):
 class Registroe520(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.e520"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.e520"]
+
+    @api.model
+    def _odoo_query(self, parent_record, declaration):
+        # IPI assessment: debits from outgoing documents, credits from incoming
+        # ones, over the period. Prior balance and other adjustments are manual.
+        query = """
+            SELECT
+                COALESCE(SUM(line.ipi_value)
+                    FILTER (WHERE doc.fiscal_operation_type = 'out'), 0) AS vl_deb,
+                COALESCE(SUM(line.ipi_value)
+                    FILTER (WHERE doc.fiscal_operation_type = 'in'), 0) AS vl_cred
+            FROM l10n_br_fiscal_document_line line
+            JOIN l10n_br_fiscal_document doc ON doc.id = line.document_id
+            WHERE doc.company_id = %s
+              AND doc.document_date >= %s
+              AND doc.document_date <= %s
+              AND doc.state_edoc = 'autorizada'
+        """
+        params = [declaration.company_id.id, declaration.DT_INI, declaration.DT_FIN]
+        return query, params
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        debits = record.get("vl_deb") or 0.0
+        credits = record.get("vl_cred") or 0.0
+        balance = debits - credits
+        return {
+            "VL_SD_ANT_IPI": 0.0,
+            "VL_DEB_IPI": debits,
+            "VL_CRED_IPI": credits,
+            "VL_OD_IPI": 0.0,
+            "VL_OC_IPI": 0.0,
+            "VL_SC_IPI": -balance if balance < 0 else 0.0,
+            "VL_SD_IPI": balance if balance > 0 else 0.0,
+        }
 
 
 class Registroe530(models.Model):
