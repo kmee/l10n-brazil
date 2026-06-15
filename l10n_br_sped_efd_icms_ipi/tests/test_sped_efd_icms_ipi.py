@@ -107,3 +107,18 @@ class TestSpedEFDICMSIPI(TransactionCase):
             comment, declaration, declaration
         )
         self.assertEqual(vals["TXT"], "Texto da observacao")
+
+    def test_map_0220_uom_conversion(self):
+        """Register 0220 computes the conversion factor to the inventory unit."""
+        unit = self.env.ref("uom.product_uom_unit")
+        dozen = self.env.ref("uom.product_uom_dozen")
+        dozen.code = "DUZIA"
+        product = self.env["product.product"].create(
+            {"name": "Caixa", "uom_id": unit.id}
+        )
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_icms_ipi.0220"]._map_from_odoo(
+            {"uom_id": dozen.id}, product, declaration
+        )
+        self.assertEqual(vals["UNID_CONV"], "DUZIA")
+        self.assertEqual(vals["FAT_CONV"], 12.0)

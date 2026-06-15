@@ -217,6 +217,46 @@ class Registro0220(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.0220"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.0220"]
 
+    @api.model
+    def _odoo_query(self, parent_record, declaration):
+        # Distinct commercial UoMs used for this product (register 0200) in the
+        # period that differ from its inventory UoM, so the conversion factor to
+        # the inventory unit can be declared.
+        query = """
+            SELECT DISTINCT line.uom_id AS uom_id
+            FROM l10n_br_fiscal_document_line line
+            JOIN l10n_br_fiscal_document doc ON doc.id = line.document_id
+            WHERE line.product_id = %s
+              AND line.uom_id IS NOT NULL
+              AND line.uom_id != %s
+              AND doc.company_id = %s
+              AND doc.document_date >= %s
+              AND doc.document_date <= %s
+              AND doc.state_edoc = 'autorizada'
+        """
+        params = [
+            parent_record.id,
+            parent_record.uom_id.id,
+            declaration.company_id.id,
+            declaration.DT_INI,
+            declaration.DT_FIN,
+        ]
+        return query, params
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        commercial_uom = self.env["uom.uom"].browse(record["uom_id"])
+        inventory_uom = parent_record.uom_id
+        if commercial_uom.category_id == inventory_uom.category_id:
+            factor = commercial_uom._compute_quantity(1.0, inventory_uom)
+        else:
+            factor = 1.0
+        return {
+            "UNID_CONV": commercial_uom.code or commercial_uom.name,
+            "FAT_CONV": factor,
+            "COD_BARRA": "",
+        }
+
 
 class Registro0221(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.0221"
