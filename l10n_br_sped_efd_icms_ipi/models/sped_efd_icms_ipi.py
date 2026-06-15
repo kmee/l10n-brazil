@@ -130,6 +130,21 @@ class Registro0000(models.Model):
             "IND_ATIV": "0",
         }
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        # Fill the 0000 fields from the company at creation, so the declaration
+        # header is complete without relying on the form onchange (which does
+        # not fire on programmatic/headless create).
+        for vals in vals_list:
+            company = (
+                self.env["res.company"].browse(vals.get("company_id"))
+                or self.env.company
+            )
+            if company and not vals.get("NOME"):
+                for key, value in self._map_from_odoo(company, None, self).items():
+                    vals.setdefault(key, value)
+        return super().create(vals_list)
+
     def button_populate_sped_from_odoo(self):
         # Populate the declaration's own 0000 fields from the company before
         # pulling the child registers, so the file header is complete without
