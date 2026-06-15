@@ -124,6 +124,29 @@ class Registro0100(models.Model):
 class Registro0150(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.0150"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.0150"]
+    _odoo_model = "res.partner"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return [("id", "in", declaration.fiscal_document_partner_ids.ids)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        digits = misc.punctuation_rm(record.cnpj_cpf_stripped or "")
+        return {
+            "COD_PART": str(record.id),
+            "NOME": record.legal_name or record.name,
+            "COD_PAIS": record.country_id.ibge_code or "",
+            "CNPJ": digits if record.is_company else "",
+            "CPF": "" if record.is_company else digits,
+            "IE": record.l10n_br_ie_code or "",
+            "COD_MUN": record.city_id.ibge_code or "",
+            "SUFRAMA": record.l10n_br_isuf_code or "",
+            "END": record.street or "",
+            "NUM": "",
+            "COMPL": record.street2 or "",
+            "BAIRRO": record.district or "",
+        }
 
 
 class Registro0175(models.Model):
@@ -151,6 +174,28 @@ class Registro0190(models.Model):
 class Registro0200(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.0200"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.0200"]
+    _odoo_model = "product.product"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return [("id", "in", declaration.fiscal_product_ids.ids)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "COD_ITEM": record.default_code or str(record.id),
+            "DESCR_ITEM": record.name,
+            "COD_BARRA": record.barcode or "",
+            "COD_ANT_ITEM": "",
+            "UNID_INV": record.uom_id.code or record.uom_id.name,
+            "TIPO_ITEM": "00",
+            "COD_NCM": misc.punctuation_rm(record.ncm_id.code or ""),
+            "EX_IPI": "",
+            "COD_GEN": record.fiscal_genre_code or "",
+            "COD_LST": "",
+            "ALIQ_ICMS": "",
+            "CEST": misc.punctuation_rm(record.cest_id.code or ""),
+        }
 
 
 class Registro0205(models.Model):
@@ -191,11 +236,35 @@ class Registro0305(models.Model):
 class Registro0400(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.0400"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.0400"]
+    _odoo_model = "l10n_br_fiscal.operation"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return [("id", "in", declaration.fiscal_operation_ids.ids)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "COD_NAT": record.code or str(record.id),
+            "DESCR_NAT": record.name,
+        }
 
 
 class Registro0450(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.0450"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.0450"]
+    _odoo_model = "l10n_br_fiscal.comment"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return [("id", "in", declaration.fiscal_comment_ids.ids)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "COD_INF": str(record.id),
+            "TXT": record.comment or "",
+        }
 
 
 class Registro0460(models.Model):

@@ -55,3 +55,55 @@ class TestSpedEFDICMSIPI(TransactionCase):
         vals = reg._map_from_odoo(uom, declaration, declaration)
         self.assertEqual(vals["UNID"], "UN")
         self.assertEqual(vals["DESCR"], "Unidade")
+
+    def _declaration(self):
+        return self.env["l10n_br_sped.efd_icms_ipi.0000"].create(
+            {"company_id": self.env.company.id}
+        )
+
+    def test_map_0150_partner(self):
+        """Register 0150 maps a participant (res.partner)."""
+        partner = self.env["res.partner"].create(
+            {"name": "Fornecedor X", "is_company": True, "district": "Industrial"}
+        )
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_icms_ipi.0150"]._map_from_odoo(
+            partner, declaration, declaration
+        )
+        self.assertEqual(vals["COD_PART"], str(partner.id))
+        self.assertEqual(vals["NOME"], "Fornecedor X")
+        self.assertEqual(vals["BAIRRO"], "Industrial")
+        self.assertEqual(vals["CPF"], "")
+
+    def test_map_0200_product(self):
+        """Register 0200 maps a product (product.product)."""
+        product = self.env["product.product"].create(
+            {"name": "Produto Z", "default_code": "PZ"}
+        )
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_icms_ipi.0200"]._map_from_odoo(
+            product, declaration, declaration
+        )
+        self.assertEqual(vals["COD_ITEM"], "PZ")
+        self.assertEqual(vals["DESCR_ITEM"], "Produto Z")
+        self.assertTrue(vals["UNID_INV"])
+
+    def test_map_0400_operation(self):
+        """Register 0400 maps a fiscal operation nature."""
+        operation = self.env["l10n_br_fiscal.operation"].new({"name": "Venda Test"})
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_icms_ipi.0400"]._map_from_odoo(
+            operation, declaration, declaration
+        )
+        self.assertEqual(vals["DESCR_NAT"], "Venda Test")
+
+    def test_map_0450_comment(self):
+        """Register 0450 maps a fiscal complementary information."""
+        comment = self.env["l10n_br_fiscal.comment"].new(
+            {"name": "Obs Test", "comment": "Texto da observacao"}
+        )
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_icms_ipi.0450"]._map_from_odoo(
+            comment, declaration, declaration
+        )
+        self.assertEqual(vals["TXT"], "Texto da observacao")
