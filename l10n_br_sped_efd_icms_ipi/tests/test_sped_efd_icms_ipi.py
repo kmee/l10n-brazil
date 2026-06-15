@@ -122,3 +122,33 @@ class TestSpedEFDICMSIPI(TransactionCase):
         )
         self.assertEqual(vals["UNID_CONV"], "DUZIA")
         self.assertEqual(vals["FAT_CONV"], 12.0)
+
+    def test_map_0002_industrial_classification(self):
+        """Register 0002 (mandatory for industry) maps the declaration config."""
+        declaration = self.env["l10n_br_sped.efd_icms_ipi.0000"].create(
+            {"company_id": self.env.company.id, "CLAS_ESTAB_IND": "00"}
+        )
+        reg = self.env["l10n_br_sped.efd_icms_ipi.0002"]
+        vals = reg._map_from_odoo(self.env.company, declaration, declaration)
+        self.assertEqual(vals["CLAS_ESTAB_IND"], "00")
+        self.assertEqual(reg._odoo_domain(None, declaration), [
+            ("id", "=", self.env.company.id),
+        ])
+
+    def test_map_0100_accountant(self):
+        """Register 0100 (mandatory) maps the accountant configured on 0000."""
+        accountant = self.env["res.partner"].create(
+            {"name": "Contador Y", "is_company": False, "district": "Centro"}
+        )
+        declaration = self.env["l10n_br_sped.efd_icms_ipi.0000"].create(
+            {
+                "company_id": self.env.company.id,
+                "accountant_id": accountant.id,
+                "accountant_crc": "SP-123456",
+            }
+        )
+        reg = self.env["l10n_br_sped.efd_icms_ipi.0100"]
+        vals = reg._map_from_odoo(accountant, declaration, declaration)
+        self.assertEqual(vals["NOME"], "Contador Y")
+        self.assertEqual(vals["CRC"], "SP-123456")
+        self.assertEqual(vals["BAIRRO"], "Centro")

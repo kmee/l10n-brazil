@@ -12,6 +12,7 @@
 import textwrap
 
 from erpbrasil.base import misc
+from lxml.builder import E
 
 from odoo import api, fields, models
 
@@ -54,6 +55,38 @@ class Registro0000(models.Model):
         default="0",
     )
 
+    # Configuration used to populate the mandatory registers 0002 and 0100,
+    # which have no direct Odoo source.
+    CLAS_ESTAB_IND = fields.Selection(
+        selection=[
+            ("00", "00 - Industrial - Transformação"),
+            ("01", "01 - Industrial - Beneficiamento"),
+            ("02", "02 - Industrial - Montagem"),
+            ("03", "03 - Industrial - Acondicionamento/Reacondicionamento"),
+            ("04", "04 - Industrial - Renovação/Recondicionamento"),
+            ("05", "05 - Equiparado a Industrial - Por opção"),
+            ("06", "06 - Equiparado a Industrial - Importação de bens"),
+            ("07", "07 - Equiparado a Industrial - Filial de estab. industrial"),
+            ("08", "08 - Equiparado a Industrial - Outros"),
+            ("09", "09 - Não Industrial / Não equiparado"),
+        ],
+        string="Classificação do estabelecimento industrial (Reg. 0002)",
+    )
+
+    accountant_id = fields.Many2one(
+        comodel_name="res.partner",
+        string="Contabilista (Reg. 0100)",
+    )
+
+    accountant_crc = fields.Char(string="CRC do contabilista (Reg. 0100)")
+
+    @api.model
+    def _append_top_view_elements(self, group, inline=False):
+        res = super()._append_top_view_elements(group, inline=inline)
+        group.append(E.field(name="accountant_id"))
+        group.append(E.field(name="accountant_crc"))
+        return res
+
     @api.model
     def _odoo_domain(self, parent_record, declaration):
         return [("id", "=", declaration.company_id.id)]
@@ -85,6 +118,19 @@ class Registro0000(models.Model):
 class Registro0002(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.0002"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.0002"]
+    _odoo_model = "res.company"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        # Mandatory only for industrial establishments: emitted when the
+        # classification is set on the declaration (register 0000).
+        if declaration.CLAS_ESTAB_IND:
+            return [("id", "=", declaration.company_id.id)]
+        return [("id", "in", [])]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {"CLAS_ESTAB_IND": declaration.CLAS_ESTAB_IND}
 
 
 class Registro0005(models.Model):
@@ -119,6 +165,32 @@ class Registro0015(models.Model):
 class Registro0100(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.0100"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.0100"]
+    _odoo_model = "res.partner"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        if declaration.accountant_id:
+            return [("id", "=", declaration.accountant_id.id)]
+        return [("id", "in", [])]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        digits = misc.punctuation_rm(record.cnpj_cpf_stripped or "")
+        return {
+            "NOME": record.legal_name or record.name,
+            "CPF": "" if record.is_company else digits,
+            "CRC": declaration.accountant_crc or "",
+            "CNPJ": digits if record.is_company else "",
+            "CEP": misc.punctuation_rm(record.zip or ""),
+            "END": record.street or "",
+            "NUM": "",
+            "COMPL": record.street2 or "",
+            "BAIRRO": record.district or "",
+            "FONE": misc.punctuation_rm(record.phone or "") if record.phone else "",
+            "FAX": "",
+            "EMAIL": record.email or "",
+            "COD_MUN": record.city_id.ibge_code or "",
+        }
 
 
 class Registro0150(models.Model):
