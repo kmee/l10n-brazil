@@ -264,3 +264,35 @@ class TestSpedEFDICMSIPI(TransactionCase):
         )
         self.assertEqual(creditor["VL_SD_IPI"], 0.0)
         self.assertEqual(creditor["VL_SC_IPI"], 300.0)
+
+    def test_map_k010_layout(self):
+        """Register K010 maps the Bloco K layout type from the declaration."""
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_icms_ipi.k010"]._map_from_odoo(
+            None, None, declaration
+        )
+        self.assertEqual(vals["IND_TP_LEIAUTE"], declaration.ind_tp_leiaute)
+
+    def test_map_k100_period(self):
+        """Register K100 maps the stock/production period from the declaration."""
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_icms_ipi.k100"]._map_from_odoo(
+            None, None, declaration
+        )
+        self.assertEqual(vals["DT_INI"], declaration.DT_INI)
+        self.assertEqual(vals["DT_FIN"], declaration.DT_FIN)
+
+    def test_map_k200_stock(self):
+        """Register K200 maps the end-of-period stock balance of an item."""
+        product = self.env["product.product"].create(
+            {"name": "Insumo", "default_code": "INS1", "type": "consu",
+             "is_storable": True}
+        )
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_icms_ipi.k200"]._map_from_odoo(
+            product, None, declaration
+        )
+        self.assertEqual(vals["COD_ITEM"], "INS1")
+        self.assertEqual(vals["DT_EST"], declaration.DT_FIN)
+        self.assertEqual(vals["IND_EST"], "0")
+        self.assertIn("QTD", vals)

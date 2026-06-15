@@ -86,12 +86,23 @@ class Registro0000(models.Model):
         default="0",
     )
 
+    ind_tp_leiaute = fields.Selection(
+        selection=[
+            ("0", "0 - Leiaute simplificado"),
+            ("1", "1 - Leiaute completo (K200, K230, etc.)"),
+            ("2", "2 - Leiaute restrito aos saldos de estoque (K200)"),
+        ],
+        string="Tipo de leiaute do Bloco K (Reg. K010)",
+        default="2",
+    )
+
     @api.model
     def _append_top_view_elements(self, group, inline=False):
         res = super()._append_top_view_elements(group, inline=inline)
         group.append(E.field(name="accountant_id"))
         group.append(E.field(name="accountant_crc"))
         group.append(E.field(name="ind_apur"))
+        group.append(E.field(name="ind_tp_leiaute"))
         return res
 
     @api.model
@@ -1455,15 +1466,43 @@ class Registrok010(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.k010"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.k010"]
 
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {"IND_TP_LEIAUTE": declaration.ind_tp_leiaute}
+
 
 class Registrok100(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.k100"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.k100"]
 
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        # Stock/production assessment period: one record per declaration period.
+        return {"DT_INI": declaration.DT_INI, "DT_FIN": declaration.DT_FIN}
+
 
 class Registrok200(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.k200"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.k200"]
+    _odoo_model = "product.product"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return [("is_storable", "=", True)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        # End-of-period stock balance (historical quantity at DT_FIN).
+        qty = record.with_context(
+            to_date=declaration.DT_FIN, company_id=declaration.company_id.id
+        ).qty_available
+        return {
+            "DT_EST": declaration.DT_FIN,
+            "COD_ITEM": record.default_code or str(record.id),
+            "QTD": qty,
+            "IND_EST": "0",
+            "COD_PART": "",
+        }
 
 
 class Registrok210(models.Model):
