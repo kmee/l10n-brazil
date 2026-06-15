@@ -80,11 +80,18 @@ class Registro0000(models.Model):
 
     accountant_crc = fields.Char(string="CRC do contabilista (Reg. 0100)")
 
+    ind_apur = fields.Selection(
+        selection=[("0", "0 - Mensal"), ("1", "1 - Decendial")],
+        string="Indicador da apuração do IPI",
+        default="0",
+    )
+
     @api.model
     def _append_top_view_elements(self, group, inline=False):
         res = super()._append_top_view_elements(group, inline=inline)
         group.append(E.field(name="accountant_id"))
         group.append(E.field(name="accountant_crc"))
+        group.append(E.field(name="ind_apur"))
         return res
 
     @api.model
@@ -571,6 +578,51 @@ class Registroc170(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.c170"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.c170"]
 
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return [("document_id", "=", parent_record.id)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        cst_icms = f"{record.icms_origin or '0'}{record.icms_cst_code or '00'}"
+        return {
+            "NUM_ITEM": index + 1,
+            "COD_ITEM": record.product_id.default_code or str(record.product_id.id),
+            "DESCR_COMPL": record.name or "",
+            "QTD": record.fiscal_quantity,
+            "UNID": record.uom_id.code or record.uom_id.name,
+            "VL_ITEM": record.price_gross or 0.0,
+            "VL_DESC": record.discount_value,
+            "IND_MOV": "0" if record.cfop_id.stock_move else "1",
+            "CST_ICMS": cst_icms,
+            "CFOP": str(record.cfop_id.code or ""),
+            "COD_NAT": record.fiscal_operation_id.code or "",
+            "VL_BC_ICMS": record.icms_base,
+            "ALIQ_ICMS": record.icms_percent,
+            "VL_ICMS": record.icms_value,
+            "VL_BC_ICMS_ST": record.icmsst_base,
+            "ALIQ_ST": record.icmsst_percent,
+            "VL_ICMS_ST": record.icmsst_value,
+            "IND_APUR": declaration.ind_apur,
+            "CST_IPI": record.ipi_cst_code or "",
+            "COD_ENQ": record.ipi_guideline_id.code or "",
+            "VL_BC_IPI": record.ipi_base,
+            "ALIQ_IPI": record.ipi_percent,
+            "VL_IPI": record.ipi_value,
+            "CST_PIS": record.pis_cst_code or "",
+            "VL_BC_PIS": record.pis_base,
+            "ALIQ_PIS": record.pis_percent,
+            "QUANT_BC_PIS": 0.0,
+            "VL_PIS": record.pis_value,
+            "CST_COFINS": record.cofins_cst_code or "",
+            "VL_BC_COFINS": record.cofins_base,
+            "ALIQ_COFINS": record.cofins_percent,
+            "QUANT_BC_COFINS": 0.0,
+            "VL_COFINS": record.cofins_value,
+            "COD_CTA": "",
+            "VL_ABAT_NT": record.financial_discount_value,
+        }
+
 
 class Registroc171(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.c171"
@@ -640,6 +692,46 @@ class Registroc186(models.Model):
 class Registroc190(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.c190"
     _inherit = ["l10n_br_sped.efd_icms_ipi.20.c190"]
+
+    @api.model
+    def _odoo_query(self, parent_record, declaration):
+        # Analytical record: the document lines grouped by CST, CFOP and ICMS
+        # rate. VL_OPR is the goods/operation value (ICMS world); CBS/IBS/IS are
+        # excluded from the EFD amounts on layout 020.
+        query = """
+            SELECT
+                CONCAT(COALESCE(line.icms_origin, '0'), cst.code) AS cst_icms,
+                cfop.code AS cfop,
+                line.icms_percent AS aliq_icms,
+                SUM(line.price_gross) AS vl_opr,
+                SUM(line.icms_base) AS vl_bc_icms,
+                SUM(line.icms_value) AS vl_icms,
+                SUM(line.icmsst_base) AS vl_bc_icms_st,
+                SUM(line.icmsst_value) AS vl_icms_st,
+                SUM(line.ipi_value) AS vl_ipi
+            FROM l10n_br_fiscal_document_line line
+            LEFT JOIN l10n_br_fiscal_cst cst ON cst.id = line.icms_cst_id
+            LEFT JOIN l10n_br_fiscal_cfop cfop ON cfop.id = line.cfop_id
+            WHERE line.document_id = %s
+            GROUP BY cst.code, cfop.code, line.icms_percent, line.icms_origin
+        """
+        return query, [parent_record.id]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "CST_ICMS": record.get("cst_icms") or "",
+            "CFOP": record.get("cfop") or "",
+            "ALIQ_ICMS": record.get("aliq_icms") or 0.0,
+            "VL_OPR": record.get("vl_opr") or 0.0,
+            "VL_BC_ICMS": record.get("vl_bc_icms") or 0.0,
+            "VL_ICMS": record.get("vl_icms") or 0.0,
+            "VL_BC_ICMS_ST": record.get("vl_bc_icms_st") or 0.0,
+            "VL_ICMS_ST": record.get("vl_icms_st") or 0.0,
+            "VL_RED_BC": 0.0,
+            "VL_IPI": record.get("vl_ipi") or 0.0,
+            "COD_OBS": "",
+        }
 
 
 class Registroc191(models.Model):

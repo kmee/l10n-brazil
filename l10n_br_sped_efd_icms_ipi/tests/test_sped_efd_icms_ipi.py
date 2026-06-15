@@ -173,3 +173,39 @@ class TestSpedEFDICMSIPI(TransactionCase):
         self.assertEqual(vals["SER"], "1")
         self.assertEqual(vals["NUM_DOC"], "123")
         self.assertIn("VL_BC_ICMS", vals)
+
+    def test_map_c170_line(self):
+        """Register C170 maps a document line (item)."""
+        product = self.env["product.product"].create(
+            {"name": "Item", "default_code": "IT1"}
+        )
+        line = self.env["l10n_br_fiscal.document.line"].new(
+            {"product_id": product.id, "name": "Item desc"}
+        )
+        declaration = self._declaration()
+        vals = self.env["l10n_br_sped.efd_icms_ipi.c170"]._map_from_odoo(
+            line, None, declaration, index=4
+        )
+        self.assertEqual(vals["NUM_ITEM"], 5)
+        self.assertEqual(vals["COD_ITEM"], "IT1")
+        self.assertEqual(vals["CST_ICMS"], "000")
+        self.assertEqual(vals["IND_APUR"], declaration.ind_apur)
+
+    def test_map_c190_analytic(self):
+        """Register C190 maps an analytical aggregation row."""
+        declaration = self._declaration()
+        row = {
+            "cst_icms": "000",
+            "cfop": "5102",
+            "aliq_icms": 18.0,
+            "vl_opr": 100.0,
+            "vl_bc_icms": 100.0,
+            "vl_icms": 18.0,
+        }
+        vals = self.env["l10n_br_sped.efd_icms_ipi.c190"]._map_from_odoo(
+            row, None, declaration
+        )
+        self.assertEqual(vals["CST_ICMS"], "000")
+        self.assertEqual(vals["CFOP"], "5102")
+        self.assertEqual(vals["ALIQ_ICMS"], 18.0)
+        self.assertEqual(vals["VL_ICMS"], 18.0)
