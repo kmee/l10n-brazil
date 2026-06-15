@@ -123,6 +123,16 @@ class Registro0110(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.0110"
     _inherit = ["l10n_br_sped.efd_pis_cofins.6.0110"]
 
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        # Assessment regime (one record per declaration). Defaults to the most
+        # common case (non-cumulative, e.g. Lucro Real); adjust per company.
+        return {
+            "COD_INC_TRIB": "1",
+            "IND_APRO_CRED": "1",
+            "COD_TIPO_CONT": "0",
+        }
+
 
 class Registro0111(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.0111"
@@ -137,6 +147,24 @@ class Registro0120(models.Model):
 class Registro0140(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.0140"
     _inherit = ["l10n_br_sped.efd_pis_cofins.6.0140"]
+    _odoo_model = "res.company"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return [("id", "=", declaration.company_id.id)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "COD_EST": str(record.id),
+            "NOME": record.legal_name or record.name,
+            "CNPJ": misc.punctuation_rm(record.vat or ""),
+            "UF": record.state_id.code or "",
+            "IE": record.l10n_br_ie_code or "",
+            "COD_MUN": record.city_id.ibge_code or "",
+            "IM": record.l10n_br_im_code or "",
+            "SUFRAMA": record.l10n_br_isuf_code or "",
+        }
 
 
 class Registro0145(models.Model):
@@ -147,16 +175,72 @@ class Registro0145(models.Model):
 class Registro0150(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.0150"
     _inherit = ["l10n_br_sped.efd_pis_cofins.6.0150"]
+    _odoo_model = "res.partner"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return [("id", "in", declaration.fiscal_document_partner_ids.ids)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        digits = misc.punctuation_rm(record.cnpj_cpf_stripped or "")
+        return {
+            "COD_PART": str(record.id),
+            "NOME": record.legal_name or record.name,
+            "COD_PAIS": record.country_id.ibge_code or "",
+            "CNPJ": digits if record.is_company else "",
+            "CPF": "" if record.is_company else digits,
+            "IE": record.l10n_br_ie_code or "",
+            "COD_MUN": record.city_id.ibge_code or "",
+            "SUFRAMA": record.l10n_br_isuf_code or "",
+            "END": record.street or "",
+            "NUM": "",
+            "COMPL": record.street2 or "",
+            "BAIRRO": record.district or "",
+        }
 
 
 class Registro0190(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.0190"
     _inherit = ["l10n_br_sped.efd_pis_cofins.6.0190"]
+    _odoo_model = "uom.uom"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return [("id", "in", declaration.fiscal_uom_ids.ids)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "UNID": record.code or record.name,
+            "DESCR": record.description or record.name,
+        }
 
 
 class Registro0200(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.0200"
     _inherit = ["l10n_br_sped.efd_pis_cofins.6.0200"]
+    _odoo_model = "product.product"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return [("id", "in", declaration.fiscal_product_ids.ids)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "COD_ITEM": record.default_code or str(record.id),
+            "DESCR_ITEM": record.name,
+            "COD_BARRA": record.barcode or "",
+            "COD_ANT_ITEM": "",
+            "UNID_INV": record.uom_id.code or record.uom_id.name,
+            "TIPO_ITEM": "00",
+            "COD_NCM": misc.punctuation_rm(record.ncm_id.code or ""),
+            "EX_IPI": "",
+            "COD_GEN": record.fiscal_genre_code or "",
+            "COD_LST": "",
+            "ALIQ_ICMS": "",
+        }
 
 
 class Registro0205(models.Model):
