@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 
 from erpbrasil.base import misc
+from nfselib.paulistana.v02 import PedidoEnvioLoteRPS as lote_rps_v02
 from nfselib.paulistana.v02.PedidoEnvioLoteRPS import (
     CabecalhoType,
     PedidoEnvioLoteRPS,
@@ -13,7 +14,16 @@ from nfselib.paulistana.v02.PedidoEnvioLoteRPS import (
     tpEndereco,
     tpRPS,
 )
+from nfselib.paulistana.v03 import PedidoEnvioLoteRPS as lote_rps_v03
 from unidecode import unidecode
+
+# Schema v01 (legado, fato gerador até 31/12/2025) = bindings v02, Versao=1.
+# Schema v02 (Reforma Tributária IBS/CBS) = bindings v03, Versao=2; nele
+# tpAssinatura exporta em base64 (bytes) e ISSRetido é xs:boolean.
+PAULISTANA_BINDINGS = {
+    "v02": {"module": lote_rps_v02, "versao": 1},
+    "v03": {"module": lote_rps_v03, "versao": 2},
+}
 
 from odoo import _, models
 from odoo.exceptions import UserError
@@ -72,18 +82,24 @@ class Document(models.Model):
             edocs.append(record.serialize_nfse_paulistana())
         return edocs
 
-    def serialize_nfse_paulistana(self):
+    def serialize_nfse_paulistana(self, nfse_version="v02"):
+        binding = PAULISTANA_BINDINGS[nfse_version]
         dados_lote_rps = self._prepare_lote_rps()
         dados_servico = self._prepare_dados_servico()
-        lote_rps = PedidoEnvioLoteRPS(
-            Cabecalho=self._serialize_cabecalho(dados_lote_rps),
-            RPS=[self._serialize_lote_rps(dados_lote_rps, dados_servico)],
+        lote_rps = binding["module"].PedidoEnvioLoteRPS(
+            Cabecalho=self._serialize_cabecalho(dados_lote_rps, binding),
+            RPS=[self._serialize_lote_rps(dados_lote_rps, dados_servico, binding)],
         )
         return lote_rps
 
-    def _serialize_cabecalho(self, dados_lote_rps):
+    def _serialize_cabecalho(self, dados_lote_rps, binding=None):
+        binding = binding or PAULISTANA_BINDINGS["v02"]
+        CabecalhoType = binding["module"].CabecalhoType
+        tpCPFCNPJ = binding["module"].tpCPFCNPJ
         return CabecalhoType(
-            Versao=self.convert_type_nfselib(CabecalhoType, "Versao", 1),
+            Versao=self.convert_type_nfselib(
+                CabecalhoType, "Versao", binding["versao"]
+            ),
             CPFCNPJRemetente=tpCPFCNPJ(
                 CNPJ=self.convert_type_nfselib(
                     CabecalhoType, "tpCPFCNPJ", dados_lote_rps["cnpj"]
@@ -107,12 +123,20 @@ class Document(models.Model):
             ),
         )
 
-    def _serialize_lote_rps(self, dados_lote_rps, dados_servico):
+    def _serialize_lote_rps(self, dados_lote_rps, dados_servico, binding=None):
+        binding = binding or PAULISTANA_BINDINGS["v02"]
+        tpRPS = binding["module"].tpRPS
+        tpChaveRPS = binding["module"].tpChaveRPS
+        tpCPFCNPJ = binding["module"].tpCPFCNPJ
+        tpEndereco = binding["module"].tpEndereco
         dados_tomador = self._prepare_dados_tomador()
+        assinatura = self.assinatura_rps(dados_lote_rps, dados_servico, dados_tomador)
+        if binding["versao"] >= 2:
+            # tpAssinatura no schema v02 é xs:base64Binary: o export do
+            # generateDS aplica b64encode e exige bytes.
+            assinatura = assinatura.encode("ascii")
         return tpRPS(
-            Assinatura=self.assinatura_rps(
-                dados_lote_rps, dados_servico, dados_tomador
-            ),
+            Assinatura=assinatura,
             ChaveRPS=tpChaveRPS(
                 InscricaoPrestador=self.convert_type_nfselib(
                     tpChaveRPS,
