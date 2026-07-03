@@ -23,6 +23,7 @@ class TestFiscalDocumentNFSePaulistana(TestFiscalDocumentNFSeCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.env["res.lang"]._activate_lang("pt_BR")
         cls.company.provedor_nfse = "paulistana"
 
     def test_nfse_paulistana(self):
@@ -32,18 +33,10 @@ class TestFiscalDocumentNFSePaulistana(TestFiscalDocumentNFSeCommon):
             l10n_br_nfse_paulistana.__path__[0], "tests", "nfse", "paulistana.xml"
         )
 
-        self.nfse_same_state._onchange_document_serie_id()
-        self.nfse_same_state._onchange_fiscal_operation_id()
-        self.nfse_same_state._onchange_company_id()
         self.nfse_same_state.rps_number = "50"
         self.nfse_same_state.document_number = "50"
 
         for line in self.nfse_same_state.fiscal_line_ids:
-            line._onchange_product_id_fiscal()
-            line._onchange_commercial_quantity()
-            line._onchange_ncm_id()
-            line._onchange_fiscal_operation_id()
-            line._onchange_fiscal_operation_line_id()
             line._onchange_fiscal_taxes()
 
         self.nfse_same_state.action_document_confirm()
@@ -72,18 +65,10 @@ class TestFiscalDocumentNFSePaulistana(TestFiscalDocumentNFSeCommon):
 
     def test_serialize_nfse_paulistana(self):
         """Test serialization of NFS-e Paulistana."""
-        self.nfse_same_state._onchange_document_serie_id()
-        self.nfse_same_state._onchange_fiscal_operation_id()
-        self.nfse_same_state._onchange_company_id()
         self.nfse_same_state.rps_number = "50"
         self.nfse_same_state.document_number = "50"
 
         for line in self.nfse_same_state.fiscal_line_ids:
-            line._onchange_product_id_fiscal()
-            line._onchange_commercial_quantity()
-            line._onchange_ncm_id()
-            line._onchange_fiscal_operation_id()
-            line._onchange_fiscal_operation_line_id()
             line._onchange_fiscal_taxes()
 
         self.nfse_same_state.action_document_confirm()
@@ -97,9 +82,6 @@ class TestFiscalDocumentNFSePaulistana(TestFiscalDocumentNFSeCommon):
 
     def test_map_taxation_rps(self):
         """Test mapping of taxation RPS."""
-        self.nfse_same_state._onchange_document_serie_id()
-        self.nfse_same_state._onchange_fiscal_operation_id()
-
         # Test all taxation mappings
         self.assertEqual(self.nfse_same_state._map_taxation_rps("1"), "T")
         self.assertEqual(self.nfse_same_state._map_taxation_rps("2"), "F")
@@ -110,8 +92,6 @@ class TestFiscalDocumentNFSePaulistana(TestFiscalDocumentNFSeCommon):
 
     def test_map_type_rps(self):
         """Test mapping of RPS type."""
-        self.nfse_same_state._onchange_document_serie_id()
-
         # Test all RPS type mappings
         self.assertEqual(self.nfse_same_state._map_type_rps("1"), "RPS")
         self.assertEqual(self.nfse_same_state._map_type_rps("2"), "RPS-M")
@@ -119,8 +99,6 @@ class TestFiscalDocumentNFSePaulistana(TestFiscalDocumentNFSeCommon):
 
     def test_map_provision_municipality(self):
         """Test mapping of provision municipality."""
-        self.nfse_same_state._onchange_document_serie_id()
-
         # Test provision municipality mapping
         self.assertIsNone(self.nfse_same_state._map_provision_municipality("1", "3550308"))
         self.assertEqual(
