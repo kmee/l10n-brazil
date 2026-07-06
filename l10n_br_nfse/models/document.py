@@ -97,7 +97,9 @@ class Document(models.Model):
         else:
             self.file_report_id = self.env["ir.attachment"].create(vals_dict)
 
-    def _processador_erpbrasil_nfse(self):
+    def _processador_erpbrasil_nfse(self, **kwargs):
+        # kwargs extras sao repassados ao NFSeFactory / provedor (ex.:
+        # versao_schema="v03" para o schema da Reforma Tributaria na Paulistana).
         certificado = self.env.company._get_br_ecertificate()
         session = Session()
         session.verify = False
@@ -110,6 +112,7 @@ class Document(models.Model):
             im_prestador=misc.punctuation_rm(
                 self.company_id.partner_id.l10n_br_im_code or ""
             ),
+            **kwargs,
         )
 
     def _document_export(self, pretty_print=True):
@@ -306,6 +309,7 @@ class Document(models.Model):
         result.update({"complemento": self.partner_shipping_id.street2 or None})
 
         return result
+
 
     def _prepare_lote_rps(self):
         num_rps = self.rps_number
