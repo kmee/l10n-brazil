@@ -75,8 +75,8 @@ class Document(models.Model):
     def make_pdf(self):
         if not self.filtered(filter_processador_edoc_nfse):
             return super().make_pdf()
-        pdf = self.env.ref("l10n_br_nfse.report_br_nfse_danfe")._render_qweb_pdf(
-            self.ids
+        pdf = self.env["ir.actions.report"]._render_qweb_pdf(
+            "l10n_br_nfse.report_br_nfse_danfe", self.ids
         )[0]
 
         if self.document_number:
@@ -97,7 +97,9 @@ class Document(models.Model):
         else:
             self.file_report_id = self.env["ir.attachment"].create(vals_dict)
 
-    def _processador_erpbrasil_nfse(self):
+    def _processador_erpbrasil_nfse(self, **kwargs):
+        # kwargs extras sao repassados ao NFSeFactory / provedor (ex.:
+        # versao_schema="v03" para o schema da Reforma Tributaria na Paulistana).
         certificado = self.env.company._get_br_ecertificate()
         session = Session()
         session.verify = False
@@ -110,6 +112,7 @@ class Document(models.Model):
             im_prestador=misc.punctuation_rm(
                 self.company_id.partner_id.l10n_br_im_code or ""
             ),
+            **kwargs,
         )
 
     def _document_export(self, pretty_print=True):
