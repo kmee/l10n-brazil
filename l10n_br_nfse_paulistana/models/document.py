@@ -1,6 +1,8 @@
 # Copyright 2019 KMEE INFORMATICA LTDA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import logging
+import re
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
@@ -38,6 +40,8 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
 )
 
 from ..constants.paulistana import CONSULTA_LOTE, ENVIO_LOTE_RPS
+
+_logger = logging.getLogger(__name__)
 
 
 def filter_oca_nfse(record):
@@ -79,8 +83,19 @@ class Document(models.Model):
     def _serialize(self, edocs):
         edocs = super()._serialize(edocs)
         for record in self.filtered(filter_oca_nfse).filtered(filter_paulistana):
-            edocs.append(record.serialize_nfse_paulistana())
+            nfse_version = record.company_id.nfse_paulistana_schema or "v02"
+            edocs.append(record.serialize_nfse_paulistana(nfse_version=nfse_version))
         return edocs
+
+    def _processador_erpbrasil_nfse(self, **kwargs):
+        # Encaminha a versao de schema configurada na empresa para o provedor
+        # erpbrasil.edoc (Paulistana), de modo que envelopes de consulta e
+        # cancelamento usem o mesmo layout (Versao 1 legado / Versao 2 Reforma).
+        if self.company_id.provedor_nfse == "paulistana":
+            kwargs.setdefault(
+                "versao_schema", self.company_id.nfse_paulistana_schema or "v02"
+            )
+        return super()._processador_erpbrasil_nfse(**kwargs)
 
     def serialize_nfse_paulistana(self, nfse_version="v02"):
         binding = PAULISTANA_BINDINGS[nfse_version]
@@ -130,12 +145,14 @@ class Document(models.Model):
         tpCPFCNPJ = binding["module"].tpCPFCNPJ
         tpEndereco = binding["module"].tpEndereco
         dados_tomador = self._prepare_dados_tomador()
-        assinatura = self.assinatura_rps(dados_lote_rps, dados_servico, dados_tomador)
+        assinatura = self.assinatura_rps(
+            dados_lote_rps, dados_servico, dados_tomador, binding
+        )
         if binding["versao"] >= 2:
             # tpAssinatura no schema v02 é xs:base64Binary: o export do
             # generateDS aplica b64encode e exige bytes.
             assinatura = assinatura.encode("ascii")
-        return tpRPS(
+        rps = tpRPS(
             Assinatura=assinatura,
             ChaveRPS=tpChaveRPS(
                 InscricaoPrestador=self.convert_type_nfselib(
@@ -259,6 +276,92 @@ class Document(models.Model):
                 ),
             ),
         )
+        if binding["versao"] >= 2:
+            self._fill_rps_v03_required(rps, binding, dados_servico)
+        return rps
+
+    def _fill_rps_v03_required(self, rps, binding, dados_servico):
+        """Popula os campos obrigatorios exclusivos do schema v02 (bindings v03,
+        Reforma Tributaria) que nao existem no layout legado.
+
+        Valores marcados como TODO usam defaults seguros e devem ser confirmados
+        com o Manual de Orientacao (MOC) da NFS-e de Sao Paulo.
+        """
+        valor_servicos = round(float(dados_servico.get("valor_servicos") or 0), 2)
+        # Base cobrada: o schema define ValorInicialCobrado XOR ValorFinalCobrado
+        # (xs:choice). A SP descontinuou ValorInicialCobrado (erro 640): a
+        # sistematica atual exige ValorFinalCobrado (valor total cobrado).
+        rps.ValorFinalCobrado = valor_servicos
+        rps.ValorIPI = 0.0  # servico nao destaca IPI
+        # TODO(MOC): mapear exigibilidade suspensa e pagamento parcelado
+        # antecipado conforme o cenario fiscal (0 = nao).
+        rps.ExigibilidadeSuspensa = 0
+        rps.PagamentoParceladoAntecipado = 0
+        # NBS deve ter 9 digitos ([0-9]{9}); usar codigo sem mascara.
+        codigo_nbs = dados_servico.get("codigo_nbs_unmasked") or dados_servico.get(
+            "codigo_nbs"
+        )
+        rps.NBS = re.sub(r"\D", "", codigo_nbs) if codigo_nbs else None
+        # gpPrestacao e xs:choice (cLocPrestacao XOR cPaisPrestacao). Servico
+        # prestado no Brasil -> apenas o municipio (codigo IBGE).
+        municipio_prestacao = dados_servico.get(
+            "municipio_prestacao_servico"
+        ) or dados_servico.get("codigo_municipio")
+        rps.cLocPrestacao = int(municipio_prestacao) if municipio_prestacao else None
+        rps.IBSCBS = self._serialize_ibscbs(binding, dados_servico)
+
+    def _serialize_ibscbs(self, binding, dados_servico):
+        """Monta o grupo IBSCBS obrigatorio do RPS (schema v02 / Reforma).
+
+        No envio informa-se a classificacao tributaria (cClassTrib) e os
+        indicadores; os valores monetarios de IBS/CBS sao calculados e
+        devolvidos pelo webservice no retorno. Indicadores marcados como TODO
+        precisam de confirmacao no MOC da NFS-e de Sao Paulo.
+        """
+        module = binding["module"]
+        tpIBSCBS = module.tpIBSCBS
+        tpValores = module.tpValores
+        tpTrib = module.tpTrib
+        tpGIBSCBS = module.tpGIBSCBS
+
+        # Valores derivados da configuracao fiscal ja existente (nao pedimos ao
+        # usuario). cClassTrib vem de tax_classification_id da linha (computado
+        # em _compute_fiscal_tax_ids via map_fiscal_taxes) com fallback no
+        # default da empresa; cIndOp vem do operation_indicator_id do produto.
+        cclasstrib = dados_servico.get("ibs_cbs_classificacao_tributaria") or (
+            self.company_id.tax_classification_id.code or None
+        )
+        cindop = dados_servico.get("codigo_indicador_operacao") or None
+        if not cclasstrib or not cindop:
+            # Nao bloqueia a emissao, mas registra: sem esses codigos o schema
+            # v02 rejeita o lote (1001). cClassTrib vem do produto/operacao
+            # fiscal ou do default da empresa; cIndOp vem do produto.
+            _logger.warning(
+                "NFS-e Paulistana %s: IBSCBS incompleto (cClassTrib=%s, "
+                "cIndOp=%s). Configure a Classificacao Tributaria (IBS/CBS) e "
+                "o Indicador de Operacao para evitar rejeicao pelo schema v02.",
+                self.document_number or self.id,
+                cclasstrib,
+                cindop,
+            )
+        try:
+            ind_final = int(self.ind_final) if self.ind_final else 0
+        except (TypeError, ValueError):
+            ind_final = 0
+
+        return tpIBSCBS(
+            finNFSe=0,  # 0 = NFS-e regular (unico valor aceito pelo schema)
+            indFinal=ind_final,
+            cIndOp=cindop,
+            # 0 = destinatario e o proprio tomador/adquirente (caso padrao,
+            # sem destinatario distinto). 1 exigiria o grupo <dest>.
+            indDest=0,
+            valores=tpValores(
+                trib=tpTrib(
+                    gIBSCBS=tpGIBSCBS(cClassTrib=cclasstrib),
+                ),
+            ),
+        )
 
     def _serialize_rps(self, dados):
         return tpRPS(
@@ -292,10 +395,15 @@ class Document(models.Model):
             or None,
         )
 
-    def assinatura_rps(self, dados_lote_rps, dados_servico, dados_tomador):
+    def assinatura_rps(self, dados_lote_rps, dados_servico, dados_tomador, binding=None):
         assinatura = ""
 
-        assinatura += dados_lote_rps["inscricao_municipal"].zfill(8)
+        # Inscrição do prestador: schema v01 (legado) usa 8 posições; schema
+        # v02 (Reforma, Versao=2) usa 12. A SP reconstrói a mesma string para
+        # verificar a assinatura RSA -> largura errada causa o erro 1206.
+        versao = binding["versao"] if binding else PAULISTANA_BINDINGS["v02"]["versao"]
+        inscr_width = 12 if versao >= 2 else 8
+        assinatura += dados_lote_rps["inscricao_municipal"].zfill(inscr_width)
         assinatura += dados_lote_rps["serie"].ljust(5, " ")
         assinatura += dados_lote_rps["numero"].zfill(12)
         assinatura += datetime.strptime(
