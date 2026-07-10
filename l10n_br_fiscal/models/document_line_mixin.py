@@ -14,6 +14,7 @@ from ..constants.fiscal import (
     FINAL_CUSTOMER,
     FISCAL_COMMENT_LINE,
     FISCAL_IN,
+    FISCAL_OUT,
     FISCAL_TAX_ID_FIELDS,
     PRODUCT_FISCAL_TYPE,
     TAX_BASE_TYPE,
@@ -596,6 +597,16 @@ class FiscalDocumentLineMixin(models.AbstractModel):
     def _onchange_fiscal_taxes(self):
         self._update_fiscal_tax_ids()
 
+    @api.depends("icms_tax_id", "icmssn_tax_id", "fiscal_operation_line_id")
+    def _compute_icms_cst_id(self):
+        for line in self.filtered(lambda ln: not ln._is_imported()):
+            tax = line.icms_tax_id or line.icmssn_tax_id
+            if tax and line.fiscal_operation_line_id:
+                fiscal_operation_type = (
+                    line.fiscal_operation_line_id.fiscal_operation_type or FISCAL_OUT
+                )
+                line.icms_cst_id = tax.cst_from_tax(fiscal_operation_type)
+
     @api.depends(
         "partner_id",
         "fiscal_tax_ids",
@@ -895,9 +906,7 @@ class FiscalDocumentLineMixin(models.AbstractModel):
 
     def _prepare_fields_icms(self, tax_dict):
         self.ensure_one()
-        cst_id = tax_dict.get("cst_id").id if tax_dict.get("cst_id") else False
         return {
-            "icms_cst_id": cst_id,
             "icms_base_type": tax_dict.get("icms_base_type", ICMS_BASE_TYPE_DEFAULT),
             "icms_base": tax_dict.get("base", 0.0),
             "icms_percent": tax_dict.get("percent_amount", 0.0),
@@ -936,13 +945,11 @@ class FiscalDocumentLineMixin(models.AbstractModel):
 
     def _prepare_fields_icmssn(self, tax_dict):
         self.ensure_one()
-        cst_id = tax_dict.get("cst_id").id if tax_dict.get("cst_id") else False
         icmssn_base = tax_dict.get("base", 0.0)
         icmssn_credit_value = tax_dict.get("tax_value", 0.0)
         simple_value = icmssn_base * self.icmssn_range_id.total_tax_percent
         simple_without_icms_value = simple_value - icmssn_credit_value
         return {
-            "icms_cst_id": cst_id,
             "icmssn_base": icmssn_base,
             "icmssn_percent": tax_dict.get("percent_amount"),
             "icmssn_reduction": tax_dict.get("percent_reduction"),
@@ -1603,7 +1610,7 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         string="CST ICMS",
         domain="[('tax_domain', '=', {'1': 'icmssn', '2': 'icmssn', "
         "'3': 'icms'}.get(tax_framework))]",
-        compute="_compute_tax_fields",
+        compute="_compute_icms_cst_id",
         store=True,
         precompute=True,
         readonly=False,
