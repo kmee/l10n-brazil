@@ -5,8 +5,7 @@
 from collections import namedtuple
 
 import requests
-
-import odoo
+from odoo import _
 from odoo.exceptions import UserError
 
 WS_SERVICOS = 0
@@ -32,30 +31,30 @@ def _request(ws_url, params, ibpt_request_timeout=30):
                 **{k.lower(): v for k, v in data.items()}
             )
         elif response.status_code == requests.codes.forbidden:
+            token = params.get("token") or ""
+            masked_token = "%s..." % token[:8] if token else ""
             raise UserError(
-                odoo.api.Environment._(
+                _(
                     "IBPT Forbidden - token=%(token)s, cnpj=%(cnpj)s, UF=%(uf)s",
-                    token=params.get("token"),
+                    token=masked_token,
                     cnpj=params.get("cnpj"),
                     uf=params.get("uf"),
                 )
             )
         elif response.status_code == requests.codes.not_found:
             raise UserError(
-                odoo.api.Environment._(
+                _(
                     "IBPT URL not found - %(url)s",
                     url=ws_url,
                 )
             )
         elif response.status_code == requests.codes.service_unavailable:
-            raise UserError(
-                odoo.api.Environment._(
-                    "IBPT Service Unavailable - %s(url)s", url=ws_url
-                )
-            )
+            raise UserError(_("IBPT Service Unavailable - %(url)s", url=ws_url))
+    except UserError:
+        raise
     except Exception as err:
         raise UserError(
-            odoo.api.Environment._(
+            _(
                 "Error in the request: %(error)s",
                 error=str(err),
             )
@@ -78,7 +77,7 @@ def get_ibpt_product(
         "gtin": gtin,
     }
 
-    return _request(WS_IBPT[WS_PRODUTOS], data, config.ibpt_request_timeout)
+    return _request(WS_IBPT[WS_PRODUTOS], data, config.ibpt_request_timeout or 30)
 
 
 def get_ibpt_service(config, nbs, description="", uom="", amount="0"):
@@ -92,4 +91,4 @@ def get_ibpt_service(config, nbs, description="", uom="", amount="0"):
         "valor": amount,
     }
 
-    return _request(WS_IBPT[WS_SERVICOS], data, config.ibpt_request_timeout)
+    return _request(WS_IBPT[WS_SERVICOS], data, config.ibpt_request_timeout or 30)

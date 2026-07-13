@@ -8,7 +8,7 @@ from datetime import timedelta
 from erpbrasil.base import misc
 from lxml import etree
 
-from odoo import api, fields, models
+from odoo import api, fields, models, _
 from odoo.tools import config as odooconfig
 
 from .ibpt import DeOlhoNoImposto
@@ -112,14 +112,18 @@ class DataNcmNbsAbstract(models.AbstractModel):
 
                     self.env["l10n_br_fiscal.tax.estimate"].create(values)
 
+                    _logger.info(
+                        _(
+                            f"{record.name} Tax Estimate Updated!",
+                        )
+                    )
+
                     record.message_post(
-                        body=self.env._(
-                            "%(name)s Tax Estimate Updated",
-                            name=object_name,
+                        body=_(
+                            f"{record.name} Tax Estimate Updated",
                         ),
-                        subject=self.env._(
-                            "%(name)s Tax Estimate Updated",
-                            name=object_name,
+                        subject=_(
+                            f"{record.name} Tax Estimate Updated",
                         ),
                     )
 
