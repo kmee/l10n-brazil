@@ -45,6 +45,7 @@ class AccountTax(models.Model):
         icmssn_range=None,
         icms_origin=None,
         ind_final=FINAL_CUSTOMER_NO,
+        rounding_method=None,
     ):
         """Returns all information required to apply taxes
             (in self + their children in case of a tax goup).
@@ -67,6 +68,11 @@ class AccountTax(models.Model):
             }]
         }"""
 
+        # fixed_multiplicator nao existe mais na assinatura do core (18.0) -
+        # o slot posicional que ele ocupava agora e rounding_method; passar
+        # fixed_multiplicator (int) ali corrompia o metodo de arredondamento
+        # silenciosamente. is_refund (ja repassado acima) e o mecanismo atual
+        # do core para o mesmo efeito de inverter sinal em devolucoes.
         taxes_results = super().compute_all(
             price_unit,
             currency,
@@ -76,7 +82,7 @@ class AccountTax(models.Model):
             is_refund,
             handle_price_include,
             include_caba_tags,
-            fixed_multiplicator,
+            rounding_method=rounding_method,
         )
 
         if not fiscal_taxes:
