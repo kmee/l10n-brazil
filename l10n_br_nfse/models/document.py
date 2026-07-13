@@ -218,7 +218,7 @@ class Document(models.Model):
         nbs_id = self.fiscal_line_ids[0].nbs_id
         tax_estimate = nbs_id.tax_estimate_ids.filtered(
             lambda x: x.state_id == state_id
-        )
+        ).sorted(key=lambda x: x.id, reverse=True)[:1]
 
         percentual_total_tributos_federais = tax_estimate.federal_taxes_national
         if self.partner_id.country_id.code != "BR":
