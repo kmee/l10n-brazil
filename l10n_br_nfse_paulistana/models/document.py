@@ -78,15 +78,30 @@ class Document(models.Model):
             return value
 
         value_type = ""
+        restriction_type = ""
         for field in class_object().member_data_items_:
             if field.name == object_filed:
                 value_type = field.child_attrs.get("type", "").replace("xs:", "")
+                # data_type e a cadeia de restricao, ex.: ['tpAliquota',
+                # 'xs:decimal']; o primeiro item identifica o tipo do schema.
+                data_type = getattr(field, "data_type", None)
+                if isinstance(data_type, (list, tuple)) and data_type:
+                    restriction_type = data_type[0]
                 break
 
         if value_type in ("int", "long", "byte", "nonNegativeInteger"):
             return int(value)
         elif value_type == "decimal":
-            return round(float(value), 2)
+            # tpValor tem fractionDigits=2 (valores monetarios), mas tpAliquota
+            # e tpPercentualCargaTributaria tem fractionDigits=4: arredondar
+            # para 2 casas corromperia o valor (ex.: 0.029 -> 0.03).
+            decimals = (
+                4
+                if restriction_type
+                in ("tpAliquota", "tpPercentualCargaTributaria")
+                else 2
+            )
+            return round(float(value), decimals)
         elif value_type == "string":
             return str(value)
         else:
@@ -196,10 +211,10 @@ class Document(models.Model):
                 tpRPS, "ValorDeducoes", dados_servico["valor_deducoes"]
             ),
             ValorPIS=self.convert_type_nfselib(
-                tpRPS, "ValorPIS", dados_servico["valor_pis_retido"]
+                tpRPS, "ValorPIS", dados_servico["valor_pis"]
             ),
             ValorCOFINS=self.convert_type_nfselib(
-                tpRPS, "ValorCOFINS", dados_servico["valor_cofins_retido"]
+                tpRPS, "ValorCOFINS", dados_servico["valor_cofins"]
             ),
             ValorINSS=self.convert_type_nfselib(
                 tpRPS, "ValorINSS", dados_servico["valor_inss_retido"]
@@ -276,8 +291,13 @@ class Document(models.Model):
                 "ValorCargaTributaria",
                 dados_lote_rps["carga_tributaria_estimada"],
             ),
+            PercentualCargaTributaria=self.convert_type_nfselib(
+                tpRPS,
+                "PercentualCargaTributaria",
+                self._percentual_carga_tributaria(dados_lote_rps, dados_servico),
+            ),
             FonteCargaTributaria=self.convert_type_nfselib(
-                tpRPS, "FonteCargaTributaria", "IBPT"
+                tpRPS, "FonteCargaTributaria", self._fonte_carga_tributaria()
             ),
             MunicipioPrestacao=self.convert_type_nfselib(
                 CabecalhoType,
@@ -291,6 +311,42 @@ class Document(models.Model):
         if binding["versao"] >= 2:
             self._fill_rps_v03_required(rps, binding, dados_servico)
         return rps
+
+    def _percentual_carga_tributaria(self, dados_lote_rps, dados_servico):
+        """Percentual (fracao) da carga tributaria estimada IBPT.
+
+        Derivado da razao valor estimado / valor dos servicos para ficar sempre
+        coerente com o ValorCargaTributaria enviado (ex.: 183.12 / 8758.72 ->
+        0.0209). O tipo tpPercentualCargaTributaria aceita 4 casas decimais.
+        """
+        valor = float(dados_servico.get("valor_servicos") or 0)
+        if not valor:
+            return 0.0
+        carga = float(dados_lote_rps.get("carga_tributaria_estimada") or 0)
+        return carga / valor
+
+    def _fonte_carga_tributaria(self):
+        """Fonte/versao da carga tributaria estimada (ex.: 'IBPT26.1.L').
+
+        Vem do campo `key` do ultimo registro IBPT (l10n_br_fiscal.tax.estimate)
+        da NBS + empresa - a mesma origem do valor estimado. Fallback para
+        'IBPT' quando nao ha chave. Limitado a 10 caracteres
+        (tpFonteCargaTributaria).
+        """
+        fonte = "IBPT"
+        nbs = self.fiscal_line_ids[:1].nbs_id
+        if nbs:
+            estimate = self.env["l10n_br_fiscal.tax.estimate"].search(
+                [
+                    ("nbs_id", "=", nbs.id),
+                    ("company_id", "=", self.company_id.id),
+                ],
+                order="create_date DESC",
+                limit=1,
+            )
+            if estimate.key:
+                fonte = estimate.key
+        return fonte[:10]
 
     def _fill_rps_v03_required(self, rps, binding, dados_servico):
         """Popula os campos obrigatorios exclusivos do schema v02 (bindings v03,
