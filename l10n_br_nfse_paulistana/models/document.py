@@ -328,10 +328,11 @@ class Document(models.Model):
     def _fonte_carga_tributaria(self):
         """Fonte/versao da carga tributaria estimada (ex.: 'IBPT26.1.L').
 
-        Vem do campo `key` do ultimo registro IBPT (l10n_br_fiscal.tax.estimate)
-        da NBS + empresa - a mesma origem do valor estimado. Fallback para
-        'IBPT' quando nao ha chave. Limitado a 10 caracteres
-        (tpFonteCargaTributaria).
+        Deriva do campo `version` do ultimo registro IBPT
+        (l10n_br_fiscal.tax.estimate) da NBS + empresa - a mesma origem do valor
+        estimado -, que traz apenas a versao ('26.1.L'); prefixamos com 'IBPT'
+        para formar a fonte esperada pela SP. Fallback para 'IBPT' quando nao ha
+        versao. Limitado a 10 caracteres (tpFonteCargaTributaria).
         """
         fonte = "IBPT"
         nbs = self.fiscal_line_ids[:1].nbs_id
@@ -344,8 +345,8 @@ class Document(models.Model):
                 order="create_date DESC",
                 limit=1,
             )
-            if estimate.key:
-                fonte = estimate.key
+            if estimate.version:
+                fonte = "IBPT" + estimate.version
         return fonte[:10]
 
     def _fill_rps_v03_required(self, rps, binding, dados_servico):
