@@ -4,6 +4,7 @@
 from lxml import etree
 
 from odoo import api, fields, models
+from odoo.osv import expression
 
 from ..constants.fiscal import (
     FINAL_CUSTOMER_YES,
@@ -47,7 +48,7 @@ VIEW = """
 
 class ICMSRegulation(models.Model):
     _name = "l10n_br_fiscal.icms.regulation"
-    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _inherit = ["mail.thread", "mail.activity.mixin", "l10n_br_fiscal.cache.mixin"]
     _description = "Tax ICMS Regulation"
 
     name = fields.Char(required=True, index=True)
@@ -1971,8 +1972,25 @@ class ICMSRegulation(models.Model):
         return domain
 
     def _tax_definition_search(self, domain, ncm, nbm, cest, product, ind_final=None):
+        icms_defs = self.env["l10n_br_fiscal.tax.definition"].search(domain)
+        return self._tax_definition_precedence(
+            icms_defs, ncm, nbm, cest, product, ind_final
+        )
+
+    def _tax_definition_precedence(
+        self, icms_defs, ncm, nbm, cest, product, ind_final=None
+    ):
+        """Apply the ICMS tax-definition precedence to a pre-fetched recordset.
+
+        Business rule (unchanged): with a single match, take it; otherwise
+        prefer benefit definitions, then product/ncm/nbm/cest-specific ones,
+        then generic ones, and finally narrow by ``ind_final`` when any
+        final-customer definition is present. Split out of
+        ``_tax_definition_search`` so that ``map_tax`` can run the four ICMS
+        group searches as a single query and still apply this exact
+        precedence per group.
+        """
         tax_definitions = self.env["l10n_br_fiscal.tax.definition"]
-        icms_defs = tax_definitions.search(domain)
 
         if len(icms_defs) == 1:
             tax_definitions |= icms_defs
@@ -2194,21 +2212,88 @@ class ICMSRegulation(models.Model):
             if not cest:
                 cest = product.cest_id
 
-        icms_taxes, icms_def_taxes = self._map_tax_def_icms(
-            company, partner, product, ncm, nbm, cest, operation_line, ind_final
+        icms_taxes = self.env["l10n_br_fiscal.tax"]
+        tax_group_icms = self.env.ref("l10n_br_fiscal.tax_group_icms")
+        tax_group_icmsst = self.env.ref("l10n_br_fiscal.tax_group_icmsst")
+        tax_group_icmsfcp = self.env.ref("l10n_br_fiscal.tax_group_icmsfcp")
+        tax_group_icmsfcpst = self.env.ref("l10n_br_fiscal.tax_group_icmsfcp_st")
+
+        # Collect the (tax_group, domain) of every ICMS definition search that
+        # applies in this context and run them as ONE search (OR of the
+        # per-group domains) instead of four. Each sub-domain pins a distinct
+        # tax_group_id, so the combined result partitions cleanly by group and
+        # the per-group precedence (see _tax_definition_precedence) is applied
+        # exactly as before. The append order below matches the original call
+        # order (icms, icms_st, icms_fcp, icms_fcp_st) so that downstream
+        # last-wins resolution of icms_tax_benefit_id is unchanged.
+        searches = []
+
+        # 1 ICMS (or the imported-ICMS shortcut, which needs no search)
+        if (
+            product.icms_origin in ICMS_ORIGIN_TAX_IMPORTED
+            and company.state_id != partner.state_id
+            and operation_line.fiscal_operation_type == FISCAL_OUT
+            or operation_line.fiscal_operation_id.fiscal_type == "return_in"
+            and operation_line.fiscal_operation_type == FISCAL_IN
+        ):
+            icms_taxes |= self.icms_imported_tax_id
+        else:
+            searches.append(
+                (
+                    tax_group_icms,
+                    self._build_map_tax_def_domain(
+                        company, partner, tax_group_icms, ncm, nbm, cest
+                    ),
+                )
+            )
+
+        # 2 ICMS ST (always)
+        searches.append(
+            (
+                tax_group_icmsst,
+                self._build_map_tax_def_domain(
+                    company, partner, tax_group_icmsst, ncm, nbm, cest
+                ),
+            )
         )
 
-        icms_def_taxes |= self._map_tax_def_icmsst(
-            company, partner, product, ncm, nbm, cest, operation_line, ind_final
+        # 3 ICMS FCP for DIFAL (conditional)
+        if (
+            company.state_id != partner.state_id
+            and partner.ind_ie_dest == NFE_IND_IE_DEST_9
+            and operation_line.fiscal_operation_type == FISCAL_OUT
+            or operation_line.fiscal_operation_id.fiscal_type == "return_in"
+            and operation_line.fiscal_operation_type == FISCAL_IN
+        ):
+            searches.append(
+                (
+                    tax_group_icmsfcp,
+                    self._build_map_tax_def_domain(
+                        partner, partner, tax_group_icmsfcp, ncm, nbm, cest
+                    ),
+                )
+            )
+
+        # 4 FCP ST (always)
+        searches.append(
+            (
+                tax_group_icmsfcpst,
+                self._build_map_tax_def_domain(
+                    company, partner, tax_group_icmsfcpst, ncm, nbm, cest
+                ),
+            )
         )
 
-        icms_def_taxes |= self._map_tax_def_icmsfcp(
-            company, partner, product, ncm, nbm, cest, operation_line, ind_final
-        )
-
-        icms_def_taxes |= self._map_tax_def_icmsfcpst(
-            company, partner, product, ncm, nbm, cest, operation_line, ind_final
-        )
+        icms_def_taxes = self.env["l10n_br_fiscal.tax.definition"]
+        combined_domain = expression.OR([domain for _group, domain in searches])
+        all_defs = self.env["l10n_br_fiscal.tax.definition"].search(combined_domain)
+        for tax_group, _domain in searches:
+            group_defs = all_defs.filtered(
+                lambda d, group=tax_group: d.tax_group_id == group
+            )
+            icms_def_taxes |= self._tax_definition_precedence(
+                group_defs, ncm, nbm, cest, product, ind_final
+            )
 
         icms_taxes |= icms_def_taxes.mapped("tax_id")
 

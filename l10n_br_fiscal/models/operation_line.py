@@ -19,12 +19,13 @@ from ..constants.fiscal import (
     TAX_ICMS_OR_ISSQN,
 )
 from ..constants.icms import ICMS_ORIGIN
+from .fiscal_cache import get_fiscal_txn_cache
 
 
 class OperationLine(models.Model):
     _name = "l10n_br_fiscal.operation.line"
     _description = "Fiscal Operation Line"
-    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _inherit = ["mail.thread", "mail.activity.mixin", "l10n_br_fiscal.cache.mixin"]
 
     fiscal_operation_id = fields.Many2one(
         comodel_name="l10n_br_fiscal.operation",
@@ -264,6 +265,68 @@ class OperationLine(models.Model):
             - 'tax_classification': The determined Tax Classification record
               (l10n_br_fiscal.tax.classification).
         """
+        self.ensure_one()
+
+        # Transaction-scoped memoization: this mapping is re-run with identical
+        # inputs several times per line by the onchange/compute cascade (and,
+        # with repeated products, across lines). The result is a pure function
+        # of the input record ids plus the config fields that drive the mapping
+        # branches, so we key on exactly those; invalidation on any fiscal
+        # definition change is handled by FiscalCacheMixin. See fiscal_cache.py.
+        cache = get_fiscal_txn_cache(self.env, "map_fiscal_taxes")
+        cache_key = self._map_fiscal_taxes_cache_key(
+            company,
+            partner,
+            product=product,
+            ncm=ncm,
+            nbm=nbm,
+            nbs=nbs,
+            cest=cest,
+            city_taxation_code=city_taxation_code,
+            national_taxation_code=national_taxation_code,
+            service_type=service_type,
+            ind_final=ind_final,
+        )
+        if cache_key is not None and cache_key in cache:
+            return cache[cache_key]
+
+        mapping_result = self._map_fiscal_taxes(
+            company,
+            partner,
+            product=product,
+            fiscal_price=fiscal_price,
+            fiscal_quantity=fiscal_quantity,
+            ncm=ncm,
+            nbm=nbm,
+            nbs=nbs,
+            cest=cest,
+            city_taxation_code=city_taxation_code,
+            national_taxation_code=national_taxation_code,
+            service_type=service_type,
+            ind_final=ind_final,
+        )
+
+        if cache_key is not None:
+            cache[cache_key] = mapping_result
+        return mapping_result
+
+    def _map_fiscal_taxes(
+        self,
+        company,
+        partner,
+        product=None,
+        fiscal_price=None,
+        fiscal_quantity=None,
+        ncm=None,
+        nbm=None,
+        nbs=None,
+        cest=None,
+        city_taxation_code=None,
+        national_taxation_code=None,
+        service_type=None,
+        ind_final=None,
+    ):
+        """Uncached body of :meth:`map_fiscal_taxes` (see its docstring)."""
         mapping_result = {
             "taxes": {},
             "cfop": False,
@@ -271,8 +334,6 @@ class OperationLine(models.Model):
             "icms_tax_benefit_id": False,
             "tax_classification": False,
         }
-
-        self.ensure_one()
 
         # Define CFOP
         mapping_result["cfop"] = self._get_cfop(company, partner)
@@ -402,6 +463,63 @@ class OperationLine(models.Model):
             mapping_result["taxes"].pop(TAX_DOMAIN_ISSQN, None)
 
         return mapping_result
+
+    def _map_fiscal_taxes_cache_key(
+        self,
+        company,
+        partner,
+        product=None,
+        ncm=None,
+        nbm=None,
+        nbs=None,
+        cest=None,
+        city_taxation_code=None,
+        national_taxation_code=None,
+        service_type=None,
+        ind_final=None,
+    ):
+        """Stable, hashable key for ``map_fiscal_taxes`` memoization.
+
+        Encodes every input record id plus the scalar config fields the mapping
+        branches on (so a config change on company/partner/product produces a
+        different key). ``fiscal_price``/``fiscal_quantity`` are intentionally
+        excluded: they do not affect the mapping. Returns ``None`` to disable
+        memoization if any input cannot be reduced to a hashable id.
+        """
+
+        def _rid(record):
+            return record.id if record else False
+
+        # NCM defaults to the product's NCM downstream; normalize it here so the
+        # key matches whether the caller passed ncm explicitly or not.
+        key_ncm = ncm or (product.ncm_id if product else None)
+        return (
+            self.id,
+            self.fiscal_operation_id.fiscal_operation_type,
+            self.fiscal_operation_id.fiscal_type,
+            company.id,
+            company.tax_framework,
+            _rid(company.icms_regulation_id),
+            _rid(company.tax_classification_id),
+            _rid(company.state_id),
+            _rid(company.country_id),
+            partner.id,
+            _rid(partner.state_id),
+            partner.ind_ie_dest,
+            _rid(partner.fiscal_profile_id),
+            _rid(partner.country_id),
+            _rid(product),
+            product.tax_icms_or_issqn if product else False,
+            product.icms_origin if product else False,
+            _rid(key_ncm),
+            _rid(nbm),
+            _rid(nbs),
+            _rid(cest),
+            _rid(city_taxation_code),
+            _rid(national_taxation_code),
+            _rid(service_type),
+            ind_final,
+        )
 
     def action_review(self):
         self.write({"state": "review"})
