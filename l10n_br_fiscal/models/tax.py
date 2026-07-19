@@ -903,6 +903,27 @@ class Tax(models.Model):
         Returns ``None`` to disable memoization if any kwarg cannot be reduced
         to a hashable value, so an unexpected input never risks a wrong cache
         hit.
+
+        On top of the input ids the key also encodes:
+
+        * the ``write_date`` of the fiscal taxes themselves. This makes the key
+          *content-versioned*: an in-place edit of a tax rate
+          (``percent_amount``/``percent_reduction``...) bumps ``write_date`` and
+          thus changes the key by construction, and a savepoint rollback that
+          reverts the edit reverts ``write_date`` too, so the key reverts with
+          it. A stale entry left behind by such a rollback becomes unreachable
+          instead of being served (self-validating key). See fiscal_cache.py.
+        * the config scalars the engine reads *directly* from ``company`` and
+          ``partner`` (they live on ``res.company``/``res.partner``, which do not
+          inherit ``FiscalCacheMixin``, so an in-transaction edit of them is not
+          observed otherwise). Symmetric with the ``map_fiscal_taxes`` key.
+
+        ``self`` and the recordset kwargs may still be ``NewId`` (unsaved)
+        records in the create/onchange precompute cascade, which is exactly the
+        hot path this memoization targets. All id handling goes through ``.ids``
+        (which resolves NewId records to their concrete origin id and drops
+        origin-less ones), so the key stays orderable and hashable; the aligned
+        ``write_date`` tuple is read from the origin records for the same reason.
         """
         normalized = []
         for name in sorted(kwargs):
@@ -913,7 +934,29 @@ class Tax(models.Model):
                 # Unexpected input type: do not risk a wrong cache hit.
                 return None
             normalized.append((name, value))
-        return (tuple(sorted(self.ids)), tuple(normalized))
+
+        # ``.ids`` yields concrete (origin) ids only, so it is always sortable;
+        # read each tax's ``write_date`` from the origin records and align it to
+        # that same id order.
+        tax_ids = tuple(sorted(self.ids))
+        write_date_by_id = {tax.id: tax.write_date for tax in self._origin}
+        tax_versions = tuple(write_date_by_id.get(tax_id) for tax_id in tax_ids)
+
+        company = kwargs.get("company")
+        partner = kwargs.get("partner")
+        config_scalars = (
+            partner.ind_ie_dest if partner else False,
+            company.tax_framework if company else False,
+            company.simplified_tax_percent if company else False,
+            company.state_id.id if company else False,
+            partner.state_id.id if partner else False,
+        )
+        return (
+            tax_ids,
+            tax_versions,
+            config_scalars,
+            tuple(normalized),
+        )
 
     @api.depends("icmsst_base_type")
     def _compute_tax_base_type(self):
