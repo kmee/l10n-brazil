@@ -26,17 +26,41 @@ scalar configuration fields that drive the mapping branches (tax framework,
 ``ind_ie_dest``, ICMS origin, states...), so a change to any *keyed* value
 naturally produces a different key.
 
-What the keys do NOT observe is an in-place edit of a *definition* table row
-(e.g. changing a tax rate or a tax-definition applicability) while keeping the
-same id. ``FiscalCacheMixin`` covers exactly that: any create/write/unlink on a
-definition model that inherits it wipes the whole transaction cache, so a
-definition edited mid-transaction (config screens, tests) forces a recompute.
+Two complementary mechanisms cover an in-place edit of a *definition* row (e.g.
+changing a tax rate) that keeps the same id:
 
-Known, documented limitation: an in-place edit of a *non-definition* config
-field that feeds the mapping but is not in the key (e.g. ``ncm.tax_ipi_id``)
-during the very same transaction that already mapped a line is not observed.
-This does not happen in the supported document flows (fiscal configuration is
-not mutated in the middle of computing a line's taxes).
+1. ``FiscalCacheMixin`` — any create/write/unlink on a definition model that
+   inherits it wipes the whole transaction cache. This covers config-screen and
+   test edits performed in an *ordinary* transaction.
+2. ``write_date`` in the cache keys — the keys encode the ``write_date`` of the
+   fiscal taxes (``compute_taxes`` key) and of the definition-anchor records
+   (``map_fiscal_taxes`` key: the operation line, the company ICMS regulation
+   and tax classification, the partner fiscal profile). Because an edit bumps
+   ``write_date`` and a **savepoint rollback reverts it**, the key produced
+   after a rollback matches the pre-edit key, not the edited one: a stale entry
+   left in the (rollback-surviving) transaction cache becomes *unreachable*
+   instead of being served. This makes the cache self-validating across
+   savepoint rollbacks, which neither ``cr.clear()`` nor ``FiscalCacheMixin``
+   observe (the per-cursor cache attribute is not part of the ORM/precommit
+   state a rollback clears).
+
+Known, documented residual limitation
+-------------------------------------
+The ``write_date`` guard versions the *anchor* records, not every child
+definition row they aggregate (``tax_definition_ids`` of the company/CFOP/
+operation line/partner profile, ICMS-regulation lines...). So the one case that
+still leaks is narrow and self-inflicted: editing a *child* definition row
+**inside a savepoint that is later rolled back**, and then recomputing with the
+**same key on the same cursor** — the child edit bumps only the child's
+``write_date`` (not the anchor's), ``FiscalCacheMixin`` cleared the cache on the
+edit but the rollback does not re-clear it, so the entry stored between the edit
+and the rollback survives and is served. This is an honest upgrade of the prior
+behaviour (which leaked on *any* savepoint rollback that reverted a keyed edit)
+and does not happen in the supported document flows: fiscal definitions are not
+mutated in the middle of computing a line's taxes. The same holds for an
+in-place edit of a *non-definition* config field that feeds the mapping but is
+not keyed (e.g. ``ncm.tax_ipi_id``) within the transaction that already mapped
+the line.
 """
 
 from odoo import api, models
