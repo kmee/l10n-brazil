@@ -10,13 +10,14 @@ class FiscalTax(models.Model):
     def _account_taxes_company(self, company=False):
         if company:
             return company
+        # ``self.env.company`` already resolves ``allowed_company_ids[0]`` *with*
+        # access validation, so it replaces the previous raw browse of that id.
+        # A ``default_company_id`` in the context is still honoured as an
+        # explicit override.
         company = self.env.company
-        if self.env.context.get("default_company_id") or self.env.context.get(
-            "allowed_company_ids"
-        ):
+        if self.env.context.get("default_company_id"):
             company = self.env["res.company"].browse(
-                self.env.context.get("default_company_id")
-                or self.env.context.get("allowed_company_ids")[0]
+                self.env.context["default_company_id"]
             )
         return company
 
