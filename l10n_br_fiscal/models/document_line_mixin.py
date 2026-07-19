@@ -596,35 +596,13 @@ class FiscalDocumentLineMixin(models.AbstractModel):
             )
             # Delta-write: only propagate the fields whose value actually
             # changes. Re-assigning a field with its current value still fires
-            # ``modified()`` on its dependents (the document monetary totals and
-            # the stored ``related`` fields such as ``*_cst_code``); in the Form
-            # onchange cascade that re-triggers this very compute for the whole
-            # document, and on a persisted ``write()`` it makes the ``write``
-            # override re-sync ``fiscal_tax_ids`` and re-run the tax engine
-            # (double-pass, cf. findings 1 & 3 of the perf analysis). Most of the
-            # ~145 fields are still cached with the right value when the compute
-            # is re-triggered (only the field read by the related-field recompute
-            # was invalidated), so writing the whole dict is almost entirely
-            # redundant. Fields absent from the cache were invalidated and are
-            # always written, so no computed value is ever left stale.
-            cache = line.env.cache
-            changed = {}
-            for field_name, value in to_update.items():
-                field = line._fields.get(field_name)
-                if (
-                    field is not None
-                    and cache.contains(line, field)
-                    and cache.get(line, field)
-                    == field.convert_to_cache(value, line, validate=False)
-                ):
-                    continue
-                changed[field_name] = value
-            if not changed:
-                continue
-            if line != line._origin:
-                line.update(changed)
-            else:
-                line.write(changed)
+            # ``modified()`` on its dependents (document monetary totals, stored
+            # ``related`` fields such as ``*_cst_code``); in the Form onchange
+            # cascade that re-triggers this very compute for the whole document,
+            # and on a persisted ``write()`` it makes the ``write`` override
+            # re-sync ``fiscal_tax_ids`` and re-run the tax engine (double-pass).
+            # See ``_delta_update`` for the full rationale.
+            line._delta_update(to_update)
 
     def _prepare_tax_fields(self, compute_result):
         self.ensure_one()
