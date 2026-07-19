@@ -261,7 +261,12 @@ class FiscalDocumentLineMixin(models.AbstractModel):
             node.attrib["name"]
             for node in fsc_doc.xpath("//page[@name='fiscal_taxes']//field")
         }
-        drop_from_tree = (taxes_names - tree_keep) | pruned_fields
+        # Subtract ``tree_keep`` LAST so it always wins: a field referenced in a
+        # kept node's modifier (attrs/invisible/domain) must never be dropped,
+        # even when a downstream ``_fiscal_view_pruned_fields()`` override also
+        # lists it in ``pruned_fields`` -- otherwise the kept node would point at
+        # a removed field and crash the view load ("Unknown field").
+        drop_from_tree = (taxes_names | pruned_fields) - tree_keep
 
         if xpath_mappings is None:
             xpath_mappings = (
