@@ -1,7 +1,10 @@
 # Copyright (C) 2013  Renato Lima - Akretion
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
+
+from ..tools import cfop_geography_warning
 
 
 class DocumentLine(models.Model):
@@ -97,9 +100,85 @@ class DocumentLine(models.Model):
 
     additional_data = fields.Text()
 
+    # Review of lines imported from a fiscal file (draft-first import flow).
+    # The document is materialized faithfully from the file and each line is
+    # then reviewed: the de-para (supplier nomenclature -> company fiscal
+    # settings) is applied on the persisted line, keeping the supplier data
+    # as a snapshot for bookkeeping and audit.
+    import_state = fields.Selection(
+        selection=[
+            ("pending", "Pending"),
+            ("matched", "Matched"),
+            ("resolved", "Resolved"),
+        ],
+        copy=False,
+        index=True,
+        help="Review state of a line imported from a fiscal document file. "
+        "Pending: no internal product resolved yet. Matched: an automatic "
+        "suggestion needs confirmation. Resolved: the de-para was applied. "
+        "Empty on lines that were not imported.",
+    )
+
+    import_uom_id = fields.Many2one(
+        comodel_name="uom.uom",
+        string="Import UoM",
+        copy=False,
+        help="Internal UoM equivalent to the supplier unit of the imported " "line.",
+    )
+
+    import_uom_factor = fields.Float(
+        string="Import UoM Factor",
+        default=1.0,
+        copy=False,
+        help="Conversion factor between the supplier unit and the internal "
+        "UoM (e.g. 25 for a 25kg bag received in KG).",
+    )
+
+    import_supplierinfo_id = fields.Many2one(
+        comodel_name="product.supplierinfo",
+        string="Import Supplier Info",
+        copy=False,
+    )
+
+    # Snapshot of the supplier values, taken when the de-para converts the
+    # line to the internal nomenclature. partner_cfop_id (mixin) is the same
+    # pattern for the CFOP.
+    partner_uom_code = fields.Char(
+        readonly=True,
+        copy=False,
+        help="Unit of measure as declared by the counterparty in the "
+        "imported document.",
+    )
+
+    partner_quantity = fields.Float(
+        digits="Product Unit of Measure",
+        readonly=True,
+        copy=False,
+        help="Quantity as declared by the counterparty, in its own unit.",
+    )
+
+    partner_price_unit = fields.Float(
+        digits="Product Price",
+        readonly=True,
+        copy=False,
+        help="Unit price as declared by the counterparty, in its own unit.",
+    )
+
+    cfop_warning = fields.Char(
+        compute="_compute_cfop_warning",
+        string="CFOP Alert",
+        help="Warns when the CFOP declared by the counterparty is "
+        "inconsistent with the actual issuer/company geography. Useful to "
+        "spot supplier mistakes before they pollute the SPED books.",
+    )
+
     @api.depends("product_id")
     def _compute_name(self):
         for line in self:
+            if line._is_imported() and line.name:
+                # Preserve the description imported from the fiscal file.
+                line.name = line.name
+                continue
             if line.product_id:
                 line.name = line.product_id.display_name
             else:
@@ -108,10 +187,208 @@ class DocumentLine(models.Model):
     @api.depends("product_id")
     def _compute_uom_id(self):
         for line in self:
+            if line._is_imported() and line.uom_id:
+                # Preserve the unit imported from the fiscal file; the
+                # internal unit is applied via _apply_import_depara().
+                line.uom_id = line.uom_id
+                continue
             if line.fiscal_operation_type == "in":
                 line.uom_id = line.product_id.uom_po_id
             else:
                 line.uom_id = line.product_id.uom_id
+
+    @api.depends(
+        "partner_cfop_id",
+        "document_id.partner_id.state_id",
+        "document_id.partner_id.country_id",
+    )
+    def _compute_cfop_warning(self):
+        for line in self:
+            line.cfop_warning = line._get_cfop_warning()
+
+    def _get_cfop_warning(self):
+        """Compare the declared CFOP scope with the real issuer/company
+        geography (see ``tools.cfop_geography_warning``)."""
+        self.ensure_one()
+        if self.document_id.fiscal_operation_type != "in":
+            return False
+        return cfop_geography_warning(
+            self.partner_cfop_id.code,
+            self.document_id.partner_id,
+            self.company_id,
+        )
+
+    def action_resolve_line(self):
+        for line in self:
+            if not line.product_id:
+                raise UserError(
+                    _("Set the internal product before resolving the line %s.")
+                    % (line.name or line.id)
+                )
+            line._apply_import_depara()
+
+    def _apply_import_depara(
+        self, product=None, uom=None, factor=None, fiscal_operation=None
+    ):
+        """Apply the reviewed de-para on a line imported from a fiscal file.
+
+        This is the single write path of the de-para: it snapshots the
+        supplier values (unit, quantity, unit price), converts the line to
+        the internal nomenclature preserving the line total (quantity is
+        multiplied by the factor, the unit price divided by it), applies the
+        fiscal operation of the line and persists the supplier info
+        learning. The original file stays untouched as an attachment.
+        """
+        self.ensure_one()
+        if not self._is_imported():
+            raise UserError(
+                _("The de-para can only be applied on imported document lines.")
+            )
+        product = product or self.product_id
+        uom = uom or self.import_uom_id
+        factor = factor or self.import_uom_factor or 1.0
+        fiscal_operation = fiscal_operation or self.fiscal_operation_id
+
+        if not self.partner_uom_code:
+            self.write(
+                {
+                    "partner_uom_code": self.uom_id.code or self.uom_id.name,
+                    "partner_quantity": self.quantity,
+                    "partner_price_unit": self.price_unit,
+                }
+            )
+
+        vals = {
+            "import_state": "resolved",
+            "import_uom_factor": factor,
+        }
+        if product:
+            vals["product_id"] = product.id
+        if uom:
+            vals["import_uom_id"] = uom.id
+            vals["uom_id"] = uom.id
+            if factor != 1.0:
+                vals["quantity"] = self.partner_quantity * factor
+                vals["price_unit"] = self.partner_price_unit / factor
+        if fiscal_operation:
+            vals["fiscal_operation_id"] = fiscal_operation.id
+        self.write(vals)
+        if product:
+            self._find_or_create_supplierinfo()
+        return True
+
+    # Supplier nomenclature hooks: implemented by each fiscal document type
+    # (e.g. l10n_br_nfe reads nfe40_cProd / nfe40_cEANTrib / nfe40_xProd).
+    def _get_partner_product_code(self):
+        self.ensure_one()
+        return False
+
+    def _get_partner_product_barcode(self):
+        self.ensure_one()
+        return False
+
+    def _get_partner_product_name(self):
+        self.ensure_one()
+        return False
+
+    def _suggest_product(self):
+        """Suggest an internal product for an imported line.
+
+        Priority: the supplier info de-para already learned for this partner
+        and supplier code, then the internal reference, then the barcode.
+        """
+        self.ensure_one()
+        product_model = self.env["product.product"]
+        code = self._get_partner_product_code()
+        partner = self.document_id.partner_id
+        if code and partner:
+            supplierinfo = self.env["product.supplierinfo"].search(
+                [
+                    ("partner_id", "=", partner.id),
+                    ("product_code", "=", code),
+                ],
+                limit=1,
+            )
+            product = (
+                supplierinfo.product_id
+                or supplierinfo.product_tmpl_id.product_variant_id
+            )
+            if product:
+                return product
+        if code:
+            product = product_model.search([("default_code", "=", code)], limit=1)
+            if product:
+                return product
+        barcode = self._get_partner_product_barcode()
+        if barcode and barcode != "SEM GTIN":
+            product = product_model.search([("barcode", "=", barcode)], limit=1)
+            if product:
+                return product
+        return product_model
+
+    def _suggest_fiscal_operation_in(self):
+        """Suggest the inbound fiscal operation of the line from the CFOP
+        declared by the counterparty, through its inverse CFOP.
+
+        The supplier declares an outbound CFOP (5xxx/6xxx/7xxx); the inverse
+        CFOP (1xxx/2xxx/3xxx) is the company side of the same operation, and
+        the approved operation lines referencing it tell which fiscal
+        operations the company configured for that kind of entry.
+        """
+        self.ensure_one()
+        cfop_inverse = self.partner_cfop_id.cfop_inverse_id
+        if not cfop_inverse:
+            return self.env["l10n_br_fiscal.operation"]
+        operation_lines = self.env["l10n_br_fiscal.operation.line"].search(
+            [
+                ("state", "=", "approved"),
+                ("fiscal_operation_type", "=", "in"),
+                "|",
+                "|",
+                ("cfop_internal_id", "=", cfop_inverse.id),
+                ("cfop_external_id", "=", cfop_inverse.id),
+                ("cfop_export_id", "=", cfop_inverse.id),
+            ]
+        )
+        return operation_lines[:1].fiscal_operation_id
+
+    def _get_supplierinfo_price(self):
+        """Price of the supplier info expressed in the product main UoM."""
+        self.ensure_one()
+        price = self.partner_price_unit or self.price_unit
+        if self.import_uom_id:
+            return self.import_uom_id._compute_price(price, self.product_id.uom_id)
+        return self.product_id.lst_price
+
+    def _prepare_supplierinfo_vals(self):
+        """Common supplier info values.
+
+        Overriden by specialized document types (e.g. NFe) to add the
+        partner UoM de-para values.
+        """
+        self.ensure_one()
+        return {
+            "product_id": self.product_id.id,
+            "product_name": self._get_partner_product_name() or self.name,
+            "product_code": self._get_partner_product_code(),
+            "price": self._get_supplierinfo_price(),
+        }
+
+    def _find_or_create_supplierinfo(self):
+        for line in self:
+            if not line.product_id or not line.document_id.partner_id:
+                continue
+            if not line.import_supplierinfo_id:
+                vals = line._prepare_supplierinfo_vals()
+                vals["partner_id"] = line.document_id.partner_id.id
+                line.import_supplierinfo_id = line.env["product.supplierinfo"].create(
+                    vals
+                )
+                line.product_id.product_tmpl_id.seller_ids = [
+                    fields.Command.link(line.import_supplierinfo_id.id)
+                ]
+            else:
+                line.import_supplierinfo_id.write(line._prepare_supplierinfo_vals())
 
     def __document_comment_vals(self):
         self.ensure_one()
