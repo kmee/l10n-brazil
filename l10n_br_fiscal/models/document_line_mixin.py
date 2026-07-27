@@ -318,13 +318,24 @@ class FiscalDocumentLineMixin(models.AbstractModel):
                     service_type=line.service_type_id,
                     ind_final=line.ind_final,
                 )
+                if line._is_imported():
+                    # taxes stay as imported; the mapping only fills what it has
+                    if mapping_result["cfop"] and not line.cfop_manual:
+                        line.cfop_id = mapping_result["cfop"]
+                    if mapping_result["ipi_guideline"]:
+                        line.ipi_guideline_id = mapping_result["ipi_guideline"]
+                    if mapping_result["tax_classification"]:
+                        line.tax_classification_id = mapping_result[
+                            "tax_classification"
+                        ]
+                    if mapping_result["icms_tax_benefit_id"]:
+                        line.icms_tax_benefit_id = mapping_result["icms_tax_benefit_id"]
+                    continue
+
                 line.cfop_id = mapping_result["cfop"]
                 line.ipi_guideline_id = mapping_result["ipi_guideline"]
                 line.tax_classification_id = mapping_result["tax_classification"]
                 line.icms_tax_benefit_id = mapping_result["icms_tax_benefit_id"]
-
-                if line._is_imported():
-                    continue
 
                 taxes = line.env["l10n_br_fiscal.tax"]
                 for tax in mapping_result["taxes"].values():
@@ -556,6 +567,9 @@ class FiscalDocumentLineMixin(models.AbstractModel):
     )
     def _compute_price_unit_fiscal(self):  # OK when edited from aml?? c-> check
         for line in self:
+            if line._is_imported():
+                line.price_unit = line.price_unit
+                continue
             line.price_unit = {
                 "sale_price": line.product_id.list_price,
                 "cost_price": line.product_id.standard_price,
@@ -595,7 +609,11 @@ class FiscalDocumentLineMixin(models.AbstractModel):
                 continue
             p = line.product_id
             line.fiscal_type = p.fiscal_type
-            line.ncm_id = p.ncm_id
+            if line._is_imported() and line.ncm_id:
+                # the SPED books of an inbound document carry the declared NCM
+                line.ncm_id = line.ncm_id
+            else:
+                line.ncm_id = p.ncm_id
             line.nbm_id = p.nbm_id
             line.tax_icms_or_issqn = p.tax_icms_or_issqn
             line.icms_origin = p.icms_origin
@@ -922,12 +940,18 @@ class FiscalDocumentLineMixin(models.AbstractModel):
     @api.depends("product_id", "uom_id")
     def _compute_uot_id(self):
         for line in self:
+            if line._is_imported() and line.uot_id:
+                line.uot_id = line.uot_id
+                continue
             p = line.product_id
             line.uot_id = (p.uot_id if p else False) or line.uom_id
 
     @api.depends("price_unit")
     def _compute_fiscal_price(self):
         for line in self:
+            if line._is_imported() and line.fiscal_price:
+                line.fiscal_price = line.fiscal_price
+                continue
             if line.product_id and line.price_unit:
                 line.fiscal_price = line.price_unit / (
                     line.product_id.uot_factor or 1.0
@@ -938,6 +962,9 @@ class FiscalDocumentLineMixin(models.AbstractModel):
     @api.depends("quantity")
     def _compute_fiscal_quantity(self):
         for line in self:
+            if line._is_imported() and line.fiscal_quantity:
+                line.fiscal_quantity = line.fiscal_quantity
+                continue
             if line.product_id and line.quantity:
                 line.fiscal_quantity = line.quantity * (
                     line.product_id.uot_factor or 1.0
@@ -1159,7 +1186,15 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         string="Partner CFOP",
         help="CFOP as declared by the counterparty in the imported document. "
         "It is preserved as-is for fiscal bookkeeping / SPED (e.g. C197), "
-        "while cfop_id reflects the company's own operation after the de-para.",
+        "while cfop_id reflects the company's own operation after the mapping.",
+    )
+
+    cfop_manual = fields.Boolean(
+        string="CFOP Set Manually",
+        copy=False,
+        help="Set when the CFOP of an imported line was chosen explicitly "
+        "instead of coming from the fiscal operation mapping, which then "
+        "does not overwrite it.",
     )
 
     fiscal_price = fields.Float(
