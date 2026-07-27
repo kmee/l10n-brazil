@@ -1,7 +1,13 @@
 import base64
+import io
 import os
 import re
+import zipfile
 from unittest.mock import MagicMock, patch
+
+import nfelib
+import pkg_resources
+from xsdata.formats.dataclass.parsers import XmlParser
 
 from odoo.tests import TransactionCase
 
@@ -133,37 +139,86 @@ class NFeImportWizardTest(TransactionCase):
         self.wizard._set_fiscal_operation_type()
         self.assertEqual(self.wizard.fiscal_operation_type, "in")
 
-    def test_imported_products(self):
+    def test_import_creates_reviewed_draft(self):
+        """The import materializes a faithful document with per-line review
+        states, the original XML attached and the supplier nomenclature
+        preserved; the supplier info learning happens on the persisted
+        line."""
         self._prepare_wizard(self.xml_1)
         self.wizard._import_edoc()
-        first_product = self.wizard.imported_products_ids[0]
-        old_product_id = first_product.product_id
+        document = self.wizard.document_id
 
-        first_product.product_id = False
-        first_product.product_name = False
-        first_product.product_code = "???"
-        first_product.product_supplier_id = False
-        first_product._find_or_create_product_supplierinfo()
-        self.assertFalse(first_product.product_supplier_id)
+        self.assertTrue(document.imported_document)
+        self.assertTrue(document.import_state)
+        self.assertTrue(all(line.import_state for line in document.fiscal_line_ids))
+        attachment = self.env["ir.attachment"].search(
+            [
+                ("res_model", "=", "l10n_br_fiscal.document"),
+                ("res_id", "=", document.id),
+                ("name", "=ilike", "%.xml"),
+            ]
+        )
+        self.assertTrue(attachment)
 
-        first_product.product_id = old_product_id
-        self.assertNotEqual(first_product.product_id, self.product_1)
+        line = document.fiscal_line_ids[0]
+        # supplier nomenclature preserved on the line (spec fields)
+        self.assertTrue(line.nfe40_cProd)
+        self.assertEqual(line._get_partner_product_code(), line.nfe40_cProd)
 
-        self.wizard.partner_id = self.partner_1
-        first_product.product_supplier_id = self.env["product.supplierinfo"].create(
+        # supplier info learning on the persisted line
+        line._apply_import_depara()
+        self.assertEqual(line.import_state, "resolved")
+        self.assertTrue(line.import_supplierinfo_id)
+        self.assertEqual(line.import_supplierinfo_id.product_code, line.nfe40_cProd)
+
+    def test_import_binding_without_product_creation(self):
+        """With create_missing_products=False an unmatched product line is
+        left empty (pending review) instead of created as a side effect."""
+        xml = self.xml_1.decode()
+        xml = xml.replace("E-COM11", "NAOEXISTE1").replace(
+            "Cabinet with Doors", "Produto Desconhecido XYZ"
+        )
+        binding = XmlParser().from_bytes(xml.encode())
+        products_before = self.env["product.product"].search_count([])
+        document = self.env["l10n_br_fiscal.document"].import_binding_nfe(
+            binding, edoc_type="in", create_missing_products=False
+        )
+        self.assertEqual(self.env["product.product"].search_count([]), products_before)
+        self.assertFalse(document.fiscal_line_ids[0].product_id)
+        document._init_import_states()
+        self.assertEqual(document.fiscal_line_ids[0].import_state, "pending")
+        self.assertEqual(document.import_state, "pending")
+
+    def test_zip_batch_import(self):
+        """A zip archive with several XMLs lands as several persisted
+        documents waiting for review."""
+        res_items = (
+            "nfe",
+            "samples",
+            "v4_0",
+            "leiauteNFe",
+            "35180834128745000152550010000474281920007498-nfe.xml",
+        )
+        other_xml = pkg_resources.resource_stream(
+            nfelib.__name__, "/".join(res_items)
+        ).read()
+
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as archive:
+            archive.writestr("nota1.xml", self.xml_1)
+            archive.writestr("nota2.xml", other_xml)
+            archive.writestr("leiame.txt", b"nao sou um xml")
+
+        wizard = self.env["l10n_br_fiscal.document.import.wizard"].create(
             {
-                "product_id": self.product_1.id,
-                "partner_id": self.partner_1.id,
-                "partner_uom_id": self.env["uom.uom"].search([], limit=1).id,
-                "price": 100,
+                "company_id": self.env.ref("base.main_company").id,
+                "file": base64.b64encode(buffer.getvalue()),
             }
         )
-        wiz_supplier_id = first_product.product_supplier_id
-
-        first_product._find_or_create_product_supplierinfo()
-        self.assertEqual(wiz_supplier_id.product_id, first_product.product_id)
-        self.assertEqual(wiz_supplier_id.partner_uom_id, first_product.uom_internal)
-        self.assertEqual(wiz_supplier_id.product_name, first_product.product_name)
+        self.assertTrue(wizard._file_is_zip())
+        documents = wizard._import_edoc_batch()
+        self.assertEqual(len(documents), 2)
+        self.assertTrue(all(documents.mapped("imported_document")))
 
     def test_match_xml_product(self):
         self._prepare_wizard(self.xml_1)
@@ -231,9 +286,17 @@ class NFeImportWizardTest(TransactionCase):
         first_product = self.wizard.imported_products_ids[0]
         first_product.new_cfop_id = self.env.ref("l10n_br_fiscal.cfop_5111").id
 
+        # The parsed binding is NEVER rewritten anymore: the file keeps the
+        # supplier data (audit trail) and the CFOP override is applied on
+        # the persisted document line instead.
         xml = self.wizard._parse_file()
         first_xml_product = xml.infNFe.det[0].prod
-        self.assertEqual(first_xml_product.CFOP, "5111")
+        self.assertEqual(first_xml_product.CFOP, "5102")
+
+        self.wizard._import_edoc()
+        self.assertEqual(
+            self.wizard.document_id.fiscal_line_ids[0].cfop_id.code, "5111"
+        )
 
         mock_prod = MagicMock(spec=["imposto"])
         mock_prod.imposto.ICMS.ICMS60.pICMS = 60
