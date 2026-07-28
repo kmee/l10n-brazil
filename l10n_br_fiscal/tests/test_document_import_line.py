@@ -175,6 +175,46 @@ class TestDocumentImportLine(TransactionCase):
             operation,
         )
 
+    def test_header_operation_cascades_to_lines(self):
+        """Changing the fiscal operation on the header of an imported draft
+        cascades to every line, except the ones explicitly overridden."""
+        line2 = self.env["l10n_br_fiscal.document.line"].create(
+            {
+                "document_id": self.document.id,
+                "name": "Linha com override",
+                "quantity": 1.0,
+                "price_unit": 10.0,
+                "uom_id": self.uom_kg.id,
+            }
+        )
+        override_operation = self.env["l10n_br_fiscal.operation"].create(
+            {
+                "code": "TST-OVR",
+                "name": "Operacao override (teste)",
+                "fiscal_operation_type": "in",
+                "fiscal_type": "purchase",
+                "state": "approved",
+            }
+        )
+        new_operation = self.env["l10n_br_fiscal.operation"].create(
+            {
+                "code": "TST-NOVA",
+                "name": "Operacao nova (teste)",
+                "fiscal_operation_type": "in",
+                "fiscal_type": "purchase",
+                "state": "approved",
+            }
+        )
+        previous = self.document.fiscal_operation_id
+        self.line.fiscal_operation_id = previous
+        line2.fiscal_operation_id = override_operation
+
+        self.document.fiscal_operation_id = new_operation
+        # line following the header is re-resolved...
+        self.assertEqual(self.line.fiscal_operation_id, new_operation)
+        # ...the explicit user override is preserved.
+        self.assertEqual(line2.fiscal_operation_id, override_operation)
+
     def test_cfop_warning_on_line(self):
         """The declared CFOP is checked against the real geography."""
         # issuer MG x company SP with an intrastate CFOP -> warn
