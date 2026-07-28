@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
 import base64
+import io
 import os
 import tempfile
 import zipfile
@@ -9,6 +10,7 @@ import zipfile
 from odoo.tests.common import TransactionCase
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
+    DOCUMENT_ISSUER_PARTNER,
     EVENT_ENV_PROD,
     SITUACAO_EDOC_AUTORIZADA,
 )
@@ -78,3 +80,49 @@ class TestFiscalClosing(TransactionCase):
         self.assertTrue(
             zip_file_period.namelist(), "Zip File for period export documents is empty"
         )
+
+    def test_imported_document_in_closing(self):
+        """An inbound document imported from the vendor XML never goes
+        through the e-document workflow (the company is not the issuer),
+        so it stays in "em_digitacao" forever. It must still be collected
+        by the closing, otherwise the accountant package misses every
+        inbound document."""
+        partner = self.env.ref("l10n_br_base.res_partner_akretion")
+        document_vals = {
+            "company_id": self.nfe_export.company_id.id,
+            "partner_id": partner.id,
+            "document_type_id": self.env.ref("l10n_br_fiscal.document_55").id,
+            "fiscal_operation_id": self.env.ref("l10n_br_fiscal.fo_compras").id,
+            "issuer": DOCUMENT_ISSUER_PARTNER,
+            "document_number": "123456",
+            "document_serie": "1",
+            "document_date": self.nfe_export.document_date,
+            "date_in_out": self.nfe_export.date_in_out,
+        }
+        imported = self.env["l10n_br_fiscal.document"].create(
+            dict(document_vals, imported_document=True)
+        )
+        # a plain draft that was NOT imported must stay out of the closing
+        draft = self.env["l10n_br_fiscal.document"].create(
+            dict(document_vals, document_number="123457")
+        )
+        self.env["ir.attachment"].create(
+            {
+                "name": "vendor_nfe.xml",
+                "res_model": "l10n_br_fiscal.document",
+                "res_id": imported.id,
+                "datas": base64.b64encode(b"<nfeProc/>"),
+            }
+        )
+
+        self.closing_period.action_export()
+
+        self.assertEqual(imported.close_id, self.closing_period)
+        self.assertFalse(draft.close_id)
+
+        zip_bytes = io.BytesIO(base64.b64decode(self.closing_period.zip_file))
+        with zipfile.ZipFile(zip_bytes) as zip_archive:
+            self.assertTrue(
+                any(name.endswith("vendor_nfe.xml") for name in zip_archive.namelist()),
+                "The imported vendor XML must be inside the closing zip",
+            )

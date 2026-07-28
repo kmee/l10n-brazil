@@ -253,7 +253,15 @@ class FiscalClosing(models.Model):
                 "in",
                 MODELO_FISCAL_EMISSAO_PRODUTO + MODELO_FISCAL_EMISSAO_SERVICO,
             ),
+            # Documents imported from the vendor XML (or typed in manually
+            # as imported) stay in "em_digitacao" forever - they never go
+            # through the e-document workflow, since the company is not
+            # the issuer. Without the imported_document leg they would
+            # never be picked up by the closing, so the accountant package
+            # would miss every inbound document.
+            "|",
             ("state_edoc", "in", SITUACAO_EDOC),
+            ("imported_document", "=", True),
         ]
 
         if self.export_type == "period":
