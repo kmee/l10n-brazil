@@ -4,6 +4,8 @@
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
 
+from collections import defaultdict
+
 from erpbrasil.base.fiscal import cnpj_cpf
 
 from odoo import _, api, fields, models
@@ -100,48 +102,75 @@ class Partner(models.Model):
 
     @api.constrains("vat", "l10n_br_ie_code")
     def _check_cnpj_l10n_br_ie_code(self):
-        for record in self:
-            domain = []
+        if self.env.context.get("disable_allow_cnpj_multi_ie") or self.env.context.get(
+            "allow_vat_duplicate"
+        ):
+            return
 
+        # allow_cnpj_multi_ie is a res.config.settings boolean: it is stored
+        # as "True" when enabled and removed entirely when disabled
+        # (set_param deletes on a False bool), so a plain bool() reads it
+        # correctly (absent -> strict), matching base_setup.show_effect.
+        # It is a system parameter (identical for every record), so it is read
+        # once here instead of once per record.
+        allow_cnpj_multi_ie = bool(
+            self.env["ir.config_parameter"]
+            .sudo()
+            .get_param("l10n_br_base.allow_cnpj_multi_ie")
+        )
+
+        # Prefetch all potential duplicates for the whole recordset in a single
+        # query, keyed by cnpj_cpf_stripped, instead of one search() per record
+        # (an N+1 on partner import/sync). Records with a parent_id keep a
+        # dedicated per-record search because their exclusion domain (the parent
+        # and its children) is record specific.
+        records_without_parent = self.filtered(lambda r: r.vat and not r.parent_id)
+        candidates_by_stripped = defaultdict(list)
+        stripped_values = records_without_parent.mapped("cnpj_cpf_stripped")
+        if stripped_values:
+            for candidate in self.env["res.partner"].search(
+                [("cnpj_cpf_stripped", "in", stripped_values)]
+            ):
+                candidates_by_stripped[candidate.cnpj_cpf_stripped].append(candidate)
+
+        for record in self:
             if not record.vat:
                 return
 
-            if self.env.context.get(
-                "disable_allow_cnpj_multi_ie"
-            ) or self.env.context.get("allow_vat_duplicate"):
-                return
-
-            # allow_cnpj_multi_ie is a res.config.settings boolean: it is stored
-            # as "True" when enabled and removed entirely when disabled
-            # (set_param deletes on a False bool), so a plain bool() reads it
-            # correctly (absent -> strict), matching base_setup.show_effect.
-            allow_cnpj_multi_ie = bool(
-                record.env["ir.config_parameter"]
-                .sudo()
-                .get_param("l10n_br_base.allow_cnpj_multi_ie")
-            )
-
             if record.parent_id:
-                domain += [
+                # Compare by the normalized CNPJ/CPF (cnpj_cpf_stripped, without
+                # mask) so the same number typed with a different mask is still
+                # detected as a duplicate: `vat` is only normalized when written
+                # through the `cnpj_cpf` alias, so a direct `vat` write could
+                # store a different mask and slip past a raw `vat` comparison.
+                # NOTE for the v19 migration: once `vat` is stored unformatted
+                # and `cnpj_cpf_stripped` is retired, comparing by `vat`
+                # directly here is enough.
+                domain = [
                     ("id", "not in", record.parent_id.ids),
                     ("parent_id", "not in", record.parent_id.ids),
+                    ("cnpj_cpf_stripped", "=", record.cnpj_cpf_stripped),
+                    ("id", "!=", record.id),
+                    ("parent_id", "!=", record.id),
                 ]
+                matches = record.env["res.partner"].search(domain)
+            else:
+                # Same domain as above (cnpj_cpf_stripped = record, excluding the
+                # record itself and its children), evaluated in memory against
+                # the prefetched candidates. An empty parent_id compares False,
+                # matching the ORM `parent_id != record.id` (which also keeps
+                # NULL rows).
+                matches = record.env["res.partner"].browse(
+                    [
+                        candidate.id
+                        for candidate in candidates_by_stripped.get(
+                            record.cnpj_cpf_stripped, []
+                        )
+                        if candidate.id != record.id
+                        and candidate.parent_id.id != record.id
+                    ]
+                )
 
-            # Compare by the normalized CNPJ/CPF (cnpj_cpf_stripped, without mask)
-            # so the same number typed with a different mask is still detected as
-            # a duplicate: `vat` is only normalized when written through the
-            # `cnpj_cpf` alias, so a direct `vat` write could store a different
-            # mask and slip past a raw `vat` comparison.
-            # NOTE for the v19 migration: once `vat` is stored unformatted and
-            # `cnpj_cpf_stripped` is retired, comparing by `vat` directly here is
-            # enough.
-            domain += [
-                ("cnpj_cpf_stripped", "=", record.cnpj_cpf_stripped),
-                ("id", "!=", record.id),
-                ("parent_id", "!=", record.id),
-            ]
-
-            matches = record.env["res.partner"].search(domain)
             if matches:
                 if cnpj_cpf.validar_cnpj(record.vat):
                     if allow_cnpj_multi_ie:
@@ -212,6 +241,25 @@ class Partner(models.Model):
         this method call others methods because this validation is State wise
         :Return: True or False.
         """
+        # Prefetch every duplicate State Tax Number for all lines of the whole
+        # recordset in a single query, grouped by (state_id, l10n_br_ie_code),
+        # instead of one search() per line (an N+1 on partner import/sync).
+        all_lines = self.mapped("state_tax_number_ids")
+        duplicates_by_key = {}
+        if all_lines:
+            state_ids = all_lines.mapped("state_id").ids
+            ie_codes = [code for code in all_lines.mapped("l10n_br_ie_code") if code]
+            if state_ids and ie_codes:
+                for partner in self.env["res.partner"].search(
+                    [
+                        ("state_id", "in", state_ids),
+                        ("l10n_br_ie_code", "in", ie_codes),
+                    ]
+                ):
+                    key = (partner.state_id.id, partner.l10n_br_ie_code)
+                    duplicates_by_key.setdefault(key, self.env["res.partner"])
+                    duplicates_by_key[key] |= partner
+
         for record in self:
             for l10n_br_ie_code_line in record.state_tax_number_ids:
                 check_ie(
@@ -228,13 +276,16 @@ class Partner(models.Model):
                             " number per state for each partner!"
                         )
                     )
-                duplicate_ie = self.env["res.partner"].search(
-                    [
-                        ("state_id", "=", l10n_br_ie_code_line.state_id.id),
-                        ("l10n_br_ie_code", "=", l10n_br_ie_code_line.l10n_br_ie_code),
-                        ("id", "!=", record.id),
-                    ]
+                # Same match as the per-line search above (state + IE code,
+                # excluding the record itself), evaluated in memory against the
+                # prefetched candidates.
+                key = (
+                    l10n_br_ie_code_line.state_id.id,
+                    l10n_br_ie_code_line.l10n_br_ie_code,
                 )
+                duplicate_ie = duplicates_by_key.get(
+                    key, self.env["res.partner"]
+                ).filtered(lambda p, rid=record.id: p.id != rid)
                 if duplicate_ie:
                     raise ValidationError(
                         _("State Tax Number already used {}").format(duplicate_ie.name)
