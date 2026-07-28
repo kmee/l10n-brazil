@@ -11,7 +11,6 @@
     "version": "16.0.2.0.0",
     "depends": [
         "l10n_br_fiscal",
-        "l10n_br_fiscal_edi",
     ],
     "data": [
         "security/ir.model.access.csv",

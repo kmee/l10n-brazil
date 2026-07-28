@@ -12,7 +12,9 @@ from odoo.tests.common import TransactionCase
 from odoo.tools import config
 
 from odoo.addons import l10n_br_nfe
-from odoo.addons.l10n_br_fiscal.constants.fiscal import DOCUMENT_STATE_DRAFT
+from odoo.addons.l10n_br_fiscal.constants.fiscal import (
+    SITUACAO_EDOC_EM_DIGITACAO,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -34,7 +36,7 @@ class TestNFeExport(TransactionCase):
         Performs actions necessary to prepare an NFe of the demo data to
         perform the tests
         """
-        if nfe.state_edoc != DOCUMENT_STATE_DRAFT:  # 2nd test run
+        if nfe.state != SITUACAO_EDOC_EM_DIGITACAO:  # 2nd test run
             nfe.action_document_back2draft()
 
         nfe._register_hook()  # required in v16 for next statement

@@ -7,9 +7,9 @@ from odoo import Command, _, api, fields, models
 from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
-    DOCUMENT_STATE_DRAFT,
     EDOC_PURPOSE_AJUSTE,
     EDOC_PURPOSE_DEVOLUCAO,
+    SITUACAO_EDOC_EM_DIGITACAO,
 )
 
 A_PRAZO = "1"
@@ -153,7 +153,7 @@ class DocumentNfe(models.Model):
     def _check_fiscal_payment_mode(self):
         for rec in self:
             if (
-                rec.state_edoc == DOCUMENT_STATE_DRAFT
+                rec.state_edoc == SITUACAO_EDOC_EM_DIGITACAO
                 or not rec._need_compute_nfe_tags()
                 or rec._is_without_payment()
             ):

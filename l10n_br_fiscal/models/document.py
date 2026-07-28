@@ -17,7 +17,6 @@ from ..constants.fiscal import (
     DOCUMENT_ISSUER_PARTNER,
     DOCUMENT_STATE_CANCEL,
     DOCUMENT_STATE_DRAFT,
-    DOCUMENT_STATE_OPEN,
     DOCUMENT_STATES,
     EDOC_PURPOSE,
     EDOC_PURPOSE_NORMAL,
@@ -30,6 +29,7 @@ from ..constants.fiscal import (
     MODELO_FISCAL_NFSE,
     PUBLIC_ENTIRY_TYPE,
     SITUACAO_EDOC_AUTORIZADA,
+    SITUACAO_EDOC_CANCELADA,
     SITUACAO_EDOC_DENEGADA,
     SITUACAO_EDOC_INUTILIZADA,
     SITUACAO_FISCAL,
@@ -291,7 +291,7 @@ class Document(models.Model):
                             MODELO_FISCAL_NFSE,
                         ),
                     ),
-                    ("state", "!=", "cancelada"),
+                    ("state", "!=", SITUACAO_EDOC_CANCELADA),
                 ]
             )
 
@@ -414,7 +414,6 @@ class Document(models.Model):
 
     def unlink(self):
         forbidden_states_unlink = [
-            DOCUMENT_STATE_OPEN,
             SITUACAO_EDOC_AUTORIZADA,
             DOCUMENT_STATE_CANCEL,
             SITUACAO_EDOC_DENEGADA,
@@ -470,25 +469,36 @@ class Document(models.Model):
 
         return action
 
-    def _document_export(self, **kwargs):
-        """Placeholder for modules to implement their own export logic."""
-        pass
-
     # the following actions are meant to be implemented in other modules such as
     # l10n_br_fiscal_edi. They are defined here so they can be overriden in modules
     # that don't depend on l10n_br_fiscal_edi (such as l10n_br_account).
+    def view_pdf(self):
+        pass
+
+    def view_xml(self):
+        pass
 
     def action_document_confirm(self):
-        """Open the fiscal document, changing its state to 'open'"""
-        self.write({"state_edoc": DOCUMENT_STATE_OPEN})
+        pass
+
+    def action_document_send(self):
+        pass
 
     def action_document_back2draft(self):
-        """Reset the fiscal document to draft, changing its state to 'draft'"""
-        self.write({"state_edoc": DOCUMENT_STATE_DRAFT})
+        pass
 
     def action_document_cancel(self):
-        """Cancel the fiscal document, changing its state to 'cancel'"""
-        self.write({"state_edoc": DOCUMENT_STATE_CANCEL})
+        pass
+
+    def action_document_invalidate(self):
+        pass
+
+    def action_document_correction(self):
+        pass
+
+    def exec_after_SITUACAO_EDOC_DENEGADA(self, old_state, new_state):
+        # see https://github.com/OCA/l10n-brazil/pull/3272
+        pass
 
     @api.depends("fiscal_operation_id")
     def _compute_edoc_purpose(self):

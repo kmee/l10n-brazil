@@ -12,7 +12,9 @@ from odoo.tests.common import TransactionCase
 from odoo.tools import config
 
 from odoo.addons import l10n_br_cte
-from odoo.addons.l10n_br_fiscal.constants.fiscal import DOCUMENT_STATE_DRAFT
+from odoo.addons.l10n_br_fiscal.constants.fiscal import (
+    SITUACAO_EDOC_EM_DIGITACAO,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -34,7 +36,7 @@ class TestCTeSerialize(TransactionCase):
         Performs actions necessary to prepare an CTe of the demo data to
         perform the tests
         """
-        if cte.state_edoc != DOCUMENT_STATE_DRAFT:  # 2nd test run
+        if cte.state != SITUACAO_EDOC_EM_DIGITACAO:  # 2nd test run
             cte.action_document_back2draft()
 
         cte.fiscal_line_ids.name = "Frete"

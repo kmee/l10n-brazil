@@ -2,7 +2,6 @@
 # Copyright (C) 2019  KMEE INFORMATICA LTDA
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
-from erpbrasil.base.fiscal.edoc import ChaveEdoc
 from transitions import Machine, MachineError
 
 from odoo import _, api, fields, models
@@ -13,13 +12,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_ISSUER_COMPANY,
     DOCUMENT_STATE_CANCEL,
     DOCUMENT_STATE_DRAFT,
-    DOCUMENT_STATE_INVALIDATED,
     DOCUMENT_STATE_OPEN,
-    MODELO_FISCAL_CTE,
-    MODELO_FISCAL_MDFE,
-    MODELO_FISCAL_NFCE,
-    MODELO_FISCAL_NFE,
-    MODELO_FISCAL_NFSE,
     PROCESSADOR_NENHUM,
 )
 
@@ -38,28 +31,37 @@ def filter_processador(record):
     return False
 
 
-class FiscalDocumentWrapper:
-    def __init__(self, document):
-        self._document = document
+class FiscalDocumentStateProxy:
+    """Plain Python model the `transitions` Machine is bound to.
 
-    def __getattr__(self, name):
-        return getattr(self._document, name)
+    The Machine assigns the initial state to its model when it is built
+    (`transitions` calls set_state() from add_model), so binding it directly
+    to an Odoo record would write state_edoc in the database on every
+    instantiation, even when no transition happens at all. The Machine only
+    moves this proxy around: the single real write is done by
+    _change_state(), and only when the transition is actually accepted.
+    """
 
-    @property
-    def state_edoc(self):
-        return self._document.state_edoc
-
-    @state_edoc.setter
-    def state_edoc(self, value):
-        self._document.write({"state_edoc": value})
+    def __init__(self, state_edoc):
+        self.state_edoc = state_edoc
 
 
 class Document(models.Model):
     """
     Fiscal Document EDI extension implementing State Machine workflow.
+
+    The l10n_br_fiscal.document.workflow mixin is the compatibility layer
+    keeping the legacy interface (_exec_before_*/_exec_after_*,
+    _change_state, _document_confirm...) working on top of this engine. See
+    models/document_workflow.py.
     """
 
-    _inherit = "l10n_br_fiscal.document"
+    _name = "l10n_br_fiscal.document"
+
+    _inherit = [
+        "l10n_br_fiscal.document",
+        "l10n_br_fiscal.document.workflow",
+    ]
 
     state_edoc = fields.Selection(
         selection_add=DOCUMENT_STATES,
@@ -165,10 +167,6 @@ class Document(models.Model):
         readonly=True,
     )
 
-    cancel_reason = fields.Char()
-
-    correction_reason = fields.Char()
-
     # Invalidate Event Related Fields
     invalidate_event_id = fields.Many2one(
         comodel_name="l10n_br_fiscal.event",
@@ -232,22 +230,31 @@ class Document(models.Model):
     # State Machine Logic
     # -------------------------------------------------------------------------
 
+    def _fsm_states(self):
+        """The machine states are the state_edoc values.
+
+        They are read from the field selection (instead of a hardcoded list)
+        so modules adding their own state_edoc value get a machine that
+        knows it: building a Machine with an unknown initial state raises
+        ValueError.
+        """
+        selection = self._fields["state_edoc"].selection
+        if callable(selection):
+            selection = selection(self)
+        return [state for state, _label in selection]
+
     def get_state_machine_config(self):
+        """Declarative definition of the fiscal document state machine.
+
+        The transitions are the single source of truth of what is allowed:
+        the legacy _avaliable_transition() is computed from them (it used to
+        be computed from the WORKFLOW_EDOC tuples, which remain exported by
+        l10n_br_fiscal.constants.fiscal for backward compatibility and are
+        the reference this machine was built upon).
+        """
         self.ensure_one()
         return {
-            "states": [
-                DOCUMENT_STATE_DRAFT,
-                DOCUMENT_STATE_OPEN,
-                DOCUMENT_STATE_SENDING,
-                DOCUMENT_STATE_AUTHORIZED,
-                DOCUMENT_STATE_REJECTED,
-                DOCUMENT_STATE_DENIED,
-                DOCUMENT_STATE_CANCEL,
-                # Terminal state (no outgoing transition), but it must be
-                # known to the machine: building it with an unknown initial
-                # state raises ValueError.
-                DOCUMENT_STATE_INVALIDATED,
-            ],
+            "states": self._fsm_states(),
             "transitions": [
                 # Validate: Draft -> Open
                 {
@@ -259,7 +266,11 @@ class Document(models.Model):
                 # Send: Open -> Sending
                 {
                     "trigger": "action_send",
-                    "source": [DOCUMENT_STATE_OPEN, DOCUMENT_STATE_REJECTED],
+                    "source": [
+                        DOCUMENT_STATE_DRAFT,
+                        DOCUMENT_STATE_OPEN,
+                        DOCUMENT_STATE_REJECTED,
+                    ],
                     "dest": DOCUMENT_STATE_SENDING,
                     "before": "_before_document_send",
                     "after": "_after_document_send",
@@ -267,20 +278,39 @@ class Document(models.Model):
                 # Authorize: Sending -> Authorized
                 {
                     "trigger": "action_authorize",
-                    "source": [DOCUMENT_STATE_SENDING, DOCUMENT_STATE_OPEN],
+                    "source": [
+                        DOCUMENT_STATE_SENDING,
+                        DOCUMENT_STATE_OPEN,
+                        # A rejected document can be sent again and a
+                        # partner issued document is authorized straight
+                        # from the draft state.
+                        DOCUMENT_STATE_REJECTED,
+                        DOCUMENT_STATE_DRAFT,
+                    ],
                     "dest": DOCUMENT_STATE_AUTHORIZED,
                     "after": "_after_document_authorize",
                 },
                 # Reject: Sending -> Rejected
                 {
                     "trigger": "action_reject",
-                    "source": [DOCUMENT_STATE_SENDING, DOCUMENT_STATE_OPEN],
+                    "source": [
+                        DOCUMENT_STATE_SENDING,
+                        DOCUMENT_STATE_OPEN,
+                        DOCUMENT_STATE_DRAFT,
+                        # A new submission of a rejected document can be
+                        # rejected again.
+                        DOCUMENT_STATE_REJECTED,
+                    ],
                     "dest": DOCUMENT_STATE_REJECTED,
                 },
                 # Deny: Sending -> Denied
                 {
                     "trigger": "action_deny",
-                    "source": [DOCUMENT_STATE_SENDING, DOCUMENT_STATE_OPEN],
+                    "source": [
+                        DOCUMENT_STATE_SENDING,
+                        DOCUMENT_STATE_OPEN,
+                        DOCUMENT_STATE_DRAFT,
+                    ],
                     "dest": DOCUMENT_STATE_DENIED,
                     "after": "_after_document_deny",
                 },
@@ -315,87 +345,151 @@ class Document(models.Model):
             "initial": self.state_edoc,
         }
 
+    def _fsm_allowed_transitions(self):
+        """The set of (source, dest) state_edoc pairs the machine allows."""
+        self.ensure_one()
+        allowed = set()
+        for transition in self.get_state_machine_config()["transitions"]:
+            source = transition["source"]
+            if isinstance(source, str):
+                source = [source]
+            for state in source:
+                allowed.add((state, transition["dest"]))
+        return allowed
+
+    def _fsm_transition_callbacks(self, old_state, new_state, kind):
+        """Return the `before`/`after` callbacks declared by the machine for
+        the (old_state, new_state) edge."""
+        self.ensure_one()
+        callbacks = []
+        for transition in self.get_state_machine_config()["transitions"]:
+            source = transition["source"]
+            if isinstance(source, str):
+                source = [source]
+            if old_state not in source or transition["dest"] != new_state:
+                continue
+            names = transition.get(kind) or []
+            if isinstance(names, str):
+                names = [names]
+            for name in names:
+                if name not in callbacks:
+                    callbacks.append(name)
+        return callbacks
+
+    def _run_fsm_callbacks(self, old_state, new_state, kind):
+        """Run the machine callbacks of a transition against the record.
+
+        They are executed by _change_state() (through
+        _before_change_state/_after_change_state), and not by the
+        `transitions` Machine itself, so that the legacy hooks and the new
+        callbacks are called at the very same point of the flow, whatever
+        the entry point (legacy _change_state or new _trigger_fsm).
+        """
+        self.ensure_one()
+        for callback in self._fsm_transition_callbacks(old_state, new_state, kind):
+            getattr(self, callback)()
+
     def _trigger_fsm(self, trigger):
+        """Fire a state machine trigger for each record of the recordset."""
         for doc in self:
+            config = doc.get_state_machine_config()
+            proxy = FiscalDocumentStateProxy(config["initial"])
+            Machine(
+                model=proxy,
+                states=config["states"],
+                # The Odoo callbacks are run by _change_state(), against the
+                # record and not against the proxy.
+                transitions=[
+                    {
+                        key: value
+                        for key, value in transition.items()
+                        if key in ("trigger", "source", "dest")
+                    }
+                    for transition in config["transitions"]
+                ],
+                initial=config["initial"],
+                model_attribute="state_edoc",  # Bind to state_edoc
+                auto_transitions=False,
+                ignore_invalid_triggers=False,
+            )
             try:
-                wrapper = FiscalDocumentWrapper(doc)
-                config = doc.get_state_machine_config()
-                Machine(
-                    model=wrapper,
-                    states=config["states"],
-                    transitions=config["transitions"],
-                    initial=config["initial"],
-                    model_attribute="state_edoc",  # Bind to state_edoc
-                    ignore_invalid_triggers=False,
-                )
-                getattr(wrapper, trigger)()
-            except MachineError as e:
+                getattr(proxy, trigger)()
+            except (AttributeError, MachineError) as e:
                 raise UserError(
                     _("State transition failed for action '%(action)s': %(error)s")
                     % {"action": trigger, "error": e}
                 ) from e
+            # The Machine above already validated the edge against the FSM
+            # table (the single source of truth for the new API), which is a
+            # superset of the legacy tuples. force_change=True skips only the
+            # redundant legacy re-validation in _change_state(); every
+            # before/after hook still runs.
+            doc._change_state(proxy.state_edoc, force_change=True)
 
-    def _document_cancel(self, justificative=None):
-        if justificative:
-            self.cancel_reason = justificative
-        self._trigger_fsm("action_cancel_fsm")
-
-    def _document_correction(self, justificative):
-        """Record the correction reason. Specific document modules override
-        this method to transmit the correction event (CC-e)."""
-        self.ensure_one()
-        self.correction_reason = justificative
+    def _get_state_to_action_map(self):
+        return {
+            DOCUMENT_STATE_OPEN: "action_validate",
+            DOCUMENT_STATE_SENDING: "action_send",
+            DOCUMENT_STATE_AUTHORIZED: "action_authorize",
+            DOCUMENT_STATE_REJECTED: "action_reject",
+            DOCUMENT_STATE_DENIED: "action_deny",
+            DOCUMENT_STATE_CANCEL: "action_cancel_fsm",
+            DOCUMENT_STATE_DRAFT: "action_draft_fsm",
+        }
 
     # -------------------------------------------------------------------------
     # Transition Callbacks
     # -------------------------------------------------------------------------
+    # These hooks are the new API. While the compatibility layer is in place
+    # their default implementation is empty: the default behavior lives in
+    # the legacy _exec_before_*/_exec_after_* hooks of the
+    # l10n_br_fiscal.document.workflow mixin, which is called at the same
+    # point of the flow. Once the mixin is removed, the default behavior
+    # moves here.
 
     def _before_document_validate(self):
-        self._document_date()
-        self._document_number()
-        self._copy_operation_comments()
-        self._document_comment()
-        self._document_check()
-        self._document_export()  # Legacy hook, might be empty
+        """Called before draft -> open. See
+        _exec_before_SITUACAO_EDOC_A_ENVIAR (document date, numbering,
+        comments, checks and export)."""
 
     def _before_document_send(self):
-        # Placeholder for pre-send checks
-        pass
+        """Called before open -> sending. See
+        _exec_before_SITUACAO_EDOC_ENVIADA."""
 
     def _after_document_send(self):
-        # Trigger actual sending logic
-        self._document_send_logic()
+        """Called after open -> sending. See
+        _exec_after_SITUACAO_EDOC_ENVIADA.
+
+        Note it does NOT transmit the document: the transmission is driven
+        by action_document_send()/_document_send(), and providers do reach
+        the 'sending' state from within the transmission itself (a
+        transmission here would recurse).
+        """
 
     def _after_document_authorize(self):
-        """Hook called after the document is authorized. Overridden by
-        transmission modules (e.g. l10n_br_nfe generates the DANFE here)."""
-        pass
+        """Called after the document is authorized. See
+        _exec_after_SITUACAO_EDOC_AUTORIZADA (l10n_br_nfe generates the
+        DANFE there)."""
+
+    def _after_document_deny(self):
+        """Called after the document is denied. See
+        _exec_after_SITUACAO_EDOC_DENEGADA / exec_after_SITUACAO_EDOC_DENEGADA
+        (l10n_br_account cancels the related account moves there)."""
 
     def _before_document_cancel(self):
-        # Logic moved from _document_cancel
-        if self.issuer == DOCUMENT_ISSUER_COMPANY:
-            # If authorized, we need to call SEFAZ cancellation
-            # This is usually done via Wizard, so this transition might be triggered
-            # AFTER the wizard logic.
-            # If triggered directly, ensure we have a reason if required.
-            pass
+        """Called before the document is cancelled. See
+        _exec_before_SITUACAO_EDOC_CANCELADA (the NFS-e providers do call
+        the web service there and veto the transition when it fails)."""
 
     def _before_document_back2draft(self):
+        """Called before the document goes back to draft. See
+        document_back2draft()."""
         self.xml_error_message = False
         self.file_report_id = False
 
     # -------------------------------------------------------------------------
-    # Logic Implementation (Ported from Workflow/Mixin)
+    # Logic Implementation
     # -------------------------------------------------------------------------
-
-    def _document_date(self):
-        if not self.document_date:
-            self.document_date = fields.Datetime.now()
-        if not self.date_in_out:
-            self.date_in_out = fields.Datetime.now()
-
-    def _document_check(self):
-        return True
 
     def _copy_operation_comments(self):
         """Copy the default comments of the fiscal operation to the document
@@ -407,60 +501,7 @@ class Document(models.Model):
                 if not line.comment_ids and line.fiscal_operation_line_id.comment_ids:
                     line.comment_ids |= line.fiscal_operation_line_id.comment_ids
 
-    def _generate_key(self):
-        for record in self:
-            if record.document_type_id.code in (
-                MODELO_FISCAL_NFE,
-                MODELO_FISCAL_NFCE,
-                MODELO_FISCAL_CTE,
-                MODELO_FISCAL_MDFE,
-            ):
-                date = fields.Datetime.context_timestamp(record, record.document_date)
-                chave_edoc = ChaveEdoc(
-                    ano_mes=date.strftime("%y%m").zfill(4),
-                    cnpj_cpf_emitente=record.company_id.vat,
-                    codigo_uf=(
-                        record.company_id.state_id
-                        and record.company_id.state_id.ibge_code
-                        or ""
-                    ),
-                    forma_emissao=1,  # TODO: Implementar campo no Odoo
-                    modelo_documento=record.document_type_id.code or "",
-                    numero_documento=record.document_number or "",
-                    numero_serie=record.document_serie or "",
-                    validar=False,
-                )
-                record.key_random_code = chave_edoc.codigo_aleatorio
-                record.key_check_digit = chave_edoc.digito_verificador
-                record.document_key = chave_edoc.chave
-
-    def _document_number(self):
-        self.ensure_one()
-        if self.issuer == DOCUMENT_ISSUER_COMPANY:
-            if self.document_serie_id:
-                self.document_serie = self.document_serie_id.code
-
-                if self.document_type == MODELO_FISCAL_NFSE and not self.rps_number:
-                    self.rps_number = self.document_serie_id.next_seq_number()
-
-                if (
-                    self.document_type != MODELO_FISCAL_NFSE
-                    and not self.document_number
-                ):
-                    self.document_number = self.document_serie_id.next_seq_number()
-
-            if not self.operation_name:
-                self.operation_name = ", ".join(
-                    [
-                        line.name
-                        for line in self.fiscal_line_ids.mapped("fiscal_operation_id")
-                    ]
-                )
-
-            if self.document_electronic and not self.document_key:
-                self._generate_key()
-
-    def _document_send_logic(self):
+    def _document_send(self):
         """
         Logic to handle document sending.
         Separates electronic vs non-electronic handling.
@@ -471,49 +512,33 @@ class Document(models.Model):
         )
         # Non-electronic/partner-issued docs go straight to Authorized:
         # there is nothing to transmit.
-        for doc in no_electronic:
-            doc._trigger_fsm("action_authorize")
-
+        no_electronic._no_eletronic_document_send()
         electronic = self - no_electronic
         electronic._eletronic_document_send()
 
+    def _document_send_logic(self):
+        """Deprecated alias of the legacy _document_send()."""
+        return self._document_send()
+
     def _eletronic_document_send(self):
-        """
-        Implement this method in your transmission module.
+        """Implement this method in your transmission module,
+        to send the electronic document and use the method _change_state
+        to update the state of the transmited document,
+
+        def _eletronic_document_send(self):
+            super()._document_send()
+            for record in self.filtered(myfilter):
+                Do your transmission stuff
+                [...]
+                Change the state of the document
         """
         for record in self.filtered(filter_processador):
-            # Simulate immediate authorization for 'No Processor'
-            record._trigger_fsm("action_authorize")
-
-    def _document_export(self, **kwargs):
-        pass
+            record._change_state(DOCUMENT_STATE_AUTHORIZED)
 
     def _document_status(self):
-        """Return the document status as text and, when needed, update the
-        document status. Hook meant to be overridden by transmission modules
-        (l10n_br_nfe, l10n_br_nfse_focus...)."""
-        return None
-
-    def _edoc_processor(self):
-        """Hook meant to return the erpbrasil.edoc processor of the document.
-        Overridden by transmission modules."""
-        return None
-
-    def _document_qrcode(self):
-        """Hook meant to compute the document QR Code (NFC-e, CT-e...).
-        Overridden by transmission modules."""
-        pass
-
-    def _validate_xml(self, xml_file):
-        """Hook meant to validate the document XML against its schema.
-        Overridden by transmission modules."""
-        pass
-
-    def _direct_draft_send(self):
-        """When it returns True, the document is sent right after being
-        confirmed (draft -> open -> sending in a single action). Meant to be
-        overridden by modules such as POS/NFC-e ones."""
-        return False
+        """Retorna o status do documento em texto e se necessário,
+        atualiza o status do documento"""
+        return
 
     def serialize(self):
         """
@@ -530,129 +555,40 @@ class Document(models.Model):
         """
         return edocs
 
-    def _get_state_to_action_map(self):
-        return {
-            DOCUMENT_STATE_OPEN: "action_validate",
-            DOCUMENT_STATE_SENDING: "action_send",
-            DOCUMENT_STATE_AUTHORIZED: "action_authorize",
-            DOCUMENT_STATE_REJECTED: "action_reject",
-            DOCUMENT_STATE_DENIED: "action_deny",
-            DOCUMENT_STATE_CANCEL: "action_cancel_fsm",
-            DOCUMENT_STATE_DRAFT: "action_draft_fsm",
-        }
-
-    def _change_state(self, state, force_change=False):
-        """
-        Wrapper to trigger state changes via FSM for legacy compatibility.
-        """
-        # Map legacy states to triggers if possible, or just update state_edoc
-        # The FSM manages state_edoc, but 'transitions' allows direct assignment
-        # if not locked. However, to respect the FSM flow, we should try triggers.
-        # But 'state' argument here is the target state (e.g. 'authorized'),
-        # not an action.
-
-        # Mapping target state to action
-        state_to_action = self._get_state_to_action_map()
-
-        trigger = state_to_action.get(state)
-        if trigger:
-            # If we are already in the target state, do nothing unless forced?
-            if self.state_edoc == state and not force_change:
-                return
-
-            # Try to trigger the transition
-            try:
-                self._trigger_fsm(trigger)
-            except UserError as e:
-                # If transition fails (e.g. invalid source state), we might force it
-                # if the legacy code demands it (e.g. synchronization with SEFAZ).
-                # In legacy code, _change_state often just wrote to the field.
-                if force_change:
-                    self.write({"state_edoc": state})
-                else:
-                    raise e
-        else:
-            # If no transition defined, fallback to write (e.g. custom states?)
-            self.write({"state_edoc": state})
-
     # -------------------------------------------------------------------------
     # Actions / Buttons
     # -------------------------------------------------------------------------
+    # these workflow methods are plugged here so their interface defined in
+    # l10n_br_fiscal can easily be overriden in other modules.
 
     def action_document_confirm(self):
-        """Override base button to trigger FSM validation.
-
-        This method must be idempotent because account.move._post() may call it
-        again for already confirmed documents.
-        """
-        electronic_company = self.filtered(
-            lambda d: d.document_electronic and d.issuer == DOCUMENT_ISSUER_COMPANY
-        )
-        to_validate = electronic_company.filtered(
-            lambda d: d.state_edoc == DOCUMENT_STATE_DRAFT
-        )
-        if to_validate:
-            to_validate._trigger_fsm("action_validate")
-            for doc in to_validate.filtered(lambda d: d._direct_draft_send()):
-                doc.action_document_send()
-
-        others = self - electronic_company
-        if others:
-            return super(Document, others).action_document_confirm()
-
-        return True
+        super().action_document_confirm()
+        return self._document_confirm_to_send()
 
     def action_document_send(self):
-        """Trigger Sending"""
-        return self._trigger_fsm("action_send")
+        super().action_document_send()
+        return self._action_document_send()
 
     def action_document_back2draft(self):
-        """Override base button"""
-        if self.document_electronic and self.issuer == DOCUMENT_ISSUER_COMPANY:
-            return self._trigger_fsm("action_draft_fsm")
-        else:
-            return super().action_document_back2draft()
+        super().action_document_back2draft()
+        return self._action_document_back2draft()
 
     def action_document_cancel(self):
-        """Override base button"""
-        if self.state_edoc in (
-            DOCUMENT_STATE_CANCEL,
-            DOCUMENT_STATE_DENIED,
-            DOCUMENT_STATE_INVALIDATED,
-        ):
-            return True
+        super().action_document_cancel()
+        return self._action_document_cancel()
 
-        if self.document_electronic and self.issuer == DOCUMENT_ISSUER_COMPANY:
-            # For authorized docs, show wizard
-            if self.state_edoc == DOCUMENT_STATE_AUTHORIZED:
-                return self.env["ir.actions.act_window"]._for_xml_id(
-                    "l10n_br_fiscal_edi.document_cancel_wizard_action"
-                )
-            # Otherwise trigger FSM cancel
-            return self._trigger_fsm("action_cancel_fsm")
-        else:
-            return super().action_document_cancel()
+    def action_document_invalidate(self):
+        super().action_document_invalidate()
+        return self._action_document_invalidate()
 
     def action_document_correction(self):
-        """Open the correction wizard for authorized company-issued documents."""
-        self.ensure_one()
-        if (
-            self.state_edoc == DOCUMENT_STATE_AUTHORIZED
-            and self.issuer == DOCUMENT_ISSUER_COMPANY
-        ):
-            return self.env["ir.actions.act_window"]._for_xml_id(
-                "l10n_br_fiscal_edi.document_correction_wizard_action"
-            )
-        raise UserError(
-            _(
-                "You can only create a fiscal correction for authorized "
-                "documents issued by your company."
-            )
-        )
+        super().action_document_correction()
+        return self._action_document_correction()
 
-    def _after_document_deny(self):
-        """Hook called after document denial. Override in account module."""
-        pass
+    def exec_after_SITUACAO_EDOC_DENEGADA(self, old_state, new_state):
+        # see https://github.com/OCA/l10n-brazil/pull/3272
+        super().exec_after_SITUACAO_EDOC_DENEGADA(old_state, new_state)
+        return self._exec_after_SITUACAO_EDOC_DENEGADA(old_state, new_state)
 
     # -------------------------------------------------------------------------
     # Misc Tools
@@ -668,6 +604,7 @@ class Document(models.Model):
 
     def view_xml(self):
         self.ensure_one()
+        super().view_xml()
         xml_file = self.authorization_file_id or self.send_file_id
         if not xml_file:
             self._document_export()
@@ -681,6 +618,7 @@ class Document(models.Model):
 
     def view_pdf(self):
         self.ensure_one()
+        super().view_pdf()
         if not self.file_report_id or not self.authorization_file_id:
             self.make_pdf()
         if not self.file_report_id:

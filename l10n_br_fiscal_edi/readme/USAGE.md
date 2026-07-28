@@ -67,3 +67,14 @@ relacionados para:
 * alterar transições válidas;
 * personalizar regras de pré/pós-transição;
 * adaptar o fluxo ao comportamento dos webservices de cada documento.
+
+7. API legada
+-------------
+
+A interface anterior à FSM continua disponível através do mixin
+`l10n_br_fiscal.document.workflow` e é chamada no mesmo ponto do fluxo que os
+callbacks novos: sobrescritas de `_exec_before_SITUACAO_EDOC_*`,
+`_exec_after_SITUACAO_EDOC_*`, `_before_change_state`, `_after_change_state`,
+bem como chamadas a `_change_state()`, continuam funcionando. Novos
+desenvolvimentos devem usar `_trigger_fsm()` e os callbacks
+`_before_document_*` / `_after_document_*`. Ver ROADMAP.

@@ -4,10 +4,7 @@
 
 from odoo import fields, models
 
-from odoo.addons.l10n_br_fiscal.constants.fiscal import DOCUMENT_STATES as FISCAL_STATES
-from odoo.addons.l10n_br_fiscal_edi.constants.fiscal import (
-    DOCUMENT_STATES as EDI_STATES,
-)
+from odoo.addons.l10n_br_fiscal.constants.fiscal import SITUACAO_EDOC
 
 SUBSEQUENT_CONDITION = [
     ("manual", "Manualmente"),
@@ -15,7 +12,7 @@ SUBSEQUENT_CONDITION = [
     ("nota_de_remessa", "Gerar Nota Fiscal de Remessa"),
 ]
 
-SUBSEQUENT_OPERATION = FISCAL_STATES + EDI_STATES + SUBSEQUENT_CONDITION
+SUBSEQUENT_OPERATION = SITUACAO_EDOC + SUBSEQUENT_CONDITION
 
 
 class SubsequentOperation(models.Model):

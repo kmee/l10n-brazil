@@ -3,6 +3,12 @@
 
 from odoo.tests.common import tagged
 
+from odoo.addons.l10n_br_fiscal.constants.fiscal import (
+    SITUACAO_EDOC_A_ENVIAR,
+    SITUACAO_EDOC_DENEGADA,
+    SITUACAO_EDOC_EM_DIGITACAO,
+)
+
 from .common import AccountMoveBRCommon
 
 
@@ -25,30 +31,28 @@ class TestMoveWorkflow(AccountMoveBRCommon):
     def test_change_states(self):
         document_id = self.move_out_venda.fiscal_document_id
         self.assertEqual(self.move_out_venda.state, "draft")
-        self.assertEqual(document_id.state, "em_digitacao")
+        self.assertEqual(document_id.state, SITUACAO_EDOC_EM_DIGITACAO)
         self.move_out_venda.action_post()
         self.assertEqual(self.move_out_venda.state, "posted")
         fiscal_edi = self.env["ir.module.module"].search(
             [("name", "=", "l10n_br_fiscal_edi")]
         )
         if fiscal_edi and fiscal_edi.state == "installed":
-            self.assertEqual(document_id.state, "a_enviar")
+            self.assertEqual(document_id.state, SITUACAO_EDOC_A_ENVIAR)
             self.move_out_venda.button_draft()
             self.assertEqual(self.move_out_venda.state, "draft")
-            self.assertEqual(document_id.state, "em_digitacao")
+            self.assertEqual(document_id.state, SITUACAO_EDOC_EM_DIGITACAO)
             document_id.action_document_confirm()
             self.assertEqual(self.move_out_venda.state, "posted")
-            self.assertEqual(document_id.state, "a_enviar")
+            self.assertEqual(document_id.state, SITUACAO_EDOC_A_ENVIAR)
             document_id.action_document_back2draft()
             self.assertEqual(self.move_out_venda.state, "draft")
-            self.assertEqual(document_id.state, "em_digitacao")
+            self.assertEqual(document_id.state, SITUACAO_EDOC_EM_DIGITACAO)
 
     def test_document_deny(self):
         document_id = self.move_out_venda.fiscal_document_id
         self.assertEqual(self.move_out_venda.state, "draft")
-        # Post the invoice, which confirms the document into 'open' state
-        self.move_out_venda.action_post()
-        # Trigger deny via FSM — the _after_document_deny callback
-        # in l10n_br_account cancels the linked account.move
-        document_id._trigger_fsm("action_deny")
+        document_id.exec_after_SITUACAO_EDOC_DENEGADA(
+            SITUACAO_EDOC_EM_DIGITACAO, SITUACAO_EDOC_DENEGADA
+        )
         self.assertEqual(self.move_out_venda.state, "cancel")

@@ -15,14 +15,15 @@ from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
-    DOCUMENT_STATE_OPEN,
     EVENT_ENV_HML,
     EVENT_ENV_PROD,
+    SITUACAO_EDOC_A_ENVIAR,
     SITUACAO_EDOC_AUTORIZADA,
     SITUACAO_EDOC_CANCELADA,
     SITUACAO_EDOC_ENVIADA,
     SITUACAO_EDOC_REJEITADA,
 )
+from odoo.addons.l10n_br_fiscal_edi.models.document import Document as FiscalDocument
 from odoo.addons.l10n_br_nfse.models.document import filter_processador_edoc_nfse
 
 from .constants import (
@@ -49,11 +50,6 @@ class Document(models.Model):
     """Document model with FocusNFE NFSe integration."""
 
     _inherit = "l10n_br_fiscal.document"
-
-    def _processador_erpbrasil_nfse(self):
-        if self.filtered(filter_focusnfe):
-            return None
-        return super()._processador_erpbrasil_nfse()
 
     def make_focus_nfse_pdf(self, content):
         """Generate a PDF for a NFSe document using Focus NFSe service.
@@ -128,7 +124,7 @@ class Document(models.Model):
             The result of the document export operation.
         """
         if self.filtered(filter_processador_edoc_nfse).filtered(filter_focusnfe):
-            result = super()._document_export()
+            result = super(FiscalDocument, self)._document_export()
         else:
             result = super()._document_export()
         for record in self.filtered(filter_processador_edoc_nfse).filtered(
@@ -282,7 +278,7 @@ class Document(models.Model):
                     protocol_number=record.authorization_protocol,
                     file_response_xml=xml,
                 )
-                record._trigger_fsm("action_authorize")
+                record._change_state(SITUACAO_EDOC_AUTORIZADA)
 
                 if record.company_id.focusnfe_nfse_force_odoo_danfse:
                     record.make_pdf()
@@ -322,7 +318,7 @@ class Document(models.Model):
                 "edoc_error_message": error_msg,
             }
         )
-        record._trigger_fsm("action_reject")
+        record._change_state(SITUACAO_EDOC_REJEITADA)
 
     def _process_status_nacional(self, record):
         """Process status check for NFSe Nacional."""
@@ -336,7 +332,7 @@ class Document(models.Model):
         json = response.json()
 
         edoc_states = [
-            DOCUMENT_STATE_OPEN,
+            SITUACAO_EDOC_A_ENVIAR,
             SITUACAO_EDOC_ENVIADA,
             SITUACAO_EDOC_REJEITADA,
         ]
@@ -370,7 +366,7 @@ class Document(models.Model):
         json = response.json()
 
         edoc_states = [
-            DOCUMENT_STATE_OPEN,
+            SITUACAO_EDOC_A_ENVIAR,
             SITUACAO_EDOC_ENVIADA,
             SITUACAO_EDOC_REJEITADA,
         ]
@@ -660,19 +656,22 @@ class Document(models.Model):
 
             if response.status_code == 202:
                 if json["status"] == STATUS_PROCESSANDO_AUTORIZACAO:
-                    pass  # Already in Sending state
+                    if record.state == SITUACAO_EDOC_REJEITADA:
+                        record.state_edoc = SITUACAO_EDOC_ENVIADA
+                    else:
+                        record._change_state(SITUACAO_EDOC_ENVIADA)
             elif response.status_code == 422:
                 code = json.get("codigo", "")
                 if code == CODE_NFE_AUTORIZADA and record.state in [
-                    DOCUMENT_STATE_OPEN,
+                    SITUACAO_EDOC_A_ENVIAR,
                     SITUACAO_EDOC_ENVIADA,
                     SITUACAO_EDOC_REJEITADA,
                 ]:
                     record._document_status()
                 else:
-                    record._trigger_fsm("action_reject")
+                    record._change_state(SITUACAO_EDOC_REJEITADA)
             else:
-                record._trigger_fsm("action_reject")
+                record._change_state(SITUACAO_EDOC_REJEITADA)
 
     def _process_send_municipal(self, record):
         """Process document send for NFSe Municipal."""
@@ -685,19 +684,22 @@ class Document(models.Model):
 
             if response.status_code == 202:
                 if json["status"] == STATUS_PROCESSANDO_AUTORIZACAO:
-                    pass  # Already in Sending state
+                    if record.state == SITUACAO_EDOC_REJEITADA:
+                        record.state_edoc = SITUACAO_EDOC_ENVIADA
+                    else:
+                        record._change_state(SITUACAO_EDOC_ENVIADA)
             elif response.status_code == 422:
                 code = json.get("codigo", "")
                 if code == CODE_NFE_AUTORIZADA and record.state in [
-                    DOCUMENT_STATE_OPEN,
+                    SITUACAO_EDOC_A_ENVIAR,
                     SITUACAO_EDOC_ENVIADA,
                     SITUACAO_EDOC_REJEITADA,
                 ]:
                     record._document_status()
                 else:
-                    record._trigger_fsm("action_reject")
+                    record._change_state(SITUACAO_EDOC_REJEITADA)
             else:
-                record._trigger_fsm("action_reject")
+                record._change_state(SITUACAO_EDOC_REJEITADA)
 
     def _eletronic_document_send(self):
         """Send the electronic document to the NFSe provider.
@@ -721,13 +723,17 @@ class Document(models.Model):
             self._process_send_municipal(record)
         return res
 
-    def _before_document_cancel(self):
+    def _exec_before_SITUACAO_EDOC_CANCELADA(self, old_state, new_state):
         """Hook method before changing document's state to 'Cancelled'.
+
+        Parameters:
+            - old_state: The document's previous state.
+            - new_state: The new state.
 
         Returns:
             The result of the cancellation process.
         """
-        super()._before_document_cancel()
+        super()._exec_before_SITUACAO_EDOC_CANCELADA(old_state, new_state)
         return self.cancel_document_focus()
 
     @api.model
@@ -742,7 +748,7 @@ class Document(models.Model):
             response.
         """
         records = (
-            self.search([("state", "in", ["enviada"])], limit=25)
+            self.search([("state", "in", [SITUACAO_EDOC_ENVIADA])], limit=25)
             .filtered(filter_processador_edoc_nfse)
             .filtered(filter_focusnfe)
         )

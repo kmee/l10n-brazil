@@ -7,12 +7,7 @@ from odoo import api, fields, models
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_ISSUER,
     DOCUMENT_ISSUER_COMPANY,
-)
-from odoo.addons.l10n_br_fiscal.constants.fiscal import (
-    DOCUMENT_STATES as FISCAL_STATES,
-)
-from odoo.addons.l10n_br_fiscal_edi.constants.fiscal import (
-    DOCUMENT_STATES as EDI_STATES,
+    SITUACAO_EDOC,
 )
 
 
@@ -50,7 +45,7 @@ class DocumentEmail(models.Model):
     )
 
     state_edoc = fields.Selection(
-        selection=FISCAL_STATES + EDI_STATES,
+        selection=SITUACAO_EDOC,
         string="Situação e-doc",
         copy=False,
         index=True,

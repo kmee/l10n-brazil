@@ -75,10 +75,16 @@ class TestWorkflow(TransactionCase):
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_AUTHORIZED)
 
     def test_no_electronic_01_draft_cancel(self):
+        """Cancelling a company issued document that was not authorized yet
+        is a no-op: only the cancel wizard (which calls _document_cancel with
+        a justification) actually cancels a document."""
         self.fiscal_document.document_electronic = False
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_DRAFT)
 
         self.fiscal_document.action_document_cancel()
+        self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_DRAFT)
+
+        self.fiscal_document._document_cancel("Cancelamento de teste")
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_CANCEL)
 
     def test_electronic_01_draft_cancel(self):
@@ -86,6 +92,9 @@ class TestWorkflow(TransactionCase):
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_DRAFT)
 
         self.fiscal_document.action_document_cancel()
+        self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_DRAFT)
+
+        self.fiscal_document._document_cancel("Cancelamento de teste")
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_CANCEL)
 
     def test_electronic_01_back2draft(self):
@@ -102,8 +111,13 @@ class TestWorkflow(TransactionCase):
         self.fiscal_document.document_electronic = True
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_DRAFT)
 
+        # a draft document is simply not selected for transmission
+        self.fiscal_document.action_document_send()
+        self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_DRAFT)
+
+        # but a transition the state machine does not know is refused
         with self.assertRaises(UserError):
-            self.fiscal_document.action_document_send()
+            self.fiscal_document._change_state(DOCUMENT_STATE_INVALIDATED)
 
     def test_cancel_on_denied_is_idempotent(self):
         self.fiscal_document.document_electronic = True
@@ -119,8 +133,8 @@ class TestWorkflow(TransactionCase):
         action_document_confirm() would fail on the second call because
         the document was already in a confirmed state.
 
-        With the FSM refactor, partner-issued docs go to OPEN (a_enviar)
-        via the base class write(), and calling again is a safe no-op.
+        A partner-issued document goes straight to AUTHORIZED: we have
+        nothing to transmit for a document we did not issue.
         """
         self.fiscal_document.document_electronic = True
         self.fiscal_document.issuer = "partner"
@@ -130,18 +144,18 @@ class TestWorkflow(TransactionCase):
             DOCUMENT_STATE_DRAFT,
         )
 
-        # First confirm - partner-issued docs go to OPEN
+        # First confirm - partner-issued docs go to AUTHORIZED
         self.fiscal_document.action_document_confirm()
         self.assertEqual(
             self.fiscal_document.state_edoc,
-            DOCUMENT_STATE_OPEN,
+            DOCUMENT_STATE_AUTHORIZED,
         )
 
         # Second confirm - must NOT raise an error (idempotent)
         self.fiscal_document.action_document_confirm()
         self.assertEqual(
             self.fiscal_document.state_edoc,
-            DOCUMENT_STATE_OPEN,
+            DOCUMENT_STATE_AUTHORIZED,
         )
 
     def test_correction_wizard(self):
@@ -194,7 +208,7 @@ class TestWorkflow(TransactionCase):
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_INVALIDATED)
 
         with self.assertRaises(UserError):
-            self.fiscal_document.action_document_send()
+            self.fiscal_document._trigger_fsm("action_send")
 
     def test_dashboard_counts_authorized(self):
         """The operation dashboard 'authorized' counter must count
