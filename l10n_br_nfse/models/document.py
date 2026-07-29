@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 import base64
+import inspect
 import logging
 
 from erpbrasil.base import misc
@@ -97,7 +98,36 @@ class Document(models.Model):
         else:
             self.file_report_id = self.env["ir.attachment"].create(vals_dict)
 
-    def _processador_erpbrasil_nfse(self):
+    def _drop_unsupported_factory_kwargs(self, kwargs):
+        """Remove os kwargs que o NFSeFactory instalado não conhece.
+
+        Permite que um módulo de provedor ofereça um recurso que depende de um
+        parâmetro novo do erpbrasil.edoc sem exigir uma versão da biblioteca que
+        ainda não foi publicada: o recurso se ativa sozinho quando a versão
+        instalada passa a aceitar o parâmetro, e até lá o caminho padrão
+        continua funcionando, com um aviso no log.
+        """
+        params = inspect.signature(NFSeFactory).parameters
+        if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()):
+            return kwargs
+        supported, unsupported = {}, []
+        for key, value in kwargs.items():
+            if key in params:
+                supported[key] = value
+            else:
+                unsupported.append(key)
+        if unsupported:
+            _logger.warning(
+                "NFSeFactory do erpbrasil.edoc instalado não aceita %s: "
+                "parâmetro(s) ignorado(s).",
+                ", ".join(sorted(unsupported)),
+            )
+        return supported
+
+    def _processador_erpbrasil_nfse(self, **kwargs):
+        # kwargs extras são repassados ao NFSeFactory pelos módulos de provedor
+        # (ex.: versao_schema="v03" para o schema da Reforma Tributária na
+        # Paulistana).
         certificado = self.env.company._get_br_ecertificate()
         session = Session()
         session.verify = False
@@ -110,6 +140,7 @@ class Document(models.Model):
             im_prestador=misc.punctuation_rm(
                 self.company_id.partner_id.l10n_br_im_code or ""
             ),
+            **self._drop_unsupported_factory_kwargs(kwargs),
         )
 
     def _document_export(self, pretty_print=True):
