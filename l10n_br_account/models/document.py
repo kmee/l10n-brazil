@@ -279,7 +279,15 @@ class FiscalDocument(models.Model):
     def cancel_move_ids(self):
         for record in self:
             if record.move_ids:
-                self.move_ids.button_cancel()
+                # No Odoo 18 o button_cancel do core reseta faturas posted para
+                # draft antes de cancelar (chama button_draft). Sinalizamos que
+                # a cascata partiu do cancelamento do documento fiscal para que
+                # o button_draft deste módulo não levante "cancelled in SEFAZ"
+                # (state_edoc já é CANCELADA neste ponto) nem devolva o
+                # documento para EM_DIGITACAO.
+                record.move_ids.with_context(
+                    fiscal_document_cancelling=True
+                ).button_cancel()
 
     def _document_cancel(self, justificative):
         result = super()._document_cancel(justificative)

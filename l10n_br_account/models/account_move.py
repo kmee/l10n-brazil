@@ -543,6 +543,12 @@ class AccountMove(models.Model):
         """Set the move to draft state, handling fiscal documents."""
         # Process fiscal documents first to sync their state
         for move in self.filtered(lambda d: d.document_type_id):
+            if self.env.context.get("fiscal_document_cancelling"):
+                # Cascata cancel_move_ids -> button_cancel -> button_draft
+                # disparada pelo cancelamento do próprio documento fiscal:
+                # nem a trava abaixo nem o action_document_back2draft se
+                # aplicam, o documento está sendo cancelado de propósito.
+                continue
             if (
                 move.state_edoc == SITUACAO_EDOC_CANCELADA
                 and move.document_number
