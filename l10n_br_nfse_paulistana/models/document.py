@@ -24,6 +24,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     MODELO_FISCAL_NFSE,
     PROCESSADOR_OCA,
     SITUACAO_EDOC_AUTORIZADA,
+    SITUACAO_EDOC_CANCELADA,
     SITUACAO_EDOC_REJEITADA,
 )
 
@@ -443,7 +444,6 @@ class Document(models.Model):
     def _document_status(self):
         status = super()._document_status()
         for record in self.filtered(filter_oca_nfse).filtered(filter_paulistana):
-            vals = dict()
             processador = record._processador_erpbrasil_nfse()
             processo = processador.consulta_nfse_rps(
                 numero_rps=record.rps_number,
@@ -454,33 +454,72 @@ class Document(models.Model):
                 or None,
                 cnpj_prest=misc.punctuation_rm(record.company_id.partner_id.vat),
             )
-
             consulta = processador.analisa_retorno_consulta(processo)
-            retorno = ET.fromstring(processo.retorno)
-
-            if processo.webservice in CONSULTA_LOTE:
-                if processo.resposta.Cabecalho.Sucesso:
-                    nfse = retorno.find(".//NFe")
-
-                    vals["document_number"] = nfse.find(".//NumeroNFe").text
-                    vals["authorization_date"] = nfse.find(".//DataEmissaoRPS").text
-                    vals["verify_code"] = nfse.find(".//CodigoVerificacao").text
-                    vals["status_name"] = _("Procesado com Sucesso")
-                    vals["status_code"] = 4
-                    vals["edoc_error_message"] = ""
-
+            if isinstance(consulta, dict):
+                retorno_xml = ET.fromstring(processo.retorno)
+                # A prefeitura devolve a data em ISO 8601 com "T"
+                # (ex.: 2026-07-07T12:07:03); o campo Datetime do Odoo espera
+                # "YYYY-MM-DD HH:MM:SS". fromisoformat aceita os dois
+                # separadores e devolve um datetime que o Odoo grava direto.
+                data_emissao = datetime.fromisoformat(consulta["data_emissao"])
+                record.write(
+                    {
+                        "verify_code": consulta["codigo_verificacao"],
+                        "document_number": consulta["numero"],
+                        "authorization_date": data_emissao,
+                    }
+                )
+                # StatusNFe: "N" = normal/autorizada, "C" = cancelada. Quando
+                # a prefeitura já cancelou, o Odoo pode ter ficado autorizado
+                # (ex.: um cancelamento anterior sofreu rollback). Reconcilia.
+                if retorno_xml.findtext(".//StatusNFe") == "C":
+                    status = record._paulistana_sync_cancelada(retorno_xml)
+                else:
                     record.authorization_event_id.set_done(
                         status_code=4,
-                        response=vals["status_name"],
-                        protocol_date=vals["authorization_date"],
-                        protocol_number=nfse.find(".//CodigoVerificacao").text,
+                        response=_("Procesado com Sucesso"),
+                        protocol_date=data_emissao,
+                        protocol_number=consulta["codigo_verificacao"],
                         file_response_xml=processo.retorno,
                     )
-
-                    record._change_state(SITUACAO_EDOC_AUTORIZADA)
-                    record.write(vals)
-            status = _(consulta)
+                    # (AUTORIZADA, AUTORIZADA) não existe no WORKFLOW_EDOC:
+                    # sem a guarda, consultar uma nota já autorizada levantava
+                    # UserError de transição não permitida.
+                    if record.state_edoc != SITUACAO_EDOC_AUTORIZADA:
+                        record._change_state(SITUACAO_EDOC_AUTORIZADA)
+                    status = _("Procesado com Sucesso")
+            else:
+                # Em caso de erro analisa_retorno_consulta devolve a mensagem
+                # (string); no sucesso devolve um dict, que não pode ir para _().
+                status = _(consulta)
         return status
+
+    def _paulistana_sync_cancelada(self, retorno_xml):
+        """Reflete no Odoo o cancelamento já efetuado na prefeitura.
+
+        Chamado pelo _document_status quando a consulta retorna StatusNFe="C".
+        A transição para CANCELADA é feita SEM re-chamar o webservice de
+        cancelamento (a nota já está cancelada lá), via a flag de contexto
+        lida em _exec_before_SITUACAO_EDOC_CANCELADA. O _document_cancel
+        também sincroniza a fatura (cancel_move_ids).
+        """
+        self.ensure_one()
+        if self.state_edoc == SITUACAO_EDOC_CANCELADA:
+            return _("Documento já cancelado")
+        data_cancelamento = retorno_xml.findtext(".//DataCancelamento")
+        justificativa = _("Cancelada na prefeitura (detectado via consulta).")
+        if data_cancelamento:
+            justificativa = "{} {}".format(
+                justificativa,
+                _("Data do cancelamento: %s") % data_cancelamento,
+            )
+        # _document_cancel é o caminho canônico: grava o cancel_reason, faz a
+        # transição de estado e, com o l10n_br_account instalado, sincroniza a
+        # fatura via cancel_move_ids.
+        self.with_context(paulistana_skip_cancel_webservice=True)._document_cancel(
+            justificativa
+        )
+        return _("Documento cancelado na prefeitura")
 
     def cancel_document_paulistana(self):
         def doc_dict(record):
@@ -522,4 +561,9 @@ class Document(models.Model):
         # silêncio.
         if not self.filtered(filter_oca_nfse).filtered(filter_paulistana):
             return result
+        if self.env.context.get("paulistana_skip_cancel_webservice"):
+            # A NFS-e já foi cancelada na prefeitura (reconciliação via
+            # consulta em _paulistana_sync_cancelada): apenas efetiva a
+            # transição no Odoo, sem re-enviar o pedido de cancelamento.
+            return True
         return self.cancel_document_paulistana()
