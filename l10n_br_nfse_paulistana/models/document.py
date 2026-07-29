@@ -1,21 +1,23 @@
 # Copyright 2019 KMEE INFORMATICA LTDA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import logging
+import re
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
 from erpbrasil.base import misc
+from nfselib.paulistana.v02 import PedidoEnvioLoteRPS as lote_rps_v02
 from nfselib.paulistana.v02.PedidoEnvioLoteRPS import (
     CabecalhoType,
-    PedidoEnvioLoteRPS,
-    tpChaveRPS,
     tpCPFCNPJ,
     tpEndereco,
     tpRPS,
 )
+from nfselib.paulistana.v03 import PedidoEnvioLoteRPS as lote_rps_v03
 from unidecode import unidecode
 
-from odoo import _, models
+from odoo import _, fields, models
 from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
@@ -29,6 +31,15 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
 )
 
 from ..constants.paulistana import CONSULTA_LOTE, ENVIO_LOTE_RPS
+
+_logger = logging.getLogger(__name__)
+
+# Layout legado (fato gerador até 31/12/2025) = bindings nfselib v02, Versao=1.
+# Layout da Reforma Tributária (IBS/CBS) = bindings nfselib v03, Versao=2.
+PAULISTANA_BINDINGS = {
+    "v02": {"module": lote_rps_v02, "versao": 1},
+    "v03": {"module": lote_rps_v03, "versao": 2},
+}
 
 
 def filter_oca_nfse(record):
@@ -47,6 +58,17 @@ def filter_paulistana(record):
 
 class Document(models.Model):
     _inherit = "l10n_br_fiscal.document"
+
+    nfse_document_key = fields.Char(
+        string="NFS-e National Key",
+        copy=False,
+        index=True,
+        help=(
+            "Chave de acesso nacional da NFS-e (Reforma Tributária, "
+            "ChaveNotaNacional). Tem 50 dígitos, diferente do document_key "
+            "(chave de 44 dígitos de NF-e/NFC-e/CT-e, validada por _check_key)."
+        ),
+    )
 
     def convert_type_nfselib(self, class_object, object_filed, value):
         if value is None:
@@ -83,21 +105,40 @@ class Document(models.Model):
     def _serialize(self, edocs):
         edocs = super()._serialize(edocs)
         for record in self.filtered(filter_oca_nfse).filtered(filter_paulistana):
-            edocs.append(record.serialize_nfse_paulistana())
+            nfse_version = record.company_id.nfse_paulistana_schema or "v02"
+            edocs.append(record.serialize_nfse_paulistana(nfse_version=nfse_version))
         return edocs
 
-    def serialize_nfse_paulistana(self):
+    def _processador_erpbrasil_nfse(self, **kwargs):
+        # Encaminha a versão de schema configurada na empresa para o provedor
+        # erpbrasil.edoc, de modo que os envelopes de consulta e cancelamento
+        # usem o mesmo layout do RPS (Versao 1 legado / Versao 2 Reforma). O
+        # l10n_br_nfse descarta o parâmetro, com aviso no log, enquanto a versão
+        # instalada da biblioteca não o aceitar - ver ROADMAP.
+        if self.company_id.provedor_nfse == "paulistana":
+            kwargs.setdefault(
+                "versao_schema", self.company_id.nfse_paulistana_schema or "v02"
+            )
+        return super()._processador_erpbrasil_nfse(**kwargs)
+
+    def serialize_nfse_paulistana(self, nfse_version="v02"):
+        binding = PAULISTANA_BINDINGS[nfse_version]
         dados_lote_rps = self._prepare_lote_rps()
         dados_servico = self._prepare_dados_servico()
-        lote_rps = PedidoEnvioLoteRPS(
-            Cabecalho=self._serialize_cabecalho(dados_lote_rps),
-            RPS=[self._serialize_lote_rps(dados_lote_rps, dados_servico)],
+        lote_rps = binding["module"].PedidoEnvioLoteRPS(
+            Cabecalho=self._serialize_cabecalho(dados_lote_rps, binding),
+            RPS=[self._serialize_lote_rps(dados_lote_rps, dados_servico, binding)],
         )
         return lote_rps
 
-    def _serialize_cabecalho(self, dados_lote_rps):
+    def _serialize_cabecalho(self, dados_lote_rps, binding=None):
+        binding = binding or PAULISTANA_BINDINGS["v02"]
+        CabecalhoType = binding["module"].CabecalhoType
+        tpCPFCNPJ = binding["module"].tpCPFCNPJ
         return CabecalhoType(
-            Versao=self.convert_type_nfselib(CabecalhoType, "Versao", 1),
+            Versao=self.convert_type_nfselib(
+                CabecalhoType, "Versao", binding["versao"]
+            ),
             CPFCNPJRemetente=tpCPFCNPJ(
                 CNPJ=self.convert_type_nfselib(
                     CabecalhoType, "tpCPFCNPJ", dados_lote_rps["cnpj"]
@@ -121,12 +162,24 @@ class Document(models.Model):
             ),
         )
 
-    def _serialize_lote_rps(self, dados_lote_rps, dados_servico):
+    def _serialize_lote_rps(self, dados_lote_rps, dados_servico, binding=None):
+        binding = binding or PAULISTANA_BINDINGS["v02"]
+        tpRPS = binding["module"].tpRPS
+        tpChaveRPS = binding["module"].tpChaveRPS
+        tpCPFCNPJ = binding["module"].tpCPFCNPJ
+        tpEndereco = binding["module"].tpEndereco
         dados_tomador = self._prepare_dados_tomador()
-        return tpRPS(
-            Assinatura=self.assinatura_rps(
-                dados_lote_rps, dados_servico, dados_tomador
-            ),
+        assinatura = self.assinatura_rps(
+            dados_lote_rps, dados_servico, dados_tomador, binding
+        )
+        if binding["versao"] >= 2:
+            # Os dois schemas declaram Assinatura como xs:base64Binary, mas os
+            # bindings v02 escrevem o valor cru (esperam str, o base64 é feito
+            # pelo erpbrasil.edoc) e os v03 aplicam b64encode no export, que
+            # exige bytes.
+            assinatura = assinatura.encode("ascii")
+        rps = tpRPS(
+            Assinatura=assinatura,
             ChaveRPS=tpChaveRPS(
                 InscricaoPrestador=self.convert_type_nfselib(
                     tpChaveRPS,
@@ -254,6 +307,91 @@ class Document(models.Model):
                 ),
             ),
         )
+        if binding["versao"] >= 2:
+            self._fill_rps_v03_required(rps, binding, dados_servico)
+        return rps
+
+    def _fill_rps_v03_required(self, rps, binding, dados_servico):
+        """Popula os campos obrigatórios que só existem no layout da Reforma.
+
+        Nenhum destes elementos existe nos bindings v02 - passá-los ao tpRPS
+        legado levantaria TypeError -, por isso são preenchidos depois da
+        construção do RPS, apenas quando o schema é o da Reforma.
+        """
+        valor_servicos = round(float(dados_servico.get("valor_servicos") or 0), 2)
+        # Base cobrada: o schema define ValorInicialCobrado XOR
+        # ValorFinalCobrado (xs:choice). A SP descontinuou o ValorInicialCobrado
+        # (erro 640); a sistemática atual exige o ValorFinalCobrado.
+        rps.ValorFinalCobrado = valor_servicos
+        rps.ValorIPI = 0.0  # serviço não destaca IPI
+        # TODO(MOC): mapear exigibilidade suspensa e pagamento parcelado
+        # antecipado conforme o cenário fiscal (0 = não).
+        rps.ExigibilidadeSuspensa = 0
+        rps.PagamentoParceladoAntecipado = 0
+        # NBS deve ter 9 dígitos ([0-9]{9}): usar o código sem máscara.
+        codigo_nbs = dados_servico.get("codigo_nbs_unmasked") or dados_servico.get(
+            "codigo_nbs"
+        )
+        rps.NBS = re.sub(r"\D", "", codigo_nbs) if codigo_nbs else None
+        # gpPrestacao é xs:choice (cLocPrestacao XOR cPaisPrestacao). Serviço
+        # prestado no Brasil -> apenas o município (código IBGE).
+        municipio_prestacao = dados_servico.get(
+            "municipio_prestacao_servico"
+        ) or dados_servico.get("codigo_municipio")
+        rps.cLocPrestacao = int(municipio_prestacao) if municipio_prestacao else None
+        rps.IBSCBS = self._serialize_ibscbs(binding, dados_servico)
+
+    def _serialize_ibscbs(self, binding, dados_servico):
+        """Monta o grupo IBSCBS, obrigatório no RPS do layout da Reforma.
+
+        No envio informa-se a classificação tributária (cClassTrib) e os
+        indicadores; os valores monetários de IBS/CBS são calculados e
+        devolvidos pelo webservice no retorno.
+        """
+        module = binding["module"]
+        tpIBSCBS = module.tpIBSCBS
+        tpValores = module.tpValores
+        tpTrib = module.tpTrib
+        tpGIBSCBS = module.tpGIBSCBS
+
+        # Os códigos saem da configuração fiscal que já existe, sem pedir nada
+        # novo ao usuário: cClassTrib vem do tax_classification_id da linha
+        # (computado em _compute_fiscal_tax_ids via map_fiscal_taxes), com
+        # fallback no default da empresa; cIndOp vem do operation_indicator_id
+        # do produto.
+        cclasstrib = dados_servico.get("ibs_cbs_classificacao_tributaria") or (
+            self.company_id.tax_classification_id.code or None
+        )
+        cindop = dados_servico.get("codigo_indicador_operacao") or None
+        if not cclasstrib or not cindop:
+            # Não bloqueia a emissão, mas registra: sem esses códigos o layout
+            # da Reforma rejeita o lote (erro 1001).
+            _logger.warning(
+                "NFS-e Paulistana %s: IBSCBS incompleto (cClassTrib=%s, "
+                "cIndOp=%s). Configure a Classificação Tributária (IBS/CBS) e o "
+                "Indicador de Operação para evitar rejeição do lote.",
+                self.document_number or self.id,
+                cclasstrib,
+                cindop,
+            )
+        try:
+            ind_final = int(self.ind_final) if self.ind_final else 0
+        except (TypeError, ValueError):
+            ind_final = 0
+
+        return tpIBSCBS(
+            finNFSe=0,  # 0 = NFS-e regular (único valor aceito pelo schema)
+            indFinal=ind_final,
+            cIndOp=cindop,
+            # 0 = o destinatário é o próprio tomador/adquirente (caso padrão,
+            # sem destinatário distinto). 1 exigiria o grupo <dest>.
+            indDest=0,
+            valores=tpValores(
+                trib=tpTrib(
+                    gIBSCBS=tpGIBSCBS(cClassTrib=cclasstrib),
+                ),
+            ),
+        )
 
     def _percentual_carga_tributaria(self, dados_lote_rps, dados_servico):
         """Percentual (fração) da carga tributária estimada IBPT.
@@ -324,10 +462,17 @@ class Document(models.Model):
             or None,
         )
 
-    def assinatura_rps(self, dados_lote_rps, dados_servico, dados_tomador):
+    def assinatura_rps(
+        self, dados_lote_rps, dados_servico, dados_tomador, binding=None
+    ):
         assinatura = ""
 
-        assinatura += dados_lote_rps["inscricao_municipal"].zfill(8)
+        # Inscrição do prestador: o layout legado usa 8 posições, o da Reforma
+        # usa 12. A SP reconstrói a mesma string para verificar a assinatura
+        # RSA, então largura errada causa o erro 1206.
+        versao = binding["versao"] if binding else PAULISTANA_BINDINGS["v02"]["versao"]
+        inscr_width = 12 if versao >= 2 else 8
+        assinatura += dados_lote_rps["inscricao_municipal"].zfill(inscr_width)
         assinatura += dados_lote_rps["serie"].ljust(5, " ")
         assinatura += dados_lote_rps["numero"].zfill(12)
         assinatura += datetime.strptime(
@@ -462,13 +607,20 @@ class Document(models.Model):
                 # "YYYY-MM-DD HH:MM:SS". fromisoformat aceita os dois
                 # separadores e devolve um datetime que o Odoo grava direto.
                 data_emissao = datetime.fromisoformat(consulta["data_emissao"])
-                record.write(
-                    {
-                        "verify_code": consulta["codigo_verificacao"],
-                        "document_number": consulta["numero"],
-                        "authorization_date": data_emissao,
-                    }
-                )
+                vals = {
+                    "verify_code": consulta["codigo_verificacao"],
+                    "document_number": consulta["numero"],
+                    "authorization_date": data_emissao,
+                }
+                # A ChaveNotaNacional (50 dígitos) vem no retorno do layout da
+                # Reforma. Não cabe em document_key, que é validado como chave
+                # de NF-e (44 dígitos): gravamos no nfse_document_key. No layout
+                # legado o elemento não existe, findtext devolve None e o campo
+                # fica intocado.
+                chave = retorno_xml.findtext(".//ChaveNotaNacional")
+                if chave:
+                    vals["nfse_document_key"] = chave
+                record.write(vals)
                 # StatusNFe: "N" = normal/autorizada, "C" = cancelada. Quando
                 # a prefeitura já cancelou, o Odoo pode ter ficado autorizado
                 # (ex.: um cancelamento anterior sofreu rollback). Reconcilia.
