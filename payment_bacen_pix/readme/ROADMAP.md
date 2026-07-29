@@ -1,6 +1,3 @@
-- Only the immediate charge (`cob`) is implemented. The API also offers the
-  charge with a due date (`cobv`), with interest, fine and discount, which is
-  the natural next step for the integration with the payment orders.
 - Pix Automático (`rec`, `solicrec` and `cobr`, introduced in version 2.7 of
   the API) is not implemented: recurring payments still need a new charge each
   time.

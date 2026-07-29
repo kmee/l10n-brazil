@@ -7,12 +7,12 @@ import re
 import uuid
 from datetime import datetime, timedelta
 
-from odoo import _, fields, models
+from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 
 from odoo.addons.payment import utils as payment_utils
 
-from ..const import DEFAULT_EXPIRATION, PAYMENT_STATUS_MAPPING
+from ..const import PAYMENT_STATUS_MAPPING
 from ..utils import redact_personal_data
 
 _logger = logging.getLogger(__name__)
@@ -46,8 +46,101 @@ class PaymentTransaction(models.Model):
         help="The moment after which the charge can no longer be paid.",
         readonly=True,
     )
+    bacenpix_charge_config_id = fields.Many2one(
+        comodel_name="bacenpix.charge.config",
+        string="Pix Charge Configuration",
+        compute="_compute_bacenpix_charge_config_id",
+        store=True,
+        readonly=False,
+        help="The kind of charge to register and its terms. Comes from the "
+        "payment mode of the document being paid, or from the provider.",
+    )
+    bacenpix_charge_type = fields.Selection(
+        related="bacenpix_charge_config_id.charge_type",
+        string="Pix Charge Type",
+        readonly=True,
+    )
+    bacenpix_invoice_id = fields.Many2one(
+        comodel_name="account.move",
+        string="Pix Invoice",
+        help="The invoice whose installment this charge collects.",
+        readonly=True,
+        ondelete="cascade",
+    )
+    bacenpix_move_line_id = fields.Many2one(
+        comodel_name="account.move.line",
+        string="Pix Installment",
+        help="The receivable line this charge collects.",
+        readonly=True,
+        ondelete="set null",
+    )
+    bacenpix_due_date = fields.Date(
+        string="Pix Due Date",
+        help="The date a charge with a due date (cobv) is due. Required by that "
+        "kind of charge, and ignored by the immediate one.",
+    )
 
     # === BUSINESS METHODS === #
+
+    @api.depends("provider_id", "invoice_ids")
+    def _compute_bacenpix_charge_config_id(self):
+        """Take the charge configuration from the payment mode or the provider."""
+        for transaction in self:
+            if transaction.provider_code != "bacenpix":
+                transaction.bacenpix_charge_config_id = False
+                continue
+            transaction.bacenpix_charge_config_id = (
+                transaction._bacenpix_get_payment_mode().bacenpix_charge_config_id
+                or transaction.provider_id.bacenpix_charge_config_id
+            )
+
+    def _bacenpix_get_charge_config(self):
+        """Return the charge configuration that rules the transaction.
+
+        The policy of the collection belongs to the payment mode of the
+        document being paid, which is where the Brazilian localization keeps the
+        terms of a charge. The configuration of the provider is the fallback for
+        the payments that have no document behind them, such as an e-commerce
+        checkout.
+
+        :return: The configuration of the charge.
+        :rtype: recordset of `bacenpix.charge.config`
+        :raise ValidationError: If no configuration is found.
+        """
+        self.ensure_one()
+        config = (
+            self.bacenpix_charge_config_id
+            or self._bacenpix_get_payment_mode().bacenpix_charge_config_id
+            or self.provider_id.bacenpix_charge_config_id
+        )
+        if not config:
+            raise ValidationError(
+                _(
+                    "Pix: No charge configuration is set on the payment mode nor "
+                    "on the provider."
+                )
+            )
+        return config
+
+    def _bacenpix_get_payment_mode(self):
+        """Return the payment mode of the document being paid.
+
+        The invoice answers first; a payment made before the invoice exists
+        falls back to the sale order, which carries the payment mode when
+        `account_payment_sale` is installed. The module does not depend on it,
+        so that a database without sales still installs.
+
+        :return: The payment mode, if any.
+        :rtype: recordset of `account.payment.mode`
+        """
+        self.ensure_one()
+        invoice = self.invoice_ids[:1]
+        if invoice.payment_mode_id:
+            return invoice.payment_mode_id
+        order = self.sale_order_ids[:1] if "sale_order_ids" in self._fields else None
+        if order and "payment_mode_id" in order._fields:
+            return order.payment_mode_id
+        return self.env["account.payment.mode"]
 
     def _get_specific_rendering_values(self, processing_values):
         """Override of `payment` to return the values of the Pix charge.
@@ -76,28 +169,35 @@ class PaymentTransaction(models.Model):
             ),
         }
 
+    def _bacenpix_charge_endpoint(self):
+        """Return the endpoint of the charge, as told by its configuration.
+
+        :return: `cob` for an immediate charge, `cobv` for one with a due date.
+        :rtype: str
+        """
+        self.ensure_one()
+        return self._bacenpix_get_charge_config().charge_type
+
     def _bacenpix_create_charge(self):
-        """Create the immediate charge on the PSP and store its QR code.
+        """Create the charge on the PSP and store its QR code.
+
+        A transaction with a due date is registered as a charge with a due date
+        (`cobv`), which carries fine, interest and discount; without one, as an
+        immediate charge (`cob`).
 
         :return: None
         """
         self.ensure_one()
 
         txid = uuid.uuid4().hex
-        payload = {
-            "calendario": {
-                "expiracao": self.provider_id.bacenpix_expiration or DEFAULT_EXPIRATION
-            },
-            "valor": {"original": f"{self.amount:.2f}"},
-            "chave": self.provider_id.sudo().bacenpix_key,
-            "solicitacaoPagador": self.reference[:140],
-        }
-        debtor = self._bacenpix_prepare_debtor_payload()
-        if debtor:
-            payload["devedor"] = debtor
+        endpoint = self._bacenpix_charge_endpoint()
+        if endpoint == "cobv":
+            payload = self._bacenpix_prepare_charge_with_due_date_payload()
+        else:
+            payload = self._bacenpix_prepare_immediate_charge_payload()
 
         response_content = self.provider_id._bacenpix_make_request(
-            f"/cob/{txid}", payload, method="PUT"
+            f"/{endpoint}/{txid}", payload, method="PUT"
         )
         _logger.info(
             "charge creation response for transaction with reference %s:\n%s",
@@ -123,26 +223,142 @@ class PaymentTransaction(models.Model):
         )
         self._handle_notification_data("bacenpix", {"response": response_content})
 
-    def _bacenpix_prepare_debtor_payload(self):
-        """Return the `devedor` part of the payload of a charge.
+    def _bacenpix_prepare_immediate_charge_payload(self):
+        """Return the payload of an immediate charge.
 
-        The Pix API only accepts a debtor with a valid CPF or CNPJ, so the
-        section is left out when the partner has no tax id.
-
-        :return: The debtor payload, or an empty dict.
+        :return: The payload of the charge.
         :rtype: dict
         """
         self.ensure_one()
 
-        tax_id = re.sub(r"\D", "", self.partner_id.vat or "")
-        name = (self.partner_name or self.partner_id.name or "")[:200]
-        if not name:
-            return {}
-        if len(tax_id) == 11:
-            return {"cpf": tax_id, "nome": name}
-        elif len(tax_id) == 14:
-            return {"cnpj": tax_id, "nome": name}
-        return {}
+        payload = {
+            "calendario": {"expiracao": self._bacenpix_get_charge_config().expiration},
+            "valor": {"original": f"{self.amount:.2f}"},
+            "chave": self.provider_id.sudo().bacenpix_key,
+            "solicitacaoPagador": self.reference[:140],
+        }
+        debtor = self._bacenpix_prepare_debtor_payload()
+        if debtor:
+            payload["devedor"] = debtor
+        return payload
+
+    def _bacenpix_prepare_charge_with_due_date_payload(self):
+        """Return the payload of a charge with a due date.
+
+        The Pix arrangement requires the full address of the debtor on a charge
+        with a due date, and accepts the fine, the interest and the discount
+        configured on the provider.
+
+        :return: The payload of the charge.
+        :rtype: dict
+        :raise ValidationError: If the debtor is not complete.
+        """
+        self.ensure_one()
+
+        config = self._bacenpix_get_charge_config()
+        if not self.bacenpix_due_date:
+            raise ValidationError(
+                _(
+                    "Pix: The charge configuration %s registers a charge with a "
+                    "due date, so the transaction needs one.",
+                    config.display_name,
+                )
+            )
+        return {
+            "calendario": {
+                "dataDeVencimento": self.bacenpix_due_date.strftime("%Y-%m-%d"),
+                "validadeAposVencimento": config.validity_after_due_date,
+            },
+            "devedor": self._bacenpix_prepare_debtor_payload(with_address=True),
+            "valor": self._bacenpix_prepare_charge_amount_payload(),
+            "chave": self.provider_id.sudo().bacenpix_key,
+            "solicitacaoPagador": self.reference[:140],
+        }
+
+    def _bacenpix_prepare_charge_amount_payload(self):
+        """Return the `valor` part of a charge with a due date.
+
+        :return: The amount payload, with the fine, interest and discount.
+        :rtype: dict
+        """
+        self.ensure_one()
+
+        config = self._bacenpix_get_charge_config()
+        amount = {"original": f"{self.amount:.2f}"}
+        if config.fine_value and config.fine_mode:
+            amount["multa"] = {
+                "modalidade": config.fine_mode,
+                "valorPerc": f"{config.fine_value:.2f}",
+            }
+        if config.interest_value and config.interest_mode:
+            amount["juros"] = {
+                "modalidade": config.interest_mode,
+                "valorPerc": f"{config.interest_value:.2f}",
+            }
+        if config.discount_value and config.discount_mode:
+            # The discount holds until the due date of the charge.
+            amount["desconto"] = {
+                "modalidade": config.discount_mode,
+                "descontoDataFixa": [
+                    {
+                        "data": self.bacenpix_due_date.strftime("%Y-%m-%d"),
+                        "valorPerc": f"{config.discount_value:.2f}",
+                    }
+                ],
+            }
+        if config.rebate_value:
+            amount["abatimento"] = {
+                "modalidade": "1",
+                "valorPerc": f"{config.rebate_value:.2f}",
+            }
+        return amount
+
+    def _bacenpix_prepare_debtor_payload(self, with_address=False):
+        """Return the `devedor` part of the payload of a charge.
+
+        The Pix API only accepts a debtor with a valid CPF or CNPJ, so the
+        section is left out when the partner has no tax id. A charge with a due
+        date also requires the address of the debtor.
+
+        :param bool with_address: Whether the address is required.
+        :return: The debtor payload, or an empty dict.
+        :rtype: dict
+        :raise ValidationError: If the debtor of a charge with a due date is
+                                not complete.
+        """
+        self.ensure_one()
+
+        partner = self.partner_id
+        tax_id = re.sub(r"\D", "", partner.vat or "")
+        name = (self.partner_name or partner.name or "")[:200]
+        debtor = {}
+        if name and len(tax_id) == 11:
+            debtor = {"cpf": tax_id, "nome": name}
+        elif name and len(tax_id) == 14:
+            debtor = {"cnpj": tax_id, "nome": name}
+
+        if not with_address:
+            return debtor
+
+        address = {
+            "logradouro": (partner.street or "")[:200],
+            "cidade": (partner.city or "")[:200],
+            "uf": partner.state_id.code or "",
+            "cep": re.sub(r"\D", "", partner.zip or ""),
+        }
+        missing = [key for key, value in address.items() if not value]
+        if not debtor or missing:
+            raise ValidationError(
+                _(
+                    "Pix: A charge with a due date requires the name, the "
+                    "CPF/CNPJ and the full address of %(partner)s. Missing: "
+                    "%(missing)s.",
+                    partner=partner.display_name,
+                    missing=", ".join(missing) or _("CPF/CNPJ"),
+                )
+            )
+        debtor.update(address)
+        return debtor
 
     @staticmethod
     def _bacenpix_compute_expiration(response_content):
@@ -153,6 +369,16 @@ class PaymentTransaction(models.Model):
         :rtype: datetime|bool
         """
         calendar = response_content.get("calendario") or {}
+        due_date = calendar.get("dataDeVencimento")
+        if due_date:
+            # Uma cobrança com vencimento continua pagável por mais alguns dias.
+            try:
+                validity = int(calendar.get("validadeAposVencimento") or 0)
+                return datetime.strptime(due_date, "%Y-%m-%d") + timedelta(
+                    days=validity + 1
+                )
+            except (ValueError, TypeError):
+                return False
         creation = calendar.get("criacao")
         expiration = calendar.get("expiracao")
         if not creation or not expiration:
@@ -174,7 +400,7 @@ class PaymentTransaction(models.Model):
         if not self.bacenpix_txid:
             return
         response_content = self.provider_id._bacenpix_make_request(
-            f"/cob/{self.bacenpix_txid}", method="GET"
+            f"/{self._bacenpix_charge_endpoint()}/{self.bacenpix_txid}", method="GET"
         )
         _logger.info(
             "charge query response for transaction with reference %s:\n%s",

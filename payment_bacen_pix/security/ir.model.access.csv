@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_bacenpix_charge_config_user,bacenpix.charge.config.user,model_bacenpix_charge_config,base.group_user,1,0,0,0
+access_bacenpix_charge_config_system,bacenpix.charge.config.system,model_bacenpix_charge_config,base.group_system,1,1,1,1

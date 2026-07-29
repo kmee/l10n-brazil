@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2023 KMEE -->
+<!-- License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo noupdate="1">
+
+    <record id="charge_config_immediate" model="bacenpix.charge.config">
+        <field name="name">Immediate charge (1 hour)</field>
+        <field name="charge_type">cob</field>
+        <field name="expiration">3600</field>
+    </record>
+
+    <record id="charge_config_due_date" model="bacenpix.charge.config">
+        <field name="name">Charge with a due date</field>
+        <field name="charge_type">cobv</field>
+        <field name="validity_after_due_date">30</field>
+        <field name="sequence">20</field>
+    </record>
+
+</odoo>

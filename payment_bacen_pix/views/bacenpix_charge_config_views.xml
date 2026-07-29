@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2023 KMEE -->
+<!-- License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+
+    <record id="bacenpix_charge_config_form" model="ir.ui.view">
+        <field name="name">bacenpix.charge.config.form</field>
+        <field name="model">bacenpix.charge.config</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" />
+                        <h1><field name="name" placeholder="e.g. Pix in 7 days" /></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="charge_type" widget="radio" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
+                            <field name="sequence" />
+                            <field name="active" invisible="1" />
+                        </group>
+                        <group attrs="{'invisible': [('charge_type', '!=', 'cob')]}">
+                            <field name="expiration" />
+                        </group>
+                        <group attrs="{'invisible': [('charge_type', '!=', 'cobv')]}">
+                            <field name="validity_after_due_date" />
+                        </group>
+                    </group>
+                    <group
+                        string="Terms"
+                        attrs="{'invisible': [('charge_type', '!=', 'cobv')]}"
+                    >
+                        <group>
+                            <label for="fine_value" />
+                            <div class="o_row">
+                                <field name="fine_value" />
+                                <field name="fine_mode" />
+                            </div>
+                            <label for="interest_value" />
+                            <div class="o_row">
+                                <field name="interest_value" />
+                                <field name="interest_mode" />
+                            </div>
+                        </group>
+                        <group>
+                            <label for="discount_value" />
+                            <div class="o_row">
+                                <field name="discount_value" />
+                                <field name="discount_mode" />
+                            </div>
+                            <field name="rebate_value" />
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="bacenpix_charge_config_tree" model="ir.ui.view">
+        <field name="name">bacenpix.charge.config.tree</field>
+        <field name="model">bacenpix.charge.config</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="sequence" widget="handle" />
+                <field name="name" />
+                <field name="charge_type" />
+                <field name="expiration" />
+                <field name="validity_after_due_date" />
+                <field name="company_id" groups="base.group_multi_company" />
+            </tree>
+        </field>
+    </record>
+
+    <record id="bacenpix_charge_config_action" model="ir.actions.act_window">
+        <field name="name">Pix Charge Configurations</field>
+        <field name="res_model">bacenpix.charge.config</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a Pix charge configuration
+            </p>
+            <p>
+                A configuration says which kind of charge to register: an
+                immediate one, payable until it expires, or one with a due date,
+                which carries fine, interest and discount.
+            </p>
+        </field>
+    </record>
+
+</odoo>

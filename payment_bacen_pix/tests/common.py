@@ -60,15 +60,17 @@ class BacenPixCommon(PaymentCommon):
         super().setUpClass()
 
         cls.currency_brl = cls._prepare_currency("BRL")
+        cls.charge_config_cob = cls.env.ref("payment_bacen_pix.charge_config_immediate")
+        cls.charge_config_cobv = cls.env.ref("payment_bacen_pix.charge_config_due_date")
         cls.bacenpix = cls._prepare_provider(
             "bacenpix",
             update_values={
+                "bacenpix_charge_config_id": cls.charge_config_cob.id,
                 "bacenpix_psp": "bb",
                 "bacenpix_key": "pix-key@example.com",
                 "bacenpix_client_id": "dummy-client-id",
                 "bacenpix_client_secret": "dummy-client-secret",
                 "bacenpix_app_key": "dummy-app-key",
-                "bacenpix_expiration": 3600,
             },
         )
 

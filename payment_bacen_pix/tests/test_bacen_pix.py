@@ -195,3 +195,75 @@ class TestBacenPixProvider(BacenPixCommon):
         self.bacenpix.invalidate_recordset(["bacenpix_psp"])
         with self.assertRaises(ValidationError):
             self.bacenpix._bacenpix_get_api_url()
+
+
+@tagged("post_install", "-at_install")
+class TestBacenPixChargeConfig(BacenPixCommon):
+    def test_immediate_charge_needs_an_expiration(self):
+        with self.assertRaises(ValidationError):
+            self.charge_config_cob.expiration = 0
+
+    def test_immediate_charge_carries_no_terms(self):
+        """Multa e juros só existem na cobrança com vencimento."""
+        with self.assertRaises(ValidationError):
+            self.charge_config_cob.fine_value = 2.0
+
+    def test_charge_with_due_date_carries_terms(self):
+        self.charge_config_cobv.write({"fine_value": 2.0, "interest_value": 1.0})
+        self.assertEqual(self.charge_config_cobv.fine_value, 2.0)
+
+    def test_transaction_without_configuration_is_rejected(self):
+        """Sem configuração no modo de pagamento nem no provider, nada é enviado."""
+        self.bacenpix.bacenpix_charge_config_id = False
+        transaction = self.env["payment.transaction"].create(
+            {
+                "provider_id": self.bacenpix.id,
+                "reference": "NO-CONFIG",
+                "amount": 10.0,
+                "currency_id": self.currency_brl.id,
+                "partner_id": self.partner.id,
+            }
+        )
+        with self.assertRaises(ValidationError):
+            transaction._bacenpix_get_charge_config()
+
+    def test_payment_mode_wins_over_the_provider(self):
+        """A política de cobrança é a do modo de pagamento do documento."""
+        journal = self.env["account.journal"].search(
+            [("type", "=", "bank"), ("company_id", "=", self.env.company.id)], limit=1
+        )
+        method = self.env["account.payment.method"].search(
+            [("code", "=", "manual"), ("payment_type", "=", "inbound")], limit=1
+        )
+        payment_mode = self.env["account.payment.mode"].create(
+            {
+                "name": "Pix com vencimento",
+                "company_id": self.env.company.id,
+                "payment_method_id": method.id,
+                "bank_account_link": "fixed",
+                "fixed_journal_id": journal.id,
+                "bacenpix_charge_config_id": self.charge_config_cobv.id,
+            }
+        )
+        invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": self.partner.id,
+                "payment_mode_id": payment_mode.id,
+            }
+        )
+        transaction = self.env["payment.transaction"].create(
+            {
+                "provider_id": self.bacenpix.id,
+                "reference": "WITH-MODE",
+                "amount": 10.0,
+                "currency_id": self.currency_brl.id,
+                "partner_id": self.partner.id,
+                "invoice_ids": [(6, 0, invoice.ids)],
+            }
+        )
+
+        self.assertEqual(
+            transaction._bacenpix_get_charge_config(), self.charge_config_cobv
+        )
+        self.assertEqual(transaction._bacenpix_charge_endpoint(), "cobv")

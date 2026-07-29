@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2023 KMEE -->
+<!-- License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+
+    <record id="account_move_form" model="ir.ui.view">
+        <field name="name">account.move.form.bacenpix</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form" />
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button
+                    type="object"
+                    name="action_view_bacenpix_charges"
+                    class="oe_stat_button"
+                    icon="fa-qrcode"
+                    attrs="{'invisible': [('bacenpix_charge_count', '=', 0)]}"
+                >
+                    <field
+                        name="bacenpix_charge_count"
+                        widget="statinfo"
+                        string="Pix Charges"
+                    />
+                </button>
+            </div>
+            <xpath expr="//button[@name='action_register_payment']" position="after">
+                <button
+                    type="object"
+                    name="action_bacenpix_generate_charges"
+                    string="Generate Pix Charges"
+                    attrs="{'invisible': ['|', '|', ('state', '!=', 'posted'), ('payment_state', '=', 'paid'), ('move_type', 'not in', ('out_invoice', 'out_refund', 'out_receipt'))]}"
+                />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
