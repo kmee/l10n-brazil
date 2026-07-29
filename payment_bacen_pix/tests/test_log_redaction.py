@@ -59,6 +59,7 @@ class TestBacenPixLogRedaction(BacenPixCommon):
                 "amount": 10.0,
                 "currency_id": self.currency_brl.id,
                 "partner_id": self.partner.id,
+                "bacenpix_charge_config_id": self.charge_config_cob.id,
             }
         )
         response = ApiResponse(
@@ -90,6 +91,7 @@ class TestBacenPixLogRedaction(BacenPixCommon):
                 "amount": 10.0,
                 "currency_id": self.currency_brl.id,
                 "partner_id": self.partner.id,
+                "bacenpix_charge_config_id": self.charge_config_cob.id,
             }
         )
         response = self._charge_response(

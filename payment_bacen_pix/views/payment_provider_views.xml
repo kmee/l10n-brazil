@@ -32,7 +32,7 @@
                     />
                     <field name="bacenpix_certificate" filename="Certificate" />
                     <field name="bacenpix_private_key" filename="Private Key" />
-                    <field name="bacenpix_expiration" />
+                    <field name="bacenpix_charge_config_id" />
                 </group>
             </group>
         </field>
@@ -45,6 +45,12 @@
         <field name="arch" type="xml">
             <field name="provider_reference" position="after">
                 <field name="bacenpix_txid" />
+                <field name="bacenpix_charge_config_id" />
+                <field name="bacenpix_charge_type" invisible="1" />
+                <field
+                    name="bacenpix_due_date"
+                    attrs="{'invisible': [('bacenpix_charge_type', '!=', 'cobv')]}"
+                />
                 <field name="bacenpix_expiration" />
             </field>
         </field>

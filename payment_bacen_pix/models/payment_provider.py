@@ -14,12 +14,7 @@ import requests
 from odoo import _, fields, models
 from odoo.exceptions import ValidationError
 
-from ..const import (
-    DEFAULT_EXPIRATION,
-    OAUTH_SCOPE,
-    PSP_CONFIG,
-    SUPPORTED_CURRENCIES,
-)
+from ..const import OAUTH_SCOPE, PSP_CONFIG, SUPPORTED_CURRENCIES
 from ..utils import redact_personal_data
 
 _logger = logging.getLogger(__name__)
@@ -78,10 +73,11 @@ class PaymentProvider(models.Model):
         help="The private key of the client certificate, in the PEM format.",
         groups="base.group_system",
     )
-    bacenpix_expiration = fields.Integer(
-        string="Expiration (s)",
-        help="The number of seconds a charge stays payable.",
-        default=DEFAULT_EXPIRATION,
+    bacenpix_charge_config_id = fields.Many2one(
+        comodel_name="bacenpix.charge.config",
+        string="Charge Configuration",
+        help="The charge registered when the document being paid has no payment "
+        "mode telling which one to use, as in an e-commerce checkout.",
     )
     bacenpix_token = fields.Char(groups="base.group_system", readonly=True)
     bacenpix_token_expiry = fields.Datetime(groups="base.group_system", readonly=True)

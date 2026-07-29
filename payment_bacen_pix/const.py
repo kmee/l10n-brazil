@@ -41,7 +41,7 @@ PSP_CONFIG = {
 }
 
 # The scopes needed to manage the charges and read the received payments.
-OAUTH_SCOPE = "cob.read cob.write pix.read"
+OAUTH_SCOPE = "cob.read cob.write cobv.read cobv.write pix.read"
 
 # Pix settles in BRL only.
 SUPPORTED_CURRENCIES = ["BRL"]
@@ -57,3 +57,27 @@ PAYMENT_STATUS_MAPPING = {
 # The number of seconds before an unpaid charge expires, when the provider does
 # not define it.
 DEFAULT_EXPIRATION = 3600
+
+# The modes of fine, interest and discount of a charge with a due date.
+# See the `Multa`, `Juros` and `Desconto` schemas of the Pix API.
+FINE_MODES = [
+    ("1", "Fixed amount"),
+    ("2", "Percentage"),
+]
+INTEREST_MODES = [
+    ("1", "Amount per calendar day"),
+    ("2", "Percentage per calendar day"),
+    ("3", "Percentage per month, calendar days"),
+    ("4", "Percentage per year, calendar days"),
+    ("5", "Amount per business day"),
+    ("6", "Percentage per business day"),
+    ("7", "Percentage per month, business days"),
+    ("8", "Percentage per year, business days"),
+]
+DISCOUNT_MODES = [
+    ("1", "Fixed amount until the given date"),
+    ("2", "Percentage until the given date"),
+]
+
+# How many days a charge with a due date stays payable after it is due.
+DEFAULT_VALIDITY_AFTER_DUE_DATE = 30
