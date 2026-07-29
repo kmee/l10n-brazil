@@ -18,6 +18,7 @@ No network access: every SEFAZ round trip goes through the XML fixtures under
 ``tests/mocks`` via the shared ``nfe_mock`` helper.
 """
 
+from types import SimpleNamespace
 from unittest import mock
 
 import nfelib
@@ -767,3 +768,86 @@ class TestNFeLifecycleChangeState(TestNFeExport):
                 self.doc_a._avaliable_transition(old_state, new_state),
                 f"{old_state} -> {new_state} should be refused",
             )
+
+
+class TestNFeLifecycleSefazSynchronization(TestNFeExport):
+    """`nfeConsultaNF` rescuing a document whose state drifted from SEFAZ.
+
+    The consultation reads the document straight from the SEFAZ database, so
+    its answer is authoritative and is applied even over an edge the state
+    machine does not declare. What must not happen is the synchronization
+    skipping the callbacks of the state it writes: a document rescued into
+    `autorizada` still needs its DANFE.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass(nfe_list=[{"record_ref": NFE_LC_DEMO}])
+        cls.nfe = cls.nfe_list[0]["nfe"]
+
+    def _drifted_document(self, local_state):
+        """A document sitting in `local_state`, as if SEFAZ disagreed."""
+        self.nfe.action_document_confirm()
+        self.nfe._change_state(local_state, force_change=True)
+        self.assertEqual(self.nfe.state_edoc, local_state)
+        return self.nfe
+
+    def _synchronize(self, c_stat, x_motivo="sincronizado pela consulta"):
+        """Apply the answer of a `nfeConsultaNF` to the document.
+
+        Only the status carried by the answer matters here, so the protocol
+        parsing is stubbed out: what is under test is the state transition the
+        synchronization performs, not the protocol bookkeeping.
+        """
+        process = SimpleNamespace(
+            webservice="nfeConsultaNF",
+            resposta=SimpleNamespace(
+                cStat=c_stat,
+                xMotivo=x_motivo,
+                protNFe=SimpleNamespace(infProt=SimpleNamespace()),
+            ),
+            processo_xml=None,
+        )
+        with mock.patch.object(
+            type(self.nfe), "_nfe_save_protocol", lambda *args, **kwargs: None
+        ):
+            self.nfe._nfe_update_status_and_save_data(process)
+
+    def test_sync_into_authorized_runs_the_authorization_callback(self):
+        """Rescuing into `autorizada` must generate the DANFE.
+
+        In the legacy API `_change_state(force_change=True)` skipped only the
+        validation of the edge, and `_exec_after_SITUACAO_EDOC_AUTORIZADA`
+        still ran. Writing `state_edoc` directly here would leave an
+        authorized document without its report and would not notify anything
+        hooked on the authorization.
+        """
+        document = self._drifted_document(SITUACAO_EDOC_CANCELADA)
+        called = []
+        with mock.patch.object(
+            type(document),
+            "_after_document_authorize",
+            lambda records, *args, **kwargs: called.append(records.id),
+        ):
+            self._synchronize("100")
+
+        self.assertEqual(document.state_edoc, SITUACAO_EDOC_AUTORIZADA)
+        self.assertEqual(
+            called,
+            [document.id],
+            "the synchronization skipped the authorization callback",
+        )
+
+    def test_sync_into_cancelled_from_authorized(self):
+        """A document cancelled at SEFAZ is cancelled locally too."""
+        document = self._drifted_document(SITUACAO_EDOC_AUTORIZADA)
+        self._synchronize("101")
+
+        self.assertEqual(document.state_edoc, SITUACAO_EDOC_CANCELADA)
+
+    def test_sync_keeps_the_status_of_the_consultation(self):
+        document = self._drifted_document(SITUACAO_EDOC_AUTORIZADA)
+        self._synchronize("101")
+
+        self.assertEqual(document.status_code, "101")
+        self.assertEqual(document.status_name, "sincronizado pela consulta")

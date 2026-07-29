@@ -1280,16 +1280,15 @@ class NFe(spec_models.StackedModel):
             **dict.fromkeys(CANCELADO, SITUACAO_EDOC_CANCELADA),
         }
         state = state_map.get(c_stat, SITUACAO_EDOC_REJEITADA)
-        transition = (self.state_edoc, state)
-        if force_change_status and transition not in self._fsm_allowed_transitions():
+        if force_change_status:
             # The `nfeConsultaNF` webservice reads the document straight from
-            # the SEFAZ database, so its answer is authoritative and the local
-            # state is synchronized with it even when the state machine does
-            # not declare the edge (rescuing a document whose state drifted
-            # from SEFAZ is precisely the point of the consultation).
-            # The machine has no forced trigger, so the write is kept raw
-            # here: no transition callback runs for this synchronization.
-            self.state_edoc = state
+            # the SEFAZ database, so its answer is authoritative and overrides
+            # the local state from wherever it is: rescuing a document whose
+            # state drifted from SEFAZ is precisely the point of the
+            # consultation. The machine declares those edges as
+            # `action_sync_*`, so the callbacks of the destination still run
+            # and a document rescued into `autorizada` still gets its DANFE.
+            self._trigger_fsm(self._get_state_to_sync_action_map()[state])
         else:
             self._trigger_fsm(self._get_state_to_action_map()[state])
 
