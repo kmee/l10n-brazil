@@ -1,10 +1,14 @@
 # Copyright 2020 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from . import models
 from . import controllers
+from . import models
 
-from odoo.addons.payment import reset_payment_provider
+from odoo.addons.payment import reset_payment_provider, setup_provider
+
+
+def post_init_hook(cr, registry):
+    setup_provider(cr, registry, "pagseguro")
 
 
 def uninstall_hook(cr, registry):
