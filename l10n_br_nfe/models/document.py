@@ -1280,7 +1280,17 @@ class NFe(spec_models.StackedModel):
             **dict.fromkeys(CANCELADO, SITUACAO_EDOC_CANCELADA),
         }
         state = state_map.get(c_stat, SITUACAO_EDOC_REJEITADA)
-        self._change_state(state, force_change_status)
+        if force_change_status:
+            # The `nfeConsultaNF` webservice reads the document straight from
+            # the SEFAZ database, so its answer is authoritative and overrides
+            # the local state from wherever it is: rescuing a document whose
+            # state drifted from SEFAZ is precisely the point of the
+            # consultation. The machine declares those edges as
+            # `action_sync_*`, so the callbacks of the destination still run
+            # and a document rescued into `autorizada` still gets its DANFE.
+            self._trigger_fsm(self._get_state_to_sync_action_map()[state])
+        else:
+            self._trigger_fsm(self._get_state_to_action_map()[state])
 
     def _nfe_save_protocol(self, inf_prot, nfe_proc_xml=None):
         if not self.authorization_event_id:
@@ -1314,7 +1324,12 @@ class NFe(spec_models.StackedModel):
         erros = "\n".join(erros)
         self.write({"xml_error_message": erros or False})
 
-    def _exec_after_SITUACAO_EDOC_AUTORIZADA(self, old_state, new_state):
+    def _after_document_authorize(self):
+        """Generate the DANFE as soon as the NF-e is authorized.
+
+        State machine callback of the `action_authorize` transition (it
+        replaces the legacy _exec_after_SITUACAO_EDOC_AUTORIZADA hook).
+        """
         self.ensure_one()
         if (
             self.document_type_id.code in [MODELO_FISCAL_NFE]
@@ -1329,7 +1344,7 @@ class NFe(spec_models.StackedModel):
                 # Se der problema que apareça quando
                 # o usuário clicar no gerar PDF novamente.
                 _logger.error(f"DANFE Error \n {e}")
-        return super()._exec_after_SITUACAO_EDOC_AUTORIZADA(old_state, new_state)
+        return super()._after_document_authorize()
 
     def _generate_key(self):
         if self.document_type_id.code not in [
@@ -1554,6 +1569,12 @@ class NFe(spec_models.StackedModel):
         self.authorization_event_id.lot_receipt_number = (
             send_process.resposta.infRec.nRec
         )
+        # Technical hop of the asynchronous transmission: the batch was
+        # accepted by SEFAZ and the document is parked waiting for the receipt
+        # consultation. It happens *inside* the transmission itself
+        # (_eletronic_document_send), so firing `action_send` here would run
+        # the send callbacks again from within the send. The state is written
+        # raw on purpose, as the legacy code did.
         self.state_edoc = SITUACAO_EDOC_ENVIADA
 
     def _nfe_process_authorization(self, authorization_process):
@@ -1572,7 +1593,7 @@ class NFe(spec_models.StackedModel):
             self._nfe_update_status_and_save_data(authorization_process)
         else:
             # Batch processing failure.
-            self._change_state(SITUACAO_EDOC_REJEITADA)
+            self._trigger_fsm("action_reject")
             self.write(
                 {
                     "status_code": authorization_process.resposta.cStat,
