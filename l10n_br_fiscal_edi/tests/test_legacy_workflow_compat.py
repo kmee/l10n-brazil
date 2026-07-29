@@ -226,27 +226,92 @@ class TestLegacyWorkflowCompat(TransactionCase):
                 document._trigger_fsm("action_validate")
 
             # a transition vetoed by a legacy hook must not write anything
+            # either, and the veto is reported to the caller instead of
+            # passing for a successful transition
             with patch.object(
                 document_class,
                 "_exec_before_SITUACAO_EDOC_CANCELADA",
                 return_value=False,
             ):
-                document._trigger_fsm("action_cancel_fsm")
+                with self.assertRaises(UserError):
+                    document._trigger_fsm("action_cancel_fsm")
 
         self.assertEqual(written_states, [])
         self.assertEqual(document.state_edoc, SITUACAO_EDOC_AUTORIZADA)
 
-    def test_avaliable_transition_matches_legacy_workflow(self):
-        """The state machine must allow every transition the legacy
-        WORKFLOW_EDOC tuples allowed."""
+    def test_state_machine_contains_every_legacy_transition(self):
+        """The FSM table must be a superset of the legacy tuples.
+
+        Confronting the two tables is the point: asserting that WORKFLOW_EDOC
+        allows what WORKFLOW_EDOC allows would be a tautology and would not
+        notice a source dropped from the machine.
+        """
         document = self.fiscal_document
-        for old_state, new_state in WORKFLOW_EDOC:
-            self.assertTrue(
-                document._avaliable_transition(old_state, new_state),
-                f"Transition {old_state} -> {new_state} is no longer allowed",
-            )
+        fsm_edges = document._fsm_allowed_transitions()
+        missing = [
+            (old_state, new_state)
+            for old_state, new_state in WORKFLOW_EDOC
+            if (old_state, new_state) not in fsm_edges
+        ]
+        self.assertFalse(
+            missing,
+            f"the state machine dropped legacy transitions: {missing}",
+        )
+
+    def test_legacy_api_stays_narrower_than_the_machine(self):
+        """The legacy validation must never accept what the machine refuses.
+
+        The machine is a superset on purpose (resending a rejected document,
+        for instance). The dangerous direction is the other one: a legacy
+        caller getting through an edge the machine does not declare.
+        """
+        document = self.fiscal_document
+        fsm_edges = document._fsm_allowed_transitions()
+        wider = [
+            (old_state, new_state)
+            for old_state, new_state in WORKFLOW_EDOC
+            if (old_state, new_state) not in fsm_edges
+        ]
+        self.assertFalse(wider, f"legacy API is wider than the machine: {wider}")
         self.assertFalse(
             document._avaliable_transition(
                 SITUACAO_EDOC_INUTILIZADA, SITUACAO_EDOC_EM_DIGITACAO
             )
         )
+
+    def test_third_party_state_is_not_a_silent_noop(self):
+        """A state added by another module must be reachable.
+
+        The compatibility layer dispatches the legacy hooks with an if/elif
+        chain over the eight known states. A state added by a municipal NFS-e
+        provider has no branch of its own, so the default of the dispatch has
+        to be "allow", otherwise extending the machine, which is what the
+        USAGE of this module documents, writes nothing and raises nothing.
+        """
+        document = self.fiscal_document
+        document.write({"state_edoc": SITUACAO_EDOC_A_ENVIAR})
+
+        self.assertTrue(
+            document._before_change_state(SITUACAO_EDOC_A_ENVIAR, "em_processamento"),
+            "the dispatch of an unknown state must default to allowing it",
+        )
+
+    def test_vetoed_trigger_raises_instead_of_returning(self):
+        """_trigger_fsm must not swallow a veto.
+
+        A legacy hook returning a falsy value stops the write. The new API
+        cannot report that as a success: the caller has no other way of
+        telling a refusal from a transition that happened.
+        """
+        document = self._confirmed_document()
+        document_class = type(document)
+
+        with patch.object(
+            document_class,
+            "_exec_before_SITUACAO_EDOC_ENVIADA",
+            lambda self, old_state, new_state: False,
+        ):
+            with self.assertRaises(UserError):
+                document._trigger_fsm("action_send")
+
+        self.assertEqual(document.state_edoc, SITUACAO_EDOC_A_ENVIAR)

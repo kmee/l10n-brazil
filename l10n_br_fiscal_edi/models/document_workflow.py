@@ -123,7 +123,11 @@ class DocumentWorkflow(models.AbstractModel):
         :return:
         """
         self.ensure_one()
-        result = None
+        # A state added by another module (a municipal NFS-e provider, for
+        # instance) has no legacy hook of its own: the default is to allow the
+        # transition, otherwise extending the machine, which is what the USAGE
+        # of this module documents, would be a silent no-op.
+        result = True
         if new_state == SITUACAO_EDOC_EM_DIGITACAO:
             result = self._exec_before_SITUACAO_EDOC_EM_DIGITACAO(old_state, new_state)
         elif new_state == SITUACAO_EDOC_A_ENVIAR:

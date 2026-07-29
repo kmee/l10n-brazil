@@ -21,7 +21,6 @@ from ..constants.fiscal import (
     DOCUMENT_STATE_DENIED,
     DOCUMENT_STATE_REJECTED,
     DOCUMENT_STATE_SENDING,
-    DOCUMENT_STATES,
 )
 
 
@@ -62,16 +61,6 @@ class Document(models.Model):
         "l10n_br_fiscal.document",
         "l10n_br_fiscal.document.workflow",
     ]
-
-    state_edoc = fields.Selection(
-        selection_add=DOCUMENT_STATES,
-        ondelete={
-            DOCUMENT_STATE_SENDING: "set default",
-            DOCUMENT_STATE_AUTHORIZED: "set default",
-            DOCUMENT_STATE_REJECTED: "set default",
-            DOCUMENT_STATE_DENIED: "set default",
-        },
-    )
 
     event_ids = fields.One2many(
         comodel_name="l10n_br_fiscal.event",
@@ -234,9 +223,11 @@ class Document(models.Model):
         """The machine states are the state_edoc values.
 
         They are read from the field selection (instead of a hardcoded list)
-        so modules adding their own state_edoc value get a machine that
-        knows it: building a Machine with an unknown initial state raises
-        ValueError.
+        so modules adding their own state_edoc value get a machine that knows
+        it: `transitions` raises ValueError ("State '%s' is not a registered
+        state.") as soon as a transition points to a state the machine does
+        not know, which is exactly what a module extending this table with
+        its own state does.
         """
         selection = self._fields["state_edoc"].selection
         if callable(selection):
@@ -246,11 +237,18 @@ class Document(models.Model):
     def get_state_machine_config(self):
         """Declarative definition of the fiscal document state machine.
 
-        The transitions are the single source of truth of what is allowed:
-        the legacy _avaliable_transition() is computed from them (it used to
-        be computed from the WORKFLOW_EDOC tuples, which remain exported by
-        l10n_br_fiscal.constants.fiscal for backward compatibility and are
-        the reference this machine was built upon).
+        The transitions are the source of truth of the new API: every
+        _trigger_fsm() call is validated against them.
+
+        The legacy _avaliable_transition() keeps validating against the
+        WORKFLOW_EDOC tuples, which are a strict subset of this table: the
+        machine was built from them and then extended with the edges the
+        refactor adds on purpose (resending a rejected document, for
+        instance). So a transition refused by the legacy API may be accepted
+        by the new one, never the opposite, and test_legacy_workflow_compat
+        asserts that containment. Deriving the legacy validation from this
+        table would silently widen the legacy API, which is why it is not
+        done here.
         """
         self.ensure_one()
         return {
@@ -314,6 +312,37 @@ class Document(models.Model):
                     "dest": DOCUMENT_STATE_DENIED,
                     "after": "_after_document_deny",
                 },
+                # Synchronization with the tax authority. A consultation
+                # such as `nfeConsultaNF` reads the document straight from the
+                # SEFAZ database, so its answer is authoritative and overrides
+                # the local state from wherever it is: the document may be
+                # locally cancelled and authorized at SEFAZ. These edges are
+                # declared instead of being written raw so the callbacks of
+                # the destination still run, which is what generates the DANFE
+                # of a document rescued into `autorizada`. Only an
+                # authoritative answer of the tax authority may fire them.
+                {
+                    "trigger": "action_sync_authorized",
+                    "source": "*",
+                    "dest": DOCUMENT_STATE_AUTHORIZED,
+                    "after": "_after_document_authorize",
+                },
+                {
+                    "trigger": "action_sync_cancelled",
+                    "source": "*",
+                    "dest": DOCUMENT_STATE_CANCEL,
+                },
+                {
+                    "trigger": "action_sync_denied",
+                    "source": "*",
+                    "dest": DOCUMENT_STATE_DENIED,
+                    "after": "_after_document_deny",
+                },
+                {
+                    "trigger": "action_sync_rejected",
+                    "source": "*",
+                    "dest": DOCUMENT_STATE_REJECTED,
+                },
                 # Cancel: Authorized -> Cancel
                 {
                     "trigger": "action_cancel_fsm",
@@ -345,15 +374,26 @@ class Document(models.Model):
             "initial": self.state_edoc,
         }
 
+    def _fsm_transition_sources(self, transition):
+        """The source states of a transition, wildcard expanded.
+
+        `transitions` accepts "*" as "from any state", which the machine uses
+        for the synchronization with the tax authority.
+        """
+        self.ensure_one()
+        source = transition["source"]
+        if source == "*":
+            return self._fsm_states()
+        if isinstance(source, str):
+            return [source]
+        return source
+
     def _fsm_allowed_transitions(self):
         """The set of (source, dest) state_edoc pairs the machine allows."""
         self.ensure_one()
         allowed = set()
         for transition in self.get_state_machine_config()["transitions"]:
-            source = transition["source"]
-            if isinstance(source, str):
-                source = [source]
-            for state in source:
+            for state in self._fsm_transition_sources(transition):
                 allowed.add((state, transition["dest"]))
         return allowed
 
@@ -363,10 +403,10 @@ class Document(models.Model):
         self.ensure_one()
         callbacks = []
         for transition in self.get_state_machine_config()["transitions"]:
-            source = transition["source"]
-            if isinstance(source, str):
-                source = [source]
-            if old_state not in source or transition["dest"] != new_state:
+            if (
+                old_state not in self._fsm_transition_sources(transition)
+                or transition["dest"] != new_state
+            ):
                 continue
             names = transition.get(kind) or []
             if isinstance(names, str):
@@ -424,7 +464,18 @@ class Document(models.Model):
             # superset of the legacy tuples. force_change=True skips only the
             # redundant legacy re-validation in _change_state(); every
             # before/after hook still runs.
-            doc._change_state(proxy.state_edoc, force_change=True)
+            if not doc._change_state(proxy.state_edoc, force_change=True):
+                # A legacy _exec_before_* hook vetoed the transition by
+                # returning a falsy value. The new API has no silent veto: the
+                # caller must be able to tell a refusal from a success.
+                raise UserError(
+                    _(
+                        "The transition '%(action)s' of the document "
+                        "%(document)s was refused.",
+                        action=trigger,
+                        document=doc.display_name,
+                    )
+                )
 
     def _get_state_to_action_map(self):
         return {
@@ -435,6 +486,20 @@ class Document(models.Model):
             DOCUMENT_STATE_DENIED: "action_deny",
             DOCUMENT_STATE_CANCEL: "action_cancel_fsm",
             DOCUMENT_STATE_DRAFT: "action_draft_fsm",
+        }
+
+    def _get_state_to_sync_action_map(self):
+        """Triggers that apply an authoritative answer of the tax authority.
+
+        They accept any source state on purpose: what they express is not a
+        business transition but the local state being corrected to match what
+        the tax authority holds.
+        """
+        return {
+            DOCUMENT_STATE_AUTHORIZED: "action_sync_authorized",
+            DOCUMENT_STATE_CANCEL: "action_sync_cancelled",
+            DOCUMENT_STATE_DENIED: "action_sync_denied",
+            DOCUMENT_STATE_REJECTED: "action_sync_rejected",
         }
 
     # -------------------------------------------------------------------------

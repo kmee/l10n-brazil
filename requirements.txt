@@ -10,6 +10,6 @@ nfelib
 num2words
 phonenumbers
 pyyaml
-transitions
+transitions>=0.9,<0.10
 unidecode
 workalendar

@@ -207,6 +207,30 @@ compatibilidade só será removida quando não houver mais nenhum
 consumidor da API legada, com aviso prévio à comunidade e
 ``DeprecationWarning`` ativo por pelo menos um ciclo de releases.
 
+Bloqueante para remover a camada: o veto por retorno
+----------------------------------------------------
+
+A API legada tem um recurso que a API nova ainda não tem: um
+``_exec_before_SITUACAO_EDOC_*`` que devolve um valor falso **veta** a
+transição sem levantar erro. Isso é usado em produção, por exemplo pelo
+``l10n_br_nfse_focus``, que assim impede que um documento de outro
+provedor seja cancelado pelo caminho dele.
+
+Os callbacks novos (``_before_document_*``) não têm esse poder: o
+retorno deles é ignorado, porque um callback ``before`` da biblioteca
+``transitions`` não aborta a transição (só uma ``condition`` aborta).
+Enquanto a API nova não oferecer equivalente, remover a camada de
+compatibilidade tira do ecossistema a capacidade de recusar uma
+transição em silêncio, e o cancelamento de NFS-e municipal quebraria sem
+erro visível.
+
+Portanto, antes de remover a camada:
+
+1. dar às transições da máquina um mecanismo de recusa explícito, via
+   ``conditions`` declaradas em ``get_state_machine_config()``;
+2. migrar os consumidores do veto por retorno para esse mecanismo;
+3. só então emitir o ``DeprecationWarning`` e marcar a data de remoção.
+
 Bug Tracker
 ===========
 

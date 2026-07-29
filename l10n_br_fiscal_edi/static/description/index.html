@@ -542,6 +542,28 @@ fluxo.</p>
 compatibilidade só será removida quando não houver mais nenhum
 consumidor da API legada, com aviso prévio à comunidade e
 <tt class="docutils literal">DeprecationWarning</tt> ativo por pelo menos um ciclo de releases.</p>
+</div>
+<div class="section" id="bloqueante-para-remover-a-camada-o-veto-por-retorno">
+<h1>Bloqueante para remover a camada: o veto por retorno</h1>
+<p>A API legada tem um recurso que a API nova ainda não tem: um
+<tt class="docutils literal">_exec_before_SITUACAO_EDOC_*</tt> que devolve um valor falso <strong>veta</strong> a
+transição sem levantar erro. Isso é usado em produção, por exemplo pelo
+<tt class="docutils literal">l10n_br_nfse_focus</tt>, que assim impede que um documento de outro
+provedor seja cancelado pelo caminho dele.</p>
+<p>Os callbacks novos (<tt class="docutils literal">_before_document_*</tt>) não têm esse poder: o
+retorno deles é ignorado, porque um callback <tt class="docutils literal">before</tt> da biblioteca
+<tt class="docutils literal">transitions</tt> não aborta a transição (só uma <tt class="docutils literal">condition</tt> aborta).
+Enquanto a API nova não oferecer equivalente, remover a camada de
+compatibilidade tira do ecossistema a capacidade de recusar uma
+transição em silêncio, e o cancelamento de NFS-e municipal quebraria sem
+erro visível.</p>
+<p>Portanto, antes de remover a camada:</p>
+<ol class="arabic simple">
+<li>dar às transições da máquina um mecanismo de recusa explícito, via
+<tt class="docutils literal">conditions</tt> declaradas em <tt class="docutils literal">get_state_machine_config()</tt>;</li>
+<li>migrar os consumidores do veto por retorno para esse mecanismo;</li>
+<li>só então emitir o <tt class="docutils literal">DeprecationWarning</tt> e marcar a data de remoção.</li>
+</ol>
 <div class="section" id="bug-tracker">
 <h2>Bug Tracker</h2>
 <p>Bugs are tracked on <a class="reference external" href="https://github.com/OCA/l10n-brazil/issues">GitHub Issues</a>.

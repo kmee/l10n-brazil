@@ -36,7 +36,7 @@
     "installable": True,
     "external_dependencies": {
         "python": [
-            "transitions",
+            "transitions>=0.9,<0.10",
         ]
     },
 }

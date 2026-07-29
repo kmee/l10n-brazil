@@ -413,12 +413,13 @@ DOCUMENT_STATE_OPEN = SITUACAO_EDOC_A_ENVIAR
 DOCUMENT_STATE_CANCEL = SITUACAO_EDOC_CANCELADA
 DOCUMENT_STATE_INVALIDATED = SITUACAO_EDOC_INUTILIZADA
 
-DOCUMENT_STATES = [
-    (DOCUMENT_STATE_DRAFT, "Draft"),
-    (DOCUMENT_STATE_OPEN, "Open"),
-    (DOCUMENT_STATE_CANCEL, "Cancelled"),
-    (DOCUMENT_STATE_INVALIDATED, "Inutilizada"),
-]
+# The eight values live here, in the base module, and not partly in
+# l10n_br_fiscal_edi: a state_edoc value added by selection_add carries an
+# `ondelete` policy, and uninstalling the module that added it would rewrite
+# every authorized, sent, rejected and denied document of the database. The
+# state of a fiscal document is a fact, not a feature of an optional module.
+# What belongs to the EDI module is the transition table, not the values.
+DOCUMENT_STATES = SITUACAO_EDOC
 
 SITUACAO_FISCAL_REGULAR = "00"
 SITUACAO_FISCAL_REGULAR_EXTEMPORANEO = "01"
