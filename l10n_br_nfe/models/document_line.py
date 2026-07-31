@@ -1479,24 +1479,9 @@ class NFeLine(spec_models.StackedModel):
 
         elif key == "nfe40_IBSCBS":
             self._import_ibscbs_attrs(value, new_value)
-            if (
-                self._name == "account.invoice.line"
-                and comodel._name == "l10n_br_fiscal.document.line"
-            ):
-                # TODO do not hardcode!!
-                # stacked m2o
-                vals.update(new_value)
             return
 
-        if (
-            self._name == "account.invoice.line"
-            and comodel._name == "l10n_br_fiscal.document.line"
-        ):
-            # TODO do not hardcode!!
-            # stacked m2o
-            vals.update(new_value)
-        else:
-            return super()._build_many2one(comodel, vals, new_value, key, value, path)
+        return super()._build_many2one(comodel, vals, new_value, key, value, path)
 
     # flake8: noqa: C901
     def _import_tax_attrs(self, key, value, odoo_attrs, sub_tags=None):

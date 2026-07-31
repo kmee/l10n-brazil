@@ -196,3 +196,61 @@ class NFeImportTest(TransactionCase):
 
     def test_import_out_nfe(self):
         "(can be useful after an ERP migration)"
+
+    def test_build_many2one_self_referencing_stacked_m2o(self):
+        """_build_many2one must merge stacked m2o values directly into vals
+        when comodel shares the same model as self, without relying on the
+        stale v12 'account.invoice.line' check (dead code, self._name is
+        always 'l10n_br_fiscal.document.line' here, never
+        'account.invoice.line')."""
+        res_items = (
+            "nfe",
+            "samples",
+            "v4_0",
+            "leiauteNFe",
+            "35180834128745000152550010000474281920007498-nfe.xml",
+        )
+        resource_path = "/".join(res_items)
+        nfe_stream = pkg_resources.resource_stream(nfelib.__name__, resource_path)
+        binding = TnfeProc.from_xml(nfe_stream.read().decode())
+        nfe = self.env["l10n_br_fiscal.document"].import_binding_nfe(
+            binding, edoc_type="in", dry_run=False
+        )
+        line = nfe.fiscal_line_ids[0]
+        self.assertNotEqual(type(line)._name, "account.invoice.line")
+
+        comodel = self.env["l10n_br_fiscal.document.line"]
+        vals = {}
+        new_value = {"icms_percent": 18.0}
+        result = line._build_many2one(
+            comodel, vals, new_value, "unknown_key", None, ""
+        )
+        self.assertIsNone(result)
+        self.assertEqual(vals, {"icms_percent": 18.0})
+
+    def test_build_many2one_ibscbs_early_return(self):
+        """IBSCBS attrs are imported directly into new_value and the method
+        returns without touching vals (dead 'account.invoice.line' branch
+        removed, no behavior change)."""
+        res_items = (
+            "nfe",
+            "samples",
+            "v4_0",
+            "leiauteNFe",
+            "35180834128745000152550010000474281920007498-nfe.xml",
+        )
+        resource_path = "/".join(res_items)
+        nfe_stream = pkg_resources.resource_stream(nfelib.__name__, resource_path)
+        binding = TnfeProc.from_xml(nfe_stream.read().decode())
+        nfe = self.env["l10n_br_fiscal.document"].import_binding_nfe(
+            binding, edoc_type="in", dry_run=False
+        )
+        line = nfe.fiscal_line_ids[0]
+        comodel = self.env["l10n_br_fiscal.document.line"]
+        vals = {"untouched": True}
+        new_value = {}
+        result = line._build_many2one(
+            comodel, vals, new_value, "nfe40_IBSCBS", None, ""
+        )
+        self.assertIsNone(result)
+        self.assertEqual(vals, {"untouched": True})
