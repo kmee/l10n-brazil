@@ -4,6 +4,8 @@
 # @author Luis Felipe Mileo <mileo@kmee.com.br>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+from unittest import mock
+
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests import tagged
 
@@ -84,6 +86,28 @@ class TestPaymentOrderInbound(CNABTestCommon):
                 change.get("change_to_send"),
                 change.get("code_to_check"),
             )
+
+    def test_create_baixa_payment_situation(self):
+        """_create_baixa deve aceitar o motivo (payment_situation) via kwargs,
+        mantendo "baixa" como valor padrao para chamadas que nao informam
+        um motivo, ao inves de sempre fixar "baixa"."""
+        self._invoice_confirm_workflow(self.invoice_cef_240)
+        aml = self.invoice_cef_240.due_line_ids[0]
+
+        # _create_payment_order_change ainda nao esta implementado
+        # (levanta NotImplementedError), o teste cobre apenas o
+        # comportamento de _create_baixa quanto ao payment_situation.
+        with mock.patch.object(
+            type(aml), "_create_payment_order_change", return_value=None
+        ):
+            aml._create_baixa("Baixa sem motivo especifico")
+            self.assertEqual(aml.payment_situation, "baixa")
+
+            aml._create_baixa(
+                "Baixa por cancelamento da fatura",
+                payment_situation="fatura_cancelada",
+            )
+            self.assertEqual(aml.payment_situation, "fatura_cancelada")
 
     def test_warning_when_cnab_config_dont_has_code(self):
         self._run_invoice_and_order_workflow(self.invoice_itau_400)

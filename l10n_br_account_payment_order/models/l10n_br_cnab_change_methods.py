@@ -549,7 +549,7 @@ class L10nBrCNABChangeMethods(models.Model):
         moves_to_sync.write(
             {
                 "last_change_reason": reason,
-                "payment_situation": "baixa",  # FIXME: Podem ser múltiplos motivos
+                "payment_situation": kwargs.get("payment_situation", "baixa"),
             }
         )
 
