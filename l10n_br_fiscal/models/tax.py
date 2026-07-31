@@ -443,12 +443,11 @@ class Tax(models.Model):
         tax_dict.update({"icms_base_type": tax.icms_base_type})
 
         # DIFAL
-        # TODO
-        # and operation_line.ind_final == FINAL_CUSTOMER_YES):
         if (
             cfop
             and cfop.destination == CFOP_DESTINATION_EXTERNAL
             and partner.ind_ie_dest == NFE_IND_IE_DEST_9
+            and ind_final == FINAL_CUSTOMER_YES
             and tax_dict.get("tax_value")
             and (
                 operation_line.fiscal_operation_type == FISCAL_OUT

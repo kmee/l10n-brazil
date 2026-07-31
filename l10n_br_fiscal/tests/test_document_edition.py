@@ -445,6 +445,7 @@ class TestDocumentEdition(TransactionCase):
     def test_difal_calculation(self):
         partner = self.env.ref("l10n_br_base.res_partner_cliente5_pe")
         partner.ind_ie_dest = "9"
+        partner.ind_final = "1"
         doc_form = Form(
             self.env["l10n_br_fiscal.document"].with_context(
                 default_fiscal_operation_type="out",
@@ -466,3 +467,31 @@ class TestDocumentEdition(TransactionCase):
         self.assertEqual(line.icms_origin_percent, 7.0)
         self.assertEqual(line.icms_destination_percent, 20.5)
         self.assertEqual(line.icms_destination_value, 13.5)
+
+    def test_difal_calculation_not_final_customer(self):
+        """DIFAL must not be computed when the partner is not a final
+        customer (ind_final != FINAL_CUSTOMER_YES), even on interstate
+        operations to a non taxpayer (ind_ie_dest == 9)."""
+        partner = self.env.ref("l10n_br_base.res_partner_cliente5_pe")
+        partner.ind_ie_dest = "9"
+        partner.ind_final = "0"
+        doc_form = Form(
+            self.env["l10n_br_fiscal.document"].with_context(
+                default_fiscal_operation_type="out",
+            )
+        )
+        doc_form.company_id = self.company
+        doc_form.partner_id = partner
+        doc_form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_venda")
+
+        product = self.env.ref("product.product_product_6")
+        with doc_form.fiscal_line_ids.new() as line_form:
+            line_form.product_id = product
+            line_form.price_unit = 100.0
+            line_form.quantity = 1.0
+
+        doc = doc_form.save()
+        line = doc.fiscal_line_ids[0]
+        self.assertEqual(line.icms_destination_base, 0.0)
+        self.assertEqual(line.icms_destination_percent, 0.0)
+        self.assertEqual(line.icms_destination_value, 0.0)
