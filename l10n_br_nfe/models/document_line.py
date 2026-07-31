@@ -22,6 +22,33 @@ from odoo.addons.spec_driven_model.models import spec_models
 
 _logger = logging.getLogger(__name__)
 
+
+def _binding_kwargs(cls, kwargs):
+    """
+    Return kwargs accepted by nfelib binding class cls.
+    nfelib (xsdata) may use snake_case (e.g. v_ibs) instead of XML names (vIBS).
+    """
+    if hasattr(cls, "__dataclass_fields__"):
+        accepted = set(cls.__dataclass_fields__.keys())
+    else:
+        import inspect
+
+        sig = inspect.signature(cls.__init__)
+        accepted = set(sig.parameters.keys()) - {"self"}
+    result = {}
+    for key, value in kwargs.items():
+        if key in accepted:
+            result[key] = value
+        else:
+            # Try camelCase -> snake_case (e.g. vIBS -> v_ibs)
+            snake = "".join(
+                ("_" + c.lower() if c.isupper() else c) for c in key
+            ).lstrip("_")
+            if snake in accepted:
+                result[snake] = value
+    return result
+
+
 ICMSSN_CST_CODES_USE_102 = ("102", "103", "300", "400")
 ICMSSN_CST_CODES_USE_202 = ("202", "203")
 ICMS_ST_CST_CODES = ["60", "10"]
@@ -279,38 +306,63 @@ class NFeLine(spec_models.StackedModel):
             p_cbs = self.cbs_percent or 0.0
             v_cbs = self.cbs_value or (v_bc * p_cbs / 100) if p_cbs else 0.0
 
-            # Build gIBSUF
+            # Build gIBSUF (nfelib may use snake_case attribute names)
             gibsuf = Tcibs.GIbsuf(
-                pIBSUF=f"{p_ibs_uf:.4f}",
-                vIBSUF=f"{v_ibs_uf:.2f}",
+                **_binding_kwargs(
+                    Tcibs.GIbsuf,
+                    {
+                        "pIBSUF": f"{p_ibs_uf:.4f}",
+                        "vIBSUF": f"{v_ibs_uf:.2f}",
+                    },
+                )
             )
 
             # Build gIBSMun
             gibsmun = Tcibs.GIbsmun(
-                pIBSMun=f"{p_ibs_mun:.4f}",
-                vIBSMun=f"{v_ibs_mun:.2f}",
+                **_binding_kwargs(
+                    Tcibs.GIbsmun,
+                    {
+                        "pIBSMun": f"{p_ibs_mun:.4f}",
+                        "vIBSMun": f"{v_ibs_mun:.2f}",
+                    },
+                )
             )
 
             # Build gCBS
             gcbs = Tcibs.GCbs(
-                pCBS=f"{p_cbs:.4f}",
-                vCBS=f"{v_cbs:.2f}",
+                **_binding_kwargs(
+                    Tcibs.GCbs,
+                    {
+                        "pCBS": f"{p_cbs:.4f}",
+                        "vCBS": f"{v_cbs:.2f}",
+                    },
+                )
             )
 
             # Build gIBSCBS (Tcibs)
             gibscbs = Tcibs(
-                vBC=f"{v_bc:.2f}",
-                gIBSUF=gibsuf,
-                gIBSMun=gibsmun,
-                vIBS=f"{v_ibs:.2f}",
-                gCBS=gcbs,
+                **_binding_kwargs(
+                    Tcibs,
+                    {
+                        "vBC": f"{v_bc:.2f}",
+                        "gIBSUF": gibsuf,
+                        "gIBSMun": gibsmun,
+                        "vIBS": f"{v_ibs:.2f}",
+                        "gCBS": gcbs,
+                    },
+                )
             )
 
             # Build TtribNfe
             ibscbs_obj = TtribNfe(
-                CST=cst,
-                cClassTrib=c_class_trib,
-                gIBSCBS=gibscbs,
+                **_binding_kwargs(
+                    TtribNfe,
+                    {
+                        "CST": cst,
+                        "cClassTrib": c_class_trib,
+                        "gIBSCBS": gibscbs,
+                    },
+                )
             )
 
             return ibscbs_obj
@@ -360,38 +412,63 @@ class NFeLine(spec_models.StackedModel):
             p_cbs = self.cbs_percent or 0.0
             v_cbs = self.cbs_value or (v_bc * p_cbs / 100) if p_cbs else 0.0
 
-            # Build gIBSUF
+            # Build gIBSUF (nfelib may use snake_case attribute names)
             gibsuf = Tcibs.GIbsuf(
-                pIBSUF=f"{p_ibs_uf:.4f}",
-                vIBSUF=f"{v_ibs_uf:.2f}",
+                **_binding_kwargs(
+                    Tcibs.GIbsuf,
+                    {
+                        "pIBSUF": f"{p_ibs_uf:.4f}",
+                        "vIBSUF": f"{v_ibs_uf:.2f}",
+                    },
+                )
             )
 
             # Build gIBSMun
             gibsmun = Tcibs.GIbsmun(
-                pIBSMun=f"{p_ibs_mun:.4f}",
-                vIBSMun=f"{v_ibs_mun:.2f}",
+                **_binding_kwargs(
+                    Tcibs.GIbsmun,
+                    {
+                        "pIBSMun": f"{p_ibs_mun:.4f}",
+                        "vIBSMun": f"{v_ibs_mun:.2f}",
+                    },
+                )
             )
 
             # Build gCBS
             gcbs = Tcibs.GCbs(
-                pCBS=f"{p_cbs:.4f}",
-                vCBS=f"{v_cbs:.2f}",
+                **_binding_kwargs(
+                    Tcibs.GCbs,
+                    {
+                        "pCBS": f"{p_cbs:.4f}",
+                        "vCBS": f"{v_cbs:.2f}",
+                    },
+                )
             )
 
             # Build gIBSCBS (Tcibs)
             gibscbs = Tcibs(
-                vBC=f"{v_bc:.2f}",
-                gIBSUF=gibsuf,
-                gIBSMun=gibsmun,
-                vIBS=f"{v_ibs:.2f}",
-                gCBS=gcbs,
+                **_binding_kwargs(
+                    Tcibs,
+                    {
+                        "vBC": f"{v_bc:.2f}",
+                        "gIBSUF": gibsuf,
+                        "gIBSMun": gibsmun,
+                        "vIBS": f"{v_ibs:.2f}",
+                        "gCBS": gcbs,
+                    },
+                )
             )
 
             # Build TtribNfe
             ibscbs_obj = TtribNfe(
-                CST=cst,
-                cClassTrib=c_class_trib,
-                gIBSCBS=gibscbs,
+                **_binding_kwargs(
+                    TtribNfe,
+                    {
+                        "CST": cst,
+                        "cClassTrib": c_class_trib,
+                        "gIBSCBS": gibscbs,
+                    },
+                )
             )
 
             return ibscbs_obj
@@ -582,38 +659,63 @@ class NFeLine(spec_models.StackedModel):
             p_cbs = self.cbs_percent or 0.0
             v_cbs = self.cbs_value or (v_bc * p_cbs / 100) if p_cbs else 0.0
 
-            # Build gIBSUF
+            # Build gIBSUF (nfelib may use snake_case attribute names)
             gibsuf = Tcibs.GIbsuf(
-                pIBSUF=f"{p_ibs_uf:.4f}",
-                vIBSUF=f"{v_ibs_uf:.2f}",
+                **_binding_kwargs(
+                    Tcibs.GIbsuf,
+                    {
+                        "pIBSUF": f"{p_ibs_uf:.4f}",
+                        "vIBSUF": f"{v_ibs_uf:.2f}",
+                    },
+                )
             )
 
             # Build gIBSMun
             gibsmun = Tcibs.GIbsmun(
-                pIBSMun=f"{p_ibs_mun:.4f}",
-                vIBSMun=f"{v_ibs_mun:.2f}",
+                **_binding_kwargs(
+                    Tcibs.GIbsmun,
+                    {
+                        "pIBSMun": f"{p_ibs_mun:.4f}",
+                        "vIBSMun": f"{v_ibs_mun:.2f}",
+                    },
+                )
             )
 
             # Build gCBS
             gcbs = Tcibs.GCbs(
-                pCBS=f"{p_cbs:.4f}",
-                vCBS=f"{v_cbs:.2f}",
+                **_binding_kwargs(
+                    Tcibs.GCbs,
+                    {
+                        "pCBS": f"{p_cbs:.4f}",
+                        "vCBS": f"{v_cbs:.2f}",
+                    },
+                )
             )
 
             # Build gIBSCBS (Tcibs)
             gibscbs = Tcibs(
-                vBC=f"{v_bc:.2f}",
-                gIBSUF=gibsuf,
-                gIBSMun=gibsmun,
-                vIBS=f"{v_ibs:.2f}",
-                gCBS=gcbs,
+                **_binding_kwargs(
+                    Tcibs,
+                    {
+                        "vBC": f"{v_bc:.2f}",
+                        "gIBSUF": gibsuf,
+                        "gIBSMun": gibsmun,
+                        "vIBS": f"{v_ibs:.2f}",
+                        "gCBS": gcbs,
+                    },
+                )
             )
 
             # Build TtribNfe and add to export_dict
             ibscbs_obj = TtribNfe(
-                CST=cst,
-                cClassTrib=c_class_trib,
-                gIBSCBS=gibscbs,
+                **_binding_kwargs(
+                    TtribNfe,
+                    {
+                        "CST": cst,
+                        "cClassTrib": c_class_trib,
+                        "gIBSCBS": gibscbs,
+                    },
+                )
             )
             export_dict["IBSCBS"] = ibscbs_obj
         else:
