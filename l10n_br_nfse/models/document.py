@@ -9,7 +9,7 @@ from erpbrasil.edoc.provedores.cidades import NFSeFactory
 from erpbrasil.transmissao import TransmissaoSOAP
 from requests import Session
 
-from odoo import fields, models
+from odoo import api, fields, models
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     EVENT_ENV_HML,
@@ -71,6 +71,40 @@ class Document(models.Model):
     civil_construction_art = fields.Char(
         string="Civil Construction ART",
     )
+
+    amount_untaxed = fields.Monetary(
+        string="Untaxed Amount",
+        compute="_compute_amount_from_moves",
+        store=False,
+        currency_field="currency_id",
+        help="Untaxed amount from related account moves",
+    )
+
+    currency_id = fields.Many2one(
+        related="company_id.currency_id",
+        string="Currency",
+        store=True,
+        readonly=True,
+    )
+
+    @api.depends("amount_price_gross", "currency_id")
+    def _compute_amount_from_moves(self):
+        """Compute amount fields from related account moves for template compatibility.
+
+        Note: move_ids is not included in @api.depends because it's defined in
+        l10n_br_account module which may not be installed. The method checks for
+        move_ids existence at runtime to avoid KeyError during module upgrade.
+        """
+        for record in self:
+            # Check if move_ids exists in the model and has values
+            # This handles the case where l10n_br_account module may not be installed
+            if "move_ids" in record._fields and record.move_ids:
+                # Sum amounts from all related moves
+                # Use the currency from the first move for consistency
+                record.amount_untaxed = sum(record.move_ids.mapped("amount_untaxed"))
+            else:
+                # Fallback to fiscal document amounts if no moves
+                record.amount_untaxed = record.amount_price_gross or 0.0
 
     def make_pdf(self):
         if not self.filtered(filter_processador_edoc_nfse):
