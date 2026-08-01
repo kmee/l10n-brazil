@@ -14,8 +14,8 @@ from erpbrasil.base.fiscal.edoc import ChaveEdoc
 from erpbrasil.transmissao import TransmissaoSOAP
 from lxml import etree
 from nfelib.nfe.bindings.v4_0.dfe_tipos_basicos_v1_00 import TibscbsmonoTot
-from nfelib.nfe.bindings.v4_0.leiaute_nfe_v4_00 import TnfeProc
 from nfelib.nfe.bindings.v4_0.nfe_v4_00 import Nfe
+from nfelib.nfe.bindings.v4_0.proc_nfe_v4_00 import NfeProc
 from nfelib.nfe.ws.edoc_legacy import NFCeAdapter as edoc_nfce
 from nfelib.nfe.ws.edoc_legacy import NFeAdapter as edoc_nfe
 from requests import Session
@@ -962,6 +962,14 @@ class NFe(spec_models.StackedModel):
             )
         return res
 
+    @api.model
+    def _build_attr(self, node, fields, vals, path, attr):
+        key = f"nfe40_{attr[1].metadata.get('name', attr[0])}"
+        if key == "nfe40_IBSCBSTot":
+            # IBSCBSTot fields are computed from lines, skip importing
+            return
+        return super()._build_attr(node, fields, vals, path, attr)
+
     def _build_many2one(self, comodel, vals, new_value, key, value, path):
         if key == "nfe40_entrega" and self.env.context.get("edoc_type") == "in":
             enderEntreg_value = self.env["res.partner"].build_attrs(value, path=path)
@@ -977,8 +985,17 @@ class NFe(spec_models.StackedModel):
                 "company_type": "person",
             }
             new_value.update(new_vals)
+            # Store the delivery address on the stored partner_shipping_id
+            # field (like emit/dest write to partner_id). nfe40_entrega is a
+            # non-stored computed field, so writing to it would silently drop
+            # the imported delivery address.
             super()._build_many2one(
-                self.env["res.partner"], vals, new_value, key, value, path
+                self.env["res.partner"],
+                vals,
+                new_value,
+                "partner_shipping_id",
+                value,
+                path,
             )
         elif key == "nfe40_emit" and self.env.context.get("edoc_type") == "in":
             enderEmit_value = self.env["res.partner"].build_attrs(
@@ -1375,7 +1392,7 @@ class NFe(spec_models.StackedModel):
         if proc_nfe_xml:
             # it is not always possible to create nfeProc.
             parser = XmlParser()
-            nfe_proc = parser.from_string(proc_nfe_xml.decode(), TnfeProc)
+            nfe_proc = parser.from_string(proc_nfe_xml.decode(), NfeProc)
             ws_response_process.processo = nfe_proc
             ws_response_process.processo_xml = proc_nfe_xml
 
