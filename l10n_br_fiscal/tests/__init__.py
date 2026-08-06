@@ -28,4 +28,5 @@ from . import (
     test_catalog_importacao,
     test_catalog_importacao_especiais,
     test_stock_cost,
+    test_document_import_line,
 )
