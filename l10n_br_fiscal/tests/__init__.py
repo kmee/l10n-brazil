@@ -22,4 +22,5 @@ from . import (
     test_catalog_venda_compras,
     test_catalog_bonificacao_comodato,
     test_catalog_triangular_industrializacao,
+    test_catalog_ativo_demonstracao_transferencia,
 )
