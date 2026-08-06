@@ -19,4 +19,5 @@ from . import (
     test_tax_framework,
     test_catalog_consignacao,
     test_regime,
+    test_catalog_venda_compras,
 )
