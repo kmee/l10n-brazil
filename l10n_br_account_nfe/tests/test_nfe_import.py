@@ -245,6 +245,33 @@ class NFeImportTest(TransactionCase):
         self.assertAlmostEqual(move.due_line_ids[1].credit, 4075.95, places=2)
         self.assertAlmostEqual(move.due_line_ids[2].credit, 4075.96, places=2)
 
+    def test_generate_move_from_resolved_document(self):
+        """The vendor bill is generated from the resolved imported document
+        itself, without going through the wizard (queue flow)."""
+        file_path = os.path.join(
+            l10n_br_account_nfe.__path__[0],
+            "tests",
+            "nfe",
+            "35231149647316000169550010000661061151600085-nfe.xml",
+        )
+        with open(file_path, "rb") as file:
+            file_content = file.read()
+
+        wizard = self.env["l10n_br_fiscal.document.import.wizard"].create({})
+        with Form(wizard) as import_form:
+            import_form.file = base64.b64encode(file_content)
+            import_form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+
+        # materialize the draft only (no move yet)
+        _binding, document = wizard._import_edoc()
+        self.assertFalse(document.move_ids)
+
+        action = document.action_generate_account_move()
+        move = self.env["account.move"].browse(action["res_id"])
+        self.assertEqual(move.fiscal_document_id, document)
+        self.assertEqual(move.move_type, "in_invoice")
+        self.assertEqual(len(move.invoice_line_ids), 4)
+
     def test_import_incomplete_document_is_blocked(self):
         """A document with a line missing its product/uom/qty/price must not
         be importable into an account move (SPED data integrity)."""

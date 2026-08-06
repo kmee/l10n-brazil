@@ -339,6 +339,31 @@ class FiscalDocument(models.Model):
             self._document_deny()
         return super().exec_after_SITUACAO_EDOC_DENEGADA(old_state, new_state)
 
+    def action_generate_account_move(self):
+        """Generate the vendor bill / invoice from a resolved imported
+        document, without going through the import wizard.
+
+        This closes the review flow of the draft-first import: documents
+        materialized by any importer (manual upload, zip batch, future
+        DF-e capture) reach the account move from the document itself.
+        """
+        self.ensure_one()
+        self._check_document_import()
+        move = (
+            self.env["account.move"]
+            .with_company(self.company_id)
+            .import_fiscal_document(
+                self,
+                move_type=f"{self.fiscal_operation_type}_invoice",
+            )
+        )
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": "account.move",
+            "view_mode": "form",
+            "res_id": move.id,
+        }
+
     def _check_document_import(self):
         """Ensure an imported fiscal document has the minimum data required
         to generate a valid account move (and a sound SPED basis).

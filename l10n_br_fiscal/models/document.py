@@ -245,6 +245,25 @@ class Document(models.Model):
                 )
             )
 
+    def write(self, vals):
+        if "fiscal_operation_id" not in vals:
+            return super().write(vals)
+        # R2: changing the fiscal operation on the header of an imported
+        # draft cascades to every line, re-resolving the operation line,
+        # the CFOP remap and everything derived from them. A line whose
+        # operation was explicitly overridden by the user (different from
+        # the previous header operation) is preserved.
+        previous_operations = {
+            document.id: document.fiscal_operation_id for document in self
+        }
+        result = super().write(vals)
+        for document in self.filtered("imported_document"):
+            previous = previous_operations[document.id]
+            for line in document.fiscal_line_ids:
+                if not line.fiscal_operation_id or line.fiscal_operation_id == previous:
+                    line.fiscal_operation_id = document.fiscal_operation_id
+        return result
+
     def _attach_imported_xml(self, file_content, filename=None):
         """Attach the original imported file to the document.
 
