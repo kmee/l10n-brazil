@@ -64,6 +64,7 @@
                     />
                 </header>
                 <sheet>
+                    <field name="account_move_id" invisible="1" />
                     <div class="oe_button_box" name="button_box">
                         <button
                             name="action_view_invoice"
