@@ -15,7 +15,11 @@ USER_TYPE_MAP = {
 
 class StockMove(models.Model):
     _name = "stock.move"
-    _inherit = [_name, "l10n_br_fiscal.document.line.mixin"]
+    _inherit = [
+        _name,
+        "l10n_br_fiscal.document.line.mixin",
+        "l10n_br_fiscal.stock.price.mixin",
+    ]
 
     @api.model
     def _default_fiscal_operation(self):
@@ -106,6 +110,12 @@ class StockMove(models.Model):
                 user_type = USER_TYPE_MAP.get((pick_type_code, usage))
 
                 if user_type:
+                    # Escolha da variante dedutível por imposto quando a
+                    # operação de compra tem destinação (ver l10n_br_account
+                    # fiscal_tax.account_taxes).
+                    credit_map = None
+                    if user_type[0] == "purchase" and record.product_destination:
+                        credit_map = record._get_stock_cost_tax_map()
                     # Necessario usar o with_company porque sem isso, pelo menos,
                     # no caso dos Dados de Demonstração são criados sem o Tax IDs
                     # porque a empresa do self.env.company vai errado
@@ -115,6 +125,7 @@ class StockMove(models.Model):
                         user_type=user_type[0],
                         fiscal_operation=record.fiscal_operation_id,
                         company=record.company_id,
+                        credit_map=credit_map,
                     )
 
                     if tax_ids:
@@ -216,6 +227,13 @@ class StockMove(models.Model):
         #  e continua sendo feito abaixo?
         if self.fiscal_operation_id.fiscal_operation_type == "out":
             result = self.product_id.with_company(self.company_id).standard_price
+        elif (
+            self.fiscal_operation_id.fiscal_operation_type == "in"
+            and self.valuation_via_stock_price
+        ):
+            # Opt-in: incoming moves are valued at the net acquisition cost
+            # (art. 301 RIR/2018, CPC 16) instead of the purchase price.
+            result = self.cost_unit
 
         return result
 

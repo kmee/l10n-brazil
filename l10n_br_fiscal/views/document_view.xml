@@ -30,6 +30,17 @@
                 />
                 <separator />
                 <filter
+                    name="imported"
+                    string="Imported"
+                    domain="[('imported_document','=',True)]"
+                />
+                <filter
+                    name="awaiting_review"
+                    string="Awaiting Review"
+                    domain="[('imported_document','=',True),('import_state','!=','resolved')]"
+                />
+                <separator />
+                <filter
                     name="document_date"
                     string="Document Date"
                     date="document_date"
@@ -184,6 +195,17 @@
                     />
                 </header>
                 <div
+                    class="alert alert-info"
+                    role="alert"
+                    attrs="{'invisible': [('import_state','not in',('pending','in_progress'))]}"
+                >
+                    <field name="imported_document" invisible="1" />
+                    <field name="import_state" invisible="1" />
+                    <strong>Imported document awaiting review:</strong>
+                    <field name="import_pending_count" readonly="1" />
+                    line(s) pending the product/operation de-para.
+                </div>
+                <div
                     class="alert alert-danger"
                     role="alert"
                     attrs="{'invisible': [('xml_error_message','=',False)]}"
@@ -231,6 +253,7 @@
                                 widget="res_partner_many2one"
                                 context="{ 'show_address': 1, 'default_is_company': True, 'show_vat': True}"
                                 options="{&quot;always_reload&quot;: True, &quot;no_quick_create&quot;: True}"
+                                attrs="{'readonly': [('imported_document', '=', True)]}"
                             />
                             <field name="partner_shipping_id" />
                         </group>
@@ -306,7 +329,7 @@
                                     'no_subcall': True,
                                 }"
                             >
-                                <tree>
+                                <tree decoration-warning="import_state == 'pending'">
                                     <field name="product_id" />
                                     <field name="name" />
                                     <field name="uom_id" />
@@ -317,6 +340,26 @@
                                         widget="many2many_tags"
                                     />
                                     <field name="fiscal_amount_total" sum="Total" />
+                                    <field name="partner_cfop_id" optional="hide" />
+                                    <field name="cfop_warning" optional="hide" />
+                                    <field name="import_uom_id" optional="hide" />
+                                    <field name="import_uom_factor" optional="hide" />
+                                    <field
+                                        name="import_state"
+                                        widget="badge"
+                                        decoration-warning="import_state == 'pending'"
+                                        decoration-info="import_state == 'matched'"
+                                        decoration-success="import_state == 'resolved'"
+                                        optional="show"
+                                        attrs="{'column_invisible': [('parent.imported_document', '=', False)]}"
+                                    />
+                                    <button
+                                        name="action_resolve_line"
+                                        type="object"
+                                        icon="fa-check"
+                                        title="Apply the de-para and resolve the line"
+                                        attrs="{'invisible': [('import_state', 'in', [False, 'resolved'])]}"
+                                    />
                                 </tree>
                             </field>
                         </page>
