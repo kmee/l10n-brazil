@@ -109,7 +109,7 @@ class TestDuimpSearchWizard(AccountMoveBRCommon):
         with self.assertRaises(UserError):
             wizard.action_import_selected()
 
-    def test_action_import_selected_creates_import_wizards(self):
+    def test_action_import_selected_creates_declaracoes(self):
         fake = FakeDuimpSearchWebservice()
         wizard = self._create_wizard()
         wizard.line_ids = [
@@ -126,9 +126,10 @@ class TestDuimpSearchWizard(AccountMoveBRCommon):
         with patch.object(ResCompany, "_get_duimp_webservice", new=lambda self: fake):
             action = wizard.action_import_selected()
 
-        import_wizards = self.env["l10n_br_fiscal.document.import.wizard"].search(
+        declaracoes = self.env["l10n_br_duimp.declaracao"].search(
             [("id", "in", action["domain"][0][2])]
         )
-        self.assertEqual(len(import_wizards), 1)
-        self.assertEqual(import_wizards.duimp_number, "26BR0000758808")
-        self.assertTrue(import_wizards.duimp_line_ids)
+        self.assertEqual(len(declaracoes), 1)
+        self.assertEqual(declaracoes.numero, "26BR0000758808")
+        self.assertEqual(declaracoes.state, "open")
+        self.assertTrue(declaracoes.item_ids)

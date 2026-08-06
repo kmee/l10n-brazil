@@ -11,8 +11,8 @@ from ..constants.duimp import DUIMP_SEARCH_DEFAULT_DAYS
 
 class DuimpSearchWizard(models.TransientModel):
     """Lists the DUIMPs registered for the company (via
-    ``DuimpWebservice.search_access_keys_by_importer``, keyed by CNPJ and
-    a date range) instead of requiring the DUIMP number to be typed in
+    ``DuimpWebservice.buscar_chaves_por_importador``, keyed by CNPJ and a
+    date range) instead of requiring the DUIMP number to be typed in
     manually, and lets the user multi-select which ones to import.
     DUIMPs already linked to an existing ``l10n_br_fiscal.document`` are
     left out of the results.
@@ -110,24 +110,24 @@ class DuimpSearchWizard(models.TransientModel):
         if not selected_lines:
             raise UserError(_("Select at least one DUIMP to import!"))
 
-        import_wizards = self.env["l10n_br_fiscal.document.import.wizard"]
+        declaracoes = self.env["l10n_br_duimp.declaracao"]
         for line in selected_lines:
-            wizard = import_wizards.create(
+            wizard = self.env["l10n_br_fiscal.document.import.wizard"].create(
                 {
                     "company_id": self.company_id.id,
                     "duimp_number": line.duimp_number,
                     "duimp_version": line.duimp_version,
                 }
             )
-            wizard.action_consult_duimp()
-            import_wizards |= wizard
+            action = wizard.action_consult_duimp()
+            declaracoes |= declaracoes.browse(action["res_id"])
 
         return {
             "name": _("DUIMP Imports"),
             "type": "ir.actions.act_window",
-            "res_model": "l10n_br_fiscal.document.import.wizard",
+            "res_model": "l10n_br_duimp.declaracao",
             "view_mode": "tree,form",
-            "domain": [("id", "in", import_wizards.ids)],
+            "domain": [("id", "in", declaracoes.ids)],
             "target": "current",
         }
 
