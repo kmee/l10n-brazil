@@ -269,6 +269,15 @@ msgid ""
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__company_tax_framework__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__partner_tax_framework__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_partner_profile__tax_framework__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__res_company__tax_framework__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__res_partner__tax_framework__4
+msgid "4 - Simples Nacional - Microempreendedor Individual (MEI)"
+msgstr ""
+
+#. module: l10n_br_fiscal
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax_classification__rate_type__4
 msgid "4 - Uniforme Nacional"
 msgstr ""
@@ -1644,6 +1653,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__pisst_cst_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__pisst_cst_id
 msgid "CST PIS ST"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_tax__cst_tax_domain
+msgid "CST Tax Domain"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -4543,6 +4557,7 @@ msgid "ICMS SN Reduction"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.cfop_search
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_fiscal_line_mixin_form
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_form
 msgid "ICMS ST"
@@ -4740,6 +4755,12 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__icmsst_wh_value
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__icmsst_wh_value
 msgid "ICMS ST WH Value"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_cfop__is_icmsst
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_operation_line__is_icmsst
+msgid "ICMS ST?"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -5440,6 +5461,23 @@ msgstr ""
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__allow_csll_irpj
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__allow_csll_irpj
 msgid "Indicates potential 'CSLL' and 'IRPJ' tax charges."
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_cfop__is_icmsst
+msgid ""
+"Indicates that this CFOP is used in operations subject to ICMS Tax "
+"Substitution (Substituição Tributária)."
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_operation_line__is_icmsst
+msgid ""
+"Indicates that this Operation Line is meant to be used for "
+"products/operations subject to ICMS Tax Substitution (Substituição "
+"Tributária), based on the CFOPs assigned to it. Used to automatically select"
+" the right Operation Line when a Fiscal Operation has separate lines for "
+"regular and ICMS ST scenarios."
 msgstr ""
 
 #. module: l10n_br_fiscal
