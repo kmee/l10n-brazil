@@ -491,6 +491,9 @@ class TaxDefinition(models.Model):
             l10n_br_fiscal.tax.definition.
         """
 
+        if not self:
+            return self
+
         if not ncm:
             ncm = product.ncm_id
 
@@ -663,12 +666,4 @@ class TaxDefinition(models.Model):
                     if record.code[:2].upper() != record.state_from_id.code.upper():
                         raise ValidationError(
                             _("Tax benefit code must be start with state code!")
-                        )
-
-                    if record.code[3:4] != record.benefit_type:
-                        raise ValidationError(
-                            _(
-                                "The tax benefit code must contain "
-                                "the type of benefit!"
-                            )
                         )

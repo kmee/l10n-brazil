@@ -47,15 +47,15 @@ class TestCTeSerialize(TransactionCase):
         )
         cte.cte40_cCT = "57000111"
 
-        if cte.cte_modal == "01":
+        if cte.cte40_modal == "01":
             self.prepare_modal_rodoviario_data(cte)
-        elif cte.cte_modal == "02":
+        elif cte.cte40_modal == "02":
             self.prepare_modal_aereo_data(cte)
-        elif cte.cte_modal == "03":
+        elif cte.cte40_modal == "03":
             self.prepare_modal_aquaviario_data(cte)
-        elif cte.cte_modal == "04":
+        elif cte.cte40_modal == "04":
             self.prepare_modal_ferroviario_data(cte)
-        elif cte.cte_modal == "05":
+        elif cte.cte40_modal == "05":
             self.prepare_modal_dutoviario_data(cte)
 
         cte._document_export()
@@ -64,6 +64,7 @@ class TestCTeSerialize(TransactionCase):
     def prepare_modal_rodoviario_data(cls, cte):
         cte.cte40_RNTRC = "12345678"
         cte.cte40_occ = [
+            Command.clear(),
             Command.create(
                 {
                     "cte40_serie": "01",
@@ -95,6 +96,7 @@ class TestCTeSerialize(TransactionCase):
 
         # Lista de produtos perigosos
         cte.cte40_peri = [
+            Command.clear(),
             Command.create(
                 {
                     "cte40_nONU": "1234",  # Número ONU do produto perigoso
@@ -128,6 +130,7 @@ class TestCTeSerialize(TransactionCase):
 
         # Informações das balsas transportadas
         cte.cte40_balsa = [
+            Command.clear(),
             Command.create(
                 {
                     "cte40_xBalsa": "Balsa A",  # Identificador da primeira balsa
