@@ -5,6 +5,7 @@ from lxml import etree
 
 from odoo import _, api, fields, models
 
+from .. import tools
 from ..constants.fiscal import (
     FINAL_CUSTOMER_YES,
     FISCAL_IN,
@@ -188,15 +189,10 @@ class ICMSRegulation(models.Model):
             ("state", "=", "approved"),
             ("tax_group_id", "=", tax_group_icms.id),
             "|",
-            ("date_start", "=", False),
-            ("date_start", "<=", reference_date),
-            "|",
-            ("date_end", "=", False),
-            ("date_end", ">=", reference_date),
-            "|",
             ("ind_final", "=", ind_final),
             ("ind_final", "=", False),
         ]
+        domain += tools.date_validity_domain(reference_date)
 
         if tax_group_icms.tax_domain in (TAX_DOMAIN_ICMS, TAX_DOMAIN_ICMS_ST):
             domain += [

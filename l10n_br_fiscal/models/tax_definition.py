@@ -324,6 +324,19 @@ class TaxDefinition(models.Model):
     def action_draft(self):
         self.write({"state": "draft"})
 
+    @api.model
+    def _expire_invalid_definitions(self):
+        """Mark as 'expired' tax definitions outside their date validity
+        window (date_start/date_end)."""
+        today = fields.Datetime.now()
+        candidates = self.search([("state", "!=", "expired")])
+        valid = self.search(
+            [("state", "!=", "expired")] + tools.date_validity_domain(today)
+        )
+        expired = candidates - valid
+        if expired:
+            expired.write({"state": "expired"})
+
     def unlink(self):
         operations = self.filtered(lambda line: line.state == "approved")
         if operations:
@@ -489,12 +502,9 @@ class TaxDefinition(models.Model):
         domain = [
             ("state", "!=", "expired"),
             ("id", "in", self.ids),
-            "|",
-            ("date_start", "=", False),
-            ("date_start", "<=", reference_date),
-            "|",
-            ("date_end", "=", False),
-            ("date_end", ">=", reference_date),
+        ]
+        domain += tools.date_validity_domain(reference_date)
+        domain += [
             "|",
             ("state_to_ids", "=", False),
             ("state_to_ids", "=", partner.state_id.id),
