@@ -26,6 +26,109 @@ def _spec(record, spec_field, default=None):
     return default
 
 
+# Contribution codes of table 4.3.5. "01" is the non-cumulative regime at the
+# basic rate and "51" the cumulative one; both are what a company assessing at
+# the basic rate reports. Anything finer (rate by product, tax substitution)
+# needs its own code and is not derived here.
+COD_CONT_NON_CUMULATIVE = "01"
+COD_CONT_CUMULATIVE = "51"
+
+COD_CONT_BY_REGIME = {
+    "non_cumulative": COD_CONT_NON_CUMULATIVE,
+    "cumulative": COD_CONT_CUMULATIVE,
+}
+
+
+def _find_assessment(env, declaration, tax_domain, regime):
+    """The closed assessment of this tax and regime for the period."""
+    return env["l10n_br_tax.assessment"].search(
+        [
+            ("company_id", "=", declaration.company_id.id),
+            ("tax_domain", "=", tax_domain),
+            ("regime", "=", regime),
+            ("date_from", ">=", declaration.DT_INI),
+            ("date_to", "<=", declaration.DT_FIN),
+            # only a CLOSED assessment enters a delivered file (council F9)
+            ("state", "=", "posted"),
+        ],
+        limit=1,
+    )
+
+
+def _consolidation_vals(env, declaration, tax_domain):
+    """Values of M200 (PIS/PASEP) and M600 (COFINS), which share every field.
+
+    Both records are OUTPUTS of an assessment rather than computations of their
+    own. They read `l10n_br_tax.assessment`, which keeps one assessment per
+    regime, because EFD Contribuicoes reports the cumulative and the
+    non-cumulative regimes in separate field sets of the same record.
+    """
+    non_cumulative = _find_assessment(env, declaration, tax_domain, "non_cumulative")
+    cumulative = _find_assessment(env, declaration, tax_domain, "cumulative")
+    return {
+        # non-cumulative regime, fields 02 to 08
+        "VL_TOT_CONT_NC_PER": non_cumulative.debit_total,
+        "VL_TOT_CRED_DESC": non_cumulative.credit_total,
+        "VL_TOT_CRED_DESC_ANT": non_cumulative.previous_balance,
+        "VL_TOT_CONT_NC_DEV": non_cumulative.assessed_balance,
+        "VL_RET_NC": non_cumulative.withholding_total,
+        "VL_OUT_DED_NC": non_cumulative.deduction_total,
+        "VL_CONT_NC_REC": non_cumulative.amount_payable,
+        # cumulative regime, fields 09 to 12. The regime has no credit to
+        # discount, which is what makes it cumulative, so the record carries no
+        # field for it either.
+        "VL_TOT_CONT_CUM_PER": cumulative.debit_total,
+        "VL_RET_CUM": cumulative.withholding_total,
+        "VL_OUT_DED_CUM": cumulative.deduction_total,
+        "VL_CONT_CUM_REC": cumulative.amount_payable,
+        # field 13 closes the record with both regimes together
+        "VL_TOT_CONT_REC": non_cumulative.amount_payable + cumulative.amount_payable,
+    }
+
+
+def _detail_domain(declaration, tax_domain):
+    """Assessed debit lines, which is one per tax and therefore one per rate."""
+    return [
+        ("assessment_id.company_id", "=", declaration.company_id.id),
+        ("assessment_id.tax_domain", "=", tax_domain),
+        ("assessment_id.date_from", ">=", declaration.DT_INI),
+        ("assessment_id.date_to", "<=", declaration.DT_FIN),
+        ("assessment_id.state", "=", "posted"),
+        ("kind", "=", "debit"),
+        ("source", "=", "computed"),
+    ]
+
+
+def _detail_vals(record, rate_field):
+    """Values of M210 (PIS/PASEP) and M610 (COFINS).
+
+    The breakdown comes from the assessment for the same reason the
+    consolidation does: recomputing it here would let the detail drift away
+    from the total right above it.
+    """
+    vals = {
+        "COD_CONT": COD_CONT_BY_REGIME.get(record.assessment_id.regime, ""),
+        # Gross revenue and tax base are reported as the same amount while the
+        # exclusions from the base are not written: inventing a split between
+        # them would be worse than stating they were not computed.
+        "VL_REC_BRT": record.base_amount,
+        "VL_BC_CONT": record.base_amount,
+        # Base adjustments (fields 5 to 7, layout in force) live in M215/M615,
+        # which are not written yet, so the adjusted base equals the base.
+        # The validator checks VL_BC_CONT_AJUS = VL_BC_CONT + acres - reduc.
+        "VL_AJUS_ACRES_BC": 0.0,
+        "VL_AJUS_REDUC_BC": 0.0,
+        "VL_BC_CONT_AJUS": record.base_amount,
+        "VL_CONT_APUR": record.tax_amount,
+        # Value adjustments live at the assessment level, not at the line:
+        # they are reported in M220/M620, which are not written yet.
+        "VL_AJUS_ACRES": 0.0,
+        "VL_AJUS_REDUC": 0.0,
+        "VL_CONT_PER": record.tax_amount,
+    }
+    vals[rate_field] = record.tax_id.amount
+    return vals
+
 class Registro0000(models.Model):
     "Abertura do Arquivo Digital e Identificação da Pessoa Jurídica"
 
@@ -60,7 +163,7 @@ class Registro0000(models.Model):
             "CNPJ": misc.punctuation_rm(record.cnpj_cpf),
             "UF": record.state_id.code,
             "COD_MUN": misc.punctuation_rm(record.city_id.ibge_code),
-            "SUFRAMA": record.suframa or "",  # Inscrição da entidade na SUFRAMA
+            "SUFRAMA": record.l10n_br_isuf_code or "",  # Inscrição da entidade na SUFRAMA
             "IND_NAT_PJ": 0,  # Indicador da natureza da pessoa jurídica: 00 – Pe...
             # "IND_ATIV": (will use the declaration field directly),
         }
@@ -104,7 +207,9 @@ class Registro0100(models.Model):
             "CPF": not record.is_company
             and misc.punctuation_rm(record.cnpj_cpf or "")
             or "",
-            "CRC": "",  # TODO: CRC field not yet available on res.partner
+            # `crc_code` does exist on res.partner in this series, and the PVA
+            # rejects the record without it: "mandatory field" on 0100 field 4.
+            "CRC": record.crc_code or "",
             "CNPJ": record.is_company
             and misc.punctuation_rm(record.cnpj_cpf or "")
             or "",
@@ -188,33 +293,15 @@ class Registro0140(models.Model):
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         return {
-            "COD_EST": record.id,
+            "COD_EST": str(record.id),
             "NOME": record.legal_name,
             "CNPJ": misc.punctuation_rm(record.cnpj_cpf),
             "UF": record.state_id.code,
             "IE": misc.punctuation_rm(record.l10n_br_ie_code or ""),
             "COD_MUN": record.city_id.ibge_code,
             "IM": misc.punctuation_rm(record.l10n_br_im_code or ""),
-            "SUFRAMA": record.suframa or "",
+            "SUFRAMA": record.l10n_br_isuf_code or "",
         }
-
-
-class Registro0145(models.Model):
-    "Regime de Apuração da Contribuição Previdenciária sobre a Receita Bruta"
-
-    _description = textwrap.dedent(f"    {__doc__}")
-    _name = "l10n_br_sped.efd_pis_cofins.0145"
-    _inherit = "l10n_br_sped.efd_pis_cofins.6.0145"
-
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "COD_INC_TRIB": 0,  # Código indicador da incidência tributária no pe...
-    #         "VL_REC_TOT": 0,  # Valor da Receita Bruta Total da Pessoa Jurídica n...
-    #         "VL_REC_ATIV": 0,  # Valor da Receita Bruta da(s) Atividade(s) Sujeit...
-    #         "VL_REC_DEMAIS_ATIV": 0,  # Valor da Receita Bruta da(s) Atividade(s)...
-    #         "INFO_COMPL": 0,  # Informação complementar
-    #     }
 
 
 class Registro0150(models.Model):
@@ -1438,100 +1525,6 @@ class RegistroC609(models.Model):
     _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.efd_pis_cofins.c609"
     _inherit = "l10n_br_sped.efd_pis_cofins.6.c609"
-
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "NUM_PROC": 0,  # Identificação do processo ou ato concessório
-    #         "IND_PROC": 0,  # Indicador da origem do processo: 1 - Justiça Federa...
-    #     }
-
-
-class RegistroC800(models.Model):
-    "Cupom Fiscal Eletrônico – CF-e"
-
-    _description = textwrap.dedent(f"    {__doc__}")
-    _name = "l10n_br_sped.efd_pis_cofins.c800"
-    _inherit = "l10n_br_sped.efd_pis_cofins.6.c800"
-
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "COD_MOD": 0,  # Código do modelo do documento fiscal, conforme a Tab...
-    #         "COD_SIT": 0,  # Código da situação do documento fiscal, conforme a T...
-    #         "NUM_CFE": 0,  # Número do Cupom Fiscal Eletrônico
-    #         "DT_DOC": 0,  # Data da emissão do Cupom Fiscal Eletrônico
-    #         "VL_CFE": 0,  # Valor total do Cupom Fiscal Eletrônico
-    #         "VL_PIS": 0,  # Valor total do PIS
-    #         "VL_COFINS": 0,  # Valor total da COFINS
-    #         "CNPJ_CPF": 0,  # CNPJ ou CPF do destinatário
-    #         "NR_SAT": 0,  # Número de Série do equipamento SAT
-    #         "CHV_CFE": 0,  # Chave do Cupom Fiscal Eletrônico
-    #         "VL_DESC": 0,  # Valor total do desconto/exclusão sobre item
-    #         "VL_MERC": 0,  # Valor total das mercadorias e serviços
-    #         "VL_OUT_DA": 0,  # Valor de outras desp. Acessórias (acréscimo)
-    #         "VL_ICMS": 0,  # Valor do ICMS
-    #         "VL_PIS_ST": 0,  # Valor total do PIS retido por subst. trib.
-    #         "VL_COFINS_ST": 0,  # Valor total da COFINS retido por subst. trib.
-    #     }
-
-
-class RegistroC810(models.Model):
-    "Detalhamento do Cupom Fiscal Eletrônico – CF-e"
-
-    _description = textwrap.dedent(f"    {__doc__}")
-    _name = "l10n_br_sped.efd_pis_cofins.c810"
-    _inherit = "l10n_br_sped.efd_pis_cofins.6.c810"
-
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "CFOP": 0,  # Código fiscal de operação e prestação
-    #         "VL_ITEM": 0,  # Valor total dos itens
-    #         "COD_ITEM": 0,  # Código do item (campo 02 do Registro 0200)
-    #         "CST_PIS": 0,  # Código da Situação Tributária referente ao PIS/PASEP
-    #         "VL_BC_PIS": 0,  # Valor da base de cálculo do PIS/PASEP
-    #         "ALIQ_PIS": 0,  # Alíquota do PIS/PASEP (em percentual)
-    #         "VL_PIS": 0,  # Valor do PIS/PASEP
-    #         "CST_COFINS": 0,  # Código da Situação Tributária referente a COFINS
-    #         "VL_BC_COFINS": 0,  # Valor da base de cálculo da COFINS
-    #         "ALIQ_COFINS": 0,  # Alíquota da COFINS (em percentual)
-    #         "VL_COFINS": 0,  # Valor da COFINS
-    #         "COD_CTA": 0,  # Código da conta analítica contábil debitada/creditad...
-    #     }
-
-
-class RegistroC820(models.Model):
-    "Detalhamento do Cupom Fiscal Eletrônico – CF-e"
-
-    _description = textwrap.dedent(f"    {__doc__}")
-    _name = "l10n_br_sped.efd_pis_cofins.c820"
-    _inherit = "l10n_br_sped.efd_pis_cofins.6.c820"
-
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "CFOP": 0,  # Código fiscal de operação e prestação
-    #         "VL_ITEM": 0,  # Valor total dos itens
-    #         "COD_ITEM": 0,  # Código do item (campo 02 do Registro 0200)
-    #         "CST_PIS": 0,  # Código da Situação Tributária referente ao PIS/PASEP
-    #         "QUANT_BC_PIS": 0,  # Base de cálculo em quantidade - PIS/PASEP
-    #         "ALIQ_PIS_QUANT": 0,  # Alíquota do PIS/PASEP (em reais)
-    #         "VL_PIS": 0,  # Valor do PIS/PASEP
-    #         "CST_COFINS": 0,  # Código da Situação Tributária referente a COFINS
-    #         "QUANT_BC_COFINS": 0,  # Base de cálculo em quantidade – COFINS
-    #         "ALIQ_COFINS_QUANT": 0,  # Alíquota da COFINS (em reais)
-    #         "VL_COFINS": 0,  # Valor da COFINS
-    #         "COD_CTA": 0,  # Código da conta analítica contábil debitada/creditad...
-    #     }
-
-
-class RegistroC830(models.Model):
-    "Processo Referenciado"
-
-    _description = textwrap.dedent(f"    {__doc__}")
-    _name = "l10n_br_sped.efd_pis_cofins.c830"
-    _inherit = "l10n_br_sped.efd_pis_cofins.6.c830"
 
     # @api.model
     # def _map_from_odoo(self, record, parent_record, declaration, index=0):
@@ -2874,22 +2867,9 @@ class RegistroM200(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.m200"
     _inherit = "l10n_br_sped.efd_pis_cofins.6.m200"
 
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "VL_TOT_CONT_NC_PER": 0,  # Valor Total da Contribuição Não Cumulativ...
-    #         "VL_TOT_CRED_DESC": 0,  # Valor do Crédito Descontado, Apurado no Pró...
-    #         "VL_TOT_CRED_DESC_ANT": 0,  # Valor do Crédito Descontado, Apurado em...
-    #         "VL_TOT_CONT_NC_DEV": 0,  # Valor Total da Contribuição Não Cumulativ...
-    #         "VL_RET_NC": 0,  # Valor Retido na Fonte Deduzido no Período
-    #         "VL_OUT_DED_NC": 0,  # Outras Deduções no Período
-    #         "VL_CONT_NC_REC": 0,  # Valor da Contribuição Não Cumulativa a Recolh...
-    #         "VL_TOT_CONT_CUM_PER": 0,  # Valor Total da Contribuição Cumulativa d...
-    #         "VL_RET_CUM": 0,  # Valor Retido na Fonte Deduzido no Período
-    #         "VL_OUT_DED_CUM": 0,  # Outras Deduções no Período
-    #         "VL_CONT_CUM_REC": 0,  # Valor da Contribuição Cumulativa a Recolher/...
-    #         "VL_TOT_CONT_REC": 0,  # Valor Total da Contribuição a Recolher/Pagar...
-    #     }
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return _consolidation_vals(self.env, declaration, "pis")
 
 
 class RegistroM205(models.Model):
@@ -2914,26 +2894,30 @@ class RegistroM210(models.Model):
     _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.efd_pis_cofins.m210"
     _inherit = "l10n_br_sped.efd_pis_cofins.6.m210"
+    _odoo_model = "l10n_br_tax.assessment.line"
 
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "COD_CONT": 0,  # Código da contribuição social apurada no período, c...
-    #         "VL_REC_BRT": 0,  # Valor da Receita Bruta
-    #         "VL_BC_CONT": 0,  # Valor da Base de Cálculo da Contribuição
-    #         "ALIQ_PIS": 0,  # Alíquota do PIS/PASEP (em percentual)
-    #         "QUANT_BC_PIS": 0,  # Quantidade – Base de cálculo PIS
-    #         "ALIQ_PIS_QUANT": 0,  # Alíquota do PIS (em reais)
-    #         "VL_CONT_APUR": 0,  # Valor total da contribuição social apurada
-    #         "VL_AJUS_ACRES": 0,  # Valor total dos ajustes de acréscimo
-    #         "VL_AJUS_REDUC": 0,  # Valor total dos ajustes de redução
-    #         "VL_CONT_DIFER": 0,  # Valor da contribuição a diferir no período
-    #         "VL_CONT_DIFER_ANT": 0,  # Valor da contribuição diferida em períodos...
-    #         "VL_CONT_PER": 0,  # Valor Total da Contribuição do Período (08 + 09 ...
-    #         "VL_CONT_DIFER_INDEX_14": 0,  # Valor da contribuição a diferir no pe...
-    #         "VL_CONT_DIFER_ANT_INDEX_15": 0,  # Valor da contribuição diferida em...
-    #         "VL_CONT_PER_INDEX_16": 0,  # Valor Total da Contribuição do Período ...
-    #     }
+    # The descriptor marks the base adjustment fields (5 to 7) obrigatorio=1:
+    # a zero must come out "0", never blank, or the PVA refuses the record
+    # with "campo obrigatorio". The generated spec cannot carry Odoo required
+    # (it would forbid creating the register before populating it), so the
+    # mapping layer declares it, which is what _write_register_line reads.
+    VL_AJUS_ACRES_BC = fields.Monetary(
+        required=True, currency_field="brl_currency_id"
+    )
+    VL_AJUS_REDUC_BC = fields.Monetary(
+        required=True, currency_field="brl_currency_id"
+    )
+    VL_BC_CONT_AJUS = fields.Monetary(
+        required=True, currency_field="brl_currency_id"
+    )
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return _detail_domain(declaration, "pis")
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return _detail_vals(record, "ALIQ_PIS")
 
 
 class RegistroM211(models.Model):
@@ -3203,22 +3187,9 @@ class RegistroM600(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.m600"
     _inherit = "l10n_br_sped.efd_pis_cofins.6.m600"
 
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "VL_TOT_CONT_NC_PER": 0,  # Valor Total da Contribuição Não Cumulativ...
-    #         "VL_TOT_CRED_DESC": 0,  # Valor do Crédito Descontado, Apurado no Pró...
-    #         "VL_TOT_CRED_DESC_ANT": 0,  # Valor do Crédito Descontado, Apurado em...
-    #         "VL_TOT_CONT_NC_DEV": 0,  # Valor Total da Contribuição Não Cumulativ...
-    #         "VL_RET_NC": 0,  # Valor Retido na Fonte Deduzido no Período
-    #         "VL_OUT_DED_NC": 0,  # Outras Deduções no Período
-    #         "VL_CONT_NC_REC": 0,  # Valor da Contribuição Não Cumulativa a Recolh...
-    #         "VL_TOT_CONT_CUM_PER": 0,  # Valor Total da Contribuição Cumulativa d...
-    #         "VL_RET_CUM": 0,  # Valor Retido na Fonte Deduzido no Período
-    #         "VL_OUT_DED_CUM": 0,  # Outras Deduções no Período
-    #         "VL_CONT_CUM_REC": 0,  # Valor da Contribuição Cumulativa a Recolher/...
-    #         "VL_TOT_CONT_REC": 0,  # Valor Total da Contribuição a Recolher/Pagar...
-    #     }
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return _consolidation_vals(self.env, declaration, "cofins")
 
 
 class RegistroM605(models.Model):
@@ -3243,26 +3214,30 @@ class RegistroM610(models.Model):
     _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.efd_pis_cofins.m610"
     _inherit = "l10n_br_sped.efd_pis_cofins.6.m610"
+    _odoo_model = "l10n_br_tax.assessment.line"
 
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "COD_CONT": 0,  # Código da contribuição social apurada no período, c...
-    #         "VL_REC_BRT": 0,  # Valor da Receita Bruta
-    #         "VL_BC_CONT": 0,  # Valor da Base de Cálculo da Contribuição
-    #         "ALIQ_COFINS": 0,  # Alíquota do COFINS (em percentual)
-    #         "QUANT_BC_COFINS": 0,  # Quantidade – Base de cálculo COFINS
-    #         "ALIQ_COFINS_QUANT": 0,  # Alíquota do COFINS (em reais)
-    #         "VL_CONT_APUR": 0,  # Valor total da contribuição social apurada
-    #         "VL_AJUS_ACRES": 0,  # Valor total dos ajustes de acréscimo
-    #         "VL_AJUS_REDUC": 0,  # Valor total dos ajustes de redução
-    #         "VL_CONT_DIFER": 0,  # Valor da contribuição a diferir no período
-    #         "VL_CONT_DIFER_ANT": 0,  # Valor da contribuição diferida em períodos...
-    #         "VL_CONT_PER": 0,  # Valor Total da Contribuição do Período (08 + 09 ...
-    #         "VL_CONT_DIFER_INDEX_14": 0,  # Valor da contribuição a diferir no pe...
-    #         "VL_CONT_DIFER_ANT_INDEX_15": 0,  # Valor da contribuição diferida em...
-    #         "VL_CONT_PER_INDEX_16": 0,  # Valor Total da Contribuição do Período ...
-    #     }
+    # The descriptor marks the base adjustment fields (5 to 7) obrigatorio=1:
+    # a zero must come out "0", never blank, or the PVA refuses the record
+    # with "campo obrigatorio". The generated spec cannot carry Odoo required
+    # (it would forbid creating the register before populating it), so the
+    # mapping layer declares it, which is what _write_register_line reads.
+    VL_AJUS_ACRES_BC = fields.Monetary(
+        required=True, currency_field="brl_currency_id"
+    )
+    VL_AJUS_REDUC_BC = fields.Monetary(
+        required=True, currency_field="brl_currency_id"
+    )
+    VL_BC_CONT_AJUS = fields.Monetary(
+        required=True, currency_field="brl_currency_id"
+    )
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return _detail_domain(declaration, "cofins")
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return _detail_vals(record, "ALIQ_COFINS")
 
 
 class RegistroM611(models.Model):
@@ -3418,114 +3393,6 @@ class RegistroM810(models.Model):
     #     }
 
 
-class RegistroP010(models.Model):
-    "Identificação do Estabelecimento"
-
-    _description = textwrap.dedent(f"    {__doc__}")
-    _name = "l10n_br_sped.efd_pis_cofins.p010"
-    _inherit = "l10n_br_sped.efd_pis_cofins.6.p010"
-
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "CNPJ": 0,  # Número de inscrição do estabelecimento no CNPJ.
-    #     }
-
-
-class RegistroP100(models.Model):
-    "Contribuição Previdenciária sobre a Receita Bruta"
-
-    _description = textwrap.dedent(f"    {__doc__}")
-    _name = "l10n_br_sped.efd_pis_cofins.p100"
-    _inherit = "l10n_br_sped.efd_pis_cofins.6.p100"
-
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "DT_INI": 0,  # Data inicial a que a apuração se refere
-    #         "DT_FIN": 0,  # Data final a que a apuração se refere
-    #         "VL_REC_TOT_EST": 0,  # Valor da Receita Bruta Total do Estabelecimen...
-    #         "COD_ATIV_ECON": 0,  # Código indicador correspondente à atividade su...
-    #         "VL_REC_ATIV_ESTAB": 0,  # Valor da Receita Bruta do Estabelecimento,...
-    #         "VL_EXC": 0,  # Valor das Exclusões da Receita Bruta informada no Cam...
-    #         "VL_BC_CONT": 0,  # Valor da Base de Cálculo da Contribuição Previden...
-    #         "ALIQ_CONT": 0,  # Alíquota da Contribuição Previdenciária sobre a Re...
-    #         "VL_CONT_APU": 0,  # Valor da Contribuição Previdenciária Apurada sob...
-    #         "COD_CTA": 0,  # Código da conta analítica contábil referente à Contr...
-    #         "INFO_COMPL": 0,  # Informação complementar do registro
-    #     }
-
-
-class RegistroP110(models.Model):
-    "Complemento da Escrituração – Detalhamento da Apuração da Contribuição"
-
-    _description = textwrap.dedent(f"    {__doc__}")
-    _name = "l10n_br_sped.efd_pis_cofins.p110"
-    _inherit = "l10n_br_sped.efd_pis_cofins.6.p110"
-
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "NUM_CAMPO": 0,  # Informar o número do campo do registro “P100”, obj...
-    #         "COD_DET": 0,  # Código do tipo de detalhamento, conforme Tabela 5.1....
-    #         "DET_VALOR": 0,  # Valor detalhado referente ao campo 02 deste regist...
-    #         "INF_COMPL": 0,  # Informação complementar do detalhamento.
-    #     }
-
-
-class RegistroP199(models.Model):
-    "Processo Referenciado"
-
-    _description = textwrap.dedent(f"    {__doc__}")
-    _name = "l10n_br_sped.efd_pis_cofins.p199"
-    _inherit = "l10n_br_sped.efd_pis_cofins.6.p199"
-
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "NUM_PROC": 0,  # Identificação do processo ou ato concessório
-    #         "IND_PROC": 0,  # Indicador da origem do processo: 1 - Justiça Federa...
-    #     }
-
-
-class RegistroP200(models.Model):
-    "Consolidação da Contribuição Previdenciária sobre a Receita Bruta"
-
-    _description = textwrap.dedent(f"    {__doc__}")
-    _name = "l10n_br_sped.efd_pis_cofins.p200"
-    _inherit = "l10n_br_sped.efd_pis_cofins.6.p200"
-
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "PER_REF": 0,  # Período de referencia da escrituração (MMAAAA)
-    #         "VL_TOT_CONT_APU": 0,  # Valor total apurado da Contribuição Previden...
-    #         "VL_TOT_AJ_REDUC": 0,  # Valor total de “Ajustes de redução” (Registr...
-    #         "VL_TOT_AJ_ACRES": 0,  # Valor total de “Ajustes de acréscimo” (Regis...
-    #         "VL_TOT_CONT_DEV": 0,  # Valor total da Contribuição Previdenciária s...
-    #         "COD_REC": 0,  # Código de Receita referente à Contribuição Previdenc...
-    #     }
-
-
-class RegistroP210(models.Model):
-    "Ajuste da Contribuição Previdenciária Apurada sobre a Receita Bruta"
-
-    _description = textwrap.dedent(f"    {__doc__}")
-    _name = "l10n_br_sped.efd_pis_cofins.p210"
-    _inherit = "l10n_br_sped.efd_pis_cofins.6.p210"
-
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "IND_AJ": 0,  # Indicador do tipo de ajuste: 0- Ajuste de redução; 1-...
-    #         "VL_AJ": 0,  # Valor do ajuste
-    #         "COD_AJ": 0,  # Código do ajuste, conforme a Tabela indicada no item ...
-    #         "NUM_DOC": 0,  # Número do processo, documento ou ato concessório ao ...
-    #         "DESCR_AJ": 0,  # Descrição resumida do ajuste.
-    #         "DT_REF": 0,  # Data de referência do ajuste (ddmmaaaa)
-    #     }
-
-
 class Registro1010(models.Model):
     "Processo Referenciado – Ação Judicial"
 
@@ -3660,119 +3527,6 @@ class Registro1100(models.Model):
     #     }
 
 
-class Registro1101(models.Model):
-    "Apuração de Crédito Extemporâneo"
-
-    _description = textwrap.dedent(f"    {__doc__}")
-    _name = "l10n_br_sped.efd_pis_cofins.1101"
-    _inherit = "l10n_br_sped.efd_pis_cofins.6.1101"
-
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "COD_PART": 0,  # Código do participante (Campo 02 do Registro 0150)
-    #         "COD_ITEM": 0,  # Código do item (campo 02 do Registro 0200)
-    #         "COD_MOD": 0,  # Código do modelo do documento fiscal, conforme a Tab...
-    #         "SER": 0,  # Série do documento fiscal
-    #         "SUB_SER": 0,  # Subsérie do documento fiscal
-    #         "NUM_DOC": 0,  # Número do documento fiscal
-    #         "DT_OPER": 0,  # Data da Operação (ddmmaaaa)
-    #         "CHV_NFE": 0,  # Chave da Nota Fiscal Eletrônica
-    #         "VL_OPER": 0,  # Valor da Operação
-    #         "CFOP": 0,  # Código fiscal de operação e prestação
-    #         "NAT_BC_CRED": 0,  # Código da Base de Cálculo do Crédito, conforme a...
-    #         "IND_ORIG_CRED": 0,  # Indicador da origem do crédito: 0 – Operação n...
-    #         "CST_PIS": 0,  # Código da Situação Tributária referente ao PIS/PASEP...
-    #         "VL_BC_PIS": 0,  # Base de Cálculo do Crédito de PIS/PASEP (em valor ...
-    #         "ALIQ_PIS": 0,  # Alíquota do PIS/PASEP (em percentual ou em reais).
-    #         "VL_PIS": 0,  # Valor do Crédito de PIS/PASEP.
-    #         "COD_CTA": 0,  # Código da conta analítica contábil debitada/creditad...
-    #         "COD_CCUS": 0,  # Código do Centro de Custos.
-    #         "DESC_COMPL": 0,  # Descrição complementar do Documento/Operação.
-    #         "PER_ESCRIT": 0,  # Mês/Ano da Escrituração em que foi registrado o d...
-    #         "CNPJ": 0,  # CNPJ do estabelecimento gerador do crédito extemporâneo...
-    #     }
-
-
-class Registro1102(models.Model):
-    "Detalhamento do Crédito Extemporâneo"
-
-    _description = textwrap.dedent(f"    {__doc__}")
-    _name = "l10n_br_sped.efd_pis_cofins.1102"
-    _inherit = "l10n_br_sped.efd_pis_cofins.6.1102"
-
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "VL_CRED_PIS_TRIB_MI": 0,  # Parcela do Crédito de PIS/PASEP, vincula...
-    #         "VL_CRED_PIS_NT_MI": 0,  # Parcela do Crédito de PIS/PASEP, vinculada...
-    #         "VL_CRED_PIS_EXP": 0,  # Parcela do Crédito de PIS/PASEP, vinculada a...
-    #     }
-
-
-class Registro1200(models.Model):
-    "Contribuição Social Extemporânea – PIS/PASEP"
-
-    _description = textwrap.dedent(f"    {__doc__}")
-    _name = "l10n_br_sped.efd_pis_cofins.1200"
-    _inherit = "l10n_br_sped.efd_pis_cofins.6.1200"
-
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "PER_APUR_ANT": 0,  # Período de Apuração da Contribuição Social Exte...
-    #         "NAT_CONT_REC": 0,  # Natureza da Contribuição a Recolher, conforme T...
-    #         "VL_CONT_APUR": 0,  # Valor da Contribuição Apurada.
-    #         "VL_CRED_PIS_DESC": 0,  # Valor do Crédito de PIS/PASEP a Descontar, ...
-    #         "VL_CONT_DEV": 0,  # Valor da Contribuição Social Extemporânea Devida...
-    #         "VL_OUT_DED": 0,  # Valor de Outras Deduções.
-    #         "VL_CONT_EXT": 0,  # Valor da Contribuição Social Extemporânea a paga...
-    #         "VL_MUL": 0,  # Valor da Multa.
-    #         "VL_JUR": 0,  # Valor dos Juros.
-    #         "DT_RECOL": 0,  # Data do Recolhimento.
-    #     }
-
-
-class Registro1210(models.Model):
-    "Detalhamento da Contribuição Social Extemporânea – PIS/PASEP"
-
-    _description = textwrap.dedent(f"    {__doc__}")
-    _name = "l10n_br_sped.efd_pis_cofins.1210"
-    _inherit = "l10n_br_sped.efd_pis_cofins.6.1210"
-
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "CNPJ": 0,  # Número de inscrição do estabelecimento no CNPJ (Campo 0...
-    #         "CST_PIS": 0,  # Código da Situação Tributária referente ao PIS/PASEP...
-    #         "COD_PART": 0,  # Código do participante (Campo 02 do Registro 0150)
-    #         "DT_OPER": 0,  # Data da Operação (ddmmaaaa)
-    #         "VL_OPER": 0,  # Valor da Operação
-    #         "VL_BC_PIS": 0,  # Base de cálculo do PIS/PASEP (em valor ou em quant...
-    #         "ALIQ_PIS": 0,  # Alíquota da PIS (em percentual ou em reais)
-    #         "VL_PIS": 0,  # Valor do PIS/PASEP
-    #         "COD_CTA": 0,  # Código da conta analítica contábil debitada/creditad...
-    #         "DESC_COMPL": 0,  # Descrição complementar do Documento/Operação
-    #     }
-
-
-class Registro1220(models.Model):
-    "Demonstração do Crédito a Descontar da Contribuição Extemporânea – PIS/PASEP"
-
-    _description = textwrap.dedent(f"    {__doc__}")
-    _name = "l10n_br_sped.efd_pis_cofins.1220"
-    _inherit = "l10n_br_sped.efd_pis_cofins.6.1220"
-
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "PER_APU_CRED": 0,  # Período de Apuração do Crédito (MM/AAAA)
-    #         "ORIG_CRED": 0,  # Indicador da origem do crédito: 01 – Crédito decor...
-    #         "COD_CRED": 0,  # Código do Tipo do Crédito, conforme Tabela 4.3.6.
-    #         "VL_CRED": 0,  # Valor do Crédito a Descontar
-    #     }
-
-
 class Registro1300(models.Model):
     "Controle dos Valores Retidos na Fonte – PIS/PASEP"
 
@@ -3820,119 +3574,6 @@ class Registro1500(models.Model):
     #         "VL_CRED_TRANS": 0,  # Valor do crédito transferido em evento de cisã...
     #         "VL_CRED_OUT": 0,  # Valor do crédito utilizado por outras formas
     #         "SLD_CRED_FIM": 0,  # Saldo de créditos a utilizar em período de apur...
-    #     }
-
-
-class Registro1501(models.Model):
-    "Apuração de Crédito Extemporâneo"
-
-    _description = textwrap.dedent(f"    {__doc__}")
-    _name = "l10n_br_sped.efd_pis_cofins.1501"
-    _inherit = "l10n_br_sped.efd_pis_cofins.6.1501"
-
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "COD_PART": 0,  # Código do participante (Campo 02 do Registro 0150)
-    #         "COD_ITEM": 0,  # Código do item (campo 02 do Registro 0200)
-    #         "COD_MOD": 0,  # Código do modelo do documento fiscal, conforme a Tab...
-    #         "SER": 0,  # Série do documento fiscal
-    #         "SUB_SER": 0,  # Subsérie do documento fiscal
-    #         "NUM_DOC": 0,  # Número do documento fiscal
-    #         "DT_OPER": 0,  # Data da Operação (ddmmaaaa)
-    #         "CHV_NFE": 0,  # Chave da Nota Fiscal Eletrônica
-    #         "VL_OPER": 0,  # Valor da Operação
-    #         "CFOP": 0,  # Código fiscal de operação e prestação
-    #         "NAT_BC_CRED": 0,  # Código da Base de Cálculo do Crédito, conforme a...
-    #         "IND_ORIG_CRED": 0,  # Indicador da origem do crédito: 0 – Operação n...
-    #         "CST_COFINS": 0,  # Código da Situação Tributária referente ao COFINS...
-    #         "VL_BC_COFINS": 0,  # Base de Cálculo do Crédito de COFINS (em valor ...
-    #         "ALIQ_COFINS": 0,  # Alíquota do COFINS (em percentual ou em reais)
-    #         "VL_COFINS": 0,  # Valor do Crédito de COFINS
-    #         "COD_CTA": 0,  # Código da conta analítica contábil debitada/creditad...
-    #         "COD_CCUS": 0,  # Código do Centro de Custos
-    #         "DESC_COMPL": 0,  # Descrição complementar do Documento/Operação
-    #         "PER_ESCRIT": 0,  # Mês/Ano da Escrituração em que foi registrado o d...
-    #         "CNPJ": 0,  # CNPJ do estabelecimento gerador do crédito extemporâneo...
-    #     }
-
-
-class Registro1502(models.Model):
-    "Detalhamento do Crédito Extemporâneo"
-
-    _description = textwrap.dedent(f"    {__doc__}")
-    _name = "l10n_br_sped.efd_pis_cofins.1502"
-    _inherit = "l10n_br_sped.efd_pis_cofins.6.1502"
-
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "VL_CRED_COFINS_TRIB_MI": 0,  # Parcela do Crédito de COFINS, vincula...
-    #         "VL_CRED_COFINS_NT_MI": 0,  # Parcela do Crédito de COFINS, vinculada...
-    #         "VL_CRED_COFINS_EXP": 0,  # Parcela do Crédito de COFINS, vinculada a...
-    #     }
-
-
-class Registro1600(models.Model):
-    "Contribuição Social Extemporânea – COFINS"
-
-    _description = textwrap.dedent(f"    {__doc__}")
-    _name = "l10n_br_sped.efd_pis_cofins.1600"
-    _inherit = "l10n_br_sped.efd_pis_cofins.6.1600"
-
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "PER_APUR_ANT": 0,  # Período de Apuração da Contribuição Social Exte...
-    #         "NAT_CONT_REC": 0,  # Natureza da Contribuição a Recolher, conforme T...
-    #         "VL_CONT_APUR": 0,  # Valor da Contribuição Apurada
-    #         "VL_CRED_COFINS_DESC": 0,  # Valor do Crédito de COFINS a Descontar, ...
-    #         "VL_CONT_DEV": 0,  # Valor da Contribuição Social Extemporânea Devida...
-    #         "VL_OUT_DED": 0,  # Valor de Outras Deduções.
-    #         "VL_CONT_EXT": 0,  # Valor da Contribuição Social Extemporânea a paga...
-    #         "VL_MUL": 0,  # Valor da Multa.
-    #         "VL_JUR": 0,  # Valor dos Juros.
-    #         "DT_RECOL": 0,  # Data do Recolhimento.
-    #     }
-
-
-class Registro1610(models.Model):
-    "Detalhamento da Contribuição Social Extemporânea – COFINS"
-
-    _description = textwrap.dedent(f"    {__doc__}")
-    _name = "l10n_br_sped.efd_pis_cofins.1610"
-    _inherit = "l10n_br_sped.efd_pis_cofins.6.1610"
-
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "CNPJ": 0,  # Número de inscrição do estabelecimento no CNPJ (Campo 0...
-    #         "CST_COFINS": 0,  # Código da Situação Tributária referente a COFINS,...
-    #         "COD_PART": 0,  # Código do participante (Campo 02 do Registro 0150)
-    #         "DT_OPER": 0,  # Data da Operação (ddmmaaaa)
-    #         "VL_OPER": 0,  # Valor da Operação
-    #         "VL_BC_COFINS": 0,  # Base de cálculo da COFINS (em valor ou em quant...
-    #         "ALIQ_COFINS": 0,  # Alíquota da COFINS (em percentual ou em reais)
-    #         "VL_COFINS": 0,  # Valor da COFINS
-    #         "COD_CTA": 0,  # Código da conta analítica contábil debitada/creditad...
-    #         "DESC_COMPL": 0,  # Descrição complementar do Documento/Operação
-    #     }
-
-
-class Registro1620(models.Model):
-    "Demonstração do Crédito a Descontar da Contribuição Extemporânea – COFINS"
-
-    _description = textwrap.dedent(f"    {__doc__}")
-    _name = "l10n_br_sped.efd_pis_cofins.1620"
-    _inherit = "l10n_br_sped.efd_pis_cofins.6.1620"
-
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "PER_APU_CRED": 0,  # Período de Apuração do Crédito (MM/AAAA)
-    #         "ORIG_CRED": 0,  # Indicador da origem do crédito: 01 – Crédito decor...
-    #         "COD_CRED": 0,  # Código do Tipo do Crédito, conforme Tabela 4.3.6.
-    #         "VL_CRED": 0,  # Valor do Crédito a Descontar
     #     }
 
 

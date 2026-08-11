@@ -300,30 +300,6 @@
 
     <menuitem name="BLOCO P" parent="efd_pis_cofins" id="efd_pis_cofins_p" />
 
-    <record id="efd_pis_cofins_p010_action" model="ir.actions.act_window">
-        <field name="name">P010 Identificação do Estabelecimento</field>
-        <field name="res_model">l10n_br_sped.efd_pis_cofins.p010</field>
-        <field name="view_mode">tree,form</field>
-    </record>
-    <menuitem
-        action="efd_pis_cofins_p010_action"
-        parent="efd_pis_cofins_p"
-        id="efd_pis_cofins_p010"
-    />
-
-    <record id="efd_pis_cofins_p200_action" model="ir.actions.act_window">
-        <field
-            name="name"
-        >P200 Consolidação da Contribuição Previdenciária sobre a Receita Bruta</field>
-        <field name="res_model">l10n_br_sped.efd_pis_cofins.p200</field>
-        <field name="view_mode">tree,form</field>
-    </record>
-    <menuitem
-        action="efd_pis_cofins_p200_action"
-        parent="efd_pis_cofins_p"
-        id="efd_pis_cofins_p200"
-    />
-
 
     <menuitem name="BLOCO 1" parent="efd_pis_cofins" id="efd_pis_cofins_1" />
 
@@ -373,17 +349,6 @@
         id="efd_pis_cofins_1100"
     />
 
-    <record id="efd_pis_cofins_1200_action" model="ir.actions.act_window">
-        <field name="name">1200 Contribuição Social Extemporânea – PIS/PASEP</field>
-        <field name="res_model">l10n_br_sped.efd_pis_cofins.1200</field>
-        <field name="view_mode">tree,form</field>
-    </record>
-    <menuitem
-        action="efd_pis_cofins_1200_action"
-        parent="efd_pis_cofins_1"
-        id="efd_pis_cofins_1200"
-    />
-
     <record id="efd_pis_cofins_1300_action" model="ir.actions.act_window">
         <field
             name="name"
@@ -406,17 +371,6 @@
         action="efd_pis_cofins_1500_action"
         parent="efd_pis_cofins_1"
         id="efd_pis_cofins_1500"
-    />
-
-    <record id="efd_pis_cofins_1600_action" model="ir.actions.act_window">
-        <field name="name">1600 Contribuição Social Extemporânea – COFINS</field>
-        <field name="res_model">l10n_br_sped.efd_pis_cofins.1600</field>
-        <field name="view_mode">tree,form</field>
-    </record>
-    <menuitem
-        action="efd_pis_cofins_1600_action"
-        parent="efd_pis_cofins_1"
-        id="efd_pis_cofins_1600"
     />
 
     <record id="efd_pis_cofins_1700_action" model="ir.actions.act_window">
