@@ -23,7 +23,7 @@ SPED_ENCODING = "iso-8859-1"
 LAYOUT_VERSIONS = {
     "ecd": "9",
     "ecf": "9",
-    "efd_icms_ipi": "17",
+    "efd_icms_ipi": "20",
     "efd_pis_cofins": "6",
     "fake": "9",  # tests; similar to ecd
 }
@@ -48,7 +48,11 @@ class SpedMixin(models.AbstractModel):
 
     brl_currency_id = fields.Many2one(
         comodel_name="res.currency",
-        string="Moeda",
+        # nao pode se chamar so "Moeda": varios registros do leiaute tem um
+        # campo proprio com esse rotulo (o TIP_MOEDA do X320 da ECF, por
+        # exemplo), e dois campos homonimos no mesmo modelo geram WARNING na
+        # carga, que o checklog da OCA reprova
+        string="Moeda da escrituração",
         compute="_compute_currency_id",
         default=lambda self: self.env.ref("base.BRL").id,
     )
@@ -220,10 +224,27 @@ class SpedMixin(models.AbstractModel):
         if view_type != "form":
             return arch, view
 
-        group = E.group(col="4")
-        self._append_top_view_elements(group)
-        group.append(E.field(name="state", invisible="1"))
+        group = E.group()
+        top_group = E.group()
+        left_group = E.group()
+        right_group = E.group()
 
+        group.append(left_group)
+        group.append(right_group)
+
+        self._append_top_view_elements(top_group)
+        top_group.append(E.field(name="state", invisible="1"))
+
+        toggle = True
+        for child in top_group:
+            target = left_group if toggle else right_group
+            target.append(child)
+            toggle = not toggle
+
+        # Wide fields (o2m, m2m, text, html) go into the sheet directly, not a group
+        wide_fields = []
+
+        toggle = True  # alternate left/right for scalar fields
         for fname, field in self._ordered_fields():
             if field.automatic:
                 continue
@@ -237,10 +258,8 @@ class SpedMixin(models.AbstractModel):
             ):
                 continue
             elif field.type in ("one2many", "many2many", "text", "html"):
-                group.append(E.newline())
                 field_tag = E.field(
                     name=fname,
-                    colspan="4",
                     attrs=EDITABLE_ON_DRAFT,
                     context="{'default_declaration_id': declaration_id}",
                 )
@@ -292,16 +311,23 @@ class SpedMixin(models.AbstractModel):
                         field_tag.append(field_tree)
                         field_form = self.env[
                             field.comodel_name
-                        ]._get_default_form_view()  # inline=True)
+                        ]._get_default_form_view()
                         field_tag.append(field_form)
-                group.append(field_tag)
-                group.append(E.newline())
+                wide_fields.append(E.separator(string=field.string))
+                wide_fields.append(field_tag)
             elif fname.isupper():
-                group.append(E.field(name=fname, attrs=EDITABLE_ON_DRAFT))
-        group.append(E.separator())
+                # alternate between left and right inner groups
+                target = left_group if toggle else right_group
+                target.append(E.field(name=fname, attrs=EDITABLE_ON_DRAFT))
+                toggle = not toggle
+
+        # Assemble the sheet: header group first, then wide fields below
+        sheet_children = [group, E.separator()]
+        sheet_children.extend(wide_fields)
+
         form = E.form()
         self._append_view_header(form)
-        form.append(E.sheet(group, string=self._description))
+        form.append(E.sheet(*sheet_children, string=self._description))
         self._append_view_footer(form)
         return form, view
 
@@ -558,23 +584,24 @@ class SpedMixin(models.AbstractModel):
             return value.strftime("%d%m%Y") if value else ""
         elif field.type == "char" or field.type == "selection":
             return str(value) if value else ""
-        elif field.type == "integer":
-            return "" if value == 0 else str(value)
-        elif field.type == "float":
+        elif field.type in ("integer", "float", "monetary"):
+            # zero: o campo obrigatorio e escriturado "0" e o opcional fica em
+            # branco. As duas pontas tem lastro: os registros I550 do arquivo
+            # de referencia da ECD escrituram "0" nos valores obrigatorios, e
+            # o PVA da ECF recusa o arquivo quando um campo condicional nao
+            # aplicavel vem preenchido ("Campo nao pode ser preenchido se a
+            # situacao especial for diferente de 6", sobre o 0000.PAT_REMAN_CIS)
+            if not value:
+                return "0" if field.required else ""
+            if field.type == "integer":
+                return str(value)
+            if field.type == "monetary":
+                # o Sped escreve o valor com virgula decimal e duas casas
+                return f"{value:.2f}".replace(".", ",")
             return (
                 str(int(value))
                 if float_is_zero(value % 1, 6)
                 else str(round(value, 6)).replace(".", ",")
-            )
-        elif field.type == "monetary":  # TODO is is usefull? (not used now)
-            return (
-                ""
-                if float_is_zero(value, precision_digits=8)
-                else (
-                    str(int(value))
-                    if float_is_zero(value % 1, precision_digits=8)
-                    else str(value)
-                )
             )
         else:
             return str(value)
@@ -635,9 +662,12 @@ class SpedMixin(models.AbstractModel):
             ][0]
 
         if self._odoo_model and hasattr(self, "_odoo_domain"):
-            records = self.env[self._odoo_model].search(
-                self._odoo_domain(parent_record, declaration)
-            )
+            if self._odoo_model in self.env:
+                records = self.env[self._odoo_model].search(
+                    self._odoo_domain(parent_record, declaration)
+                )
+            else:  # mapping might be for a module that is uninstalled
+                records = []
 
         elif hasattr(self, "_odoo_query"):
             self._cr.execute(*self._odoo_query(parent_record, declaration))
