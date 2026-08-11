@@ -38,6 +38,21 @@ COD_CONT_BY_REGIME = {
     "cumulative": COD_CONT_CUMULATIVE,
 }
 
+# DARF revenue codes of the standard cases, fixed by RFB regulation: PIS
+# 6912 (non-cumulative) / 8109 (cumulative), COFINS 5856 / 2172. M205/M605
+# break the amount due by these codes; a company under a special code books
+# it as a manual detail.
+COD_REC = {
+    ("pis", "non_cumulative"): "6912",
+    ("pis", "cumulative"): "8109",
+    ("cofins", "non_cumulative"): "5856",
+    ("cofins", "cumulative"): "2172",
+}
+# M200/M600 field the M205/M605 detail points at: 08 is the non-cumulative
+# amount due (VL_CONT_NC_REC), 12 the cumulative one (VL_CONT_CUM_REC)
+NUM_CAMPO_BY_REGIME = {"non_cumulative": "08", "cumulative": "12"}
+
+
 
 def _find_assessment(env, declaration, tax_domain, regime):
     """The closed assessment of this tax and regime for the period."""
@@ -2867,6 +2882,23 @@ class RegistroM200(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.m200"
     _inherit = "l10n_br_sped.efd_pis_cofins.6.m200"
 
+    # The descriptor marks every value field obrigatorio=1: a zero must be
+    # written "0", never blank. Declared at the mapping layer, as everywhere
+    # else (the generated spec cannot carry Odoo required).
+    VL_TOT_CONT_NC_PER = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_TOT_CRED_DESC = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_TOT_CRED_DESC_ANT = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_TOT_CONT_NC_DEV = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_RET_NC = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_OUT_DED_NC = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_CONT_NC_REC = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_TOT_CONT_CUM_PER = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_RET_CUM = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_OUT_DED_CUM = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_CONT_CUM_REC = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_TOT_CONT_REC = fields.Monetary(required=True, currency_field="brl_currency_id")
+
+
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         return _consolidation_vals(self.env, declaration, "pis")
@@ -2878,14 +2910,28 @@ class RegistroM205(models.Model):
     _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.efd_pis_cofins.m205"
     _inherit = "l10n_br_sped.efd_pis_cofins.6.m205"
+    _odoo_model = "l10n_br_tax.assessment"
 
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "NUM_CAMPO": 0,  # Informar o número do campo do registro “M200” (Cam...
-    #         "COD_REC": 0,  # Informar o código da receita referente à contribuiçã...
-    #         "VL_DEBITO": 0,  # Valor do Débito correspondente ao código do Campo ...
-    #     }
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        # One detail per regime that closed with tax due: the PVA checks that
+        # the sum of these records equals the amount due of the M200.
+        return [
+            ("company_id", "=", declaration.company_id.id),
+            ("tax_domain", "=", "pis"),
+            ("date_from", ">=", declaration.DT_INI),
+            ("date_to", "<=", declaration.DT_FIN),
+            ("state", "=", "posted"),
+            ("amount_payable", ">", 0),
+        ]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "NUM_CAMPO": NUM_CAMPO_BY_REGIME[record.regime],
+            "COD_REC": COD_REC[("pis", record.regime)],
+            "VL_DEBITO": record.amount_payable,
+        }
 
 
 class RegistroM210(models.Model):
@@ -2894,6 +2940,20 @@ class RegistroM210(models.Model):
     _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.efd_pis_cofins.m210"
     _inherit = "l10n_br_sped.efd_pis_cofins.6.m210"
+
+    # The descriptor marks every value field obrigatorio=1: a zero must be
+    # written "0", never blank. Declared at the mapping layer, as everywhere
+    # else (the generated spec cannot carry Odoo required).
+    VL_REC_BRT = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_BC_CONT = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_AJUS_ACRES_BC = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_AJUS_REDUC_BC = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_BC_CONT_AJUS = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_CONT_APUR = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_AJUS_ACRES = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_AJUS_REDUC = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_CONT_PER = fields.Monetary(required=True, currency_field="brl_currency_id")
+
     _odoo_model = "l10n_br_tax.assessment.line"
 
     # The descriptor marks the base adjustment fields (5 to 7) obrigatorio=1:
@@ -3187,6 +3247,23 @@ class RegistroM600(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.m600"
     _inherit = "l10n_br_sped.efd_pis_cofins.6.m600"
 
+    # The descriptor marks every value field obrigatorio=1: a zero must be
+    # written "0", never blank. Declared at the mapping layer, as everywhere
+    # else (the generated spec cannot carry Odoo required).
+    VL_TOT_CONT_NC_PER = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_TOT_CRED_DESC = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_TOT_CRED_DESC_ANT = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_TOT_CONT_NC_DEV = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_RET_NC = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_OUT_DED_NC = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_CONT_NC_REC = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_TOT_CONT_CUM_PER = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_RET_CUM = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_OUT_DED_CUM = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_CONT_CUM_REC = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_TOT_CONT_REC = fields.Monetary(required=True, currency_field="brl_currency_id")
+
+
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         return _consolidation_vals(self.env, declaration, "cofins")
@@ -3198,14 +3275,28 @@ class RegistroM605(models.Model):
     _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.efd_pis_cofins.m605"
     _inherit = "l10n_br_sped.efd_pis_cofins.6.m605"
+    _odoo_model = "l10n_br_tax.assessment"
 
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "NUM_CAMPO": 0,  # Informar o número do campo do registro “M600” (Cam...
-    #         "COD_REC": 0,  # Informar o código da receita referente à contribuiçã...
-    #         "VL_DEBITO": 0,  # Valor do Débito correspondente ao código do Campo ...
-    #     }
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        # One detail per regime that closed with tax due: the PVA checks that
+        # the sum of these records equals the amount due of the M600.
+        return [
+            ("company_id", "=", declaration.company_id.id),
+            ("tax_domain", "=", "cofins"),
+            ("date_from", ">=", declaration.DT_INI),
+            ("date_to", "<=", declaration.DT_FIN),
+            ("state", "=", "posted"),
+            ("amount_payable", ">", 0),
+        ]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "NUM_CAMPO": NUM_CAMPO_BY_REGIME[record.regime],
+            "COD_REC": COD_REC[("cofins", record.regime)],
+            "VL_DEBITO": record.amount_payable,
+        }
 
 
 class RegistroM610(models.Model):
@@ -3214,6 +3305,20 @@ class RegistroM610(models.Model):
     _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.efd_pis_cofins.m610"
     _inherit = "l10n_br_sped.efd_pis_cofins.6.m610"
+
+    # The descriptor marks every value field obrigatorio=1: a zero must be
+    # written "0", never blank. Declared at the mapping layer, as everywhere
+    # else (the generated spec cannot carry Odoo required).
+    VL_REC_BRT = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_BC_CONT = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_AJUS_ACRES_BC = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_AJUS_REDUC_BC = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_BC_CONT_AJUS = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_CONT_APUR = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_AJUS_ACRES = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_AJUS_REDUC = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_CONT_PER = fields.Monetary(required=True, currency_field="brl_currency_id")
+
     _odoo_model = "l10n_br_tax.assessment.line"
 
     # The descriptor marks the base adjustment fields (5 to 7) obrigatorio=1:
