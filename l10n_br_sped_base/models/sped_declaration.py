@@ -161,6 +161,27 @@ class SpedDeclaration(models.AbstractModel):
         log_msg = StringIO()
         log_msg.write(f"<h3>{_('Pulled from Odoo')}</h3>")
         kind = self._get_kind()
+
+        # The declaration record IS the 0000: apply its own mapping first,
+        # otherwise only the children get pulled and the header goes out
+        # blank (COD_VER, TIPO_ESCRIT, the company identification), which the
+        # validator refuses at the door. The import path fills these from the
+        # file; this is its pull-side mirror. Only empty fields are written,
+        # so whatever the user typed on the form wins.
+        if hasattr(self, "_map_from_odoo"):
+            header_record = self.company_id
+            if self._odoo_model and self._odoo_model != "res.company":
+                header_record = self.env[self._odoo_model].search(
+                    self._odoo_domain(None, self), limit=1
+                )
+            vals = self._map_from_odoo(header_record, None, self)
+            self.write(
+                {
+                    field: value
+                    for field, value in vals.items()
+                    if not self[field]
+                }
+            )
         mixin_env = self.env["l10n_br_sped.mixin"].with_context(
             company_id=self.company_id.id,
             declaration=self,

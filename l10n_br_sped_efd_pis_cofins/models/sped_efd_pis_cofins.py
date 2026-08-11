@@ -168,10 +168,13 @@ class Registro0000(models.Model):
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         return {
-            "COD_VER": LAYOUT_VERSIONS["efd_pis_cofins"],
+            # the layout code has 3 fixed positions ("006"); LAYOUT_VERSIONS
+            # keeps the bare number the model names use
+            "COD_VER": LAYOUT_VERSIONS["efd_pis_cofins"].zfill(3),
             "TIPO_ESCRIT": 0,  # Tipo de escrituração: 0 - Original; 1 – Retifica...
-            "IND_SIT_ESP": 0,  # Indicador de situação especial: 0 - Abertura 1 -...
-            "NUM_REC_ANTERIOR": 0,  # Número do Recibo da Escrituração anterior a...
+            # IND_SIT_ESP and NUM_REC_ANTERIOR stay blank: they only exist in
+            # special situations and rectifications, and the validator refuses
+            # a zero written where the layout wants emptiness
             # "DT_INI": (will use the declaration field directly),
             # "DT_FIN": (will use the declaration field directly),
             "NOME": record.legal_name,
@@ -179,7 +182,7 @@ class Registro0000(models.Model):
             "UF": record.state_id.code,
             "COD_MUN": misc.punctuation_rm(record.city_id.ibge_code),
             "SUFRAMA": record.l10n_br_isuf_code or "",  # Inscrição da entidade na SUFRAMA
-            "IND_NAT_PJ": 0,  # Indicador da natureza da pessoa jurídica: 00 – Pe...
+            "IND_NAT_PJ": "00",  # Pessoa jurídica em geral (2 fixed positions)
             # "IND_ATIV": (will use the declaration field directly),
         }
 
@@ -854,7 +857,9 @@ class RegistroC170(models.Model):
             "VL_ITEM": record.price_gross or 0,
             "VL_DESC": record.discount_value or 0,
             "IND_MOV": "0",
-            "CST_ICMS": record.icms_cst_code or "",
+            # 3 positions: the origin digit prefixes the 2-digit CST, as the
+            # ICMS book writes it
+            "CST_ICMS": (record.icms_origin or "0") + (record.icms_cst_code or ""),
             "CFOP": record.cfop_id.code or "",
             "COD_NAT": record.fiscal_operation_id.code
             or str(record.fiscal_operation_id.id or ""),
