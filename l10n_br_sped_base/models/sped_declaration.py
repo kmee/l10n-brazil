@@ -10,7 +10,7 @@ from lxml.builder import E
 
 from odoo import _, api, fields, models
 
-from .sped_mixin import LAYOUT_VERSIONS
+from .sped_mixin import LAYOUT_VERSIONS, SPED_ENCODING
 
 _logger = logging.getLogger(__name__)
 
@@ -34,7 +34,6 @@ class SpedDeclaration(models.AbstractModel):
         comodel_name="res.company",
         string="Company",
         required=True,
-        states={"done": [("readonly", True)]},
         default=lambda self: self.env.company,
     )
     state = fields.Selection(
@@ -161,6 +160,27 @@ class SpedDeclaration(models.AbstractModel):
         log_msg = StringIO()
         log_msg.write(f"<h3>{_('Pulled from Odoo')}</h3>")
         kind = self._get_kind()
+
+        # The declaration record IS the 0000: apply its own mapping first,
+        # otherwise only the children get pulled and the header goes out
+        # blank (COD_VER, TIPO_ESCRIT, the company identification), which the
+        # validator refuses at the door. The import path fills these from the
+        # file; this is its pull-side mirror. Only empty fields are written,
+        # so whatever the user typed on the form wins.
+        if hasattr(self, "_map_from_odoo"):
+            header_record = self.company_id
+            if self._odoo_model and self._odoo_model != "res.company":
+                header_record = self.env[self._odoo_model].search(
+                    self._odoo_domain(None, self), limit=1
+                )
+            vals = self._map_from_odoo(header_record, None, self)
+            self.write(
+                {
+                    field: value
+                    for field, value in vals.items()
+                    if not self[field]
+                }
+            )
         mixin_env = self.env["l10n_br_sped.mixin"].with_context(
             company_id=self.company_id.id,
             declaration=self,
@@ -239,7 +259,11 @@ class SpedDeclaration(models.AbstractModel):
             "name": file_name,
             "res_model": self._name,
             "res_id": self.id,
-            "datas": base64.b64encode(text.encode()),
+            # SPED files are ISO-8859-1, not the utf-8 of the default
+            # encode(); errors="replace" keeps a character outside Latin-1
+            # pasted in some journal item label from aborting the whole
+            # file generation
+            "datas": base64.b64encode(text.encode(SPED_ENCODING, errors="replace")),
             "mimetype": "application/txt",
             "type": "binary",
         }
@@ -264,7 +288,7 @@ class SpedDeclaration(models.AbstractModel):
             E.button(
                 name="button_populate_sped_from_odoo",
                 type="object",
-                states="draft",
+                invisible="state != 'draft'",
                 string="Pull Registers from Odoo",
                 #            class="oe_highlight",
                 groups="l10n_br_fiscal.group_manager",
@@ -274,7 +298,7 @@ class SpedDeclaration(models.AbstractModel):
             E.button(
                 name="button_flush_registers",
                 type="object",
-                states="draft",
+                invisible="state != 'draft'",
                 string="Flush Registers",
                 #            class="oe_highlight",
                 groups="l10n_br_fiscal.group_manager",
@@ -284,7 +308,7 @@ class SpedDeclaration(models.AbstractModel):
             E.button(
                 name="button_done",
                 type="object",
-                states="draft",
+                invisible="state != 'draft'",
                 string="Set to Done",
                 #            class="oe_highlight",
                 groups="l10n_br_fiscal.group_manager",
@@ -294,7 +318,7 @@ class SpedDeclaration(models.AbstractModel):
             E.button(
                 name="button_draft",
                 type="object",
-                states="done",
+                invisible="state != 'done'",
                 string="Reset to Draft",
                 #            class="oe_highlight",
                 groups="l10n_br_fiscal.group_manager",
@@ -304,7 +328,7 @@ class SpedDeclaration(models.AbstractModel):
             E.button(
                 name="button_create_sped_files",
                 type="object",
-                states="done",
+                invisible="state != 'done'",
                 string="Generate SPED File",
                 #            class="oe_highlight",
                 groups="l10n_br_fiscal.group_manager",
@@ -333,6 +357,17 @@ class SpedDeclaration(models.AbstractModel):
         group.append(E.field(name="debug"))
         group.append(E.separator(colspan="4"))
 
+    def _skip_empty_blocks(self):
+        """O bloco sem nenhum registro entra no arquivo, ou e omitido?
+
+        A ECD escritura o bloco vazio com o indicador "1" (bloco sem dados);
+        a ECF nao aceita: o PVA recusa o arquivo com "Organizacao hierarquica
+        dos blocos/registros do arquivo esta fora dos padroes estabelecidos"
+        e aponta como esperado o primeiro registro do proximo bloco com dados.
+        Cada escrituracao responde por si.
+        """
+        return False
+
     def _generate_sped_text(self, version=None):
         """Generate SPED text from Odoo declaration records."""
         self.ensure_one()
@@ -341,44 +376,50 @@ class SpedDeclaration(models.AbstractModel):
             version = LAYOUT_VERSIONS[kind]
         top_register_classes = self._get_top_registers(kind)
         sped = StringIO()
-        last_bloco = None
         line_total = 0
         # mutable register line_count https://stackoverflow.com/a/15148557
         line_count = [0]
         count_by_register = defaultdict(int)
-        count_by_bloco = defaultdict(int)
         self._generate_register_text(sped, version, line_count, count_by_register)
-        count_by_register["0990"] = 1  # for some reason it is needed
 
+        # agrupa os registros de topo por bloco, preservando a ordem
+        blocos = []
         for register_class in top_register_classes:
             bloco = register_class._name[-4:][0].upper()
-            count_by_bloco[bloco] += register_class.search_count([])
+            if not blocos or blocos[-1][0] != bloco:
+                blocos.append((bloco, []))
+            blocos[-1][1].append(register_class)
 
         domain = [("declaration_id", "=", self.id)]
-        for register_class in top_register_classes:
-            bloco = register_class._name[-4:][0].upper()
-            registers = register_class.search(domain)
-            if bloco != last_bloco:
-                if last_bloco:
-                    sped.write(f"\n|{last_bloco}990|{line_count[0] + 1}|")
-                    count_by_register[f"{bloco}990"] = 1
-                    line_total += line_count[0] + 1
-                    line_count = [0]
+        pular_vazios = self._skip_empty_blocks()
+        primeiro = True
+        for bloco, register_classes in blocos:
+            # a busca leva o dominio da declaracao: o indicador de
+            # movimento do bloco enxerga so ESTA escrituracao (sem o
+            # dominio, registros de outras declaracoes da base abririam
+            # como "com dados" um bloco vazio aqui, e o PVA recusa a
+            # importacao)
+            registros = [
+                register_class.search(domain) for register_class in register_classes
+            ]
+            tem_dados = any(registros)
+            if pular_vazios and not tem_dados and bloco != "0":
+                continue
+            if not primeiro:
+                line_count = [0]
+            sped.write(f"\n|{bloco}001|{0 if tem_dados else 1}|")
+            count_by_register[f"{bloco}001"] = 1
+            line_count[0] += 1
+            for registro in registros:
+                registro._generate_register_text(
+                    sped, version, line_count, count_by_register
+                )
+            sped.write(f"\n|{bloco}990|{line_count[0] + 1}|")
+            count_by_register[f"{bloco}990"] = 1
+            line_total += line_count[0] + 1
+            primeiro = False
 
-                sped.write(f"\n|{bloco}001|{0 if count_by_bloco[bloco] > 0 else 1}|")
-                count_by_register[f"{bloco}001"] = 1
-                line_count[0] += 1
-            registers._generate_register_text(
-                sped, version, line_count, count_by_register
-            )
-            last_bloco = bloco
-
-        # close the last register:
-        # closing_register = "099" if kind == "ecf" else "990"
-        # sped.write(f"\n|{bloco}{closing_register}|{line_count[0] + 1}|")
-        sped.write(f"\n|{bloco}990|{line_count[0] + 1}|")
-
-        # totals:
+        # totais:
         sped.write("\n|9001|0|")
         count_by_register["9001"] = 1
         count_by_register["9990"] = 1
@@ -391,8 +432,9 @@ class SpedDeclaration(models.AbstractModel):
             code = item[0]
             num = item[1]
             sped.write(f"\n|9900|{code}|{num}|")
-        sped.write(f"\n|9990|{len(count_by_register.keys()) + 3}|")
+        linhas_bloco_9 = len(count_by_register.keys()) + 3
+        sped.write(f"\n|9990|{linhas_bloco_9}|")
 
-        line_total += line_count[0] + len(count_by_register.keys()) + 4
+        line_total += linhas_bloco_9
         sped.write(f"\n|9999|{line_total}|")
         return sped.getvalue()

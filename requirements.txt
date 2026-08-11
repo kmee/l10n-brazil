@@ -2,6 +2,7 @@
 brazil_fiscal_client
 brazilcep
 brazilfiscalreport
+cryptography
 email-validator
 erpbrasil.assinatura
 erpbrasil.base
@@ -12,5 +13,6 @@ nfselib.paulistana
 num2words
 phonenumbers
 pyyaml
+requests
 unidecode
 workalendar
