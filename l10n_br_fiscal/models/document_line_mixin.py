@@ -321,6 +321,8 @@ class FiscalDocumentLineMixin(models.AbstractModel):
                 line.ipi_guideline_id = mapping_result["ipi_guideline"]
                 line.tax_classification_id = mapping_result["tax_classification"]
                 line.icms_tax_benefit_id = mapping_result["icms_tax_benefit_id"]
+                line.icms_relief_id = mapping_result["icms_relief_id"]
+                line.icms_relief_type = mapping_result["icms_relief_type"]
 
                 if line._is_imported():
                     continue
@@ -701,6 +703,11 @@ class FiscalDocumentLineMixin(models.AbstractModel):
     def _onchange_icms_fields(self):
         if self.icms_tax_benefit_id:
             self.icms_tax_id = self.icms_tax_benefit_id.tax_id
+            self.icms_relief_id = self.icms_tax_benefit_id.icms_relief_id
+            self.icms_relief_type = self.icms_tax_benefit_id.icms_relief_type
+        else:
+            self.icms_relief_id = False
+            self.icms_relief_type = "0"
 
     @api.onchange("tax_classification_id")
     def _onchange_tax_classification_id(self):
@@ -1487,7 +1494,12 @@ class FiscalDocumentLineMixin(models.AbstractModel):
 
     # motDesICMS - Motivo da desoneração do ICMS
     icms_relief_id = fields.Many2one(
-        comodel_name="l10n_br_fiscal.icms.relief", string="ICMS Relief"
+        comodel_name="l10n_br_fiscal.icms.relief",
+        string="ICMS Relief",
+        compute="_compute_fiscal_tax_ids",
+        store=True,
+        precompute=True,
+        readonly=False,
     )
 
     # indDeduzDeson - Indicador de dedução do valor do ICMS desonerado
@@ -1498,6 +1510,10 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         ],
         string="ICMS Relief Deduction",
         default="0",
+        compute="_compute_fiscal_tax_ids",
+        store=True,
+        precompute=True,
+        readonly=False,
         help="indDeduzDeson (NT 2023.004): indicates whether the ICMS relief "
         "value (vICMSDeson) is deducted from the item value (vProd) and "
         "from the document total (vNF).",
