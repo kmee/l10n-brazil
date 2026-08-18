@@ -109,6 +109,21 @@ class NFeImportWizardTest(TransactionCase):
         self.assertEqual(first_imported_product.price_unit_trib, 14)
         self.assertEqual(first_imported_product.total, 14)
 
+    def test_fiscal_operation_from_issuer_cfop(self):
+        self._prepare_wizard(self.xml_1)
+
+        self.assertEqual(self.wizard.fiscal_operation_type, "in")
+        self.assertTrue(self.wizard.fiscal_operation_id)
+        self.assertEqual(self.wizard.fiscal_operation_id.fiscal_operation_type, "in")
+
+    def test_counterpart_cfop_code(self):
+        wizard = self.env["l10n_br_fiscal.document.import.wizard"]
+        self.assertEqual(wizard._counterpart_cfop_code("5102", "in"), "1102")
+        self.assertEqual(wizard._counterpart_cfop_code("6102", "in"), "2102")
+        self.assertEqual(wizard._counterpart_cfop_code("7102", "in"), "3102")
+        self.assertEqual(wizard._counterpart_cfop_code("5102", "out"), "5102")
+        self.assertFalse(wizard._counterpart_cfop_code("1102", "in"))
+
     def test_create_edoc_from_xml(self):
         self._prepare_wizard(self.xml_1)
 
