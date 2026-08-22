@@ -5,8 +5,10 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 import base64
+from datetime import datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest import mock
 
 from unidecode import unidecode
 
@@ -15,6 +17,7 @@ from odoo.tests import Form
 from odoo.tests.common import tagged
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
+from odoo.addons.l10n_br_account_payment_order.tests.golden import GoldenMixin
 
 CNAB_240 = "240"
 CNAB_400 = "400"
@@ -48,13 +51,27 @@ TEST_CNPJ = "82688625000152"
 TEST_PARTNER_CNPJ = "45823449000198"
 TEST_INVOICE_AMOUNT = 300.0
 
+# Momento fixo usado nos testes golden. Os campos de data/hora do CNAB são
+# resolvidos por expressões `time.strftime(...)` avaliadas em safe_eval, então
+# congelar `time` é o que torna o arquivo gerado comparável byte a byte.
+GOLDEN_MOMENT = datetime(2024, 3, 15, 10, 30, 0)
+GOLDEN_DATE = "2024-03-15"
+GOLDEN_TIME_TARGET = "odoo.addons.l10n_br_cnab_structure.models.cnab_line_field.time"
+
+
+class FrozenTime:
+    """Substituto de ``time`` no safe_eval dos campos CNAB."""
+
+    def strftime(self, fmt):
+        return GOLDEN_MOMENT.strftime(fmt)
+
 
 def replace_chars(string: str, index: int, replacement: str) -> str:
     return string[:index] + replacement + string[index + len(replacement) :]
 
 
 @tagged("post_install", "-at_install")
-class TestCNABStructure(AccountTestInvoicingCommon):
+class TestCNABStructure(GoldenMixin, AccountTestInvoicingCommon):
     @classmethod
     def setUpClass(
         cls, chart_template_ref="l10n_br_coa_generic.l10n_br_coa_generic_template"
@@ -794,3 +811,121 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         self.assertFalse(cnab_field_id.content_source_field)
         field_select_wizard.action_confirm()
         self.assertEqual(cnab_field_id.content_source_field, "company_partner_bank_id")
+
+    # ------------------------------------------------------------------
+    # Testes golden
+    #
+    # Congelam o arquivo CNAB gerado por estrutura de banco. É o que permite
+    # revisar um PR de banco olhando só o diff: se o golden de outro banco
+    # mudou, ou é bug ou é mudança de base — e nesse caso precisa estar dita
+    # na descrição do PR. Para semear/atualizar, veja
+    # l10n_br_account_payment_order/tests/golden.py.
+    # ------------------------------------------------------------------
+
+    def _golden_dir(self):
+        return Path(__file__).parent / "golden"
+
+    def _golden_payment_mode(self, bank_ref, structure_ref, pay_way_ref, acc_number):
+        """Cria conta, diário e modo de pagamento de um banco para o golden."""
+        bank = self.env.ref(bank_ref)
+        bank_account = self.res_partner_bank_model.create(
+            {
+                "acc_number": acc_number,
+                "bra_number": "1030",
+                "bank_id": bank.id,
+                "company_id": self.company.id,
+                "partner_id": self.company.partner_id.id,
+            }
+        )
+        journal = self.env["account.journal"].create(
+            {
+                "name": f"Golden {bank.code_bc}",
+                "type": "bank",
+                "code": f"GLD{bank.code_bc}",
+                "bank_account_id": bank_account.id,
+                "bank_id": bank.id,
+            }
+        )
+        return self.payment_mode_model.create(
+            {
+                "bank_account_link": "fixed",
+                "name": f"Golden Pix {bank.code_bc}",
+                "company_id": self.company.id,
+                "payment_method_id": self.outbound_payment_method.id,
+                "payment_mode_domain": "pix_transfer",
+                "payment_order_ok": True,
+                "fixed_journal_id": journal.id,
+                "cnab_processor": "oca_processor",
+                "cnab_structure_id": self.env.ref(structure_ref).id,
+                "cnab_payment_way_ids": [(6, 0, [self.env.ref(pay_way_ref).id])],
+            }
+        )
+
+    def _golden_open_order(self, payment_mode):
+        """Fatura com data fixa -> ordem aberta, com o que varia fixado."""
+        invoice = self.env["account.move"].create(
+            {
+                "partner_id": self.partner_a.id,
+                "move_type": "in_invoice",
+                "ref": "Golden Invoice",
+                "invoice_date": fields.Date.to_date(GOLDEN_DATE),
+                "company_id": self.company.id,
+                "payment_mode_id": payment_mode.id,
+                "journal_id": self.company_data["default_journal_purchase"].id,
+                "invoice_line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product_a.id,
+                            "quantity": 1.0,
+                            "price_unit": TEST_INVOICE_AMOUNT,
+                        },
+                    )
+                ],
+            }
+        )
+        payment_order = self._create_payment_order(invoice)
+        payment_order.draft2open()
+        # Nome da ordem e das linhas vêm de sequência, e a data vem da fatura:
+        # sem fixar, o golden mudaria a cada execução.
+        payment_order.name = "GOLDEN-ORDER"
+        for index, line in enumerate(payment_order.payment_line_ids, 1):
+            line.write(
+                {
+                    "name": f"GOLDEN-LINE-{index:03d}",
+                    "date": fields.Date.to_date(GOLDEN_DATE),
+                }
+            )
+        return payment_order
+
+    def _assert_golden_cnab(self, case, payment_mode):
+        payment_order = self._golden_open_order(payment_mode)
+        structure = payment_order.cnab_structure_id
+        self.assertTrue(structure, "Modo de pagamento sem estrutura CNAB.")
+        with mock.patch(GOLDEN_TIME_TARGET, FrozenTime()):
+            self.assert_golden_text(case, lambda: structure.output(payment_order))
+
+    def test_golden_itau_240(self):
+        self._assert_golden_cnab("341_itau_240", self.pix_mode)
+
+    def test_golden_banco_brasil_240(self):
+        self._assert_golden_cnab("001_banco_brasil_240", self.pix_mode_bb)
+
+    def test_golden_santander_240(self):
+        payment_mode = self._golden_payment_mode(
+            "l10n_br_base.res_bank_033",
+            "l10n_br_cnab_structure.cnab_santander_240",
+            "l10n_br_cnab_structure.cnab_santander_240_pay_way_45",
+            "301040",
+        )
+        self._assert_golden_cnab("033_santander_240", payment_mode)
+
+    def test_golden_sicoob_240(self):
+        payment_mode = self._golden_payment_mode(
+            "l10n_br_base.res_bank_756",
+            "l10n_br_cnab_structure.cnab_sicoob_240",
+            "l10n_br_cnab_structure.cnab_sicoob_240_pay_way_45",
+            "401040",
+        )
+        self._assert_golden_cnab("756_sicoob_240", payment_mode)

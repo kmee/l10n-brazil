@@ -99,19 +99,57 @@ class PaymentOrder(models.Model):
     def _prepare_remessa_bradesco(self, remessa_values, cnab_config):
         remessa_values["codigo_empresa"] = int(cnab_config.cnab_company_bank_code)
 
+    def _prepare_remessa_payload(self, cnab_config, bank_brcobranca):
+        """Monta o payload da remessa que será enviado ao BRCobrança.
+
+        Método puro: sem I/O e sem efeito colateral (a sequência do arquivo já
+        vem resolvida em ``self.file_number``). É exatamente o que o Odoo
+        controla na geração da remessa - os bytes finais são do BRCobrança -
+        e por isso é o que os testes golden congelam por banco/formato.
+
+        see remessa fields here:
+        https://github.com/kivanio/brcobranca/blob/master/lib/brcobranca/remessa/base.rb
+        https://github.com/kivanio/brcobranca/tree/master/lib/brcobranca/remessa/cnab240
+        https://github.com/kivanio/brcobranca/tree/master/lib/brcobranca/remessa/cnab400
+        and a test here:
+        https://github.com/kivanio/brcobranca/blob/master/spec/
+        brcobranca/remessa/cnab400/itau_spec.rb
+        """
+        self.ensure_one()
+        bank_account_id = self.journal_id.bank_account_id
+
+        pagamentos = []
+        for line in self.payment_line_ids:
+            pagamentos.append(line.prepare_bank_payment_line(bank_brcobranca))
+
+        remessa_values = {
+            "carteira": str(cnab_config.boleto_wallet),
+            "agencia": bank_account_id.bra_number,
+            "conta_corrente": int(misc.punctuation_rm(bank_account_id.acc_number)),
+            "digito_conta": bank_account_id.acc_number_dig[0],
+            "empresa_mae": bank_account_id.partner_id.legal_name[:30],
+            "documento_cedente": misc.punctuation_rm(
+                bank_account_id.partner_id.cnpj_cpf
+            ),
+            "pagamentos": pagamentos,
+            "sequencial_remessa": self.file_number,
+        }
+
+        # Casos onde o Banco além dos principais campos possui campos
+        # específicos, dos casos por enquanto mapeados, se estiver vendo
+        # um caso que está faltando por favor considere fazer um
+        # PR para ajudar
+        if hasattr(self, f"_prepare_remessa_{bank_brcobranca.name}"):
+            bank_method = getattr(self, f"_prepare_remessa_{bank_brcobranca.name}")
+            bank_method(remessa_values, cnab_config)
+
+        return remessa_values
+
     def generate_payment_file(self):
         """Returns (payment file as string, filename)"""
         self.ensure_one()
         cnab_config = self.payment_mode_id.cnab_config_id
         self.file_number = cnab_config.cnab_sequence_id.next_by_id()
-
-        # see remessa fields here:
-        # https://github.com/kivanio/brcobranca/blob/master/lib/brcobranca/remessa/base.rb
-        # https://github.com/kivanio/brcobranca/tree/master/lib/brcobranca/remessa/cnab240
-        # https://github.com/kivanio/brcobranca/tree/master/lib/brcobranca/remessa/cnab400
-        # and a test here:
-        # https://github.com/kivanio/brcobranca/blob/master/spec/
-        # brcobranca/remessa/cnab400/itau_spec.rb
 
         cnab_type = cnab_config.payment_method_id.code
 
@@ -142,30 +180,7 @@ class PaymentOrder(models.Model):
                 )
             )
 
-        pagamentos = []
-        for line in self.payment_line_ids:
-            pagamentos.append(line.prepare_bank_payment_line(bank_brcobranca))
-
-        remessa_values = {
-            "carteira": str(cnab_config.boleto_wallet),
-            "agencia": bank_account_id.bra_number,
-            "conta_corrente": int(misc.punctuation_rm(bank_account_id.acc_number)),
-            "digito_conta": bank_account_id.acc_number_dig[0],
-            "empresa_mae": bank_account_id.partner_id.legal_name[:30],
-            "documento_cedente": misc.punctuation_rm(
-                bank_account_id.partner_id.cnpj_cpf
-            ),
-            "pagamentos": pagamentos,
-            "sequencial_remessa": self.file_number,
-        }
-
-        # Casos onde o Banco além dos principais campos possui campos
-        # específicos, dos casos por enquanto mapeados, se estiver vendo
-        # um caso que está faltando por favor considere fazer um
-        # PR para ajudar
-        if hasattr(self, f"_prepare_remessa_{bank_brcobranca.name}"):
-            bank_method = getattr(self, f"_prepare_remessa_{bank_brcobranca.name}")
-            bank_method(remessa_values, cnab_config)
+        remessa_values = self._prepare_remessa_payload(cnab_config, bank_brcobranca)
 
         remessa = self._get_brcobranca_remessa(
             bank_brcobranca, remessa_values, cnab_type

@@ -1,7 +1,7 @@
 # Refatoração do framework CNAB: base FEBRABAN + bancos por cima
 
-> Documento de proposta (RFC). Nenhum código de produção foi alterado ainda.
-> Objetivo: discutir a arquitetura antes de mexer.
+> RFC da refatoração. A **trilha C** (seção 4) está implementada; as trilhas
+> A e B ainda são proposta, para discussão antes de mexer.
 
 ## 1. O problema, na prática
 
@@ -74,13 +74,15 @@ E parte do 1/3 restante não é diferença de banco — é *drift* de cópia:
 * Santander e Sicoob têm os grupos condicionais *"Conta Corrente - Mesmo Banco"*
   e *"Outros Bancos"* **com condição e zero campos** — o andaime foi copiado do
   Itaú sem conteúdo (`cnab.line.field.group.csv` + `cnab.line.group.field.condition.csv`).
-* BB, segmento A: o campo `DV CONTA` (42-42) existe duas vezes — uma sem grupo e
-  outra em `group_1_bb`. Só não gera linha de 241 caracteres porque
+* BB, segmento A: o campo `DV CONTA` (42-42) existia duas vezes — uma sem grupo
+  e outra em `group_1_bb`. Só não gerava linha de 241 caracteres porque
   `CnabLine.sorted_values()` monta um `dict` por `ref_name` e **silenciosamente
   deduplica**. Se os dois campos tivessem nomes diferentes, o arquivo sairia
-  errado sem nenhum erro.
-* `CNABLine.check_line()` valida apenas que o primeiro campo começa em 1 e o
-  último termina em 240 — **não valida buraco nem sobreposição no meio**.
+  errado sem nenhum erro. *Corrigido na trilha C, junto com a validação que o
+  detectou.*
+* `CNABLine.check_line()` validava apenas que o primeiro campo começa em 1 e o
+  último termina em 240 — **não validava buraco nem sobreposição no meio**.
+  *Corrigido na trilha C.*
 
 Esse conjunto é exatamente o sintoma que motiva a refatoração: sem base comum,
 cada correção só chega ao banco em que alguém percebeu o problema.
@@ -98,56 +100,80 @@ Três trilhas, implementáveis de forma independente e nessa ordem de prioridade
 * **Trilha B — adaptadores por banco** (código, brcobranca) → refatoração pura.
 * **Trilha A — herança de estrutura** (dados, cnab_structure) → base FEBRABAN.
 
-## 4. Trilha C — golden tests por banco (fazer primeiro)
+## 4. Trilha C — golden tests por banco (implementada)
 
-Sem isso, as trilhas A e B são apostas. Com isso, viram refatorações verificáveis.
+Sem isso, as trilhas A e B são apostas. Com isso, viram refatorações
+verificáveis. O que foi entregue:
 
-**Cobrança (brcobranca)**: os bytes são gerados pelo Ruby, mas o que o Odoo
-controla — e onde estão todos os bugs de banco — é o JSON enviado à API. Então o
-golden é o payload, e o teste roda 100% offline (hoje os testes dependem do
-serviço e são pulados com `CI_NO_BRCOBRANCA`):
+**Infraestrutura** — `l10n_br_account_payment_order/tests/golden.py`
+(`GoldenMixin`). Congela a saída de um caso em disco e compara nas execuções
+seguintes. Ao semear com `UPDATE_GOLDEN=1`, cada caso é gerado **duas vezes** e
+as duas execuções precisam bater: é assim que se prova que o golden é
+determinístico em vez de descobrir depois, por falha intermitente, que sobrou
+uma data de "hoje" ou uma sequência dentro dele. Quando o golden ainda não
+existe, o teste é pulado com a instrução de como gerá-lo.
 
-```
-l10n_br_account_payment_brcobranca/tests/golden/
-    001_banco_brasil_240.json
-    001_banco_brasil_400.json
-    033_santander_240.json
-    033_santander_400.json
-    ...
-```
+**Cobrança (brcobranca)** — os bytes são gerados pelo Ruby, mas o que o Odoo
+controla, e onde estão todas as particularidades de banco e de carteira, é o
+payload enviado à API. Então `generate_payment_file()` foi quebrado em
+`_prepare_remessa_payload()` (puro, sem I/O) + `_get_brcobranca_remessa()`
+(I/O), e o golden é o payload. Resultado: `tests/test_golden_remessa.py` cobre
+11 casos (BB 240/400, Nordeste 400, Santander 240/400, Ailos 240, Caixa 240,
+Unicred 400, Bradesco 400, Itaú 400, Sicredi 240) e roda **sem o serviço
+externo**, ao contrário dos testes existentes, que são pulados com
+`CI_NO_BRCOBRANCA`.
 
-```python
-def _assert_golden(self, case, payload):
-    path = Path(__file__).parent / "golden" / f"{case}.json"
-    payload = self._freeze(payload)     # sequencial_remessa, datas
-    if os.environ.get("UPDATE_GOLDEN"):
-        path.write_text(json.dumps(payload, indent=2, sort_keys=True,
-                                   ensure_ascii=False))
-    self.assertEqual(json.loads(path.read_text()), payload)
-```
+Os valores que variam são fixados no teste — e não de forma arbitrária: o
+nosso número com 8 dígitos exercita o corte para 7 + DV do Santander 400 e o
+número do documento com 11 dígitos exercita o corte para 10 do Unicred. As
+particularidades de banco ficam dentro do golden, não fora dele.
 
-Para isso, `generate_payment_file()` precisa ser quebrado em
-`_prepare_remessa_payload()` (puro, testável) + `_get_brcobranca_remessa()`
-(I/O), o que já é uma melhoria por si só.
+**Pagamentos (cnab_structure)** — o golden é o arquivo `.REM` inteiro, byte a
+byte, para as quatro estruturas (Itaú, BB, Santander e Sicoob 240). O horário
+de geração é congelado substituindo o `time` do `safe_eval` dos campos; nome da
+ordem, nome das linhas e datas são fixados.
 
-**Pagamentos (cnab_structure)**: o golden é o arquivo `.REM` byte a byte, com
-data e sequência congeladas. `output_yaml()` já dá uma versão legível — o diff
-de um YAML golden é ainda mais fácil de revisar do que o do arquivo posicional,
-então vale manter os dois (`.rem` para garantia, `.yaml` para revisão).
+Em arquivo posicional, o diff de um golden é literalmente a linha e a coluna
+que mudaram — e é assim que a falha é reportada ("primeira divergência na
+linha 3, posição 154"), em vez de um diff de texto corrido de 240 colunas.
 
-**Efeito prático**: um PR "ajusta Santander" que mexeu em código comum aparece
-como alteração nos goldens do Itaú, do BB e do Sicoob. O revisor vê na hora, sem
-precisar conhecer os quatro manuais.
+**Cobertura de posições** — `l10n_br_cnab_structure/tests/test_data_layout.py`
+valida as estruturas entregues sem precisar de banco de dados, e
+`CNABLine._check_field_positions()` valida as estruturas criadas pelo usuário.
+As regras, derivadas de como `CNABLine.output()` monta a linha:
 
-Complementos baratos e de alto retorno:
+* nenhum campo de grupo condicional pode disputar posição com um campo sem
+  grupo, que é sempre emitido;
+* a união de todos os campos precisa cobrir a linha inteira, sem buraco;
+* dois campos com o mesmo `ref_name` emitidos juntos são proibidos, porque um
+  sobrescreve o outro em silêncio.
 
-* Validação de *tiling* de posições: para cada combinação de grupos ativos, os
-  campos precisam cobrir 1..N sem buraco e sem sobreposição. Pega o caso do BB
-  acima e qualquer erro futuro de digitação de posição.
-* Teste de arquitetura: falhar se `code_bc ==` / `code_bc in` aparecer fora de
-  `models/banks/`. É o que transforma a regra em garantia.
-* Matriz banco × formato × carteira gerada a partir do registry e publicada no
-  README, em vez de mantida à mão.
+Grupos diferentes *podem* definir as mesmas posições — são variantes
+mutuamente exclusivas, como "conta no mesmo banco" e "conta em outro banco".
+
+A validação já encontrou e corrigiu um caso real: no segmento A do Banco do
+Brasil o campo `DV CONTA` (42-42) estava definido duas vezes, uma sem grupo e
+outra em "Conta Corrente - Mesmo Banco". A linha só não saía com 241
+caracteres porque `sorted_values()` monta um `dict` por `ref_name` e
+deduplicava por acidente — bastaria um dos dois ter nome ligeiramente
+diferente para o arquivo sair errado sem nenhum erro.
+
+**Catraca de `if` de banco** —
+`l10n_br_account_payment_brcobranca/tests/test_no_bank_conditionals.py`
+inventaria as 15 ramificações por banco que existem hoje no caminho comum
+(4 arquivos). Uma nova falha o teste; uma removida também falha, pedindo que o
+inventário seja atualizado. Assim o número só cai, o inventário nunca fica
+desatualizado e o progresso da trilha B fica visível.
+
+**Pendente**: semear os goldens. Isso precisa de um ambiente com Odoo e banco
+de dados, e cada arquivo deve ser conferido contra uma remessa homologada pelo
+banco antes de ser commitado — um golden errado congelado vira uma verdade
+errada. Enquanto não forem semeados, os testes golden são pulados com a
+instrução; as demais travas desta trilha já valem.
+
+Complemento ainda não feito: a matriz banco × formato × carteira gerada a
+partir do registry, em vez de mantida à mão no README. Ela depende do registry
+da trilha B.
 
 ## 5. Trilha B — adaptadores por banco (brcobranca)
 
@@ -312,7 +338,7 @@ Cuidados conhecidos:
 
 | # | Trilha | Esforço | Risco | Pré-requisito |
 |---|---|---|---|---|
-| 1 | C — goldens + tiling + teste de arquitetura | 2-3 dias | baixo | — |
+| 1 | C — goldens + tiling + catraca | ~~2-3 dias~~ **feito** (falta semear os goldens) | baixo | — |
 | 2 | B — adaptadores no brcobranca | 3-5 dias | médio (refatoração pura, coberta pelos goldens) | 1 |
 | 3 | A — herança de estrutura + migração dos CSVs | ~2 semanas | médio-alto (mexe em dado instalado) | 1 |
 | 4 | Convergência: cobrança pelo `cnab_structure`, sem o serviço Ruby na remessa | grande | alto | 1, 2, 3 |

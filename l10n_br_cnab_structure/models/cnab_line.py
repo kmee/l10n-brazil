@@ -254,6 +254,72 @@ class CNABLine(models.Model):
                 )
             )
 
+        self._check_field_positions()
+
+    def _check_field_positions(self):
+        """Verifica que os campos preenchem a linha inteira, uma única vez.
+
+        Um arquivo CNAB é posicional: uma posição sem campo, ou dois campos
+        disputando a mesma posição, produz linha com tamanho errado ou
+        conteúdo sobrescrito - e o banco rejeita o arquivo.
+
+        Grupos condicionais diferentes podem definir as mesmas posições: são
+        variantes mutuamente exclusivas (conta no mesmo banco x conta em outro
+        banco, por exemplo). O que nunca pode acontecer é um campo de grupo
+        colidir com um campo sem grupo, que é sempre emitido, nem sobrar
+        posição sem definição nenhuma.
+        """
+        self.ensure_one()
+        line_size = int(self.cnab_structure_id.cnab_format)
+        ungrouped = self.field_ids.filtered(lambda f: not f.cnab_group_id)
+
+        emitted_sets = [(False, ungrouped)]
+        for group in self.field_ids.mapped("cnab_group_id"):
+            in_group = self.field_ids.filtered(lambda f, g=group: f.cnab_group_id == g)
+            emitted_sets.append((group, ungrouped | in_group))
+
+        for group, emitted in emitted_sets:
+            occupied = {}
+            for field in emitted.sorted(key=lambda f: (f.start_pos, f.end_pos)):
+                for position in range(field.start_pos, field.end_pos + 1):
+                    if position not in occupied:
+                        occupied[position] = field
+                        continue
+                    context = f" with group '{group.name}'" if group else ""
+                    raise UserError(
+                        _(
+                            f"{self.name}{context}: position {position} is defined "
+                            f"by both '{occupied[position].name}' and "
+                            f"'{field.name}'. Only one of them can exist."
+                        )
+                    )
+
+        covered = set()
+        for field in self.field_ids:
+            covered.update(range(field.start_pos, field.end_pos + 1))
+        missing = sorted(set(range(1, line_size + 1)) - covered)
+        if missing:
+            raise UserError(
+                _(
+                    f"{self.name}: no field defined for position(s) "
+                    f"{self._format_positions(missing)}. The line has "
+                    f"{line_size} positions."
+                )
+            )
+
+    @staticmethod
+    def _format_positions(numbers):
+        "Compacta [1, 2, 3, 7] em '1-3, 7' para a mensagem de erro."
+        ranges = []
+        for number in numbers:
+            if ranges and number == ranges[-1][1] + 1:
+                ranges[-1][1] = number
+            else:
+                ranges.append([number, number])
+        return ", ".join(
+            str(start) if start == end else f"{start}-{end}" for start, end in ranges
+        )
+
     @api.onchange("communication_flow")
     def _onchange_communication_flow(self):
         self.current_view = "general"

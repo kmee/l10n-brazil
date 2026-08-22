@@ -1,0 +1,3 @@
+# Remessa CNAB é posicional: preservar os bytes exatamente como foram gerados,
+# sem normalizar fim de linha (o layout usa CRLF).
+*.rem -text
