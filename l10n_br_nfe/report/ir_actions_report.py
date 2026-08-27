@@ -57,7 +57,8 @@ class IrActionsReport(models.Model):
         if nfe.company_id.danfe_display_pis_cofins:
             config.display_pis_cofins = True
 
-        danfe = Danfe(xml=nfe_xml, config=config)
+        danfe_class = self._danfe_class(nfe.company_id)
+        danfe = danfe_class(xml=nfe_xml, config=config)
 
         tmpDanfe = BytesIO()
         danfe.output(tmpDanfe)
@@ -65,6 +66,10 @@ class IrActionsReport(models.Model):
         tmpDanfe.close()
 
         return danfe_file, "pdf"
+
+    @api.model
+    def _danfe_class(self, company):
+        return Danfe
 
     @api.model
     def _get_danfe_config(self, tmpLogo, company):
