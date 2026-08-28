@@ -647,6 +647,9 @@ class NFe(spec_models.StackedModel):
         "fiscal_line_ids.cbs_base",
         "fiscal_line_ids.ibs_value",
         "fiscal_line_ids.cbs_value",
+        "fiscal_line_ids.ibs_percent",
+        "fiscal_line_ids.cbs_percent",
+        "fiscal_line_ids.price_gross",
     )
     def _compute_nfe40_IBSCBSTot_fields(self):
         """Compute IBSCBSTot fields from document lines"""
@@ -669,11 +672,13 @@ class NFe(spec_models.StackedModel):
                 record.nfe40_vCredPresCondSusCBS = 0.0
                 continue
 
-            # Calculate totals from lines
-            total_ibs_base = (
-                sum(record.fiscal_line_ids.mapped("ibs_base"))
-                or sum(record.fiscal_line_ids.mapped("cbs_base"))
-                or sum(record.fiscal_line_ids.mapped("price_gross"))
+            # The base of the total group is the sum of the bases the lines
+            # export in gIBSCBS. Lines with no amount (exempt, immune, not
+            # taxed) have no gIBSCBS, so they add nothing here.
+            total_ibs_base = sum(
+                line.ibs_base or line.cbs_base or line.price_gross
+                for line in record.fiscal_line_ids
+                if line._has_nfe40_ibscbs_amounts()
             )
 
             total_ibs_value = sum(record.fiscal_line_ids.mapped("ibs_value"))
@@ -810,6 +815,17 @@ class NFe(spec_models.StackedModel):
     # Framework Spec model's methods
     ################################
 
+    def _has_nfe40_ibscbstot(self):
+        """Whether the NF-e must carry the IBSCBSTot group.
+
+        The total group is required as soon as one item carries the IBSCBS
+        group, amounts or not: an immune or exempt item still reports CST and
+        cClassTrib, and SEFAZ rejects the NF-e with 1119 when the total is
+        missing.
+        """
+        self.ensure_one()
+        return any(line._has_nfe40_ibscbs() for line in self.fiscal_line_ids)
+
     def _export_field(self, xsd_field, class_obj, member_spec, export_value=None):
         if xsd_field == "nfe40_tpAmb":
             self.env.context = dict(self.env.context)
@@ -819,10 +835,7 @@ class NFe(spec_models.StackedModel):
             )
 
         if xsd_field == "nfe40_IBSCBSTot":
-            total_ibs = sum(self.fiscal_line_ids.mapped("ibs_value"))
-            total_cbs = sum(self.fiscal_line_ids.mapped("cbs_value"))
-
-            if not total_ibs and not total_cbs:
+            if not self._has_nfe40_ibscbstot():
                 return False
 
             # Build gIBSUF
@@ -882,9 +895,7 @@ class NFe(spec_models.StackedModel):
                 return False
 
             if field_name == "nfe40_IBSCBSTot":
-                total_ibs = sum(self.fiscal_line_ids.mapped("ibs_value"))
-                total_cbs = sum(self.fiscal_line_ids.mapped("cbs_value"))
-                if not total_ibs and not total_cbs:
+                if not self._has_nfe40_ibscbstot():
                     return False
 
             elif (not xsd_required) and field_name not in ["nfe40_enderDest"]:

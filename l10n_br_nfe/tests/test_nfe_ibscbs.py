@@ -669,3 +669,79 @@ class TestNFeIBSCBS(TransactionCase):
         self.assertEqual(result.CST, "410")
         self.assertEqual(result.cClassTrib, "410001")
         self.assertIsNone(result.gIBSCBS)
+
+    def _create_immune_line(self, price_unit=100.0):
+        tax_classification = self.env["l10n_br_fiscal.tax.classification"].create(
+            {
+                "name": "Demais imunidades e não incidências",
+                "code": "410999",
+            }
+        )
+        return self.env["l10n_br_fiscal.document.line"].create(
+            {
+                "document_id": self.document.id,
+                "product_id": self.product.id,
+                "quantity": 1.0,
+                "price_unit": price_unit,
+                "tax_classification_id": tax_classification.id,
+            }
+        )
+
+    def test_export_field_ibscbstot_immune_line(self):
+        """Test IBSCBSTot is exported for an immune line (SEFAZ rejection 1119)"""
+        self._create_immune_line()
+
+        result = self.document._export_field("nfe40_IBSCBSTot", None, None)
+        self.assertIsNotNone(result)
+        self.assertEqual(result.vBCIBSCBS, "0.00")
+        self.assertEqual(result.gIBS.vIBS, "0.00")
+        self.assertEqual(result.gIBS.gIBSUF.vIBSUF, "0.00")
+        self.assertEqual(result.gIBS.gIBSMun.vIBSMun, "0.00")
+        self.assertEqual(result.gCBS.vCBS, "0.00")
+
+    def test_export_field_ibscbstot_line_without_ibscbs(self):
+        """Test IBSCBSTot is skipped when no line carries the IBSCBS group"""
+        self.env["l10n_br_fiscal.document.line"].create(
+            {
+                "document_id": self.document.id,
+                "product_id": self.product.id,
+                "quantity": 1.0,
+                "price_unit": 100.0,
+            }
+        )
+
+        result = self.document._export_field("nfe40_IBSCBSTot", None, None)
+        self.assertFalse(result)
+
+    def test_compute_nfe40_ibscbstot_fields_immune_line(self):
+        """Test the total base stays zero when no line reports an IBS/CBS base"""
+        self._create_immune_line()
+
+        self.document._compute_nfe40_IBSCBSTot_fields()
+
+        self.assertEqual(self.document.nfe40_vBCIBSCBS, 0.0)
+        self.assertEqual(self.document.nfe40_vIBS, 0.0)
+        self.assertEqual(self.document.nfe40_vCBS, 0.0)
+
+    def test_compute_nfe40_ibscbstot_fields_mixed_lines(self):
+        """Test the total base only sums the lines that report amounts"""
+        taxed_line = self.env["l10n_br_fiscal.document.line"].create(
+            {
+                "document_id": self.document.id,
+                "product_id": self.product.id,
+                "quantity": 1.0,
+                "price_unit": 100.0,
+            }
+        )
+        taxed_line.write(
+            {
+                "ibs_value": 10.0,
+                "ibs_base": 100.0,
+            }
+        )
+        self._create_immune_line(price_unit=200.0)
+
+        self.document._compute_nfe40_IBSCBSTot_fields()
+
+        self.assertEqual(self.document.nfe40_vBCIBSCBS, 100.0)
+        self.assertEqual(self.document.nfe40_vIBS, 10.0)
