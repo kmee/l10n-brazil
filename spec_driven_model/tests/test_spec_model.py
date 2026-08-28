@@ -408,3 +408,26 @@ class TestSpecModel(TransactionCase, FakeModelLoader):
         finally:
             module_to_models["spec_driven_model"] = saved_module_classes
             registry.ready = ready
+
+    def test_the_access_guard_matches_a_declared_access(self):
+        mixin = type(self.env["spec.mixin"])
+
+        access_data = []
+        mixin._auto_fill_access_data(self.env, "spec_driven_model", access_data)
+        self.assertEqual(
+            [row[0] for row in access_data],
+            ["access_spec_mixin_user", "access_spec_mixin_manager"],
+        )
+
+        self.env["ir.model.access"].create(
+            {
+                "name": "access_spec_mixin_user",
+                "model_id": self.env["ir.model"]._get("spec.mixin").id,
+                "group_id": self.env.ref("base.group_user").id,
+                "perm_read": True,
+            }
+        )
+
+        access_data = []
+        mixin._auto_fill_access_data(self.env, "spec_driven_model", access_data)
+        self.assertEqual([row[0] for row in access_data], ["access_spec_mixin_manager"])
