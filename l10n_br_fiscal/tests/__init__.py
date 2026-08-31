@@ -20,3 +20,4 @@ from . import (
 )
 from . import test_comment
 from . import test_import_taxes
+from . import test_taxable_unit
