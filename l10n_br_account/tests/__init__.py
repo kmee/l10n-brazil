@@ -15,3 +15,4 @@ from . import test_import_fiscal_document
 from . import test_move_tax_totals_view
 from . import test_imported_tax_override
 from . import test_imported_due_date
+from . import test_import_declaration_wizard
