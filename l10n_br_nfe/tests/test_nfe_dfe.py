@@ -22,8 +22,11 @@ class TestNFeDFe(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.dfe_id = cls.env["l10n_br_fiscal.dfe"].create(
-            {"company_id": cls.env.ref("l10n_br_base.empresa_lucro_presumido").id}
+        company = cls.env.ref("l10n_br_base.empresa_lucro_presumido")
+        cls.dfe_id = (
+            cls.env["l10n_br_fiscal.dfe"]
+            .with_company(company)
+            .create({"company_id": company.id})
         )
 
     @mock.patch.object(
@@ -37,10 +40,13 @@ class TestNFeDFe(TransactionCase):
 
         self.dfe_id.import_documents()
         self.assertEqual(len(self.dfe_id.imported_document_ids), 1)
+        document = self.dfe_id.imported_document_ids[0]
         self.assertEqual(
-            self.dfe_id.imported_document_ids[0].document_key,
+            document.document_key,
             "35200159594315000157550010000000012062777161",
         )
+        self.assertTrue(document.fiscal_operation_id)
+        self.assertEqual(document.fiscal_line_ids.cfop_id.code, "1102")
 
     @mock.patch.object(
         DocumentoElectronicoAdapter, "_post", side_effect=mocked_post_success_multiple
