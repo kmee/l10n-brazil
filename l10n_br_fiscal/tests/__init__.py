@@ -21,3 +21,4 @@ from . import (
     test_company_tax_domain,
     test_document_import_wizard,
 )
+from . import test_comment
