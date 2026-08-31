@@ -11,3 +11,4 @@ from . import test_invoice_refund
 from . import test_payment_status
 from . import test_move_workflow
 from . import test_move_tax_totals_view
+from . import test_imported_tax_override
