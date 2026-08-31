@@ -11,3 +11,4 @@ from . import test_import_fiscal_document_access_rights
 # from . import test_multi_localizations_invoice
 from . import test_payment_status
 from . import test_move_workflow
+from . import test_import_fiscal_document
