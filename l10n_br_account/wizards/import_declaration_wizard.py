@@ -249,8 +249,11 @@ class ImportDeclarationWizard(models.TransientModel):
         self.ensure_one()
         if "nfe40_DI" not in line._fields:
             return False
-        declaration = self.env["nfe.40.di"].create(self._di_values())
-        line.nfe40_DI = [(6, 0, declaration.ids)]
+        # sudo on the spec record: the declaration is a consequence of generating
+        # the note, and the access of the nfe.40 models belongs to the NF-e
+        # groups, which whoever books the bill does not necessarily carry.
+        declaration = self.env["nfe.40.di"].sudo().create(self._di_values())
+        line.sudo().nfe40_DI = [(6, 0, declaration.ids)]
         return declaration
 
     def _tax_fields(self):
