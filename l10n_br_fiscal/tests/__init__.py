@@ -19,3 +19,4 @@ from . import (
     test_company_tax_domain,
 )
 from . import test_comment
+from . import test_import_taxes
