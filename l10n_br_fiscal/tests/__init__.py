@@ -22,3 +22,4 @@ from . import (
     test_document_import_wizard,
 )
 from . import test_comment
+from . import test_import_taxes
