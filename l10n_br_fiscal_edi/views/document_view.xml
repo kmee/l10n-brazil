@@ -32,34 +32,6 @@
         <field name="priority">5</field>
         <field name="inherit_id" ref="l10n_br_fiscal.document_tree" />
         <field name="arch" type="xml">
-            <list position="inside">
-                <header>
-                    <button
-                        name="action_download_xml"
-                        string="Download XML"
-                        type="object"
-                        display="always"
-                    />
-                    <button
-                        name="action_download_report"
-                        string="Download DANFE"
-                        type="object"
-                        display="always"
-                    />
-                    <button
-                        name="action_download_xml_and_report"
-                        string="Download both"
-                        type="object"
-                        display="always"
-                    />
-                    <button
-                        name="action_check_status"
-                        string="Check status at the SEFAZ"
-                        type="object"
-                        display="always"
-                    />
-                </header>
-            </list>
             <field name="state_edoc" position="attributes">
                 <attribute name="decoration-info">state_edoc == 'enviada'</attribute>
                 <attribute
@@ -70,6 +42,46 @@
                 >state_edoc == 'autorizada'</attribute>
             </field>
         </field>
+    </record>
+
+    <!-- In the action menu and not in the header: four toolbar buttons push the
+         search box off a narrow screen, and an action over the selected records
+         is what the action menu exists to hold. -->
+
+    <record id="action_download_xml" model="ir.actions.server">
+        <field name="name">Download XML</field>
+        <field name="model_id" ref="l10n_br_fiscal.model_l10n_br_fiscal_document" />
+        <field name="binding_model_id" ref="l10n_br_fiscal.model_l10n_br_fiscal_document" />
+        <field name="binding_view_types">list,form</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_download_xml()</field>
+    </record>
+
+    <record id="action_download_report" model="ir.actions.server">
+        <field name="name">Download DANFE</field>
+        <field name="model_id" ref="l10n_br_fiscal.model_l10n_br_fiscal_document" />
+        <field name="binding_model_id" ref="l10n_br_fiscal.model_l10n_br_fiscal_document" />
+        <field name="binding_view_types">list,form</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_download_report()</field>
+    </record>
+
+    <record id="action_download_xml_and_report" model="ir.actions.server">
+        <field name="name">Download XML and DANFE</field>
+        <field name="model_id" ref="l10n_br_fiscal.model_l10n_br_fiscal_document" />
+        <field name="binding_model_id" ref="l10n_br_fiscal.model_l10n_br_fiscal_document" />
+        <field name="binding_view_types">list,form</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_download_xml_and_report()</field>
+    </record>
+
+    <record id="action_check_status" model="ir.actions.server">
+        <field name="name">Check status at the SEFAZ</field>
+        <field name="model_id" ref="l10n_br_fiscal.model_l10n_br_fiscal_document" />
+        <field name="binding_model_id" ref="l10n_br_fiscal.model_l10n_br_fiscal_document" />
+        <field name="binding_view_types">list,form</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_check_status()</field>
     </record>
 
     <record id="document_form" model="ir.ui.view">
