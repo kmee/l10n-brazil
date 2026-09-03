@@ -348,6 +348,19 @@ class DocumentWorkflow(models.AbstractModel):
                     "l10n_br_fiscal_edi.document_cancel_wizard_action"
                 )
                 return result
+            # Falling through here used to return None: the button answered
+            # nothing at all, no wizard and no message, and whoever pressed it
+            # had no way to tell a cancellation from a broken screen. There is
+            # nothing to cancel at the SEFAZ on a document it never authorized,
+            # and the number it took is given back by invalidating the range.
+            raise UserError(
+                _(
+                    "Only a document the SEFAZ authorized can be cancelled "
+                    "there, and this one is %s. To give back the number it "
+                    "took, invalidate its numbering instead."
+                )
+                % self.state_edoc
+            )
         else:
             self.state_edoc = SITUACAO_EDOC_CANCELADA
 

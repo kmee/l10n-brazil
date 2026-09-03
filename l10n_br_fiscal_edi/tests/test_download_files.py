@@ -93,6 +93,23 @@ class TestDownloadFiles(TransactionCase):
         self.assertEqual(len(action["params"]["files"]), 2)
         self.assertEqual(action["params"]["skipped"], self.empty.mapped("display_name"))
 
+    def test_an_imported_note_hands_over_the_xml_that_came_with_it(self):
+        """A note that came in by import has no authorization event: its file
+        arrived as an attachment of the document, and it is the one the
+        accountant asks for."""
+        imported = self._create_document()
+        self.env["ir.attachment"].create(
+            {
+                "name": "NFe-Importada.xml",
+                "datas": b"MA==",
+                "mimetype": "application/xml",
+                "res_model": imported._name,
+                "res_id": imported.id,
+            }
+        )
+        files = imported.action_download_xml()["params"]["files"]
+        self.assertEqual([each["name"] for each in files], ["NFe-Importada.xml"])
+
     def test_a_selection_with_no_file_at_all_is_refused(self):
         with self.assertRaises(UserError):
             self.empty.action_download_xml_and_report()

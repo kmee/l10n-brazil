@@ -787,6 +787,10 @@ class AccountMove(models.Model):
     def action_download_xml_and_report(self):
         return self._download_fiscal_files("action_download_xml_and_report")
 
+    def action_check_status(self):
+        """Ask the SEFAZ about the fiscal documents of the selected invoices."""
+        return self._download_fiscal_files("action_check_status")
+
     @api.constrains("state")
     def _check_l10n_latam_documents(self):
         """Auto-assign l10n_latam document type for Brazilian companies, then
