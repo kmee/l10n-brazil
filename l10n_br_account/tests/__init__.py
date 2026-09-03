@@ -4,6 +4,7 @@ from . import test_account_move_lc
 from . import test_account_move_sn
 from . import test_declaration_xml
 from . import test_document_import_wizard
+from . import test_download_files
 from . import test_import_declaration_wizard
 from . import test_import_fiscal_document
 from . import test_import_fiscal_document_access_rights
