@@ -824,6 +824,23 @@ class AccountMove(models.Model):
     def action_download_xml_and_report(self):
         return self._download_fiscal_files("action_download_xml_and_report")
 
+    def action_check_status(self):
+        """Ask the SEFAZ about the fiscal documents of the selected invoices.
+
+        Soft dependency: the consult lives in l10n_br_fiscal_edi, which this
+        module does not depend on, so what is left here is the forwarding and a
+        legible answer where the electronic document module is not installed.
+        """
+        documents = self._fiscal_documents_to_download()
+        if not hasattr(documents, "action_check_status"):
+            raise UserError(
+                _(
+                    "Asking the SEFAZ about a document needs the electronic "
+                    "fiscal document module installed."
+                )
+            )
+        return documents.action_check_status()
+
     @api.constrains("state")
     def _check_l10n_latam_documents(self):
         """Auto-assign l10n_latam document type for Brazilian companies, then

@@ -67,6 +67,12 @@
                     type="object"
                     display="always"
                 />
+                <button
+                    name="action_check_status"
+                    string="Check status at the SEFAZ"
+                    type="object"
+                    display="always"
+                />
             </xpath>
         </field>
     </record>
