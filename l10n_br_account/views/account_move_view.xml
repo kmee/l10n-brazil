@@ -43,39 +43,46 @@
             </field>
         </field>
     </record>
-    <record id="invoice_tree_download_buttons" model="ir.ui.view">
-        <field name="name">l10n_br_account.invoice.tree.download</field>
-        <field name="model">account.move</field>
-        <field name="inherit_id" ref="account.view_invoice_tree" />
-        <field name="arch" type="xml">
-            <xpath expr="//list/header" position="inside">
-                <button
-                    name="action_download_xml"
-                    string="Download XML"
-                    type="object"
-                    display="always"
-                />
-                <button
-                    name="action_download_report"
-                    string="Download DANFE"
-                    type="object"
-                    display="always"
-                />
-                <button
-                    name="action_download_xml_and_report"
-                    string="Download both"
-                    type="object"
-                    display="always"
-                />
-                <button
-                    name="action_check_status"
-                    string="Check status at the SEFAZ"
-                    type="object"
-                    display="always"
-                />
-            </xpath>
-        </field>
+    <!-- Na engrenagem e nao no cabecalho: quatro botoes de barra empurram a
+         busca para fora numa tela estreita, e acao sobre registro selecionado
+         e o que o menu de acoes existe para abrigar. -->
+
+    <record id="invoice_action_download_xml" model="ir.actions.server">
+        <field name="name">Download XML</field>
+        <field name="model_id" ref="account.model_account_move" />
+        <field name="binding_model_id" ref="account.model_account_move" />
+        <field name="binding_view_types">list,form</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_download_xml()</field>
     </record>
+
+    <record id="invoice_action_download_report" model="ir.actions.server">
+        <field name="name">Download DANFE</field>
+        <field name="model_id" ref="account.model_account_move" />
+        <field name="binding_model_id" ref="account.model_account_move" />
+        <field name="binding_view_types">list,form</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_download_report()</field>
+    </record>
+
+    <record id="invoice_action_download_xml_and_report" model="ir.actions.server">
+        <field name="name">Download XML and DANFE</field>
+        <field name="model_id" ref="account.model_account_move" />
+        <field name="binding_model_id" ref="account.model_account_move" />
+        <field name="binding_view_types">list,form</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_download_xml_and_report()</field>
+    </record>
+
+    <record id="invoice_action_check_status" model="ir.actions.server">
+        <field name="name">Check status at the SEFAZ</field>
+        <field name="model_id" ref="account.model_account_move" />
+        <field name="binding_model_id" ref="account.model_account_move" />
+        <field name="binding_view_types">list,form</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_check_status()</field>
+    </record>
+
 
     <!-- Customer Invoice views -->
 
