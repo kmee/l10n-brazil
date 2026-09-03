@@ -813,9 +813,28 @@ class Document(models.Model):
         return f"/web/content/{attachment.id}/{attachment.name}?download=true"
 
     def _xml_attachment(self):
-        """The authorized XML, and the sent one while authorization has not come."""
+        """The XML of the document, wherever this one keeps it.
+
+        A document the company issued keeps it in the authorization event, and
+        the sent one serves while the authorization has not come. A document
+        that came in by import has neither: its file arrived as an attachment
+        of the document, and looking only at the event fields would answer that
+        an imported note has no XML, which is exactly the note the accountant
+        asks for.
+        """
         self.ensure_one()
-        return self.authorization_file_id or self.send_file_id
+        found = self.authorization_file_id or self.send_file_id
+        if found:
+            return found
+        return self.env["ir.attachment"].search(
+            [
+                ("res_model", "=", self._name),
+                ("res_id", "=", self.id),
+                ("mimetype", "in", ("application/xml", "text/xml")),
+            ],
+            order="id desc",
+            limit=1,
+        )
 
     def _report_attachment(self):
         self.ensure_one()
