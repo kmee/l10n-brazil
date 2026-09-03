@@ -280,6 +280,14 @@ class AccountMove(models.Model):
         "fiscal_line_ids.fiscal_amount_tax",
     )
     def _compute_amount(self):
+        if "force_fiscal_amount_recompute" in self._context:
+            for move in self.filtered(lambda m: m.fiscal_operation_id):
+                # this is a ugly hack required for importing composite
+                # fiscal documents for instance. It should be used
+                # exceptionnaly as it breaks the dependency chain and
+                # can leave fields such as payment_state inconsistent.
+                move.fiscal_document_id._compute_fiscal_amount()
+
         result = super()._compute_amount()
         for move in self.filtered(lambda m: m.fiscal_operation_id):
             sign = -move.direction_sign
