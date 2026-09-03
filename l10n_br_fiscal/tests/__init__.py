@@ -12,6 +12,7 @@
     test_ibpt_product,
     test_ibpt_service,
     test_icms_regulation,
+    test_import_tax_base,
     test_ncm,
     test_operation,
     test_partner_profile,
