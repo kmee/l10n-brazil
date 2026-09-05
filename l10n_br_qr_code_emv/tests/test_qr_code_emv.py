@@ -86,6 +86,15 @@ class TestPixQrCodeEmv(TransactionCase):
     def test_qr_setting_shows_for_brazilian_accounts(self):
         self.assertTrue(self.bank_account.display_qr_setting)
 
+    def test_account_with_pix_key_reports_no_error(self):
+        """Regression test: a valid BR account must not fall through to the
+        generic account_qr_code_emv error, which always refuses emv_qr."""
+        self.assertIsNone(
+            self.bank_account._get_error_messages_for_qr(
+                "emv_qr", self.debtor, self.brl
+            )
+        )
+
     def test_account_without_pix_key_reports_why(self):
         self.pix.unlink()
         self.assertIn(
