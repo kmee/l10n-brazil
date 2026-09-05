@@ -397,13 +397,21 @@ four key types the Central Bank defines.</p>
 <div class="section" id="configuration">
 <h1><a class="toc-backref" href="#toc-entry-1">Configuration</a></h1>
 <ol class="arabic simple">
-<li>Register the Pix key on the company partner, under <em>Sales &amp; Purchase
-&gt; Pix Keys</em>, and link it to the bank account that should receive the
-payment.</li>
-<li>On the bank account, set <em>QR Code</em> to <em>EMV Merchant-Presented
-QR-code</em>.</li>
-<li>On the journal of that bank account, enable <em>QR Code</em> so the payment
-link and the invoice report offer it.</li>
+<li>Register the Pix key on the invoice-issuing company’s partner. With
+<tt class="docutils literal">l10n_br_account</tt> installed, this is under the <em>Invoicing</em> tab
+(<em>Pix Keys</em>); otherwise it is on the bank account form itself, in the
+<em>Brazilian Instant Payment Keys (PIX)</em> section, which only shows once
+the account’s company has Brazilian localization. Optionally link the
+key to the specific bank account that should receive the payment;
+otherwise the partner’s first key is used.</li>
+<li>The partner issuing the invoice needs a City: Pix requires it as
+Merchant City.</li>
+<li>In <em>Accounting/Invoicing &gt; Configuration &gt; Settings &gt; Customer
+Payments</em>, enable <em>QR Codes</em>.</li>
+<li>Nothing else to configure: the invoice picks the EMV QR code
+automatically once eligible. If it does not appear, open the
+invoice’s <em>Other Info</em> tab and check the <em>QR Code</em> field for the
+specific error message.</li>
 </ol>
 </div>
 <div class="section" id="usage">

@@ -14,10 +14,7 @@ REFERENCE_LABEL_SUBTAG = 5
 REFERENCE_LABEL_EMPTY = "***"
 # The Central Bank accepts 0000: the code belongs to the acquirer, not to Pix.
 DEFAULT_MERCHANT_CATEGORY_CODE = "0000"
-# Positions of the transaction amount and of the additional data field in the
-# list account_qr_code_emv builds.
-AMOUNT_INDEX = 5
-ADDITIONAL_DATA_INDEX = 9
+TRANSACTION_AMOUNT_TAG = 54
 
 
 class ResPartnerBank(models.Model):
@@ -65,21 +62,22 @@ class ResPartnerBank(models.Model):
         float happens to be, so 745.10 travels as 745.1, and it drops field 62
         when the account carries no reference. The BR Code fixes both, and the
         bank app answers an invalid code without saying which field is wrong.
+
+        Fields are found by tag, not by position: account_qr_code_emv does not
+        promise a stable order or length for the list it returns.
         """
         vals = super()._get_qr_code_vals_list(*args, **kwargs)
         if self.country_code != "BR":
             return vals
 
-        tag, amount = vals[AMOUNT_INDEX]
-        if isinstance(amount, int | float):
-            vals[AMOUNT_INDEX] = (tag, float_repr(amount, 2))
-
-        tag, additional_data = vals[ADDITIONAL_DATA_INDEX]
-        if not additional_data:
-            vals[ADDITIONAL_DATA_INDEX] = (
-                tag,
-                self._get_additional_data_field(REFERENCE_LABEL_EMPTY),
-            )
+        for index, (tag, value) in enumerate(vals):
+            if tag == TRANSACTION_AMOUNT_TAG and isinstance(value, int | float):
+                vals[index] = (tag, float_repr(value, 2))
+            elif tag == ADDITIONAL_DATA_FIELD_TAG and not value:
+                vals[index] = (
+                    tag,
+                    self._get_additional_data_field(REFERENCE_LABEL_EMPTY),
+                )
         return vals
 
     def _get_merchant_category_code(self):
@@ -97,6 +95,7 @@ class ResPartnerBank(models.Model):
                     "under the partner's Pix Keys and link it to this account.",
                     account=self.acc_number,
                 )
+            return None
         return super()._get_error_messages_for_qr(qr_method, debtor_partner, currency)
 
     def _check_for_qr_code_errors(
