@@ -1,12 +1,11 @@
 # Copyright 2021 - TODAY Akretion - Raphael Valyi <raphael.valyi@akretion.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
-import importlib
+import importlib.resources
 import re
 from datetime import date
 
 import nfelib
-import pkg_resources
 from nfelib.nfe.bindings.v4_0.leiaute_nfe_v4_00 import TnfeProc
 
 from odoo import fields
@@ -24,10 +23,12 @@ class NFeImportTest(TransactionCase):
             "35180834128745000152550010000474281920007498-nfe.xml",
         )
 
-        resource_path = "/".join(res_items)
-        nfe_stream = importlib.resources.files(nfelib.__name__).joinpath(resource_path)
-        with nfe_stream.open("rb") as fp:
-            binding = TnfeProc.from_xml(fp.read().decode())
+        binding = TnfeProc.from_xml(
+            importlib.resources.files(nfelib.__name__)
+            .joinpath(*res_items)
+            .read_bytes()
+            .decode()
+        )
         nfe = self.env["l10n_br_fiscal.document"].import_binding_nfe(
             binding, edoc_type="in", dry_run=True
         )
@@ -42,10 +43,12 @@ class NFeImportTest(TransactionCase):
             "leiauteNFe",
             "35180834128745000152550010000474281920007498-nfe.xml",
         )
-        resource_path = "/".join(res_items)
-        nfe_stream = importlib.resources.files(nfelib.__name__).joinpath(resource_path)
-        with nfe_stream.open("rb") as fp:
-            binding = TnfeProc.from_xml(fp.read().decode())
+        binding = TnfeProc.from_xml(
+            importlib.resources.files(nfelib.__name__)
+            .joinpath(*res_items)
+            .read_bytes()
+            .decode()
+        )
         nfe = self.env["l10n_br_fiscal.document"].import_binding_nfe(
             binding, edoc_type="in", dry_run=False
         )
@@ -181,9 +184,12 @@ class NFeImportTest(TransactionCase):
             "leiauteNFe",
             "35180834128745000152550010000474281920007498-nfe.xml",
         )
-        resource_path = "/".join(res_items)
-        nfe_stream = pkg_resources.resource_stream(nfelib.__name__, resource_path)
-        xml = nfe_stream.read().decode()
+        xml = (
+            importlib.resources.files(nfelib.__name__)
+            .joinpath(*res_items)
+            .read_bytes()
+            .decode()
+        )
         entrega = (
             "<entrega>"
             "<CNPJ>34128745000152</CNPJ>"
@@ -216,9 +222,12 @@ class NFeImportTest(TransactionCase):
             "leiauteNFe",
             "35180834128745000152550010000474281920007498-nfe.xml",
         )
-        resource_path = "/".join(res_items)
-        nfe_stream = pkg_resources.resource_stream(nfelib.__name__, resource_path)
-        xml = nfe_stream.read().decode()
+        xml = (
+            importlib.resources.files(nfelib.__name__)
+            .joinpath(*res_items)
+            .read_bytes()
+            .decode()
+        )
         # Replace the first ICMS00 node with an ICMS20 (base reduction).
         # pICMS 7.00 + 33.33% reduction is unlikely to pre-exist -> forces
         # the create-if-not-found branch.
