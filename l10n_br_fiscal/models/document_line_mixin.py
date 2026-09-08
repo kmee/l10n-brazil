@@ -212,7 +212,6 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         "quantity",
         "fiscal_operation_line_id",
         "cfop_id",
-        "icms_relief_value",
         "insurance_value",
         "other_value",
         "freight_value",
@@ -1038,7 +1037,7 @@ class FiscalDocumentLineMixin(models.AbstractModel):
 
     @api.model
     def _rm_fields_to_amount(self):
-        return ["icms_relief_value"]
+        return []
 
     def _is_imported(self):
         # When the mixin is used for instance
