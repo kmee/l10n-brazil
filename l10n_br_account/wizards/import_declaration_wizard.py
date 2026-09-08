@@ -631,29 +631,33 @@ class ImportDeclarationWizard(models.TransientModel):
         }
         Line = self.env["l10n_br_fiscal.document.line"]
         for position, bill_line in enumerate(lines):
+            # The values of the declaration were paid, so they win over any
+            # recomputation from rates. ii_declared_value has to be there from
+            # create(): the IPI base is composed by the same compute that
+            # derives it, and writing it onto the line afterwards leaves the
+            # IPI the engine already derived from the product's own Import Tax
+            # rate, not the one the declaration charged.
+            declared_taxes = {
+                fname: parts[position]
+                for fname, parts in tax_parts.items()
+                if parts[position]
+            }
             line = Line.create(
                 dict(
                     self._prepare_line_values(bill_line, gross_parts[position]),
                     document_id=document.id,
+                    **declared_taxes,
                 )
             )
             self._write_declaration(
                 line, number=block["number"], manufacturer=block["manufacturer"]
             )
-            # The values of the declaration were paid, so they win over any
-            # recomputation from rates. These fields are stored computes with
-            # readonly=False, which is what makes writing them stick.
-            values = {
-                fname: parts[position]
-                for fname, parts in tax_parts.items()
-                if parts[position]
-            }
             # On an import CFOP the fiscal amount already adds II, PIS, COFINS,
             # ICMS and the customs charges to the untaxed amount, so the only
             # tax left outside the price is the IPI. Without writing it here the
             # document total keeps the IPI the engine computed from the product
             # rate instead of the one the declaration charged.
-            values["amount_tax_included"] = 0.0
+            values = {"amount_tax_included": 0.0}
             # The base of the IPI and of the contributions is composed by the
             # engine, which takes the Import Tax the declaration charged. The
             # ICMS is not: the engine only puts the IPI inside its base for
@@ -668,7 +672,7 @@ class ImportDeclarationWizard(models.TransientModel):
             # without one there is no compute to run, and the SEFAZ recomputes
             # that product and refuses the note with 528 when it does not close.
             gross = gross_parts[position]
-            declared = values.get("ii_declared_value", 0.0)
+            declared = declared_taxes.get("ii_declared_value", 0.0)
             if declared:
                 values["ii_base"] = gross
                 values["ii_percent"] = self._rate(declared, gross)
@@ -676,8 +680,8 @@ class ImportDeclarationWizard(models.TransientModel):
             if rate:
                 before_icms = (
                     gross
-                    + values.get("ii_declared_value", 0.0)
-                    + values.get("ii_customhouse_charges", 0.0)
+                    + declared_taxes.get("ii_declared_value", 0.0)
+                    + declared_taxes.get("ii_customhouse_charges", 0.0)
                     + line.ipi_value
                     + line.pis_value
                     + line.cofins_value
