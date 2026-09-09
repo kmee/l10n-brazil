@@ -214,6 +214,28 @@ class ImportDeclarationWizard(models.TransientModel):
         readonly=True,
     )
 
+    @api.model
+    def default_get(self, fields_list):
+        res = super().default_get(fields_list)
+        move = self.env["account.move"].browse(res.get("move_id"))
+        operation = move.fiscal_operation_id
+        if (
+            operation
+            and operation.fiscal_operation_type == "in"
+            and "fiscal_operation_id" in fields_list
+            and not res.get("fiscal_operation_id")
+        ):
+            res["fiscal_operation_id"] = operation.id
+            if operation.line_ids and "fiscal_operation_line_id" in fields_list:
+                res["fiscal_operation_line_id"] = operation.line_ids[0].id
+        if (
+            move.document_serie_id
+            and "document_serie_id" in fields_list
+            and not res.get("document_serie_id")
+        ):
+            res["document_serie_id"] = move.document_serie_id.id
+        return res
+
     @api.onchange("di_file")
     def _onchange_di_file(self):
         """Fill the form the moment the file is chosen.
@@ -263,6 +285,7 @@ class ImportDeclarationWizard(models.TransientModel):
             ],
             limit=1,
         )
+        prepared_additions = self._additions_from_declaration(declaration)
         values = {
             "di_number": declaration["number"],
             "di_date": declaration["registration_date"],
@@ -270,13 +293,30 @@ class ImportDeclarationWizard(models.TransientModel):
             "clearance_place": declaration["clearance_place"],
             "transport_via": declaration["transport_via"],
             "addition_ids": [(5, 0, 0)]
-            + [
-                (0, 0, prepared)
-                for prepared in self._additions_from_declaration(declaration)
-            ],
+            + [(0, 0, prepared) for prepared in prepared_additions],
         }
+        if prepared_additions:
+            values["customs_value"] = sum(
+                prepared["customs_value"] for prepared in prepared_additions
+            )
+            values["ii_value"] = sum(
+                prepared["ii_value"] for prepared in prepared_additions
+            )
+            values["ipi_value"] = sum(
+                prepared["ipi_value"] for prepared in prepared_additions
+            )
+            values["pis_value"] = sum(
+                prepared["pis_value"] for prepared in prepared_additions
+            )
+            values["cofins_value"] = sum(
+                prepared["cofins_value"] for prepared in prepared_additions
+            )
         if state:
             values["clearance_state_id"] = state.id
+        if declaration["customhouse_charges"] and not self.customhouse_charges:
+            values["customhouse_charges"] = declaration["customhouse_charges"]
+        if declaration["icms_value"] and not self.icms_value:
+            values["icms_value"] = declaration["icms_value"]
         exporter = next(
             (a["exporter"] for a in declaration["additions"] if a["exporter"]), ""
         )
@@ -348,9 +388,15 @@ class ImportDeclarationWizard(models.TransientModel):
         unmatched = []
         for item in items:
             description = self._comparable(item["description"])
+            code = item["description"].split(" - ")[0].strip()
             candidates = available.filtered(
-                lambda line, wanted=description: wanted
-                and wanted in self._comparable(line.name or line.product_id.name)
+                lambda line, code=code, wanted=description: (
+                    code and line.product_id.default_code == code
+                )
+                or (
+                    wanted
+                    and wanted in self._comparable(line.name or line.product_id.name)
+                )
             )
             candidates -= matched
             if not candidates:
@@ -442,6 +488,7 @@ class ImportDeclarationWizard(models.TransientModel):
 
     def _di_values(self, number=None, manufacturer=None):
         self.ensure_one()
+        addition_number = str(int(number or self.addition_number))
         values = {
             "nfe40_nDI": self.di_number,
             "nfe40_dDI": self.di_date,
@@ -456,7 +503,7 @@ class ImportDeclarationWizard(models.TransientModel):
                     0,
                     0,
                     {
-                        "nfe40_nAdicao": number or self.addition_number,
+                        "nfe40_nAdicao": addition_number,
                         "nfe40_nSeqAdic": "1",
                         "nfe40_cFabricante": manufacturer
                         or self.manufacturer_code
@@ -507,7 +554,6 @@ class ImportDeclarationWizard(models.TransientModel):
             # from the note.
             ("ii_declared_value", self.ii_value),
             ("ii_value", self.ii_value),
-            ("ii_customhouse_charges", self.customhouse_charges),
         )
 
     def _declared_totals(self):
@@ -605,20 +651,24 @@ class ImportDeclarationWizard(models.TransientModel):
                     "taxes": {
                         "ii_declared_value": addition.ii_value,
                         "ii_value": addition.ii_value,
-                        "ii_customhouse_charges": 0.0,
                     },
                     "number": addition.number,
                     "manufacturer": addition.manufacturer_code,
                 }
             )
-        # The charges of the declaration are of the whole despatch, not of any
-        # addition, so they ride on the first block instead of being invented
-        # per addition.
-        if blocks:
-            blocks[0]["taxes"]["ii_customhouse_charges"] = self.customhouse_charges
         return blocks
 
-    def _write_block(self, document, block):
+    def _customhouse_charges_by_line(self, blocks):
+        self.ensure_one()
+        empty = self._bill_lines().browse()
+        all_lines = sum((block["lines"] for block in blocks), empty)
+        if not self.customhouse_charges or not all_lines:
+            return {}
+        shares = self._shares(all_lines)
+        parts = self._split(self.customhouse_charges, shares, self.company_currency_id)
+        return dict(zip(all_lines.ids, parts))
+
+    def _write_block(self, document, block, customhouse_by_line):
         """Write the lines of one group, with the tax that belongs to it."""
         self.ensure_one()
         currency = self.company_currency_id
@@ -642,6 +692,9 @@ class ImportDeclarationWizard(models.TransientModel):
                 for fname, parts in tax_parts.items()
                 if parts[position]
             }
+            charge = customhouse_by_line.get(bill_line.id, 0.0)
+            if charge:
+                declared_taxes["ii_customhouse_charges"] = charge
             line = Line.create(
                 dict(
                     self._prepare_line_values(bill_line, gross_parts[position]),
@@ -676,19 +729,36 @@ class ImportDeclarationWizard(models.TransientModel):
             if declared:
                 values["ii_base"] = gross
                 values["ii_percent"] = self._rate(declared, gross)
+            before_icms = (
+                gross
+                + declared_taxes.get("ii_declared_value", 0.0)
+                + declared_taxes.get("ii_customhouse_charges", 0.0)
+                + line.ipi_value
+                + line.pis_value
+                + line.cofins_value
+            )
             rate = line.icms_percent or 0.0
             if rate:
-                before_icms = (
-                    gross
-                    + declared_taxes.get("ii_declared_value", 0.0)
-                    + declared_taxes.get("ii_customhouse_charges", 0.0)
-                    + line.ipi_value
-                    + line.pis_value
-                    + line.cofins_value
-                )
                 icms_base = before_icms / (1 - rate / 100.0)
                 values["icms_base"] = icms_base
                 values["icms_value"] = icms_base * rate / 100.0
+            values["other_value"] = (
+                line.pis_value
+                + line.cofins_value
+                + declared_taxes.get("ii_customhouse_charges", 0.0)
+            )
+            if declared:
+                vprod_gross = gross + declared
+                values["price_unit"] = vprod_gross / line.quantity
+                values["ipi_base"] = line.ipi_base
+                values["ipi_percent"] = line.ipi_percent
+                values["ipi_value"] = line.ipi_value
+                values["pis_base"] = line.pis_base
+                values["pis_percent"] = line.pis_percent
+                values["pis_value"] = line.pis_value
+                values["cofins_base"] = line.cofins_base
+                values["cofins_percent"] = line.cofins_percent
+                values["cofins_value"] = line.cofins_value
             line.write(values)
 
     def action_generate_document(self):
@@ -699,15 +769,21 @@ class ImportDeclarationWizard(models.TransientModel):
                 _("This wizard already generated the document %s.")
                 % self.document_id.display_name
             )
+        shadow_document = self.move_id.fiscal_document_id
         document = self.env["l10n_br_fiscal.document"].create(
             self._prepare_document_values()
         )
-        for block in self._blocks():
-            self._write_block(document, block)
+        blocks = self._blocks()
+        customhouse_by_line = self._customhouse_charges_by_line(blocks)
+        for block in blocks:
+            self._write_block(document, block, customhouse_by_line)
 
         document.invalidate_recordset()
         self._check_against_declaration(document)
         self.document_id = document
+        self.move_id.fiscal_document_id = document
+        if shadow_document and shadow_document.state_edoc == "em_digitacao":
+            shadow_document.action_document_cancel()
         return {
             "name": _("Import Entry Note"),
             "type": "ir.actions.act_window",

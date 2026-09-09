@@ -113,6 +113,17 @@ def _additions(declaration):
     return additions
 
 
+SISCOMEX_REVENUE_CODE = "7811"
+
+
+def _customhouse_charges(declaration):
+    return sum(
+        _amount(pagamento, "valorReceita")
+        for pagamento in declaration.findall("pagamento")
+        if _text(pagamento, "codigoReceita") == SISCOMEX_REVENUE_CODE
+    )
+
+
 def parse_declaration(content):
     """Turn the XML of one import declaration into plain data.
 
@@ -148,6 +159,7 @@ def parse_declaration(content):
         "freight": _amount(declaration, "freteTotalReais"),
         "insurance": _amount(declaration, "seguroTotalReais"),
         "icms_value": _amount(icms, "valorTotalIcms") if icms is not None else 0.0,
+        "customhouse_charges": _customhouse_charges(declaration),
         "gross_weight": _amount(declaration, "cargaPesoBruto", WEIGHT),
         "net_weight": _amount(declaration, "cargaPesoLiquido", WEIGHT),
         "additions": _additions(declaration),
