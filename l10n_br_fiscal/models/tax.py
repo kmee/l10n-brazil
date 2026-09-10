@@ -753,13 +753,57 @@ class Tax(models.Model):
         operation_line = kwargs.get("operation_line")
         fiscal_operation_type = operation_line.fiscal_operation_type or FISCAL_OUT
 
-        # Se for entrada de importação o II entra na base de calculo do IPI
+        # Se for entrada de importação o II entra na base de calculo do IPI,
+        # e as despesas acessórias (other_value) saem: elas só compõem a base
+        # do ICMS, que já faz esse mesmo ajuste em _compute_icms.
         if (
             cfop
             and cfop.destination == CFOP_DESTINATION_EXPORT
             and fiscal_operation_type == FISCAL_IN
         ):
             tax_dict["add_to_base"] += self._import_tax_in_base(taxes_dict, **kwargs)
+            tax_dict["remove_from_base"] += kwargs.get("other_value", 0.00)
+
+        return self._compute_tax(tax, taxes_dict, **kwargs)
+
+    @api.model
+    def _compute_pis(self, tax, taxes_dict, **kwargs):
+        """PIS-Importação uses the customs value as its base, not the Import
+        Tax: unlike ICMS and IPI, II never composes it. The accessory
+        expenses (other_value) still creep in through the generic
+        base_with_additional_values path, so remove them on imports the same
+        way ICMS and IPI already do.
+        """
+        cfop = kwargs.get("cfop")
+        operation_line = kwargs.get("operation_line")
+        fiscal_operation_type = operation_line.fiscal_operation_type or FISCAL_OUT
+
+        tax_dict = taxes_dict.get(tax.tax_domain)
+        if (
+            cfop
+            and cfop.destination == CFOP_DESTINATION_EXPORT
+            and fiscal_operation_type == FISCAL_IN
+        ):
+            tax_dict["remove_from_base"] += kwargs.get("other_value", 0.00)
+
+        return self._compute_tax(tax, taxes_dict, **kwargs)
+
+    @api.model
+    def _compute_cofins(self, tax, taxes_dict, **kwargs):
+        """Same rule as _compute_pis: COFINS-Importação's base is the customs
+        value, and other_value has to be removed from it on imports.
+        """
+        cfop = kwargs.get("cfop")
+        operation_line = kwargs.get("operation_line")
+        fiscal_operation_type = operation_line.fiscal_operation_type or FISCAL_OUT
+
+        tax_dict = taxes_dict.get(tax.tax_domain)
+        if (
+            cfop
+            and cfop.destination == CFOP_DESTINATION_EXPORT
+            and fiscal_operation_type == FISCAL_IN
+        ):
+            tax_dict["remove_from_base"] += kwargs.get("other_value", 0.00)
 
         return self._compute_tax(tax, taxes_dict, **kwargs)
 
