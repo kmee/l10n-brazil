@@ -2,6 +2,8 @@
 # Copyright 2026 KMEE INFORMATICA LTDA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import re
+
 from odoo import api, fields
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import TAX_FRAMEWORK_SIMPLES_ALL
@@ -96,7 +98,17 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
     nfse10_cLocPrestacao = fields.Char(related="issqn_fg_city_id.ibge_code")
     nfse10_cTribNac = fields.Char(related="national_taxation_code_id.code")
     nfse10_cTribMun = fields.Char(related="city_taxation_code_id.code")
-    nfse10_cNBS = fields.Char(related="nbs_id.code")
+    # O cadastro de NBS guarda o codigo com mascara ("1.2001.50.00") porque e
+    # assim que ele e exibido, e o layout quer os 9 digitos crus ("120015000").
+    # Conferido na nota real 28 da Zitron, cuja tag traz sem separador e cujo
+    # DANFSE imprime com.
+    nfse10_cNBS = fields.Char(compute="_compute_nfse10_cnbs")
+
+    @api.depends("nbs_id.code")
+    def _compute_nfse10_cnbs(self):
+        for rec in self:
+            rec.nfse10_cNBS = re.sub(r"\D", "", rec.nbs_id.code or "") or False
+
     nfse10_xDescServ = fields.Char(related="name")
 
     nfse10_vServ = fields.Char(compute="_compute_nfse10_valores")
@@ -142,12 +154,18 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
     nfse10_pTotTribEst = fields.Char(compute="_compute_nfse10_tot_trib")
     nfse10_pTotTribMun = fields.Char(compute="_compute_nfse10_tot_trib")
 
+    @api.depends("discount_value", "issqn_desc_cond_amount")
     def _compute_nfse10_self(self):
         for rec in self:
             rec.nfse10_locPrest = rec.id
             rec.nfse10_cServ = rec.id
             rec.nfse10_vServPrest = rec.id
-            rec.nfse10_vDescCondIncond = rec.id
+            # Grupo opcional: apontar sempre para o registro serializa
+            # <vDescCondIncond/> vazio, porque os dois filhos ficam False quando nao ha
+            # desconto. Tag vazia e recusa no XSD.
+            rec.nfse10_vDescCondIncond = (
+                rec.id if (rec.discount_value or rec.issqn_desc_cond_amount) else False
+            )
             rec.nfse10_trib = rec.id
             rec.nfse10_tribMun = rec.id
             rec.nfse10_tribFed = rec.id
