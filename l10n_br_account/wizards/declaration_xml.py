@@ -12,6 +12,7 @@ number that looks plausible and is off by a factor of ten, so the scale lives
 next to each field instead of being guessed at the call site.
 """
 
+import re
 from datetime import date
 from xml.etree import ElementTree
 
@@ -160,7 +161,202 @@ def parse_declaration(content):
         "insurance": _amount(declaration, "seguroTotalReais"),
         "icms_value": _amount(icms, "valorTotalIcms") if icms is not None else 0.0,
         "customhouse_charges": _customhouse_charges(declaration),
+        # The Siscomex XML never states this on its own: AFRMM is a payment
+        # to a different fund, not a customs charge of the DI itself. Left at
+        # 0.0 here on purpose, so a maritime import through this reader still
+        # needs the operator to type it once — the TXT reader below does not.
+        "afrmm": 0.0,
         "gross_weight": _amount(declaration, "cargaPesoBruto", WEIGHT),
         "net_weight": _amount(declaration, "cargaPesoLiquido", WEIGHT),
         "additions": _additions(declaration),
+    }
+
+
+def _brl_to_float(raw):
+    """"1.705,10" the way the despachante writes it, not "1705.10"."""
+    return float(raw.replace(".", "").replace(",", "."))
+
+
+def _txt_field(parts, index, default=""):
+    return parts[index].strip() if index < len(parts) else default
+
+
+def _txt_date(raw):
+    raw = (raw or "").strip()
+    try:
+        return date.fromisoformat(raw)
+    except ValueError:
+        return False
+
+
+def parse_txt_declaration(content):
+    """Turn the despachante's draft-invoice TXT into the same plain data
+    `parse_declaration` returns from the Siscomex XML.
+
+    The DI itself never states the Import Tax per addition on paper — the
+    despachante already worked it out here, item by item, precisely because
+    nobody types nine tariff lines by hand. One line per record, fields
+    separated by "|": `H` opens an item block, `I` carries the item, `I18`
+    carries the DI reference and the addition number (field 6, constant
+    across every item of the same addition — `I25`'s own field 2 is only the
+    item's sequence in the draft invoice, not the addition), `N02` is the
+    ICMS, `O07`+`O10` the IPI, `P` the Import Tax (base at position 1, value
+    at position 3), `Q02` the PIS, `S02` the COFINS.
+
+    A DI addition groups every item bought under the same tariff treatment
+    (NCM, exporter, incoterm), so more than one `H` block shares the same
+    addition number here whenever the shipment repeats an item under it —
+    exactly the shape of the Talleres Zitrón DUIMP, one addition (001) for
+    all seven items. Blocks are merged back into one addition per number
+    below, the same way `_additions` already groups `mercadoria` items under
+    one `adicao` when reading the Siscomex XML.
+    """
+    text = content.decode("latin-1") if isinstance(content, bytes) else content
+    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+
+    header = {}
+    additions = []
+    current = None
+    for raw_line in lines:
+        if not raw_line.strip():
+            continue
+        parts = raw_line.split("|")
+        tag = parts[0].strip()
+        if tag == "C02":
+            header["importer_document"] = _txt_field(parts, 1)
+        elif tag == "E" and "exporter" not in header:
+            header["exporter"] = _txt_field(parts, 1)
+        elif tag == "E05" and "origin_country" not in header:
+            header["origin_country"] = _txt_field(parts, 10)
+        elif tag == "H":
+            current = {
+                "customs_value": 0.0,
+                "ii_value": 0.0,
+                "ipi_rate": 0.0,
+                "ipi_value": 0.0,
+                "pis_rate": 0.0,
+                "pis_value": 0.0,
+                "cofins_value": 0.0,
+                "icms_value": 0.0,
+            }
+            additions.append(current)
+        elif tag == "I" and current is not None:
+            current["product_code"] = _txt_field(parts, 1)
+            current["description"] = _txt_field(parts, 4)
+            current["ncm"] = _ncm(_txt_field(parts, 5))
+            current["uom"] = _txt_field(parts, 7)
+            current["quantity"] = float(_txt_field(parts, 8) or 0)
+            current["net_weight"] = float(_txt_field(parts, 14) or 0)
+        elif tag == "I18" and current is not None:
+            header.setdefault("number", _txt_field(parts, 1))
+            header.setdefault("registration_date", _txt_field(parts, 2))
+            header.setdefault("clearance_place", _txt_field(parts, 3))
+            header.setdefault("clearance_state", _txt_field(parts, 4))
+            current["addition_number"] = _txt_field(parts, 6)
+        elif tag == "N02" and current is not None:
+            current["icms_value"] = float(_txt_field(parts, 6) or 0)
+        elif tag == "O07" and current is not None:
+            current["ipi_value"] = float(_txt_field(parts, 2) or 0)
+        elif tag == "O10" and current is not None:
+            current["ipi_rate"] = float(_txt_field(parts, 2) or 0)
+        elif tag == "P" and current is not None:
+            current["customs_value"] = float(_txt_field(parts, 1) or 0)
+            current["ii_value"] = float(_txt_field(parts, 3) or 0)
+        elif tag == "Q02" and current is not None:
+            current["pis_rate"] = float(_txt_field(parts, 3) or 0)
+            current["pis_value"] = float(_txt_field(parts, 4) or 0)
+        elif tag == "S02" and current is not None:
+            current["cofins_value"] = float(_txt_field(parts, 4) or 0)
+        elif tag == "Z":
+            afrmm = re.search(r"A\.F\.R\.M\.M\.?\s*[:\-]*\s*R\$\s*([\d.,]+)", raw_line)
+            if afrmm:
+                header["afrmm"] = _brl_to_float(afrmm.group(1))
+            siscomex = re.search(
+                r"Taxa Siscomex\s*[:\-]*\s*R\$\s*([\d.,]+)", raw_line
+            )
+            if siscomex:
+                header["customhouse_charges"] = _brl_to_float(siscomex.group(1))
+
+    if not additions:
+        raise DeclarationXmlError(
+            "No H/addition record found. The expected file is the "
+            "despachante's draft-invoice TXT (H/I/I18/N02/O07/O10/P/Q02/S02 "
+            "records), not the Siscomex XML."
+        )
+
+    exporter = header.get("exporter", "")
+    origin_country = header.get("origin_country", "")
+    grouped = {}
+    order = []
+    for addition in additions:
+        number = addition.get("addition_number", "") or "1"
+        if number not in grouped:
+            grouped[number] = []
+            order.append(number)
+        grouped[number].append(addition)
+
+    prepared_additions = []
+    for number in order:
+        items = grouped[number]
+        customs_value = sum(item["customs_value"] for item in items)
+        ii_value = sum(item["ii_value"] for item in items)
+        ii_rate = (
+            round(ii_value / customs_value * 100, 2) if customs_value else 0.0
+        )
+        first = items[0]
+        prepared_additions.append(
+            {
+                "number": f"{int(number):03d}" if number.isdigit() else number,
+                "ncm": first.get("ncm", ""),
+                "customs_value": customs_value,
+                "goods_value": customs_value,
+                "ii_rate": ii_rate,
+                "ii_value": ii_value,
+                "ipi_rate": first["ipi_rate"],
+                "ipi_value": sum(item["ipi_value"] for item in items),
+                "pis_rate": first["pis_rate"],
+                "pis_value": sum(item["pis_value"] for item in items),
+                "cofins_value": sum(item["cofins_value"] for item in items),
+                "net_weight": sum(item.get("net_weight", 0.0) for item in items),
+                "exporter": exporter,
+                "manufacturer": "",
+                "origin_country": origin_country,
+                "items": [
+                    {
+                        "sequence": f"{sequence:02d}",
+                        "description": (
+                            f"{item.get('product_code', '')} - "
+                            f"{item.get('description', '')}"
+                        ),
+                        "quantity": item.get("quantity", 0.0),
+                        "unit_value": 0.0,
+                        "uom": item.get("uom", ""),
+                    }
+                    for sequence, item in enumerate(items, start=1)
+                ],
+            }
+        )
+
+    registration_date = _txt_date(header.get("registration_date"))
+    return {
+        "number": header.get("number", ""),
+        "registration_date": registration_date,
+        # The despachante's draft never states whether it cleared yet — this
+        # file is drawn up the moment the DUIMP registers, not when customs
+        # releases the goods. Registration date is the only one there is.
+        "clearance_date": registration_date,
+        # Not a field the TXT states either. AFRMM only applies to maritime
+        # freight, so its presence is the signal this shipment came by sea.
+        "transport_via": "1" if header.get("afrmm") else "",
+        "clearance_place": header.get("clearance_place", ""),
+        "clearance_state": header.get("clearance_state", ""),
+        "importer_document": header.get("importer_document", ""),
+        "freight": 0.0,
+        "insurance": 0.0,
+        "icms_value": sum(a["icms_value"] for a in additions),
+        "customhouse_charges": header.get("customhouse_charges", 0.0),
+        "afrmm": header.get("afrmm", 0.0),
+        "gross_weight": 0.0,
+        "net_weight": sum(a.get("net_weight", 0.0) for a in additions),
+        "additions": prepared_additions,
     }
