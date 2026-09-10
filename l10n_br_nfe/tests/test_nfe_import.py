@@ -64,9 +64,12 @@ class NFeImportTest(TransactionCase):
             "leiauteNFe",
             "35180834128745000152550010000474281920007498-nfe.xml",
         )
-        resource_path = "/".join(res_items)
-        nfe_stream = pkg_resources.resource_stream(nfelib.__name__, resource_path)
-        xml = nfe_stream.read().decode()
+        xml = (
+            importlib.resources.files(nfelib.__name__)
+            .joinpath(*res_items)
+            .read_bytes()
+            .decode()
+        )
         xml = re.sub(r"<cEAN>[^<]*</cEAN>", "<cEAN>SEM GTIN</cEAN>", xml)
         xml = re.sub(
             r"<cEANTrib>[^<]*</cEANTrib>", "<cEANTrib>SEM GTIN</cEANTrib>", xml
@@ -273,9 +276,12 @@ class NFeImportTest(TransactionCase):
             "leiauteNFe",
             "35180834128745000152550010000474281920007498-nfe.xml",
         )
-        resource_path = "/".join(res_items)
-        nfe_stream = pkg_resources.resource_stream(nfelib.__name__, resource_path)
-        return nfe_stream.read().decode()
+        return (
+            importlib.resources.files(nfelib.__name__)
+            .joinpath(*res_items)
+            .read_bytes()
+            .decode()
+        )
 
     def test_import_out_nfe(self):
         "(can be useful after an ERP migration)"
@@ -313,9 +319,12 @@ class NFeImportTest(TransactionCase):
             "leiauteNFe",
             "35180834128745000152550010000474281920007498-nfe.xml",
         )
-        resource_path = "/".join(res_items)
-        nfe_stream = pkg_resources.resource_stream(nfelib.__name__, resource_path)
-        xml = nfe_stream.read().decode()
+        xml = (
+            importlib.resources.files(nfelib.__name__)
+            .joinpath(*res_items)
+            .read_bytes()
+            .decode()
+        )
         ipi = (
             "<IPI><cEnq>999</cEnq><IPITrib>"
             "<CST>50</CST><vBC>50.60</vBC><pIPI>6.50</pIPI><vIPI>3.29</vIPI>"
