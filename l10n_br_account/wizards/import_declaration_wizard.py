@@ -6,7 +6,11 @@ import base64
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
-from .declaration_xml import DeclarationXmlError, parse_declaration
+from .declaration_xml import (
+    DeclarationXmlError,
+    parse_declaration,
+    parse_txt_declaration,
+)
 
 INTERMEDIATION = [
     ("1", "1 - Por conta propria"),
@@ -269,9 +273,22 @@ class ImportDeclarationWizard(models.TransientModel):
         }
 
     def _load_declaration(self):
+        """Pick the reader by what the file actually is, not by its name.
+
+        The Siscomex XML is what the DI is really made of; the despachante's
+        TXT is what an operator actually has on hand most of the time, since
+        nobody prints a DI to a filing cabinet anymore and the broker's own
+        software never emits the Siscomex shape. Sniffing the content instead
+        of trusting the extension means a renamed file still loads.
+        """
         self.ensure_one()
+        content = base64.b64decode(self.di_file)
+        is_xml = content.lstrip()[:1] in (b"<", b"\xef")
         try:
-            declaration = parse_declaration(base64.b64decode(self.di_file))
+            if is_xml:
+                declaration = parse_declaration(content)
+            else:
+                declaration = parse_txt_declaration(content)
         except DeclarationXmlError as error:
             raise UserError(str(error)) from error
         self.update(self._values_from_declaration(declaration))
@@ -315,6 +332,8 @@ class ImportDeclarationWizard(models.TransientModel):
             values["clearance_state_id"] = state.id
         if declaration["customhouse_charges"] and not self.customhouse_charges:
             values["customhouse_charges"] = declaration["customhouse_charges"]
+        if declaration.get("afrmm") and not self.afrmm_value:
+            values["afrmm_value"] = declaration["afrmm"]
         if declaration["icms_value"] and not self.icms_value:
             values["icms_value"] = declaration["icms_value"]
         exporter = next(
@@ -659,13 +678,21 @@ class ImportDeclarationWizard(models.TransientModel):
         return blocks
 
     def _customhouse_charges_by_line(self, blocks):
+        """The Siscomex fee and the AFRMM both ride the ICMS "por dentro"
+        base as customs charges of the whole despatch — neither belongs to
+        any one addition. Splitting only the Siscomex fee and leaving the
+        AFRMM out of the base is what left the ICMS short on a maritime
+        import: the note computed without it, the declaration charged with
+        it, and the two never closed.
+        """
         self.ensure_one()
         empty = self._bill_lines().browse()
         all_lines = sum((block["lines"] for block in blocks), empty)
-        if not self.customhouse_charges or not all_lines:
+        total_charges = self.customhouse_charges + self.afrmm_value
+        if not total_charges or not all_lines:
             return {}
         shares = self._shares(all_lines)
-        parts = self._split(self.customhouse_charges, shares, self.company_currency_id)
+        parts = self._split(total_charges, shares, self.company_currency_id)
         return dict(zip(all_lines.ids, parts))
 
     def _write_block(self, document, block, customhouse_by_line):
@@ -680,6 +707,7 @@ class ImportDeclarationWizard(models.TransientModel):
             for fname, amount in block["taxes"].items()
         }
         Line = self.env["l10n_br_fiscal.document.line"]
+        pairs = []
         for position, bill_line in enumerate(lines):
             # The values of the declaration were paid, so they win over any
             # recomputation from rates. ii_declared_value has to be there from
@@ -702,6 +730,7 @@ class ImportDeclarationWizard(models.TransientModel):
                     **declared_taxes,
                 )
             )
+            pairs.append((bill_line, line))
             self._write_declaration(
                 line, number=block["number"], manufacturer=block["manufacturer"]
             )
@@ -749,6 +778,11 @@ class ImportDeclarationWizard(models.TransientModel):
             )
             if declared:
                 vprod_gross = gross + declared
+                # freight_value and insurance_value are added back on top of
+                # vProd by _add_fields_to_amount, so they have to come out of
+                # the unit price here — otherwise the note's total counts the
+                # customs value's own freight and insurance twice.
+                vprod_gross -= line.freight_value + line.insurance_value
                 values["price_unit"] = vprod_gross / line.quantity
                 values["ipi_base"] = line.ipi_base
                 values["ipi_percent"] = line.ipi_percent
@@ -759,7 +793,22 @@ class ImportDeclarationWizard(models.TransientModel):
                 values["cofins_base"] = line.cofins_base
                 values["cofins_percent"] = line.cofins_percent
                 values["cofins_value"] = line.cofins_value
+            # II sits inside vProd, PIS/COFINS inside vOutro and ICMS inside
+            # its own grossed base: the fiscal total already carries them all,
+            # and each one still gets its own tax line in the accounting. They
+            # have to be declared as included, or the goods line books them a
+            # second time and the payable overshoots the note. IBS/CBS are
+            # only stated in 2026, not charged, so they come out the same way.
+            values["amount_tax_included"] = (
+                declared
+                + values.get("icms_value", line.icms_value)
+                + line.pis_value
+                + line.cofins_value
+                + line.ibs_value
+                + line.cbs_value
+            )
             line.write(values)
+        return pairs
 
     def action_generate_document(self):
         """Write the entry note from the bill and the declaration."""
@@ -775,11 +824,22 @@ class ImportDeclarationWizard(models.TransientModel):
         )
         blocks = self._blocks()
         customhouse_by_line = self._customhouse_charges_by_line(blocks)
+        pairs = []
         for block in blocks:
-            self._write_block(document, block, customhouse_by_line)
+            pairs.extend(self._write_block(document, block, customhouse_by_line))
 
         document.invalidate_recordset()
         self._check_against_declaration(document)
+        # The values are the declaration's now, not the product file's. Marking
+        # the document as imported freezes them against any later recompute and
+        # makes the accounting book them as-is, the way an imported NF-e is.
+        # Only then can each bill line adopt its new fiscal line: the move line
+        # delegates its fiscal fields to it, and adopting it before the freeze
+        # let the bill line's own onchange chain rewrite the line from the
+        # product's rate.
+        document.imported_document = True
+        for bill_line, line in pairs:
+            bill_line.fiscal_document_line_id = line
         self.document_id = document
         self.move_id.fiscal_document_id = document
         if shadow_document and shadow_document.state_edoc == "em_digitacao":
