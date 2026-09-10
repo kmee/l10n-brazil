@@ -10,6 +10,10 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import TAX_FRAMEWORK_SIMPLES_AL
 from odoo.addons.l10n_br_nfse.constants.nfse import ISSQN_TO_TRIBUTACAO_ISS
 from odoo.addons.spec_driven_model.models import spec_models
 
+# xDescServ e TSDesc2000 no esquema: 2000 caracteres. A descricao composta da nota
+# real tem cerca de 330, entao o corte e rede de seguranca, nao regra de negocio.
+LIMITE_XDESCSERV = 2000
+
 
 class L10nBrFiscalDocumentLine(spec_models.SpecModel):
     _name = "l10n_br_fiscal.document.line"
@@ -109,7 +113,27 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
         for rec in self:
             rec.nfse10_cNBS = re.sub(r"\D", "", rec.nbs_id.code or "") or False
 
-    nfse10_xDescServ = fields.Char(related="name")
+    # A NFS-e nao tem tag de informacao adicional por item: o que a nota carrega do
+    # servico e o xDescServ, e nada mais. E ha cliente que exige ali o boletim de
+    # medicao, o contrato, o pedido, a competencia, o centro de custo, o vencimento e
+    # os dados bancarios — foi assim na nota real 28 da Zitron, emitida por fora.
+    #
+    # `additional_data` da linha ja e o texto renderizado dos comentarios fiscais de
+    # linha (l10n_br_fiscal.comment com object de linha), que sao TEMPLATE Jinja com
+    # `doc` e `item` no contexto e vem configurados na propria linha de operacao. O
+    # `manual_additional_data` entra na mesma renderizacao, para a parte que muda por
+    # nota. Faltava so levar isso ao xDescServ.
+    #
+    # Quando ha texto composto ele SUBSTITUI o nome, em vez de se somar: a nota real
+    # nao prefixa nome de produto, e um template que queira o nome escreve
+    # ${item.name}. Sem comentario nenhum, cai no nome da linha, que e o de hoje.
+    nfse10_xDescServ = fields.Char(compute="_compute_nfse10_xdescserv")
+
+    @api.depends("name", "additional_data")
+    def _compute_nfse10_xdescserv(self):
+        for rec in self:
+            texto = (rec.additional_data or "").strip() or (rec.name or "").strip()
+            rec.nfse10_xDescServ = texto[:LIMITE_XDESCSERV] or False
 
     nfse10_vServ = fields.Char(compute="_compute_nfse10_valores")
     nfse10_vDescIncond = fields.Char(compute="_compute_nfse10_valores")
