@@ -1393,6 +1393,39 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         readonly=False,
     )
 
+    # cLocPrestacao. Municipio onde o servico foi PRESTADO, que nao e o mesmo que o
+    # municipio do fato gerador do ISSQN: pelo art. 3 caput da LC 116 o imposto e devido
+    # no estabelecimento do prestador, e a prestacao pode ocorrer em qualquer lugar. A
+    # NFS-e nacional pede os dois e o ambiente nacional deriva a incidencia do que a
+    # gente manda aqui — na nota real 28 da Zitron a prestacao esta em Jaguarari e a
+    # incidencia volta em Indaiatuba.
+    #
+    # Campo proprio porque `issqn_fg_city_id` ja alimenta o cMunFG da NF-e, que e o fato
+    # gerador. Um campo nao serve aos dois quando eles divergem, e divergir e o caso
+    # comum de quem presta servico na planta do cliente.
+    issqn_service_city_id = fields.Many2one(
+        comodel_name="res.city",
+        compute="_compute_issqn_service_city_id",
+        string="Service City",
+        store=True,
+        precompute=True,
+        readonly=False,
+    )
+
+    @api.depends("partner_id.city_id", "issqn_fg_city_id", "tax_icms_or_issqn")
+    def _compute_issqn_service_city_id(self):
+        """Servico prestado tende a ocorrer no municipio do tomador.
+
+        So vale para linha de servico: mercadoria nao tem local de prestacao. Fora
+        disso cai no municipio do fato gerador, que e o comportamento antigo. O campo
+        e editavel, porque quem sabe onde o servico foi feito e quem o fez.
+        """
+        for line in self:
+            cidade = False
+            if line.tax_icms_or_issqn == "issqn" and line.partner_id.city_id:
+                cidade = line.partner_id.city_id
+            line.issqn_service_city_id = cidade or line.issqn_fg_city_id
+
     # vDeducao
     issqn_deduction_amount = fields.Monetary(string="ISSQN Deduction Value")
 

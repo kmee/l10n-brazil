@@ -99,7 +99,11 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
     )
 
     # Fields mapped to tags
-    nfse10_cLocPrestacao = fields.Char(related="issqn_fg_city_id.ibge_code")
+    # Local da PRESTACAO, nao do fato gerador do ISSQN: ver issqn_service_city_id
+    # em l10n_br_fiscal. Era related do fato gerador, que cai na cidade da empresa
+    # quando nao ha codigo municipal, e por isso a nota saia sempre com o municipio
+    # do emitente.
+    nfse10_cLocPrestacao = fields.Char(related="issqn_service_city_id.ibge_code")
     nfse10_cTribNac = fields.Char(related="national_taxation_code_id.code")
     nfse10_cTribMun = fields.Char(related="city_taxation_code_id.code")
     # O cadastro de NBS guarda o codigo com mascara ("1.2001.50.00") porque e
