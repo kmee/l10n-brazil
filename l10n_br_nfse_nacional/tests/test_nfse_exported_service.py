@@ -32,6 +32,16 @@ class TestNfseExportedService(TransactionCase):
         self.line.issqn_eligibility = "1"
         self.assertEqual(self.line.nfse10_tribISSQN, "1")
 
+    def test_a_new_line_is_taxable_and_not_exempt(self):
+        """The default used to be "2", so every line was born declaring no incidence.
+
+        That went out as tribISSQN 3 next to an ISS rate, which is a contradiction the
+        real note from the national emitter does not have: it carries 1.
+        """
+        line = self.env["l10n_br_fiscal.document.line"].new({})
+        self.assertEqual(line.issqn_eligibility, "1")
+        self.assertEqual(line.nfse10_tribISSQN, "1")
+
     def test_a_taker_abroad_carries_its_own_tax_number(self):
         self.abroad.vat = "ESA58818501"
         self.assertEqual(self.abroad.nfse10_NIF, "ESA58818501")
