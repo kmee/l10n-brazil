@@ -4,10 +4,17 @@ import os
 import re
 import tempfile
 
+import nfelib
 import pytz
 from nfelib import CommonMixin
-from nfelib.nfse.bindings.v1_0.dps_v1_00 import Dps
+from nfelib.nfse.bindings.v1_0.dps_v1_01 import Dps
 from nfelib.nfse.bindings.v1_0.ped_reg_evento_v1_00 import PedRegEvento
+from nfelib.nfse.bindings.v1_0.tipos_complexos_v1_01 import (
+    TcrtcinfoIbscbs,
+    TcrtcinfoTributosIbscbs,
+    TcrtcinfoTributosSitClas,
+    TcrtcinfoValoresIbscbs,
+)
 from nfelib.nfse.bindings.v1_0.tipos_eventos_v1_00 import (
     TcinfPedReg,
     Te101101,
@@ -21,6 +28,7 @@ from odoo.exceptions import UserError
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     EVENT_ENV_HML,
     EVENT_ENV_PROD,
+    FINAL_CUSTOMER_NO,
     MODELO_FISCAL_NFSE,
     PROCESSADOR_OCA,
     SITUACAO_EDOC_AUTORIZADA,
@@ -32,13 +40,38 @@ from odoo.addons.spec_driven_model.models import spec_models
 from ..constants.nfse_nacional import (
     ADN_BASE_URL,
     DANFSE_NACIONAL_TEMPLATE,
+    IBSCBS_FIN_NFSE_NORMAL,
+    IBSCBS_IND_DEST_TOMADOR,
     NFSE_NACIONAL_CANCEL_EVENT,
     NFSE_NACIONAL_CANCEL_OFICIO_EVENT,
+    NFSE_NACIONAL_LAYOUT_VERSION,
     PROVEDOR_NFSE_NACIONAL,
 )
 from ..transport.adn_rest import AdnRestClient
 
 BRAZIL_TZ = pytz.timezone("America/Sao_Paulo")
+
+
+# TSSerieDPS in the official 1.01 schema carries the pattern "^0{0,4}\\d{1,5}$".
+# XML Schema treats "^" and "$" as literal characters, not anchors, and maxLength
+# is 5, so no numeric serie can ever match it: only an absurd value like "^7$"
+# validates. This single error is dropped until the schema itself is corrected.
+SERIE_ELEMENT = "{http://www.sped.fazenda.gov.br/nfse}serie"
+SERIE_DEFECTIVE_PATTERN = "^0{0,4}\\d{1,5}$"
+
+
+def is_serie_pattern_defect(error):
+    return SERIE_ELEMENT in error and SERIE_DEFECTIVE_PATTERN in error
+
+
+def nfse_nacional_schema_path():
+    return os.path.join(
+        os.path.dirname(nfelib.__file__),
+        "nfse",
+        "schemas",
+        "v1_01",
+        "DPS_v1.01.xsd",
+    )
 
 
 def filter_nfse_nacional(record):
@@ -59,9 +92,9 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
     ]
 
     _nfse10_odoo_module = (
-        "odoo.addons.l10n_br_nfse_spec.models.v1_0.tipos_complexos_v1_00"
+        "odoo.addons.l10n_br_nfse_spec.models.v1_0.tipos_complexos_v1_01"
     )
-    _nfse10_binding_module = "nfelib.nfse.bindings.v1_0.tipos_complexos_v1_00"
+    _nfse10_binding_module = "nfelib.nfse.bindings.v1_0.tipos_complexos_v1_01"
     _nfse10_binding_type = "TcinfDps"  # Tcdps"
     #    _nfse10_binding_module = "nfelib.nfse.bindings.v1_0.dps_v1_00"
     #    _nfse10_binding_type = "Dps" #Tcdps"
@@ -116,14 +149,19 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
 
     @api.depends("document_date", "date_in_out")
     def _compute_nfse10_dates(self):
+        # dCompet is the competence of the service, not the day the DPS was
+        # issued: a note cut on the 1st for the previous month would otherwise
+        # declare the ISSQN in the wrong period.
         for rec in self:
             if rec.document_date:
                 local_dt = pytz.utc.localize(rec.document_date).astimezone(BRAZIL_TZ)
                 rec.nfse10_dhEmi = local_dt.isoformat(timespec="seconds")
-                rec.nfse10_dCompet = rec.document_date.strftime("%Y-%m-%d")
             else:
                 rec.nfse10_dhEmi = False
-                rec.nfse10_dCompet = False
+            competence = rec.date_in_out or rec.document_date
+            rec.nfse10_dCompet = (
+                competence.strftime("%Y-%m-%d") if competence else False
+            )
 
     @api.depends("fiscal_line_ids")
     def _compute_nfse10_serv_valores(self):
@@ -135,11 +173,45 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
                 rec.nfse10_serv = False
                 rec.nfse10_valores = False
 
+    def _nfse10_ibscbs_line(self):
+        self.ensure_one()
+        return self.fiscal_line_ids[:1]
+
+    def _build_nfse10_gibscbs(self):
+        line = self._nfse10_ibscbs_line()
+        return TcrtcinfoTributosSitClas(
+            CST=line._nfse10_ibscbs_cst(),
+            cClassTrib=line._nfse10_ibscbs_class_trib(),
+        )
+
+    def _build_nfse10_ibscbs(self):
+        self.ensure_one()
+        line = self._nfse10_ibscbs_line()
+        indicator = line.operation_indicator_id.code
+        if not indicator:
+            return False
+        return TcrtcinfoIbscbs(
+            finNFSe=IBSCBS_FIN_NFSE_NORMAL,
+            indFinal=self.ind_final or FINAL_CUSTOMER_NO,
+            cIndOp=indicator,
+            indDest=IBSCBS_IND_DEST_TOMADOR,
+            valores=TcrtcinfoValoresIbscbs(
+                trib=TcrtcinfoTributosIbscbs(gIBSCBS=self._build_nfse10_gibscbs())
+            ),
+        )
+
+    def _export_field(self, xsd_field, class_obj, field_spec, export_value=None):
+        if xsd_field == "nfse10_IBSCBS":
+            return self._build_nfse10_ibscbs()
+        return super()._export_field(xsd_field, class_obj, field_spec, export_value)
+
     def _export_many2one(self, field_name, xsd_required, class_obj=None):
         if field_name == "nfse10_infDPS":
             return self._build_binding(
                 class_name=class_obj._fields[field_name].comodel_name
             )
+        if field_name == "nfse10_IBSCBS":
+            return self._build_nfse10_ibscbs()
         return super()._export_many2one(field_name, xsd_required, class_obj)
 
     def import_binding_nfse(self, binding, edoc_type="in", dry_run=False):
@@ -197,7 +269,11 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
         for record in self.filtered(filter_nfse_nacional):
             record._ensure_dps_key()
             inf_dps = record._build_binding("nfse", "10")
-            nfse = Dps(infDPS=inf_dps, versao="1.00", signature=None)
+            nfse = Dps(
+                infDPS=inf_dps,
+                versao=NFSE_NACIONAL_LAYOUT_VERSION,
+                signature=None,
+            )
             edocs.append(nfse)
         return edocs
 
@@ -231,8 +307,14 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
         self.ensure_one()
         if not self.filtered(filter_nfse_nacional):
             return super()._validate_xml(xml_file)
-        erros = "\n".join(Dps.schema_validation(xml_file))
-        self.write({"xml_error_message": erros or False})
+        errors = "\n".join(self._nfse10_schema_errors(xml_file))
+        self.write({"xml_error_message": errors or False})
+
+    def _nfse10_schema_errors(self, xml_file):
+        errors = Dps.schema_validation(
+            xml_file, schema_path=nfse_nacional_schema_path()
+        )
+        return [error for error in errors if not is_serie_pattern_defect(error)]
 
     def _nfse_nacional_event_env(self):
         self.ensure_one()

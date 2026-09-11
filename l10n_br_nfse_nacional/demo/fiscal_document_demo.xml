@@ -89,6 +89,10 @@
         <field name="issqn_wh_value">0.00</field>
         <field name="tax_icms_or_issqn">issqn</field>
         <field name="issqn_eligibility">1</field>
+        <field
+            name="operation_indicator_id"
+            ref="l10n_br_fiscal.operation_indicator_050103"
+        />
     </record>
 
     <!-- DEMO 2: SIMPLES NACIONAL (SN) -->
@@ -127,5 +131,9 @@
         <field name="issqn_desc_cond_amount">9.99</field>
         <field name="tax_icms_or_issqn">issqn</field>
         <field name="issqn_eligibility">1</field>
+        <field
+            name="operation_indicator_id"
+            ref="l10n_br_fiscal.operation_indicator_050103"
+        />
     </record>
 </odoo>

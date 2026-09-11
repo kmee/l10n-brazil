@@ -10,9 +10,16 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import TAX_FRAMEWORK_SIMPLES_AL
 from odoo.addons.l10n_br_nfse.constants.nfse import ISSQN_TO_TRIBUTACAO_ISS
 from odoo.addons.spec_driven_model.models import spec_models
 
-# xDescServ e TSDesc2000 no esquema: 2000 caracteres. A descricao composta da nota
-# real tem cerca de 330, entao o corte e rede de seguranca, nao regra de negocio.
-LIMITE_XDESCSERV = 2000
+from ..constants.nfse_nacional import (
+    IBSCBS_CLASS_TRIB_DEFAULT,
+    IBSCBS_CST_DEFAULT,
+    TP_RET_PIS_COFINS,
+)
+
+# xDescServ is a TSDesc2000 in the schema: 2000 characters. The composed
+# description of the real note runs about 330, so the cut is a safety net
+# rather than a business rule.
+XDESCSERV_MAX_LENGTH = 2000
 
 
 class L10nBrFiscalDocumentLine(spec_models.SpecModel):
@@ -29,16 +36,17 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
         "nfse.10.tcvdesccondincond",
         "nfse.10.tcinfotributacao",
         "nfse.10.tctribmunicipal",
-        "nfse.10.tctribnacional",
+        "nfse.10.tctribfederal",
         "nfse.10.tctriboutrospiscofins",
         "nfse.10.tctribtotal",
+        "nfse.10.tctribtotalmonet",
         "nfse.10.tctribtotalpercent",
     ]
 
     _nfse10_odoo_module = (
-        "odoo.addons.l10n_br_nfse_spec.models.v1_0.tipos_complexos_v1_00"
+        "odoo.addons.l10n_br_nfse_spec.models.v1_0.tipos_complexos_v1_01"
     )
-    _nfse10_binding_module = "nfelib.nfse.bindings.v1_0.tipos_complexos_v1_00"
+    _nfse10_binding_module = "nfelib.nfse.bindings.v1_0.tipos_complexos_v1_01"
     _nfse10_binding_type_serv = "Tcserv"
     _nfse10_binding_type_valores = "TcinfoValores"
     _nfse10_binding_type_vServPrest = "TcvservPrest"
@@ -48,8 +56,11 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
     _nfse10_binding_type_locPrest = "TclocPrest"
     _nfse10_binding_type_cServ = "Tccserv"
     _nfse10_binding_type_tribMun = "TctribMunicipal"
-    _nfse10_binding_type_tribFed = "TctribNacional"
+    # In 1.01 TCTribNacional became TCTribFederal (nfelib PR #105, "TribNac
+    # renamed to tribFed"). The tag name stays tribFed in both versions.
+    _nfse10_binding_type_tribFed = "TctribFederal"
     _nfse10_binding_type_totTrib = "TctribTotal"
+    _nfse10_binding_type_vTotTrib = "TctribTotalMonet"
     _nfse10_binding_type_pTotTrib = "TctribTotalPercent"
 
     nfse10_locPrest = fields.Many2one(
@@ -137,7 +148,7 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
     def _compute_nfse10_xdescserv(self):
         for rec in self:
             texto = (rec.additional_data or "").strip() or (rec.name or "").strip()
-            rec.nfse10_xDescServ = texto[:LIMITE_XDESCSERV] or False
+            rec.nfse10_xDescServ = texto[:XDESCSERV_MAX_LENGTH] or False
 
     nfse10_vServ = fields.Char(compute="_compute_nfse10_valores")
     nfse10_vDescIncond = fields.Char(compute="_compute_nfse10_valores")
@@ -181,6 +192,14 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
     nfse10_pTotTribFed = fields.Char(compute="_compute_nfse10_tot_trib")
     nfse10_pTotTribEst = fields.Char(compute="_compute_nfse10_tot_trib")
     nfse10_pTotTribMun = fields.Char(compute="_compute_nfse10_tot_trib")
+    nfse10_vTotTrib = fields.Many2one(
+        "l10n_br_fiscal.document.line",
+        compute="_compute_nfse10_tot_trib",
+        string="Valor Total de Tributos",
+    )
+    nfse10_vTotTribFed = fields.Char(compute="_compute_nfse10_tot_trib")
+    nfse10_vTotTribEst = fields.Char(compute="_compute_nfse10_tot_trib")
+    nfse10_vTotTribMun = fields.Char(compute="_compute_nfse10_tot_trib")
 
     @api.depends("discount_value", "issqn_desc_cond_amount")
     def _compute_nfse10_self(self):
@@ -215,27 +234,42 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
 
     @api.depends("issqn_wh_value")
     def _compute_nfse10_trib_mun(self):
-        # O binding do nfelib nasce do esquema v1.00, que ordena o pAliq antes do
-        # tpRetISSQN. O esquema v1.01, que o ambiente nacional aplica, espera ele
-        # depois, e rejeita com E1235. O campo e opcional nos dois esquemas e a
-        # aliquota do ISSQN vem do cadastro do municipio na propria ADN, entao
-        # nao informar e o unico caminho valido para as duas versoes.
+        # pAliq is optional and the ISSQN rate comes from the municipality
+        # register inside the ADN, which applies it to the declared base.
+        # Sending it again only diverges the day the municipality changes it.
         for rec in self:
             rec.nfse10_pAliq = False
             rec.nfse10_tpRetISSQN = "2" if rec.issqn_wh_value > 0 else "1"
 
-    @api.depends("inss_wh_value", "irpj_wh_value", "csll_wh_value")
+    def _nfse10_csrf_withholding(self):
+        self.ensure_one()
+        return self.csll_wh_value + self.pis_wh_value + self.cofins_wh_value
+
+    def _nfse10_federal_withholding(self):
+        self.ensure_one()
+        return self.irpj_wh_value + self._nfse10_csrf_withholding()
+
+    @api.depends(
+        "inss_wh_value",
+        "irpj_wh_value",
+        "csll_wh_value",
+        "pis_wh_value",
+        "cofins_wh_value",
+    )
     def _compute_nfse10_trib_fed(self):
+        # tribFed holds no monetary field for the PIS/COFINS withheld: the
+        # layout only flags them in tpRetPisCofins. The CSRF of Lei 10.833
+        # art. 30 is therefore declared as a single amount in vRetCSLL, which
+        # is what makes vTotalRet on the DANFSE close.
         for rec in self:
+            csrf = rec._nfse10_csrf_withholding()
             rec.nfse10_vRetCP = (
                 f"{rec.inss_wh_value:.2f}" if rec.inss_wh_value else False
             )
             rec.nfse10_vRetIRRF = (
                 f"{rec.irpj_wh_value:.2f}" if rec.irpj_wh_value else False
             )
-            rec.nfse10_vRetCSLL = (
-                f"{rec.csll_wh_value:.2f}" if rec.csll_wh_value else False
-            )
+            rec.nfse10_vRetCSLL = f"{csrf:.2f}" if csrf else False
 
     @api.depends(
         "pis_cst_code",
@@ -247,6 +281,7 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
         "cofins_value",
         "pis_wh_value",
         "cofins_wh_value",
+        "csll_wh_value",
     )
     def _compute_nfse10_pis_cofins(self):
         valid_cst = dict(self._fields["nfse10_CST"].selection)
@@ -263,22 +298,28 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
             rec.nfse10_vCofins = (
                 f"{rec.cofins_value:.2f}" if rec.cofins_value else False
             )
-            rec.nfse10_tpRetPisCofins = (
-                "1" if (rec.pis_wh_value or rec.cofins_wh_value) else "2"
-            )
+            rec.nfse10_tpRetPisCofins = TP_RET_PIS_COFINS[
+                (
+                    bool(rec.pis_wh_value),
+                    bool(rec.cofins_wh_value),
+                    bool(rec.csll_wh_value),
+                )
+            ]
 
     @api.depends(
         "company_id.tax_framework",
         "company_id.simplified_tax_range_id.total_tax_percent",
-        "pis_percent",
-        "cofins_percent",
-        "issqn_percent",
+        "irpj_wh_value",
+        "csll_wh_value",
+        "pis_wh_value",
+        "cofins_wh_value",
+        "issqn_value",
     )
     def _compute_nfse10_tot_trib(self):
-        # O grupo totTrib e um xs:choice obrigatorio entre vTotTrib, pTotTrib,
-        # indTotTrib e pTotTribSN. A rejeicao E0713 do ambiente nacional proibe
-        # indTotTrib e pTotTribSN para quem nao e optante do Simples Nacional,
-        # que por isso informa a carga aproximada em pTotTrib.
+        # totTrib is a required xs:choice between vTotTrib, pTotTrib,
+        # indTotTrib and pTotTribSN. Rejection E0713 of the national
+        # environment bars indTotTrib and pTotTribSN outside Simples Nacional,
+        # which therefore declares the burden as an amount in vTotTrib.
         for rec in self:
             simples = rec.company_id.tax_framework in TAX_FRAMEWORK_SIMPLES_ALL
             percent = (
@@ -286,21 +327,40 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
                 if simples
                 else 0.0
             )
+            rec.nfse10_pTotTrib = False
+            rec.nfse10_pTotTribFed = False
+            rec.nfse10_pTotTribEst = False
+            rec.nfse10_pTotTribMun = False
             if simples:
                 rec.nfse10_indTotTrib = False if percent else "0"
                 rec.nfse10_pTotTribSN = f"{percent:.2f}" if percent else False
-                rec.nfse10_pTotTrib = False
-                rec.nfse10_pTotTribFed = False
-                rec.nfse10_pTotTribEst = False
-                rec.nfse10_pTotTribMun = False
+                rec.nfse10_vTotTrib = False
+                rec.nfse10_vTotTribFed = False
+                rec.nfse10_vTotTribEst = False
+                rec.nfse10_vTotTribMun = False
             else:
                 rec.nfse10_indTotTrib = False
                 rec.nfse10_pTotTribSN = False
-                rec.nfse10_pTotTrib = rec.id
-                federal = (rec.pis_percent or 0.0) + (rec.cofins_percent or 0.0)
-                rec.nfse10_pTotTribFed = f"{federal:.2f}"
-                rec.nfse10_pTotTribEst = "0.00"
-                rec.nfse10_pTotTribMun = f"{rec.issqn_percent or 0.0:.2f}"
+                rec.nfse10_vTotTrib = rec.id
+                rec.nfse10_vTotTribFed = f"{rec._nfse10_federal_withholding():.2f}"
+                rec.nfse10_vTotTribEst = "0.00"
+                rec.nfse10_vTotTribMun = f"{rec.issqn_value or 0.0:.2f}"
+
+    def _nfse10_ibscbs_cst(self):
+        self.ensure_one()
+        if self.ibs_cst_id.code:
+            return self.ibs_cst_id.code
+        if self.cbs_cst_id.code:
+            return self.cbs_cst_id.code
+        if self.tax_classification_id.code:
+            return self.tax_classification_id.code.zfill(6)[:3]
+        return IBSCBS_CST_DEFAULT
+
+    def _nfse10_ibscbs_class_trib(self):
+        self.ensure_one()
+        if self.tax_classification_id.code:
+            return self.tax_classification_id.code.zfill(6)
+        return IBSCBS_CLASS_TRIB_DEFAULT
 
     def _export_many2one(self, field_name, xsd_required, class_obj=None):
         internal_stack_mappings = [
@@ -313,6 +373,7 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
             "nfse10_tribFed",
             "nfse10_piscofins",
             "nfse10_totTrib",
+            "nfse10_vTotTrib",
             "nfse10_pTotTrib",
         ]
         if field_name in internal_stack_mappings:

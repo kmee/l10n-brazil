@@ -12,11 +12,11 @@ from odoo.addons import l10n_br_nfse_nacional
 class NfseImportTest(TransactionCase):
     def test_import_dps(self):
         try:
-            from nfelib.nfse.bindings.v1_0.tipos_complexos_v1_00 import DPS
+            from nfelib.nfse.bindings.v1_0.tipos_complexos_v1_01 import DPS
         except ImportError:
             return  # Skip gracefully if nfelib nfse national schema isn't present
 
-        res_items = ("tests", "nfse", "v1_00", "DPS", "dps-regime-normal.xml")
+        res_items = ("tests", "nfse", "v1_01", "DPS", "dps-regime-normal.xml")
         resource_path = "/".join(res_items)
         dps_file = importlib.resources.files(l10n_br_nfse_nacional.__name__).joinpath(
             resource_path

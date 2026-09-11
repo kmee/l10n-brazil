@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
+<DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01">
     <infDPS Id="DPS140015920176113500013200900000000000000006">
         <tpAmb>2</tpAmb>
         <dhEmi>2022-09-28T13:50:29-03:00</dhEmi>
@@ -42,7 +42,7 @@
                 <tribFed>
                     <piscofins>
                         <CST>00</CST>
-                        <tpRetPisCofins>2</tpRetPisCofins>
+                        <tpRetPisCofins>0</tpRetPisCofins>
                     </piscofins>
                 </tribFed>
                 <totTrib>
@@ -50,5 +50,19 @@
                 </totTrib>
             </trib>
         </valores>
+        <IBSCBS>
+            <finNFSe>0</finNFSe>
+            <indFinal>0</indFinal>
+            <cIndOp>050103</cIndOp>
+            <indDest>0</indDest>
+            <valores>
+                <trib>
+                    <gIBSCBS>
+                        <CST>000</CST>
+                        <cClassTrib>000001</cClassTrib>
+                    </gIBSCBS>
+                </trib>
+            </valores>
+        </IBSCBS>
     </infDPS>
 </DPS>

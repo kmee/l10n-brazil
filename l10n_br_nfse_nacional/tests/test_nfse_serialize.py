@@ -6,7 +6,7 @@ import logging
 import os
 import tempfile
 
-from nfelib.nfse.bindings.v1_0.tipos_complexos_v1_00 import TcinfDps
+from nfelib.nfse.bindings.v1_0.tipos_complexos_v1_01 import TcinfDps
 from xmldiff import main
 from xsdata.formats.dataclass.serializers import XmlSerializer
 from xsdata.formats.dataclass.serializers.config import SerializerConfig
@@ -48,7 +48,7 @@ class TestNfseSerialize(TransactionCase):
             l10n_br_nfse_nacional.__path__[0],
             "tests",
             "nfse",
-            "v1_00",
+            "v1_01",
             "DPS",
             nfse_data["xml_file"],
         )

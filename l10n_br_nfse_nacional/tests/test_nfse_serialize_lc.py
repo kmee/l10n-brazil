@@ -28,17 +28,19 @@ class TestNfseExportLC(TestNfseSerialize):
             diff = self.serialize_xml(nfse_data)
             self.assertEqual(len(diff), 0)
 
-    def test_tot_trib_uses_percent_group(self):
-        """Outside Simples Nacional the burden goes in pTotTrib, never indTotTrib.
+    def test_tot_trib_uses_the_monetary_group(self):
+        """Outside Simples Nacional the burden goes in vTotTrib as an amount.
 
         Informing indTotTrib or pTotTribSN is what the national environment
-        rejects with E0713.
+        rejects with E0713, and the national web emitter declares the amounts,
+        which is what the taker reconciles against vTotalRet.
         """
         line = self.nfse_list[0]["nfse"].fiscal_line_ids[0]
         self.assertFalse(line.nfse10_indTotTrib)
         self.assertFalse(line.nfse10_pTotTribSN)
-        self.assertTrue(line.nfse10_pTotTrib)
-        self.assertEqual(line.nfse10_pTotTribEst, "0.00")
+        self.assertFalse(line.nfse10_pTotTrib)
+        self.assertTrue(line.nfse10_vTotTrib)
+        self.assertEqual(line.nfse10_vTotTribEst, "0.00")
 
     def test_dps_key_is_composed_from_the_document(self):
         """The DPS key is composed by the module, never typed by hand.
@@ -69,9 +71,9 @@ class TestNfseExportLC(TestNfseSerialize):
     def test_paliq_stays_out_of_trib_mun(self):
         """pAliq is never exported, even with an ISSQN rate on the line.
 
-        The nfelib binding comes from the v1.00 schema, which puts pAliq before
-        tpRetISSQN inside tribMun. The v1.01 schema the national environment
-        applies expects it after, and rejects the DPS with E1235.
+        The rate lives in the municipality register inside the ADN, which
+        applies it to the declared base. Sending it again only creates a
+        divergence the day the municipality changes it.
         """
         line = self.nfse_list[0]["nfse"].fiscal_line_ids[0]
         line.issqn_percent = 2.5

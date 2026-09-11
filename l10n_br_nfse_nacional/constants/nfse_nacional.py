@@ -25,3 +25,24 @@ NFSE_NACIONAL_CANCEL_MOTIVES = [
     ("2", "Serviço não prestado"),
     ("9", "Outros"),
 ]
+
+IBSCBS_CST_DEFAULT = "000"
+IBSCBS_CLASS_TRIB_DEFAULT = "000001"
+IBSCBS_FIN_NFSE_NORMAL = "0"
+IBSCBS_IND_DEST_TOMADOR = "0"
+
+# Withholding type for PIS/COFINS (TSTipoRetPISCofins, tiposComplexos_v1.01.xsd).
+# The schema table lists ten codes, but 1 and 2 say nothing about the CSLL, while
+# 0 and 3 to 9 already name all eight combinations of PIS, COFINS and CSLL held.
+TP_RET_PIS_COFINS = {
+    (False, False, False): "0",
+    (True, True, True): "3",
+    (True, True, False): "4",
+    (True, False, False): "5",
+    (False, True, False): "6",
+    (False, True, True): "7",
+    (False, False, True): "8",
+    (True, False, True): "9",
+}
+
+NFSE_NACIONAL_LAYOUT_VERSION = "1.01"

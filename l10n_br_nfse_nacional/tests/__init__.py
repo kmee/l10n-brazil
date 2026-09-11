@@ -9,3 +9,4 @@ from . import test_nfse_lifecycle
 from . import test_danfse_report
 from . import test_nfse_exported_service
 from . import test_nfse_optional_groups
+from . import test_nfse_ibscbs
