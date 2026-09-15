@@ -309,14 +309,21 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
         self.ensure_one()
         if not self.filtered(filter_nfse_nacional):
             return super()._validate_xml(xml_file)
-        errors = "\n".join(self._nfse10_schema_errors(xml_file))
-        self.write({"xml_error_message": errors or False})
+        errors = self._nfse10_schema_errors(xml_file) + self._nfse10_business_errors()
+        self.write({"xml_error_message": "\n".join(errors) or False})
 
     def _nfse10_schema_errors(self, xml_file):
         errors = Dps.schema_validation(
             xml_file, schema_path=nfse_nacional_schema_path()
         )
         return [error for error in errors if not is_serie_pattern_defect(error)]
+
+    def _nfse10_business_errors(self):
+        self.ensure_one()
+        errors = []
+        for line in self.fiscal_line_ids:
+            errors += line._nfse10_issqn_situation_errors()
+        return errors
 
     def _nfse_nacional_event_env(self):
         self.ensure_one()

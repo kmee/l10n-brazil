@@ -1,7 +1,7 @@
 {
     "name": "NFS-e Nacional",
     "summary": "Brazilian Electronic Invoice for Services (National Standard)",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.1.0",
     "category": "Localisation",
     "license": "AGPL-3",
     "author": "Akretion, KMEE, Odoo Community Association (OCA)",
@@ -24,6 +24,7 @@
     "data": [
         "wizards/document_cancel_wizard.xml",
         "views/document_view.xml",
+        "views/document_line_view.xml",
         "report/danfse_nacional.xml",
     ],
     "demo": [

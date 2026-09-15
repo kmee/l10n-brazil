@@ -4,15 +4,16 @@
 
 import re
 
-from odoo import api, fields
+from odoo import _, api, fields
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import TAX_FRAMEWORK_SIMPLES_ALL
-from odoo.addons.l10n_br_nfse.constants.nfse import ISSQN_TO_TRIBUTACAO_ISS
 from odoo.addons.spec_driven_model.models import spec_models
 
 from ..constants.nfse_nacional import (
     IBSCBS_CLASS_TRIB_DEFAULT,
     IBSCBS_CST_DEFAULT,
+    ISSQN_ELIGIBILITY_TO_TP_SUSP,
+    ISSQN_ELIGIBILITY_TO_TRIB_ISSQN,
     TP_RET_PIS_COFINS,
 )
 
@@ -36,6 +37,9 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
         "nfse.10.tcvdesccondincond",
         "nfse.10.tcinfotributacao",
         "nfse.10.tctribmunicipal",
+        "nfse.10.tcexigsuspensa",
+        "nfse.10.tcbeneficiomunicipal",
+        "nfse.10.tccomexterior",
         "nfse.10.tctribfederal",
         "nfse.10.tctriboutrospiscofins",
         "nfse.10.tctribtotal",
@@ -56,6 +60,9 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
     _nfse10_binding_type_locPrest = "TclocPrest"
     _nfse10_binding_type_cServ = "Tccserv"
     _nfse10_binding_type_tribMun = "TctribMunicipal"
+    _nfse10_binding_type_exigSusp = "TcexigSuspensa"
+    _nfse10_binding_type_BM = "TcbeneficioMunicipal"
+    _nfse10_binding_type_comExt = "TccomExterior"
     # In 1.01 TCTribNacional became TCTribFederal (nfelib PR #105, "TribNac
     # renamed to tribFed"). The tag name stays tribFed in both versions.
     _nfse10_binding_type_tribFed = "TctribFederal"
@@ -92,6 +99,21 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
         "l10n_br_fiscal.document.line",
         compute="_compute_nfse10_self",
         string="Tributos Municipais",
+    )
+    nfse10_exigSusp = fields.Many2one(
+        "l10n_br_fiscal.document.line",
+        compute="_compute_nfse10_self",
+        string="Exigibilidade Suspensa",
+    )
+    nfse10_BM = fields.Many2one(
+        "l10n_br_fiscal.document.line",
+        compute="_compute_nfse10_self",
+        string="Benefício Municipal",
+    )
+    nfse10_comExt = fields.Many2one(
+        "l10n_br_fiscal.document.line",
+        compute="_compute_nfse10_self",
+        string="Comércio Exterior",
     )
     nfse10_tribFed = fields.Many2one(
         "l10n_br_fiscal.document.line",
@@ -163,9 +185,25 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
     @api.depends("issqn_eligibility")
     def _compute_nfse10_tribISSQN(self):
         for record in self:
-            record.nfse10_tribISSQN = ISSQN_TO_TRIBUTACAO_ISS.get(
+            record.nfse10_tribISSQN = ISSQN_ELIGIBILITY_TO_TRIB_ISSQN.get(
                 record.issqn_eligibility, "1"
             )
+
+    nfse10_tpImunidade = fields.Selection(
+        compute="_compute_nfse10_trib_mun",
+        store=True,
+        readonly=False,
+    )
+    nfse10_cPaisResult = fields.Char(
+        compute="_compute_nfse10_trib_mun",
+        store=True,
+        readonly=False,
+    )
+    nfse10_tpSusp = fields.Selection(
+        compute="_compute_nfse10_trib_mun",
+        store=True,
+        readonly=False,
+    )
 
     nfse10_tpRetISSQN = fields.Selection(compute="_compute_nfse10_trib_mun")
     nfse10_pAliq = fields.Char(compute="_compute_nfse10_trib_mun")
@@ -201,7 +239,7 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
     nfse10_vTotTribEst = fields.Char(compute="_compute_nfse10_tot_trib")
     nfse10_vTotTribMun = fields.Char(compute="_compute_nfse10_tot_trib")
 
-    @api.depends("discount_value", "issqn_desc_cond_amount")
+    @api.depends("discount_value", "issqn_desc_cond_amount", "issqn_eligibility")
     def _compute_nfse10_self(self):
         for rec in self:
             rec.nfse10_locPrest = rec.id
@@ -215,6 +253,11 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
             )
             rec.nfse10_trib = rec.id
             rec.nfse10_tribMun = rec.id
+            rec.nfse10_exigSusp = (
+                rec.id if rec.issqn_eligibility in ("6", "7") else False
+            )
+            rec.nfse10_BM = rec.id if rec.issqn_eligibility == "3" else False
+            rec.nfse10_comExt = rec.id if rec.issqn_eligibility == "4" else False
             rec.nfse10_tribFed = rec.id
             rec.nfse10_piscofins = rec.id
             rec.nfse10_totTrib = rec.id
@@ -232,7 +275,7 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
                 else False
             )
 
-    @api.depends("issqn_wh_value")
+    @api.depends("issqn_wh_value", "issqn_eligibility", "partner_id.country_id")
     def _compute_nfse10_trib_mun(self):
         # pAliq is optional and the ISSQN rate comes from the municipality
         # register inside the ADN, which applies it to the declared base.
@@ -240,6 +283,15 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
         for rec in self:
             rec.nfse10_pAliq = False
             rec.nfse10_tpRetISSQN = "2" if rec.issqn_wh_value > 0 else "1"
+            rec.nfse10_tpImunidade = "0" if rec.issqn_eligibility == "5" else False
+            rec.nfse10_cPaisResult = (
+                rec.partner_id.country_id.code
+                if rec.issqn_eligibility == "4"
+                else False
+            )
+            rec.nfse10_tpSusp = ISSQN_ELIGIBILITY_TO_TP_SUSP.get(
+                rec.issqn_eligibility, False
+            )
 
     def _nfse10_csrf_withholding(self):
         self.ensure_one()
@@ -362,6 +414,61 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
             return self.tax_classification_id.code.zfill(6)
         return IBSCBS_CLASS_TRIB_DEFAULT
 
+    def _nfse10_com_ext_missing_fields(self):
+        self.ensure_one()
+        required = (
+            "nfse10_mdPrestacao",
+            "nfse10_vincPrest",
+            "nfse10_tpMoeda",
+            "nfse10_vServMoeda",
+            "nfse10_mecAFComexP",
+            "nfse10_mecAFComexT",
+            "nfse10_movTempBens",
+            "nfse10_mdic",
+        )
+        return [field_name for field_name in required if not self[field_name]]
+
+    def _nfse10_issqn_situation_errors(self):
+        self.ensure_one()
+        errors = []
+        if self.nfse10_tribISSQN == "3":
+            missing = self._nfse10_com_ext_missing_fields()
+            if not self.nfse10_cPaisResult:
+                missing.append("nfse10_cPaisResult")
+            if missing:
+                errors.append(
+                    _(
+                        "Line %(line)s is an export of service (issqn_eligibility "
+                        "'4') and is missing: %(fields)s.",
+                        line=self.display_name,
+                        fields=", ".join(missing),
+                    )
+                )
+        if self.issqn_eligibility in ("6", "7") and not self.nfse10_nProcesso:
+            errors.append(
+                _(
+                    "Line %(line)s has a suspended ISSQN liability and is "
+                    "missing nfse10_nProcesso.",
+                    line=self.display_name,
+                )
+            )
+        if self.issqn_eligibility == "3":
+            missing = []
+            if not self.nfse10_nBM:
+                missing.append("nfse10_nBM")
+            if not (self.nfse10_vRedBCBM or self.nfse10_pRedBCBM):
+                missing.append("nfse10_vRedBCBM or nfse10_pRedBCBM")
+            if missing:
+                errors.append(
+                    _(
+                        "Line %(line)s is an ISSQN exemption and is missing: "
+                        "%(fields)s.",
+                        line=self.display_name,
+                        fields=", ".join(missing),
+                    )
+                )
+        return errors
+
     def _export_many2one(self, field_name, xsd_required, class_obj=None):
         internal_stack_mappings = [
             "nfse10_locPrest",
@@ -370,6 +477,9 @@ class L10nBrFiscalDocumentLine(spec_models.SpecModel):
             "nfse10_vDescCondIncond",
             "nfse10_trib",
             "nfse10_tribMun",
+            "nfse10_exigSusp",
+            "nfse10_BM",
+            "nfse10_comExt",
             "nfse10_tribFed",
             "nfse10_piscofins",
             "nfse10_totTrib",

@@ -1,0 +1,44 @@
+<odoo>
+    <record id="document_line_form" model="ir.ui.view">
+        <field name="name">l10n_br_nfse_nacional.document.line.form</field>
+        <field name="model">l10n_br_fiscal.document.line</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.document_line_form" />
+        <field name="arch" type="xml">
+            <notebook position="inside">
+                <page name="nfse10_issqn_situation" string="ISSQN Nacional">
+                    <group
+                        string="Exportação de Serviço"
+                        invisible="issqn_eligibility != '4'"
+                    >
+                        <field name="nfse10_cPaisResult" />
+                        <field name="nfse10_mdPrestacao" />
+                        <field name="nfse10_vincPrest" />
+                        <field name="nfse10_tpMoeda" />
+                        <field name="nfse10_vServMoeda" />
+                        <field name="nfse10_mecAFComexP" />
+                        <field name="nfse10_mecAFComexT" />
+                        <field name="nfse10_movTempBens" />
+                        <field name="nfse10_mdic" />
+                        <field name="nfse10_nDI" />
+                        <field name="nfse10_nRE" />
+                    </group>
+                    <group string="Isenção" invisible="issqn_eligibility != '3'">
+                        <field name="nfse10_nBM" />
+                        <field name="nfse10_vRedBCBM" />
+                        <field name="nfse10_pRedBCBM" />
+                    </group>
+                    <group
+                        string="Exigibilidade Suspensa"
+                        invisible="issqn_eligibility not in ('6', '7')"
+                    >
+                        <field name="nfse10_tpSusp" />
+                        <field name="nfse10_nProcesso" />
+                    </group>
+                    <group string="Imunidade" invisible="issqn_eligibility != '5'">
+                        <field name="nfse10_tpImunidade" />
+                    </group>
+                </page>
+            </notebook>
+        </field>
+    </record>
+</odoo>

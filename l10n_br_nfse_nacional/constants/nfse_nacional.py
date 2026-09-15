@@ -45,4 +45,19 @@ TP_RET_PIS_COFINS = {
     (True, False, True): "9",
 }
 
+ISSQN_ELIGIBILITY_TO_TRIB_ISSQN = {
+    "1": "1",
+    "2": "4",
+    "3": "1",
+    "4": "3",
+    "5": "2",
+    "6": "1",
+    "7": "1",
+}
+
+ISSQN_ELIGIBILITY_TO_TP_SUSP = {
+    "6": "1",
+    "7": "2",
+}
+
 NFSE_NACIONAL_LAYOUT_VERSION = "1.01"
