@@ -96,6 +96,22 @@ class TestNfseLifecycle(TransactionCase):
         self.assertFalse(self.doc.edoc_error_message)
         self.assertEqual(self.doc.authorization_event_id.state, "done")
 
+    def test_send_button_reaches_the_adn(self):
+        """The Send button must POST the DPS, not just move the state.
+
+        The state machine writes the new state before running the transition's
+        `after` callbacks, so the send hook already sees `enviada`. A guard
+        accepting only `a_enviar` skipped the POST in silence: the document
+        showed "Aguardando processamento" while the ADN had never heard of it,
+        and the reconciliation by DPS id answered E2404.
+        """
+        with mock.patch(SESSION_POST, return_value=mock_response(AUTHORIZED)) as post:
+            self.doc.action_document_confirm()
+            self.assertEqual(self.doc.state_edoc, "a_enviar")
+            self.doc.action_document_send()
+            self.assertTrue(post.called, "the Send button did not reach the ADN")
+        self.assertEqual(self.doc.state_edoc, "autorizada")
+
     def test_issuance_rejected(self):
         with mock.patch(SESSION_POST, return_value=mock_response(REJECTED, 400)):
             self.doc.action_document_confirm()

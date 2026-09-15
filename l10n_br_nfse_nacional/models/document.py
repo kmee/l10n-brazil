@@ -26,6 +26,7 @@ from odoo import _, api, fields
 from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
+    DOCUMENT_STATE_OPEN,
     EVENT_ENV_HML,
     EVENT_ENV_PROD,
     FINAL_CUSTOMER_NO,
@@ -35,6 +36,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     SITUACAO_EDOC_CANCELADA,
     SITUACAO_EDOC_REJEITADA,
 )
+from odoo.addons.l10n_br_fiscal_edi.constants.fiscal import DOCUMENT_STATE_SENDING
 from odoo.addons.spec_driven_model.models import spec_models
 
 from ..constants.nfse_nacional import (
@@ -339,7 +341,13 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
                         "errors": record.xml_error_message,
                     }
                 )
-            if record.state_edoc != "a_enviar":
+            # The state machine writes the new state before running the
+            # transition's `after` callbacks, so by the time the send runs the
+            # document already sits in `enviada`. Accepting only `a_enviar`
+            # made the button change the state and transmit nothing, without
+            # an error: the document stayed waiting for a DPS the ADN never
+            # received. Same pair of states the NF-e module accepts.
+            if record.state_edoc not in (DOCUMENT_STATE_OPEN, DOCUMENT_STATE_SENDING):
                 continue
             record._adn_send_for_authorization()
         return result
