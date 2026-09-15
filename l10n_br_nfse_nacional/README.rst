@@ -112,6 +112,11 @@ Implemented:
 - DANFSe rendered from the authorized NFS-e XML by
   ``brazilfiscalreport``, in the v2.0 layout of NT 008/2026, with no
   call to any portal.
+- ``tribISSQN`` mapped from ``issqn_eligibility`` by the national
+  ``TSTribISSQN`` enum, distinct from the ABRASF table. Export of
+  service, ISSQN exemption and suspended liability carry their own group
+  (``comExt``, ``BM``, ``exigSusp``); the send is blocked with a
+  readable message when the group is incomplete.
 
 Not yet implemented (next iteration):
 

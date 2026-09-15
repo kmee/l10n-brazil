@@ -460,6 +460,11 @@ and <tt class="docutils literal">305101</tt>).</li>
 <li>DANFSe rendered from the authorized NFS-e XML by
 <tt class="docutils literal">brazilfiscalreport</tt>, in the v2.0 layout of NT 008/2026, with no
 call to any portal.</li>
+<li><tt class="docutils literal">tribISSQN</tt> mapped from <tt class="docutils literal">issqn_eligibility</tt> by the national
+<tt class="docutils literal">TSTribISSQN</tt> enum, distinct from the ABRASF table. Export of
+service, ISSQN exemption and suspended liability carry their own group
+(<tt class="docutils literal">comExt</tt>, <tt class="docutils literal">BM</tt>, <tt class="docutils literal">exigSusp</tt>); the send is blocked with a
+readable message when the group is incomplete.</li>
 </ul>
 <p>Not yet implemented (next iteration):</p>
 <ul class="simple">
