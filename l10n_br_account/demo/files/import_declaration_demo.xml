@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ListaDeclaracoes>
+  <declaracaoImportacao>
+    <numeroDI>2600001234</numeroDI>
+    <dataRegistro>20260801</dataRegistro>
+    <dataDesembaraco>20260805</dataDesembaraco>
+    <viaTransporteCodigo>01</viaTransporteCodigo>
+    <armazenamentoRecintoAduaneiroNome>PORTO DE SANTOS</armazenamentoRecintoAduaneiroNome>
+    <importadorNumero>61099008000141</importadorNumero>
+    <caracterizacaoOperacaoCodigoTipo>1</caracterizacaoOperacaoCodigoTipo>
+    <freteTotalReais>50000</freteTotalReais>
+    <seguroTotalReais>10000</seguroTotalReais>
+    <cargaPesoBruto>8000000</cargaPesoBruto>
+    <cargaPesoLiquido>7500000</cargaPesoLiquido>
+    <icms>
+      <ufIcms>SP</ufIcms>
+      <valorTotalIcms>180000</valorTotalIcms>
+    </icms>
+    <adicao>
+      <numeroAdicao>001</numeroAdicao>
+      <dadosMercadoriaCodigoNcm>94013090</dadosMercadoriaCodigoNcm>
+      <iiBaseCalculo>600000</iiBaseCalculo>
+      <condicaoVendaValorReais>600000</condicaoVendaValorReais>
+      <condicaoVendaIncoterm>FOB</condicaoVendaIncoterm>
+      <iiAliquotaAdValorem>1600</iiAliquotaAdValorem>
+      <iiAliquotaValorRecolher>96000</iiAliquotaValorRecolher>
+      <iiRegimeTributacaoCodigo>1</iiRegimeTributacaoCodigo>
+      <ipiAliquotaAdValorem>325</ipiAliquotaAdValorem>
+      <ipiAliquotaValorRecolher>19500</ipiAliquotaValorRecolher>
+      <ipiRegimeTributacaoCodigo>4</ipiRegimeTributacaoCodigo>
+      <pisPasepAliquotaAdValorem>210</pisPasepAliquotaAdValorem>
+      <pisPasepAliquotaValorRecolher>12600</pisPasepAliquotaValorRecolher>
+      <cofinsAliquotaValorRecolher>57900</cofinsAliquotaValorRecolher>
+      <pisCofinsRegimeTributacaoCodigo>1</pisCofinsRegimeTributacaoCodigo>
+      <dadosMercadoriaPesoLiquido>5000000</dadosMercadoriaPesoLiquido>
+      <fornecedorNome>DEMO EXTERIOR EXPORT LLC</fornecedorNome>
+      <fabricanteNome>DEMO EXTERIOR MANUFACTURING LLC</fabricanteNome>
+      <paisOrigemMercadoriaNome>ESTADOS UNIDOS</paisOrigemMercadoriaNome>
+      <dcrIdentificacao>0</dcrIdentificacao>
+      <mercadoria>
+        <numeroSequencialItem>1</numeroSequencialItem>
+        <descricaoMercadoria>CADEIRA DE ESCRITORIO IMPORTADA MODELO A</descricaoMercadoria>
+        <quantidade>1000000</quantidade>
+        <valorUnitario>6000000000</valorUnitario>
+        <unidadeMedida>UN</unidadeMedida>
+      </mercadoria>
+    </adicao>
+    <adicao>
+      <numeroAdicao>002</numeroAdicao>
+      <dadosMercadoriaCodigoNcm>94052000</dadosMercadoriaCodigoNcm>
+      <iiBaseCalculo>300000</iiBaseCalculo>
+      <condicaoVendaValorReais>300000</condicaoVendaValorReais>
+      <condicaoVendaIncoterm>FOB</condicaoVendaIncoterm>
+      <iiAliquotaAdValorem>1600</iiAliquotaAdValorem>
+      <iiAliquotaValorRecolher>48000</iiAliquotaValorRecolher>
+      <iiRegimeTributacaoCodigo>1</iiRegimeTributacaoCodigo>
+      <ipiAliquotaAdValorem>325</ipiAliquotaAdValorem>
+      <ipiAliquotaValorRecolher>9750</ipiAliquotaValorRecolher>
+      <ipiRegimeTributacaoCodigo>4</ipiRegimeTributacaoCodigo>
+      <pisPasepAliquotaAdValorem>210</pisPasepAliquotaAdValorem>
+      <pisPasepAliquotaValorRecolher>6300</pisPasepAliquotaValorRecolher>
+      <cofinsAliquotaValorRecolher>28950</cofinsAliquotaValorRecolher>
+      <pisCofinsRegimeTributacaoCodigo>1</pisCofinsRegimeTributacaoCodigo>
+      <dadosMercadoriaPesoLiquido>2500000</dadosMercadoriaPesoLiquido>
+      <fornecedorNome>DEMO EXTERIOR EXPORT LLC</fornecedorNome>
+      <fabricanteNome>DEMO EXTERIOR MANUFACTURING LLC</fabricanteNome>
+      <paisOrigemMercadoriaNome>ESTADOS UNIDOS</paisOrigemMercadoriaNome>
+      <dcrIdentificacao>0</dcrIdentificacao>
+      <mercadoria>
+        <numeroSequencialItem>1</numeroSequencialItem>
+        <descricaoMercadoria>LUMINARIA DE MESA IMPORTADA MODELO B</descricaoMercadoria>
+        <quantidade>500000</quantidade>
+        <valorUnitario>6000000000</valorUnitario>
+        <unidadeMedida>UN</unidadeMedida>
+      </mercadoria>
+    </adicao>
+    <pagamento>
+      <codigoReceita>7811</codigoReceita>
+      <valorReceita>15000</valorReceita>
+    </pagamento>
+  </declaracaoImportacao>
+</ListaDeclaracoes>

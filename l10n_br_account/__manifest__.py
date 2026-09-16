@@ -37,6 +37,7 @@
     ],
     "demo": [
         "demo/res_users_demo.xml",
+        "demo/import_declaration_demo.xml",
     ],
     "post_init_hook": "post_init_hook",
     "installable": True,
