@@ -1,7 +1,9 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html).
 
-from odoo import fields, models
+import base64
+
+from odoo import api, fields, models
 
 SOURCE_FORMAT = [
     ("xml", "Siscomex XML"),
@@ -156,6 +158,117 @@ class ImportDeclaration(models.Model):
         inverse_name="declaration_id",
         string="Divergences",
     )
+
+    @api.model
+    def create_from_parsed(
+        self, declaration, source_format, raw_file=None, raw_filename=None
+    ):
+        """Persist what `declaration_xml.parse_*` read, nothing discarded.
+
+        `declaration` is the plain dict either parser returns. Every key it
+        already produces lands on a typed column here; every tag the parser
+        could not name (`unmapped_tags`) lands on `extra_field_ids` instead of
+        vanishing, so a file that carries something this reader has no slot
+        for is still fully on record, not silently short of it.
+        """
+        state = self.env["res.country.state"].search(
+            [
+                ("code", "=", declaration.get("clearance_state")),
+                ("country_id.code", "=", "BR"),
+            ],
+            limit=1,
+        )
+        values = {
+            "company_id": self.env.company.id,
+            "number": declaration.get("number") or "",
+            "registration_date": declaration.get("registration_date") or False,
+            "clearance_date": declaration.get("clearance_date") or False,
+            "clearance_place": declaration.get("clearance_place") or "",
+            "clearance_state_id": state.id,
+            "transport_via": declaration.get("transport_via") or "",
+            "operation_type_code": declaration.get("operation_type_code") or "",
+            "importer_document": declaration.get("importer_document") or "",
+            "freight_value": declaration.get("freight") or 0.0,
+            "freight_stated": bool(declaration.get("freight")),
+            "insurance_value": declaration.get("insurance") or 0.0,
+            "insurance_stated": bool(declaration.get("insurance")),
+            "afrmm_value": declaration.get("afrmm") or 0.0,
+            "afrmm_stated": bool(declaration.get("afrmm")),
+            "customhouse_charges": declaration.get("customhouse_charges") or 0.0,
+            "customhouse_charges_stated": bool(
+                declaration.get("customhouse_charges")
+            ),
+            "icms_value": declaration.get("icms_value") or 0.0,
+            "gross_weight": declaration.get("gross_weight") or 0.0,
+            "net_weight": declaration.get("net_weight") or 0.0,
+            "source_format": source_format,
+            "raw_filename": raw_filename or False,
+            "stated_field_names": ", ".join(
+                sorted(
+                    key
+                    for key, value in declaration.items()
+                    if key not in ("additions", "unmapped_tags", "regime_signals")
+                    and value
+                )
+            )
+            or False,
+            "extra_field_ids": [
+                (0, 0, {"record": "header", "tag": tag, "raw_value": ""})
+                for tag in declaration.get("unmapped_tags", [])
+            ],
+            "addition_ids": [
+                (0, 0, self._addition_values_from_parsed(addition))
+                for addition in declaration.get("additions", [])
+            ],
+        }
+        if raw_file is not None:
+            values["raw_file"] = (
+                base64.b64encode(raw_file)
+                if isinstance(raw_file, bytes)
+                else raw_file
+            )
+        return self.create(values)
+
+    @api.model
+    def _addition_values_from_parsed(self, addition):
+        ncm = self.env["l10n_br_fiscal.ncm"].search(
+            [("code", "=", addition.get("ncm"))], limit=1
+        )
+        return {
+            "number": addition.get("number") or "",
+            "ncm_id": ncm.id,
+            "amount_brl": addition.get("goods_value") or 0.0,
+            "net_weight": addition.get("net_weight") or 0.0,
+            "incoterm": addition.get("incoterm") or "",
+            "exporter_name": addition.get("exporter") or "",
+            "manufacturer_name": addition.get("manufacturer") or "",
+            "drawback_act": addition.get("drawback_act") or "",
+            "ii_base": addition.get("customs_value") or 0.0,
+            "ii_rate": addition.get("ii_rate") or 0.0,
+            "ii_value": addition.get("ii_value") or 0.0,
+            "ii_regime_code": addition.get("ii_regime_code") or "",
+            "ipi_rate": addition.get("ipi_rate") or 0.0,
+            "ipi_value": addition.get("ipi_value") or 0.0,
+            "ipi_regime_code": addition.get("ipi_regime_code") or "",
+            "pis_rate": addition.get("pis_rate") or 0.0,
+            "pis_value": addition.get("pis_value") or 0.0,
+            "cofins_value": addition.get("cofins_value") or 0.0,
+            "pis_cofins_regime_code": addition.get("pis_cofins_regime_code") or "",
+            "line_ids": [
+                (
+                    0,
+                    0,
+                    {
+                        "sequence": int(item.get("sequence") or 0) or 10,
+                        "description": item.get("description") or "",
+                        "quantity": item.get("quantity") or 0.0,
+                        "unit_value": item.get("unit_value") or 0.0,
+                        "uom_name": item.get("uom") or "",
+                    },
+                )
+                for item in addition.get("items", [])
+            ],
+        }
 
 
 class ImportDeclarationAddition(models.Model):
