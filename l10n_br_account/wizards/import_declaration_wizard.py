@@ -590,6 +590,16 @@ class ImportDeclarationWizard(models.TransientModel):
         }
         if drawback_act:
             adi_values["nfe40_nDraw"] = drawback_act
+        if self.declaration_id:
+            # Not every addition of the declaration necessarily made it here:
+            # only the one this block covers gets tied to its own persisted
+            # record, and one that finds no match leaves the field empty
+            # rather than pointing at the wrong addition.
+            persisted_addition = self.declaration_id.addition_ids.filtered(
+                lambda a, number=addition_number: a.number == number
+            )[:1]
+            if persisted_addition:
+                adi_values["addition_id"] = persisted_addition.id
         values = {
             "nfe40_nDI": self.di_number,
             "nfe40_dDI": self.di_date,
@@ -599,6 +609,7 @@ class ImportDeclarationWizard(models.TransientModel):
             "nfe40_tpIntermedio": self.intermediation,
             "nfe40_cExportador": exporter or self.exporter_code,
             "state_clearance_id": self.clearance_state_id.id,
+            "declaration_id": self.declaration_id.id,
             "nfe40_adi": [(0, 0, adi_values)],
         }
         if self.afrmm_value:
