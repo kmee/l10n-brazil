@@ -7,10 +7,16 @@ from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 from .declaration_xml import (
+    NORMAL_REGIME_CODE,
     DeclarationXmlError,
     parse_declaration,
     parse_txt_declaration,
 )
+
+SUSPENSION_REGIME_CODE = "4"
+IPI_SUSPENSION_CST = "l10n_br_fiscal.cst_ipi_05"
+PIS_SUSPENSION_CST = "l10n_br_fiscal.cst_pis_72"
+COFINS_SUSPENSION_CST = "l10n_br_fiscal.cst_cofins_72"
 
 INTERMEDIATION = [
     ("1", "1 - Por conta propria"),
@@ -65,12 +71,18 @@ class ImportDeclarationAddition(models.TransientModel):
     )
     ii_rate = fields.Float(string="II %")
     ii_value = fields.Monetary(string="II", currency_field="company_currency_id")
+    ii_regime_code = fields.Char(string="II Regime Code")
     ipi_value = fields.Monetary(string="IPI", currency_field="company_currency_id")
+    ipi_regime_code = fields.Char(string="IPI Regime Code")
     pis_value = fields.Monetary(string="PIS", currency_field="company_currency_id")
     cofins_value = fields.Monetary(
         string="COFINS", currency_field="company_currency_id"
     )
+    pis_cofins_regime_code = fields.Char(string="PIS/COFINS Regime Code")
     manufacturer_code = fields.Char(string="Foreign Manufacturer Code")
+    exporter_code = fields.Char(string="Addition Exporter Code")
+    incoterm = fields.Char(string="Incoterm")
+    drawback_act = fields.Char(string="Drawback Act")
     line_ids = fields.Many2many(
         comodel_name="account.move.line",
         # Named by hand because the one Odoo derives from the two models is
@@ -193,6 +205,14 @@ class ImportDeclarationWizard(models.TransientModel):
         default="1",
         help="Mandatory in the schema and it comes before the exporter code, so "
         "leaving it out makes the validation blame cExportador instead.",
+    )
+    acquirer_partner_id = fields.Many2one(
+        comodel_name="res.partner",
+        string="Acquirer",
+        help="The buyer on whose behalf the goods were imported, on an "
+        "intermediated import. The declaration never states who this is, only "
+        "that the import was intermediated: the operator has to pick the "
+        "partner by hand.",
     )
     afrmm_value = fields.Monetary(
         string="AFRMM",
@@ -349,6 +369,9 @@ class ImportDeclarationWizard(models.TransientModel):
         )
         if exporter and not self.exporter_code:
             values["exporter_code"] = exporter[:60]
+        operation_type = declaration.get("operation_type_code", "")
+        if operation_type in dict(INTERMEDIATION) and self.intermediation == "1":
+            values["intermediation"] = operation_type
         # The other half of what the matching learns. A line the declaration
         # never mentions and a good with no line are the two faces of an invoice
         # that disagrees with the declaration, and seeing only one of them sends
@@ -388,10 +411,16 @@ class ImportDeclarationWizard(models.TransientModel):
                     "customs_value": addition["customs_value"],
                     "ii_rate": addition["ii_rate"],
                     "ii_value": addition["ii_value"],
+                    "ii_regime_code": addition["ii_regime_code"],
                     "ipi_value": addition["ipi_value"],
+                    "ipi_regime_code": addition["ipi_regime_code"],
                     "pis_value": addition["pis_value"],
                     "cofins_value": addition["cofins_value"],
+                    "pis_cofins_regime_code": addition["pis_cofins_regime_code"],
                     "manufacturer_code": addition["manufacturer"][:60] or False,
+                    "exporter_code": addition["exporter"][:60] or False,
+                    "incoterm": addition["incoterm"] or False,
+                    "drawback_act": addition["drawback_act"] or False,
                     "line_ids": [(6, 0, matched.ids)],
                     "unmatched": "\n".join(unmatched) or False,
                 }
@@ -519,9 +548,20 @@ class ImportDeclarationWizard(models.TransientModel):
     def _rate(value, base):
         return (value / base * 100.0) if base else 0.0
 
-    def _di_values(self, number=None, manufacturer=None):
+    def _di_values(
+        self, number=None, manufacturer=None, exporter=None, drawback_act=None
+    ):
         self.ensure_one()
         addition_number = str(int(number or self.addition_number))
+        adi_values = {
+            "nfe40_nAdicao": addition_number,
+            "nfe40_nSeqAdic": "1",
+            "nfe40_cFabricante": manufacturer
+            or self.manufacturer_code
+            or self.exporter_code,
+        }
+        if drawback_act:
+            adi_values["nfe40_nDraw"] = drawback_act
         values = {
             "nfe40_nDI": self.di_number,
             "nfe40_dDI": self.di_date,
@@ -529,27 +569,19 @@ class ImportDeclarationWizard(models.TransientModel):
             "nfe40_dDesemb": self.clearance_date or self.di_date,
             "nfe40_tpViaTransp": self.transport_via,
             "nfe40_tpIntermedio": self.intermediation,
-            "nfe40_cExportador": self.exporter_code,
+            "nfe40_cExportador": exporter or self.exporter_code,
             "state_clearance_id": self.clearance_state_id.id,
-            "nfe40_adi": [
-                (
-                    0,
-                    0,
-                    {
-                        "nfe40_nAdicao": addition_number,
-                        "nfe40_nSeqAdic": "1",
-                        "nfe40_cFabricante": manufacturer
-                        or self.manufacturer_code
-                        or self.exporter_code,
-                    },
-                )
-            ],
+            "nfe40_adi": [(0, 0, adi_values)],
         }
         if self.afrmm_value:
             values["nfe40_vAFRMM"] = self.afrmm_value
+        if self.intermediation != "1" and self.acquirer_partner_id:
+            values["partner_acquirer_id"] = self.acquirer_partner_id.id
         return values
 
-    def _write_declaration(self, line, number=None, manufacturer=None):
+    def _write_declaration(
+        self, line, number=None, manufacturer=None, exporter=None, drawback_act=None
+    ):
         """Attach the declaration to the line, when the NF-e module is there.
 
         Soft dependency: the DI fields come from the NF-e schema and live on the
@@ -565,7 +597,14 @@ class ImportDeclarationWizard(models.TransientModel):
         declaration = (
             self.env["nfe.40.di"]
             .sudo()
-            .create(self._di_values(number=number, manufacturer=manufacturer))
+            .create(
+                self._di_values(
+                    number=number,
+                    manufacturer=manufacturer,
+                    exporter=exporter,
+                    drawback_act=drawback_act,
+                )
+            )
         )
         line.sudo().nfe40_DI = [(6, 0, declaration.ids)]
         return declaration
@@ -660,8 +699,13 @@ class ImportDeclarationWizard(models.TransientModel):
                     "lines": self._bill_lines(),
                     "customs_value": self.customs_value,
                     "taxes": dict(self._tax_fields()),
+                    "forced_taxes": {},
                     "number": self.addition_number,
                     "manufacturer": self.manufacturer_code,
+                    "exporter": self.exporter_code,
+                    "ipi_regime_code": False,
+                    "pis_cofins_regime_code": False,
+                    "drawback_act": False,
                 }
             ]
         blocks = []
@@ -685,11 +729,29 @@ class ImportDeclarationWizard(models.TransientModel):
                         "ii_declared_value": addition.ii_value,
                         "ii_value": addition.ii_value,
                     },
+                    "forced_taxes": self._forced_taxes(addition),
                     "number": addition.number,
                     "manufacturer": addition.manufacturer_code,
+                    "exporter": addition.exporter_code,
+                    "ipi_regime_code": addition.ipi_regime_code,
+                    "pis_cofins_regime_code": addition.pis_cofins_regime_code,
+                    "drawback_act": addition.drawback_act,
                 }
             )
         return blocks
+
+    @staticmethod
+    def _has_special_regime(code):
+        return bool(code) and code != NORMAL_REGIME_CODE
+
+    def _forced_taxes(self, addition):
+        forced = {}
+        if self._has_special_regime(addition.ipi_regime_code):
+            forced["ipi_value"] = addition.ipi_value
+        if self._has_special_regime(addition.pis_cofins_regime_code):
+            forced["pis_value"] = addition.pis_value
+            forced["cofins_value"] = addition.cofins_value
+        return forced
 
     def _customhouse_charges_by_line(self, blocks):
         """The Siscomex fee and the AFRMM both ride the ICMS "por dentro"
@@ -709,6 +771,45 @@ class ImportDeclarationWizard(models.TransientModel):
         parts = self._split(total_charges, shares, self.company_currency_id)
         return dict(zip(all_lines.ids, parts))
 
+    def _apply_forced_taxes(self, line, block, forced, gross, declared):
+        if "ipi_value" in forced:
+            ipi_base = gross + declared
+            line.write(
+                {
+                    "ipi_base": ipi_base,
+                    "ipi_percent": self._rate(forced["ipi_value"], ipi_base),
+                    "ipi_value": forced["ipi_value"],
+                }
+            )
+            if block["ipi_regime_code"] == SUSPENSION_REGIME_CODE:
+                line.ipi_cst_id = self.env.ref(
+                    IPI_SUSPENSION_CST, raise_if_not_found=False
+                )
+        if "pis_value" in forced:
+            line.write(
+                {
+                    "pis_base": gross,
+                    "pis_percent": self._rate(forced["pis_value"], gross),
+                    "pis_value": forced["pis_value"],
+                }
+            )
+            if block["pis_cofins_regime_code"] == SUSPENSION_REGIME_CODE:
+                line.pis_cst_id = self.env.ref(
+                    PIS_SUSPENSION_CST, raise_if_not_found=False
+                )
+        if "cofins_value" in forced:
+            line.write(
+                {
+                    "cofins_base": gross,
+                    "cofins_percent": self._rate(forced["cofins_value"], gross),
+                    "cofins_value": forced["cofins_value"],
+                }
+            )
+            if block["pis_cofins_regime_code"] == SUSPENSION_REGIME_CODE:
+                line.cofins_cst_id = self.env.ref(
+                    COFINS_SUSPENSION_CST, raise_if_not_found=False
+                )
+
     def _write_block(self, document, block, customhouse_by_line):
         """Write the lines of one group, with the tax that belongs to it."""
         self.ensure_one()
@@ -719,6 +820,10 @@ class ImportDeclarationWizard(models.TransientModel):
         tax_parts = {
             fname: self._split(amount, shares, currency)
             for fname, amount in block["taxes"].items()
+        }
+        forced_parts = {
+            fname: self._split(amount, shares, currency)
+            for fname, amount in block["forced_taxes"].items()
         }
         Line = self.env["l10n_br_fiscal.document.line"]
         pairs = []
@@ -746,8 +851,25 @@ class ImportDeclarationWizard(models.TransientModel):
             )
             pairs.append((bill_line, line))
             self._write_declaration(
-                line, number=block["number"], manufacturer=block["manufacturer"]
+                line,
+                number=block["number"],
+                manufacturer=block["manufacturer"],
+                exporter=block["exporter"],
+                drawback_act=block["drawback_act"],
             )
+            forced_here = {
+                fname: parts[position]
+                for fname, parts in forced_parts.items()
+                if parts[position]
+            }
+            if forced_here:
+                self._apply_forced_taxes(
+                    line,
+                    block,
+                    forced_here,
+                    gross_parts[position],
+                    declared_taxes.get("ii_declared_value", 0.0),
+                )
             # On an import CFOP the fiscal amount already adds II, PIS, COFINS,
             # ICMS and the customs charges to the untaxed amount, so the only
             # tax left outside the price is the IPI. Without writing it here the

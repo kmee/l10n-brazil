@@ -45,6 +45,10 @@
                         <field name="clearance_state_id" />
                         <field name="transport_via" />
                         <field name="intermediation" />
+                        <field
+                            name="acquirer_partner_id"
+                            invisible="intermediation == '1'"
+                        />
                     </group>
                     <group string="Addition and Exporter">
                         <field name="addition_number" invisible="addition_ids" />
@@ -73,9 +77,45 @@
                         <field name="customs_value" readonly="1" force_save="1" />
                         <field name="ii_rate" readonly="1" force_save="1" />
                         <field name="ii_value" readonly="1" force_save="1" />
+                        <field
+                            name="ii_regime_code"
+                            readonly="1"
+                            force_save="1"
+                            optional="show"
+                        />
                         <field name="ipi_value" readonly="1" force_save="1" />
+                        <field
+                            name="ipi_regime_code"
+                            readonly="1"
+                            force_save="1"
+                            optional="show"
+                        />
                         <field name="pis_value" readonly="1" force_save="1" />
                         <field name="cofins_value" readonly="1" force_save="1" />
+                        <field
+                            name="pis_cofins_regime_code"
+                            readonly="1"
+                            force_save="1"
+                            optional="show"
+                        />
+                        <field
+                            name="exporter_code"
+                            readonly="1"
+                            force_save="1"
+                            optional="show"
+                        />
+                        <field
+                            name="incoterm"
+                            readonly="1"
+                            force_save="1"
+                            optional="show"
+                        />
+                        <field
+                            name="drawback_act"
+                            readonly="1"
+                            force_save="1"
+                            optional="show"
+                        />
                         <field name="line_ids" widget="many2many_tags" />
                         <field name="unmatched" readonly="1" force_save="1" optional="show" />
                     </list>

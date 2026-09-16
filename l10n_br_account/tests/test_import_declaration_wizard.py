@@ -270,3 +270,115 @@ class TestImportDeclarationWizard(AccountMoveBRCommon):
 
         with self.assertRaises(UserError):
             wizard.action_generate_document()
+
+    def _addition_wizard(self, declared_ipi, declared_pis, declared_cofins, **regime):
+        line = self.bill.invoice_line_ids.filtered(
+            lambda invoice_line: invoice_line.product_id == self.product_a
+        )
+        Line = self.env["l10n_br_fiscal.document.line"]
+        probe = Line.new(
+            {
+                "product_id": self.product_a.id,
+                "fiscal_operation_id": self.operation.id,
+                "fiscal_operation_line_id": self.operation_line.id,
+                "quantity": line.quantity,
+                "price_unit": VALOR_ADUANEIRO / line.quantity,
+                "uom_id": line.product_uom_id.id,
+                "partner_id": self.foreign_partner.id,
+                "ii_declared_value": II,
+                "ii_value": II,
+            }
+        )
+        rate = probe.icms_percent or 0.0
+        before_icms = (
+            VALOR_ADUANEIRO + II + declared_ipi + declared_pis + declared_cofins
+        )
+        expected_icms = before_icms / (1 - rate / 100.0) * rate / 100.0 if rate else 0.0
+        wizard = self.env["l10n_br_account.import.declaration.wizard"].create(
+            {
+                "move_id": self.bill.id,
+                "fiscal_operation_id": self.operation.id,
+                "fiscal_operation_line_id": self.operation_line.id,
+                "document_type_id": self.env.ref("l10n_br_fiscal.document_55").id,
+                "document_date": "2026-07-10 12:00:00",
+                "customs_value": VALOR_ADUANEIRO,
+                "di_number": "26/0755042-3",
+                "di_date": date(2026, 7, 10),
+                "clearance_date": date(2026, 7, 10),
+                "clearance_place": "ALF - URUGUAIANA",
+                "clearance_state_id": self.env.ref("base.state_br_rs").id,
+                "transport_via": "7",
+                "exporter_code": "76900150",
+                "intermediation": "1",
+                "customhouse_charges": 0.0,
+                "icms_value": expected_icms,
+                "addition_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "number": "001",
+                            "customs_value": VALOR_ADUANEIRO,
+                            "ii_value": II,
+                            "ipi_value": declared_ipi,
+                            "pis_value": declared_pis,
+                            "cofins_value": declared_cofins,
+                            "line_ids": [(6, 0, line.ids)],
+                            **regime,
+                        },
+                    )
+                ],
+            }
+        )
+        return wizard
+
+    def test_a_regime_code_forces_the_declared_ipi_over_the_product_rate(self):
+        declared_ipi = 500.0
+        wizard = self._addition_wizard(declared_ipi, PIS, COFINS, ipi_regime_code="4")
+
+        wizard.action_generate_document()
+
+        line = wizard.document_id.fiscal_line_ids[0]
+        self.assertAlmostEqual(line.ipi_value, declared_ipi, places=2)
+        self.assertEqual(line.ipi_cst_id, self.env.ref("l10n_br_fiscal.cst_ipi_05"))
+
+    def test_a_regime_code_forces_the_declared_pis_and_cofins(self):
+        declared_pis = 321.0
+        declared_cofins = 654.0
+        wizard = self._addition_wizard(
+            IPI, declared_pis, declared_cofins, pis_cofins_regime_code="4"
+        )
+
+        wizard.action_generate_document()
+
+        line = wizard.document_id.fiscal_line_ids[0]
+        self.assertAlmostEqual(line.pis_value, declared_pis, places=2)
+        self.assertAlmostEqual(line.cofins_value, declared_cofins, places=2)
+        self.assertEqual(line.pis_cst_id, self.env.ref("l10n_br_fiscal.cst_pis_72"))
+        self.assertEqual(
+            line.cofins_cst_id, self.env.ref("l10n_br_fiscal.cst_cofins_72")
+        )
+
+    def test_the_common_regime_code_does_not_force_anything(self):
+        wizard = self._addition_wizard(IPI, PIS, COFINS, ipi_regime_code="1")
+
+        wizard.action_generate_document()
+
+        line = wizard.document_id.fiscal_line_ids[0]
+        self.assertNotEqual(line.ipi_cst_id, self.env.ref("l10n_br_fiscal.cst_ipi_05"))
+
+    def test_drawback_is_written_onto_the_addition(self):
+        wizard = self._addition_wizard(IPI, PIS, COFINS, drawback_act="12345678")
+
+        wizard.action_generate_document()
+
+        line = wizard.document_id.fiscal_line_ids[0]
+        self.assertEqual(line.nfe40_DI.nfe40_adi[:1].nfe40_nDraw, "12345678")
+
+    def test_the_addition_exporter_wins_over_the_header_one(self):
+        wizard = self._addition_wizard(IPI, PIS, COFINS, exporter_code="99887766")
+
+        wizard.action_generate_document()
+
+        line = wizard.document_id.fiscal_line_ids[0]
+        self.assertEqual(line.nfe40_DI.nfe40_cExportador, "99887766")
