@@ -3,7 +3,7 @@
 
 import base64
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
 
 SOURCE_FORMAT = [
     ("xml", "Siscomex XML"),
@@ -158,6 +158,161 @@ class ImportDeclaration(models.Model):
         inverse_name="declaration_id",
         string="Divergences",
     )
+
+    # Tax domain, (declared base, declared rate, declared value) field names
+    # on the addition, (computed base, computed rate, computed value) field
+    # names on the fiscal line — the addition names its rate `*_rate` and the
+    # line names the same figure `*_percent`, so the two need to be told
+    # apart. The base is the same valor aduaneiro for II, PIS and COFINS
+    # (Art. 75, Decreto 6.759/09; Art. 7º, I, Lei 10.865/04), and IPI's own
+    # base (Art. 190, I, "a", Decreto 7.212/10) only exists on an addition
+    # the TXT reader stated it for.
+    _RECONCILE_TAXES = (
+        ("ii", ("ii_base", "ii_rate", "ii_value"), ("ii_base", "ii_percent", "ii_value")),
+        (
+            "ipi",
+            ("ipi_base", "ipi_rate", "ipi_value"),
+            ("ipi_base", "ipi_percent", "ipi_value"),
+        ),
+        (
+            "pis",
+            ("ii_base", "pis_rate", "pis_value"),
+            ("pis_base", "pis_percent", "pis_value"),
+        ),
+        (
+            "cofins",
+            ("ii_base", "cofins_rate", "cofins_value"),
+            ("cofins_base", "cofins_percent", "cofins_value"),
+        ),
+    )
+
+    def _reconcile(self):
+        """Compare what the declaration charged against what the engine
+        computed for the lines each addition claims, and record every
+        divergence found — this method never blocks; a value divergence
+        that should stop the note is for whoever calls it to act on.
+
+        Compares base, rate and value for II, IPI, PIS and COFINS, one
+        addition at a time, against the sum (value) or the common figure
+        (base, rate) of the fiscal lines the wizard tied to it. An addition
+        with no line tied to it yet has nothing to compare against and is
+        skipped, not flagged.
+        """
+        self.ensure_one()
+        self.divergence_ids.unlink()
+        currency = self.company_currency_id
+        rows = []
+        for addition in self.addition_ids:
+            lines = addition.fiscal_line_ids
+            if not lines:
+                continue
+            tolerance = (currency.rounding or 0.01) * len(lines)
+            for tax_domain, declared_fields, computed_fields in self._RECONCILE_TAXES:
+                declared_base_f, declared_rate_f, declared_value_f = declared_fields
+                computed_base_f, computed_rate_f, computed_value_f = computed_fields
+
+                declared_value = addition[declared_value_f]
+                computed_value = sum(lines.mapped(computed_value_f))
+                rows.append(
+                    self._divergence_row(
+                        addition,
+                        lines,
+                        tax_domain,
+                        "value",
+                        declared_value,
+                        computed_value,
+                        tolerance,
+                    )
+                )
+
+                declared_base = addition[declared_base_f]
+                if declared_base:
+                    computed_bases = set(
+                        currency.round(value)
+                        for value in lines.mapped(computed_base_f)
+                    )
+                    computed_base = (
+                        computed_bases.pop()
+                        if len(computed_bases) == 1
+                        else sum(lines.mapped(computed_base_f))
+                    )
+                    rows.append(
+                        self._divergence_row(
+                            addition,
+                            lines,
+                            tax_domain,
+                            "base",
+                            declared_base,
+                            computed_base,
+                            tolerance,
+                        )
+                    )
+
+                declared_rate = addition[declared_rate_f]
+                if declared_rate:
+                    computed_rates = set(
+                        round(value, 2) for value in lines.mapped(computed_rate_f)
+                    )
+                    computed_rate = (
+                        computed_rates.pop()
+                        if len(computed_rates) == 1
+                        else lines[:1][computed_rate_f]
+                    )
+                    rows.append(
+                        self._divergence_row(
+                            addition,
+                            lines,
+                            tax_domain,
+                            "percent",
+                            declared_rate,
+                            computed_rate,
+                            0.01,
+                        )
+                    )
+        rows = [row for row in rows if row]
+        if rows:
+            self.env["l10n_br_fiscal.import.declaration.divergence"].create(rows)
+        return self.divergence_ids
+
+    def _divergence_row(
+        self, addition, lines, tax_domain, dimension, declared, computed, tolerance
+    ):
+        difference = computed - declared
+        if abs(difference) <= tolerance:
+            return None
+        severity = "rounding" if abs(difference) <= tolerance * 3 else "divergence"
+        explanation = {
+            "value": _(
+                "The declaration charged %(declared)s of %(tax)s and the "
+                "lines close at %(computed)s."
+            ),
+            "base": _(
+                "The declaration's base for %(tax)s is %(declared)s and the "
+                "lines compute %(computed)s — check the tax configuration if "
+                "the value still closes."
+            ),
+            "percent": _(
+                "The declaration charged %(tax)s at %(declared)s%% and the "
+                "lines carry %(computed)s%% — a configuration mismatch, not "
+                "a value to force."
+            ),
+        }[dimension] % {
+            "tax": tax_domain.upper(),
+            "declared": declared,
+            "computed": computed,
+        }
+        return {
+            "declaration_id": self.id,
+            "addition_id": addition.id,
+            "fiscal_line_id": lines[:1].id,
+            "tax_domain": tax_domain,
+            "dimension": dimension,
+            "declared": declared,
+            "computed": computed,
+            "difference": difference,
+            "severity": severity,
+            "explanation": explanation,
+        }
 
     @api.model
     def create_from_parsed(
