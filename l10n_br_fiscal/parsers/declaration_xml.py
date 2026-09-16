@@ -133,11 +133,17 @@ def _additions(declaration):
                 "ii_rate": _amount(addition, "iiAliquotaAdValorem", RATE),
                 "ii_value": _amount(addition, "iiAliquotaValorRecolher"),
                 "ii_regime_code": _text(addition, "iiRegimeTributacaoCodigo"),
+                # The DI never states an IPI base of its own — it is II's
+                # base plus II, not a separate declared figure — so this
+                # stays 0.0 here and only the TXT reader (O10's vBC) ever
+                # fills it.
+                "ipi_base": 0.0,
                 "ipi_rate": _amount(addition, "ipiAliquotaAdValorem", RATE),
                 "ipi_value": _amount(addition, "ipiAliquotaValorRecolher"),
                 "ipi_regime_code": _text(addition, "ipiRegimeTributacaoCodigo"),
                 "pis_rate": _amount(addition, "pisPasepAliquotaAdValorem", RATE),
                 "pis_value": _amount(addition, "pisPasepAliquotaValorRecolher"),
+                "cofins_rate": _amount(addition, "cofinsAliquotaAdValorem", RATE),
                 "cofins_value": _amount(addition, "cofinsAliquotaValorRecolher"),
                 "pis_cofins_regime_code": _text(
                     addition, "pisCofinsRegimeTributacaoCodigo"
@@ -200,6 +206,7 @@ MAPPED_TAGS = STRUCTURAL_TAGS | {
     "ipiAliquotaValorRecolher",
     "pisPasepAliquotaAdValorem",
     "pisPasepAliquotaValorRecolher",
+    "cofinsAliquotaAdValorem",
     "cofinsAliquotaValorRecolher",
     "dadosMercadoriaPesoLiquido",
     "fornecedorNome",
@@ -429,12 +436,16 @@ def parse_txt_declaration(content):
             current = {
                 "customs_value": 0.0,
                 "ii_value": 0.0,
+                "ipi_base": 0.0,
                 "ipi_rate": 0.0,
                 "ipi_value": 0.0,
                 "pis_rate": 0.0,
                 "pis_value": 0.0,
+                "cofins_rate": 0.0,
                 "cofins_value": 0.0,
                 "icms_value": 0.0,
+                "manufacturer": "",
+                "drawback_act": "",
             }
             additions.append(current)
         elif tag == "I" and current is not None:
@@ -449,12 +460,26 @@ def parse_txt_declaration(content):
                 parts, 14, "I", "pesoLiquido", line_number
             )
         elif tag == "I18" and current is not None:
+            # Official chain (Padrão de Integração TXT NF-e 4.00, grupo I18):
+            # I18|nDI|dDI|xLocDesemb|UFDesemb|dDesemb|tpViaTransp|vAFRMM|
+            # tpIntermedio|CNPJ|UFTerceiro|cExportador|CPF
             header.setdefault("number", _txt_field(parts, 1))
             header.setdefault("registration_date", _txt_field(parts, 2))
             header.setdefault("clearance_place", _txt_field(parts, 3))
             header.setdefault("clearance_state", _txt_field(parts, 4))
+            header.setdefault("clearance_date_raw", _txt_field(parts, 5))
+            header.setdefault("transport_via_stated", _txt_field(parts, 6))
+            header.setdefault(
+                "afrmm_stated",
+                _txt_number(parts, 7, "I18", "vAFRMM", line_number),
+            )
+            header.setdefault("intermediation_code", _txt_field(parts, 8))
+            header.setdefault("exporter_code", _txt_field(parts, 11))
         elif tag == "I25" and current is not None:
+            # I25|nAdicao|nSeqAdic|cFabricante|vDescDI|nDraw
             current["addition_number"] = _txt_field(parts, 1)
+            current["manufacturer"] = _txt_field(parts, 3)
+            current["drawback_act"] = _txt_field(parts, 5)
         elif tag == "N02" and current is not None:
             current["icms_value"] = _txt_number(
                 parts, 6, "N02", "vICMS", line_number
@@ -464,6 +489,10 @@ def parse_txt_declaration(content):
                 parts, 2, "O07", "vIPI", line_number
             )
         elif tag == "O10" and current is not None:
+            # O10|vBC|pIPI
+            current["ipi_base"] = _txt_number(
+                parts, 1, "O10", "vBC", line_number
+            )
             current["ipi_rate"] = _txt_number(
                 parts, 2, "O10", "pIPI", line_number
             )
@@ -480,6 +509,10 @@ def parse_txt_declaration(content):
                 parts, 4, "Q02", "vPIS", line_number
             )
         elif tag == "S02" and current is not None:
+            # S02|CST|vBC|pCOFINS|vCOFINS
+            current["cofins_rate"] = _txt_number(
+                parts, 3, "S02", "pCOFINS", line_number
+            )
             current["cofins_value"] = _txt_number(
                 parts, 4, "S02", "vCOFINS", line_number
             )
@@ -529,19 +562,25 @@ def parse_txt_declaration(content):
                 "ii_rate": ii_rate,
                 "ii_value": ii_value,
                 "ii_regime_code": "",
+                "ipi_base": first["ipi_base"],
                 "ipi_rate": first["ipi_rate"],
                 "ipi_value": sum(item["ipi_value"] for item in items),
                 "ipi_regime_code": "",
                 "pis_rate": first["pis_rate"],
                 "pis_value": sum(item["pis_value"] for item in items),
+                "cofins_rate": first["cofins_rate"],
                 "cofins_value": sum(item["cofins_value"] for item in items),
                 "pis_cofins_regime_code": "",
                 "net_weight": sum(item.get("net_weight", 0.0) for item in items),
                 "exporter": exporter,
-                "manufacturer": "",
+                # I25's cFabricante and nDraw are the same for every item of a
+                # real addition, so the first block's reading stands for all
+                # of them — the same reasoning `ipi_rate`/`pis_rate` already
+                # rely on above.
+                "manufacturer": first["manufacturer"],
                 "origin_country": origin_country,
                 "incoterm": "",
-                "drawback_act": "",
+                "drawback_act": first["drawback_act"],
                 "items": [
                     {
                         "sequence": f"{sequence:02d}",
@@ -559,25 +598,33 @@ def parse_txt_declaration(content):
         )
 
     registration_date = _txt_date(header.get("registration_date"))
+    # I18 states dDesemb, tpViaTransp and vAFRMM directly (positions 5, 6 and
+    # 7 of the record) whenever the despachante fills them in. Only a file
+    # that leaves I18 blank on these three falls back to the guesses this
+    # reader used before it read them: the registration date standing in for
+    # the clearance date, and AFRMM's mere presence standing in for the
+    # transport being maritime.
+    clearance_date = _txt_date(header.get("clearance_date_raw")) or registration_date
+    transport_via = header.get("transport_via_stated") or (
+        "1" if header.get("afrmm_stated") else ""
+    )
+    afrmm = header.get("afrmm_stated") or header.get("afrmm", 0.0)
     return {
         "number": header.get("number", ""),
         "registration_date": registration_date,
-        # The despachante's draft never states whether it cleared yet — this
-        # file is drawn up the moment the DUIMP registers, not when customs
-        # releases the goods. Registration date is the only one there is.
-        "clearance_date": registration_date,
-        # Not a field the TXT states either. AFRMM only applies to maritime
-        # freight, so its presence is the signal this shipment came by sea.
-        "transport_via": "1" if header.get("afrmm") else "",
+        "clearance_date": clearance_date,
+        "transport_via": transport_via,
         "clearance_place": header.get("clearance_place", ""),
         "clearance_state": header.get("clearance_state", ""),
         "importer_document": header.get("importer_document", ""),
         "operation_type_code": "",
+        "exporter_code": header.get("exporter_code", ""),
+        "intermediation_code": header.get("intermediation_code", ""),
         "freight": 0.0,
         "insurance": 0.0,
         "icms_value": sum(a["icms_value"] for a in additions),
         "customhouse_charges": header.get("customhouse_charges", 0.0),
-        "afrmm": header.get("afrmm", 0.0),
+        "afrmm": afrmm,
         "gross_weight": 0.0,
         "net_weight": sum(a.get("net_weight", 0.0) for a in additions),
         "additions": prepared_additions,
