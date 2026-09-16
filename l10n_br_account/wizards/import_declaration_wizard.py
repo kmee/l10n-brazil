@@ -346,15 +346,30 @@ class ImportDeclarationWizard(models.TransientModel):
             limit=1,
         )
         prepared_additions = self._additions_from_declaration(declaration)
+        transport_via = declaration["transport_via"]
+        unmapped_notes = list(declaration.get("unmapped_tags", []))
         values = {
             "di_number": declaration["number"],
             "di_date": declaration["registration_date"],
             "clearance_date": declaration["clearance_date"],
             "clearance_place": declaration["clearance_place"],
-            "transport_via": declaration["transport_via"],
             "addition_ids": [(5, 0, 0)]
             + [(0, 0, prepared) for prepared in prepared_additions],
         }
+        if transport_via in dict(TRANSPORT_VIA):
+            values["transport_via"] = transport_via
+        elif transport_via:
+            # A code the file states but this list does not recognize: left
+            # blank rather than written unchecked, because a Selection field
+            # accepts any string on write and only the form's dropdown would
+            # ever have caught it, silently, long after the file was read.
+            unmapped_notes.append(
+                _(
+                    "tpViaTransp: the file states code %(code)r, which is not "
+                    "one of the known transport codes."
+                )
+                % {"code": transport_via}
+            )
         if prepared_additions:
             values["customs_value"] = sum(
                 prepared["customs_value"] for prepared in prepared_additions
@@ -403,9 +418,7 @@ class ImportDeclarationWizard(models.TransientModel):
             )
             or False
         )
-        values["unmapped_fields"] = (
-            ", ".join(declaration.get("unmapped_tags", [])) or False
-        )
+        values["unmapped_fields"] = ", ".join(unmapped_notes) or False
         values["regime_warning"] = (
             "\n".join(declaration.get("regime_signals", [])) or False
         )
