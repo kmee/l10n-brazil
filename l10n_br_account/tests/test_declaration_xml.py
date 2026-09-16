@@ -7,7 +7,7 @@ from xml.etree import ElementTree
 
 from odoo.tests import TransactionCase
 
-from ..wizards.declaration_xml import (
+from odoo.addons.l10n_br_fiscal.parsers.declaration_xml import (
     DeclarationXmlError,
     parse_declaration,
     parse_txt_declaration,

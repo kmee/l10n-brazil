@@ -6,7 +6,7 @@ import base64
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
-from .declaration_xml import (
+from odoo.addons.l10n_br_fiscal.parsers.declaration_xml import (
     IPI_NORMAL_REGIME_CODE,
     DeclarationXmlError,
     parse_declaration,
