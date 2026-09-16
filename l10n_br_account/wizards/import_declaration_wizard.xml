@@ -128,6 +128,21 @@
                     invisible="not declaration_id"
                     readonly="1"
                 />
+                <field
+                    name="divergence_ids"
+                    invisible="not divergence_ids"
+                    readonly="1"
+                >
+                    <list>
+                        <field name="tax_domain" />
+                        <field name="dimension" />
+                        <field name="declared" />
+                        <field name="computed" />
+                        <field name="difference" />
+                        <field name="severity" />
+                        <field name="explanation" />
+                    </list>
+                </field>
                 <footer>
                     <button
                         name="action_generate_document"

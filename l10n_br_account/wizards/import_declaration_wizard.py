@@ -251,6 +251,10 @@ class ImportDeclarationWizard(models.TransientModel):
         "not this wizard's own reading of it is complete: nothing the file "
         "stated is lost even when a field here has no place to go yet.",
     )
+    divergence_ids = fields.One2many(
+        related="declaration_id.divergence_ids",
+        string="Divergences",
+    )
 
     @api.model
     def default_get(self, fields_list):
@@ -583,6 +587,29 @@ class ImportDeclarationWizard(models.TransientModel):
     def _rate(value, base):
         return (value / base * 100.0) if base else 0.0
 
+    def _persisted_addition(self, number):
+        """The addition of `declaration_id` this block's number names, if any.
+
+        Not every addition of the declaration necessarily made it here: only
+        the one this block covers is tied to its own persisted record, and
+        one that finds no match returns empty rather than the wrong addition.
+
+        Compared as a number, not as a string: the persisted addition keeps
+        the parser's own zero-padded "001", while `_di_values` strips the
+        padding to "1" for the NF-e's own nAdicao field, and both name the
+        same addition.
+        """
+        self.ensure_one()
+        if not self.declaration_id:
+            return self.env["l10n_br_fiscal.import.declaration.addition"]
+        wanted = number.lstrip("0") or "0"
+        return self.declaration_id.addition_ids.filtered(
+            lambda a, wanted=wanted: (
+                (a.number or "").lstrip("0") or "0"
+            )
+            == wanted
+        )[:1]
+
     def _di_values(
         self, number=None, manufacturer=None, exporter=None, drawback_act=None
     ):
@@ -597,16 +624,9 @@ class ImportDeclarationWizard(models.TransientModel):
         }
         if drawback_act:
             adi_values["nfe40_nDraw"] = drawback_act
-        if self.declaration_id:
-            # Not every addition of the declaration necessarily made it here:
-            # only the one this block covers gets tied to its own persisted
-            # record, and one that finds no match leaves the field empty
-            # rather than pointing at the wrong addition.
-            persisted_addition = self.declaration_id.addition_ids.filtered(
-                lambda a, number=addition_number: a.number == number
-            )[:1]
-            if persisted_addition:
-                adi_values["addition_id"] = persisted_addition.id
+        persisted_addition = self._persisted_addition(addition_number)
+        if persisted_addition:
+            adi_values["addition_id"] = persisted_addition.id
         values = {
             "nfe40_nDI": self.di_number,
             "nfe40_dDI": self.di_date,
@@ -875,6 +895,9 @@ class ImportDeclarationWizard(models.TransientModel):
                 exporter=block["exporter"],
                 drawback_act=block["drawback_act"],
             )
+            persisted_addition = self._persisted_addition(str(block["number"]))
+            if persisted_addition:
+                persisted_addition.fiscal_line_ids = [(4, line.id)]
             forced_here = {
                 fname: parts[position]
                 for fname, parts in forced_parts.items()
@@ -984,6 +1007,8 @@ class ImportDeclarationWizard(models.TransientModel):
 
         document.invalidate_recordset()
         self._check_against_declaration(document)
+        if self.declaration_id:
+            self.declaration_id._reconcile()
         # The values are the declaration's now, not the product file's. Marking
         # the document as imported freezes them against any later recompute and
         # makes the accounting book them as-is, the way an imported NF-e is.
