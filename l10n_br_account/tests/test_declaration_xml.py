@@ -181,20 +181,26 @@ class TestRegimeSignals(TransactionCase):
             f"<declaracaoImportacao>{body}</declaracaoImportacao>"
         )
 
-    def test_the_common_regime_code_raises_no_signal(self):
+    def test_the_ipi_common_regime_code_raises_no_signal(self):
         root = self._root(
-            "<adicao><iiRegimeTributacaoCodigo>1</iiRegimeTributacaoCodigo></adicao>"
+            "<adicao><ipiRegimeTributacaoCodigo>4</ipiRegimeTributacaoCodigo></adicao>"
         )
         self.assertEqual(regime_signals(root), [])
 
-    def test_a_different_regime_code_is_flagged(self):
+    def test_an_ipi_suspension_code_is_flagged(self):
         root = self._root(
-            "<adicao><iiRegimeTributacaoCodigo>3</iiRegimeTributacaoCodigo></adicao>"
+            "<adicao><ipiRegimeTributacaoCodigo>5</ipiRegimeTributacaoCodigo></adicao>"
         )
         self.assertEqual(
             regime_signals(root),
-            ["II sob regime de tributação diferente do comum"],
+            ["IPI sob regime de tributação diferente do comum"],
         )
+
+    def test_the_ii_regime_code_table_is_unconfirmed_so_any_code_is_flagged(self):
+        common_looking = self._root(
+            "<adicao><iiRegimeTributacaoCodigo>1</iiRegimeTributacaoCodigo></adicao>"
+        )
+        self.assertNotEqual(regime_signals(common_looking), [])
 
     def test_a_rectified_declaration_is_flagged(self):
         root = self._root("<numeroRetificacao>01</numeroRetificacao>")

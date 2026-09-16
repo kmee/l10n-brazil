@@ -7,16 +7,14 @@ from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 from .declaration_xml import (
-    NORMAL_REGIME_CODE,
+    IPI_NORMAL_REGIME_CODE,
     DeclarationXmlError,
     parse_declaration,
     parse_txt_declaration,
 )
 
-SUSPENSION_REGIME_CODE = "4"
+IPI_SUSPENSION_REGIME_CODE = "5"
 IPI_SUSPENSION_CST = "l10n_br_fiscal.cst_ipi_05"
-PIS_SUSPENSION_CST = "l10n_br_fiscal.cst_pis_72"
-COFINS_SUSPENSION_CST = "l10n_br_fiscal.cst_cofins_72"
 
 INTERMEDIATION = [
     ("1", "1 - Por conta propria"),
@@ -704,7 +702,6 @@ class ImportDeclarationWizard(models.TransientModel):
                     "manufacturer": self.manufacturer_code,
                     "exporter": self.exporter_code,
                     "ipi_regime_code": False,
-                    "pis_cofins_regime_code": False,
                     "drawback_act": False,
                 }
             ]
@@ -734,23 +731,19 @@ class ImportDeclarationWizard(models.TransientModel):
                     "manufacturer": addition.manufacturer_code,
                     "exporter": addition.exporter_code,
                     "ipi_regime_code": addition.ipi_regime_code,
-                    "pis_cofins_regime_code": addition.pis_cofins_regime_code,
                     "drawback_act": addition.drawback_act,
                 }
             )
         return blocks
 
     @staticmethod
-    def _has_special_regime(code):
-        return bool(code) and code != NORMAL_REGIME_CODE
+    def _has_special_ipi_regime(code):
+        return bool(code) and code != IPI_NORMAL_REGIME_CODE
 
     def _forced_taxes(self, addition):
         forced = {}
-        if self._has_special_regime(addition.ipi_regime_code):
+        if self._has_special_ipi_regime(addition.ipi_regime_code):
             forced["ipi_value"] = addition.ipi_value
-        if self._has_special_regime(addition.pis_cofins_regime_code):
-            forced["pis_value"] = addition.pis_value
-            forced["cofins_value"] = addition.cofins_value
         return forced
 
     def _customhouse_charges_by_line(self, blocks):
@@ -772,43 +765,20 @@ class ImportDeclarationWizard(models.TransientModel):
         return dict(zip(all_lines.ids, parts))
 
     def _apply_forced_taxes(self, line, block, forced, gross, declared):
-        if "ipi_value" in forced:
-            ipi_base = gross + declared
-            line.write(
-                {
-                    "ipi_base": ipi_base,
-                    "ipi_percent": self._rate(forced["ipi_value"], ipi_base),
-                    "ipi_value": forced["ipi_value"],
-                }
+        if "ipi_value" not in forced:
+            return
+        ipi_base = gross + declared
+        line.write(
+            {
+                "ipi_base": ipi_base,
+                "ipi_percent": self._rate(forced["ipi_value"], ipi_base),
+                "ipi_value": forced["ipi_value"],
+            }
+        )
+        if block["ipi_regime_code"] == IPI_SUSPENSION_REGIME_CODE:
+            line.ipi_cst_id = self.env.ref(
+                IPI_SUSPENSION_CST, raise_if_not_found=False
             )
-            if block["ipi_regime_code"] == SUSPENSION_REGIME_CODE:
-                line.ipi_cst_id = self.env.ref(
-                    IPI_SUSPENSION_CST, raise_if_not_found=False
-                )
-        if "pis_value" in forced:
-            line.write(
-                {
-                    "pis_base": gross,
-                    "pis_percent": self._rate(forced["pis_value"], gross),
-                    "pis_value": forced["pis_value"],
-                }
-            )
-            if block["pis_cofins_regime_code"] == SUSPENSION_REGIME_CODE:
-                line.pis_cst_id = self.env.ref(
-                    PIS_SUSPENSION_CST, raise_if_not_found=False
-                )
-        if "cofins_value" in forced:
-            line.write(
-                {
-                    "cofins_base": gross,
-                    "cofins_percent": self._rate(forced["cofins_value"], gross),
-                    "cofins_value": forced["cofins_value"],
-                }
-            )
-            if block["pis_cofins_regime_code"] == SUSPENSION_REGIME_CODE:
-                line.cofins_cst_id = self.env.ref(
-                    COFINS_SUSPENSION_CST, raise_if_not_found=False
-                )
 
     def _write_block(self, document, block, customhouse_by_line):
         """Write the lines of one group, with the tax that belongs to it."""

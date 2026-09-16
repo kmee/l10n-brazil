@@ -271,7 +271,7 @@ class TestImportDeclarationWizard(AccountMoveBRCommon):
         with self.assertRaises(UserError):
             wizard.action_generate_document()
 
-    def _addition_wizard(self, declared_ipi, declared_pis, declared_cofins, **regime):
+    def _addition_wizard(self, ipi_regime_code="4", declared_ipi=None, **extra):
         line = self.bill.invoice_line_ids.filtered(
             lambda invoice_line: invoice_line.product_id == self.product_a
         )
@@ -289,9 +289,10 @@ class TestImportDeclarationWizard(AccountMoveBRCommon):
                 "ii_value": II,
             }
         )
+        ipi_value = probe.ipi_value if declared_ipi is None else declared_ipi
         rate = probe.icms_percent or 0.0
         before_icms = (
-            VALOR_ADUANEIRO + II + declared_ipi + declared_pis + declared_cofins
+            VALOR_ADUANEIRO + II + ipi_value + probe.pis_value + probe.cofins_value
         )
         expected_icms = before_icms / (1 - rate / 100.0) * rate / 100.0 if rate else 0.0
         wizard = self.env["l10n_br_account.import.declaration.wizard"].create(
@@ -320,11 +321,12 @@ class TestImportDeclarationWizard(AccountMoveBRCommon):
                             "number": "001",
                             "customs_value": VALOR_ADUANEIRO,
                             "ii_value": II,
-                            "ipi_value": declared_ipi,
-                            "pis_value": declared_pis,
-                            "cofins_value": declared_cofins,
+                            "ipi_value": ipi_value,
+                            "ipi_regime_code": ipi_regime_code,
+                            "pis_value": probe.pis_value,
+                            "cofins_value": probe.cofins_value,
                             "line_ids": [(6, 0, line.ids)],
-                            **regime,
+                            **extra,
                         },
                     )
                 ],
@@ -332,9 +334,17 @@ class TestImportDeclarationWizard(AccountMoveBRCommon):
         )
         return wizard
 
-    def test_a_regime_code_forces_the_declared_ipi_over_the_product_rate(self):
+    def test_the_common_ipi_regime_code_does_not_force_anything(self):
+        wizard = self._addition_wizard(ipi_regime_code="4")
+
+        wizard.action_generate_document()
+
+        line = wizard.document_id.fiscal_line_ids[0]
+        self.assertNotEqual(line.ipi_cst_id, self.env.ref("l10n_br_fiscal.cst_ipi_05"))
+
+    def test_ipi_suspension_forces_the_declared_value(self):
         declared_ipi = 500.0
-        wizard = self._addition_wizard(declared_ipi, PIS, COFINS, ipi_regime_code="4")
+        wizard = self._addition_wizard(ipi_regime_code="5", declared_ipi=declared_ipi)
 
         wizard.action_generate_document()
 
@@ -342,33 +352,29 @@ class TestImportDeclarationWizard(AccountMoveBRCommon):
         self.assertAlmostEqual(line.ipi_value, declared_ipi, places=2)
         self.assertEqual(line.ipi_cst_id, self.env.ref("l10n_br_fiscal.cst_ipi_05"))
 
-    def test_a_regime_code_forces_the_declared_pis_and_cofins(self):
-        declared_pis = 321.0
-        declared_cofins = 654.0
-        wizard = self._addition_wizard(
-            IPI, declared_pis, declared_cofins, pis_cofins_regime_code="4"
-        )
+    def test_an_ipi_regime_code_outside_the_known_table_only_warns(self):
+        declared_ipi = 500.0
+        wizard = self._addition_wizard(ipi_regime_code="2", declared_ipi=declared_ipi)
 
         wizard.action_generate_document()
 
         line = wizard.document_id.fiscal_line_ids[0]
-        self.assertAlmostEqual(line.pis_value, declared_pis, places=2)
-        self.assertAlmostEqual(line.cofins_value, declared_cofins, places=2)
-        self.assertEqual(line.pis_cst_id, self.env.ref("l10n_br_fiscal.cst_pis_72"))
-        self.assertEqual(
+        self.assertAlmostEqual(line.ipi_value, declared_ipi, places=2)
+        self.assertNotEqual(line.ipi_cst_id, self.env.ref("l10n_br_fiscal.cst_ipi_05"))
+
+    def test_pis_and_cofins_are_never_forced_by_their_own_regime_code(self):
+        wizard = self._addition_wizard(pis_cofins_regime_code="5")
+
+        wizard.action_generate_document()
+
+        line = wizard.document_id.fiscal_line_ids[0]
+        self.assertNotEqual(line.pis_cst_id, self.env.ref("l10n_br_fiscal.cst_pis_72"))
+        self.assertNotEqual(
             line.cofins_cst_id, self.env.ref("l10n_br_fiscal.cst_cofins_72")
         )
 
-    def test_the_common_regime_code_does_not_force_anything(self):
-        wizard = self._addition_wizard(IPI, PIS, COFINS, ipi_regime_code="1")
-
-        wizard.action_generate_document()
-
-        line = wizard.document_id.fiscal_line_ids[0]
-        self.assertNotEqual(line.ipi_cst_id, self.env.ref("l10n_br_fiscal.cst_ipi_05"))
-
     def test_drawback_is_written_onto_the_addition(self):
-        wizard = self._addition_wizard(IPI, PIS, COFINS, drawback_act="12345678")
+        wizard = self._addition_wizard(drawback_act="12345678")
 
         wizard.action_generate_document()
 
@@ -376,7 +382,7 @@ class TestImportDeclarationWizard(AccountMoveBRCommon):
         self.assertEqual(line.nfe40_DI.nfe40_adi[:1].nfe40_nDraw, "12345678")
 
     def test_the_addition_exporter_wins_over_the_header_one(self):
-        wizard = self._addition_wizard(IPI, PIS, COFINS, exporter_code="99887766")
+        wizard = self._addition_wizard(exporter_code="99887766")
 
         wizard.action_generate_document()
 

@@ -197,11 +197,15 @@ def unmapped_tags(root):
 
 
 NORMAL_REGIME_CODE = "1"
+IPI_NORMAL_REGIME_CODE = "4"
 
 REGIME_SIGNALS = {
     "iiRegimeTributacaoCodigo": (
-        "II sob regime de tributação diferente do comum",
-        {NORMAL_REGIME_CODE},
+        (
+            "II sob regime de tributação diferente do comum "
+            "(tabela de códigos não confirmada, todo código não-zero é sinalizado)"
+        ),
+        set(),
     ),
     "iiAliquotaReduzida": ("alíquota de II reduzida", set()),
     "iiAcordoTarifarioTipoCodigo": ("II sob acordo tarifário", set()),
@@ -211,11 +215,14 @@ REGIME_SIGNALS = {
     "destaqueNcm": ("ex-tarifário", set()),
     "ipiRegimeTributacaoCodigo": (
         "IPI sob regime de tributação diferente do comum",
-        {NORMAL_REGIME_CODE},
+        {IPI_NORMAL_REGIME_CODE},
     ),
     "pisCofinsRegimeTributacaoCodigo": (
-        "PIS/COFINS sob regime de tributação diferente do comum",
-        {NORMAL_REGIME_CODE},
+        (
+            "PIS/COFINS sob regime de tributação diferente do comum "
+            "(tabela de códigos não confirmada, todo código não-zero é sinalizado)"
+        ),
+        set(),
     ),
     "caracterizacaoOperacaoCodigoTipo": (
         "importação por conta e ordem ou por encomenda",
