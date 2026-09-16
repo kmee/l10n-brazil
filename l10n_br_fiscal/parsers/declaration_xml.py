@@ -27,10 +27,38 @@ class DeclarationXmlError(ValueError):
     """The file is not an import declaration this reader understands."""
 
 
+class DeclarationParseError(DeclarationXmlError):
+    """A field of the declaration does not hold the value its record promises.
+
+    Names the record, the field and the raw value so whoever reads the
+    message can go straight to the line that needs fixing, instead of a bare
+    traceback pointing at a cast three layers removed from the file.
+    """
+
+    def __init__(self, record, field, raw_value, line_number=None):
+        self.record = record
+        self.field = field
+        self.raw_value = raw_value
+        self.line_number = line_number
+        where = f"record {record}"
+        if line_number is not None:
+            where += f", line {line_number}"
+        super().__init__(
+            f"{where}, field {field}: {raw_value!r} is not a number in the "
+            "layout's format."
+        )
+
+
 def _number(element, scale):
     if element is None or not (element.text or "").strip():
         return 0.0
-    return int(element.text) / (10**scale)
+    raw = element.text.strip()
+    try:
+        return int(raw) / (10**scale)
+    except ValueError as error:
+        raise DeclarationParseError(
+            record=element.tag, field=element.tag, raw_value=raw
+        ) from error
 
 
 def _text(parent, tag):
@@ -304,7 +332,30 @@ def _txt_field(parts, index, default=""):
     return parts[index].strip() if index < len(parts) else default
 
 
-TXT_TAG_PATTERN = re.compile(r"^[A-Z][A-Za-z0-9]{0,5}$")
+def _txt_number(parts, index, record, field, line_number, default=0.0):
+    """A numeric field of a TXT record, or a named error, never a bare crash.
+
+    An empty field is 0.0 — the despachante leaves a column blank rather than
+    typing a zero. Anything else that fails to parse names the record, the
+    line and the field: a broker's extra or reshuffled column shows up here
+    as a clear message, not a traceback three layers removed from the file.
+    """
+    raw = _txt_field(parts, index)
+    if not raw:
+        return default
+    try:
+        return float(raw)
+    except ValueError as error:
+        raise DeclarationParseError(
+            record=record, field=field, raw_value=raw, line_number=line_number
+        ) from error
+
+
+# Every record tag actually seen, letters or digits, of any length: this only
+# decides what counts as "a tag" for the unmapped-fields report, never what
+# gets parsed. A record this reader has no branch for must still be visible
+# there instead of vanishing because its name does not fit an assumed shape.
+TXT_TAG_PATTERN = re.compile(r"^[A-Za-z0-9]+$")
 
 TXT_MAPPED_TAGS = {
     "C02",
@@ -361,7 +412,7 @@ def parse_txt_declaration(content):
     additions = []
     current = None
     tags_seen = set()
-    for raw_line in lines:
+    for line_number, raw_line in enumerate(lines, start=1):
         if not raw_line.strip():
             continue
         parts = raw_line.split("|")
@@ -391,8 +442,12 @@ def parse_txt_declaration(content):
             current["description"] = _txt_field(parts, 4)
             current["ncm"] = _ncm(_txt_field(parts, 5))
             current["uom"] = _txt_field(parts, 7)
-            current["quantity"] = float(_txt_field(parts, 8) or 0)
-            current["net_weight"] = float(_txt_field(parts, 14) or 0)
+            current["quantity"] = _txt_number(
+                parts, 8, "I", "quantidade", line_number
+            )
+            current["net_weight"] = _txt_number(
+                parts, 14, "I", "pesoLiquido", line_number
+            )
         elif tag == "I18" and current is not None:
             header.setdefault("number", _txt_field(parts, 1))
             header.setdefault("registration_date", _txt_field(parts, 2))
@@ -401,19 +456,33 @@ def parse_txt_declaration(content):
         elif tag == "I25" and current is not None:
             current["addition_number"] = _txt_field(parts, 1)
         elif tag == "N02" and current is not None:
-            current["icms_value"] = float(_txt_field(parts, 6) or 0)
+            current["icms_value"] = _txt_number(
+                parts, 6, "N02", "vICMS", line_number
+            )
         elif tag == "O07" and current is not None:
-            current["ipi_value"] = float(_txt_field(parts, 2) or 0)
+            current["ipi_value"] = _txt_number(
+                parts, 2, "O07", "vIPI", line_number
+            )
         elif tag == "O10" and current is not None:
-            current["ipi_rate"] = float(_txt_field(parts, 2) or 0)
+            current["ipi_rate"] = _txt_number(
+                parts, 2, "O10", "pIPI", line_number
+            )
         elif tag == "P" and current is not None:
-            current["customs_value"] = float(_txt_field(parts, 1) or 0)
-            current["ii_value"] = float(_txt_field(parts, 3) or 0)
+            current["customs_value"] = _txt_number(
+                parts, 1, "P", "vBC", line_number
+            )
+            current["ii_value"] = _txt_number(parts, 3, "P", "vII", line_number)
         elif tag == "Q02" and current is not None:
-            current["pis_rate"] = float(_txt_field(parts, 3) or 0)
-            current["pis_value"] = float(_txt_field(parts, 4) or 0)
+            current["pis_rate"] = _txt_number(
+                parts, 3, "Q02", "pPIS", line_number
+            )
+            current["pis_value"] = _txt_number(
+                parts, 4, "Q02", "vPIS", line_number
+            )
         elif tag == "S02" and current is not None:
-            current["cofins_value"] = float(_txt_field(parts, 4) or 0)
+            current["cofins_value"] = _txt_number(
+                parts, 4, "S02", "vCOFINS", line_number
+            )
         elif tag == "Z":
             afrmm = re.search(r"A\.F\.R\.M\.M\.?\s*[:\-]*\s*R\$\s*([\d.,]+)", raw_line)
             if afrmm:
