@@ -85,6 +85,11 @@ def _items(addition):
     return items
 
 
+def _drawback_act(addition):
+    value = _text(addition, "dcrIdentificacao")
+    return value if value.strip("0") else ""
+
+
 def _additions(declaration):
     additions = []
     for addition in declaration.findall("adicao"):
@@ -99,15 +104,22 @@ def _additions(declaration):
                 "goods_value": _amount(addition, "condicaoVendaValorReais"),
                 "ii_rate": _amount(addition, "iiAliquotaAdValorem", RATE),
                 "ii_value": _amount(addition, "iiAliquotaValorRecolher"),
+                "ii_regime_code": _text(addition, "iiRegimeTributacaoCodigo"),
                 "ipi_rate": _amount(addition, "ipiAliquotaAdValorem", RATE),
                 "ipi_value": _amount(addition, "ipiAliquotaValorRecolher"),
+                "ipi_regime_code": _text(addition, "ipiRegimeTributacaoCodigo"),
                 "pis_rate": _amount(addition, "pisPasepAliquotaAdValorem", RATE),
                 "pis_value": _amount(addition, "pisPasepAliquotaValorRecolher"),
                 "cofins_value": _amount(addition, "cofinsAliquotaValorRecolher"),
+                "pis_cofins_regime_code": _text(
+                    addition, "pisCofinsRegimeTributacaoCodigo"
+                ),
                 "net_weight": _amount(addition, "dadosMercadoriaPesoLiquido", WEIGHT),
                 "exporter": _text(addition, "fornecedorNome"),
                 "manufacturer": _text(addition, "fabricanteNome"),
                 "origin_country": _text(addition, "paisOrigemMercadoriaNome"),
+                "incoterm": _text(addition, "condicaoVendaIncoterm"),
+                "drawback_act": _drawback_act(addition),
                 "items": _items(addition),
             }
         )
@@ -170,6 +182,12 @@ MAPPED_TAGS = STRUCTURAL_TAGS | {
     "quantidade",
     "valorUnitario",
     "unidadeMedida",
+    "iiRegimeTributacaoCodigo",
+    "ipiRegimeTributacaoCodigo",
+    "pisCofinsRegimeTributacaoCodigo",
+    "dcrIdentificacao",
+    "condicaoVendaIncoterm",
+    "caracterizacaoOperacaoCodigoTipo",
 }
 
 
@@ -252,6 +270,7 @@ def parse_declaration(content):
         or _text(declaration, "cargaUrfEntradaNome"),
         "clearance_state": _text(icms, "ufIcms") if icms is not None else "",
         "importer_document": _text(declaration, "importadorNumero"),
+        "operation_type_code": _text(declaration, "caracterizacaoOperacaoCodigoTipo"),
         "freight": _amount(declaration, "freteTotalReais"),
         "insurance": _amount(declaration, "seguroTotalReais"),
         "icms_value": _amount(icms, "valorTotalIcms") if icms is not None else 0.0,
@@ -433,15 +452,20 @@ def parse_txt_declaration(content):
                 "goods_value": customs_value,
                 "ii_rate": ii_rate,
                 "ii_value": ii_value,
+                "ii_regime_code": "",
                 "ipi_rate": first["ipi_rate"],
                 "ipi_value": sum(item["ipi_value"] for item in items),
+                "ipi_regime_code": "",
                 "pis_rate": first["pis_rate"],
                 "pis_value": sum(item["pis_value"] for item in items),
                 "cofins_value": sum(item["cofins_value"] for item in items),
+                "pis_cofins_regime_code": "",
                 "net_weight": sum(item.get("net_weight", 0.0) for item in items),
                 "exporter": exporter,
                 "manufacturer": "",
                 "origin_country": origin_country,
+                "incoterm": "",
+                "drawback_act": "",
                 "items": [
                     {
                         "sequence": f"{sequence:02d}",
@@ -472,6 +496,7 @@ def parse_txt_declaration(content):
         "clearance_place": header.get("clearance_place", ""),
         "clearance_state": header.get("clearance_state", ""),
         "importer_document": header.get("importer_document", ""),
+        "operation_type_code": "",
         "freight": 0.0,
         "insurance": 0.0,
         "icms_value": sum(a["icms_value"] for a in additions),

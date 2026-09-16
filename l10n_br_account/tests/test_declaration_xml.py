@@ -125,6 +125,55 @@ class TestDeclarationXml(TransactionCase):
         )
         self.assertEqual(unmapped_tags(root), [])
 
+    def test_each_addition_carries_its_own_regime_codes(self):
+        addition = self.declaration["additions"][0]
+        self.assertEqual(addition["ii_regime_code"], "1")
+        self.assertEqual(addition["ipi_regime_code"], "4")
+        self.assertEqual(addition["pis_cofins_regime_code"], "1")
+
+    def test_each_addition_carries_its_own_exporter_and_incoterm(self):
+        addition = self.declaration["additions"][0]
+        self.assertEqual(addition["exporter"], "FORNECEDOR DO EXTERIOR")
+        self.assertEqual(addition["incoterm"], "FCA")
+
+    def test_a_drawback_act_of_all_zeroes_is_not_a_drawback(self):
+        addition = self.declaration["additions"][0]
+        self.assertEqual(addition["drawback_act"], "")
+
+    def test_the_operation_type_code_comes_out_of_the_header(self):
+        self.assertEqual(self.declaration["operation_type_code"], "1")
+
+
+class TestRealShapedDeclaration(TransactionCase):
+    """A DI actually issued for an import, with the identifying fields
+    swapped for made up ones and the fiscal numbers kept as they were
+    charged.
+    """
+
+    FIXTURE = (
+        Path(__file__).parent / "fixtures" / "import_declaration_multi_addition.xml"
+    )
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.declaration = parse_declaration(cls.FIXTURE.read_bytes())
+
+    def test_it_reads_every_addition(self):
+        self.assertEqual(len(self.declaration["additions"]), 7)
+
+    def test_it_carries_no_identifying_field(self):
+        self.assertNotIn("47786619000137", self.declaration["importer_document"])
+
+    def test_it_signals_no_regime_the_file_does_not_state(self):
+        self.assertEqual(self.declaration["regime_signals"], [])
+
+    def test_every_addition_shares_the_same_ncm_and_exporter(self):
+        ncms = {a["ncm"] for a in self.declaration["additions"]}
+        exporters = {a["exporter"] for a in self.declaration["additions"]}
+        self.assertEqual(ncms, {"8414.90.20"})
+        self.assertEqual(exporters, {"FORNECEDOR DE TESTE S.A."})
+
 
 class TestRegimeSignals(TransactionCase):
     def _root(self, body):
@@ -235,3 +284,12 @@ class TestTxtDeclaration(TransactionCase):
         self.assertAlmostEqual(
             sum(a["cofins_value"] for a in additions), 14475.00, places=2
         )
+
+    def test_the_txt_never_states_a_regime_code(self):
+        for addition in self.declaration["additions"]:
+            self.assertEqual(addition["ii_regime_code"], "")
+            self.assertEqual(addition["ipi_regime_code"], "")
+            self.assertEqual(addition["pis_cofins_regime_code"], "")
+            self.assertEqual(addition["drawback_act"], "")
+            self.assertEqual(addition["incoterm"], "")
+        self.assertEqual(self.declaration["operation_type_code"], "")
