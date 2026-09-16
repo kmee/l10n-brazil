@@ -55,3 +55,4 @@ from . import national_taxation_code
 from . import document_supplement
 from . import tax_classification
 from . import operation_indicator
+from . import import_declaration
