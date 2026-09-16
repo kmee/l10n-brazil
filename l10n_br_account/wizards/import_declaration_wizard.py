@@ -570,6 +570,13 @@ class ImportDeclarationWizard(models.TransientModel):
             "quantity": quantity,
             "price_unit": gross / quantity,
             "uom_id": bill_line.product_uom_id.id,
+            # The line's own share of the addition's valor aduaneiro — the
+            # legal base of II, IPI and PIS/COFINS on an import (see
+            # customs_declared_value's help). Written here so the engine
+            # itself now computes those bases correctly; the manual
+            # gross_parts-based rewrite below is unrelated to this and
+            # still stands until it is proven redundant.
+            "customs_declared_value": gross,
         }
 
     @staticmethod

@@ -288,7 +288,22 @@ class Tax(models.Model):
 
         if tax_dict["base_type"] == "percent":
             # Compute initial Tax Base for base_type Percent
-            base = currency.round(fiscal_price * fiscal_quantity)
+            #
+            # On an import, the legal base of II (Art. 75, Decreto 6.759/09),
+            # IPI (Art. 190, I, "a", Decreto 7.212/10) and PIS/COFINS (Art.
+            # 7º, I, Lei 10.865/04) is the valor aduaneiro the customs
+            # authority fixed — a fact the DI states, not a figure this
+            # engine derives from the commercial invoice. price × quantity is
+            # the wrong quantity whenever the invoice is in foreign currency
+            # or freight/insurance are billed apart from the goods, so a
+            # stated customs_declared_value wins over it; every operation
+            # that is not an import never sets this kwarg, so this line does
+            # not change what it does today.
+            customs_declared_value = kwargs.get("customs_declared_value") or 0.00
+            if customs_declared_value:
+                base = currency.round(customs_declared_value)
+            else:
+                base = currency.round(fiscal_price * fiscal_quantity)
 
         if tax_dict["base_type"] == "quantity":
             # Compute initial Tax Base for base_type Quantity
@@ -366,9 +381,12 @@ class Tax(models.Model):
         # Seeding the rate before the base is what makes the base exist at all:
         # a tax of zero percent and zero amount gets a base of zero, and a
         # declaration charging over a classification the product file keeps at
-        # zero is precisely the case this method is here for.
-        gross = (kwargs.get("fiscal_price") or 0.00) * (
-            kwargs.get("fiscal_quantity") or 0.00
+        # zero is precisely the case this method is here for. The declared
+        # customs value is the legal base (Art. 75, Decreto 6.759/09) when the
+        # declaration states one; the commercial line is only the fallback for
+        # a line the declaration never covers.
+        gross = kwargs.get("customs_declared_value") or (
+            (kwargs.get("fiscal_price") or 0.00) * (kwargs.get("fiscal_quantity") or 0.00)
         )
         if gross and not tax_dict.get("percent_amount"):
             tax_dict["percent_amount"] = declared / gross * 100.0
