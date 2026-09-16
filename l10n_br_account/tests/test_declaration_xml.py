@@ -3,6 +3,7 @@
 
 from datetime import date
 from pathlib import Path
+from xml.etree import ElementTree
 
 from odoo.tests import TransactionCase
 
@@ -10,6 +11,8 @@ from ..wizards.declaration_xml import (
     DeclarationXmlError,
     parse_declaration,
     parse_txt_declaration,
+    regime_signals,
+    unmapped_tags,
 )
 
 FIXTURE = Path(__file__).parent / "fixtures" / "import_declaration.xml"
@@ -110,6 +113,54 @@ class TestDeclarationXml(TransactionCase):
         with self.assertRaises(DeclarationXmlError):
             parse_declaration(b"nao sou xml")
 
+    def test_the_declaration_reports_the_tags_it_ignores(self):
+        self.assertIn("importadorNome", self.declaration["unmapped_tags"])
+        self.assertNotIn("numeroDI", self.declaration["unmapped_tags"])
+        self.assertNotIn("adicao", self.declaration["unmapped_tags"])
+
+    def test_a_file_with_nothing_extra_reports_no_unmapped_tags(self):
+        root = ElementTree.fromstring(
+            "<declaracaoImportacao><numeroDI>0000000001</numeroDI>"
+            "</declaracaoImportacao>"
+        )
+        self.assertEqual(unmapped_tags(root), [])
+
+
+class TestRegimeSignals(TransactionCase):
+    def _root(self, body):
+        return ElementTree.fromstring(
+            f"<declaracaoImportacao>{body}</declaracaoImportacao>"
+        )
+
+    def test_the_common_regime_code_raises_no_signal(self):
+        root = self._root(
+            "<adicao><iiRegimeTributacaoCodigo>1</iiRegimeTributacaoCodigo></adicao>"
+        )
+        self.assertEqual(regime_signals(root), [])
+
+    def test_a_different_regime_code_is_flagged(self):
+        root = self._root(
+            "<adicao><iiRegimeTributacaoCodigo>3</iiRegimeTributacaoCodigo></adicao>"
+        )
+        self.assertEqual(
+            regime_signals(root),
+            ["II sob regime de tributação diferente do comum"],
+        )
+
+    def test_a_rectified_declaration_is_flagged(self):
+        root = self._root("<numeroRetificacao>01</numeroRetificacao>")
+        self.assertEqual(regime_signals(root), ["DI retificada"])
+
+    def test_an_unrectified_declaration_raises_no_signal(self):
+        root = self._root("<numeroRetificacao>00</numeroRetificacao>")
+        self.assertEqual(regime_signals(root), [])
+
+    def test_drawback_is_flagged(self):
+        root = self._root(
+            "<adicao><dcrIdentificacao>12345678</dcrIdentificacao></adicao>"
+        )
+        self.assertEqual(regime_signals(root), ["drawback"])
+
 
 class TestTxtDeclaration(TransactionCase):
     """Reading the despachante's draft-invoice TXT.
@@ -165,6 +216,13 @@ class TestTxtDeclaration(TransactionCase):
         self.assertAlmostEqual(by_number["002"]["ipi_value"], 5752.50, places=2)
         self.assertAlmostEqual(by_number["002"]["pis_value"], 1050.00, places=2)
         self.assertAlmostEqual(by_number["002"]["cofins_value"], 4825.00, places=2)
+
+    def test_the_file_reports_the_records_it_ignores(self):
+        unmapped = self.declaration["unmapped_tags"]
+        for tag in ("A", "B", "C", "C05", "E03a", "M", "N", "O", "Q", "S"):
+            self.assertIn(tag, unmapped)
+        for tag in ("C02", "E", "H", "I", "I18", "I25", "N02", "O07", "O10", "P"):
+            self.assertNotIn(tag, unmapped)
 
     def test_the_tax_of_the_additions_adds_up_to_the_file(self):
         additions = self.declaration["additions"]

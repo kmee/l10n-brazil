@@ -125,6 +125,101 @@ def _customhouse_charges(declaration):
     )
 
 
+STRUCTURAL_TAGS = {
+    "ListaDeclaracoes",
+    "declaracaoImportacao",
+    "icms",
+    "pagamento",
+    "adicao",
+    "mercadoria",
+}
+
+MAPPED_TAGS = STRUCTURAL_TAGS | {
+    "numeroDI",
+    "dataRegistro",
+    "dataDesembaraco",
+    "viaTransporteCodigo",
+    "armazenamentoRecintoAduaneiroNome",
+    "cargaUrfEntradaNome",
+    "importadorNumero",
+    "freteTotalReais",
+    "seguroTotalReais",
+    "cargaPesoBruto",
+    "cargaPesoLiquido",
+    "ufIcms",
+    "valorTotalIcms",
+    "codigoReceita",
+    "valorReceita",
+    "numeroAdicao",
+    "dadosMercadoriaCodigoNcm",
+    "iiBaseCalculo",
+    "condicaoVendaValorReais",
+    "iiAliquotaAdValorem",
+    "iiAliquotaValorRecolher",
+    "ipiAliquotaAdValorem",
+    "ipiAliquotaValorRecolher",
+    "pisPasepAliquotaAdValorem",
+    "pisPasepAliquotaValorRecolher",
+    "cofinsAliquotaValorRecolher",
+    "dadosMercadoriaPesoLiquido",
+    "fornecedorNome",
+    "fabricanteNome",
+    "paisOrigemMercadoriaNome",
+    "numeroSequencialItem",
+    "descricaoMercadoria",
+    "quantidade",
+    "valorUnitario",
+    "unidadeMedida",
+}
+
+
+def unmapped_tags(root):
+    present = {element.tag for element in root.iter()}
+    return sorted(present - MAPPED_TAGS)
+
+
+NORMAL_REGIME_CODE = "1"
+
+REGIME_SIGNALS = {
+    "iiRegimeTributacaoCodigo": (
+        "II sob regime de tributação diferente do comum",
+        {NORMAL_REGIME_CODE},
+    ),
+    "iiAliquotaReduzida": ("alíquota de II reduzida", set()),
+    "iiAcordoTarifarioTipoCodigo": ("II sob acordo tarifário", set()),
+    "iiMotivoAdmissaoTemporariaCodigo": ("admissão temporária", set()),
+    "dcrIdentificacao": ("drawback", set()),
+    "numeroRetificacao": ("DI retificada", set()),
+    "destaqueNcm": ("ex-tarifário", set()),
+    "ipiRegimeTributacaoCodigo": (
+        "IPI sob regime de tributação diferente do comum",
+        {NORMAL_REGIME_CODE},
+    ),
+    "pisCofinsRegimeTributacaoCodigo": (
+        "PIS/COFINS sob regime de tributação diferente do comum",
+        {NORMAL_REGIME_CODE},
+    ),
+    "caracterizacaoOperacaoCodigoTipo": (
+        "importação por conta e ordem ou por encomenda",
+        {NORMAL_REGIME_CODE},
+    ),
+}
+
+
+def regime_signals(root):
+    found = set()
+    for tag, (label, trivial_values) in REGIME_SIGNALS.items():
+        for element in root.iter(tag):
+            value = (element.text or "").strip()
+            if not value or value in trivial_values:
+                continue
+            if not value.strip("0"):
+                continue
+            found.add(label)
+            break
+    return sorted(found)
+
+
 def parse_declaration(content):
     """Turn the XML of one import declaration into plain data.
 
@@ -169,6 +264,8 @@ def parse_declaration(content):
         "gross_weight": _amount(declaration, "cargaPesoBruto", WEIGHT),
         "net_weight": _amount(declaration, "cargaPesoLiquido", WEIGHT),
         "additions": _additions(declaration),
+        "unmapped_tags": unmapped_tags(root),
+        "regime_signals": regime_signals(root),
     }
 
 
@@ -179,6 +276,26 @@ def _brl_to_float(raw):
 
 def _txt_field(parts, index, default=""):
     return parts[index].strip() if index < len(parts) else default
+
+
+TXT_TAG_PATTERN = re.compile(r"^[A-Z][A-Za-z0-9]{0,5}$")
+
+TXT_MAPPED_TAGS = {
+    "C02",
+    "E",
+    "E05",
+    "H",
+    "I",
+    "I18",
+    "I25",
+    "N02",
+    "O07",
+    "O10",
+    "P",
+    "Q02",
+    "S02",
+    "Z",
+}
 
 
 def _txt_date(raw):
@@ -217,11 +334,14 @@ def parse_txt_declaration(content):
     header = {}
     additions = []
     current = None
+    tags_seen = set()
     for raw_line in lines:
         if not raw_line.strip():
             continue
         parts = raw_line.split("|")
         tag = parts[0].strip()
+        if TXT_TAG_PATTERN.match(tag):
+            tags_seen.add(tag)
         if tag == "C02":
             header["importer_document"] = _txt_field(parts, 1)
         elif tag == "E" and "exporter" not in header:
@@ -360,4 +480,6 @@ def parse_txt_declaration(content):
         "gross_weight": 0.0,
         "net_weight": sum(a.get("net_weight", 0.0) for a in additions),
         "additions": prepared_additions,
+        "unmapped_tags": sorted(tags_seen - TXT_MAPPED_TAGS),
+        "regime_signals": [],
     }

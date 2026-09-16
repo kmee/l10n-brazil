@@ -81,6 +81,8 @@
                     </list>
                 </field>
                 <field name="unclaimed_lines" invisible="not unclaimed_lines" />
+                <field name="regime_warning" invisible="not regime_warning" />
+                <field name="unmapped_fields" invisible="not unmapped_fields" />
                 <footer>
                     <button
                         name="action_generate_document"

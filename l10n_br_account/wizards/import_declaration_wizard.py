@@ -164,6 +164,14 @@ class ImportDeclarationWizard(models.TransientModel):
         help="Lines of the invoice that no addition of the declaration "
         "answered for.",
     )
+    unmapped_fields = fields.Text(
+        string="Fields the file has and this reader ignores",
+        readonly=True,
+    )
+    regime_warning = fields.Text(
+        string="Regimes the declaration signals",
+        readonly=True,
+    )
 
     di_number = fields.Char(string="Declaration Number", required=True)
     di_date = fields.Date(string="Registration Date", required=True)
@@ -356,6 +364,12 @@ class ImportDeclarationWizard(models.TransientModel):
                 for line in left
             )
             or False
+        )
+        values["unmapped_fields"] = (
+            ", ".join(declaration.get("unmapped_tags", [])) or False
+        )
+        values["regime_warning"] = (
+            "\n".join(declaration.get("regime_signals", [])) or False
         )
         return values
 
