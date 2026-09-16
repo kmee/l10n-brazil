@@ -480,18 +480,26 @@ class Tax(models.Model):
         # Get Computed IPI Tax
         tax_dict_ipi = taxes_dict.get("ipi", {})
 
-        if partner.ind_ie_dest in (NFE_IND_IE_DEST_2, NFE_IND_IE_DEST_9) or (
-            ind_final == FINAL_CUSTOMER_YES
+        is_import = bool(
+            cfop
+            and cfop.destination == CFOP_DESTINATION_EXPORT
+            and fiscal_operation_type == FISCAL_IN
+        )
+        # LC 87/96 art. 13, V lists the IPI as a component of the ICMS base of
+        # an import in its own right, apart from the general domestic rule
+        # below (the §2º exception, which the art. 13, V import case is not
+        # subject to): the recipient's classification never keeps the IPI out
+        # of the base of an import the way it does for a domestic operation.
+        if (
+            partner.ind_ie_dest in (NFE_IND_IE_DEST_2, NFE_IND_IE_DEST_9)
+            or ind_final == FINAL_CUSTOMER_YES
+            or is_import
         ):
             # Add IPI in ICMS Base
             tax_dict["add_to_base"] += tax_dict_ipi.get("tax_value", 0.00)
 
         # Adiciona na base de calculo do ICMS nos casos de entrada de importação
-        if (
-            cfop
-            and cfop.destination == CFOP_DESTINATION_EXPORT
-            and fiscal_operation_type == FISCAL_IN
-        ):
+        if is_import:
             tax_dict["add_to_base"] += self._import_tax_in_base(taxes_dict, **kwargs)
 
             tax_dict_pis = taxes_dict.get("pis", {})
