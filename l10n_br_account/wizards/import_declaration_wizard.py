@@ -243,6 +243,14 @@ class ImportDeclarationWizard(models.TransientModel):
         string="Generated Document",
         readonly=True,
     )
+    declaration_id = fields.Many2one(
+        comodel_name="l10n_br_fiscal.import.declaration",
+        string="Declaration Record",
+        readonly=True,
+        help="The full declaration as read from the file, kept whether or "
+        "not this wizard's own reading of it is complete: nothing the file "
+        "stated is lost even when a field here has no place to go yet.",
+    )
 
     @api.model
     def default_get(self, fields_list):
@@ -310,6 +318,7 @@ class ImportDeclarationWizard(models.TransientModel):
         self.ensure_one()
         content = base64.b64decode(self.di_file)
         is_xml = content.lstrip()[:1] in (b"<", b"\xef")
+        source_format = "xml" if is_xml else "txt"
         try:
             if is_xml:
                 declaration = parse_declaration(content)
@@ -317,7 +326,15 @@ class ImportDeclarationWizard(models.TransientModel):
                 declaration = parse_txt_declaration(content)
         except DeclarationXmlError as error:
             raise UserError(str(error)) from error
-        self.update(self._values_from_declaration(declaration))
+        record = self.env["l10n_br_fiscal.import.declaration"].create_from_parsed(
+            declaration,
+            source_format,
+            raw_file=content,
+            raw_filename=self.di_filename,
+        )
+        values = self._values_from_declaration(declaration)
+        values["declaration_id"] = record.id
+        self.update(values)
 
     def _values_from_declaration(self, declaration):
         self.ensure_one()

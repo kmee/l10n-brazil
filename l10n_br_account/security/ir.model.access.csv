@@ -20,3 +20,4 @@
 "l10n_br_account_partner_profile_user","Fiscal Partner Profile for Account User","l10n_br_fiscal.model_l10n_br_fiscal_partner_profile","account.group_account_invoice",1,0,0,0
 "l10n_br_account_import_declaration_wizard_user","Import Declaration Wizard","model_l10n_br_account_import_declaration_wizard","account.group_account_invoice",1,1,1,1
 "l10n_br_account_import_declaration_addition_user","Import Declaration Addition","model_l10n_br_account_import_declaration_addition","account.group_account_invoice",1,1,1,1
+"l10n_br_account_import_declaration_user","Import Declaration for Account User","l10n_br_fiscal.model_l10n_br_fiscal_import_declaration","account.group_account_invoice",1,1,1,0
