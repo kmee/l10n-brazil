@@ -197,9 +197,9 @@ def parse_txt_declaration(content):
     despachante already worked it out here, item by item, precisely because
     nobody types nine tariff lines by hand. One line per record, fields
     separated by "|": `H` opens an item block, `I` carries the item, `I18`
-    carries the DI reference and the addition number (field 6, constant
-    across every item of the same addition — `I25`'s own field 2 is only the
-    item's sequence in the draft invoice, not the addition), `N02` is the
+    carries the DI reference (field 6 is `tpViaTransp`, the transport mode,
+    not the addition), `I25` carries the addition number itself (field 1,
+    `nAdicao` — field 2 is only the item's sequence inside it), `N02` is the
     ICMS, `O07`+`O10` the IPI, `P` the Import Tax (base at position 1, value
     at position 3), `Q02` the PIS, `S02` the COFINS.
 
@@ -252,7 +252,8 @@ def parse_txt_declaration(content):
             header.setdefault("registration_date", _txt_field(parts, 2))
             header.setdefault("clearance_place", _txt_field(parts, 3))
             header.setdefault("clearance_state", _txt_field(parts, 4))
-            current["addition_number"] = _txt_field(parts, 6)
+        elif tag == "I25" and current is not None:
+            current["addition_number"] = _txt_field(parts, 1)
         elif tag == "N02" and current is not None:
             current["icms_value"] = float(_txt_field(parts, 6) or 0)
         elif tag == "O07" and current is not None:
