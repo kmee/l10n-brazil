@@ -911,48 +911,25 @@ class ImportDeclarationWizard(models.TransientModel):
                     gross_parts[position],
                     declared_taxes.get("ii_declared_value", 0.0),
                 )
-            # On an import CFOP the fiscal amount already adds II, PIS, COFINS,
-            # ICMS and the customs charges to the untaxed amount, so the only
-            # tax left outside the price is the IPI. Without writing it here the
-            # document total keeps the IPI the engine computed from the product
-            # rate instead of the one the declaration charged.
-            values = {"amount_tax_included": 0.0}
-            # The base of the IPI and of the contributions is composed by the
-            # engine, which takes the Import Tax the declaration charged. The
-            # ICMS is not: the engine only puts the IPI inside its base for
-            # some kinds of recipient, and on an import it always belongs
-            # there, so the base is grossed up here with everything in it. The
-            # rate stays the one of the product file, and keeping it is what
-            # makes base times rate reproduce the amount: the SEFAZ recomputes
-            # that product and refuses the note with 528 otherwise.
-            # Base and rate of the Import Tax follow the amount charged, so
-            # base times rate reproduces it. The engine only derives them when
-            # the product file carries an Import Tax of its own; on a line
-            # without one there is no compute to run, and the SEFAZ recomputes
-            # that product and refuses the note with 528 when it does not close.
+            # The base and the value of II, IPI, PIS, COFINS and ICMS are all
+            # the engine's own doing now: it took customs_declared_value as
+            # the legal base (Art. 75, Decreto 6.759/09) when `_prepare_line_
+            # values` set it above, and it grosses up the ICMS base with the
+            # IPI unconditionally on an import (LC 87/96 art. 13, V). What is
+            # left to fix by hand is not a tax figure at all: it is where the
+            # NF-e schema expects each of those already-correct amounts to
+            # sit — II inside vProd, PIS/COFINS/customs charges inside
+            # vOutro, and every tax marked as already included in the total,
+            # so the goods line does not book any of them a second time.
             gross = gross_parts[position]
             declared = declared_taxes.get("ii_declared_value", 0.0)
-            if declared:
-                values["ii_base"] = gross
-                values["ii_percent"] = self._rate(declared, gross)
-            before_icms = (
-                gross
-                + declared_taxes.get("ii_declared_value", 0.0)
-                + declared_taxes.get("ii_customhouse_charges", 0.0)
-                + line.ipi_value
-                + line.pis_value
-                + line.cofins_value
-            )
-            rate = line.icms_percent or 0.0
-            if rate:
-                icms_base = before_icms / (1 - rate / 100.0)
-                values["icms_base"] = icms_base
-                values["icms_value"] = icms_base * rate / 100.0
-            values["other_value"] = (
-                line.pis_value
-                + line.cofins_value
-                + declared_taxes.get("ii_customhouse_charges", 0.0)
-            )
+            values = {
+                "other_value": (
+                    line.pis_value
+                    + line.cofins_value
+                    + declared_taxes.get("ii_customhouse_charges", 0.0)
+                )
+            }
             if declared:
                 vprod_gross = gross + declared
                 # freight_value and insurance_value are added back on top of
@@ -961,15 +938,6 @@ class ImportDeclarationWizard(models.TransientModel):
                 # customs value's own freight and insurance twice.
                 vprod_gross -= line.freight_value + line.insurance_value
                 values["price_unit"] = vprod_gross / line.quantity
-                values["ipi_base"] = line.ipi_base
-                values["ipi_percent"] = line.ipi_percent
-                values["ipi_value"] = line.ipi_value
-                values["pis_base"] = line.pis_base
-                values["pis_percent"] = line.pis_percent
-                values["pis_value"] = line.pis_value
-                values["cofins_base"] = line.cofins_base
-                values["cofins_percent"] = line.cofins_percent
-                values["cofins_value"] = line.cofins_value
             # II sits inside vProd, PIS/COFINS inside vOutro and ICMS inside
             # its own grossed base: the fiscal total already carries them all,
             # and each one still gets its own tax line in the accounting. They
@@ -978,7 +946,7 @@ class ImportDeclarationWizard(models.TransientModel):
             # only stated in 2026, not charged, so they come out the same way.
             values["amount_tax_included"] = (
                 declared
-                + values.get("icms_value", line.icms_value)
+                + line.icms_value
                 + line.pis_value
                 + line.cofins_value
                 + line.ibs_value
