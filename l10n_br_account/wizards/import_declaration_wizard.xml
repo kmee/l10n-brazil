@@ -163,5 +163,6 @@
         <field name="target">new</field>
         <field name="binding_model_id" ref="account.model_account_move" />
         <field name="binding_view_types">form,list</field>
+        <field name="context">{'default_move_id': active_id}</field>
     </record>
 </odoo>
