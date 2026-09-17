@@ -2959,6 +2959,247 @@ msgstr "Esta tela já gerou o documento %s."
 msgid "Transport Via"
 msgstr "Via de Transporte"
 
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_account_import_declaration_wizard__acquirer_partner_id
+msgid "Acquirer"
+msgstr "Adquirente"
+
+#. module: l10n_br_account
+#. odoo-python
+#: code:addons/l10n_br_account/wizards/import_declaration_wizard.py:0
+msgid ""
+"Addition %s has no line of the invoice answering for it. Tie its goods to "
+"the lines before generating."
+msgstr "A adição %s não tem linha da fatura correspondente. Vincule as mercadorias às linhas antes de gerar."
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_account_import_declaration_addition__exporter_code
+msgid "Addition Exporter Code"
+msgstr "Código do Exportador da Adição"
+
+#. module: l10n_br_account
+#. odoo-python
+#: code:addons/l10n_br_account/models/account_move.py:0
+msgid ""
+"Asking the SEFAZ about a document needs the electronic fiscal document "
+"module installed."
+msgstr "Consultar o status na SEFAZ exige o módulo de documento fiscal eletrônico instalado."
+
+#. module: l10n_br_account
+#: model:ir.model.fields,help:l10n_br_account.field_l10n_br_account_import_declaration_addition__customs_value
+msgid ""
+"Base of the Import Tax of the addition, which is the customs value of the "
+"goods it covers."
+msgstr "Base do Imposto de Importação da adição, que é o valor aduaneiro das mercadorias que ela cobre."
+
+#. module: l10n_br_account
+#: model_terms:ir.ui.view,arch_db:l10n_br_account.import_declaration_wizard_form
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: l10n_br_account
+#: model:ir.actions.server,name:l10n_br_account.invoice_action_check_status
+msgid "Check status at the SEFAZ"
+msgstr "Consultar status na SEFAZ"
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_account_import_declaration_addition__create_uid
+#: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_account_import_declaration_wizard__create_uid
+msgid "Created by"
+msgstr "Criado por"
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_account_import_declaration_addition__create_date
+#: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_account_import_declaration_wizard__create_date
+msgid "Created on"
+msgstr "Criado em"
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__customs_declared_value
+msgid "Customs value charged by the declaration"
+msgstr "Valor aduaneiro declarado pela DI"
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_account_import_declaration_wizard__declaration_id
+msgid "Declaration Record"
+msgstr "Registro da Declaração"
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_account_import_declaration_wizard__divergence_ids
+msgid "Divergences"
+msgstr "Divergências"
+
+#. module: l10n_br_account
+#: model:ir.actions.server,name:l10n_br_account.invoice_action_download_report
+msgid "Download DANFE"
+msgstr "Baixar DANFE"
+
+#. module: l10n_br_account
+#: model:ir.actions.server,name:l10n_br_account.invoice_action_download_xml
+msgid "Download XML"
+msgstr "Baixar XML"
+
+#. module: l10n_br_account
+#: model:ir.actions.server,name:l10n_br_account.invoice_action_download_xml_and_report
+#: model_terms:ir.ui.view,arch_db:l10n_br_account.invoice_form
+msgid "Download XML and DANFE"
+msgstr "Baixar XML e DANFE"
+
+#. module: l10n_br_account
+#. odoo-python
+#: code:addons/l10n_br_account/models/account_move.py:0
+msgid ""
+"Downloading the XML and the report needs the electronic fiscal document "
+"module installed."
+msgstr "Baixar o XML e o relatório exige o módulo de documento fiscal eletrônico instalado."
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_account_import_declaration_addition__drawback_act
+msgid "Drawback Act"
+msgstr "Ato Concessório de Drawback"
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_account_import_declaration_wizard__unmapped_fields
+msgid "Fields the file has and this reader ignores"
+msgstr "Campos que o arquivo tem e este leitor ignora"
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_account_import_declaration_addition__ii_regime_code
+msgid "II Regime Code"
+msgstr "Código do Regime de Tributação do II"
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_account_import_declaration_addition__ipi_regime_code
+msgid "IPI Regime Code"
+msgstr "Código do Regime de Tributação do IPI"
+
+#. module: l10n_br_account
+#: model:ir.model.fields,help:l10n_br_account.field_account_move_line__ii_declared_value
+msgid ""
+"Import Tax the import declaration actually charged. It follows the tariff "
+"classification and any tariff exception, so the product file has no way to "
+"know it. When informed it wins over the rate of the product file, and it is "
+"what composes the base of the IPI, of the ICMS, of the CBS and of the IS."
+msgstr "O Imposto de Importação que a declaração efetivamente cobrou. Segue a classificação tarifária e qualquer exceção tarifária, algo que o cadastro do produto não tem como saber. Quando informado, prevalece sobre a alíquota do cadastro do produto, e é o que compõe a base do IPI, do ICMS, da CBS e do IS."
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_account_import_declaration_addition__write_uid
+#: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_account_import_declaration_wizard__write_uid
+msgid "Last Updated by"
+msgstr "Última Atualização por"
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_account_import_declaration_addition__write_date
+#: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_account_import_declaration_wizard__write_date
+msgid "Last Updated on"
+msgstr "Última Atualização em"
+
+#. module: l10n_br_account
+#: model:ir.model.fields,help:l10n_br_account.field_l10n_br_account_import_declaration_wizard__intermediation
+msgid ""
+"Mandatory in the schema and it comes before the exporter code, so leaving it"
+" out makes the validation blame cExportador instead."
+msgstr "Obrigatório no esquema e vem antes do código do exportador, então deixá-lo em branco faz a validação acusar o cExportador em seu lugar."
+
+#. module: l10n_br_account
+#. odoo-python
+#: code:addons/l10n_br_account/models/account_move.py:0
+msgid "None of the selected invoices carries a fiscal document."
+msgstr "Nenhuma das faturas selecionadas carrega um documento fiscal."
+
+#. module: l10n_br_account
+#. odoo-python
+#: code:addons/l10n_br_account/wizards/document_import_wizard.py:0
+msgid "None of the uploaded files is an XML: %(names)s"
+msgstr "Nenhum dos arquivos enviados é um XML: %(names)s"
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_account_import_declaration_addition__pis_cofins_regime_code
+msgid "PIS/COFINS Regime Code"
+msgstr "Código do Regime de Tributação do PIS/COFINS"
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_account_import_declaration_wizard__regime_warning
+msgid "Regimes the declaration signals"
+msgstr "Regimes que a declaração sinaliza"
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__issqn_service_city_id
+msgid "Service City"
+msgstr "Município do Serviço"
+
+#. module: l10n_br_account
+#: model:ir.model.fields,help:l10n_br_account.field_l10n_br_account_import_declaration_wizard__di_file
+msgid ""
+"The XML of the import declaration, as the Siscomex hands it out. Loading it "
+"fills the declaration and its additions."
+msgstr "O XML da declaração de importação, como o Siscomex o entrega. Carregá-lo preenche a declaração e suas adições."
+
+#. module: l10n_br_account
+#: model:ir.model.fields,help:l10n_br_account.field_l10n_br_account_import_declaration_wizard__acquirer_partner_id
+msgid ""
+"The buyer on whose behalf the goods were imported, on an intermediated "
+"import. The declaration never states who this is, only that the import was "
+"intermediated: the operator has to pick the partner by hand."
+msgstr "O comprador por conta de quem as mercadorias foram importadas, numa importação intermediada. A declaração nunca diz quem é, só que a importação foi intermediada: o operador precisa escolher o parceiro manualmente."
+
+#. module: l10n_br_account
+#: model:ir.model.fields,help:l10n_br_account.field_l10n_br_account_import_declaration_wizard__declaration_id
+msgid ""
+"The full declaration as read from the file, kept whether or not this "
+"wizard's own reading of it is complete: nothing the file stated is lost even"
+" when a field here has no place to go yet."
+msgstr "A declaração completa lida do arquivo, mantida independentemente de a leitura deste assistente estar completa: nada que o arquivo declarou se perde, mesmo quando um campo aqui ainda não tem onde ir."
+
+#. module: l10n_br_account
+#. odoo-python
+#: code:addons/l10n_br_account/wizards/import_declaration_wizard.py:0
+msgid ""
+"The note does not close on the declaration:\n"
+"%s\n"
+"\n"
+"The rate of these taxes comes from the product and from the CFOP, so a difference here is a tax mapping to fix, not a value to force."
+msgstr "A nota não fecha com a declaração:\n%s\n\nA alíquota desses impostos vem do produto e do CFOP, então uma diferença aqui é um mapeamento de imposto a corrigir, não um valor a forçar."
+
+#. module: l10n_br_account
+#: model:ir.model.fields,help:l10n_br_account.field_l10n_br_account_import_declaration_wizard__customs_value
+msgid ""
+"Valor aduaneiro in BRL, as converted by the declaration exchange rate. It "
+"becomes the gross amount of the note lines."
+msgstr "Valor aduaneiro em BRL, já convertido pela taxa de câmbio da declaração. Torna-se o valor bruto das linhas da nota."
+
+#. module: l10n_br_account
+#: model:ir.model.fields,help:l10n_br_account.field_account_move_line__customs_declared_value
+msgid ""
+"Valor aduaneiro the import declaration fixed for this line: the legal base "
+"of II (Art. 75, Decreto 6.759/09), of IPI (Art. 190, I, 'a', Decreto "
+"7.212/10) and of PIS/COFINS-Importação (Art. 7º, I, Lei 10.865/04). A "
+"commercial invoice in foreign currency, or with freight and insurance billed"
+" apart from the goods, gives a price × quantity that is not this value; when"
+" the declaration states it, it wins over that product instead of the engine "
+"trying to recompute a customs authority's own figure from the invoice."
+msgstr "O valor aduaneiro que a declaração de importação fixou para esta linha: a base legal do II (Art. 75, Decreto 6.759/09), do IPI (Art. 190, I, \"a\", Decreto 7.212/10) e do PIS/COFINS-Importação (Art. 7º, I, Lei 10.865/04). Uma fatura comercial em moeda estrangeira, ou com frete e seguro cobrados à parte da mercadoria, resulta num preço × quantidade que não é esse valor; quando a declaração o informa, ele prevalece sobre o produto em vez de o motor tentar recalcular uma cifra que é da autoridade aduaneira, a partir da fatura."
+
+#. module: l10n_br_account
+#: model:ir.model.fields,help:l10n_br_account.field_l10n_br_account_import_declaration_wizard__exporter_code
+msgid ""
+"Without it the XML does not even validate, and the error message blames the "
+"next element."
+msgstr "Sem ele o XML nem valida, e a mensagem de erro acusa o próximo elemento."
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_account_import_declaration_addition__wizard_id
+msgid "Wizard"
+msgstr "Assistente"
+
+#. module: l10n_br_account
+#. odoo-python
+#: code:addons/l10n_br_account/wizards/import_declaration_wizard.py:0
+msgid ""
+"tpViaTransp: the file states code %(code)r, which is not one of the known "
+"transport codes."
+msgstr "tpViaTransp: o arquivo declara o código %(code)r, que não é um dos códigos de transporte conhecidos."
+
 #, python-format
 #~ msgid ""
 #~ "You can't set this document number: {} to draft because this document is "
