@@ -107,6 +107,9 @@ class FiscalDocumentMixin(models.AbstractModel):
             elif doc.document_serie is None:
                 doc.document_serie = False
 
+    def _inverse_document_serie(self):
+        pass
+
     @api.depends("document_type_id", "issuer")
     def _compute_document_serie_id(self):
         for doc in self:
@@ -743,6 +746,7 @@ class FiscalDocumentMixin(models.AbstractModel):
     document_serie = fields.Char(
         string="Serie Number",
         compute="_compute_document_serie",
+        inverse="_inverse_document_serie",
         store=True,
     )
 

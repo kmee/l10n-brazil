@@ -7,7 +7,10 @@ from odoo.exceptions import ValidationError
 from odoo.tests import TransactionCase
 from odoo.tools import mute_logger
 
-from odoo.addons.l10n_br_fiscal.constants.fiscal import DOCUMENT_STATE_CANCEL
+from odoo.addons.l10n_br_fiscal.constants.fiscal import (
+    DOCUMENT_ISSUER_PARTNER,
+    DOCUMENT_STATE_CANCEL,
+)
 
 from .tools import load_fiscal_fixture_files
 
@@ -63,3 +66,19 @@ class TestFiscalDocumentSerie(TransactionCase):
         """Test document serie code in use constraint."""
         with self.assertRaises(ValidationError):
             self.document_serie_nfe_5.write({"code": "7"})
+
+    def test_document_serie_manual_for_partner_issuer(self):
+        """A partner-issued document has no document_serie_id to derive
+        document_serie from, so users must be able to type it in."""
+        document = self.document.copy(
+            {
+                "issuer": DOCUMENT_ISSUER_PARTNER,
+                "document_serie_id": False,
+                "document_number": "3778",
+            }
+        )
+        document.document_serie = "1"
+        self.assertEqual(document.document_serie, "1")
+
+        document.document_type_id = self.document_type_nfe.id
+        self.assertEqual(document.document_serie, "1")
