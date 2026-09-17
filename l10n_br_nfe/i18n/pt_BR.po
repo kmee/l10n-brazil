@@ -6598,6 +6598,32 @@ msgstr ""
 msgid "Órgão emitente"
 msgstr ""
 
+#. module: l10n_br_nfe
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_nfe_40_di__declaration_id
+msgid "Import Declaration"
+msgstr "Declaração de Importação"
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_nfe_40_adi__addition_id
+msgid "Import Declaration Addition"
+msgstr "Adição da Declaração de Importação"
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,help:l10n_br_nfe.field_nfe_40_adi__addition_id
+msgid ""
+"The persisted addition this adi group was built from, when one exists. See "
+"nfe.40.di.declaration_id for why this can be empty."
+msgstr "A adição persistida a partir da qual este grupo adi foi construído, quando existir. Veja nfe.40.di.declaration_id para saber por que isso pode ficar vazio."
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,help:l10n_br_nfe.field_nfe_40_di__declaration_id
+msgid ""
+"The persisted declaration this DI group was built from, when one exists. A "
+"note imported straight from an inbound DF-e, with no declaration file behind"
+" it, keeps this empty; every field of the DI group is still written the way "
+"it always was."
+msgstr "A declaração persistida a partir da qual este grupo DI foi construído, quando existir. Uma nota importada direto de um DF-e recebido, sem arquivo de declaração por trás, mantém isso vazio; todo campo do grupo DI continua sendo gravado como sempre foi."
+
 #~ msgid "1.00"
 #~ msgstr "1.00"
 
