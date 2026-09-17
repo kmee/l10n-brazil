@@ -31,6 +31,7 @@ class TestImportTaxBase(TransactionCase):
         cls.taxes = cls.env.ref("l10n_br_fiscal.tax_ii_0") + cls.env.ref(
             "l10n_br_fiscal.tax_ipi_9_75"
         )
+        cls.taxes += cls.env.ref("l10n_br_fiscal.tax_icms_17")
 
     def _kwargs(self, **overrides):
         values = {
@@ -103,4 +104,35 @@ class TestImportTaxBase(TransactionCase):
         self.assertEqual(
             self.currency.round(result["taxes"]["ipi"]["base"]),
             self.currency.round(CUSTOMS_VALUE),
+        )
+
+    def test_declared_customs_value_drives_import_bases(self):
+        customs_value = 100000.00
+        ii_value = 12000.00
+        charges = 400.00
+        iof_value = 300.00
+        result = self.taxes.compute_taxes(
+            **self._kwargs(
+                fiscal_price=1.00,
+                customs_declared_value=customs_value,
+                ii_declared_value=ii_value,
+                ii_customhouse_charges=charges,
+                ii_iof_value=iof_value,
+            )
+        )
+        ii = result["taxes"]["ii"]
+        ipi = result["taxes"]["ipi"]
+        icms = result["taxes"]["icms"]
+
+        self.assertEqual(self.currency.round(ii["base"]), customs_value)
+        self.assertEqual(
+            self.currency.round(ipi["base"]),
+            self.currency.round(customs_value + ii_value),
+        )
+        expected_icms_base = (
+            customs_value + ii_value + ipi["tax_value"] + charges + iof_value
+        ) / (1 - icms["percent_amount"] / 100)
+        self.assertEqual(
+            self.currency.round(icms["base"]),
+            self.currency.round(expected_icms_base),
         )

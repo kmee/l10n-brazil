@@ -271,12 +271,27 @@ class Tax(models.Model):
         insurance_value = kwargs.get("insurance_value", 0.00)
         freight_value = kwargs.get("freight_value", 0.00)
         other_value = kwargs.get("other_value", 0.00)
+        customs_declared_value = kwargs.get("customs_declared_value") or 0.00
+        cfop = kwargs.get("cfop")
+        operation_line = kwargs.get("operation_line")
+        is_import = bool(
+            cfop
+            and operation_line
+            and cfop.destination == CFOP_DESTINATION_EXPORT
+            and operation_line.fiscal_operation_type == FISCAL_IN
+        )
 
-        if tax.tax_group_id.base_with_additional_values:
+        # The valor aduaneiro already carries freight, insurance and other
+        # customs charges (Art. 77, Decreto 6.759/09): summing them again on
+        # top of a stated customs_declared_value double-counts them.
+        if tax.tax_group_id.base_with_additional_values and not (
+            is_import and customs_declared_value
+        ):
             tax_dict["add_to_base"] += sum(
                 [freight_value, insurance_value, other_value]
             )
-        tax_dict["remove_from_base"] += sum([discount_value])
+        if not (is_import and customs_declared_value):
+            tax_dict["remove_from_base"] += sum([discount_value])
 
         base = 0.00
 
@@ -386,7 +401,8 @@ class Tax(models.Model):
         # declaration states one; the commercial line is only the fallback for
         # a line the declaration never covers.
         gross = kwargs.get("customs_declared_value") or (
-            (kwargs.get("fiscal_price") or 0.00) * (kwargs.get("fiscal_quantity") or 0.00)
+            (kwargs.get("fiscal_price") or 0.00)
+            * (kwargs.get("fiscal_quantity") or 0.00)
         )
         if gross and not tax_dict.get("percent_amount"):
             tax_dict["percent_amount"] = declared / gross * 100.0
@@ -527,6 +543,7 @@ class Tax(models.Model):
             tax_dict["add_to_base"] += tax_dict_cofins.get("tax_value", 0.00)
 
             tax_dict["add_to_base"] += kwargs.get("ii_customhouse_charges", 0.00)
+            tax_dict["add_to_base"] += kwargs.get("ii_iof_value", 0.00)
 
             other_value = kwargs.get("other_value", 0.00)
             tax_dict["remove_from_base"] += sum([other_value])
