@@ -9382,6 +9382,821 @@ msgstr ""
 msgid "pis_wh"
 msgstr "pis_wh"
 
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__afrmm_value
+msgid "AFRMM"
+msgstr "AFRMM"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__afrmm_stated
+msgid "AFRMM Stated"
+msgstr "AFRMM Declarado"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_payment__account_number
+msgid "Account Number"
+msgstr "Número da Conta"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__acquisition_country_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__acquisition_country_id
+msgid "Acquisition Country"
+msgstr "País de Aquisição"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_import_declaration_adjustment__kind__acrescimo
+msgid "Acréscimo"
+msgstr "Acréscimo"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition_line__addition_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_adjustment__addition_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_divergence__addition_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_field__addition_id
+msgid "Addition"
+msgstr "Adição"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__number
+msgid "Addition Number"
+msgstr "Número da Adição"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__addition_ids
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.import_declaration_view_form
+msgid "Additions"
+msgstr "Adições"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__adjustment_ids
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.import_declaration_addition_view_form
+msgid "Adjustments"
+msgstr "Acréscimos e Deduções"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_payment__agency_code
+msgid "Agency Code"
+msgstr "Código da Agência"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_payment__amount
+msgid "Amount"
+msgstr "Valor"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__amount_brl
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_adjustment__amount_brl
+msgid "Amount (BRL)"
+msgstr "Valor (BRL)"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__amount_foreign
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_adjustment__amount_foreign
+msgid "Amount (Foreign Currency)"
+msgstr "Valor (Moeda Estrangeira)"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_payment__bank_code
+msgid "Bank Code"
+msgstr "Código do Banco"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_import_declaration_divergence__dimension__base
+msgid "Base"
+msgstr "Base"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__fiscal_line_ids
+msgid "Bill/Fiscal Lines"
+msgstr "Linhas da Fatura/Documento Fiscal"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__cide_due_value
+msgid "CIDE Due"
+msgstr "CIDE Devida"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__cide_value
+msgid "CIDE Paid"
+msgstr "CIDE Recolhida"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__cide_rate
+msgid "CIDE Rate"
+msgstr "Alíquota da CIDE"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__cofins_value
+msgid "COFINS Paid"
+msgstr "COFINS Recolhida"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__cofins_rate
+msgid "COFINS Rate (%)"
+msgstr "Alíquota da COFINS (%)"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__cofins_reduced_rate
+msgid "COFINS Reduced Rate (%)"
+msgstr "Alíquota Reduzida da COFINS (%)"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__clearance_date
+msgid "Clearance Date"
+msgstr "Data de Desembaraço"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__clearance_place
+msgid "Clearance Place"
+msgstr "Local de Desembaraço"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__clearance_state_id
+msgid "Clearance State"
+msgstr "UF de Desembaraço"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__stated_field_names
+msgid "Comma separated list of fields the source actually stated."
+msgstr "Lista, separada por vírgula, dos campos que o arquivo de origem realmente declarou."
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__company_currency_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__company_currency_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_adjustment__company_currency_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_payment__company_currency_id
+msgid "Company Currency"
+msgstr "Moeda da Empresa"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_divergence__computed
+msgid "Computed"
+msgstr "Calculado"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__customhouse_charges_stated
+msgid "Customhouse Charges Stated"
+msgstr "Despesas Aduaneiras Declaradas"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__customs_declared_value
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__customs_declared_value
+msgid "Customs value charged by the declaration"
+msgstr "Valor aduaneiro declarado pela DI"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__dcr_due_value
+msgid "DCR Due"
+msgstr "DCR Devido"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__dcr_identification
+msgid "DCR Identification"
+msgstr "Identificação do DCR"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__dcr_reduction_coefficient
+msgid "DCR Reduction Coefficient"
+msgstr "Coeficiente de Redução do DCR"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__number
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.import_declaration_view_form
+msgid "DI/DUIMP Number"
+msgstr "Número da DI/DUIMP"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__declaration_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_divergence__declaration_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_document__declaration_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_field__declaration_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_payment__declaration_id
+msgid "Declaration"
+msgstr "Declaração"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__declaration_type
+msgid "Declaration Type"
+msgstr "Tipo de Declaração"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_import_declaration__declaration_type__di
+msgid "Declaração de Importação"
+msgstr "Declaração de Importação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_import_declaration__declaration_type__duimp
+msgid "Declaração Única de Importação"
+msgstr "Declaração Única de Importação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_divergence__declared
+msgid "Declared"
+msgstr "Declarado"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_import_declaration_adjustment__kind__deducao
+msgid "Dedução"
+msgstr "Dedução"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_divergence__difference
+msgid "Difference"
+msgstr "Diferença"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_divergence__dimension
+msgid "Dimension"
+msgstr "Dimensão"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__document_ids
+msgid "Dispatch Documents"
+msgstr "Documentos de Instrução do Despacho"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__urf_clearance_code
+msgid "Dispatch URF Code"
+msgstr "Código da URF de Despacho"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__urf_clearance_name
+msgid "Dispatch URF Name"
+msgstr "Nome da URF de Despacho"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_import_declaration_divergence__severity__divergence
+msgid "Divergence"
+msgstr "Divergência"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__divergence_ids
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.import_declaration_view_form
+msgid "Divergences"
+msgstr "Divergências"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_document__name
+msgid "Document Name"
+msgstr "Nome do Documento"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__drawback_act
+msgid "Drawback Act"
+msgstr "Ato Concessório de Drawback"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__drawback_coefficient
+msgid "Drawback Reduction Coefficient"
+msgstr "Coeficiente de Redução do Drawback"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__urf_entry_code
+msgid "Entry URF Code"
+msgstr "Código da URF de Entrada"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__urf_entry_name
+msgid "Entry URF Name"
+msgstr "Nome da URF de Entrada"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__exchange_rate
+msgid "Exchange Rate"
+msgstr "Taxa de Câmbio"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__exchange_rate_stated
+msgid "Exchange Rate Stated"
+msgstr "Taxa de Câmbio Declarada"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_divergence__explanation
+msgid "Explanation"
+msgstr "Explicação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__exporter_code
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__exporter_code
+msgid "Exporter Code"
+msgstr "Código do Exportador"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__exporter_name
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__exporter_name
+msgid "Exporter Name"
+msgstr "Nome do Exportador"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_divergence__fiscal_line_id
+msgid "Fiscal Line"
+msgstr "Linha Fiscal"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__currency_id
+msgid "Foreign Currency"
+msgstr "Moeda Estrangeira"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__freight_value
+msgid "Freight"
+msgstr "Frete"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__freight_stated
+msgid "Freight Stated"
+msgstr "Frete Declarado"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__line_ids
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.import_declaration_addition_view_form
+msgid "Goods"
+msgstr "Mercadorias"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__gross_weight
+msgid "Gross Weight"
+msgstr "Peso Bruto"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__ii_calculated_value
+msgid "II Calculated"
+msgstr "II Calculado"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__ii_due_value
+msgid "II Due"
+msgstr "II Devido"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__ii_legal_basis_code
+msgid "II Legal Basis Code"
+msgstr "Código do Fundamento Legal do II"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__ii_value
+msgid "II Paid"
+msgstr "II Recolhido"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__ii_rate
+msgid "II Rate (%)"
+msgstr "Alíquota do II (%)"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__ii_reduced_rate
+msgid "II Reduced Rate (%)"
+msgstr "Alíquota Reduzida do II (%)"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__ii_reduction_percent
+msgid "II Reduction (%)"
+msgstr "Percentual de Redução do II (%)"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__ii_regime_code
+msgid "II Regime Code"
+msgstr "Código do Regime de Tributação do II"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__ii_tariff_agreement_code
+msgid "II Tariff Agreement Code"
+msgstr "Código do Acordo Tarifário do II"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__ii_declared_value
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__ii_declared_value
+msgid "II charged by the declaration"
+msgstr "II cobrado pela declaração"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__ipi_calculated_value
+msgid "IPI Calculated"
+msgstr "IPI Calculado"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__ipi_value
+msgid "IPI Paid"
+msgstr "IPI Recolhido"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__ipi_rate
+msgid "IPI Rate (%)"
+msgstr "Alíquota do IPI (%)"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__ipi_reduced_rate
+msgid "IPI Reduced Rate (%)"
+msgstr "Alíquota Reduzida do IPI (%)"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__ipi_regime_code
+msgid "IPI Regime Code"
+msgstr "Código do Regime de Tributação do IPI"
+
+#. module: l10n_br_fiscal
+#: model:ir.model,name:l10n_br_fiscal.model_l10n_br_fiscal_import_declaration
+msgid "Import Declaration (DI/DUIMP)"
+msgstr "Declaração de Importação (DI/DUIMP)"
+
+#. module: l10n_br_fiscal
+#: model:ir.model,name:l10n_br_fiscal.model_l10n_br_fiscal_import_declaration_addition
+msgid "Import Declaration Addition (Adição)"
+msgstr "Adição da Declaração de Importação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model,name:l10n_br_fiscal.model_l10n_br_fiscal_import_declaration_adjustment
+msgid "Import Declaration Adjustment (Acréscimo/Dedução)"
+msgstr "Acréscimo/Dedução da Declaração de Importação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model,name:l10n_br_fiscal.model_l10n_br_fiscal_import_declaration_document
+msgid "Import Declaration Dispatch Document"
+msgstr "Documento de Instrução do Despacho da DI"
+
+#. module: l10n_br_fiscal
+#: model:ir.model,name:l10n_br_fiscal.model_l10n_br_fiscal_import_declaration_addition_line
+msgid "Import Declaration Good (Mercadoria)"
+msgstr "Mercadoria da Declaração de Importação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model,name:l10n_br_fiscal.model_l10n_br_fiscal_import_declaration_payment
+msgid "Import Declaration Payment (Pagamento)"
+msgstr "Pagamento da Declaração de Importação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model,name:l10n_br_fiscal.model_l10n_br_fiscal_import_declaration_divergence
+msgid "Import Declaration Reconciliation Divergence"
+msgstr "Divergência de Reconciliação da Declaração de Importação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model,name:l10n_br_fiscal.model_l10n_br_fiscal_import_declaration_field
+msgid "Import Declaration Unmapped Field"
+msgstr "Campo não Mapeado da Declaração de Importação"
+
+#. module: l10n_br_fiscal
+#: model:ir.actions.act_window,name:l10n_br_fiscal.import_declaration_action
+#: model:ir.ui.menu,name:l10n_br_fiscal.import_declaration_menu
+msgid "Import Declarations"
+msgstr "Declarações de Importação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__importer_partner_id
+msgid "Importer"
+msgstr "Importador"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__importer_document
+msgid "Importer Document"
+msgstr "Documento do Importador"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__incoterm
+msgid "Incoterm"
+msgstr "Incoterm"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__insurance_value
+msgid "Insurance"
+msgstr "Seguro"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__insurance_stated
+msgid "Insurance Stated"
+msgstr "Seguro Declarado"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__interest_value
+msgid "Interest (Juros e Encargos)"
+msgstr "Juros e Encargos"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__intermediation_code
+msgid "Intermediation Code"
+msgstr "Código de Intermediação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_adjustment__kind
+msgid "Kind"
+msgstr "Tipo"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__manufacturer_code
+msgid "Manufacturer Code"
+msgstr "Código do Fabricante"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__manufacturer_name
+msgid "Manufacturer Name"
+msgstr "Nome do Fabricante"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition_line__product_id
+msgid "Matched Product"
+msgstr "Produto Encontrado"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__naladi_ncca_code
+msgid "NALADI/NCCA Code"
+msgstr "Código NALADI/NCCA"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__naladi_sh_code
+msgid "NALADI/SH Code"
+msgstr "Código NALADI/SH"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__destaque_ncm
+msgid "NCM Highlight (Destaque)"
+msgstr "Destaque da NCM"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_import_declaration__source_format__txt
+msgid "NF-e TXT Layout"
+msgstr "Leiaute TXT da NF-e"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__net_weight
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__net_weight
+msgid "Net Weight"
+msgstr "Peso Líquido"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__operation_type_code
+msgid "Operation Type Code"
+msgstr "Código do Tipo de Operação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__origin_country_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__origin_country_id
+msgid "Origin Country"
+msgstr "País de Origem"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__pis_value
+msgid "PIS Paid"
+msgstr "PIS Recolhido"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__pis_rate
+msgid "PIS Rate (%)"
+msgstr "Alíquota do PIS (%)"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__pis_reduced_rate
+msgid "PIS Reduced Rate (%)"
+msgstr "Alíquota Reduzida do PIS (%)"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__pis_cofins_base
+msgid "PIS/COFINS Base"
+msgstr "Base de Cálculo do PIS/COFINS"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__pis_cofins_regime_code
+msgid "PIS/COFINS Regime Code"
+msgstr "Código do Regime de Tributação do PIS/COFINS"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__parser_version
+msgid "Parser Version"
+msgstr "Versão do Leitor"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_payment__payment_date
+msgid "Payment Date"
+msgstr "Data do Pagamento"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_payment__payment_type_code
+msgid "Payment Type Code"
+msgstr "Código do Tipo de Pagamento"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__payment_ids
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.import_declaration_view_form
+msgid "Payments"
+msgstr "Pagamentos"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__penalty_value
+msgid "Penalty (Multa)"
+msgstr "Multa"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_field__position
+msgid "Position"
+msgstr "Posição"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition_line__product_code
+msgid "Product Code"
+msgstr "Código do Produto"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_import_declaration_divergence__dimension__percent
+msgid "Rate"
+msgstr "Alíquota"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_field__raw_value
+msgid "Raw Value"
+msgstr "Valor Bruto"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_field__record
+msgid "Record"
+msgstr "Registro"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__rectification_number
+msgid "Rectification Number"
+msgstr "Número da Retificação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__registration_date
+msgid "Registration Date"
+msgstr "Data de Registro"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition_line__product_id
+msgid "Resolved by the wizard's matching against the bill lines."
+msgstr "Resolvido pelo casamento do assistente com as linhas da fatura."
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_payment__revenue_code
+msgid "Revenue Code (Código Receita)"
+msgstr "Código da Receita"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_import_declaration_divergence__severity__rounding
+msgid "Rounding"
+msgstr "Arredondamento"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__issqn_service_city_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__issqn_service_city_id
+msgid "Service City"
+msgstr "Município do Serviço"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_divergence__severity
+msgid "Severity"
+msgstr "Severidade"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__customhouse_charges
+msgid "Siscomex Fee / Customhouse Charges"
+msgstr "Taxa Siscomex / Despesas Aduaneiras"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_import_declaration__source_format__xml
+msgid "Siscomex XML"
+msgstr "XML do Siscomex"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__raw_file
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.import_declaration_view_form
+msgid "Source File"
+msgstr "Arquivo de Origem"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__raw_filename
+msgid "Source Filename"
+msgstr "Nome do Arquivo de Origem"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__source_format
+msgid "Source Format"
+msgstr "Formato de Origem"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__stated_field_names
+msgid "Stated Fields"
+msgstr "Campos Declarados"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition_line__statistical_quantity
+msgid "Statistical Quantity"
+msgstr "Quantidade Estatística"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition_line__statistical_uom_name
+msgid "Statistical UoM"
+msgstr "Unidade Estatística"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_field__tag
+msgid "Tag"
+msgstr "Tag"
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/import_declaration.py:0
+msgid ""
+"The declaration charged %(declared)s of %(tax)s and the lines close at "
+"%(computed)s."
+msgstr "A declaração cobrou %(declared)s de %(tax)s e as linhas fecham em %(computed)s."
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/import_declaration.py:0
+msgid ""
+"The declaration charged %(tax)s at %(declared)s%% and the lines carry "
+"%(computed)s%% — a configuration mismatch, not a value to force."
+msgstr "A declaração cobrou %(tax)s a %(declared)s%% e as linhas carregam %(computed)s%% — divergência de configuração, não um valor a forçar."
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/import_declaration.py:0
+msgid ""
+"The declaration's base for %(tax)s is %(declared)s and the lines compute "
+"%(computed)s — check the tax configuration if the value still closes."
+msgstr "A base da declaração para %(tax)s é %(declared)s e as linhas calculam %(computed)s — confira a configuração do imposto se o valor ainda fechar."
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__acquirer_partner_id
+msgid "Third-Party Acquirer"
+msgstr "Adquirente (por conta e ordem)"
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/wizards/document_import_wizard.py:0
+msgid ""
+"This file is not the XML of an electronic fiscal document. Upload the XML of the document itself, not its printed representation such as the DANFE in PDF.\n"
+"\n"
+"%(error)s"
+msgstr "Este arquivo não é o XML de um documento fiscal eletrônico. Envie o XML do próprio documento, não a sua representação impressa como o DANFE em PDF.\n\n%(error)s"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__customs_value
+msgid "Total Customs Value"
+msgstr "Valor Aduaneiro Total"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__freight_value
+msgid "Total Freight"
+msgstr "Frete Total"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__insurance_value
+msgid "Total Insurance"
+msgstr "Seguro Total"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__amount_foreign
+msgid "Total in Foreign Currency"
+msgstr "Total em Moeda Estrangeira"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__transport_via
+msgid "Transport Via Code"
+msgstr "Código da Via de Transporte"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition_line__unit_value
+msgid "Unit Value"
+msgstr "Valor Unitário"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition_line__uom_name
+msgid "Unit of Measure"
+msgstr "Unidade de Medida"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_addition__extra_field_ids
+msgid "Unmapped Addition Fields"
+msgstr "Campos não Mapeados da Adição"
+
+#. module: l10n_br_fiscal
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.import_declaration_addition_view_form
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.import_declaration_view_form
+msgid "Unmapped Fields"
+msgstr "Campos não Mapeados"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration__extra_field_ids
+msgid "Unmapped Header Fields"
+msgstr "Campos não Mapeados do Cabeçalho"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__customs_declared_value
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__customs_declared_value
+msgid ""
+"Valor aduaneiro the import declaration fixed for this line: the legal base "
+"of II (Art. 75, Decreto 6.759/09), of IPI (Art. 190, I, 'a', Decreto "
+"7.212/10) and of PIS/COFINS-Importação (Art. 7º, I, Lei 10.865/04). A "
+"commercial invoice in foreign currency, or with freight and insurance billed"
+" apart from the goods, gives a price × quantity that is not this value; when"
+" the declaration states it, it wins over that product instead of the engine "
+"trying to recompute a customs authority's own figure from the invoice."
+msgstr "O valor aduaneiro que a declaração de importação fixou para esta linha: a base legal do II (Art. 75, Decreto 6.759/09), do IPI (Art. 190, I, \"a\", Decreto 7.212/10) e do PIS/COFINS-Importação (Art. 7º, I, Lei 10.865/04). Uma fatura comercial em moeda estrangeira, ou com frete e seguro cobrados à parte da mercadoria, resulta num preço × quantidade que não é esse valor; quando a declaração o informa, ele prevalece sobre o produto em vez de o motor tentar recalcular uma cifra que é da autoridade aduaneira, a partir da fatura."
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_import_declaration_field__record
+msgid "XML parent path, or the TXT record tag this field came from."
+msgstr "Caminho do elemento pai no XML, ou o registro do TXT de onde este campo veio."
+
 #~ msgid "Aguardando envio"
 #~ msgstr "Aguardando envio"
 
