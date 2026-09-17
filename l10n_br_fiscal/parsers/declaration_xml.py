@@ -74,7 +74,10 @@ def _date(parent, tag):
     raw = _text(parent, tag)
     if len(raw) != 8 or not raw.isdigit():
         return False
-    return date(int(raw[:4]), int(raw[4:6]), int(raw[6:8]))
+    try:
+        return date(int(raw[:4]), int(raw[4:6]), int(raw[6:8]))
+    except ValueError:
+        return False
 
 
 def _ncm(raw):
@@ -562,7 +565,7 @@ def parse_txt_declaration(content):
                 "ii_rate": ii_rate,
                 "ii_value": ii_value,
                 "ii_regime_code": "",
-                "ipi_base": first["ipi_base"],
+                "ipi_base": sum(item["ipi_base"] for item in items),
                 "ipi_rate": first["ipi_rate"],
                 "ipi_value": sum(item["ipi_value"] for item in items),
                 "ipi_regime_code": "",
