@@ -64,7 +64,11 @@ class TestImportTaxBase(TransactionCase):
         return values
 
     def test_the_declared_import_tax_composes_the_ipi_base(self):
-        result = self.taxes.compute_taxes(**self._kwargs(ii_declared_value=DECLARED_II))
+        result = self.taxes.compute_taxes(
+            **self._kwargs(
+                ii_declared_value=DECLARED_II, customs_declared_value=CUSTOMS_VALUE
+            )
+        )
         ipi = result["taxes"]["ipi"]
         self.assertEqual(
             self.currency.round(ipi["base"]),
@@ -78,7 +82,11 @@ class TestImportTaxBase(TransactionCase):
         )
 
     def test_the_declared_import_tax_wins_over_the_product_rate(self):
-        result = self.taxes.compute_taxes(**self._kwargs(ii_declared_value=DECLARED_II))
+        result = self.taxes.compute_taxes(
+            **self._kwargs(
+                ii_declared_value=DECLARED_II, customs_declared_value=CUSTOMS_VALUE
+            )
+        )
         ii = result["taxes"]["ii"]
         self.assertEqual(self.currency.round(ii["tax_value"]), DECLARED_II)
         self.assertAlmostEqual(
@@ -90,7 +98,12 @@ class TestImportTaxBase(TransactionCase):
         )
 
     def test_without_a_declaration_the_product_rate_still_rules(self):
-        """Contraproof: nothing changes for whoever does not inform a value."""
+        """Contraproof: nothing changes for whoever does not inform a value.
+
+        No `customs_declared_value` is passed here, which is every operation
+        that is not an import: `ii_declared_value` is absent too, so this
+        never reaches the branch the next two tests exercise.
+        """
         result = self.taxes.compute_taxes(**self._kwargs())
         self.assertEqual(self.currency.round(result["taxes"]["ii"]["tax_value"]), 0.00)
         self.assertEqual(
@@ -98,12 +111,36 @@ class TestImportTaxBase(TransactionCase):
             self.currency.round(CUSTOMS_VALUE),
         )
 
-    def test_a_zero_declaration_is_not_a_declaration(self):
-        """An import free of the tax keeps following the product file."""
-        result = self.taxes.compute_taxes(**self._kwargs(ii_declared_value=0.00))
+    def test_a_zero_declaration_composes_the_ipi_base_at_zero(self):
+        """A DI charging Import Tax of exactly zero is still a declaration."""
+        result = self.taxes.compute_taxes(
+            **self._kwargs(ii_declared_value=0.00, customs_declared_value=CUSTOMS_VALUE)
+        )
+        self.assertEqual(self.currency.round(result["taxes"]["ii"]["tax_value"]), 0.00)
         self.assertEqual(
             self.currency.round(result["taxes"]["ipi"]["base"]),
             self.currency.round(CUSTOMS_VALUE),
+        )
+
+    def test_a_zero_declaration_does_not_fall_back_to_the_product_rate(self):
+        """A declared exemption must not be overridden by the product's rate."""
+        taxes = self.env.ref("l10n_br_fiscal.tax_ii_14") + self.env.ref(
+            "l10n_br_fiscal.tax_ipi_9_75"
+        )
+        result = taxes.compute_taxes(
+            **self._kwargs(ii_declared_value=0.00, customs_declared_value=CUSTOMS_VALUE)
+        )
+        self.assertEqual(
+            self.currency.round(result["taxes"]["ii"]["tax_value"]),
+            0.00,
+            "the declaration charged no Import Tax on this addition; the "
+            "product's own 14% must not override that",
+        )
+        self.assertEqual(
+            self.currency.round(result["taxes"]["ipi"]["base"]),
+            self.currency.round(CUSTOMS_VALUE),
+            "with no Import Tax actually charged, the IPI base is the "
+            "customs value alone",
         )
 
     def test_declared_customs_value_drives_import_bases(self):

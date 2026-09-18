@@ -374,11 +374,17 @@ class Tax(models.Model):
 
         Falls back to the computed amount when no declaration was informed, which
         is every operation that is not an import.
+
+        Whether a declaration was informed is read from `customs_declared_value`,
+        never from `ii_declared_value` alone: an addition can legitimately
+        declare Import Tax of exactly zero, and `ii_declared_value or 0.00`
+        cannot tell that zero apart from the field being absent -- it fell
+        back to the product's registered rate and taxed an exemption the
+        declaration had already granted.
         """
-        declared = kwargs.get("ii_declared_value") or 0.00
-        if declared:
-            return declared
-        return taxes_dict.get("ii", {}).get("tax_value", 0.00)
+        if not kwargs.get("customs_declared_value"):
+            return taxes_dict.get("ii", {}).get("tax_value", 0.00)
+        return kwargs.get("ii_declared_value") or 0.00
 
     @api.model
     def _compute_ii(self, tax, taxes_dict, **kwargs):
@@ -387,10 +393,15 @@ class Tax(models.Model):
         The rate follows the amount, so base times rate reproduces what was paid:
         the SEFAZ recomputes it and refuses the note with 528 when the two do not
         agree to the cent.
+
+        Gated on `customs_declared_value`, for the same reason `_import_tax_in_base`
+        above is: a declared Import Tax of exactly zero must still win over the
+        product's rate, and only the customs value reliably says a declaration is
+        there at all.
         """
-        declared = kwargs.get("ii_declared_value") or 0.00
-        if not declared:
+        if not kwargs.get("customs_declared_value"):
             return self._compute_tax(tax, taxes_dict, **kwargs)
+        declared = kwargs.get("ii_declared_value") or 0.00
 
         tax_dict = taxes_dict.get(tax.tax_domain)
         # Seeding the rate before the base is what makes the base exist at all:
