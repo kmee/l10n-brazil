@@ -271,6 +271,12 @@ class ImportDeclarationWizard(models.TransientModel):
             if operation.line_ids and "fiscal_operation_line_id" in fields_list:
                 res["fiscal_operation_line_id"] = operation.line_ids[0].id
         if (
+            move.document_type_id
+            and "document_type_id" in fields_list
+            and not res.get("document_type_id")
+        ):
+            res["document_type_id"] = move.document_type_id.id
+        if (
             move.document_serie_id
             and "document_serie_id" in fields_list
             and not res.get("document_serie_id")

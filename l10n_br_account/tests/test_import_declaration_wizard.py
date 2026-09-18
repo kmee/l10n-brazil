@@ -135,6 +135,22 @@ class TestImportDeclarationWizard(AccountMoveBRCommon):
             wizard.write(self._expected_totals(wizard))
         return wizard
 
+    def test_the_wizard_takes_the_document_type_from_the_bill(self):
+        """default_get has to fill it: the field is invisible on the form.
+
+        document_type_id is required but hidden, and document_serie_id's own
+        domain filters by it. Left empty, the wizard fails at save with a
+        required-field error, no matter what the operator filled in — this is
+        the bug of ticket #1697.
+        """
+        defaults = (
+            self.env["l10n_br_account.import.declaration.wizard"]
+            .with_context(default_move_id=self.bill.id)
+            .default_get(["move_id", "document_type_id"])
+        )
+
+        self.assertEqual(defaults["document_type_id"], self.bill.document_type_id.id)
+
     def test_the_note_closes_on_the_declaration(self):
         """The generated note has to total what the declaration charged.
 
