@@ -21,3 +21,6 @@
 "l10n_br_fiscal_tax_ipi_guideline","l10n_br_fiscal.tax.ipi.guideline","l10n_br_fiscal.model_l10n_br_fiscal_tax_ipi_guideline","purchase.group_purchase_user",1,0,0,0
 "l10n_br_fiscal_tax_pis_cofins_base","l10n_br_fiscal.tax.pis.cofins.base","l10n_br_fiscal.model_l10n_br_fiscal_tax_pis_cofins_base","purchase.group_purchase_user",1,0,0,0
 "l10n_br_fiscal_tax_pis_cofins_credit","l10n_br_fiscal.tax.pis.cofins.credit","l10n_br_fiscal.model_l10n_br_fiscal_tax_pis_cofins_credit","purchase.group_purchase_user",1,0,0,0
+
+"purchase_update_from_nfe_wizard","purchase.update.from.nfe.wizard","model_purchase_update_from_nfe_wizard","purchase.group_purchase_user",1,1,1,1
+"purchase_update_from_nfe_wizard_line","purchase.update.from.nfe.wizard.line","model_purchase_update_from_nfe_wizard_line","purchase.group_purchase_user",1,1,1,1
