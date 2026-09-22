@@ -122,16 +122,18 @@ class PartnerCnpjSearchWizard(models.TransientModel):
             "phone": self.phone,
             "mobile": self.mobile,
             "email": self.email,
-            "legal_nature_id": self.legal_nature_id,
+            "legal_nature_id": self.legal_nature_id.id,
             "equity_capital": self.equity_capital,
-            "cnae_main_id": self.cnae_main_id,
-            "cnae_secondary_ids": self.cnae_secondary_ids,
+            "cnae_main_id": self.cnae_main_id.id,
+            #"cnae_secondary_ids": self.cnae_secondary_ids,
             "company_type": "company",
         }
         if self.vat:
             values_to_update["vat"] = punctuation_rm(self.vat)
         if self.child_ids:
             values_to_update["child_ids"] = [Command.set(self.child_ids.ids)]
+        if self.cnae_secondary_ids:
+            values_to_update["cnae_secondary_ids"] = [Command.set(self.cnae_secondary_ids.ids)]
 
         non_empty_values = {
             key: value for key, value in values_to_update.items() if value

@@ -8,7 +8,10 @@ from odoo import fields, models
 class ResCompany(models.Model):
     _inherit = "res.company"
 
-    equity_capital = fields.Monetary(related="partner_id.equity_capital")
+    equity_capital = fields.Monetary(
+        related="partner_id.equity_capital",
+        currency_field="currency_id"
+        )
 
     mobile = fields.Char(related="partner_id.mobile")
 

@@ -148,7 +148,7 @@ class TestTestSerPro(TestCnpjCommon):
             },
         ]
 
-        self.assertEqual(socios, expected_socios)
+        self.assertCountEqual(socios, expected_socios)
 
     def test_serpro_empresa(self):
         with (

@@ -50,7 +50,6 @@ class PartyMixin(models.AbstractModel):
             "name": "Search Data by CNPJ",
             "type": "ir.actions.act_window",
             "res_model": "partner.search.wizard",
-            "view_type": "form",
             "view_mode": "form",
             "context": context,
             "target": "new",
@@ -63,4 +62,4 @@ class PartyMixin(models.AbstractModel):
             .sudo()
             .get_param("l10n_br_base.disable_cpf_cnpj_validation")
         )
-        return cnpj_validation_disabled
+        return cnpj_validation_disabled == "True"
