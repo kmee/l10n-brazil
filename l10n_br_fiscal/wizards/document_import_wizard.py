@@ -86,7 +86,9 @@ class DocumentImportWizard(models.TransientModel):
 
     @api.depends("issuer_cnpj", "company_id.vat")
     def _compute_fiscal_operation_type(self):
-        if self.issuer_cnpj == self.company_id.vat:
+        if punctuation_rm(self.issuer_cnpj or "") == punctuation_rm(
+            self.company_id.vat or ""
+        ):
             self.fiscal_operation_type = "out"
         else:
             self.fiscal_operation_type = "in"
