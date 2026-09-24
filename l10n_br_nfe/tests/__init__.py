@@ -15,6 +15,7 @@ from . import test_nfe_ibscbs
 from . import test_nfe_icmsufdest
 from . import test_nfe_credit_debit_note
 from . import test_nfe_ibscbs_groups
+from . import test_nfe_intermediary
 from . import test_nfe_workflow
 from . import test_nfe_legacy_edoc
 from . import test_autxml

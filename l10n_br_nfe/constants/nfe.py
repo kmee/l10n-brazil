@@ -189,3 +189,7 @@ NFE_DEBIT_NOTE_ADVANCE_PAYMENT_TAX_GROUPS_2026 = (
     "nfe40_COFINS",
     "nfe40_COFINSST",
 )
+
+# indPres where indIntermed is mandatory (NT 2020.006, rule B25c-10). indPres 1
+# informs it only with an intermediary (item 2.4), 0 and 5 never (B25c-20).
+IND_PRES_NON_PRESENTIAL = ("2", "3", "4", "9")
