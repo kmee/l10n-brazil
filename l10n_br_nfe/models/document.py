@@ -9,6 +9,7 @@ import string
 import threading
 from datetime import datetime
 
+from erpbrasil.base.fiscal import cnpj_cpf
 from erpbrasil.base.fiscal.edoc import ChaveEdoc
 from erpbrasil.transmissao import TransmissaoSOAP
 from lxml import etree
@@ -58,6 +59,7 @@ from odoo.addons.spec_driven_model.models import spec_models
 
 from ..constants.nfe import (
     FISCAL_PAYMENT_MODE,
+    IND_PRES_NON_PRESENTIAL,
     NFCE_DANFE_LAYOUTS,
     NFE_DANFE_LAYOUTS,
     NFE_ENVIRONMENTS,
@@ -291,6 +293,8 @@ class NFe(spec_models.StackedModel):
 
     nfe40_indPres = fields.Selection(related="ind_pres")
 
+    nfe40_indIntermed = fields.Selection(compute="_compute_nfe40_indIntermed")
+
     nfe40_tpEnteGov = fields.Selection(
         related="public_entity_type", string="Tipo de Entidade Governamental (NFe)"
     )
@@ -330,6 +334,17 @@ class NFe(spec_models.StackedModel):
 
                 if record.document_type_id.code == MODELO_FISCAL_NFCE:
                     record.nfe40_tpImp = record.company_id.nfce_danfe_layout
+
+    @api.depends("ind_pres", "intermediary_partner_id", "nfe40_infIntermed")
+    def _compute_nfe40_indIntermed(self):
+        for doc in self:
+            intermediated = doc.intermediary_partner_id or doc.nfe40_infIntermed
+            if doc.ind_pres in IND_PRES_NON_PRESENTIAL:
+                doc.nfe40_indIntermed = "1" if intermediated else "0"
+            elif doc.ind_pres == "1" and intermediated:
+                doc.nfe40_indIntermed = "1"
+            else:
+                doc.nfe40_indIntermed = False
 
     @api.depends("partner_id", "company_id", "partner_shipping_id")
     def _compute_nfe40_idDest(self):
@@ -791,6 +806,64 @@ class NFe(spec_models.StackedModel):
     nfe40_transporta = fields.Many2one(comodel_name="res.partner")
 
     ##########################
+    # NF-e tag: infIntermed
+    ##########################
+
+    intermediary_partner_id = fields.Many2one(
+        comodel_name="res.partner",
+        string="Intermediary",
+        help="Platform where the sale was made (marketplace, delivery app...), "
+        "informed in the infIntermed group.",
+    )
+
+    intermediary_seller_code = fields.Char(
+        string="Seller Id at the Intermediary",
+        help="Identifier of the seller registered at the intermediary "
+        "platform (idCadIntTran).",
+    )
+
+    def _export_tag_nfe_40_infintermed(self, xsd_fields, class_obj, export_dict):
+        """infIntermed group (NT 2020.006)."""
+        intermediary = self.intermediary_partner_id
+        name = intermediary.display_name
+        if self.nfe40_indIntermed != "1":
+            if intermediary:
+                raise UserError(
+                    _(
+                        "The buyer presence indicator does not accept the "
+                        "intermediary %s (NT 2020.006, rule B25c-20): change "
+                        "the indicator or remove the intermediary.",
+                        name,
+                    )
+                )
+            return
+        if not cnpj_cpf.validar_cnpj(intermediary.vat or ""):
+            raise UserError(_("The intermediary %s needs a valid CNPJ.", name))
+        if intermediary.cnpj_cpf_stripped == (
+            self.company_id.partner_id.cnpj_cpf_stripped
+        ):
+            raise UserError(
+                _(
+                    "The intermediary %s has the issuer CNPJ: a sale on the own "
+                    "platform is not intermediated.",
+                    name,
+                )
+            )
+        code = (self.intermediary_seller_code or "").strip()
+        if not code:
+            raise UserError(_("Inform the seller id at the intermediary %s.", name))
+        if not 2 <= len(code) <= 60:
+            raise UserError(
+                _(
+                    "The seller id at the intermediary %s must have 2 to 60 "
+                    "characters.",
+                    name,
+                )
+            )
+        export_dict["CNPJ"] = intermediary.cnpj_cpf_stripped
+        export_dict["idCadIntTran"] = code
+
+    ##########################
     # NF-e tag: infAdic
     ##########################
 
@@ -943,6 +1016,13 @@ class NFe(spec_models.StackedModel):
             if self.company_l10n_br_ie_code_st:
                 res.IEST = self.company_l10n_br_ie_code_st
             return res
+
+        if field_name == "nfe40_infIntermed":
+            # the new fields win over an imported infIntermed record
+            if self.intermediary_partner_id:
+                return self._export_m2o_via_tag_hooks(field_name, class_obj)
+            if self.nfe40_indIntermed != "1":
+                return False
 
         return super()._export_many2one(field_name, xsd_required, class_obj)
 
