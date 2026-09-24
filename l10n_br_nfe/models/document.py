@@ -1030,6 +1030,8 @@ class NFe(spec_models.StackedModel):
             company_vat = self.env.company.vat.translate(
                 str.maketrans("", "", string.punctuation)
             )
+            # a foreign recipient (export, import entry) only has idEstrangeiro
+            dest_vat = False
             if new_value.get("nfe40_CNPJ"):
                 dest_vat = new_value.get("nfe40_CNPJ").translate(
                     str.maketrans("", "", string.punctuation)
@@ -1041,7 +1043,8 @@ class NFe(spec_models.StackedModel):
             if company_vat != dest_vat:
                 vals["issuer"] = "partner"
             new_value["is_company"] = True
-            new_value["vat"] = dest_vat
+            if dest_vat:
+                new_value["vat"] = dest_vat
             super()._build_many2one(
                 self.env["res.partner"], vals, new_value, "partner_id", value, path
             )
@@ -1609,6 +1612,22 @@ class NFe(spec_models.StackedModel):
 
         self.file_report_id = self.env["ir.attachment"].create(attachment_data)
 
+    @api.model
+    def _dedupe_autxml(self, binding):
+        """Keep one autXML entry per CNPJ/CPF, and none for a party already
+        registered: the import does not match existing partners on autXML,
+        so a repeated entry (same XML or a previous import) would create the
+        partner again and clash on the unique CNPJ."""
+        partner = self.env["res.partner"].with_context(active_test=False)
+        seen, unique = set(), []
+        for aut in binding.infNFe.autXML or []:
+            key = aut.CNPJ or aut.CPF
+            if key in seen or (key and partner.search_count([("vat", "=", cnpj_cpf.formata(key))])):
+                continue
+            seen.add(key)
+            unique.append(aut)
+        binding.infNFe.autXML = unique
+
     def import_binding_nfe(
         self, binding, edoc_type="in", dry_run=False, create_missing_products=True
     ):
@@ -1620,6 +1639,7 @@ class NFe(spec_models.StackedModel):
         """
         if hasattr(binding, "NFe"):
             binding = binding.NFe
+        self._dedupe_autxml(binding)
         document = (
             self.env["nfe.40.infnfe"]
             .with_context(
