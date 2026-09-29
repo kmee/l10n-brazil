@@ -21,13 +21,13 @@ Brazilian Localization Base
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-OCA%2Fl10n--brazil-lightgray.png?logo=github
-    :target: https://github.com/OCA/l10n-brazil/tree/19.0/l10n_br_base
+    :target: https://github.com/OCA/l10n-brazil/tree/20.0/l10n_br_base
     :alt: OCA/l10n-brazil
 .. |badge4| image:: https://img.shields.io/badge/weblate-Translate%20me-F47D42.png
-    :target: https://translation.odoo-community.org/projects/l10n-brazil-19-0/l10n-brazil-19-0-l10n_br_base
+    :target: https://translation.odoo-community.org/projects/l10n-brazil-20-0/l10n-brazil-20-0-l10n_br_base
     :alt: Translate me on Weblate
 .. |badge5| image:: https://img.shields.io/badge/runboat-Try%20me-875A7B.png
-    :target: https://runboat.odoo-community.org/builds?repo=OCA/l10n-brazil&target_branch=19.0
+    :target: https://runboat.odoo-community.org/builds?repo=OCA/l10n-brazil&target_branch=20.0
     :alt: Try me on Runboat
 
 |badge1| |badge2| |badge3| |badge4| |badge5|
@@ -41,7 +41,8 @@ Endereços:
 - Formatação dos campos de endereço;
 - Código do Banco Central e Siscomex para países;
 - Código do IBGE para estados e municípios;
-- Lista dos Bancos brasileiros;
+- Lista dos Bancos brasileiros (tabela do Banco Central com código COMPE
+  e ISPB), ligada às contas bancárias;
 - Contas bancarias e chaves PIX dos parceiros;
 - Lista dos municípios brasileiros.
 
@@ -83,13 +84,35 @@ encotrar os campos CNPJ, CPF, IE, RG e os campos de endereço formatado
 para o Brasil. Caso você tenha apenas o módulo base instalado, você pode
 instalar o módulo Contact para acessar o cadastro de parceiros.
 
+Nas contas bancárias do parceiro, o campo "Brazilian Bank" seleciona o
+banco pela tabela do Banco Central (busca por nome, código COMPE ou
+ISPB) e preenche o nome e o BIC do banco. A tabela fica em
+``/odoo/br-banks``.
+
 Known issues / Roadmap
 ======================
 
 - Formatação da Inscrição Estadual de acordo com cada UF.
+- Modelo de bancos brasileiros (``l10n_br_base.bank``): a forma
+  definitiva depois da remoção do ``res.bank`` no Odoo 20 está em
+  discussão com os mantenedores.
 
 Changelog
 =========
+
+20.0.1.0.0 (2026)
+-----------------
+
+O Odoo 20 removeu o modelo ``res.bank`` e levou o ``res.partner.bank``
+para o ``base``, com o nome e o BIC do banco como campos de texto na
+própria conta. A tabela de bancos brasileiros (código COMPE, ISPB,
+membro da COMPE) passou para o modelo ``l10n_br_base.bank``, ligado à
+conta bancária pelo campo ``l10n_br_bank_id``, que preenche o nome e o
+BIC do banco da conta.
+
+O Odoo 20 também passou a calcular o campo "É uma empresa" a partir do
+VAT. Na localização brasileira, parceiro com CPF é pessoa física e
+parceiro com CNPJ é empresa.
 
 12.0.1.0.0 (2019)
 -----------------
@@ -142,7 +165,7 @@ Bug Tracker
 Bugs are tracked on `GitHub Issues <https://github.com/OCA/l10n-brazil/issues>`_.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
-`feedback <https://github.com/OCA/l10n-brazil/issues/new?body=module:%20l10n_br_base%0Aversion:%2019.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
+`feedback <https://github.com/OCA/l10n-brazil/issues/new?body=module:%20l10n_br_base%0Aversion:%2020.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
 
 Do not contact contributors directly about support or help with technical issues.
 
@@ -195,6 +218,6 @@ Current `maintainers <https://odoo-community.org/page/maintainer-role>`__:
 
 |maintainer-renatonlima| |maintainer-rvalyi| 
 
-This module is part of the `OCA/l10n-brazil <https://github.com/OCA/l10n-brazil/tree/19.0/l10n_br_base>`_ project on GitHub.
+This module is part of the `OCA/l10n-brazil <https://github.com/OCA/l10n-brazil/tree/20.0/l10n_br_base>`_ project on GitHub.
 
 You are welcome to contribute. To learn how please visit https://odoo-community.org/page/Contribute.

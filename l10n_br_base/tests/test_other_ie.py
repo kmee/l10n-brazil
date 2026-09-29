@@ -4,6 +4,9 @@
 
 import logging
 
+from psycopg2 import IntegrityError
+
+from odoo.exceptions import ValidationError
 from odoo.tests import TransactionCase
 from odoo.tools import mute_logger
 
@@ -73,7 +76,7 @@ class OtherIETest(TransactionCase):
                     ]
                 }
             )
-        except Exception:
+        except (IntegrityError, ValidationError):
             result = False
 
         self.assertFalse(
@@ -96,7 +99,7 @@ class OtherIETest(TransactionCase):
                     ]
                 }
             )
-        except Exception:
+        except ValidationError:
             result = False
         self.assertFalse(result, "Error to check included invalid IE.")
 
@@ -116,7 +119,7 @@ class OtherIETest(TransactionCase):
                     ]
                 }
             )
-        except Exception:
+        except ValidationError:
             result = False
         self.assertFalse(
             result,

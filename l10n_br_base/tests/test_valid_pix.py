@@ -47,7 +47,7 @@ class ValidCreatePIXTest(TransactionCase):
     def test_invalid_pix_cnpj_wrong_value(self):
         # Desabilitando a Validação do CPF_CNPJ porque mesmo
         # nesse caso a validação da Chave PIX deve ser feita.
-        self.env["ir.config_parameter"].set_param(
+        self.env["ir.config_parameter"].set_bool(
             "l10n_br_base.disable_cpf_cnpj_validation", True
         )
 
@@ -128,8 +128,10 @@ class ValidCreatePIXTest(TransactionCase):
             "key": "+50372424737",
         }
         self.res_partner_pix_model.with_context(tracking_disable=True).create(pix_vals)
-        with mute_logger("odoo.sql_db"):
-            with self.assertRaisesRegex(IntegrityError, "partner_pix_key_unique"):
-                self.res_partner_pix_model.with_context(tracking_disable=True).create(
-                    pix_vals
-                )
+        with (
+            mute_logger("odoo.sql_db"),
+            self.assertRaisesRegex(IntegrityError, "partner_pix_key_unique"),
+        ):
+            self.res_partner_pix_model.with_context(tracking_disable=True).create(
+                pix_vals
+            )

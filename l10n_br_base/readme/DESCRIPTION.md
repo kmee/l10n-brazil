@@ -7,7 +7,8 @@ Endereços:
 - Formatação dos campos de endereço;
 - Código do Banco Central e Siscomex para países;
 - Código do IBGE para estados e municípios;
-- Lista dos Bancos brasileiros;
+- Lista dos Bancos brasileiros (tabela do Banco Central com código COMPE
+  e ISPB), ligada às contas bancárias;
 - Contas bancarias e chaves PIX dos parceiros;
 - Lista dos municípios brasileiros.
 

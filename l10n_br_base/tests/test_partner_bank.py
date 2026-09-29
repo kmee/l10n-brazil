@@ -27,9 +27,9 @@ class PartnerBankTest(TransactionCase):
         ok_bank_vals = {
             "partner_id": self.partner_id.id,
             "transactional_acc_type": "checking",
-            "bank_id": self.bank_id.id,
+            "l10n_br_bank_id": self.bank_id.id,
             "bra_number": "1020",
-            "acc_number": "102030",
+            "account_number": "102030",
             "acc_number_dig": "9",
         }
         ok_acc_bank = self.partner_bank_model.with_context(
@@ -52,9 +52,28 @@ class PartnerBankTest(TransactionCase):
     def test_bra_number_empty_does_not_raise(self):
         bank_vals = {
             "partner_id": self.partner_id.id,
-            "bank_id": self.bank_id.id,
+            "l10n_br_bank_id": self.bank_id.id,
         }
         bank = self.partner_bank_model.with_context(tracking_disable=True).create(
             bank_vals
         )
         self.assertTrue(bank.exists())
+
+    def test_bank_data_from_brazilian_bank(self):
+        bank = self.partner_bank_model.with_context(tracking_disable=True).create(
+            {
+                "partner_id": self.partner_id.id,
+                "l10n_br_bank_id": self.bank_id.id,
+                "account_number": "405060",
+            }
+        )
+        self.assertEqual(bank.bank_name, "Banco do Brasil S.A.")
+        self.assertEqual(bank.bank_bic, "BRASBRRJ")
+        self.assertEqual(bank.l10n_br_bank_id.code_bc, "001")
+        self.assertEqual(bank.l10n_br_bank_id.ispb_number, "00000000")
+
+    def test_brazilian_bank_search_by_code(self):
+        banks = self.env["l10n_br_base.bank"].name_search("341")
+        self.assertIn(
+            self.env.ref("l10n_br_base.res_bank_341").id, [b[0] for b in banks]
+        )

@@ -1,5 +1,5 @@
 from . import format_address_mixin
-from . import res_bank
+from . import l10n_br_base_bank
 from . import res_city
 from . import res_country_state
 from . import res_country

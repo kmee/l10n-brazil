@@ -7,7 +7,7 @@ from odoo import api, fields, models
 
 class Company(models.Model):
     _name = "res.company"
-    _inherit = [_name, "format.address.mixin", "l10n_br_base.party.mixin"]
+    _inherit = (_name, "format.address.mixin", "l10n_br_base.party.mixin")
 
     def _get_company_address_field_names(self):
         partner_fields = super()._get_company_address_field_names()

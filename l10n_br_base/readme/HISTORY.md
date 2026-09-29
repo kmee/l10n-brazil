@@ -1,3 +1,15 @@
+## 20.0.1.0.0 (2026)
+
+O Odoo 20 removeu o modelo `res.bank` e levou o `res.partner.bank` para o
+`base`, com o nome e o BIC do banco como campos de texto na própria conta.
+A tabela de bancos brasileiros (código COMPE, ISPB, membro da COMPE)
+passou para o modelo `l10n_br_base.bank`, ligado à conta bancária pelo
+campo `l10n_br_bank_id`, que preenche o nome e o BIC do banco da conta.
+
+O Odoo 20 também passou a calcular o campo "É uma empresa" a partir do
+VAT. Na localização brasileira, parceiro com CPF é pessoa física e
+parceiro com CNPJ é empresa.
+
 ## 12.0.1.0.0 (2019)
 
 A partir da versão 12.0 foi extraído o pacote de validações cadastrais

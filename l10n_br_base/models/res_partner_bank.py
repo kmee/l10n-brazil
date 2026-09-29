@@ -30,6 +30,7 @@ class ResPartnerBank(models.Model):
 
     bank_account_type = fields.Selection(
         selection=BANK_ACCOUNT_TYPE,
+        string="Brazilian Bank Account Type",
         default="01",
     )
 
@@ -46,8 +47,25 @@ class ResPartnerBank(models.Model):
         string="Pix Keys",
     )
 
-    acc_number = fields.Char(
-        string="Account Number",
+    l10n_br_bank_id = fields.Many2one(
+        comodel_name="l10n_br_base.bank",
+        string="Brazilian Bank",
+        help="Bank from the Brazilian Central Bank table (COMPE code and ISPB).",
+    )
+
+    bank_name = fields.Char(
+        compute="_compute_l10n_br_bank_data",
+        store=True,
+        readonly=False,
+    )
+
+    bank_bic = fields.Char(
+        compute="_compute_l10n_br_bank_data",
+        store=True,
+        readonly=False,
+    )
+
+    account_number = fields.Char(
         size=64,
         required=False,
     )
@@ -79,35 +97,48 @@ class ResPartnerBank(models.Model):
         related="company_id.country_id",
     )
 
+    @api.depends("l10n_br_bank_id")
+    def _compute_l10n_br_bank_data(self):
+        for account in self:
+            bank = account.l10n_br_bank_id
+            account.bank_name = bank.name or account.bank_name
+            account.bank_bic = bank.bic or account.bank_bic
+
     @api.constrains("bra_number")
     def _check_bra_number(self):
         for bank in self:
-            if bank.bank_id.code_bc and bank.bra_number and len(bank.bra_number) > 4:
+            if (
+                bank.l10n_br_bank_id.code_bc
+                and bank.bra_number
+                and len(bank.bra_number) > 4
+            ):
                 raise UserError(self.env._("Bank branch code must be four characters."))
 
     @api.constrains(
         "transactional_acc_type",
-        "bank_id",
-        "acc_number",
+        "l10n_br_bank_id",
+        "account_number",
         "bra_number",
         "acc_number_dig",
     )
     def _check_transc_acc_type(self):
         for rec in self:
-            if rec.transactional_acc_type:
-                if not rec.bank_id or not rec.bank_id.code_bc or not rec.acc_number:
-                    raise UserError(
-                        self.env._(
-                            "a transactional account must contain the bank "
-                            "information (code_bc) and the account number"
-                        )
+            if rec.transactional_acc_type and (
+                not rec.l10n_br_bank_id.code_bc or not rec.account_number
+            ):
+                raise UserError(
+                    self.env._(
+                        "a transactional account must contain the bank "
+                        "information (code_bc) and the account number"
                     )
-            if rec.transactional_acc_type in ["checking", "saving"]:
-                if not rec.bra_number or not rec.acc_number_dig:
-                    raise UserError(
-                        self.env._(
-                            "A Checking Account or Saving Account transactional account"
-                            " must contain the branch number and the account"
-                            " verification digit."
-                        )
+                )
+            if rec.transactional_acc_type in ["checking", "saving"] and (
+                not rec.bra_number or not rec.acc_number_dig
+            ):
+                raise UserError(
+                    self.env._(
+                        "A Checking Account or Saving Account transactional account"
+                        " must contain the branch number and the account"
+                        " verification digit."
                     )
+                )

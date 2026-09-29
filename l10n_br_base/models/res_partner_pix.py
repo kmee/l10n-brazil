@@ -10,6 +10,13 @@ from odoo.exceptions import ValidationError
 
 from ..tools import check_cnpj_cpf
 
+KEY_TYPES = [
+    ("cnpj_cpf", "CPF or CNPJ"),
+    ("phone", "Phone Number"),
+    ("email", "E-mail"),
+    ("evp", "Random Key"),
+]
+
 
 class PartnerPix(models.Model):
     _name = "res.partner.pix"
@@ -22,16 +29,8 @@ class PartnerPix(models.Model):
         "A Pix Key with this values already exists in this partner.",
     )
 
-    KEY_TYPES = [
-        ("cnpj_cpf", "CPF or CNPJ"),
-        ("phone", "Phone Number"),
-        ("email", "E-mail"),
-        ("evp", "Random Key"),
-    ]
-
     partner_id = fields.Many2one(
         comodel_name="res.partner",
-        string="Partner",
         ondelete="cascade",
         required=True,
     )

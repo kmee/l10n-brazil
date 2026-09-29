@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="l10n_br_base_bank_form" model="ir.ui.view">
+        <field name="name">l10n_br_base.bank.form</field>
+        <field name="model">l10n_br_base.bank</field>
+        <field name="arch" type="xml">
+            <form string="Brazilian Bank">
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        bg_color="text-bg-danger"
+                        invisible="active"
+                    />
+                    <group>
+                        <group>
+                            <field name="name" />
+                            <field name="short_name" />
+                            <field name="active" invisible="1" />
+                        </group>
+                        <group>
+                            <field name="code_bc" />
+                            <field name="ispb_number" />
+                            <field name="compe_member" />
+                            <field name="bic" />
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="l10n_br_base_bank_tree" model="ir.ui.view">
+        <field name="name">l10n_br_base.bank.list</field>
+        <field name="model">l10n_br_base.bank</field>
+        <field name="arch" type="xml">
+            <list string="Brazilian Banks">
+                <field name="code_bc" />
+                <field name="name" />
+                <field name="short_name" optional="hide" />
+                <field name="ispb_number" />
+                <field name="compe_member" optional="show" />
+                <field name="bic" optional="show" />
+            </list>
+        </field>
+    </record>
+
+    <record id="l10n_br_base_bank_search" model="ir.ui.view">
+        <field name="name">l10n_br_base.bank.search</field>
+        <field name="model">l10n_br_base.bank</field>
+        <field name="arch" type="xml">
+            <search string="Brazilian Banks">
+                <field name="name" />
+                <field name="code_bc" />
+                <field name="ispb_number" />
+                <filter
+                    name="compe_member"
+                    string="COMPE Member"
+                    domain="[('compe_member', '=', True)]"
+                />
+                <separator />
+                <filter
+                    name="inactive"
+                    string="Archived"
+                    domain="[('active', '=', False)]"
+                />
+            </search>
+        </field>
+    </record>
+
+    <record id="l10n_br_base_bank_action" model="ir.actions.act_window">
+        <field name="name">Brazilian Banks</field>
+        <field name="res_model">l10n_br_base.bank</field>
+        <field name="path">br-banks</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

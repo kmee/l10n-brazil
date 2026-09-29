@@ -14,13 +14,13 @@ from ..tools import check_cnpj_cpf, check_ie
 
 class Partner(models.Model):
     _name = "res.partner"
-    _inherit = [_name, "l10n_br_base.party.mixin"]
+    _inherit = (_name, "l10n_br_base.party.mixin")
 
     @property
     def _rec_names_search(self):
-        names = super()._rec_names_search
-        # not "names +=": that would extend the parent class attribute in place
-        return names + ["cnpj_cpf_stripped", "legal_name", "l10n_br_ie_code"]
+        # a tuple since 20.0
+        names = tuple(super()._rec_names_search or ())
+        return (*names, "cnpj_cpf_stripped", "legal_name", "l10n_br_ie_code")
 
     def _inverse_street_data(self):
         """In Brazil the address format is street_name, street_number
@@ -101,14 +101,10 @@ class Partner(models.Model):
             ) or self.env.context.get("allow_vat_duplicate"):
                 continue
 
-            # allow_cnpj_multi_ie is a res.config.settings boolean: it is stored
-            # as "True" when enabled and removed entirely when disabled
-            # (set_param deletes on a False bool), so a plain bool() reads it
-            # correctly (absent -> strict), matching base_setup.show_effect.
-            allow_cnpj_multi_ie = bool(
+            allow_cnpj_multi_ie = (
                 record.env["ir.config_parameter"]
                 .sudo()
-                .get_param("l10n_br_base.allow_cnpj_multi_ie")
+                .get_bool("l10n_br_base.allow_cnpj_multi_ie")
             )
 
             domain = []
@@ -236,28 +232,36 @@ class Partner(models.Model):
     def _onchange_city_id(self):
         self.city = self.city_id.name
 
-    def create_company(self):
-        self.ensure_one()
-        res = super(
+    def _create_parent_from_name(self, parent_name, additional_values=None):
+        """The core copies the contact VAT to the new parent company: allow
+        the duplicated CNPJ and copy the Brazilian fiscal data too."""
+        if not self.is_br_partner:
+            return super()._create_parent_from_name(parent_name, additional_values)
+        parent = super(
             Partner, self.with_context(allow_vat_duplicate=True)
-        ).create_company()
-        if res and self.is_br_partner:
-            parent = self.parent_id
-            parent.legal_name = parent.name
-            parent.l10n_br_ie_code = self.l10n_br_ie_code
-            parent.l10n_br_im_code = self.l10n_br_im_code
+        )._create_parent_from_name(parent_name, additional_values)
+        parent.legal_name = parent.name
+        parent.l10n_br_ie_code = self.l10n_br_ie_code
+        parent.l10n_br_im_code = self.l10n_br_im_code
+        return parent
+
+    @api.depends("cnpj_cpf_stripped", "country_id")
+    def _compute_is_company(self):
+        """In Brazil a CPF identifies a person, not a company."""
+        res = super()._compute_is_company()
+        for partner in self.filtered("is_company"):
+            if len(partner.cnpj_cpf_stripped or "") == 11 and partner._is_br_partner():
+                partner.is_company = False
         return res
 
     def _is_br_partner(self):
         """Check if is a Brazilian Partner."""
-        if (
+        return bool(
             self.country_id
             and self.country_id == self.env.ref("base.br")
             or self.vat
             and (cnpj_cpf.validar_cnpj(self.vat) or cnpj_cpf.validar_cpf(self.vat))
-        ):
-            return True
-        return False
+        )
 
     def _compute_br_partner(self):
         """Check if is a Brazilian Partner."""
