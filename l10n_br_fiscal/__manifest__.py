@@ -56,7 +56,7 @@
         # and will be trimmed down when demo mode is True (faster):
         "data/l10n_br_fiscal.ncm.csv",
         "data/l10n_br_fiscal.nbm.csv",
-        # "data/l10n_br_fiscal.nbs.csv",
+        "data/l10n_br_fiscal.nbs.csv",
         "data/l10n_br_fiscal.cest.csv",
         # "data/l10n_br_fiscal_icms_tax_definition_data.xml",
         # Views
