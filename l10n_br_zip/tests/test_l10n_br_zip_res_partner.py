@@ -4,6 +4,7 @@
 
 from unittest import mock
 
+from odoo.exceptions import UserError
 from odoo.tests.common import TransactionCase
 
 MODULE_NS = "odoo.addons.l10n_br_zip"
@@ -17,35 +18,35 @@ class L10nBRZipTest(TransactionCase):
 
         cls.zip_obj = cls.env["l10n_br.zip"]
         cls.zip_1 = cls.zip_obj.create(
-            dict(
-                zip_code="01310923",
-                city_id=cls.env.ref("l10n_br_base.city_3550308").id,
-                state_id=cls.env.ref("base.state_br_sp").id,
-                country_id=cls.env.ref("base.br").id,
-                street_name="Avenida Paulista 1842",
-                street_type="Avenida",
-                district="Bela Vista",
-            )
+            {
+                "zip_code": "01310923",
+                "city_id": cls.env.ref("l10n_br_base.city_3550308").id,
+                "state_id": cls.env.ref("base.state_br_sp").id,
+                "country_id": cls.env.ref("base.br").id,
+                "street_name": "Avenida Paulista 1842",
+                "street_type": "Avenida",
+                "district": "Bela Vista",
+            }
         )
         cls.res_partner = cls.env["res.partner"].create(
-            dict(
-                name="Akretion",
-                street_name="Avenida Paulista",
-                district="Bela Vista",
-                country_id=cls.env.ref("base.br").id,
-                state_id=cls.env.ref("base.state_br_sp").id,
-                city_id=cls.env.ref("l10n_br_base.city_3550308").id,
-            )
+            {
+                "name": "Akretion",
+                "street_name": "Avenida Paulista",
+                "district": "Bela Vista",
+                "country_id": cls.env.ref("base.br").id,
+                "state_id": cls.env.ref("base.state_br_sp").id,
+                "city_id": cls.env.ref("l10n_br_base.city_3550308").id,
+            }
         )
         cls.res_partner_1 = cls.env["res.partner"].create(
-            dict(
-                name="teste",
-                street_name="paulista",
-                district="Bela Vista",
-                country_id=cls.env.ref("base.br").id,
-                state_id=cls.env.ref("base.state_br_sp").id,
-                city_id=cls.env.ref("l10n_br_base.city_3550308").id,
-            )
+            {
+                "name": "teste",
+                "street_name": "paulista",
+                "district": "Bela Vista",
+                "country_id": cls.env.ref("base.br").id,
+                "state_id": cls.env.ref("base.state_br_sp").id,
+                "city_id": cls.env.ref("l10n_br_base.city_3550308").id,
+            }
         )
 
     def test_without_all_required_fields(self):
@@ -54,7 +55,7 @@ class L10nBRZipTest(TransactionCase):
         self.res_partner_1.street_name = False
         try:
             result = self.res_partner_1.zip_search()
-        except Exception:
+        except UserError:
             result = False
         self.assertFalse(
             result, "Error to search by address without all required fields."
@@ -87,7 +88,7 @@ class L10nBRZipTest(TransactionCase):
         self.res_partner_1.street_name = False
         try:
             result = self.res_partner_1.zip_search()
-        except Exception:
+        except UserError:
             result = False
         self.assertFalse(
             result, "Error to search by address without all required fields."
@@ -106,15 +107,15 @@ class L10nBRZipTest(TransactionCase):
         """Test search by address return more the one result in res_partner."""
 
         self.zip_2 = self.zip_obj.create(
-            dict(
-                zip_code="01310940",
-                city_id=self.env.ref("l10n_br_base.city_3550308").id,
-                state_id=self.env.ref("base.state_br_sp").id,
-                country_id=self.env.ref("base.br").id,
-                street_name="Avenida Paulista 900",
-                street_type="Avenida",
-                district="Bela Vista",
-            )
+            {
+                "zip_code": "01310940",
+                "city_id": self.env.ref("l10n_br_base.city_3550308").id,
+                "state_id": self.env.ref("base.state_br_sp").id,
+                "country_id": self.env.ref("base.br").id,
+                "street_name": "Avenida Paulista 900",
+                "street_type": "Avenida",
+                "district": "Bela Vista",
+            }
         )
         result = self.res_partner_1.zip_search()
         obj_zip_search = self.env["l10n_br.zip.search"].browse(result.get("res_id"))
@@ -179,7 +180,7 @@ class L10nBRZipTest(TransactionCase):
         self.res_partner.zip = "00000000"
         try:
             result = self.res_partner.zip_search()
-        except Exception:
+        except UserError:
             result = False
         self.assertFalse(result, "Error to search by invalid ZIP on PyCEP-Correios.")
 
