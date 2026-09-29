@@ -165,7 +165,7 @@ class AccountChartTemplate(models.AbstractModel):
             refund_account_id: xmlid
         }
         """
-        return dict()
+        return {}
 
     @api.model
     def _populate_default_br_tax_accounts(
