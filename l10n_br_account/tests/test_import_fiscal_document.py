@@ -1,6 +1,8 @@
 # Copyright 2026 KMEE INFORMATICA LTDA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+from unittest.mock import patch
+
 from odoo import fields
 from odoo.tests.common import tagged
 
@@ -111,3 +113,28 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
             self.assertEqual(
                 move.l10n_latam_document_type_id.code, self.document_type_55.code
             )
+
+    def test_importer_action_reads_the_attachment_content(self):
+        # In 20.0 ir.attachment has no 'datas' anymore: the wizard must read the
+        # content from 'raw' and hand it to the wizard file field as it is.
+        content = b"<root/>"
+        attachment = self.env["ir.attachment"].create(
+            {"name": "nfe.xml", "raw": content, "mimetype": "text/xml"}
+        )
+        wizard_model = type(self.env["l10n_br_fiscal.document.import.wizard"])
+        with patch.object(wizard_model, "_onchange_file"):
+            action = (
+                self.env["l10n_br_fiscal.document.import.wizard"]
+                .create({})
+                ._get_importer_action(attachment)
+            )
+        wizard = self.env[action["res_model"]].browse(action["res_id"])
+        self.assertEqual(wizard.file.content, content)
+        self.assertEqual(attachment.res_model, action["res_model"])
+
+    def test_distribute_delta_amount_smoothly_without_factors(self):
+        # The core already answers an empty list of factors: the override that
+        # guarded this case in 18.0 is not needed anymore.
+        self.assertEqual(
+            self.env["account.tax"]._distribute_delta_amount_smoothly(2, 0.01, []), []
+        )
