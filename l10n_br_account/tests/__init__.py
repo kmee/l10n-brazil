@@ -14,3 +14,4 @@ from . import test_import_fiscal_document
 from . import test_document_import_check
 from . import test_import_tax_override
 from . import test_load_fiscal_taxes
+from . import test_invoice_report

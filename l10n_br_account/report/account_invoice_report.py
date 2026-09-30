@@ -92,7 +92,8 @@ class AccountInvoiceReport(models.Model):
         document (line) is joined explicitly through its delegated fields
         instead of the removed _select()/_from() string hooks of 19.0.
         """
-        fiscal_document = table._join("fiscal_document_id")
+        # The fiscal document is delegated by the move, not by the line.
+        fiscal_document = table._join("move_id")._join("fiscal_document_id")
         fiscal_document_line = table._join("fiscal_document_line_id")
         return super()._select_list(table) + [
             SQL("%s AS issuer", fiscal_document.issuer),
