@@ -47,7 +47,6 @@ class AccountChartTemplate(models.AbstractModel):
             "name": self.env._("Basic Chart of Accounts"),
             "visible": True,  # TODO
             "code_digits": "2",
-            "use_anglo_saxon": True,
         }
 
     @template("br_oca", "account.tax.group")
@@ -84,6 +83,7 @@ class AccountChartTemplate(models.AbstractModel):
         return {
             self.env.company.id: {
                 "account_fiscal_country_id": "base.br",
+                "anglo_saxon_accounting": True,
                 "cash_account_code_prefix": "1.1.1.1.",
                 "bank_account_code_prefix": "1.1.1.2.",
                 "transfer_account_code_prefix": "1.1.1.2.0",
@@ -94,6 +94,12 @@ class AccountChartTemplate(models.AbstractModel):
 
     def _load(self, template_code, company, install_demo, force_create=True):
         result = super()._load(template_code, company, install_demo, force_create)
+        # Only the OCA Brazilian charts are completed with the default Brazilian
+        # tax accounts below. The native 'br' localization ships its own taxes
+        # and accounts, and completing it here wrote a negative repartition
+        # factor on its taxes, which the 20.0 validation rejects.
+        if not (template_code or "").startswith("br_oca"):
+            return result
         # Remove Company default taxes configuration
         if company.currency_id == self.env.ref("base.BRL"):
             company.write(
@@ -174,6 +180,18 @@ class AccountChartTemplate(models.AbstractModel):
         """
         Populate a default Brazilian tax accounts and configure tax repartition lines.
         """
+        # Only the native 'br' localization owns its own tax accounts and
+        # taxes: it must never be written on from here. Other charts (the OCA
+        # br_oca* ones, but also generic charts on which l10n_br_account loads
+        # the Brazilian taxes) still need those accounts to be created.
+        if (company.chart_template or "") == "br":
+            _logger.info(
+                "Company %s: chart %s is the native Brazilian chart, skipping the"
+                " default tax accounts",
+                company.name,
+                company.chart_template,
+            )
+            return {}
         Account = self.env["account.account"]
         IrModelData = self.env["ir.model.data"].sudo()
         created_accounts_refs = {}

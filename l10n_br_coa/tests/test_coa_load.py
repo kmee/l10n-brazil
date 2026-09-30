@@ -23,6 +23,30 @@ class TestCoaLoad(TransactionCase):  # AccountTestInvoicingCommon):
 
         cls.env["account.chart.template"].try_loading("br_oca", cls.company)
 
+    def test_template_data_keys_are_20_0_compatible(self):
+        """The chart enables anglo-saxon accounting through the company section.
+
+        'use_anglo_saxon' is not a valid 20.0 template_data key anymore and would
+        be silently dropped in _pre_load_data, leaving the setting off.
+        """
+        data = self.env["account.chart.template"]._get_chart_template_data("br_oca")
+        self.assertNotIn("use_anglo_saxon", data["template_data"])
+        self.assertTrue(data["res.company"][self.company.id]["anglo_saxon_accounting"])
+        self.assertTrue(self.company.anglo_saxon_accounting)
+
+    def test_native_br_chart_is_not_completed(self):
+        """The native 'br' chart owns its tax accounts: never write on it."""
+        Account = self.env["account.account"]
+        before = Account.search_count([("company_ids", "in", self.company.id)])
+        self.company.chart_template = "br"
+        result = self.env["account.chart.template"]._populate_default_br_tax_accounts(
+            self.company, flavor="cfc", review_suffix=".X", template_module="account"
+        )
+        self.assertEqual(result, {})
+        self.assertEqual(
+            Account.search_count([("company_ids", "in", self.company.id)]), before
+        )
+
     def test_load_and_populate_coa(self):
         # Manually call and verify _populate_default_br_tax_accounts
         # This call is normally done from l10n_br_account, so we simulate it here
