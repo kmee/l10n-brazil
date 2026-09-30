@@ -2,9 +2,12 @@
 # @author Antônio S. Pereira Neto <neto@engenere.one>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+from unittest.mock import patch
+
 from odoo import fields
 from odoo.tests import Form, tagged
 
+from odoo.addons.base.models.res_partner import ResPartner
 from odoo.addons.mail.tests.common import MailCommon
 
 from .common import AccountMoveBRCommon
@@ -14,7 +17,16 @@ from .common import AccountMoveBRCommon
 class TestPaymentStatusBR(AccountMoveBRCommon, MailCommon):
     @classmethod
     def setUpClass(cls):
-        super().setUpClass()
+        # MailCommon moves the admin company (Brazilian in the demo data, with a
+        # CNPJ) to Belgium, and since 20.0 the base module validates the VAT
+        # when the country changes: format it without validating it here.
+        check_vat = ResPartner._check_vat
+
+        def _check_vat_without_validation(self, validation="error"):
+            return check_vat(self, validation=False)
+
+        with patch.object(ResPartner, "_check_vat", _check_vat_without_validation):
+            super().setUpClass()
         # Enable tracking (needed by this scenario)
         cls.env = cls.env(context=dict(cls.env.context, tracking_disable=False))
         cls.configure_normal_company_taxes()
