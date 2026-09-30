@@ -27,6 +27,7 @@ class AccountTax(models.Model):
         handle_price_include=True,
         include_caba_tags=False,
         rounding_method=None,
+        document_tax_mode=None,
         fixed_multiplicator=1,
         fiscal_taxes=None,
         operation_line=False,
@@ -78,6 +79,7 @@ class AccountTax(models.Model):
             handle_price_include,
             include_caba_tags,
             rounding_method,
+            document_tax_mode=document_tax_mode,
         )
 
         if not fiscal_taxes:
@@ -209,10 +211,13 @@ class AccountTax(models.Model):
             and record.fiscal_operation_id
         ):
             # Use Brazilian tax computation
-            self._add_br_tax_details_in_base_line(base_line, company, rounding_method)
-        else:
-            # Use standard tax computation
-            super()._add_tax_details_in_base_line(base_line, company, rounding_method)
+            return self._add_br_tax_details_in_base_line(
+                base_line, company, rounding_method
+            )
+        # Use standard tax computation
+        return super()._add_tax_details_in_base_line(
+            base_line, company, rounding_method
+        )
 
     def _add_br_tax_details_in_base_line(
         self, base_line, company, rounding_method=None
@@ -235,7 +240,7 @@ class AccountTax(models.Model):
                     base_line, company, rounding_method
                 )
                 return
-        except Exception:
+        except Exception:  # noqa: BLE001 (record not readable: standard computation)
             super()._add_tax_details_in_base_line(base_line, company, rounding_method)
             return
 
@@ -376,7 +381,11 @@ class AccountTax(models.Model):
 
     @api.model
     def _distribute_delta_amount_smoothly(
-        self, precision_digits, delta_amount, target_factors
+        self,
+        precision_digits,
+        delta_amount,
+        target_factors,
+        allow_negative_factors=False,
     ):
         """Guard against empty target_factors.
 
@@ -387,5 +396,8 @@ class AccountTax(models.Model):
         if not target_factors:
             return []
         return super()._distribute_delta_amount_smoothly(
-            precision_digits, delta_amount, target_factors
+            precision_digits,
+            delta_amount,
+            target_factors,
+            allow_negative_factors=allow_negative_factors,
         )

@@ -203,7 +203,10 @@ class FiscalDocumentLine(models.Model):
             vals["quantity"] = vals["proxy_quantity"]
         if "price_unit" not in vals and "proxy_price_unit" in vals:
             vals["price_unit"] = vals["proxy_price_unit"]
-        if "name" not in vals and "proxy_name" in vals:
+        # Since 20.0 the account.move.line name is only the extra description
+        # (the product is shown by the computed label): when it is empty, let
+        # _compute_name fall back to the product name.
+        if "name" not in vals and vals.get("proxy_name"):
             vals["name"] = vals["proxy_name"]
         if "product_id" not in vals and "proxy_product_id" in vals:
             vals["product_id"] = vals["proxy_product_id"]

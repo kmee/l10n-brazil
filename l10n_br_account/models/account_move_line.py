@@ -4,7 +4,7 @@
 
 from contextlib import contextmanager
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 from odoo.fields import Command
 from odoo.tools import frozendict
 
@@ -14,11 +14,11 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import FISCAL_TAX_ID_FIELDS
 class AccountMoveLine(models.Model):
     _name = "account.move.line"
     _fiscal_decorator_model = "l10n_br_fiscal.document.line"
-    _inherit = [
-        _name,
-        "l10n_br_account.decorator.mixin",
-    ]
-    _inherits = {_fiscal_decorator_model: "fiscal_document_line_id"}
+    _inherit = (_name, "l10n_br_account.decorator.mixin")
+    _inherits = {_fiscal_decorator_model: "fiscal_document_line_id"}  # noqa: RUF012
+    # Access to the move must not depend on the access to its fiscal
+    # document: the fiscal document is an implementation detail here.
+    _check_inherits_access = False
 
     @api.model
     def default_get(self, fields_list):
@@ -31,7 +31,6 @@ class AccountMoveLine(models.Model):
 
     fiscal_document_line_id = fields.Many2one(
         comodel_name="l10n_br_fiscal.document.line",
-        string="Fiscal Document Line",
         copy=False,
         ondelete="cascade",
         index="btree_not_null",
@@ -63,7 +62,7 @@ class AccountMoveLine(models.Model):
     # methods would fail to do what we expect from them in the Odoo objects.
     # -------------------------------------------------------------------------
 
-    name = fields.Char(inverse="_inverse_name")
+    name = fields.Text(inverse="_inverse_name")
     quantity = fields.Float(inverse="_inverse_quantity")
     price_unit = fields.Float(inverse="_inverse_price_unit")
     product_uom_id = fields.Many2one(inverse="_inverse_product_uom_id")
@@ -391,6 +390,8 @@ class AccountMoveLine(models.Model):
         "icms_origin",
         "ind_final",
         "icms_relief_value",
+        "document_tax_mode",
+        "extra_tax_data",
     )
     def _compute_totals(self):
         """
@@ -452,17 +453,19 @@ class AccountMoveLine(models.Model):
                 line.price_total = line.price_subtotal = subtotal
 
     # tax_domain -> (fiscal_value_field, fiscal_base_field)
-    _IMPORTED_TAX_FIELD_MAP = {
-        "icmsst": ("icmsst_value", "icmsst_base"),
-        "icms": ("icms_value", "icms_base"),
-        "ipi": ("ipi_value", "ipi_base"),
-        "pis": ("pis_value", "pis_base"),
-        "cofins": ("cofins_value", "cofins_base"),
-        "issqn": ("issqn_value", "issqn_base"),
-        "ii": ("ii_value", "ii_base"),
-        "ibs": ("ibs_value", "ibs_base"),
-        "cbs": ("cbs_value", "cbs_base"),
-    }
+    _IMPORTED_TAX_FIELD_MAP = frozendict(
+        {
+            "icmsst": ("icmsst_value", "icmsst_base"),
+            "icms": ("icms_value", "icms_base"),
+            "ipi": ("ipi_value", "ipi_base"),
+            "pis": ("pis_value", "pis_base"),
+            "cofins": ("cofins_value", "cofins_base"),
+            "issqn": ("issqn_value", "issqn_base"),
+            "ii": ("ii_value", "ii_base"),
+            "ibs": ("ibs_value", "ibs_base"),
+            "cbs": ("cbs_value", "cbs_base"),
+        }
+    )
 
     def _override_taxes_from_import(self, taxes, fiscal_line, sign):
         """Override compute_all tax amounts with the imported fiscal values.
@@ -495,46 +498,6 @@ class AccountMoveLine(models.Model):
                 factor = repartition_line.factor if repartition_line else 1.0
                 fiscal_value = getattr(fiscal_line, field_names[0]) or 0.0
                 tax["amount"] = sign * fiscal_value * factor
-                tax["base"] = sign * (getattr(fiscal_line, field_names[1]) or 0.0)
-
-    # tax_domain -> (fiscal_value_field, fiscal_base_field)
-    _IMPORTED_TAX_FIELD_MAP = {
-        "icmsst": ("icmsst_value", "icmsst_base"),
-        "icms": ("icms_value", "icms_base"),
-        "ipi": ("ipi_value", "ipi_base"),
-        "pis": ("pis_value", "pis_base"),
-        "cofins": ("cofins_value", "cofins_base"),
-        "issqn": ("issqn_value", "issqn_base"),
-        "ii": ("ii_value", "ii_base"),
-        "ibs": ("ibs_value", "ibs_base"),
-        "cbs": ("cbs_value", "cbs_base"),
-    }
-
-    def _override_taxes_from_import(self, taxes, fiscal_line, sign):
-        """Override compute_all tax amounts with the imported fiscal values.
-
-        The account.tax -> Brazilian tax mapping comes from the fiscal
-        tax group (``tax_group_id.fiscal_tax_group_id.tax_domain``), the
-        same canonical link already used by the account.tax compute_all
-        override.
-        """
-        for tax in taxes:
-            acc_tax = self.env["account.tax"].browse(tax.get("id") or [])
-            if not acc_tax and tax.get("tax_repartition_line_id"):
-                acc_tax = (
-                    self.env["account.tax.repartition.line"]
-                    .browse(tax["tax_repartition_line_id"])
-                    .tax_id
-                )
-            fiscal_group = acc_tax.tax_group_id.fiscal_tax_group_id
-            if fiscal_group.tax_withholding:
-                # Clear withholding taxes: XML doesn't bring WH item per item
-                tax["amount"] = 0.0
-                tax["base"] = 0.0
-                continue
-            field_names = self._IMPORTED_TAX_FIELD_MAP.get(fiscal_group.tax_domain)
-            if field_names:
-                tax["amount"] = sign * (getattr(fiscal_line, field_names[0]) or 0.0)
                 tax["base"] = sign * (getattr(fiscal_line, field_names[1]) or 0.0)
 
     @api.depends(
@@ -655,7 +618,11 @@ class AccountMoveLine(models.Model):
                     }
                 ): {
                     "name": tax["name"]
-                    + (" " + _("(Discount)") if line.display_type == "epd" else ""),
+                    + (
+                        " " + self.env._("(Discount)")
+                        if line.display_type == "epd"
+                        else ""
+                    ),
                     "balance": tax["amount"] / rate,
                     "amount_currency": tax["amount"],
                     "tax_base_amount": tax["base"]

@@ -27,10 +27,7 @@ from .constants import (
 class AccountMove(models.Model):
     _name = "account.move"
     _fiscal_decorator_model = "l10n_br_fiscal.document"
-    _inherit = [
-        _name,
-        "l10n_br_account.decorator.mixin",
-    ]
+    _inherit = (_name, "l10n_br_account.decorator.mixin")
 
     # an account.move has normally 0 or 1 related fiscal document:
     # - 0 when it is not related to a Brazilian company for instance.
@@ -42,7 +39,10 @@ class AccountMove(models.Model):
     # fiscal_document_id might be used only to sync the "main" fiscal
     # document (or the one currently imported or edited). In this case,
     # fiscal_document_ids contains all the line fiscal documents.
-    _inherits = {_fiscal_decorator_model: "fiscal_document_id"}
+    _inherits = {_fiscal_decorator_model: "fiscal_document_id"}  # noqa: RUF012
+    # Access to the move must not depend on the access to its fiscal
+    # document: the fiscal document is an implementation detail here.
+    _check_inherits_access = False
 
     _order = "date DESC, name DESC"
 
@@ -53,7 +53,6 @@ class AccountMove(models.Model):
 
     fiscal_document_id = fields.Many2one(
         comodel_name="l10n_br_fiscal.document",
-        string="Fiscal Document",
         copy=False,
         ondelete="cascade",
         store=True,
@@ -386,12 +385,15 @@ class AccountMove(models.Model):
 
         for invoice in invoices_with_fiscal_op:
             is_draft = invoice.id != invoice._origin.id
-            invoice.needed_terms = {}
+            # needed_terms is a Json list of (key, values) items since 20.0
+            invoice.needed_terms = []
+            needed_terms = {}
             invoice.needed_terms_dirty = True
             sign = 1 if invoice.is_inbound(include_receipts=True) else -1
             if invoice.is_invoice(True) and invoice.invoice_line_ids:
                 if invoice.imported_document:
                     invoice._compute_imported_terms()
+                    needed_terms = dict(invoice.needed_terms or [])
                 elif invoice.invoice_payment_term_id:
                     if is_draft:
                         tax_amount_currency = 0.0
@@ -450,16 +452,15 @@ class AccountMove(models.Model):
                             #     "discount_percentage"
                             # ),
                         }
-                        if key not in invoice.needed_terms:
-                            invoice.needed_terms[key] = values
+                        if key not in needed_terms:
+                            needed_terms[key] = values
                         else:
-                            invoice.needed_terms[key]["balance"] += values["balance"]
-                            invoice.needed_terms[key]["amount_currency"] += values[
+                            needed_terms[key]["balance"] += values["balance"]
+                            needed_terms[key]["amount_currency"] += values[
                                 "amount_currency"
                             ]
-                if not invoice.needed_terms:
-                    invoice.needed_terms = {}
-                    invoice.needed_terms[
+                if not needed_terms:
+                    needed_terms[
                         frozendict(
                             {
                                 "move_id": invoice.id,
@@ -474,6 +475,7 @@ class AccountMove(models.Model):
                         "balance": invoice.amount_total_signed,
                         "amount_currency": invoice.amount_total_in_currency_signed,
                     }
+            invoice.needed_terms = list(needed_terms.items())
         return res
 
     def _get_protected_vals(self, vals, records):
@@ -904,15 +906,16 @@ class AccountMove(models.Model):
 
             # This method is in l10n_br_fiscal_subsequent_document module, the IF
             # is necessary to avoid a 'glue module' or direct dependence.
-            if hasattr(record.fiscal_document_id, "_document_reference"):
-                # Add the related document to the NF-e.
-                # this is required for correct xml validation
-                if record.document_type_id and record.document_type_id.code in (
-                    MODELO_FISCAL_NFE
-                ):
-                    record.fiscal_document_id._document_reference(
-                        record.reversed_entry_id.fiscal_document_id
-                    )
+            # Add the related document to the NF-e.
+            # this is required for correct xml validation
+            if (
+                hasattr(record.fiscal_document_id, "_document_reference")
+                and record.document_type_id
+                and record.document_type_id.code in (MODELO_FISCAL_NFE)
+            ):
+                record.fiscal_document_id._document_reference(
+                    record.reversed_entry_id.fiscal_document_id
+                )
 
         return new_moves
 

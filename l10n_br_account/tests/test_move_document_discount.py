@@ -4,10 +4,9 @@
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
 from datetime import datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
-from pytz import UTC, timezone
-
-from odoo import Command
+from odoo import Command, fields
 from odoo.tests import TransactionCase
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import DOCUMENT_ISSUER_PARTNER
@@ -90,10 +89,12 @@ class TestInvoiceDatesAndDiscount(TransactionCase):
 
     def test_document_date(self):
         self.move_id.issuer = DOCUMENT_ISSUER_PARTNER
-        user_tz = timezone(self.env.user.tz or "UTC")
-        original_date = datetime.combine(datetime.now().date(), time.min)
+        user_tz = ZoneInfo(self.env.user.tz or "UTC")
+        original_date = datetime.combine(fields.Date.today(), time.min)
         original_date_in_user_tz = (
-            user_tz.localize(original_date).astimezone(UTC).replace(tzinfo=None)
+            original_date.replace(tzinfo=user_tz)
+            .astimezone(ZoneInfo("UTC"))
+            .replace(tzinfo=None)
         )
         original_date_without_time = original_date_in_user_tz.date()
 
@@ -107,7 +108,7 @@ class TestInvoiceDatesAndDiscount(TransactionCase):
 
     def test_inverse_document_date(self):
         self.move_id.issuer = DOCUMENT_ISSUER_PARTNER
-        new_date = datetime.now() - timedelta(days=2)
+        new_date = fields.Datetime.now() - timedelta(days=2)
         self.move_id.fiscal_document_id.document_date = new_date
 
         self.assertEqual(
@@ -118,10 +119,12 @@ class TestInvoiceDatesAndDiscount(TransactionCase):
 
     def test_date_in_out(self):
         self.move_id.issuer = DOCUMENT_ISSUER_PARTNER
-        user_tz = timezone(self.env.user.tz or "UTC")
-        original_date = datetime.combine(datetime.now().date(), time.min)
+        user_tz = ZoneInfo(self.env.user.tz or "UTC")
+        original_date = datetime.combine(fields.Date.today(), time.min)
         original_date_in_user_tz = (
-            user_tz.localize(original_date).astimezone(UTC).replace(tzinfo=None)
+            original_date.replace(tzinfo=user_tz)
+            .astimezone(ZoneInfo("UTC"))
+            .replace(tzinfo=None)
         )
         original_date_without_time = original_date_in_user_tz.date()
         self.move_id.date = original_date.date()
@@ -134,7 +137,7 @@ class TestInvoiceDatesAndDiscount(TransactionCase):
 
     def test_inverse_date_in_out(self):
         self.move_id.issuer = DOCUMENT_ISSUER_PARTNER
-        new_date = datetime.now() - timedelta(days=2)
+        new_date = fields.Datetime.now() - timedelta(days=2)
         self.move_id.fiscal_document_id.date_in_out = new_date
         self.assertEqual(
             self.move_id.date,

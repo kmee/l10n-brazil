@@ -140,7 +140,7 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
 
     def test_revenda(self):
         product_line_vals_1 = {
-            "name": self.product_a.display_name,
+            "label": self.product_a.display_name,
             "product_id": self.product_a.id,
             "account_id": self.product_a.property_account_income_id.id,
             "partner_id": self.partner_a.id,
@@ -159,7 +159,7 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
         }
 
         tax_line_vals_icms = {
-            "name": "ICMS SN Saída",
+            "label": "ICMS SN Saída",
             "product_id": False,
             "account_id": self.env["account.account"]
             .search(
@@ -195,7 +195,7 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
         }
 
         term_line_vals_1 = {
-            "name": False,
+            "label": False,
             "product_id": False,
             "account_id": self.company_data["default_account_receivable"].id,
             "partner_id": self.partner_a.id,

@@ -18,17 +18,20 @@ def post_init_hook(env):
         br_demo_companies.append(demo_lp)
 
     for company in env["res.company"].with_context(active_test=False).search([]):
-        if "br_oca" in env["account.chart.template"]._get_parent_template(
-            company.chart_template
+        if (
+            "br_oca"
+            in env["account.chart.template"]._get_parent_template(
+                company.chart_template
+            )
+            and company in br_demo_companies
         ):
-            if company in br_demo_companies:
-                # fallback to generic_coa to make tests pass
-                # FIXME tests should not depend on demo companies anymore!
-                env["account.chart.template"].try_loading(
-                    "generic_coa", company, install_demo=True
-                )
-                env["account.chart.template"].load_fiscal_taxes([company])
-                company.currency_id = env.ref("base.BRL")
+            # fallback to generic_coa to make tests pass
+            # FIXME tests should not depend on demo companies anymore!
+            env["account.chart.template"].try_loading(
+                "generic_coa", company, install_demo=True
+            )
+            env["account.chart.template"].load_fiscal_taxes([company])
+            company.currency_id = env.ref("base.BRL")
 
     if env.ref("base.module_l10n_br_account").demo:
         main_company = env.ref("base.main_company", raise_if_not_found=False)

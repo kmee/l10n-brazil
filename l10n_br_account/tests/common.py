@@ -28,7 +28,13 @@ def load_demo_company_chart(env, company_xmlid="l10n_br_base.empresa_lucro_presu
     only, which makes the operation line resolution pick the wrong line.
     """
     company = env.ref(company_xmlid)
-    if not company.chart_template:
+    # the post_init_hook may set the chart template of a demo company without
+    # loading it (Simples Nacional): look for its journals, and load the chart
+    # from scratch, otherwise _load() takes it as an update of the chart
+    if not company.chart_template or not env["account.journal"].search_count(
+        [("company_id", "=", company.id)], limit=1
+    ):
+        company.chart_template = False
         # _load() is what try_loading() wraps: it does not warn about a not
         # fully loaded registry, which is the case while the tests are running.
         env["account.chart.template"]._load("generic_coa", company, install_demo=False)
@@ -374,20 +380,20 @@ class AccountMoveBRCommon(AccountTestInvoicingCommon):
             "l10n_latam.document.type" in cls.env
             and move_form.l10n_latam_use_documents
             and not move_form.l10n_latam_document_type_id
+            and document_type
         ):
-            if document_type:
-                # Map fiscal document type to l10n_latam document type
-                latam_doc_type = "l10n_latam.document.type" in cls.env and cls.env[
-                    "l10n_latam.document.type"
-                ].search(
-                    [
-                        ("code", "=", document_type.code),
-                        ("country_id", "=", cls.env.ref("base.br").id),
-                    ],
-                    limit=1,
-                )
-                if latam_doc_type:
-                    move_form.l10n_latam_document_type_id = latam_doc_type
+            # Map fiscal document type to l10n_latam document type
+            latam_doc_type = "l10n_latam.document.type" in cls.env and cls.env[
+                "l10n_latam.document.type"
+            ].search(
+                [
+                    ("code", "=", document_type.code),
+                    ("country_id", "=", cls.env.ref("base.br").id),
+                ],
+                limit=1,
+            )
+            if latam_doc_type:
+                move_form.l10n_latam_document_type_id = latam_doc_type
 
         for index, product in enumerate(products):
             with move_form.invoice_line_ids.new() as line_form:

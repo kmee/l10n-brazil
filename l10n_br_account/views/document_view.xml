@@ -17,7 +17,7 @@
                     type="object"
                     help="Show related invoices"
                     invisible="move_count == 0"
-                    icon="fa-pencil-square-o"
+                    icon="edit_square"
                 >
                     <field name="move_count" widget="statinfo" string="Invoices" />
                 </button>

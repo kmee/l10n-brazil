@@ -37,7 +37,7 @@
                     title="Open Fiscal Document"
                     type="object"
                     class="oe_stat_button"
-                    icon="fa-pencil-square-o"
+                    icon="edit_square"
                     invisible="not document_type_id"
                 />
             </field>
@@ -57,7 +57,7 @@
                     title="Open Fiscal Document"
                     type="object"
                     class="oe_stat_button"
-                    icon="fa-pencil-square-o"
+                    icon="edit_square"
                 >
                     <span>Fiscal Details</span>
                 </button>
@@ -153,7 +153,7 @@
                 </attribute>
             </field>
             <xpath
-                expr="//field[@name='invoice_line_ids']/list/field[@name='product_id']"
+                expr="//field[@name='invoice_line_ids']/list//field[@name='product_id']"
                 position="attributes"
             >
                 <attribute name="optional">show</attribute>

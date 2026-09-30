@@ -1,3 +1,26 @@
+## Na tela (Odoo 20.0)
+
+Em *Faturamento > Clientes > Faturas*, crie uma fatura numa empresa brasileira.
+
+1. Escolha o cliente e o **Tipo de Documento Fiscal** (por exemplo
+   `55 - Nota Fiscal Eletrônica`): aparecem a **Operação** fiscal, o consumidor
+   final, o emissor e a série do documento.
+
+   ![Cabeçalho fiscal da fatura](../static/img/invoice_header.png)
+
+2. Inclua as linhas: cada linha resolve a linha da operação fiscal e mostra os
+   tributos fiscais (ICMS, IPI, PIS, COFINS, IBS, CBS) calculados pelo motor
+   fiscal, que alimentam os impostos contábeis da fatura.
+
+   ![Tributos fiscais da linha](../static/img/invoice_line_taxes.png)
+
+3. Os totais mostram o valor bruto, o desconto, frete, seguro e outros custos,
+   as retenções e o total com os impostos por fora (como o IPI).
+
+   ![Totais da fatura](../static/img/invoice_totals.png)
+
+O botão **Fiscal Details** abre o documento fiscal ligado à fatura.
+
 ## Passo a Passo: Criando uma Fatura Fiscal
 
 O processo se inicia a partir da fatura padrão do Odoo, agora "decorada" com os campos fiscais necessários.
