@@ -219,3 +219,13 @@ class L10nBRZipTest(TransactionCase):
             "São Paulo",
             "Error in method zip_search with PyCEP-Correiosto mapping field city.",
         )
+
+    def test_zip_search_buttons_use_the_oi_icon(self):
+        """The 20.0 web client has no Font Awesome icon on object buttons."""
+        for xmlid in (
+            "l10n_br_zip.l10n_br_zip_res_partner_form",
+            "l10n_br_zip.l10n_br_zip_res_company_form",
+        ):
+            arch = self.env.ref(xmlid).arch
+            self.assertIn('data-icon="search"', arch, xmlid)
+            self.assertNotIn("fa-search", arch, xmlid)
