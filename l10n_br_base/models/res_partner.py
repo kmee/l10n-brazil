@@ -254,6 +254,17 @@ class Partner(models.Model):
                 partner.is_company = False
         return res
 
+    def _check_vat(self, validation="error"):
+        """Skip the core VAT check when the Brazilian validation is disabled.
+
+        Odoo 20.0 validates the VAT itself in ``base`` (``check_vat_br``
+        accepts both the CPF and the CNPJ), so the l10n_br_base setting that
+        disables the validation must also bypass the core check.
+        """
+        if self._l10n_br_disable_vat_validation():
+            return
+        return super()._check_vat(validation=validation)
+
     def _is_br_partner(self):
         """Check if is a Brazilian Partner."""
         return bool(

@@ -321,6 +321,20 @@ class ValidCreateIdTest(TransactionCase):
             "The company VAT must be the same as the partner VAT",
         )
 
+    # No test on Inscricao Estadual for partners with CPF
+    # because they haven't Inscricao Estadual
 
-# No test on Inscricao Estadual for partners with CPF
-# because they haven't Inscricao Estadual
+    def test_core_vat_check_respects_disable_cpf_cnpj_validation(self):
+        """The core check_vat_br of 20.0 must not bypass the l10n_br_base setting."""
+        vals = {
+            "name": "Legacy Vat Partner",
+            "vat": "12345",
+            "country_id": self.env.ref("base.br").id,
+        }
+        with self.assertRaises(ValidationError):
+            self.env["res.partner"].create(vals)
+        self.env["ir.config_parameter"].sudo().set_bool(
+            "l10n_br_base.disable_cpf_cnpj_validation", True
+        )
+        partner = self.env["res.partner"].create(vals)
+        self.assertEqual(partner.vat, "12345")
