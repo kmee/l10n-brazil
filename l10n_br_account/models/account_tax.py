@@ -213,7 +213,6 @@ class AccountTax(models.Model):
         else:
             # Use standard tax computation
             super()._add_tax_details_in_base_line(base_line, company, rounding_method)
-        return None
 
     def _add_br_tax_details_in_base_line(
         self, base_line, company, rounding_method=None

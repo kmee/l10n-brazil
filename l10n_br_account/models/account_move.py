@@ -362,7 +362,7 @@ class AccountMove(models.Model):
 
     def _compute_imported_terms(self):
         self.ensure_one()
-        pass  # meant to be overriden
+        # meant to be overriden
 
     @api.depends(
         "invoice_payment_term_id",
@@ -487,9 +487,7 @@ class AccountMove(models.Model):
                 records._name == "account.move"
                 and records.fiscal_document_id
                 and records.fiscal_document_id._fields.get(fname)
-            ):
-                continue
-            elif (
+            ) or (
                 records._name == "account.move.line"
                 and records.fiscal_document_line_id
                 and records.fiscal_document_line_id._fields.get(fname)
