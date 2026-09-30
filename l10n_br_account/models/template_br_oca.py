@@ -172,6 +172,10 @@ class AccountChartTemplate(models.AbstractModel):
             )
             _logger.info(f"Created {tax_count} taxes for company {company.name}")
 
-            self.env["account.chart.template"]._populate_default_br_tax_accounts(
+            # account.account.code is company dependent since 20.0: search and
+            # create the tax accounts in the context of the company populated.
+            self.env["account.chart.template"].with_company(
+                company
+            )._populate_default_br_tax_accounts(
                 company, flavor="cfc", review_suffix=".BR"
             )
