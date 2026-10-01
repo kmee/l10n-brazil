@@ -12,6 +12,7 @@ from . import test_imported_due_date
 from . import test_imported_tax_override
 from . import test_invoice_refund
 from . import test_move_document_discount
+from . import test_move_document_on_write
 from . import test_move_edition
 from . import test_move_workflow
 from . import test_payment_status
