@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
 from datetime import datetime
+from types import SimpleNamespace
 from unittest import mock
 
 from nfelib.nfe.ws.edoc_legacy import MDFeAdapter
@@ -83,6 +84,37 @@ class MDFeDocumentTest(TransactionCase):
         self.assertTrue(self.mdfe_id.document_key)
         self.assertTrue(self.mdfe_id.key_random_code)
         self.assertTrue(self.mdfe_id.key_check_digit)
+
+    def test_generate_key_accepts_alphanumeric_cnpj(self):
+        """The CNPJ with letters reaches the key builder instead of being refused."""
+        self.mdfe_id._generate_key()
+        numeric_key = self.mdfe_id.document_key
+        self.mdfe_id.company_id.cnpj_cpf = "12.ABC.345/01DE-35"
+        fake_key = mock.Mock(
+            chave=numeric_key,
+            codigo_aleatorio=numeric_key[35:43],
+            digito_verificador=numeric_key[-1],
+        )
+        with mock.patch(
+            "odoo.addons.l10n_br_mdfe.models.document.ChaveEdoc",
+            return_value=fake_key,
+        ) as chave_edoc:
+            self.mdfe_id._generate_key()
+        self.assertEqual(
+            chave_edoc.call_args.kwargs["cnpj_cpf_emitente"], "12ABC34501DE35"
+        )
+
+    def test_inverse_mdfe30_id_keeps_alphanumeric_access_key(self):
+        """The document key is the whole Id, also with an alphanumeric CNPJ."""
+        document_model = type(self.env["l10n_br_fiscal.document"])
+        keys = (
+            "50260912ABC34501DE35580010000011311421039568",
+            "50170876063965000276580010000011311421039568",
+        )
+        for key in keys:
+            record = SimpleNamespace(mdfe30_Id="MDFe" + key, document_key=False)
+            document_model._inverse_mdfe30_id_tag([record])
+            self.assertEqual(record.document_key, key)
 
     def _create_company(self, name):
         return self.env["res.company"].create({"name": name})

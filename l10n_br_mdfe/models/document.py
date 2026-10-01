@@ -160,7 +160,9 @@ class MDFe(spec_models.StackedModel):
     def _inverse_mdfe30_id_tag(self):
         for record in self:
             if record.mdfe30_Id:
-                record.document_key = re.findall(r"\d+", str(record.mdfe30_Id))[0]
+                # The access key may carry letters (alphanumeric CNPJ), so it
+                # cannot be found with \d+. Id is the "MDFe" prefix + the key.
+                record.document_key = re.sub(r"^[A-Za-z]+", "", str(record.mdfe30_Id))
 
     ##########################
     # MDF-e tag: ide
@@ -1022,7 +1024,18 @@ class MDFe(spec_models.StackedModel):
             cleaned_fields = {}
             for label, value in fields_to_validate.items():
                 cleaned = punctuation_rm(str(value or ""))
-                if cleaned and not cleaned.isdigit():
+                if label == "CNPJ/CPF":
+                    # The CNPJ may be alphanumeric (NT 2025.001)
+                    cleaned = cleaned.upper()
+                    if not re.fullmatch(r"[0-9A-Z]{12}[0-9]{2}|[0-9]{11}", cleaned):
+                        raise ValidationError(
+                            _(
+                                "The field %(label)s is not a valid CNPJ or CPF "
+                                "number. Found: '%(value)s'"
+                            )
+                            % {"label": label, "value": value}
+                        )
+                elif cleaned and not cleaned.isdigit():
                     raise ValidationError(
                         _(
                             "The field %(label)s must contain only numbers. "
