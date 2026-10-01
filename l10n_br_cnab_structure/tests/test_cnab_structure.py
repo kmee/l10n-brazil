@@ -707,29 +707,55 @@ class TestCNABStructure(AccountTestInvoicingCommon):
             }
         )
 
-        self.env["account.payment.line"].create(
+        # The service type is computed from the rules (it is no longer taken
+        # from the vals): supplier -> TED/20, employee -> current account/30.
+        rule_model = self.env["l10n_br_cnab.payment.rule"]
+        rule_model.create(
+            {
+                "cnab_structure_id": cnab_structure.id,
+                "sequence": 10,
+                "match_bank_type": "any",
+                "match_partner_type": "employee",
+                "payment_way_id": way_cc.id,
+                "service_type": SVC_SALARY,
+            }
+        )
+        rule_model.create(
+            {
+                "cnab_structure_id": cnab_structure.id,
+                "sequence": 20,
+                "match_bank_type": "any",
+                "match_partner_type": "supplier",
+                "payment_way_id": way_ted.id,
+                "service_type": SVC_SUPPLIER,
+            }
+        )
+        employee_partner = self.partner_b
+        employee_partner.employee = True
+        employee_bank = self._create_partner_bank(
+            self.bank_341, partner_id=employee_partner.id
+        )
+
+        line_supplier = self.env["account.payment.line"].create(
             {
                 "order_id": payment_order.id,
                 "partner_id": self.partner_a.id,
                 "partner_bank_id": self.partner_a_itau_bank.id,
                 "amount_currency": 100.0,
-                "service_type": SVC_SUPPLIER,
-                "cnab_payment_way_id": way_ted.id,
                 "communication": "TEST BATCH 1",
             }
         )
-
-        self.env["account.payment.line"].create(
+        line_employee = self.env["account.payment.line"].create(
             {
                 "order_id": payment_order.id,
-                "partner_id": self.partner_a.id,
-                "partner_bank_id": self.partner_a_itau_bank.id,
+                "partner_id": employee_partner.id,
+                "partner_bank_id": employee_bank.id,
                 "amount_currency": 200.0,
-                "service_type": SVC_SALARY,
-                "cnab_payment_way_id": way_cc.id,
                 "communication": "TEST BATCH 2",
             }
         )
+        self.assertEqual(line_supplier.service_type, SVC_SUPPLIER)
+        self.assertEqual(line_employee.service_type, SVC_SALARY)
 
         payment_order._compute_cnab_processor()
         payment_order._compute_cnab_structure_id()
@@ -1067,3 +1093,95 @@ class TestCNABStructure(AccountTestInvoicingCommon):
             line.cnab_payment_way_id,
             self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_45"),
         )
+
+    # ------------------------------------------------------------------
+    # Same bank by code, employee flag, exported orders, order computes
+    # ------------------------------------------------------------------
+    def test_same_bank_by_code_with_duplicated_bank(self):
+        """Two res.bank records with code 341 must still be the "same bank"."""
+        duplicated = self.env["res.bank"].create(
+            {"name": "Itau duplicated", "code_bc": "341"}
+        )
+        self.assertNotEqual(duplicated, self.bank_341)
+        payee_bank = self._create_partner_bank(duplicated)
+        _order, line = self._create_itau_salary_line_for_rules(payee_bank)
+        self.assertEqual(line.order_id.journal_id.bank_id, self.bank_341)
+        self.assertEqual(line._get_cnab_bank_type(), "same")
+        self.assertEqual(line._get_matching_rule().payment_way_id, self.way_01)
+        # 409 (Unibanco) is treated as 341
+        duplicated.code_bc = "409"
+        line.invalidate_recordset()
+        self.assertEqual(line._get_cnab_bank_type(), "same")
+        # Different code or empty code is "other"
+        duplicated.code_bc = "001"
+        self.assertEqual(line._get_cnab_bank_type(), "other")
+        duplicated.code_bc = False
+        self.assertEqual(line._get_cnab_bank_type(), "other")
+
+    def _create_itau_salary_line_for_rules(self, partner_bank):
+        self._create_itau_salary_rules()
+        return self._create_itau_salary_line(partner_bank, self.way_01)
+
+    def test_employee_by_flag(self):
+        """Only the res.partner.employee flag is used by the base module."""
+        partner_bank = self._create_partner_bank(self.bank_341)
+        _order, line = self._create_itau_salary_line_for_rules(partner_bank)
+        self.assertFalse(self.partner_a.employee)
+        self.assertFalse(line._is_cnab_employee())
+        self.partner_a.employee = True
+        self.assertTrue(line._is_cnab_employee())
+
+    def test_employee_rule_matches_by_flag(self):
+        rule = self._create_employee_rule()
+        self.partner_a.employee = True
+        invoice = self._create_test_invoice()
+        order = self._create_payment_order(invoice)
+        line = order.payment_line_ids
+        self.assertEqual(line._get_matching_rule(), rule)
+        self.partner_a.employee = False
+        self.assertFalse(line._get_matching_rule())
+
+    def test_exported_order_keeps_service_type(self):
+        """Recompute never rewrites service type of an exported order."""
+        self._create_employee_rule()
+        self.partner_a.employee = True
+        invoice = self._create_test_invoice()
+        order = self._create_payment_order(invoice)
+        line = order.payment_line_ids
+        self.assertEqual(line.service_type, SVC_SALARY)
+        order.draft2open()
+        order.open2generated()
+        self.assertEqual(order.state, "generated")
+        # flag change: recompute leaves the stored service type alone
+        self.partner_a.employee = False
+        line._compute_cnab_payment_way_id()
+        self.assertEqual(line.service_type, SVC_SALARY)
+        # bank code change: same
+        self.bank_341.code_bc = "237"
+        line._compute_cnab_payment_way_id()
+        self.assertEqual(line.service_type, SVC_SALARY)
+        self.bank_341.code_bc = "341"
+        # in a draft order the recompute does apply
+        order.state = "draft"
+        line._compute_cnab_payment_way_id()
+        self.assertEqual(line.service_type, SVC_SUPPLIER)
+
+    def test_order_computes_handle_multiple_records(self):
+        """The computes must fill every record, not only the first one."""
+        invoice_1 = self._create_test_invoice()
+        order_1 = self._create_payment_order(invoice_1)
+        order_2 = self.payment_order_model.create(
+            {
+                "payment_mode_id": self.pix_mode_bb.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": self.bank_journal_bb.id,
+            }
+        )
+        orders = order_1 | order_2
+        orders._compute_cnab_processor()
+        orders._compute_cnab_structure_id()
+        self.assertEqual(order_1.cnab_structure_id, self.cnab_structure_itau_240)
+        self.assertEqual(order_2.cnab_structure_id, self.cnab_structure_bb_240)
+        self.assertEqual(order_1.cnab_processor, "oca_processor")
+        self.assertEqual(order_2.cnab_processor, "oca_processor")

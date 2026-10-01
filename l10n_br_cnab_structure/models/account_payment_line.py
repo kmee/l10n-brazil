@@ -93,7 +93,16 @@ class AccountPaymentLine(models.Model):
                 raise UserError(_("Mapping for batch template not found"))
             bline.batch_template_id = bline.cnab_payment_way_id.batch_id
 
-    @api.depends("payment_mode_id", "partner_id", "partner_bank_id")
+    @api.depends(
+        "payment_mode_id",
+        "partner_id",
+        "partner_bank_id",
+        "partner_id.employee",
+        "partner_bank_id.bank_id",
+        "partner_bank_id.bank_id.code_bc",
+        "order_id.journal_id.bank_id",
+        "order_id.payment_mode_id.cnab_structure_id",
+    )
     def _compute_cnab_payment_way_id(self):
         for line in self:
             mode = line.order_id.payment_mode_id
@@ -102,17 +111,17 @@ class AccountPaymentLine(models.Model):
 
             if rule:
                 line.cnab_payment_way_id = rule.payment_way_id
-                line.service_type = rule.service_type
+                line._set_cnab_service_type(rule.service_type)
             else:
                 ways = mode.cnab_payment_way_ids.filtered(
                     lambda w, s=cnab_structure: w.cnab_structure_id == s
                 )
                 if ways:
                     line.cnab_payment_way_id = ways[0]
-                    line.service_type = "20"
+                    line._set_cnab_service_type("20")
                 else:
                     line.cnab_payment_way_id = False
-                    line.service_type = False
+                    line._set_cnab_service_type(False)
                     if mode.cnab_structure_ok:
                         raise UserError(
                             _(
@@ -126,19 +135,57 @@ class AccountPaymentLine(models.Model):
                             }
                         )
 
+    def _set_cnab_service_type(self, value):
+        """Set the stored service type, unless the order was already exported.
+
+        Lines of orders that are not draft/open (generated, uploaded, done,
+        cancel) keep the value already stored, so a later change of flag, bank
+        or employee never rewrites a service type that went to the bank.
+        The stored column is read with SQL to avoid recursing into the compute.
+        """
+        self.ensure_one()
+        if isinstance(self.id, int) and self.order_id.state not in ("draft", "open"):
+            self.env.cr.execute(
+                "SELECT service_type FROM account_payment_line WHERE id = %s",
+                (self.id,),
+            )
+            row = self.env.cr.fetchone()
+            if row and row[0]:
+                self.service_type = row[0]
+                return
+        self.service_type = value
+
+    @api.model
+    def _normalize_cnab_bank_code(self, code):
+        """Bank code used to compare banks: 409 (Unibanco) is the same as 341."""
+        code = (code or "").strip()
+        return "341" if code == "409" else code
+
+    def _get_cnab_bank_type(self):
+        """Return "same" or "other" comparing bank codes, never record ids."""
+        self.ensure_one()
+        payee = self._normalize_cnab_bank_code(self.partner_bank_id.bank_id.code_bc)
+        payer = self._normalize_cnab_bank_code(
+            self.order_id.journal_id.bank_id.code_bc
+        )
+        return "same" if payee and payee == payer else "other"
+
+    def _is_cnab_employee(self):
+        """Whether the payee is an employee (salary payment).
+
+        Base implementation only uses the res.partner.employee flag, the only
+        source that exists without the hr module. The bridge module
+        l10n_br_cnab_structure_hr adds the hr.employee detection.
+        """
+        self.ensure_one()
+        return bool(self.partner_id.employee)
+
     def _get_matching_rule(self):
         """Finds the best matching CNAB rule based on bank and partner attributes."""
         self.ensure_one()
         cnab_structure = self.order_id.cnab_structure_id
-        if self.partner_bank_id.bank_id == self.order_id.journal_id.bank_id:
-            bank_type = "same"
-        else:
-            bank_type = "other"
-        is_employee = getattr(self.partner_id, "employee", False)
-        if is_employee:
-            partner_type = "employee"
-        else:
-            partner_type = "supplier"
+        bank_type = self._get_cnab_bank_type()
+        partner_type = "employee" if self._is_cnab_employee() else "supplier"
         rules = self.env["l10n_br_cnab.payment.rule"].search(
             [
                 ("cnab_structure_id", "=", cnab_structure.id),
@@ -154,34 +201,3 @@ class AccountPaymentLine(models.Model):
                 continue
             return rule
         return False
-
-    def _compute_cnab_payment_way_id(self):
-        for line in self:
-            mode = line.order_id.payment_mode_id
-            cnab_structure = line.order_id.cnab_structure_id
-
-            rule = line._get_matching_rule()
-
-            if rule:
-                line.cnab_payment_way_id = rule.payment_way_id
-                line.service_type = rule.service_type
-            else:
-                ways = mode.cnab_payment_way_ids.filtered(
-                    lambda w, s=cnab_structure: w.cnab_structure_id == s
-                )
-
-                if ways:
-                    line.cnab_payment_way_id = ways[0]
-                else:
-                    line.cnab_payment_way_id = False
-                    raise UserError(
-                        _(
-                            "CNAB payment way not found.\n"
-                            "Payment Mode: %(payment_mode)s\n"
-                            "CNAB Structure: %(cnab_structure)s"
-                        )
-                        % {
-                            "payment_mode": mode.name,
-                            "cnab_structure": cnab_structure.name,
-                        }
-                    )
