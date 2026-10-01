@@ -68,6 +68,16 @@ class _FakeProcessor:
         return self._get("operacao_nao_realizada")
 
 
+class _RecordingProcessor(_FakeProcessor):
+    """Records the CNPJ that the event is sent with."""
+
+    cnpj_dest = None
+
+    def ciencia_da_operacao(self, chave, cnpj_dest):
+        self.cnpj_dest = cnpj_dest
+        return super().ciencia_da_operacao(chave, cnpj_dest)
+
+
 class TestNFeMDE(TransactionCase):
     @classmethod
     def setUpClass(cls):
@@ -150,3 +160,15 @@ class TestNFeMDE(TransactionCase):
 
         self.assertEqual(self.mde_id.state, "done")
         self.assertTrue(self.mde_id.response_xml)
+
+    def test_event_sends_alphanumeric_cnpj(self):
+        """The author CNPJ keeps its letters when the event is sent."""
+        self.company.partner_id.vat = "12.ABC.345/01DE-35"
+        proc = _RecordingProcessor()
+        with mock.patch(
+            "odoo.addons.l10n_br_nfe.models.nfe_md_event.NfeRecipientManifestationEvent._get_processor",
+            return_value=proc,
+        ):
+            self.mde_id.event_type = "ciente"
+            self.mde_id.action_confirm()
+        self.assertEqual(proc.cnpj_dest, "12ABC34501DE35")

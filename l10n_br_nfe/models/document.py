@@ -195,7 +195,9 @@ class NFe(spec_models.StackedModel):
     def _inverse_nfe40_Id(self):
         for record in self:
             if record.nfe40_Id:
-                record.document_key = re.findall(r"\d+", str(record.nfe40_Id))[0]
+                # The access key may carry letters (alphanumeric CNPJ), so it
+                # cannot be found with \d+. Id is the "NFe" prefix + the key.
+                record.document_key = re.sub(r"^[A-Za-z]+", "", str(record.nfe40_Id))
 
     ##########################
     # NF-e tag: ide

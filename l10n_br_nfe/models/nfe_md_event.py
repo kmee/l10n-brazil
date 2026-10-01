@@ -2,9 +2,9 @@
 # License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 
 import logging
-import re
 from datetime import datetime, timezone
 
+from erpbrasil.base.misc import punctuation_rm
 from erpbrasil.transmissao import TransmissaoSOAP
 from nfelib.nfe.ws.edoc_legacy import MDeAdapter as edoc_mde
 from requests import Session
@@ -122,7 +122,7 @@ class NfeRecipientManifestationEvent(models.Model):
 
     def _send_event(self, method, valid_codes):
         processor = self._get_processor()
-        cnpj_partner = re.sub("[^0-9]", "", self.company_id.cnpj_cpf)
+        cnpj_partner = punctuation_rm(self.company_id.cnpj_cpf or "")
 
         if hasattr(processor, method):
             result = getattr(processor, method)(self.access_key, cnpj_partner)

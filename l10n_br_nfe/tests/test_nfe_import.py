@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
 import re
+from types import SimpleNamespace
 
 import nfelib
 import pkg_resources
@@ -274,3 +275,15 @@ class NFeImportTest(TransactionCase):
 
     def test_import_out_nfe(self):
         "(can be useful after an ERP migration)"
+
+    def test_inverse_nfe40_id_keeps_alphanumeric_access_key(self):
+        """The document key is the whole Id, also with an alphanumeric CNPJ."""
+        document_model = type(self.env["l10n_br_fiscal.document"])
+        keys = (
+            "35260912ABC34501DE35550010000001231123456780",
+            "35180834128745000152550010000474281920007498",
+        )
+        for key in keys:
+            record = SimpleNamespace(nfe40_Id="NFe" + key, document_key=False)
+            document_model._inverse_nfe40_Id([record])
+            self.assertEqual(record.document_key, key)
