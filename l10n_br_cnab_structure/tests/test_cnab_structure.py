@@ -1012,3 +1012,58 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         other_field.cnab_line_id.resource_ref = f"account.payment.line,{line.id}"
         other_field.invalidate_recordset(["preview_field"])
         self.assertTrue(other_field.preview_field)
+
+    # ------------------------------------------------------------------
+    # Service type reproduction (real flow: invoice -> payment line multi)
+    # ------------------------------------------------------------------
+    def _create_employee_rule(self):
+        way_45 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_45")
+        return self.env["l10n_br_cnab.payment.rule"].create(
+            {
+                "cnab_structure_id": self.cnab_structure_itau_240.id,
+                "sequence": 5,
+                "match_bank_type": "any",
+                "match_partner_type": "employee",
+                "payment_way_id": way_45.id,
+                "service_type": SVC_SALARY,
+            }
+        )
+
+    def test_service_type_supplier_without_rule(self):
+        """PAY0005 reproduction: supplier PIX, no rule at all.
+
+        Cause (i) + vals: with no rule the compute is not involved and the
+        "20" comes from _prepare_payment_line_vals (in_invoice default),
+        confirmed by this test. PAY0005 was not a salary. Passes before and
+        after the fix.
+        """
+        self.assertFalse(self.cnab_structure_itau_240.cnab_payment_rule_ids)
+        invoice = self._create_test_invoice()
+        order = self._create_payment_order(invoice)
+        line = order.payment_line_ids
+        self.assertEqual(len(line), 1)
+        self.assertEqual(line.service_type, SVC_SUPPLIER)
+        self.assertEqual(
+            line.cnab_payment_way_id,
+            self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_45"),
+        )
+
+    def test_service_type_salary_with_employee_rule(self):
+        """Employee flag + active "employee" rule must give service type 30.
+
+        Cause (ii): before the fix this test FAILS, because the "20" passed
+        in the vals by _prepare_payment_line_vals prevails: the surviving
+        _compute_cnab_payment_way_id has no @api.depends, so it never runs
+        on create and the stored value is the one from the vals.
+        """
+        self._create_employee_rule()
+        self.partner_a.employee = True
+        invoice = self._create_test_invoice()
+        order = self._create_payment_order(invoice)
+        line = order.payment_line_ids
+        self.assertEqual(len(line), 1)
+        self.assertEqual(line.service_type, SVC_SALARY)
+        self.assertEqual(
+            line.cnab_payment_way_id,
+            self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_45"),
+        )
