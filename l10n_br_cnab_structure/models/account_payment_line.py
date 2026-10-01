@@ -165,9 +165,7 @@ class AccountPaymentLine(models.Model):
         """Return "same" or "other" comparing bank codes, never record ids."""
         self.ensure_one()
         payee = self._normalize_cnab_bank_code(self.partner_bank_id.bank_id.code_bc)
-        payer = self._normalize_cnab_bank_code(
-            self.order_id.journal_id.bank_id.code_bc
-        )
+        payer = self._normalize_cnab_bank_code(self.order_id.journal_id.bank_id.code_bc)
         return "same" if payee and payee == payer else "other"
 
     def _is_cnab_employee(self):

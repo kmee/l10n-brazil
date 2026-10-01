@@ -205,9 +205,7 @@ class CNABField(models.Model):
         if not reason:
             return
         payment_line = (
-            resource_ref.name
-            if resource_ref and "name" in resource_ref._fields
-            else ""
+            resource_ref.name if resource_ref and "name" in resource_ref._fields else ""
         ) or ""
         partner = (
             resource_ref.partner_id.name
