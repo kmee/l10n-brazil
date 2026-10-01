@@ -224,7 +224,9 @@ class CTe(spec_models.StackedModel):
     def _inverse_cte40_id(self):
         for record in self:
             if record.cte40_Id:
-                record.document_key = re.findall(r"\d+", str(record.cte40_Id))[0]
+                # The access key may carry letters (alphanumeric CNPJ), so it
+                # cannot be found with \d+. Id is the "CTe" prefix + the key.
+                record.document_key = re.sub(r"^[A-Za-z]+", "", str(record.cte40_Id))
 
     ##########################
     # CT-e tag: ide

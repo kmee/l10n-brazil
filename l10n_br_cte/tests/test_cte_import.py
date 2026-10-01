@@ -2,6 +2,8 @@
 # Copyright 2025 - TODAY Akretion - Raphael Valyi <raphael.valyi@akretion.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
+from types import SimpleNamespace
+
 import pkg_resources
 from nfelib.cte.bindings.v4_0.cte_v4_00 import Tcte
 
@@ -101,3 +103,15 @@ class CTeImportTest(TransactionCase):
 
     def test_import_out_cte(self):
         "(can be useful after an ERP migration)"
+
+    def test_inverse_cte40_id_keeps_alphanumeric_access_key(self):
+        """The document key is the whole Id, also with an alphanumeric CNPJ."""
+        document_model = type(self.env["l10n_br_fiscal.document"])
+        keys = (
+            "35260912ABC34501DE35570010000000311000000240",
+            "51160724686092000173570010000000031000000024",
+        )
+        for key in keys:
+            record = SimpleNamespace(cte40_Id="CTe" + key, document_key=False)
+            document_model._inverse_cte40_id([record])
+            self.assertEqual(record.document_key, key)
