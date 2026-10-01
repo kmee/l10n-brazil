@@ -74,6 +74,14 @@ class CNABField(models.Model):
     )
     default_value = fields.Char(readonly=True, states={"draft": [("readonly", False)]})
     notes = fields.Char(readonly=True, states={"draft": [("readonly", False)]})
+    raise_on_overflow = fields.Boolean(
+        string="Strict Value Validation",
+        default=False,
+        help="When generating the CNAB file, raise an error instead of silently "
+        "truncating or zero-filling: empty values, non-digit characters and "
+        "values longer than the field size are rejected. Only applies to "
+        "numeric fields. It is not applied to the preview.",
+    )
     size = fields.Integer(compute="_compute_size")
 
     state = fields.Selection(
@@ -187,12 +195,13 @@ class CNABField(models.Model):
                 try:
                     ref_name, preview = rec.output(rec.resource_ref)
                     preview = preview.replace(" ", "⎵")
-                except (ValueError, SyntaxError) as exc:
+                except (ValueError, SyntaxError, UserError) as exc:
                     preview = str(exc)
             rec.preview_field = preview
 
     def output(self, resource_ref, **kwargs):
         "Compute output value for this field"
+        strict = kwargs.pop("strict", False)
         for rec in self:
             value = rec.default_value or ""
             if rec.content_source_field and resource_ref:
@@ -203,8 +212,58 @@ class CNABField(models.Model):
                 value = rec.eval_compute_value(
                     value, rec.sending_dynamic_content, **kwargs
                 )
+            if strict and rec.raise_on_overflow:
+                rec._check_strict_value(value, resource_ref)
             value = self.format(rec.size, rec.type, value)
             return self.ref_name, value
+
+    def _check_strict_value(self, value, resource_ref=None):
+        """Reject empty, non digit or oversized values (numeric fields only)."""
+        self.ensure_one()
+        if self.type != "num":
+            return
+        if isinstance(value, float):
+            value = f"{value:.{self.assumed_comma}f}"
+        raw = str(value).strip()
+        reason = False
+        if not raw:
+            reason = _("empty value")
+        elif not raw.isdigit():
+            reason = _("only digits are allowed (no separators or letters)")
+        elif len(raw.lstrip("0")) > self.size:
+            reason = _("value has more significant digits than the field size")
+        if not reason:
+            return
+        payment_line = (
+            resource_ref.name if resource_ref and "name" in resource_ref._fields else ""
+        ) or ""
+        partner = (
+            resource_ref.partner_id.name
+            if resource_ref and "partner_id" in resource_ref._fields
+            else ""
+        ) or ""
+        raise UserError(
+            _(
+                "Invalid value for CNAB field '%(field)s' (positions "
+                "%(start)s-%(end)s).\n"
+                "Payment line: %(line)s\n"
+                "Beneficiary: %(partner)s\n"
+                "Value received: '%(value)s'\n"
+                "Reason: %(reason)s. Expected up to %(size)s digit(s).\n"
+                "Fix the beneficiary's bank account (branch, account number "
+                "and check digit) in the partner form."
+            )
+            % {
+                "field": self.name,
+                "start": self.start_pos,
+                "end": self.end_pos,
+                "line": payment_line,
+                "partner": partner,
+                "value": raw,
+                "reason": reason,
+                "size": self.size,
+            }
+        )
 
     def format(self, size, value_type, value):
         """formats the value according to the specification"""
@@ -213,6 +272,13 @@ class CNABField(models.Model):
         value = str(value)
         if value_type == "num":
             value = re.sub(r"[^0-9]", "", value)
+            if self.raise_on_overflow and len(value) > size:
+                # Strict fields only: leading zeros must not push significant
+                # digits out of the field. Other fields keep the legacy
+                # behaviour (truncation of the value).
+                stripped = value.lstrip("0")
+                if len(stripped) <= size:
+                    value = stripped
             value = value.zfill(size)
         if value_type == "alpha":
             value = unidecode(value).upper()

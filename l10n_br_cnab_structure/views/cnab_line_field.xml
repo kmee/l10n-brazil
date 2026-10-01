@@ -48,6 +48,7 @@
                             <field name="cnab_group_id" />
                             <field name="default_value" />
                             <field name="size" />
+                            <field name="raise_on_overflow" />
                         </group>
                         <field name="notes" placeholder="Notes.." widget="text" />
                     </group>
