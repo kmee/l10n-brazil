@@ -24,6 +24,10 @@ from .constants import (
     MOVE_TO_OPERATION,
 )
 
+# Same criterion as the fiscal document create (see document.py): the fiscal
+# document is only created when there is a document type or a serie.
+FISCAL_DOCUMENT_TRIGGER_FIELDS = ("document_type_id", "document_serie_id")
+
 
 class AccountMove(models.Model):
     _name = "account.move"
@@ -136,10 +140,66 @@ class AccountMove(models.Model):
         ):
             vals.pop("tax_totals")
 
+        if any(vals.get(fname) for fname in FISCAL_DOCUMENT_TRIGGER_FIELDS):
+            self.filtered(
+                lambda move: not move.fiscal_document_id
+            )._create_missing_fiscal_document(vals)
+
         res = super().write(vals)
         if "partner_id" in vals:
             self._onchange_ind_final()
         return res
+
+    def _create_missing_fiscal_document(self, vals):
+        """Create and link the fiscal document of already saved moves without one.
+
+        The fiscal document is only created in the account.move create, and only
+        if the document type (or serie) is already filled. A move saved before
+        that stayed without a fiscal document forever, and the
+        _check_fiscal_document_type constraint rejected any later attempt to set
+        the document type. The document is created here the same way as in the
+        create (create_from_account context), before the write.
+        """
+        Document = self.env["l10n_br_fiscal.document"].with_context(
+            create_from_account=True, allow_fiscal_access=True
+        )
+        fiscal_vals = self._prepare_missing_fiscal_document_vals(vals)
+        proxy_fields = {
+            "proxy_partner_id": "partner_id",
+            "proxy_partner_shipping_id": "partner_shipping_id",
+            "proxy_company_id": "company_id",
+            "proxy_user_id": "invoice_user_id",
+        }
+        documents = Document.browse()
+        for move in self:
+            document_vals = dict(fiscal_vals)
+            for proxy_fname, move_fname in proxy_fields.items():
+                document_vals.setdefault(proxy_fname, move[move_fname].id)
+            document_vals.setdefault(
+                "issuer", move._get_missing_fiscal_document_issuer()
+            )
+            document = Document.create(document_vals)
+            super(AccountMove, move).write({"fiscal_document_id": document.id})
+            documents |= document
+        return documents
+
+    def _get_missing_fiscal_document_issuer(self):
+        """Same rule as default_get: outgoing documents are issued by the company,
+        incoming ones (vendor bills) by the partner."""
+        self.ensure_one()
+        if MOVE_TO_OPERATION.get(self.move_type) == FISCAL_OUT:
+            return DOCUMENT_ISSUER_COMPANY
+        return DOCUMENT_ISSUER_PARTNER
+
+    def _prepare_missing_fiscal_document_vals(self, vals):
+        """Values of the write that belong to the fiscal document (_inherits)."""
+        return {
+            fname: value
+            for fname, value in vals.items()
+            if fname in self._fields
+            and self._fields[fname].inherited
+            and self._fields[fname].related.startswith("fiscal_document_id.")
+        }
 
     def _inverse_tax_totals(self):
         # Never let the tax_totals widget override the tax values of a fiscal
