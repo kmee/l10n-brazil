@@ -48,6 +48,10 @@
                             <field name="cnab_group_id" readonly="state != 'draft'" />
                             <field name="default_value" readonly="state != 'draft'" />
                             <field name="size" />
+                            <field
+                                name="raise_on_overflow"
+                                readonly="state != 'draft'"
+                            />
                         </group>
                         <field name="notes" placeholder="Notes.." widget="text" />
                     </group>

@@ -11,6 +11,7 @@ from tempfile import TemporaryDirectory
 from unidecode import unidecode
 
 from odoo import fields
+from odoo.exceptions import UserError
 from odoo.tests import Form
 from odoo.tests.common import tagged
 
@@ -793,3 +794,221 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         self.assertFalse(cnab_field_id.content_source_field)
         field_select_wizard.action_confirm()
         self.assertEqual(cnab_field_id.content_source_field, "company_partner_bank_id")
+
+    # ------------------------------------------------------------------
+    # Itau SISPAG segment A (salary): same bank group and strict validation
+    # ------------------------------------------------------------------
+    def _create_itau_salary_rules(self):
+        cnab_structure = self.cnab_structure_itau_240
+        self.way_01 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_01")
+        self.way_41 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_41")
+        rule_model = self.env["l10n_br_cnab.payment.rule"]
+        rule_model.create(
+            {
+                "cnab_structure_id": cnab_structure.id,
+                "sequence": 10,
+                "match_bank_type": "same",
+                "match_partner_type": "any",
+                "payment_way_id": self.way_01.id,
+                "service_type": SVC_SALARY,
+            }
+        )
+        rule_model.create(
+            {
+                "cnab_structure_id": cnab_structure.id,
+                "sequence": 20,
+                "match_bank_type": "other",
+                "match_partner_type": "any",
+                "payment_way_id": self.way_41.id,
+                "service_type": SVC_SALARY,
+            }
+        )
+
+    def _create_itau_salary_mode(self):
+        return self.env["account.payment.mode"].create(
+            {
+                "name": "Itau Salary Mode",
+                "bank_account_link": "fixed",
+                "company_id": self.company.id,
+                "payment_method_id": self.outbound_payment_method.id,
+                "fixed_journal_id": self.bank_journal_itau.id,
+                "cnab_structure_id": self.cnab_structure_itau_240.id,
+                "cnab_payment_way_ids": [(6, 0, [self.way_01.id, self.way_41.id])],
+                "cnab_processor": "oca_processor",
+            }
+        )
+
+    def _create_itau_salary_line(self, partner_bank, way):
+        mode = self._create_itau_salary_mode()
+        order = self.payment_order_model.create(
+            {
+                "payment_mode_id": mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": self.bank_journal_itau.id,
+            }
+        )
+        line = self.payment_line_model.create(
+            {
+                "order_id": order.id,
+                "partner_id": self.partner_a.id,
+                "partner_bank_id": partner_bank.id,
+                "amount_currency": 100.0,
+                "service_type": SVC_SALARY,
+                "cnab_payment_way_id": way.id,
+                "communication": "SALARY TEST",
+            }
+        )
+        return order, line
+
+    def _generate_segment_a(self, order):
+        order.draft2open()
+        action = order.open2generated()
+        data = base64.b64decode(self.attachment_model.browse(action["res_id"]).datas)
+        lines = data.decode().splitlines()
+        batch_headers = [x for x in lines if len(x) > 8 and x[7] == "1"]
+        segments = [x for x in lines if len(x) > 13 and x[7] == "3" and x[13] == "A"]
+        self.assertEqual(len(segments), 1)
+        return batch_headers, segments[0]
+
+    def _create_partner_bank(self, bank, **vals):
+        values = {
+            "bank_id": bank.id,
+            "partner_id": self.partner_a.id,
+            "acc_number": "123456",
+            "bra_number": "1234",
+            "acc_number_dig": "7",
+        }
+        values.update(vals)
+        return self.res_partner_bank_model.create(values)
+
+    def test_itau_salary_same_bank_segment_a(self):
+        """Group 1 (same bank) must fill branch, account and DAC."""
+        self._create_itau_salary_rules()
+        partner_bank = self._create_partner_bank(self.bank_341)
+        order, _line = self._create_itau_salary_line(partner_bank, self.way_01)
+        batch_headers, seg = self._generate_segment_a(order)
+        self.assertEqual(batch_headers[0][9:11], SVC_SALARY)
+        self.assertEqual(seg[20:23], "341")
+        self.assertEqual(seg[23], "0")
+        self.assertEqual(seg[24:28], "1234")
+        self.assertEqual(seg[28], " ")
+        self.assertEqual(seg[29:35], "000000")
+        self.assertEqual(seg[35:41], "123456")
+        self.assertEqual(seg[41], " ")
+        self.assertEqual(seg[42], "7")
+
+    def test_itau_salary_other_bank_segment_a(self):
+        """Group 2 (other banks) layout is unchanged; format only."""
+        self._create_itau_salary_rules()
+        partner_bank = self._create_partner_bank(
+            self.bank_001, acc_number="789012", bra_number="2", acc_number_dig="X"
+        )
+        order, _line = self._create_itau_salary_line(partner_bank, self.way_41)
+        batch_headers, seg = self._generate_segment_a(order)
+        self.assertEqual(batch_headers[0][9:11], SVC_SALARY)
+        self.assertEqual(seg[20:23], "001")
+        self.assertEqual(seg[23:28], "00002")
+        self.assertEqual(seg[28], " ")
+        self.assertEqual(seg[29:41], "000000789012")
+        self.assertEqual(seg[41], " ")
+        self.assertEqual(seg[42], "X")
+
+    def _strict_field(self, suffix):
+        return self.env.ref(
+            "l10n_br_cnab_structure.cnab_itau_240_pagamentos_segmento_a_" + suffix
+        )
+
+    def _assert_strict_error(self, field, line, *fragments):
+        with self.assertRaises(UserError) as ctx:
+            field.output(line, strict=True)
+        message = str(ctx.exception)
+        for fragment in fragments:
+            self.assertIn(fragment, message)
+        return message
+
+    def test_itau_strict_validation(self):
+        self._create_itau_salary_rules()
+        field_branch = self._strict_field("25_28b")
+        field_account = self._strict_field("36_41b")
+        field_dac = self._strict_field("43_43b")
+        for field in (field_branch, field_account, field_dac):
+            self.assertTrue(field.raise_on_overflow)
+        partner_bank = self._create_partner_bank(self.bank_341)
+        _order, line = self._create_itau_salary_line(partner_bank, self.way_01)
+
+        # Valid values
+        self.assertEqual(field_branch.output(line, strict=True)[1], "1234")
+        self.assertEqual(field_account.output(line, strict=True)[1], "123456")
+        self.assertEqual(field_dac.output(line, strict=True)[1], "7")
+
+        # Account with embedded check digit and separator
+        partner_bank.acc_number = "12345-6"
+        message = self._assert_strict_error(
+            field_account, line, "12345-6", self.partner_a.name, "36", "41"
+        )
+        self.assertNotIn(TEST_PARTNER_CNPJ, message)
+        # Account with 7 significant digits (embedded DAC, no separator)
+        partner_bank.acc_number = "1234567"
+        self._assert_strict_error(field_account, line, "1234567")
+        # Leading zeros do not count against the limit
+        partner_bank.acc_number = "0012345"
+        self.assertEqual(field_account.output(line, strict=True)[1], "012345")
+        # Shorter values are zero filled
+        partner_bank.acc_number = "123"
+        self.assertEqual(field_account.output(line, strict=True)[1], "000123")
+        # Empty account
+        partner_bank.acc_number = False
+        self._assert_strict_error(field_account, line)
+        partner_bank.acc_number = "123456"
+
+        # Empty branch
+        partner_bank.bra_number = False
+        self._assert_strict_error(field_branch, line)
+        partner_bank.bra_number = "1234"
+
+        # DAC: empty, letter and two digits
+        for dac in (False, "A", "12"):
+            partner_bank.acc_number_dig = dac
+            self._assert_strict_error(field_dac, line)
+
+        # Legacy branch with 5 digits (the ORM constraint blocks it)
+        partner_bank.acc_number_dig = "7"
+        with self.assertRaises(UserError):
+            partner_bank.bra_number = "12345"
+        self.env.cr.execute(
+            "UPDATE res_partner_bank SET bra_number = %s WHERE id = %s",
+            ("12345", partner_bank.id),
+        )
+        partner_bank.invalidate_recordset()
+        self._assert_strict_error(field_branch, line, "12345")
+
+        # Without strict the behaviour is unchanged (silent truncation)
+        self.assertEqual(field_branch.output(line)[1], "1234")
+
+    def test_itau_strict_validation_not_applied_to_other_fields(self):
+        """Fields without the flag keep the legacy behaviour."""
+        field_other = self._strict_field("30_41")
+        self.assertFalse(field_other.raise_on_overflow)
+        partner_bank = self._create_partner_bank(
+            self.bank_001, acc_number="12345-6789012345"
+        )
+        _order, line = self._create_itau_salary_line(partner_bank, self.way_41)
+        self.assertEqual(field_other.output(line, strict=True)[1], "123456789012")
+
+    def test_itau_strict_preview_does_not_raise(self):
+        """The CNAB line form preview must never raise on invalid data."""
+        self._create_itau_salary_rules()
+        partner_bank = self._create_partner_bank(self.bank_341, acc_number="12345-6")
+        _order, line = self._create_itau_salary_line(partner_bank, self.way_01)
+        field_account = self._strict_field("36_41b")
+        field_account.cnab_line_id.resource_ref = f"account.payment.line,{line.id}"
+        field_account.invalidate_recordset(["preview_field"])
+        self.assertTrue(field_account.preview_field)
+        # Same for a field of another bank layout
+        other_field = self.env.ref(
+            "l10n_br_cnab_structure.cnab_bb_240_pagamentos_segmento_a_24_28"
+        )
+        other_field.cnab_line_id.resource_ref = f"account.payment.line,{line.id}"
+        other_field.invalidate_recordset(["preview_field"])
+        self.assertTrue(other_field.preview_field)
