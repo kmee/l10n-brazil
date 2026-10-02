@@ -2900,3 +2900,37 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:l10n_br_cnab_structure.cnab_operation_kanban
 msgid "records"
 msgstr ""
+
+#. module: l10n_br_cnab_structure
+#: code:addons/l10n_br_cnab_structure/models/cnab_line_field.py:0
+msgid ""
+"Invalid value for CNAB field '%(field)s' (positions %(start)s-%(end)s).\n"
+"Payment line: %(line)s\n"
+"Beneficiary: %(partner)s\n"
+"Value received: '%(value)s'\n"
+"Reason: %(reason)s. Expected up to %(size)s digit(s).\n"
+"Fix the beneficiary's bank account (branch, account number and check digit) in the partner form."
+msgstr ""
+
+#. module: l10n_br_cnab_structure
+#: code:addons/l10n_br_cnab_structure/models/cnab_line_field.py:0
+msgid "empty value"
+msgstr ""
+
+#. module: l10n_br_cnab_structure
+#: code:addons/l10n_br_cnab_structure/models/cnab_line_field.py:0
+msgid "only digits are allowed (no separators or letters)"
+msgstr ""
+
+#. module: l10n_br_cnab_structure
+#: code:addons/l10n_br_cnab_structure/models/cnab_line_field.py:0
+msgid "value has more significant digits than the field size"
+msgstr ""
+
+#. module: l10n_br_cnab_structure
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"CNAB payment way not found.\n"
+"Payment Mode: %(payment_mode)s\n"
+"CNAB Structure: %(cnab_structure)s"
+msgstr ""
