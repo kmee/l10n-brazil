@@ -2926,11 +2926,3 @@ msgstr ""
 #: code:addons/l10n_br_cnab_structure/models/cnab_line_field.py:0
 msgid "value has more significant digits than the field size"
 msgstr ""
-
-#. module: l10n_br_cnab_structure
-#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
-msgid ""
-"CNAB payment way not found.\n"
-"Payment Mode: %(payment_mode)s\n"
-"CNAB Structure: %(cnab_structure)s"
-msgstr ""
