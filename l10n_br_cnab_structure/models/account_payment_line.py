@@ -159,7 +159,20 @@ class AccountPaymentLine(models.Model):
         if not row or not (row[0] or row[1]):
             return False
         self.service_type = row[0]
-        self.cnab_payment_way_id = row[1]
+        if row[1]:
+            self.cnab_payment_way_id = row[1]
+        else:
+            # Line exported before cnab_payment_way_id became stored (module
+            # upgrade): fill only the missing way, never raise, and keep the
+            # stored service type.
+            rule = self._get_matching_rule()
+            structure = self.order_id.cnab_structure_id
+            ways = self.order_id.payment_mode_id.cnab_payment_way_ids.filtered(
+                lambda w, s=structure: w.cnab_structure_id == s
+            )
+            self.cnab_payment_way_id = (
+                rule.payment_way_id if rule else (ways[:1] or False)
+            )
         return True
 
     @api.model

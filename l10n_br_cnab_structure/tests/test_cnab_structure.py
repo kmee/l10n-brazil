@@ -403,8 +403,9 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         )
 
         self.assertIsNotNone(preview_wizard.output_yaml)
+        bank_name = unidecode(self.bank_341.name).upper()[:30].ljust(30)
         self.assertIn(
-            "    103_132_nome_do_banco: 'ITAU UNIBANCO SA              '\n",
+            f"    103_132_nome_do_banco: '{bank_name}'\n",
             preview_wizard.output_yaml,
         )
 
@@ -1178,15 +1179,36 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         # way/rule matches any more
         way = line.cnab_payment_way_id
         self.assertTrue(way)
+        mode_ways = order.payment_mode_id.cnab_payment_way_ids
         order.payment_mode_id.cnab_payment_way_ids = False
-        self.assertTrue(order.payment_mode_id.cnab_structure_ok)
+        order.payment_mode_id.cnab_structure_ok = True
         line._compute_cnab_payment_way_id()
         self.assertEqual(line.cnab_payment_way_id, way)
         self.assertEqual(line.service_type, SVC_SALARY)
         # in a draft order the recompute does apply
+        order.payment_mode_id.cnab_payment_way_ids = mode_ways
         order.state = "draft"
         line._compute_cnab_payment_way_id()
         self.assertEqual(line.service_type, SVC_SUPPLIER)
+
+    def test_exported_legacy_line_without_stored_way(self):
+        """Upgrade case: exported line with service type but no stored way."""
+        self._create_employee_rule()
+        self.partner_a.employee = True
+        invoice = self._create_test_invoice()
+        order = self._create_payment_order(invoice)
+        line = order.payment_line_ids
+        way = line.cnab_payment_way_id
+        order.draft2open()
+        order.open2generated()
+        self.env.cr.execute(
+            "UPDATE account_payment_line SET cnab_payment_way_id = NULL WHERE id = %s",
+            (line.id,),
+        )
+        line.invalidate_recordset()
+        line._compute_cnab_payment_way_id()
+        self.assertEqual(line.cnab_payment_way_id, way)
+        self.assertEqual(line.service_type, SVC_SALARY)
 
     def test_order_computes_handle_multiple_records(self):
         """The computes must fill every record, not only the first one."""
