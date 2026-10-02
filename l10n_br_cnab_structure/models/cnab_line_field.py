@@ -242,8 +242,10 @@ class CNABField(models.Model):
         value = str(value)
         if value_type == "num":
             value = re.sub(r"[^0-9]", "", value)
-            if len(value) > size:
-                # Leading zeros must not push significant digits out of the field
+            if self.raise_on_overflow and len(value) > size:
+                # Itau strict fields only: leading zeros must not push
+                # significant digits out of the field. Other layouts keep the
+                # legacy behaviour (truncation of the value).
                 stripped = value.lstrip("0")
                 if len(stripped) <= size:
                     value = stripped
