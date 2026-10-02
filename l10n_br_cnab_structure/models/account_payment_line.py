@@ -40,6 +40,7 @@ class AccountPaymentLine(models.Model):
     cnab_payment_way_id = fields.Many2one(
         comodel_name="cnab.payment.way",
         compute="_compute_cnab_payment_way_id",
+        store=True,
     )
 
     batch_template_id = fields.Many2one(
@@ -105,23 +106,25 @@ class AccountPaymentLine(models.Model):
     )
     def _compute_cnab_payment_way_id(self):
         for line in self:
+            if line._cnab_freeze_exported():
+                continue
             mode = line.order_id.payment_mode_id
             cnab_structure = line.order_id.cnab_structure_id
             rule = line._get_matching_rule()
 
             if rule:
                 line.cnab_payment_way_id = rule.payment_way_id
-                line._set_cnab_service_type(rule.service_type)
+                line.service_type = rule.service_type
             else:
                 ways = mode.cnab_payment_way_ids.filtered(
                     lambda w, s=cnab_structure: w.cnab_structure_id == s
                 )
                 if ways:
                     line.cnab_payment_way_id = ways[0]
-                    line._set_cnab_service_type("20")
+                    line.service_type = "20"
                 else:
                     line.cnab_payment_way_id = False
-                    line._set_cnab_service_type(False)
+                    line.service_type = False
                     if mode.cnab_structure_ok:
                         raise UserError(
                             _(
@@ -135,25 +138,29 @@ class AccountPaymentLine(models.Model):
                             }
                         )
 
-    def _set_cnab_service_type(self, value):
-        """Set the stored service type, unless the order was already exported.
+    def _cnab_freeze_exported(self):
+        """Keep stored service type and payment way of exported orders.
 
         Lines of orders that are not draft/open (generated, uploaded, done,
-        cancel) keep the value already stored, so a later change of flag, bank
-        or employee never rewrites a service type that went to the bank.
-        The stored column is read with SQL to avoid recursing into the compute.
+        cancel) keep the values already stored, so a later change of flag, bank
+        or employee never rewrites what went to the bank, and no error is
+        raised for them. The stored columns are read with SQL to avoid
+        recursing into the compute. Returns True when the line was frozen.
         """
         self.ensure_one()
-        if isinstance(self.id, int) and self.order_id.state not in ("draft", "open"):
-            self.env.cr.execute(
-                "SELECT service_type FROM account_payment_line WHERE id = %s",
-                (self.id,),
-            )
-            row = self.env.cr.fetchone()
-            if row and row[0]:
-                self.service_type = row[0]
-                return
-        self.service_type = value
+        if not isinstance(self.id, int) or self.order_id.state in ("draft", "open"):
+            return False
+        self.env.cr.execute(
+            "SELECT service_type, cnab_payment_way_id "
+            "FROM account_payment_line WHERE id = %s",
+            (self.id,),
+        )
+        row = self.env.cr.fetchone()
+        if not row or not (row[0] or row[1]):
+            return False
+        self.service_type = row[0]
+        self.cnab_payment_way_id = row[1]
+        return True
 
     @api.model
     def _normalize_cnab_bank_code(self, code):
