@@ -403,9 +403,8 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         )
 
         self.assertIsNotNone(preview_wizard.output_yaml)
-        bank_name = unidecode(self.bank_341.name).upper()[:30].ljust(30)
         self.assertIn(
-            f"    103_132_nome_do_banco: '{bank_name}'\n",
+            "    103_132_nome_do_banco: 'ITAU UNIBANCO SA              '\n",
             preview_wizard.output_yaml,
         )
 
@@ -1025,6 +1024,17 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         _order, line = self._create_itau_salary_line(partner_bank, self.way_41)
         self.assertEqual(field_other.output(line, strict=True)[1], "123456789012")
 
+    def test_format_leading_zeros_only_with_strict_flag(self):
+        """Stripping leading zeros is Itau strict only; other fields unchanged."""
+        field_strict = self._strict_field("36_41b")
+        self.assertTrue(field_strict.raise_on_overflow)
+        field_other = self._strict_field("30_41")
+        self.assertFalse(field_other.raise_on_overflow)
+        self.assertEqual(field_strict.format(6, "num", "0012345"), "012345")
+        # Legacy behaviour for fields without the flag: plain truncation
+        self.assertEqual(field_other.format(6, "num", "0012345"), "001234")
+        self.assertEqual(field_other.format(6, "num", "123"), "000123")
+
     def test_itau_strict_preview_does_not_raise(self):
         """The CNAB line form preview must never raise on invalid data."""
         self._create_itau_salary_rules()
@@ -1164,6 +1174,15 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         line._compute_cnab_payment_way_id()
         self.assertEqual(line.service_type, SVC_SALARY)
         self.bank_341.code_bc = "341"
+        # payment way is frozen too, and no UserError is raised even when no
+        # way/rule matches any more
+        way = line.cnab_payment_way_id
+        self.assertTrue(way)
+        order.payment_mode_id.cnab_payment_way_ids = False
+        self.assertTrue(order.payment_mode_id.cnab_structure_ok)
+        line._compute_cnab_payment_way_id()
+        self.assertEqual(line.cnab_payment_way_id, way)
+        self.assertEqual(line.service_type, SVC_SALARY)
         # in a draft order the recompute does apply
         order.state = "draft"
         line._compute_cnab_payment_way_id()
