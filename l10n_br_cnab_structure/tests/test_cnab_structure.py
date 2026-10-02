@@ -95,6 +95,7 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         cls.partner_a_itau_bank = cls.res_partner_bank_model.create(
             {
                 "acc_number": "123456",
+                "acc_number_dig": "7",
                 "bra_number": "0001",
                 "bank_id": cls.bank_341.id,
                 "partner_id": cls.partner_a.id,
@@ -402,8 +403,9 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         )
 
         self.assertIsNotNone(preview_wizard.output_yaml)
+        bank_name = unidecode(self.bank_341.name).upper()[:30].ljust(30)
         self.assertIn(
-            "    103_132_nome_do_banco: 'ITAU UNIBANCO SA              '\n",
+            f"    103_132_nome_do_banco: '{bank_name}'\n",
             preview_wizard.output_yaml,
         )
 
@@ -900,7 +902,7 @@ class TestCNABStructure(AccountTestInvoicingCommon):
     def _create_partner_bank(self, bank, **vals):
         values = {
             "bank_id": bank.id,
-            "partner_id": self.partner_a.id,
+            "partner_id": self.env["res.partner"].create({"name": "Bank Holder"}).id,
             "acc_number": "123456",
             "bra_number": "1234",
             "acc_number_dig": "7",
@@ -1014,6 +1016,7 @@ class TestCNABStructure(AccountTestInvoicingCommon):
 
     def test_itau_strict_validation_not_applied_to_other_fields(self):
         """Fields without the flag keep the legacy behaviour."""
+        self._create_itau_salary_rules()
         field_other = self._strict_field("30_41")
         self.assertFalse(field_other.raise_on_overflow)
         partner_bank = self._create_partner_bank(

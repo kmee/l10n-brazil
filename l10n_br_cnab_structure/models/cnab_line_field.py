@@ -242,6 +242,11 @@ class CNABField(models.Model):
         value = str(value)
         if value_type == "num":
             value = re.sub(r"[^0-9]", "", value)
+            if len(value) > size:
+                # Leading zeros must not push significant digits out of the field
+                stripped = value.lstrip("0")
+                if len(stripped) <= size:
+                    value = stripped
             value = value.zfill(size)
         if value_type == "alpha":
             value = unidecode(value).upper()
