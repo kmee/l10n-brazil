@@ -18,3 +18,4 @@ from . import test_nfe_ibscbs
 from . import test_nfe_workflow
 from . import test_nfe_import_declaration
 from . import test_nfe_export_detail
+from . import test_nfe_duplicate
