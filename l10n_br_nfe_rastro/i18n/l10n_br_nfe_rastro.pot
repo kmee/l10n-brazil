@@ -1,0 +1,128 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* l10n_br_nfe_rastro
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: l10n_br_nfe_rastro
+#. odoo-python
+#: code:addons/l10n_br_nfe_rastro/models/document.py:0
+msgid "%(item)s, lot %(lot)s: expiration date missing."
+msgstr ""
+
+#. module: l10n_br_nfe_rastro
+#. odoo-python
+#: code:addons/l10n_br_nfe_rastro/models/document.py:0
+msgid "%(item)s, lot %(lot)s: manufacturing date missing."
+msgstr ""
+
+#. module: l10n_br_nfe_rastro
+#. odoo-python
+#: code:addons/l10n_br_nfe_rastro/models/document.py:0
+msgid ""
+"%(item)s, lot %(lot)s: the expiration date is before the manufacturing date."
+msgstr ""
+
+#. module: l10n_br_nfe_rastro
+#. odoo-python
+#: code:addons/l10n_br_nfe_rastro/models/document.py:0
+msgid "%(item)s, lot %(lot)s: the manufacturing date is after the issue date."
+msgstr ""
+
+#. module: l10n_br_nfe_rastro
+#. odoo-python
+#: code:addons/l10n_br_nfe_rastro/models/document.py:0
+msgid "%(item)s: lot number missing."
+msgstr ""
+
+#. module: l10n_br_nfe_rastro
+#. odoo-python
+#: code:addons/l10n_br_nfe_rastro/models/document.py:0
+msgid "%(item)s: the NF-e accepts at most %(max)s lots per item."
+msgstr ""
+
+#. module: l10n_br_nfe_rastro
+#. odoo-python
+#: code:addons/l10n_br_nfe_rastro/models/document.py:0
+msgid ""
+"%(item)s: the traceability group (lot number, quantity, manufacturing and "
+"expiration dates) is required."
+msgstr ""
+
+#. module: l10n_br_nfe_rastro
+#: model_terms:ir.ui.view,arch_db:l10n_br_nfe_rastro.nfe_rastro_list
+msgid "Aggregation Code"
+msgstr ""
+
+#. module: l10n_br_nfe_rastro
+#: model_terms:ir.ui.view,arch_db:l10n_br_nfe_rastro.nfe_rastro_list
+msgid "Expiration Date"
+msgstr ""
+
+#. module: l10n_br_nfe_rastro
+#: model:ir.model,name:l10n_br_nfe_rastro.model_l10n_br_fiscal_document
+msgid "Fiscal Document"
+msgstr ""
+
+#. module: l10n_br_nfe_rastro
+#: model:ir.model,name:l10n_br_nfe_rastro.model_l10n_br_fiscal_document_line
+msgid "Fiscal Document Line"
+msgstr ""
+
+#. module: l10n_br_nfe_rastro
+#: model:ir.model,name:l10n_br_nfe_rastro.model_account_move_line
+msgid "Journal Item"
+msgstr ""
+
+#. module: l10n_br_nfe_rastro
+#: model_terms:ir.ui.view,arch_db:l10n_br_nfe_rastro.nfe_rastro_list
+msgid "Lot"
+msgstr ""
+
+#. module: l10n_br_nfe_rastro
+#: model:ir.model,name:l10n_br_nfe_rastro.model_stock_lot
+msgid "Lot/Serial"
+msgstr ""
+
+#. module: l10n_br_nfe_rastro
+#: model_terms:ir.ui.view,arch_db:l10n_br_nfe_rastro.nfe_rastro_list
+msgid "Manufacturing Date"
+msgstr ""
+
+#. module: l10n_br_nfe_rastro
+#: model:product.template,name:l10n_br_nfe_rastro.product_traced_beverage_product_template
+msgid "Mineral Water 500 ml (lot traced)"
+msgstr ""
+
+#. module: l10n_br_nfe_rastro
+#: model_terms:ir.ui.view,arch_db:l10n_br_nfe_rastro.nfe_rastro_list
+msgid "Quantity"
+msgstr ""
+
+#. module: l10n_br_nfe_rastro
+#: model:ir.model,name:l10n_br_nfe_rastro.model_stock_invoice_onshipping
+msgid "Stock Invoice Onshipping"
+msgstr ""
+
+#. module: l10n_br_nfe_rastro
+#. odoo-python
+#: code:addons/l10n_br_nfe_rastro/models/document.py:0
+msgid ""
+"The NF-e traceability data (rastro) is incomplete or inconsistent:\n"
+"%(errors)s"
+msgstr ""
+
+#. module: l10n_br_nfe_rastro
+#: model_terms:ir.ui.view,arch_db:l10n_br_nfe_rastro.document_line_form
+#: model_terms:ir.ui.view,arch_db:l10n_br_nfe_rastro.invoice_form
+msgid "Traceability"
+msgstr ""

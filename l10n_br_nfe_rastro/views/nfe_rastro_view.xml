@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2024 KMEE
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="nfe_rastro_list" model="ir.ui.view">
+        <field name="name">nfe.40.rastro.list</field>
+        <field name="model">nfe.40.rastro</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="nfe40_nLote" string="Lot" />
+                <field name="nfe40_qLote" string="Quantity" />
+                <field name="nfe40_dFab" string="Manufacturing Date" />
+                <field name="nfe40_dVal" string="Expiration Date" />
+                <field name="nfe40_cAgreg" string="Aggregation Code" optional="hide" />
+            </list>
+        </field>
+    </record>
+</odoo>

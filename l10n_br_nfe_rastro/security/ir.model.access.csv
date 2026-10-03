@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_nfe_40_rastro_fiscal_user,access_nfe_40_rastro_fiscal_user,l10n_br_nfe_spec.model_nfe_40_rastro,l10n_br_fiscal.group_user,1,1,1,1
+access_nfe_40_rastro_employee,access_nfe_40_rastro_employee,l10n_br_nfe_spec.model_nfe_40_rastro,base.group_user,1,0,0,0

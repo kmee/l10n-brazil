@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2024 KMEE
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo noupdate="1">
+    <!-- A beverage tracked by lot, shipped and invoiced: the NF-e of the
+         posted invoice carries one traceability group (rastro) per lot. -->
+    <record id="product_traced_beverage" model="product.product">
+        <field name="name">Mineral Water 500 ml (lot traced)</field>
+        <field name="default_code">RASTRO-DEMO-1</field>
+        <field name="type">consu</field>
+        <field name="is_storable" eval="True" />
+        <field name="tracking">lot</field>
+        <field name="use_expiration_date" eval="True" />
+        <field name="list_price">3.5</field>
+        <field name="standard_price">1.2</field>
+        <field name="ncm_id" ref="l10n_br_fiscal.ncm_22011000" />
+        <field name="fiscal_genre_id" ref="l10n_br_fiscal.product_genre_22" />
+        <field name="fiscal_type">00</field>
+        <field name="icms_origin">0</field>
+    </record>
+
+    <record id="lot_traced_beverage_1" model="stock.lot">
+        <field name="name">DEMO-RASTRO-001</field>
+        <field name="product_id" ref="product_traced_beverage" />
+        <field name="company_id" ref="l10n_br_base.empresa_lucro_presumido" />
+        <field
+            name="production_date"
+            eval="(DateTime.today() - timedelta(days=40)).strftime('%Y-%m-%d 15:00:00')"
+        />
+        <field
+            name="expiration_date"
+            eval="(DateTime.today() + timedelta(days=320)).strftime('%Y-%m-%d 15:00:00')"
+        />
+    </record>
+
+    <record id="lot_traced_beverage_2" model="stock.lot">
+        <field name="name">DEMO-RASTRO-002</field>
+        <field name="product_id" ref="product_traced_beverage" />
+        <field name="company_id" ref="l10n_br_base.empresa_lucro_presumido" />
+        <field
+            name="production_date"
+            eval="(DateTime.today() - timedelta(days=10)).strftime('%Y-%m-%d 15:00:00')"
+        />
+        <field
+            name="expiration_date"
+            eval="(DateTime.today() + timedelta(days=350)).strftime('%Y-%m-%d 15:00:00')"
+        />
+    </record>
+
+    <record id="quant_traced_beverage_1" model="stock.quant">
+        <field name="product_id" ref="product_traced_beverage" />
+        <field name="lot_id" ref="lot_traced_beverage_1" />
+        <field
+            name="location_id"
+            ref="l10n_br_stock.wh_empresa_lucro_presumido_loc_stock_id"
+        />
+        <field name="inventory_quantity">6</field>
+    </record>
+
+    <record id="quant_traced_beverage_2" model="stock.quant">
+        <field name="product_id" ref="product_traced_beverage" />
+        <field name="lot_id" ref="lot_traced_beverage_2" />
+        <field
+            name="location_id"
+            ref="l10n_br_stock.wh_empresa_lucro_presumido_loc_stock_id"
+        />
+        <field name="inventory_quantity">4</field>
+    </record>
+
+    <function model="stock.quant" name="action_apply_inventory">
+        <value
+            eval="[ref('quant_traced_beverage_1'), ref('quant_traced_beverage_2')]"
+        />
+    </function>
+
+    <record id="picking_traced_beverage" model="stock.picking">
+        <field name="partner_id" ref="l10n_br_base.res_partner_cliente1_sp" />
+        <field
+            name="picking_type_id"
+            ref="l10n_br_stock.wh_empresa_lucro_presumido_picking_type_out"
+        />
+        <field
+            name="location_id"
+            ref="l10n_br_stock.wh_empresa_lucro_presumido_loc_stock_id"
+        />
+        <field name="location_dest_id" ref="stock.stock_location_customers" />
+        <field name="invoice_state">2binvoiced</field>
+        <field name="origin">l10n_br_nfe_rastro demo</field>
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_simples_remessa" />
+        <field name="company_id" ref="l10n_br_base.empresa_lucro_presumido" />
+    </record>
+
+    <record id="move_traced_beverage" model="stock.move">
+        <field name="name">Mineral Water 500 ml (lot traced)</field>
+        <field name="partner_id" ref="l10n_br_base.res_partner_cliente1_sp" />
+        <field name="product_id" ref="product_traced_beverage" />
+        <field name="product_uom_qty">10</field>
+        <field name="price_unit">3.5</field>
+        <field name="product_uom" ref="uom.product_uom_unit" />
+        <field name="picking_id" ref="picking_traced_beverage" />
+        <field
+            name="location_id"
+            ref="l10n_br_stock.wh_empresa_lucro_presumido_loc_stock_id"
+        />
+        <field name="location_dest_id" ref="stock.stock_location_customers" />
+        <field name="invoice_state">2binvoiced</field>
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_simples_remessa" />
+        <field
+            name="fiscal_operation_line_id"
+            ref="l10n_br_fiscal.fo_simples_remessa_simples_remessa"
+        />
+        <field name="company_id" ref="l10n_br_base.empresa_lucro_presumido" />
+    </record>
+
+    <!-- The 10 units shipped take the whole stock of both lots. -->
+    <function
+        model="stock.picking"
+        name="action_confirm"
+        eval="[[ref('picking_traced_beverage')]]"
+    />
+    <function
+        model="stock.picking"
+        name="action_assign"
+        eval="[[ref('picking_traced_beverage')]]"
+    />
+    <function
+        model="stock.move"
+        name="write"
+        eval="[[ref('move_traced_beverage')], {'picked': True, 'icms_origin': '0'}]"
+    />
+    <function
+        model="stock.picking"
+        name="button_validate"
+        eval="[[ref('picking_traced_beverage')]]"
+        context="{'skip_expired': True, 'skip_sms': True}"
+    />
+
+    <!-- Invoice the delivery through the picking invoicing wizard and post
+         the invoice, which confirms the NF-e. -->
+    <function
+        model="stock.invoice.onshipping"
+        name="action_generate"
+        eval="[obj().create({}).ids]"
+        context="{'active_ids': [ref('picking_traced_beverage')], 'active_model': 'stock.picking', 'active_id': ref('picking_traced_beverage'), 'allowed_company_ids': [ref('l10n_br_base.empresa_lucro_presumido')]}"
+    />
+    <function
+        model="account.move"
+        name="action_post"
+        eval="[obj().env.ref('l10n_br_nfe_rastro.picking_traced_beverage').invoice_ids.ids]"
+        context="{'allowed_company_ids': [ref('l10n_br_base.empresa_lucro_presumido')]}"
+    />
+</odoo>
