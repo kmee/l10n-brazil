@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2024 KMEE
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="product_template_form" model="ir.ui.view">
+        <field name="name">product.template.form (med)</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.product_template_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='fiscal']/group" position="after">
+                <group name="nfe40_med" string="Medicine">
+                    <field
+                        name="nfe40_med"
+                        context="{'form_view_ref': 'l10n_br_nfe_med.nfe_med_form'}"
+                    />
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

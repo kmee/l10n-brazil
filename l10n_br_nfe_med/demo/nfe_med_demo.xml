@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2024 KMEE
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo noupdate="1">
+    <!-- A medicine shipped and invoiced: the NF-e of the posted invoice
+         carries the medicine group (med) and one traceability group
+         (rastro) per lot. The demo database only loads a few NCM codes,
+         so the medicine NCM is declared here. -->
+    <record id="ncm_medicine_demo" model="l10n_br_fiscal.ncm">
+        <field name="code">3004.90.99</field>
+        <field name="name">Medicamentos em doses - Outros</field>
+        <field name="tax_ipi_id" ref="l10n_br_fiscal.tax_ipi_0" />
+    </record>
+
+    <record id="nfe_med_demo" model="nfe.40.med">
+        <field name="nfe40_cProdANVISA">1234567890123</field>
+        <field name="nfe40_vPMC">25.90</field>
+    </record>
+
+    <record id="product_medicine" model="product.product">
+        <field name="name">Paracetamol 750 mg, 20 tablets</field>
+        <field name="default_code">MED-DEMO-1</field>
+        <field name="type">consu</field>
+        <field name="is_storable" eval="True" />
+        <field name="tracking">lot</field>
+        <field name="use_expiration_date" eval="True" />
+        <field name="list_price">19.9</field>
+        <field name="standard_price">1.2</field>
+        <field name="ncm_id" ref="ncm_medicine_demo" />
+        <field name="fiscal_genre_id" ref="l10n_br_fiscal.product_genre_30" />
+        <field name="fiscal_type">00</field>
+        <field name="icms_origin">0</field>
+        <field name="nfe40_med" ref="nfe_med_demo" />
+    </record>
+
+    <record id="lot_medicine_1" model="stock.lot">
+        <field name="name">DEMO-MED-001</field>
+        <field name="product_id" ref="product_medicine" />
+        <field name="company_id" ref="l10n_br_base.empresa_lucro_presumido" />
+        <field
+            name="production_date"
+            eval="(DateTime.today() - timedelta(days=40)).strftime('%Y-%m-%d 15:00:00')"
+        />
+        <field
+            name="expiration_date"
+            eval="(DateTime.today() + timedelta(days=320)).strftime('%Y-%m-%d 15:00:00')"
+        />
+    </record>
+
+    <record id="lot_medicine_2" model="stock.lot">
+        <field name="name">DEMO-MED-002</field>
+        <field name="product_id" ref="product_medicine" />
+        <field name="company_id" ref="l10n_br_base.empresa_lucro_presumido" />
+        <field
+            name="production_date"
+            eval="(DateTime.today() - timedelta(days=10)).strftime('%Y-%m-%d 15:00:00')"
+        />
+        <field
+            name="expiration_date"
+            eval="(DateTime.today() + timedelta(days=350)).strftime('%Y-%m-%d 15:00:00')"
+        />
+    </record>
+
+    <record id="quant_medicine_1" model="stock.quant">
+        <field name="product_id" ref="product_medicine" />
+        <field name="lot_id" ref="lot_medicine_1" />
+        <field
+            name="location_id"
+            ref="l10n_br_stock.wh_empresa_lucro_presumido_loc_stock_id"
+        />
+        <field name="inventory_quantity">6</field>
+    </record>
+
+    <record id="quant_medicine_2" model="stock.quant">
+        <field name="product_id" ref="product_medicine" />
+        <field name="lot_id" ref="lot_medicine_2" />
+        <field
+            name="location_id"
+            ref="l10n_br_stock.wh_empresa_lucro_presumido_loc_stock_id"
+        />
+        <field name="inventory_quantity">4</field>
+    </record>
+
+    <function model="stock.quant" name="action_apply_inventory">
+        <value eval="[ref('quant_medicine_1'), ref('quant_medicine_2')]" />
+    </function>
+
+    <record id="picking_medicine" model="stock.picking">
+        <field name="partner_id" ref="l10n_br_base.res_partner_cliente1_sp" />
+        <field
+            name="picking_type_id"
+            ref="l10n_br_stock.wh_empresa_lucro_presumido_picking_type_out"
+        />
+        <field
+            name="location_id"
+            ref="l10n_br_stock.wh_empresa_lucro_presumido_loc_stock_id"
+        />
+        <field name="location_dest_id" ref="stock.stock_location_customers" />
+        <field name="invoice_state">2binvoiced</field>
+        <field name="origin">l10n_br_nfe_med demo</field>
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_simples_remessa" />
+        <field name="company_id" ref="l10n_br_base.empresa_lucro_presumido" />
+    </record>
+
+    <record id="move_medicine" model="stock.move">
+        <field name="name">Paracetamol 750 mg, 20 tablets</field>
+        <field name="partner_id" ref="l10n_br_base.res_partner_cliente1_sp" />
+        <field name="product_id" ref="product_medicine" />
+        <field name="product_uom_qty">10</field>
+        <field name="price_unit">19.9</field>
+        <field name="product_uom" ref="uom.product_uom_unit" />
+        <field name="picking_id" ref="picking_medicine" />
+        <field
+            name="location_id"
+            ref="l10n_br_stock.wh_empresa_lucro_presumido_loc_stock_id"
+        />
+        <field name="location_dest_id" ref="stock.stock_location_customers" />
+        <field name="invoice_state">2binvoiced</field>
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_simples_remessa" />
+        <field
+            name="fiscal_operation_line_id"
+            ref="l10n_br_fiscal.fo_simples_remessa_simples_remessa"
+        />
+        <field name="company_id" ref="l10n_br_base.empresa_lucro_presumido" />
+    </record>
+
+    <!-- The 10 units shipped take the whole stock of both lots. -->
+    <function
+        model="stock.picking"
+        name="action_confirm"
+        eval="[[ref('picking_medicine')]]"
+    />
+    <function
+        model="stock.picking"
+        name="action_assign"
+        eval="[[ref('picking_medicine')]]"
+    />
+    <function
+        model="stock.move"
+        name="write"
+        eval="[[ref('move_medicine')], {'picked': True, 'icms_origin': '0'}]"
+    />
+    <function
+        model="stock.picking"
+        name="button_validate"
+        eval="[[ref('picking_medicine')]]"
+        context="{'skip_expired': True, 'skip_sms': True}"
+    />
+
+    <!-- Invoice the delivery through the picking invoicing wizard and post
+         the invoice, which confirms the NF-e. -->
+    <function
+        model="stock.invoice.onshipping"
+        name="action_generate"
+        eval="[obj().create({}).ids]"
+        context="{'active_ids': [ref('picking_medicine')], 'active_model': 'stock.picking', 'active_id': ref('picking_medicine'), 'allowed_company_ids': [ref('l10n_br_base.empresa_lucro_presumido')]}"
+    />
+    <function
+        model="account.move"
+        name="action_post"
+        eval="[obj().env.ref('l10n_br_nfe_med.picking_medicine').invoice_ids.ids]"
+        context="{'allowed_company_ids': [ref('l10n_br_base.empresa_lucro_presumido')]}"
+    />
+</odoo>

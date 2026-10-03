@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2024 KMEE
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="nfe_med_form" model="ir.ui.view">
+        <field name="name">nfe.40.med.form</field>
+        <field name="model">nfe.40.med</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="nfe40_cProdANVISA" string="ANVISA Code" />
+                    <field
+                        name="nfe40_xMotivoIsencao"
+                        string="Exemption Reason"
+                        invisible="nfe40_cProdANVISA != 'ISENTO'"
+                    />
+                    <field name="brl_currency_id" invisible="1" />
+                    <field name="nfe40_vPMC" string="Maximum Consumer Price" />
+                </group>
+            </form>
+        </field>
+    </record>
+
+    <record id="nfe_med_list" model="ir.ui.view">
+        <field name="name">nfe.40.med.list</field>
+        <field name="model">nfe.40.med</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="nfe40_cProdANVISA" string="ANVISA Code" />
+                <field name="nfe40_xMotivoIsencao" string="Exemption Reason" />
+                <field name="nfe40_vPMC" string="Maximum Consumer Price" />
+            </list>
+        </field>
+    </record>
+</odoo>
