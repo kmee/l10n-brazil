@@ -536,6 +536,17 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         self.ensure_one()
         return self.document_id
 
+    def _get_fiscal_reference_date(self):
+        """Date that decides which fiscal rule applies to this line.
+
+        Fiscal rules are chosen on the document date (fato gerador), never on
+        the server clock. Models whose document has no `document_date` (sale
+        order, purchase order, stock picking) override this method.
+        """
+        self.ensure_one()
+        document = self._get_document()
+        return getattr(document, "document_date", False) or fields.Datetime.now()
+
     def _get_fiscal_partner(self):
         """
         Meant to be overriden when the l10n_br_fiscal.document partner_id should not
