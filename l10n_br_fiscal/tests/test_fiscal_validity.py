@@ -133,3 +133,39 @@ class TestTaxDefinitionValidity(TransactionCase):
             service_type=self.env["l10n_br_fiscal.service.type"],
         )
         self.assertNotIn(tax_definition, result)
+
+
+class TestFiscalReferenceDate(TransactionCase):
+    """The date that decides which fiscal rule applies to a document line.
+
+    Fiscal rules must be chosen on the document date (fato gerador), never
+    on the server clock: a document dated 2026-12-31 that is edited in 2027
+    keeps the 2026 rules.
+    """
+
+    def _line(self, document_date=None):
+        document = self.env["l10n_br_fiscal.document"].new(
+            {"document_date": document_date}
+        )
+        return self.env["l10n_br_fiscal.document.line"].new(
+            {"document_id": document.id}
+        )
+
+    def test_reference_date_is_the_document_date(self):
+        document_date = fields.Datetime.to_datetime("2026-12-31 22:30:00")
+        line = self._line(document_date)
+        self.assertEqual(line._get_fiscal_reference_date(), document_date)
+
+    def test_reference_date_ignores_the_server_clock(self):
+        old_date = fields.Datetime.to_datetime("2026-12-31 22:30:00")
+        line = self._line(old_date)
+        self.assertNotEqual(
+            line._get_fiscal_reference_date(), fields.Datetime.now()
+        )
+
+    def test_reference_date_falls_back_to_now_without_document_date(self):
+        line = self._line(document_date=False)
+        before = fields.Datetime.now()
+        reference_date = line._get_fiscal_reference_date()
+        after = fields.Datetime.now()
+        self.assertTrue(before <= reference_date <= after)
