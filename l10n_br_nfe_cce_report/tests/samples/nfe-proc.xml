@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+ <NFe><infNFe Id="NFe35260911222333000181550010000001231000001234" versao="4.00">
+  <ide><cUF>35</cUF><mod>55</mod><serie>1</serie><nNF>123</nNF>
+   <dhEmi>2026-09-09T21:08:26-03:00</dhEmi></ide>
+  <emit><CNPJ>11222333000181</CNPJ><xNome>Empresa Exemplo Ltda</xNome>
+   <enderEmit><xLgr>Rua das Flores</xLgr><nro>100</nro><xBairro>Centro</xBairro>
+    <xMun>Taubaté</xMun><UF>SP</UF><CEP>12010000</CEP><fone>1236000000</fone>
+   </enderEmit><IE>123456789012</IE></emit>
+  <dest><idEstrangeiro>ESX00000000</idEstrangeiro><xNome>Cliente Exterior S.A.</xNome>
+   <enderDest><xLgr>Calle Mayor</xLgr><nro>1</nro><xBairro>Centro</xBairro>
+    <xMun>EXTERIOR</xMun><UF>EX</UF><xPais>Espanha</xPais></enderDest></dest>
+ </infNFe></NFe>
+ <protNFe versao="4.00"><infProt><tpAmb>1</tpAmb><chNFe>35260911222333000181550010000001231000001234</chNFe>
+  <dhRecbto>2026-09-09T21:19:28-03:00</dhRecbto><nProt>135260000000001</nProt>
+  <cStat>100</cStat></infProt></protNFe>
+</nfeProc>
