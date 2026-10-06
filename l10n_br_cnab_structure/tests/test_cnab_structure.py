@@ -1511,3 +1511,20 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         )
         self.assertEqual(line.cnab_payment_way_id, self.way_01)
         line._check_cnab_pix_key_type()
+
+    def test_pix_way_without_key_blocks_generation(self):
+        """A line on a PIX way (rule 'any') without a PIX key aborts the CNAB."""
+        self._create_pix_employee_rules(same_bank_first=False)
+        self.env["l10n_br_cnab.payment.rule"].search(
+            [
+                ("cnab_structure_id", "=", self.cnab_structure_itau_240.id),
+                ("payment_way_id", "=", self.way_45.id),
+            ]
+        ).write({"match_pix_key": "any"})
+        other = self._create_partner_bank(self.bank_001)
+        order, line = self._create_salary_line_by_rule(other)
+        self.assertEqual(line.cnab_payment_way_id, self.way_45)
+        order.draft2open()
+        with self.assertRaises(UserError) as ctx:
+            order.open2generated()
+        self.assertIn(self.partner_a.name, str(ctx.exception))

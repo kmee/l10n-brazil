@@ -94,6 +94,16 @@ class AccountPaymentLine(models.Model):
         bank would reject the file (or pay the wrong key).
         """
         for bline in self:
+            if bline.cnab_payment_way_id.is_pix and not bline.partner_pix_id:
+                raise UserError(
+                    _(
+                        "Não foi possível gerar o arquivo CNAB: %(partner)s foi "
+                        "enquadrado(a) em uma forma de pagamento PIX, mas não "
+                        "possui chave PIX cadastrada. Cadastre a chave PIX ou "
+                        "ajuste a regra de pagamento CNAB.",
+                        partner=bline.partner_id.name,
+                    )
+                )
             if (
                 bline.partner_pix_id
                 and bline.cnab_pix_transfer_type_id.type_domain == "pix_key"
