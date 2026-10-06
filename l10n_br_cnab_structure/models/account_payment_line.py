@@ -54,7 +54,7 @@ class AccountPaymentLine(models.Model):
         store=True,
     )
 
-    @api.depends("partner_pix_id")
+    @api.depends("partner_pix_id", "partner_pix_id.key_type")
     def _compute_cnab_pix_type_id(self):
         for bline in self:
             cnab_pix_type_id = (
@@ -62,22 +62,60 @@ class AccountPaymentLine(models.Model):
                     lambda t, b=bline: t.key_type == b.partner_pix_id.key_type
                 )
             )
-            self.cnab_pix_type_id = cnab_pix_type_id
+            bline.cnab_pix_type_id = cnab_pix_type_id
 
-    @api.depends("pix_transfer_type")
+    @api.depends("pix_transfer_type", "partner_pix_id", "cnab_payment_way_id.is_pix")
     def _compute_cnab_pix_transfer_type_id(self):
         for bline in self:
+            transfer_domain = False
             if bline.payment_mode_domain == "pix_transfer":
-                cnab_pix_transfer_type = self.env["cnab.pix.transfer.type"].search(
+                transfer_domain = bline.pix_transfer_type
+            elif bline.cnab_payment_way_id.is_pix and bline.partner_pix_id:
+                # PIX way chosen by a CNAB payment rule on a payment mode that
+                # is not a PIX transfer mode (e.g. salary by PIX key).
+                transfer_domain = "pix_key"
+            if transfer_domain:
+                bline.cnab_pix_transfer_type_id = self.env[
+                    "cnab.pix.transfer.type"
+                ].search(
                     [
                         ("cnab_structure_id", "=", bline.order_id.cnab_structure_id.id),
-                        ("type_domain", "=", bline.pix_transfer_type),
+                        ("type_domain", "=", transfer_domain),
                     ],
                     limit=1,
                 )
-                bline.cnab_pix_transfer_type_id = cnab_pix_transfer_type
             else:
                 bline.cnab_pix_transfer_type_id = False
+
+    def _check_cnab_pix_key_type(self):
+        """Block the CNAB when a line leaves as PIX key without a key type mapping.
+
+        Without the mapping the TIPO CHAVE field would be generated empty and the
+        bank would reject the file (or pay the wrong key).
+        """
+        for bline in self:
+            if (
+                bline.partner_pix_id
+                and bline.cnab_pix_transfer_type_id.type_domain == "pix_key"
+                and not bline.cnab_pix_type_id
+            ):
+                key_type = bline.partner_pix_id.key_type
+                label = dict(
+                    bline.partner_pix_id._fields["key_type"]._description_selection(
+                        self.env
+                    )
+                ).get(key_type, key_type)
+                raise UserError(
+                    _(
+                        "Não foi possível gerar o arquivo CNAB: a chave PIX de "
+                        "%(partner)s é do tipo '%(key_type)s', que não possui "
+                        "mapeamento na estrutura CNAB %(structure)s. Corrija o "
+                        "cadastro da chave PIX do parceiro.",
+                        partner=bline.partner_id.name,
+                        key_type=label,
+                        structure=bline.order_id.cnab_structure_id.display_name,
+                    )
+                )
 
     def _compute_cnab_beneficiary_name(self):
         for bline in self:
@@ -99,6 +137,7 @@ class AccountPaymentLine(models.Model):
         "partner_id",
         "partner_bank_id",
         "partner_id.employee",
+        "partner_pix_id",
         "partner_bank_id.bank_id",
         "partner_bank_id.bank_id.code_bc",
         "order_id.journal_id.bank_id",
@@ -204,6 +243,7 @@ class AccountPaymentLine(models.Model):
         cnab_structure = self.order_id.cnab_structure_id
         bank_type = self._get_cnab_bank_type()
         partner_type = "employee" if self._is_cnab_employee() else "supplier"
+        pix_key = "with_key" if self.partner_pix_id else "without_key"
         rules = self.env["l10n_br_cnab.payment.rule"].search(
             [
                 ("cnab_structure_id", "=", cnab_structure.id),
@@ -216,6 +256,8 @@ class AccountPaymentLine(models.Model):
                 rule.match_partner_type != "any"
                 and rule.match_partner_type != partner_type
             ):
+                continue
+            if rule.match_pix_key not in ("any", pix_key):
                 continue
             return rule
         return False

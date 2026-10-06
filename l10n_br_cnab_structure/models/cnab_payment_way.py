@@ -23,6 +23,13 @@ class CNABPaymentWay(models.Model):
         required=True,
     )
 
+    is_pix = fields.Boolean(
+        string="PIX Way",
+        help="Payment way that sends a PIX transfer. Lines using it get the PIX "
+        "key type and transfer type filled even when the payment mode is not "
+        "a PIX transfer mode.",
+    )
+
     batch_id = fields.Many2one(
         comodel_name="l10n_br_cnab.batch",
         string="Cnab Batch",

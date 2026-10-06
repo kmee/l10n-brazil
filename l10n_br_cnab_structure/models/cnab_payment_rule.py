@@ -32,6 +32,17 @@ class CNABPaymentRule(models.Model):
         required=True,
     )
 
+    match_pix_key = fields.Selection(
+        [
+            ("any", "Any"),
+            ("with_key", "Has PIX key"),
+            ("without_key", "No PIX key"),
+        ],
+        default="any",
+        required=True,
+        help="Whether the payment line has a PIX key (partner_pix_id).",
+    )
+
     payment_way_id = fields.Many2one(
         comodel_name="cnab.payment.way",
         required=True,
