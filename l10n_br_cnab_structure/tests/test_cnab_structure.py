@@ -1528,3 +1528,24 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         with self.assertRaises(UserError) as ctx:
             order.open2generated()
         self.assertIn(self.partner_a.name, str(ctx.exception))
+
+    def test_pix_transfer_mode_by_account_without_key_generates(self):
+        """pix_transfer mode, Itau way 45, no key but transactional account."""
+        partner_bank = self._create_partner_bank(
+            self.bank_341, transactional_acc_type="checking"
+        )
+        order = self.payment_order_model.create(
+            {
+                "payment_mode_id": self.pix_mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": self.bank_journal_itau.id,
+            }
+        )
+        line = self._add_salary_line(order, partner_bank)
+        self.assertFalse(line.partner_pix_id)
+        way_45 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_45")
+        self.assertEqual(line.cnab_payment_way_id, way_45)
+        self.assertEqual(line.cnab_pix_transfer_type_id.code, "01")
+        lines = self._generate_cnab_lines(order)
+        self.assertEqual(self._segments(lines, "A")[0][112:114], "01")

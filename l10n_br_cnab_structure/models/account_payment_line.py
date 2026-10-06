@@ -94,7 +94,10 @@ class AccountPaymentLine(models.Model):
         bank would reject the file (or pay the wrong key).
         """
         for bline in self:
-            if bline.cnab_payment_way_id.is_pix and not bline.partner_pix_id:
+            if (
+                bline.cnab_payment_way_id.is_pix
+                and not bline.cnab_pix_transfer_type_id
+            ):
                 raise UserError(
                     _(
                         "Não foi possível gerar o arquivo CNAB: %(partner)s foi "
