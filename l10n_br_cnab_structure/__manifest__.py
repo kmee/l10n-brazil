@@ -26,6 +26,7 @@
         "data/cnab.occurrence.csv",
         "data/cnab.pix.key.type.csv",
         "data/cnab.pix.transfer.type.csv",
+        "data/cnab.payment.way_pix.xml",
         "wizard/field_select_wizard.xml",
         "wizard/cnab_preview_wizard.xml",
         "wizard/cnab_import_wizard.xml",

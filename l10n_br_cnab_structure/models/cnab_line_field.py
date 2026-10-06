@@ -63,6 +63,7 @@ class CNABField(models.Model):
     type = fields.Selection(
         [
             ("alpha", _("Alphanumeric")),
+            ("raw", _("Alphanumeric (verbatim)")),
             ("num", _("Numeric")),
         ],
         readonly=True,
@@ -214,6 +215,10 @@ class CNABField(models.Model):
         if value_type == "num":
             value = re.sub(r"[^0-9]", "", value)
             value = value.zfill(size)
+        if value_type == "raw":
+            # Verbatim content (PIX key): keeps case, "@", ".", "-" and "+".
+            # Only accents are removed (ASCII safe).
+            value = unidecode(value).strip().ljust(size)
         if value_type == "alpha":
             value = unidecode(value).upper()
             value = re.sub(r"[^A-Z0-9\s]", "", value)

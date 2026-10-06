@@ -11,6 +11,7 @@ from tempfile import TemporaryDirectory
 from unidecode import unidecode
 
 from odoo import fields
+from odoo.exceptions import UserError
 from odoo.tests import Form
 from odoo.tests.common import tagged
 
@@ -794,3 +795,244 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         self.assertFalse(cnab_field_id.content_source_field)
         field_select_wizard.action_confirm()
         self.assertEqual(cnab_field_id.content_source_field, "company_partner_bank_id")
+
+    # ------------------------------------------------------------------
+    # PIX key sent verbatim, key type per line and PIX payment way
+    # ------------------------------------------------------------------
+    PIX_KEYS = {
+        "phone": "+5511987654321",
+        "email": "fin@fornecedor.com.br",
+        "cnpj_cpf": "12345678909",
+        "evp": "123e4567-e89b-12d3-a456-426614174000",
+    }
+    PIX_CODES = {"phone": "01", "email": "02", "cnpj_cpf": "03", "evp": "04"}
+
+    def _generate_cnab_lines(self, order):
+        order.draft2open()
+        action = order.open2generated()
+        data = base64.b64decode(self.attachment_model.browse(action["res_id"]).datas)
+        return data.decode().splitlines()
+
+    @staticmethod
+    def _segments(lines, segment):
+        return [x for x in lines if len(x) > 13 and x[7] == "3" and x[13] == segment]
+
+    def _create_pix_key(self, key_type, key):
+        return self.res_partner_pix_model.create(
+            {"partner_id": self.partner_a.id, "key_type": key_type, "key": key}
+        )
+
+    def _create_pix_order(self, mode, journal, pix_keys):
+        order = self.payment_order_model.create(
+            {
+                "payment_mode_id": mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": journal.id,
+            }
+        )
+        for pix_key in pix_keys:
+            self.payment_line_model.create(
+                {
+                    "order_id": order.id,
+                    "partner_id": self.partner_a.id,
+                    "partner_pix_id": pix_key.id,
+                    "amount_currency": 100.0,
+                    "communication": "PIX TEST",
+                    "date": fields.Date.today(),
+                }
+            )
+        return order
+
+    def test_pix_key_fields_are_verbatim(self):
+        """Itau and Santander PIX key fields keep the key as it is."""
+        for xmlid in (
+            "cnab_itau_240_pagamentos_segmento_b_128_227",
+            "cnab_santander_240_pagamentos_segmento_b_128_226",
+        ):
+            field = self.env.ref("l10n_br_cnab_structure." + xmlid)
+            self.assertEqual(field.type, "raw")
+            for key in (*self.PIX_KEYS.values(), "ABC-Def@X.com"):
+                result = field.format(field.size, field.type, key)
+                self.assertEqual(result, key.ljust(field.size))
+        # only accents are removed, the case is kept
+        self.assertEqual(
+            field.format(field.size, "raw", "José@X.com"),
+            "Jose@X.com".ljust(field.size),
+        )
+
+    def test_alpha_field_format_unchanged(self):
+        """Regular alphanumeric fields still strip symbols and uppercase."""
+        field = self.env.ref(
+            "l10n_br_cnab_structure.cnab_itau_240_pagamentos_segmento_b_15_16"
+        )
+        self.assertEqual(field.type, "alpha")
+        self.assertEqual(
+            field.format(30, "alpha", "fin@fornecedor.com.br"),
+            "FINFORNECEDORCOMBR".ljust(30),
+        )
+
+    def test_itau_pix_keys_segment_a_b_mixed_key_types(self):
+        """Seg. A 113-114 is 04 and seg. B has the key intact and the type per line."""
+        keys = list(self.PIX_KEYS.items())
+        pix_keys = [self._create_pix_key(k_type, key) for k_type, key in keys]
+        order = self._create_pix_order(self.pix_mode, self.bank_journal_itau, pix_keys)
+        for line, (key_type, _key) in zip(order.payment_line_ids, keys, strict=False):
+            self.assertEqual(line.cnab_pix_type_id.code, self.PIX_CODES[key_type])
+        lines = self._generate_cnab_lines(order)
+        seg_a = self._segments(lines, "A")
+        seg_b = self._segments(lines, "B")
+        self.assertEqual(len(seg_a), len(keys))
+        self.assertEqual(len(seg_b), len(keys))
+        for a_rec in seg_a:
+            self.assertEqual(a_rec[112:114], "04")
+        for b_rec, (key_type, _key), pix_key in zip(
+            seg_b, keys, pix_keys, strict=False
+        ):
+            self.assertEqual(b_rec[14:16], self.PIX_CODES[key_type])
+            self.assertEqual(b_rec[127:227], pix_key.key.ljust(100))
+
+    def _create_rule_pix_mode(self):
+        """Non PIX transfer payment mode where a rule chooses the PIX way 45."""
+        way_45 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_45")
+        way_41 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_41")
+        self.env["l10n_br_cnab.payment.rule"].search(
+            [("cnab_structure_id", "=", self.cnab_structure_itau_240.id)]
+        ).unlink()
+        self.env["l10n_br_cnab.payment.rule"].create(
+            {
+                "cnab_structure_id": self.cnab_structure_itau_240.id,
+                "sequence": 10,
+                "match_bank_type": "any",
+                "match_partner_type": "any",
+                "payment_way_id": way_45.id,
+                "service_type": SVC_SUPPLIER,
+            }
+        )
+        mode = self.payment_mode_model.create(
+            {
+                "name": "Itau rule PIX",
+                "bank_account_link": "fixed",
+                "company_id": self.company.id,
+                "payment_method_id": self.outbound_payment_method.id,
+                "fixed_journal_id": self.bank_journal_itau.id,
+                "cnab_structure_id": self.cnab_structure_itau_240.id,
+                "cnab_payment_way_ids": [(6, 0, [way_41.id, way_45.id])],
+                "cnab_processor": "oca_processor",
+            }
+        )
+        return mode, way_45
+
+    def test_pix_way_chosen_by_rule_fills_pix_types(self):
+        """A PIX way chosen by rule on a non PIX mode fills key and transfer type."""
+        mode, way_45 = self._create_rule_pix_mode()
+        self.assertTrue(way_45.is_pix)
+        self.assertNotEqual(mode.payment_mode_domain, "pix_transfer")
+        pix_key = self._create_pix_key("email", self.PIX_KEYS["email"])
+        order = self._create_pix_order(mode, self.bank_journal_itau, [pix_key])
+        line = order.payment_line_ids
+        self.assertEqual(line.cnab_payment_way_id, way_45)
+        self.assertEqual(line.cnab_pix_type_id.code, "02")
+        self.assertEqual(line.cnab_pix_transfer_type_id.code, "04")
+        lines = self._generate_cnab_lines(order)
+        self.assertEqual(self._segments(lines, "A")[0][112:114], "04")
+        self.assertEqual(self._segments(lines, "B")[0][14:16], "02")
+
+    def test_pix_way_without_pix_key_blocks_generation(self):
+        """A line matched to a PIX way without PIX key must not leave as credit."""
+        mode, _way_45 = self._create_rule_pix_mode()
+        order = self.payment_order_model.create(
+            {
+                "payment_mode_id": mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": self.bank_journal_itau.id,
+            }
+        )
+        self.payment_line_model.create(
+            {
+                "order_id": order.id,
+                "partner_id": self.partner_a.id,
+                "partner_bank_id": self.partner_a_bb_bank.id,
+                "amount_currency": 100.0,
+                "communication": "NO KEY",
+            }
+        )
+        order.draft2open()
+        with self.assertRaises(UserError) as ctx:
+            order.open2generated()
+        self.assertIn(self.partner_a.name, str(ctx.exception))
+
+    def test_pix_key_without_type_mapping_blocks_generation(self):
+        """A key whose type has no mapping aborts the CNAB naming the partner."""
+        self.env["cnab.pix.key.type"].search(
+            [
+                ("cnab_structure_id", "=", self.cnab_structure_itau_240.id),
+                ("key_type", "=", "evp"),
+            ]
+        ).unlink()
+        pix_key = self._create_pix_key("evp", self.PIX_KEYS["evp"])
+        order = self._create_pix_order(self.pix_mode, self.bank_journal_itau, [pix_key])
+        self.assertFalse(order.payment_line_ids.cnab_pix_type_id)
+        order.draft2open()
+        with self.assertRaises(UserError) as ctx:
+            order.open2generated()
+        self.assertIn(self.partner_a.name, str(ctx.exception))
+
+    def test_santander_pix_key_is_verbatim(self):
+        """Santander segment B sends the PIX key intact (no upper case, symbols)."""
+        bank = self.env.ref("l10n_br_base.res_bank_033")
+        account = self.res_partner_bank_model.create(
+            {
+                "acc_number": "99887",
+                "bra_number": "4321",
+                "bank_id": bank.id,
+                "company_id": self.company.id,
+                "partner_id": self.company.partner_id.id,
+            }
+        )
+        journal = self.env["account.journal"].create(
+            {
+                "name": "Santander Bank",
+                "type": "bank",
+                "code": "BNKS",
+                "bank_account_id": account.id,
+                "bank_id": bank.id,
+            }
+        )
+        mode = self.payment_mode_model.create(
+            {
+                "name": "Santander PIX",
+                "bank_account_link": "fixed",
+                "company_id": self.company.id,
+                "payment_method_id": self.outbound_payment_method.id,
+                "payment_mode_domain": "pix_transfer",
+                "payment_order_ok": True,
+                "fixed_journal_id": journal.id,
+                "cnab_structure_id": self.env.ref(
+                    "l10n_br_cnab_structure.cnab_santander_240"
+                ).id,
+                "cnab_payment_way_ids": [
+                    (
+                        6,
+                        0,
+                        [
+                            self.env.ref(
+                                "l10n_br_cnab_structure.cnab_santander_240_pay_way_45"
+                            ).id
+                        ],
+                    )
+                ],
+                "cnab_processor": "oca_processor",
+            }
+        )
+        keys = [
+            self._create_pix_key("email", self.PIX_KEYS["email"]),
+            self._create_pix_key("evp", self.PIX_KEYS["evp"]),
+        ]
+        order = self._create_pix_order(mode, journal, keys)
+        lines = self._generate_cnab_lines(order)
+        seg_b = self._segments(lines, "B")
+        self.assertEqual(len(seg_b), 2)
+        for b_rec, pix_key in zip(seg_b, keys, strict=False):
+            self.assertEqual(b_rec[127:226], pix_key.key.ljust(99))

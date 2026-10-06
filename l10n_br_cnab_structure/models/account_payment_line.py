@@ -53,7 +53,7 @@ class AccountPaymentLine(models.Model):
         store=True,
     )
 
-    @api.depends("partner_pix_id")
+    @api.depends("partner_pix_id", "partner_pix_id.key_type")
     def _compute_cnab_pix_type_id(self):
         for bline in self:
             cnab_pix_type_id = (
@@ -61,22 +61,81 @@ class AccountPaymentLine(models.Model):
                     lambda t, b=bline: t.key_type == b.partner_pix_id.key_type
                 )
             )
-            self.cnab_pix_type_id = cnab_pix_type_id
+            bline.cnab_pix_type_id = cnab_pix_type_id
 
-    @api.depends("pix_transfer_type")
+    @api.depends("pix_transfer_type", "partner_pix_id", "cnab_payment_way_id.is_pix")
     def _compute_cnab_pix_transfer_type_id(self):
         for bline in self:
+            transfer_domain = False
             if bline.payment_mode_domain == "pix_transfer":
-                cnab_pix_transfer_type = self.env["cnab.pix.transfer.type"].search(
+                transfer_domain = bline.pix_transfer_type
+            elif bline.cnab_payment_way_id.is_pix and bline.partner_pix_id:
+                # PIX way chosen by a CNAB payment rule on a payment mode that
+                # is not a PIX transfer mode (e.g. salary by PIX key).
+                transfer_domain = "pix_key"
+            if transfer_domain:
+                bline.cnab_pix_transfer_type_id = self.env[
+                    "cnab.pix.transfer.type"
+                ].search(
                     [
                         ("cnab_structure_id", "=", bline.order_id.cnab_structure_id.id),
-                        ("type_domain", "=", bline.pix_transfer_type),
+                        ("type_domain", "=", transfer_domain),
                     ],
                     limit=1,
                 )
-                bline.cnab_pix_transfer_type_id = cnab_pix_transfer_type
             else:
                 bline.cnab_pix_transfer_type_id = False
+
+    def _check_cnab_pix_key_type(self):
+        """Block the CNAB when a PIX line cannot be mapped to the layout.
+
+        Without the mapping the PIX transfer type or the key type fields would be
+        generated empty and the bank would reject the file (or pay the wrong key).
+        """
+        for bline in self:
+            structure = bline.order_id.cnab_structure_id
+            if bline.cnab_payment_way_id.is_pix and not bline.cnab_pix_transfer_type_id:
+                if not bline.partner_pix_id:
+                    raise UserError(
+                        _(
+                            "Cannot generate the CNAB file: %(partner)s was matched "
+                            "to a PIX payment way but has no PIX key. Register the "
+                            "PIX key or adjust the CNAB payment rule.",
+                            partner=bline.partner_id.name,
+                        )
+                    )
+                raise UserError(
+                    _(
+                        "Cannot generate the CNAB file: %(partner)s has a PIX key "
+                        "but the CNAB structure %(structure)s has no mapping for "
+                        "the PIX transfer type by key. Fix the CNAB structure "
+                        "configuration.",
+                        partner=bline.partner_id.name,
+                        structure=structure.display_name,
+                    )
+                )
+            if (
+                bline.partner_pix_id
+                and bline.cnab_pix_transfer_type_id.type_domain == "pix_key"
+                and not bline.cnab_pix_type_id
+            ):
+                key_type = bline.partner_pix_id.key_type
+                label = dict(
+                    bline.partner_pix_id._fields["key_type"]._description_selection(
+                        self.env
+                    )
+                ).get(key_type, key_type)
+                raise UserError(
+                    _(
+                        "Cannot generate the CNAB file: the PIX key of %(partner)s "
+                        "is of type '%(key_type)s', which has no mapping in the "
+                        "CNAB structure %(structure)s. Fix the PIX key of the "
+                        "partner.",
+                        partner=bline.partner_id.name,
+                        key_type=label,
+                        structure=structure.display_name,
+                    )
+                )
 
     def _compute_cnab_beneficiary_name(self):
         for bline in self:
