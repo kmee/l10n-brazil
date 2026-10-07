@@ -11,7 +11,6 @@ from datetime import datetime
 
 from erpbrasil.base.fiscal import cnpj_cpf
 from erpbrasil.base.fiscal.edoc import ChaveEdoc
-from erpbrasil.base.misc import punctuation_rm
 from erpbrasil.transmissao import TransmissaoSOAP
 from lxml import etree
 from nfelib.nfe.bindings.v4_0.nfe_v4_00 import Nfe
@@ -936,22 +935,9 @@ class NFe(spec_models.StackedModel):
             if not self.partner_id.vat:
                 return None
 
+            # CPF or CNPJ come from the partner, without punctuation
             res = super()._export_many2one(field_name, xsd_required, class_obj)
-
-            if (
-                self.partner_cnpj_cpf
-                and len(punctuation_rm(self.partner_cnpj_cpf)) <= 11
-            ) or (
-                self.partner_id.vat and len(punctuation_rm(self.partner_id.vat)) <= 11
-            ):
-                res.CPF = self.partner_cnpj_cpf or punctuation_rm(self.partner_id.vat)
-                res.CNPJ = None
-            else:
-                res.CNPJ = self.partner_cnpj_cpf
-                res.CPF = None
-
             res.enderDest = None
-            res.CEP = None
             res.xNome = None
 
             return res
