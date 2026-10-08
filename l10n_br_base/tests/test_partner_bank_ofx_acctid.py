@@ -3,7 +3,7 @@
 import base64
 import unittest
 
-from odoo.tests import TransactionCase
+from odoo.tests import TransactionCase, tagged
 
 OFX_TEMPLATE = """<?xml version="1.0" encoding="ASCII"?>
 <?OFX OFXHEADER="200" VERSION="211" SECURITY="NONE"?>
@@ -45,6 +45,7 @@ OFX_TEMPLATE = """<?xml version="1.0" encoding="ASCII"?>
 """
 
 
+@tagged("post_install", "-at_install")
 class PartnerBankOfxAcctidTest(TransactionCase):
     """Itau OFX ACCTID 5118005031 matches a clean 5118 / 00503 / 1 account."""
 
@@ -56,7 +57,6 @@ class PartnerBankOfxAcctidTest(TransactionCase):
                 "account_statement_import_ofx_by_acctid is not installed"
             )
         cls.brl = cls.env.ref("base.BRL")
-        cls.env.company.currency_id = cls.brl
         cls.bank = cls.env["res.partner.bank"].create(
             {
                 "partner_id": cls.env.company.partner_id.id,
@@ -72,11 +72,9 @@ class PartnerBankOfxAcctidTest(TransactionCase):
                 "name": "Itau OFX acctid",
                 "code": "ITAU9",
                 "type": "bank",
+                "currency_id": cls.brl.id,
                 "bank_account_id": cls.bank.id,
             }
-        )
-        cls.other_journal = cls.env["account.journal"].create(
-            {"name": "Other bank", "code": "OTH9", "type": "bank"}
         )
         cls.wizard = cls.env["account.statement.import"].create(
             {
