@@ -7,7 +7,8 @@ from odoo.tests import TransactionCase
 class TestNfseExportedService(TransactionCase):
     """The DPS declares how the ISSQN falls on the service.
 
-    1 is taxable, 2 is export of service, 3 is no incidence and 4 is immunity.
+    1 is taxable, 2 is immunity, 3 is export of service and 4 is no incidence
+    (TSTribISSQN of the national layout).
     """
 
     @classmethod
@@ -24,10 +25,10 @@ class TestNfseExportedService(TransactionCase):
 
     def test_an_exported_service_is_not_declared_as_taxable(self):
         self.line.issqn_eligibility = "4"
-        self.assertEqual(self.line.nfse10_tribISSQN, "2")
+        self.assertEqual(self.line.nfse10_tribISSQN, "3")
 
         self.line.issqn_eligibility = "5"
-        self.assertEqual(self.line.nfse10_tribISSQN, "4")
+        self.assertEqual(self.line.nfse10_tribISSQN, "2")
 
         self.line.issqn_eligibility = "1"
         self.assertEqual(self.line.nfse10_tribISSQN, "1")
