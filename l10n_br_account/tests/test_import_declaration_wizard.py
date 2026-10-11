@@ -183,13 +183,15 @@ class TestImportDeclarationWizard(AccountMoveBRCommon):
             )
 
     def test_the_customs_value_becomes_the_gross_amount(self):
+        """The Import Tax sits inside vProd, so the gross amount of the lines is
+        the customs value plus the declared II."""
         wizard = self._wizard()
 
         wizard.action_generate_document()
 
         self.assertAlmostEqual(
             sum(wizard.document_id.fiscal_line_ids.mapped("price_gross")),
-            VALOR_ADUANEIRO,
+            VALOR_ADUANEIRO + II,
             places=2,
         )
 

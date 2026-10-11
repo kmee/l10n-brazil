@@ -1733,7 +1733,7 @@ class NFe(spec_models.StackedModel):
             return super()._get_imported_installments()
         installments = [
             (dup.nfe40_dVenc, dup.nfe40_vDup)
-            for dup in self.nfe40_dup
+            for dup in self.sudo().nfe40_dup
             if dup.nfe40_dVenc and dup.nfe40_vDup
         ]
         if not installments:
