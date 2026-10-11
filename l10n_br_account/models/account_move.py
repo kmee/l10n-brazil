@@ -1061,7 +1061,9 @@ class AccountMove(models.Model):
     def button_cancel(self):
         for doc in self.filtered(lambda d: d.document_type_id):
             if hasattr(doc.fiscal_document_id, "action_document_cancel"):
-                doc.fiscal_document_id.action_document_cancel()
+                doc.fiscal_document_id.with_context(
+                    in_button_cancel=True
+                ).action_document_cancel()
         return super(
             AccountMove, self.with_context(in_button_cancel=True)
         ).button_cancel()
