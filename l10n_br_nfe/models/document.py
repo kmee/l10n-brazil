@@ -1753,7 +1753,50 @@ class NFe(spec_models.StackedModel):
             document.fiscal_operation_type = "in"
             document.issuer = "partner"
 
+        if not dry_run and document:
+            document._infer_icms_relief_deduct(binding.infNFe)
+
         return document
+
+    @api.model
+    def _binding_has_ind_deduz_deson(self, inf_nfe):
+        """True if any ICMS group of the NF-e binding informs indDeduzDeson."""
+        for det in inf_nfe.det or []:
+            icms = det.imposto and det.imposto.ICMS
+            if not icms:
+                continue
+            for group in vars(icms).values():
+                if getattr(group, "indDeduzDeson", None) is not None:
+                    return True
+        return False
+
+    def _infer_icms_relief_deduct(self, inf_nfe):
+        """When the imported NF-e does not inform indDeduzDeson, infer whether
+        the ICMS relief (vICMSDeson) was deducted from the total by comparing
+        the XML vNF with the totals computed with and without the deduction.
+        If vNF only matches the total without the deduction, the lines are
+        flagged icms_relief_deduct=False so the amounts follow the XML."""
+        total = inf_nfe.total
+        v_nf = total and total.ICMSTot and total.ICMSTot.vNF
+        if v_nf is None or self._binding_has_ind_deduz_deson(inf_nfe):
+            return
+        for doc in self:
+            relief_lines = doc.fiscal_line_ids.filtered(
+                lambda ln: ln.icms_relief_value and ln.icms_relief_deduct
+            )
+            if not relief_lines:
+                continue
+            # not doc.fiscal_amount_total: on import it is overwritten by vNF
+            with_deduction = sum(doc.fiscal_line_ids.mapped("fiscal_amount_total"))
+            without_deduction = with_deduction + sum(
+                relief_lines.mapped("icms_relief_value")
+            )
+            if (
+                abs(float(v_nf) - without_deduction)
+                < 0.01
+                <= abs(float(v_nf) - with_deduction)
+            ):
+                relief_lines.write({"icms_relief_deduct": False})
 
     def _document_cancel(self, justificative):
         if self.document_type_id.code in [MODELO_FISCAL_NFE]:

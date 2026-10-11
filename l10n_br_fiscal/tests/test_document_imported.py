@@ -136,6 +136,31 @@ class TestImportedDocumentTaxAmounts(TransactionCase):
             document.fiscal_amount_total, document.fiscal_amount_untaxed - 6.3
         )
 
+    def test_icms_relief_is_deducted_by_default(self):
+        document = self._create_imported_document(
+            {"price_unit": 371159.0, "icms_relief_value": 12535.23}
+        )
+        line = document.fiscal_line_ids
+        self.assertTrue(line.icms_relief_deduct)
+        self.assertAlmostEqual(line.fiscal_amount_untaxed, 358623.77)
+        self.assertAlmostEqual(document.fiscal_amount_total, 358623.77)
+
+    def test_icms_relief_not_deducted_keeps_the_product_total(self):
+        """indDeduzDeson=0: vICMSDeson does not reduce the item / NF-e total."""
+        document = self._create_imported_document(
+            {
+                "price_unit": 371159.0,
+                "icms_relief_value": 12535.23,
+                "icms_relief_deduct": False,
+            }
+        )
+        line = document.fiscal_line_ids
+        self.assertAlmostEqual(line.icms_relief_value, 12535.23)
+        self.assertAlmostEqual(line.fiscal_amount_untaxed, 371159.0)
+        self.assertAlmostEqual(document.fiscal_amount_total, 371159.0)
+        line.icms_relief_deduct = True
+        self.assertAlmostEqual(document.fiscal_amount_total, 358623.77)
+
     def test_every_line_tax_field_has_a_value_field(self):
         line_fields = self.env["l10n_br_fiscal.document.line"]._fields
         for tax_field in FISCAL_TAX_ID_FIELDS:

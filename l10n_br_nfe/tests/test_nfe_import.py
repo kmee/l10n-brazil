@@ -342,6 +342,86 @@ class NFeImportTest(TransactionCase):
         self.assertEqual(line.fiscal_amount_tax, 3.29)
         self.assertEqual(line.amount_tax_included, 7.64)
 
+    def _import_with_icms_relief(self, ind_deduz=None, v_nf=None):
+        """Import the sample NF-e with its first item turned into a CST 20 item
+        carrying vICMSDeson (optionally with indDeduzDeson), and
+        optionally overriding vNF."""
+        res_items = (
+            "nfe",
+            "samples",
+            "v4_0",
+            "leiauteNFe",
+            "35180834128745000152550010000474281920007498-nfe.xml",
+        )
+        xml = (
+            importlib.resources.files(nfelib.__name__)
+            .joinpath(*res_items)
+            .read_bytes()
+            .decode()
+        )
+        icms = (
+            "<ICMS><ICMS20><orig>0</orig><CST>20</CST><modBC>3</modBC>"
+            "<pRedBC>10.00</pRedBC>"
+            "<vBC>50.60</vBC><pICMS>12.00</pICMS><vICMS>6.07</vICMS>"
+            "<vICMSDeson>5.00</vICMSDeson><motDesICMS>9</motDesICMS>"
+        )
+        if ind_deduz is not None:
+            icms += f"<indDeduzDeson>{ind_deduz}</indDeduzDeson>"
+        icms += "</ICMS20></ICMS>"
+        xml = re.sub(r"<ICMS>.*?</ICMS>", icms, xml, count=1, flags=re.S)
+        # unique number: the same sample can be imported several times per test
+        self._nnf = getattr(self, "_nnf", 900000) + 1
+        key = "35180834128745000152550010000474281920007498"
+        new_key = key[:25] + f"{self._nnf:09d}" + key[34:43]
+        total = sum(
+            int(d) * (2 + i % 8) for i, d in enumerate(reversed(new_key))
+        )  # modulo 11 check digit
+        dv = 0 if total % 11 < 2 else 11 - total % 11
+        new_key += str(dv)
+        xml = xml.replace("<cDV>8</cDV>", f"<cDV>{dv}</cDV>")
+        xml = xml.replace("<nNF>47428</nNF>", f"<nNF>{self._nnf}</nNF>")
+        xml = xml.replace(key, new_key)
+        if v_nf is not None:
+            xml = xml.replace("<vNF>347.28</vNF>", f"<vNF>{v_nf:.2f}</vNF>")
+        return self.env["l10n_br_fiscal.document"].import_binding_nfe(
+            TnfeProc.from_xml(xml), edoc_type="in", dry_run=False
+        )
+
+    @staticmethod
+    def _lines_total(doc):
+        return sum(doc.fiscal_line_ids.mapped("fiscal_amount_total"))
+
+    def test_import_icms_relief_ind_deduz_deson_zero(self):
+        doc = self._import_with_icms_relief(ind_deduz=0)
+        line = doc.fiscal_line_ids[0]
+        relief = line.icms_relief_value
+        self.assertGreater(relief, 0)
+        self.assertFalse(line.icms_relief_deduct)
+        doc_deducted = self._import_with_icms_relief(ind_deduz=1)
+        line_deducted = doc_deducted.fiscal_line_ids[0]
+        self.assertTrue(line_deducted.icms_relief_deduct)
+        self.assertAlmostEqual(
+            self._lines_total(doc) - self._lines_total(doc_deducted), relief
+        )
+
+    def test_import_icms_relief_without_indicator_infers_from_vnf(self):
+        ref = self._import_with_icms_relief(ind_deduz=0)
+        base = self._lines_total(ref)
+        relief = ref.fiscal_line_ids[0].icms_relief_value
+        # vNF equals the total WITHOUT deduction -> not deducted
+        doc = self._import_with_icms_relief(v_nf=base)
+        self.assertFalse(doc.fiscal_line_ids[0].icms_relief_deduct)
+        self.assertAlmostEqual(self._lines_total(doc), base)
+        # vNF equals the total WITH deduction -> keeps deducting
+        doc = self._import_with_icms_relief(v_nf=base - relief)
+        self.assertTrue(doc.fiscal_line_ids[0].icms_relief_deduct)
+        self.assertAlmostEqual(self._lines_total(doc), base - relief)
+
+    def test_import_icms_relief_explicit_indicator_wins_over_vnf(self):
+        base = self._lines_total(self._import_with_icms_relief(ind_deduz=0))
+        doc = self._import_with_icms_relief(ind_deduz=1, v_nf=base)
+        self.assertTrue(doc.fiscal_line_ids[0].icms_relief_deduct)
+
     def test_import_in_nfe_reuses_the_authorized_partner(self):
         res_items = (
             "nfe",

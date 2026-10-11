@@ -396,6 +396,35 @@ class TestMoveEdition(TransactionCase):
         self.assertEqual(move.state, "draft")
         self.assertEqual(move.state_edoc, DOCUMENT_STATE_DRAFT)
 
+    def test_icms_relief_deduction_flag_drives_the_move_line_total(self):
+        """indDeduzDeson: the ICMS relief only reduces the invoice line total
+        when icms_relief_deduct is set."""
+        self.user.groups_id += self.env.ref("l10n_br_fiscal.group_user")
+        self.user.groups_id += self.env.ref("uom.group_uom")
+        move_form = Form(
+            self.env["account.move"].with_context(default_move_type="out_invoice")
+        )
+        move_form.partner_id = self.env.ref("l10n_br_base.res_partner_cliente5_pe")
+        move_form.document_type_id = self.env.ref("l10n_br_fiscal.document_55")
+        move_form.document_serie_id = self.env.ref(
+            "l10n_br_fiscal.empresa_lc_document_55_serie_1"
+        )
+        move_form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_venda")
+        move_form.ind_final = "1"
+        with move_form.invoice_line_ids.new() as line_form:
+            line_form.product_id = self.product_id
+            line_form.price_unit = 42
+        move = move_form.save()
+        line = move.invoice_line_ids[0]
+        self.assertTrue(line.icms_relief_deduct)
+
+        line.write({"icms_relief_value": 0.0, "icms_relief_deduct": True})
+        total_without_relief = line.price_total
+        line.write({"icms_relief_value": 10.0})
+        self.assertAlmostEqual(line.price_total, total_without_relief - 10.0)
+        line.write({"icms_relief_deduct": False})
+        self.assertAlmostEqual(line.price_total, total_without_relief)
+
     def test_in_non_fiscal_invoice(self):
         """
         Ensure supplier Invoice with no fiscal document type can be edited.

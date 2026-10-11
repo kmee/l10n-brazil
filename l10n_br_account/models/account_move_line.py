@@ -380,6 +380,7 @@ class AccountMoveLine(models.Model):
         "icms_origin",
         "ind_final",
         "icms_relief_value",
+        "icms_relief_deduct",
     )
     def _compute_totals(self):
         """
@@ -436,7 +437,7 @@ class AccountMoveLine(models.Model):
                     line.insurance_value
                     + line.other_value
                     + line.freight_value
-                    - line.icms_relief_value
+                    - (line.icms_relief_value if line.icms_relief_deduct else 0.0)
                 )
             else:
                 # If no tax, just compute the total based on price_unit and quantity

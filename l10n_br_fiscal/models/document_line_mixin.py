@@ -213,6 +213,7 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         "fiscal_operation_line_id",
         "cfop_id",
         "icms_relief_value",
+        "icms_relief_deduct",
         "insurance_value",
         "other_value",
         "freight_value",
@@ -1030,9 +1031,12 @@ class FiscalDocumentLineMixin(models.AbstractModel):
             fields_to_amount.append("icms_value")
         return fields_to_amount
 
-    @api.model
     def _rm_fields_to_amount(self):
-        return ["icms_relief_value"]
+        """Fields subtracted from the line total. The ICMS relief (vICMSDeson)
+        is only deducted when indDeduzDeson = 1 (icms_relief_deduct)."""
+        if self.icms_relief_deduct:
+            return ["icms_relief_value"]
+        return []
 
     def _is_imported(self):
         # When the mixin is used for instance
@@ -1641,6 +1645,15 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         store=True,
         precompute=True,
         readonly=False,
+    )
+
+    # indDeduzDeson - ICMS relief deducts from the item/NF-e total
+    icms_relief_deduct = fields.Boolean(
+        string="ICMS Relief Deducts From Total",
+        default=True,
+        help="If set, the ICMS relief value (vICMSDeson) is subtracted from the "
+        "line total (NF-e indDeduzDeson=1). Unset it for documents issued with "
+        "indDeduzDeson=0, where the relief does not reduce the total.",
     )
 
     # ICMS ST Fields

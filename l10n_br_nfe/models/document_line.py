@@ -1512,6 +1512,12 @@ class NFeLine(spec_models.StackedModel):
                     f"l10n_br_fiscal.icms_relief_{mot_des_icms}"
                 ).id
             map_binding_attr("vICMSDeson", "icms_relief_value")
+            # indDeduzDeson: 1 = vICMSDeson deducts from the item/NF-e total,
+            # 0 = it does not. When absent we keep the default (deduct); the
+            # document import may later infer it from vNF.
+            ind_deduz_deson = map_binding_attr("indDeduzDeson")
+            if ind_deduz_deson is not None:
+                odoo_attrs["icms_relief_deduct"] = float(ind_deduz_deson) != 0.0
             map_binding_attr("vICMSSubstituto", "icms_substitute")
 
             # ICMS ST fields
