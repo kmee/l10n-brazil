@@ -261,6 +261,18 @@ class TestImportDeclarationWizard(AccountMoveBRCommon):
         with self.assertRaises(UserError):
             wizard.action_generate_document()
 
+    def test_the_imported_bill_survives_the_shadow_document_cancel(self):
+        """The shadow document is cancelled, but never the bill that was just
+        imported: cancelling a fiscal document also cancels its moves."""
+        wizard = self._wizard()
+        shadow = wizard.move_id.fiscal_document_id
+
+        wizard.action_generate_document()
+
+        self.assertEqual(wizard.move_id.fiscal_document_id, wizard.document_id)
+        self.assertNotEqual(wizard.move_id.state, "cancel")
+        self.assertEqual(shadow.state_edoc, "cancelada")
+
     def test_a_bill_without_product_line_is_refused(self):
         empty = self.bill.copy()
         empty.invoice_line_ids.unlink()
