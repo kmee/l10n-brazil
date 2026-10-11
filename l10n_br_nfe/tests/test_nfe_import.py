@@ -378,3 +378,17 @@ class NFeImportTest(TransactionCase):
             self.env["res.partner"].search_count([("vat", "=", "09270492000100")]),
             1,
         )
+
+
+class NFeAdditionalDataTest(TransactionCase):
+    def test_additional_data_has_no_tab_or_line_break(self):
+        """TAB in infAdFisco/infCpl fails the XSD validation of the NF-e."""
+        nfe = self.env.ref("l10n_br_nfe.demo_nfe_natural_icms_18_red_51_11")
+        nfe.write(
+            {
+                "fiscal_additional_data": "Fisco\tcom\ttab\r\nlinha dois",
+                "customer_additional_data": "Cliente\t\tcom tab\nlinha dois",
+            }
+        )
+        self.assertEqual(nfe.nfe40_infAdFisco, "Fisco com tab linha dois")
+        self.assertEqual(nfe.nfe40_infCpl, "Cliente com tab linha dois")

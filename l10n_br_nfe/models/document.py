@@ -778,19 +778,21 @@ class NFe(spec_models.StackedModel):
         comodel_name="l10n_br_fiscal.document.supplement",
     )
 
-    @api.depends("fiscal_additional_data", "fiscal_additional_data")
+    @api.depends("fiscal_additional_data", "customer_additional_data")
     def _compute_nfe40_additional_data(self):
+        def sanitize(text):
+            # TAB/line breaks are not allowed by the XSD pattern of
+            # infAdFisco/infCpl ([!-ÿ] / [ -ÿ]) and make the XML validation
+            # fail: turn them into a single space.
+            return remove_non_ascii_characters(re.sub(r"[\t\r\n\v\f]+", " ", text))
+
         for record in self:
             record.nfe40_infCpl = False
             record.nfe40_infAdFisco = False
             if record.fiscal_additional_data:
-                record.nfe40_infAdFisco = remove_non_ascii_characters(
-                    record.fiscal_additional_data
-                )
+                record.nfe40_infAdFisco = sanitize(record.fiscal_additional_data)
             if record.customer_additional_data:
-                record.nfe40_infCpl = remove_non_ascii_characters(
-                    record.customer_additional_data
-                )
+                record.nfe40_infCpl = sanitize(record.customer_additional_data)
 
     ##########################
     # NF-e tag: fat
