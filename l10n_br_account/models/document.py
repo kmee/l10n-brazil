@@ -12,6 +12,7 @@ from odoo.exceptions import UserError
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_ISSUER_COMPANY,
     DOCUMENT_ISSUER_PARTNER,
+    DOCUMENT_STATE_CANCEL,
     DOCUMENT_STATE_DRAFT,
     MODELO_FISCAL_CTE,
     MODELO_FISCAL_NFE,
@@ -279,7 +280,22 @@ class FiscalDocument(models.Model):
     def cancel_move_ids(self):
         for record in self:
             if record.move_ids:
-                self.move_ids.button_cancel()
+                record.move_ids.button_cancel()
+
+    def action_document_cancel(self):
+        """Also cancel the linked account moves when the fiscal document is
+        cancelled directly (e.g. an NF-e that was never transmitted, which goes
+        through the FSM cancel and never reaches _document_cancel)."""
+        result = super().action_document_cancel()
+        if self.env.context.get("in_button_cancel"):
+            # account.move.button_cancel() already handles the move itself.
+            return result
+        for doc in self.with_context(in_button_cancel=True):
+            if doc.state_edoc == DOCUMENT_STATE_CANCEL and doc.move_ids.filtered(
+                lambda m: m.state != "cancel"
+            ):
+                doc.cancel_move_ids()
+        return result
 
     def _document_cancel(self, justificative):
         result = super()._document_cancel(justificative)
