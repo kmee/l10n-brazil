@@ -422,6 +422,12 @@ class TestMoveEdition(TransactionCase):
         total_without_relief = line.price_total
         line.write({"icms_relief_value": 10.0})
         self.assertAlmostEqual(line.price_total, total_without_relief - 10.0)
+        # own emission: indDeduzDeson is not exported, deduction is forced on
+        line.write({"icms_relief_deduct": False})
+        self.assertTrue(line.icms_relief_deduct)
+        self.assertAlmostEqual(line.price_total, total_without_relief - 10.0)
+        # a third-party document keeps the flag editable
+        move.fiscal_document_id.issuer = "partner"
         line.write({"icms_relief_deduct": False})
         self.assertAlmostEqual(line.price_total, total_without_relief)
 

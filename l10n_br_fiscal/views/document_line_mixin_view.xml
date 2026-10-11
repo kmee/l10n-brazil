@@ -393,6 +393,11 @@
                                         <field
                                             name="icms_relief_deduct"
                                             invisible="tax_framework in ('1', '2') or not icms_relief_id"
+                                            readonly="icms_relief_deduct_locked"
+                                        />
+                                        <field
+                                            name="icms_relief_deduct_locked"
+                                            invisible="1"
                                         />
                                         <field
                                             name="icms_substitute"

@@ -214,3 +214,20 @@ class TestImportedDocumentTaxAmounts(TransactionCase):
         document.imported_document = False
 
         self.assertEqual(document.fiscal_line_ids._get_imported_tax_values(), {})
+
+    def test_own_emission_always_deducts_the_icms_relief(self):
+        """indDeduzDeson is not exported on own emission, so the deduction is
+        forced on for documents issued by the company."""
+        document = self._create_imported_document(
+            {"price_unit": 371159.0, "icms_relief_value": 12535.23}
+        )
+        line = document.fiscal_line_ids
+        line.icms_relief_deduct = False
+        self.assertFalse(line.icms_relief_deduct_locked)
+        self.assertFalse(line.icms_relief_deduct)
+        document.issuer = "company"
+        line.icms_relief_deduct = True
+        line.icms_relief_deduct = False
+        self.assertTrue(line.icms_relief_deduct_locked)
+        self.assertTrue(line.icms_relief_deduct)
+        self.assertAlmostEqual(document.fiscal_amount_total, 358623.77)

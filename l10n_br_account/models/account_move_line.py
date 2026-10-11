@@ -143,7 +143,15 @@ class AccountMoveLine(models.Model):
 
     def write(self, values):
         self._sync_proxy_fields_vals(values)
-        res = super().write(values)
+        if values.get("icms_relief_deduct") is False:
+            # own emission cannot export indDeduzDeson=0: keep the deduction on
+            locked = self.filtered("icms_relief_deduct_locked")
+            if locked:
+                rest = {k: v for k, v in values.items() if k != "icms_relief_deduct"}
+                if rest:
+                    super(AccountMoveLine, locked).write(rest)
+                self -= locked
+        res = super().write(values) if self else True
         return res
 
     @api.model_create_multi

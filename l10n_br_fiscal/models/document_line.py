@@ -3,6 +3,8 @@
 
 from odoo import api, fields, models
 
+from ..constants.fiscal import DOCUMENT_ISSUER_COMPANY
+
 
 class DocumentLine(models.Model):
     """
@@ -96,6 +98,49 @@ class DocumentLine(models.Model):
     )
 
     additional_data = fields.Text()
+
+    icms_relief_deduct_locked = fields.Boolean(
+        compute="_compute_icms_relief_deduct_locked",
+        help="Own-emission documents always deduct the ICMS relief: the "
+        "indDeduzDeson indicator is not exported yet, so the SEFAZ would "
+        "presume the deduction (indDeduzDeson=1) anyway.",
+    )
+
+    @api.depends("document_id.issuer")
+    def _compute_icms_relief_deduct_locked(self):
+        for line in self:
+            line.icms_relief_deduct_locked = (
+                line.document_id.issuer == DOCUMENT_ISSUER_COMPANY
+            )
+
+    def _force_icms_relief_deduct(self):
+        """Own emission cannot export indDeduzDeson=0 (no spec field), so
+        keep the deduction always on for documents issued by the company."""
+        lines = self.filtered(
+            lambda ln: ln.document_id.issuer == DOCUMENT_ISSUER_COMPANY
+            and not ln.icms_relief_deduct
+        )
+        if lines:
+            lines.write({"icms_relief_deduct": True})
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        lines = super().create(vals_list)
+        lines._force_icms_relief_deduct()
+        return lines
+
+    def write(self, vals):
+        if vals.get("icms_relief_deduct") is False:
+            locked = self.filtered("icms_relief_deduct_locked")
+            if locked:
+                rest = {k: v for k, v in vals.items() if k != "icms_relief_deduct"}
+                if rest:
+                    super(DocumentLine, locked).write(rest)
+                self -= locked
+        result = super().write(vals) if self else True
+        if "document_id" in vals:
+            self._force_icms_relief_deduct()
+        return result
 
     @api.depends("product_id")
     def _compute_name(self):
