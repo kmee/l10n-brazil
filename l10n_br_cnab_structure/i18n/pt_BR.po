@@ -492,12 +492,12 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_cnab_structure.field_account_payment_line__cnab_pix_transfer_type_id
 #: model:ir.model.fields,field_description:l10n_br_cnab_structure.field_l10n_br_cnab_structure__cnab_pix_transfer_type_ids
 msgid "Cnab Pix Transfer Type"
-msgstr ""
+msgstr "Tipo de transferência PIX (CNAB)"
 
 #. module: l10n_br_cnab_structure
 #: model:ir.model.fields,field_description:l10n_br_cnab_structure.field_account_payment_line__cnab_pix_type_id
 msgid "Cnab Pix Type"
-msgstr ""
+msgstr "Tipo de chave PIX (CNAB)"
 
 #. module: l10n_br_cnab_structure
 #: model:ir.model.fields,field_description:l10n_br_cnab_structure.field_account_payment_order__cnab_processor
