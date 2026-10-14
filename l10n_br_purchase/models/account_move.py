@@ -3,6 +3,7 @@
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
 from odoo import api, models
+from odoo.exceptions import UserError
 from odoo.tools import float_compare
 
 
@@ -126,36 +127,22 @@ class AccountMove(models.Model):
             move.invoice_origin = ", ".join(origins + missing)
 
     @api.model
-    def _po_link_drop_po_lines(self, move, fiscal_document):
-        """Draft bill created from a purchase order, then fiscal document
-        imported: the lines derived from the purchase order are replaced by the
-        lines of the document (which are then linked to the PO lines like in a
-        regular import), so nothing is duplicated and the total is the one of
-        the document. A note on the bill lists what was removed."""
-        amls = move.invoice_line_ids.filtered(
+    def _po_link_check_bill_without_po_lines(self, move):
+        """A draft bill created from a purchase order cannot receive a fiscal
+        document: its lines would be duplicated or their data lost."""
+        po_lines = move.invoice_line_ids.filtered(
             lambda line: line.purchase_line_id
-            and line.fiscal_document_line_id.document_id != fiscal_document
+            and not line.fiscal_document_line_id.document_id.imported_document
         )
-        if not amls:
-            return
-        note = [
-            self.env._(
-                "Lines created from purchase orders replaced by the imported "
-                "fiscal document %s:",
-                fiscal_document.document_number or fiscal_document.display_name,
+        if po_lines:
+            raise UserError(
+                self.env._(
+                    "This bill already has lines from purchase orders. Delete "
+                    'this draft bill and import the NF-e with "Import Account '
+                    'Move": the bill lines will be linked to the purchase '
+                    "order automatically."
+                )
             )
-        ]
-        for line in amls:
-            note.append(
-                f"{line.purchase_line_id.order_id.name}: "
-                f"{line.name or line.product_id.display_name} x {line.quantity}"
-            )
-        stale_fiscal_lines = amls.fiscal_document_line_id
-        move.with_context(check_move_validity=False).write(
-            {"invoice_line_ids": [(2, line.id) for line in amls]}
-        )
-        stale_fiscal_lines.exists().unlink()
-        move.message_post(body="<br/>".join(note))
 
     @api.model
     def _po_link_new_lines(self, move, fiscal_document):
@@ -199,7 +186,7 @@ class AccountMove(models.Model):
                 fiscal_document, move_id=move_id, move_type=move_type
             )
         if move_id:
-            self._po_link_drop_po_lines(move, fiscal_document)
+            self._po_link_check_bill_without_po_lines(move)
         result = super().import_fiscal_document(
             fiscal_document, move_id=move_id, move_type=move_type
         )
