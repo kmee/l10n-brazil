@@ -2,7 +2,8 @@
 # Copyright (C) 2020  Renato Lima - Akretion
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
-from odoo import api, fields, models
+from odoo import api, models
+from odoo.tools import float_compare
 
 
 class AccountMove(models.Model):
@@ -21,102 +22,98 @@ class AccountMove(models.Model):
 
     # ------------------------------------------------------------------
     # Link imported fiscal document lines to purchase order lines
+    #
+    # Only purchase_line_id (and invoice_origin) is written on the imported
+    # bill lines: quantity, price_unit and product_uom_id proxy to the imported
+    # fiscal line and must keep the values of the document (uCom/qCom/vUnCom).
     # ------------------------------------------------------------------
 
     @api.model
-    def _get_fiscal_lines_to_import(self, fiscal_document, move):
-        lines = super()._get_fiscal_lines_to_import(fiscal_document, move)
-        skip_ids = self.env.context.get("po_link_reused_fiscal_line_ids")
-        if skip_ids:
-            lines = lines.filtered(lambda line: line.id not in skip_ids)
-        return lines
-
-    @api.model
-    def _po_link_candidates_domain(self, partner, company):
-        return [
-            ("order_id.state", "=", "purchase"),
-            (
-                "order_id.partner_id.commercial_partner_id",
-                "=",
-                partner.commercial_partner_id.id,
-            ),
-            ("order_id.company_id", "=", company.id),
-            ("display_type", "=", False),
-        ]
-
-    @api.model
-    def _po_link_sort(self, pol_lines):
-        """Deterministic order: oldest purchase order first."""
-        return pol_lines.sorted(
-            lambda line: (
-                line.order_id.date_order or fields.Datetime.now(),
-                line.order_id.id,
-                line.sequence,
-                line.id,
+    def _po_link_candidates(self, partner, company, products):
+        """Open purchase order lines of the vendor for the given products,
+        oldest purchase order first, with the quantity still to be billed
+        (ordered minus already billed, whatever the billing policy)."""
+        lines = (
+            self.env["purchase.order.line"]
+            .sudo()
+            .search(
+                [
+                    ("order_id.state", "=", "purchase"),
+                    (
+                        "order_id.partner_id.commercial_partner_id",
+                        "=",
+                        partner.commercial_partner_id.id,
+                    ),
+                    ("order_id.company_id", "=", company.id),
+                    ("display_type", "=", False),
+                    ("product_id", "in", products.ids),
+                ],
+                order="date_order, order_id, sequence, id",
             )
         )
+        remaining = {line.id: line.product_qty - line.qty_invoiced for line in lines}
+        return lines.filtered(lambda line: remaining[line.id] > 0), remaining
 
     @api.model
-    def _po_link_match(self, fiscal_line, candidates, remaining):
-        """Pick the purchase order line for an imported fiscal line.
+    def _po_link_required_quantity(self, aml, pol):
+        """Quantity of the bill line expressed in the PO line UoM, or None when
+        the UoM categories differ (the line cannot be billed against it)."""
+        uom = aml.product_uom_id or pol.product_uom
+        if uom.category_id != pol.product_uom.category_id:
+            return None
+        return uom._compute_quantity(aml.quantity, pol.product_uom, round=False)
 
-        1. xPed / nItemPed (partner_order / partner_order_line) on the fiscal
-           line, matched against the PO line fields, the PO name or partner_ref;
-        2. else the product, with remaining quantity, oldest PO first.
+    @api.model
+    def _po_link_match(self, aml, candidates, remaining):
+        """Pick the purchase order line billed by invoice line ``aml``.
 
-        :param candidates: purchase.order.line recordset to choose from
-        :param remaining: dict pol.id -> quantity still available to bill
+        Candidates must have the same product, a compatible UoM category and a
+        remaining quantity covering the whole line (no split). The xPed /
+        nItemPed of the fiscal line (matched against the PO line partner_order
+        / partner_order_line, the PO name or its partner_ref) has priority and,
+        when it points to a purchase order, no other order is considered.
+        Otherwise the oldest purchase order with enough quantity wins.
         """
-        candidates = self._po_link_sort(
-            candidates.filtered(lambda line: remaining.get(line.id, 0.0) > 0)
-        )
-        if not candidates:
-            return candidates
+        fiscal_line = aml.fiscal_document_line_id
         product = fiscal_line.product_id
+        if not product:
+            return candidates.browse()
+        precision = self.env["decimal.precision"].precision_get(
+            "Product Unit of Measure"
+        )
+
+        def eligible(lines):
+            res = lines.browse()
+            for line in lines:
+                needed = self._po_link_required_quantity(aml, line)
+                if needed is None:
+                    continue
+                if (
+                    float_compare(
+                        remaining[line.id], needed, precision_digits=precision
+                    )
+                    >= 0
+                ):
+                    res |= line
+            return res
+
+        same_product = candidates.filtered(lambda line: line.product_id == product)
         xped = (fiscal_line.partner_order or "").strip()
-        nitemped = (fiscal_line.partner_order_line or "").strip()
         if xped:
-            by_order = candidates.filtered(
+            by_order = same_product.filtered(
                 lambda line: (line.partner_order or "").strip() == xped
                 or xped in (line.order_id.name, line.order_id.partner_ref)
             )
-            if nitemped:
-                exact = by_order.filtered(
-                    lambda line: (line.partner_order_line or "").strip() == nitemped
-                    and (line.partner_order or "").strip() == xped
-                )
-                if exact:
-                    return exact[:1]
-            if product:
-                by_order = by_order.filtered(lambda line: line.product_id == product)
-            if len(by_order) == 1 or (by_order and product):
-                return by_order[:1]
-        if product:
-            return candidates.filtered(lambda line: line.product_id == product)[:1]
-        return candidates.browse()
-
-    @api.model
-    def _po_link_values(self, from_uom, quantity, price_unit, pol):
-        """Values to write on an invoice line to bill ``pol``, keeping the
-        purchase order line UoM: quantity/price are converted when the UoMs
-        share a category, otherwise they are kept so the line total holds."""
-        to_uom = pol.product_uom
-        if from_uom and from_uom != to_uom:
-            if from_uom.category_id == to_uom.category_id:
-                new_qty = from_uom._compute_quantity(quantity, to_uom, round=False)
-                if new_qty:
-                    price_unit = price_unit * quantity / new_qty
-                    quantity = new_qty
-        return {
-            "purchase_line_id": pol.id,
-            "product_uom_id": to_uom.id,
-            "quantity": quantity,
-            "price_unit": price_unit,
-        }
-
-    @api.model
-    def _po_link_remaining(self, pols):
-        return {line.id: line.qty_to_invoice for line in pols}
+            if by_order:
+                nitemped = (fiscal_line.partner_order_line or "").strip()
+                found = eligible(by_order)
+                if nitemped:
+                    exact = found.filtered(
+                        lambda line: (line.partner_order_line or "").strip() == nitemped
+                    )
+                    found = exact or found
+                return found[:1]
+        return eligible(same_product)[:1]
 
     @api.model
     def _po_link_set_origin(self, move):
@@ -129,94 +126,64 @@ class AccountMove(models.Model):
             move.invoice_origin = ", ".join(origins + missing)
 
     @api.model
-    def _po_link_reuse_existing_lines(self, move, fiscal_document):
-        """Draft bill created from a purchase order: attach the fiscal lines to
-        the bill lines already linked to PO lines instead of appending
-        duplicates. Returns the fiscal lines that were attached."""
-        reused = self.env["l10n_br_fiscal.document.line"]
+    def _po_link_drop_po_lines(self, move, fiscal_document):
+        """Draft bill created from a purchase order, then fiscal document
+        imported: the lines derived from the purchase order are replaced by the
+        lines of the document (which are then linked to the PO lines like in a
+        regular import), so nothing is duplicated and the total is the one of
+        the document. A note on the bill lists what was removed."""
         amls = move.invoice_line_ids.filtered(
             lambda line: line.purchase_line_id
             and line.fiscal_document_line_id.document_id != fiscal_document
         )
         if not amls:
-            return reused
-        pols = amls.purchase_line_id
-        remaining = {pol.id: 1.0 for pol in pols}  # already on this bill
-        write_vals = []
-        dummy_lines = self.env["l10n_br_fiscal.document.line"]
-        for fiscal_line in fiscal_document.fiscal_line_ids:
-            pol = self._po_link_match(fiscal_line, pols, remaining)
-            if not pol:
-                continue
-            aml = amls.filtered(lambda line, pol=pol: line.purchase_line_id == pol)[:1]
-            if not aml:
-                continue
-            amls -= aml
-            remaining[pol.id] = 0.0
-            vals = self._po_link_values(
-                fiscal_line.uot_id,
-                fiscal_line.quantity,
-                fiscal_line.price_unit,
-                pol,
+            return
+        note = [
+            self.env._(
+                "Lines created from purchase orders replaced by the imported "
+                "fiscal document %s:",
+                fiscal_document.document_number or fiscal_document.display_name,
             )
-            amt_inc, amt_not_inc = self._get_import_tax_amounts(fiscal_line)
-            vals.update(
-                {
-                    "fiscal_document_line_id": fiscal_line.id,
-                    "amount_tax_included": amt_inc,
-                    "amount_tax_not_included": amt_not_inc,
-                }
+        ]
+        for line in amls:
+            note.append(
+                f"{line.purchase_line_id.order_id.name}: "
+                f"{line.name or line.product_id.display_name} x {line.quantity}"
             )
-            if aml.fiscal_document_line_id != fiscal_line:
-                dummy_lines |= aml.fiscal_document_line_id
-            write_vals.append((1, aml.id, vals))
-            reused |= fiscal_line
-        if write_vals:
-            move.with_context(check_move_validity=False).write(
-                {"invoice_line_ids": write_vals}
-            )
-            dummy_lines.exists().unlink()
-            self._po_link_set_origin(move)
-        return reused
+        stale_fiscal_lines = amls.fiscal_document_line_id
+        move.with_context(check_move_validity=False).write(
+            {"invoice_line_ids": [(2, line.id) for line in amls]}
+        )
+        stale_fiscal_lines.exists().unlink()
+        move.message_post(body="<br/>".join(note))
 
     @api.model
-    def _po_link_new_lines(self, move, fiscal_document, skip_fiscal_lines):
-        """Link the invoice lines just created from the imported fiscal
-        document to open purchase order lines of the same vendor."""
-        fiscal_lines = fiscal_document.fiscal_line_ids - skip_fiscal_lines
+    def _po_link_new_lines(self, move, fiscal_document):
+        """Link the invoice lines created from the imported fiscal document to
+        open purchase order lines of the same vendor."""
         amls = move.invoice_line_ids.filtered(
             lambda line: not line.purchase_line_id
-            and line.fiscal_document_line_id in fiscal_lines
+            and line.fiscal_document_line_id.document_id == fiscal_document
+            and line.fiscal_document_line_id.product_id
         )
         if not amls:
             return
-        candidates = (
-            self.env["purchase.order.line"]
-            .sudo()
-            .search(
-                self._po_link_candidates_domain(
-                    fiscal_document.partner_id, move.company_id
-                )
-            )
+        candidates, remaining = self._po_link_candidates(
+            fiscal_document.partner_id,
+            move.company_id,
+            amls.fiscal_document_line_id.product_id,
         )
         if not candidates:
             return
-        remaining = self._po_link_remaining(candidates)
-        write_vals = []
+        linked = False
         for aml in amls:
-            fiscal_line = aml.fiscal_document_line_id
-            pol = self._po_link_match(fiscal_line, candidates, remaining)
+            pol = self._po_link_match(aml, candidates, remaining)
             if not pol:
                 continue
-            vals = self._po_link_values(
-                aml.product_uom_id, aml.quantity, aml.price_unit, pol
-            )
-            remaining[pol.id] -= vals["quantity"]
-            write_vals.append((1, aml.id, vals))
-        if write_vals:
-            move.with_context(check_move_validity=False).write(
-                {"invoice_line_ids": write_vals}
-            )
+            remaining[pol.id] -= self._po_link_required_quantity(aml, pol)
+            aml.with_context(check_move_validity=False).purchase_line_id = pol
+            linked = True
+        if linked:
             self._po_link_set_origin(move)
 
     @api.model
@@ -228,14 +195,10 @@ class AccountMove(models.Model):
             return super().import_fiscal_document(
                 fiscal_document, move_id=move_id, move_type=move_type
             )
-        reused = self.env["l10n_br_fiscal.document.line"]
-        model = self
         if move_id:
-            reused = self._po_link_reuse_existing_lines(move, fiscal_document)
-            if reused:
-                model = self.with_context(po_link_reused_fiscal_line_ids=reused.ids)
-        result = super(AccountMove, model).import_fiscal_document(
+            self._po_link_drop_po_lines(move, fiscal_document)
+        result = super().import_fiscal_document(
             fiscal_document, move_id=move_id, move_type=move_type
         )
-        self._po_link_new_lines(self.browse(result.id), fiscal_document, reused)
+        self._po_link_new_lines(self.browse(result.id), fiscal_document)
         return result

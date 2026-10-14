@@ -1,6 +1,9 @@
 # Copyright 2026 KMEE INFORMATICA LTDA
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+import base64
+import os
+
 from odoo import fields
 from odoo.tests.common import tagged
 
@@ -20,6 +23,7 @@ class TestImportFiscalDocumentPOLink(AccountMoveBRCommon):
         cls.fo_compras_line = cls.env.ref("l10n_br_fiscal.fo_compras_compras")
         cls.uom_unit = cls.env.ref("uom.product_uom_unit")
         cls.uom_kg = cls.env.ref("uom.product_uom_kgm")
+        cls.uom_dozen = cls.env.ref("uom.product_uom_dozen")
         cls.number = 6000
         if "l10n_latam.document.type" in cls.env:
             cls._mirror_latam_document_type()
@@ -43,6 +47,8 @@ class TestImportFiscalDocumentPOLink(AccountMoveBRCommon):
             )
 
     def _create_po(self, products_qty, partner_order=None, name_ref=None):
+        for item in products_qty:
+            item[0].purchase_method = "purchase"
         """products_qty: list of (product, qty[, partner_order_line])."""
         lines = []
         for item in products_qty:
@@ -68,8 +74,6 @@ class TestImportFiscalDocumentPOLink(AccountMoveBRCommon):
             }
         )
         po.button_confirm()
-        # bill all ordered quantities, not only the received ones
-        po.order_line.product_id.product_tmpl_id.purchase_method = "purchase"
         return po
 
     def _create_fiscal_document(self, lines):
@@ -175,28 +179,94 @@ class TestImportFiscalDocumentPOLink(AccountMoveBRCommon):
         self.assertEqual(line.product_uom_id, self.uom_kg)
         self.assertEqual(move.amount_total, document.fiscal_amount_total)
 
-    def test_po_line_uom_is_kept_over_fiscal_uom(self):
+    def test_fiscal_data_is_not_changed_by_the_link(self):
+        """Only purchase_line_id is written: the quantity, price and UoM of the
+        document are kept and the PO line gets its quantity converted by the
+        standard qty_invoiced computation (same UoM category)."""
+        po = self._create_po([(self.product_a, 24)])
+        document = self._create_fiscal_document(
+            [
+                {
+                    "product": self.product_a,
+                    "qty": 2,
+                    "price": 456.0,
+                    "uom": self.uom_dozen,
+                }
+            ]
+        )
+        move = self._import(document)
+        line = move.invoice_line_ids
+        self.assertEqual(line.purchase_line_id, po.order_line)
+        self.assertEqual(line.product_uom_id, self.uom_dozen)
+        self.assertEqual(line.quantity, 2)
+        self.assertEqual(line.price_unit, 456.0)
+        fiscal_line = document.fiscal_line_ids
+        self.assertEqual(fiscal_line.quantity, 2)
+        self.assertEqual(fiscal_line.price_unit, 456.0)
+        self.assertEqual(po.order_line.qty_invoiced, 24)
+        self.assertEqual(move.amount_total, document.fiscal_amount_total)
+
+    def test_uom_category_mismatch_is_not_linked(self):
         po = self._create_po([(self.product_a, 10)])
         document = self._create_fiscal_document(
             [{"product": self.product_a, "qty": 10, "uom": self.uom_kg}]
         )
         move = self._import(document)
         line = move.invoice_line_ids
-        self.assertEqual(line.purchase_line_id, po.order_line)
-        self.assertEqual(line.product_uom_id, self.uom_unit)
-        self.assertEqual(
-            line.product_uom_id.category_id,
-            po.order_line.product_uom.category_id,
+        self.assertFalse(line.purchase_line_id)
+        self.assertEqual(line.product_uom_id, self.uom_kg)
+        self.assertEqual(po.order_line.qty_invoiced, 0)
+
+    def test_link_before_receipt_with_receive_policy(self):
+        po = self._create_po([(self.product_a, 10)])
+        self.product_a.purchase_method = "receive"
+        self.assertEqual(po.order_line.qty_to_invoice, 0)
+        move = self._import(
+            self._create_fiscal_document([{"product": self.product_a, "qty": 10}])
         )
+        self.assertEqual(move.invoice_line_ids.purchase_line_id, po.order_line)
         self.assertEqual(po.order_line.qty_invoiced, 10)
-        self.assertEqual(move.amount_total, document.fiscal_amount_total)
+
+    def test_only_a_purchase_line_with_enough_quantity_is_linked(self):
+        po1 = self._create_po([(self.product_a, 30)])
+        po2 = self._create_po([(self.product_a, 100)])
+        po2.date_order = fields.Datetime.add(po1.date_order, days=3)
+        move = self._import(
+            self._create_fiscal_document([{"product": self.product_a, "qty": 100}])
+        )
+        self.assertEqual(move.invoice_line_ids.purchase_line_id, po2.order_line)
+        self.assertEqual(po1.order_line.qty_invoiced, 0)
+        # nothing left with enough quantity: no link, no split
+        move2 = self._import(
+            self._create_fiscal_document([{"product": self.product_a, "qty": 40}])
+        )
+        self.assertFalse(move2.invoice_line_ids.purchase_line_id)
+
+    def test_xped_match_never_falls_back_to_another_order(self):
+        po1 = self._create_po([(self.product_a, 5)], partner_order="PED-A")
+        po2 = self._create_po([(self.product_a, 50)])
+        document = self._create_fiscal_document(
+            [{"product": self.product_a, "qty": 20, "xped": "PED-A"}]
+        )
+        move = self._import(document)
+        self.assertFalse(move.invoice_line_ids.purchase_line_id)
+        self.assertEqual(po1.order_line.qty_invoiced, 0)
+        self.assertEqual(po2.order_line.qty_invoiced, 0)
+
+    def test_unknown_xped_falls_back_to_product(self):
+        po = self._create_po([(self.product_a, 5)])
+        document = self._create_fiscal_document(
+            [{"product": self.product_a, "qty": 5, "xped": "NOT-A-PO"}]
+        )
+        move = self._import(document)
+        self.assertEqual(move.invoice_line_ids.purchase_line_id, po.order_line)
 
     def test_import_into_bill_from_po_has_no_duplicates(self):
-        po = self._create_po([(self.product_a, 10)])
+        po = self._create_po([(self.product_a, 10), (self.product_b, 4)])
         po.action_create_invoice()
         bill = po.invoice_ids
-        self.assertEqual(len(bill.invoice_line_ids), 1)
-        pol = po.order_line
+        self.assertEqual(len(bill.invoice_line_ids), 2)
+        pol = po.order_line.filtered(lambda line: line.product_id == self.product_a)
         document = self._create_fiscal_document(
             [{"product": self.product_a, "qty": 10}]
         )
@@ -204,13 +274,15 @@ class TestImportFiscalDocumentPOLink(AccountMoveBRCommon):
         move = self._import(document, move_id=bill.id)
         self.assertEqual(move, bill)
         self.assertEqual(len(move.invoice_line_ids), 1)
-        self.assertEqual(move.invoice_line_ids.purchase_line_id, pol)
-        self.assertEqual(
-            move.invoice_line_ids.fiscal_document_line_id.document_id, document
-        )
+        line = move.invoice_line_ids
+        self.assertEqual(line.purchase_line_id, pol)
+        self.assertEqual(line.fiscal_document_line_id.document_id, document)
         self.assertEqual(pol.qty_invoiced, 10)
         self.assertEqual(move.amount_total, document.fiscal_amount_total)
         self.assertEqual(po.invoice_ids, bill)
+        # the PO line that is not in the document is released
+        self.assertEqual((po.order_line - pol).qty_invoiced, 0)
+        self.assertIn(po.name, move.message_ids[0].body)
 
     def test_import_into_bill_from_po_with_latam_documents(self):
         """The LATAM document number must not block the import into a bill
@@ -220,3 +292,76 @@ class TestImportFiscalDocumentPOLink(AccountMoveBRCommon):
         journal = self.company_data["default_journal_purchase"]
         journal.l10n_latam_use_documents = True
         self.test_import_into_bill_from_po_has_no_duplicates()
+
+    def test_import_a_real_nfe_xml_through_the_wizard(self):
+        if "nfe40_dup" not in self.env["l10n_br_fiscal.document"]._fields:
+            self.skipTest("l10n_br_nfe not installed")
+        from odoo.addons import l10n_br_nfe
+
+        path = os.path.join(
+            l10n_br_nfe.__path__[0],
+            "tests",
+            "nfe",
+            "v4_00",
+            "leiauteNFe",
+            "NFe35200681583054000129550010000000012760018057-nf-e.xml",
+        )
+        with open(path, "rb") as xml_file:
+            xml = xml_file.read()
+        wizard = (
+            self.env["l10n_br_fiscal.document.import.wizard"]
+            .sudo()
+            .create(
+                {
+                    "company_id": self.company_data["company"].id,
+                    "file": base64.b64encode(xml),
+                }
+            )
+        )
+        wizard._onchange_file()
+        product_1 = self.env["product.product"].search(
+            [("default_code", "=", "E-COM07")], limit=1
+        )
+        product_2 = self.env["product.product"].search(
+            [("default_code", "=", "FURN_8855")], limit=1
+        )
+        self.assertTrue(product_1 and product_2)
+        po = self.env["purchase.order"].create(
+            {
+                "partner_id": wizard.issuer_partner_id.id,
+                "company_id": self.company_data["company"].id,
+                "order_line": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": prod.id,
+                            "product_qty": 1,
+                            "price_unit": 1.0,
+                            "name": prod.name,
+                            "product_uom": prod.uom_id.id,
+                        },
+                    )
+                    for prod in (product_1, product_2)
+                ],
+            }
+        )
+        po.button_confirm()
+        wizard.action_import_and_open_move()
+        move = self.env["account.move"].search(
+            [("fiscal_document_id", "=", wizard.document_id.id)]
+        )
+        self.assertEqual(len(move), 1)
+        self.assertEqual(move.invoice_line_ids.purchase_line_id, po.order_line)
+        self.assertAlmostEqual(move.amount_total, 4147.25, places=2)
+        for line in move.invoice_line_ids:
+            self.assertEqual(line.fiscal_document_line_id.fiscal_quantity, 1.0)
+            self.assertEqual(line.fiscal_document_line_id.uot_id, self.uom_unit)
+        by_code = {
+            line.product_id.default_code: line.fiscal_document_line_id
+            for line in move.invoice_line_ids
+        }
+        self.assertAlmostEqual(by_code["E-COM07"].price_unit, 320.0)
+        self.assertAlmostEqual(by_code["FURN_8855"].price_unit, 3645.0)
+        self.assertAlmostEqual(by_code["FURN_8855"].ipi_value, 182.25)
+        self.assertAlmostEqual(by_code["FURN_8855"].icms_value, 459.27)
