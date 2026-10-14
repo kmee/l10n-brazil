@@ -1101,6 +1101,31 @@ class AccountMove(models.Model):
             self.import_fiscal_document(move.fiscal_document_id, move_id=move.id)
 
     @api.model
+    def _get_fiscal_lines_to_import(self, fiscal_document, move):
+        """Hook: fiscal document lines that must be appended as new invoice
+        lines by import_fiscal_document. Default: all of them."""
+        return fiscal_document.fiscal_line_ids
+
+    @api.model
+    def _get_import_tax_amounts(self, line):
+        """Return the (included, not included) tax amounts of a fiscal line
+        in the invoice line price, per the SEFAZ rule about what vProd holds."""
+        amt_inc = (
+            (line.icms_value or 0.0)
+            + (line.pis_value or 0.0)
+            + (line.cofins_value or 0.0)
+            + (line.issqn_value or 0.0)
+            + (line.icmsfcp_value or 0.0)
+        )
+        amt_not_inc = (
+            (line.icmsst_value or 0.0)
+            + (line.ipi_value or 0.0)
+            + (line.ii_value or 0.0)
+            + (line.icmsfcpst_value or 0.0)
+        )
+        return amt_inc, amt_not_inc
+
+    @api.model
     def import_fiscal_document(
         self,
         fiscal_document,
@@ -1154,9 +1179,30 @@ class AccountMove(models.Model):
                     move_form.l10n_latam_document_number = (
                         fiscal_document.document_number
                     )
+        elif (
+            "l10n_latam.document.type" in self.env
+            and move_form.l10n_latam_use_documents
+            and move_form.l10n_latam_manual_document_number
+            and not move_form.l10n_latam_document_number
+        ):
+            # Existing draft bill that already has a fiscal document (e.g. a
+            # bill created from a purchase order): the LATAM document number
+            # is required to save the form, so fill it from the imported one.
+            if not move_form.l10n_latam_document_type_id:
+                latam_doc_type = self._find_latam_document_type(
+                    fiscal_document.document_type_id, fiscal_document.company_id
+                )
+                if latam_doc_type:
+                    move_form.l10n_latam_document_type_id = latam_doc_type
+            move_form.l10n_latam_document_number = fiscal_document.document_number
 
+        # Lines already on the bill before the import (they must not be
+        # mistaken for the lines created below).
+        existing_lines = (
+            move.invoice_line_ids if move_id else self.env["account.move.line"]
+        )
         unit_and_prices = []
-        for line in fiscal_document.fiscal_line_ids:
+        for line in self._get_fiscal_lines_to_import(fiscal_document, move):
             with move_form.invoice_line_ids.new() as line_form:
                 line_form.cfop_id = line.cfop_id
                 line_form.fiscal_operation_id = (
@@ -1166,20 +1212,7 @@ class AccountMove(models.Model):
                 line_form.quantity = line.quantity
                 line_form.fiscal_document_line_id = line
 
-                # SEFAZ Standard: What is included in vProd?
-                amt_inc = (
-                    (line.icms_value or 0.0)
-                    + (line.pis_value or 0.0)
-                    + (line.cofins_value or 0.0)
-                    + (line.issqn_value or 0.0)
-                    + (line.icmsfcp_value or 0.0)
-                )
-                amt_not_inc = (
-                    (line.icmsst_value or 0.0)
-                    + (line.ipi_value or 0.0)
-                    + (line.ii_value or 0.0)
-                    + (line.icmsfcpst_value or 0.0)
-                )
+                amt_inc, amt_not_inc = self._get_import_tax_amounts(line)
 
                 unit_and_prices.append(
                     {
@@ -1197,9 +1230,10 @@ class AccountMove(models.Model):
         invoice_line_write_vals = []
         dummy_lines_to_unlink = self.env["l10n_br_fiscal.document.line"]
 
+        new_lines = move.invoice_line_ids - existing_lines
         for index, item in enumerate(unit_and_prices):
-            if index < len(move.invoice_line_ids):
-                aml = move.invoice_line_ids[index]
+            if index < len(new_lines):
+                aml = new_lines[index]
                 dummy_fiscal_line = aml.fiscal_document_line_id
 
                 if dummy_fiscal_line and dummy_fiscal_line.id != item["fiscal_line_id"]:
