@@ -2,4 +2,5 @@
 
 from . import test_l10n_br_purchase
 from . import test_l10n_br_purchase_sn
+from . import test_import_fiscal_document_po_link
 from . import test_purchase_edition
