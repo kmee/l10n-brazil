@@ -61,6 +61,18 @@ class TestCNABStructureHR(base_tests.TestCNABStructure):
         line._compute_cnab_payment_way_id()
         self.assertEqual(line.service_type, SVC_SUPPLIER)
 
+    def test_hr_employee_with_pix_key_rule(self):
+        """hr employee with a PIX key goes to the PIX way; without, to bank way."""
+        self._create_pix_employee_rules()
+        self._create_hr_employee(self.partner_a)
+        pix = self._create_pix_key("email", "fin@fornecedor.com.br")
+        other = self._create_partner_bank(self.bank_001)
+        _order, line = self._create_salary_line_by_rule(other, pix)
+        self.assertEqual(line.cnab_payment_way_id, self.way_45)
+        self.assertEqual(line.service_type, SVC_SALARY)
+        _order, line = self._create_salary_line_by_rule(other)
+        self.assertEqual(line.cnab_payment_way_id, self.way_01)
+
     def test_partner_without_employee_is_supplier(self):
         invoice = self._create_test_invoice()
         order = self._create_payment_order(invoice)

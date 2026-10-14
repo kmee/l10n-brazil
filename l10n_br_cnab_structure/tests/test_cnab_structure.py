@@ -1229,3 +1229,176 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         self.assertEqual(order_2.cnab_structure_id, self.cnab_structure_bb_240)
         self.assertEqual(order_1.cnab_processor, "oca_processor")
         self.assertEqual(order_2.cnab_processor, "oca_processor")
+
+    # ------------------------------------------------------------------
+    # PIX key verbatim formatting and match_pix_key rule criterion
+    # ------------------------------------------------------------------
+    def test_pix_key_field_is_verbatim(self):
+        """The PIX key field keeps the exact key, left-aligned and padded."""
+        for xmlid in (
+            "cnab_itau_240_pagamentos_segmento_b_128_227",
+            "cnab_santander_240_pagamentos_segmento_b_128_226",
+        ):
+            field = self.env.ref(f"l10n_br_cnab_structure.{xmlid}")
+            self.assertEqual(field.type, "raw")
+            self.assertEqual(field.content_source_field, "partner_pix_id.key")
+        field = self.env.ref(
+            "l10n_br_cnab_structure.cnab_itau_240_pagamentos_segmento_b_128_227"
+        )
+        for key in (
+            "fin@fornecedor.com.br",
+            "123e4567-e89b-12d3-a456-426614174000",
+            "+5511987654321",
+            "12345678909",
+        ):
+            result = field.format(field.size, field.type, key)
+            self.assertEqual(result, key.ljust(field.size))
+            self.assertEqual(len(result), field.size)
+
+    def test_alpha_field_format_unchanged(self):
+        """Regular alphanumeric fields still strip symbols and uppercase."""
+        field = self.env.ref(
+            "l10n_br_cnab_structure.cnab_itau_240_pagamentos_segmento_b_15_16"
+        )
+        self.assertEqual(
+            field.format(30, "alpha", "fin@fornecedor.com.br"),
+            "FINFORNECEDORCOMBR".ljust(30),
+        )
+
+    def _create_pix_key(self, key_type, key):
+        return self.res_partner_pix_model.create(
+            {"partner_id": self.partner_a.id, "key_type": key_type, "key": key}
+        )
+
+    def _create_salary_line_by_rule(self, partner_bank, pix_key=None):
+        """Employee line on a non-PIX mode: way and service come from rules."""
+        mode = self._create_itau_salary_mode()
+        order = self.payment_order_model.create(
+            {
+                "payment_mode_id": mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": self.bank_journal_itau.id,
+            }
+        )
+        vals = {
+            "order_id": order.id,
+            "partner_id": self.partner_a.id,
+            "partner_bank_id": partner_bank.id,
+            "amount_currency": 100.0,
+            "communication": "SALARY TEST",
+        }
+        if pix_key:
+            vals["partner_pix_id"] = pix_key.id
+        return order, self.payment_line_model.create(vals)
+
+    def _create_pix_employee_rules(self, with_key=True, without_key=True):
+        self._create_itau_salary_rules()
+        self.way_45 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_45")
+        rule_model = self.env["l10n_br_cnab.payment.rule"]
+        if with_key:
+            rule_model.create(
+                {
+                    "cnab_structure_id": self.cnab_structure_itau_240.id,
+                    "sequence": 5,
+                    "match_bank_type": "any",
+                    "match_partner_type": "employee",
+                    "match_pix_key": "with_key",
+                    "payment_way_id": self.way_45.id,
+                    "service_type": SVC_SALARY,
+                }
+            )
+        if without_key:
+            rule_model.create(
+                {
+                    "cnab_structure_id": self.cnab_structure_itau_240.id,
+                    "sequence": 6,
+                    "match_bank_type": "any",
+                    "match_partner_type": "employee",
+                    "match_pix_key": "without_key",
+                    "payment_way_id": self.way_01.id,
+                    "service_type": SVC_SALARY,
+                }
+            )
+
+    def test_rule_match_pix_key_default_is_any(self):
+        """Existing rules keep the old behaviour: any PIX key condition."""
+        self._create_itau_salary_rules()
+        rules = self.env["l10n_br_cnab.payment.rule"].search(
+            [("cnab_structure_id", "=", self.cnab_structure_itau_240.id)]
+        )
+        self.assertTrue(rules)
+        self.assertEqual(set(rules.mapped("match_pix_key")), {"any"})
+        self.partner_a.employee = True
+        pix = self._create_pix_key("email", "fin@fornecedor.com.br")
+        same = self._create_partner_bank(self.bank_341)
+        _order, line = self._create_salary_line_by_rule(same, pix)
+        self.assertEqual(line._get_matching_rule().payment_way_id, self.way_01)
+        _order, line = self._create_salary_line_by_rule(same)
+        self.assertEqual(line._get_matching_rule().payment_way_id, self.way_01)
+
+    def test_rule_with_key_and_without_key_employee(self):
+        """Employee with key goes to PIX on any bank, without key to bank way."""
+        self._create_pix_employee_rules(without_key=False)
+        self.partner_a.employee = True
+        pix = self._create_pix_key("email", "fin@fornecedor.com.br")
+        same = self._create_partner_bank(self.bank_341)
+        other = self._create_partner_bank(self.bank_001)
+        for bank in (same, other):
+            _order, line = self._create_salary_line_by_rule(bank, pix)
+            self.assertEqual(line.cnab_payment_way_id, self.way_45)
+            self.assertEqual(line.service_type, SVC_SALARY)
+        # Without key the with_key rule is skipped: falls to the bank rules
+        _order, line = self._create_salary_line_by_rule(same)
+        self.assertEqual(line.cnab_payment_way_id, self.way_01)
+        _order, line = self._create_salary_line_by_rule(other)
+        self.assertEqual(line.cnab_payment_way_id, self.way_41)
+        # A supplier with key does not match the employee rule
+        self.partner_a.employee = False
+        _order, line = self._create_salary_line_by_rule(same, pix)
+        self.assertEqual(line.cnab_payment_way_id, self.way_01)
+
+    def test_rule_without_key_ordering(self):
+        """without_key rule wins over later rules only when there is no key."""
+        self._create_pix_employee_rules()
+        self.partner_a.employee = True
+        pix = self._create_pix_key("email", "fin@fornecedor.com.br")
+        other = self._create_partner_bank(self.bank_001)
+        _order, line = self._create_salary_line_by_rule(other)
+        self.assertEqual(line._get_matching_rule().match_pix_key, "without_key")
+        self.assertEqual(line.cnab_payment_way_id, self.way_01)
+        line.partner_pix_id = pix
+        self.assertEqual(line.cnab_payment_way_id, self.way_45)
+
+    def test_pix_way_fills_pix_types_on_non_pix_mode(self):
+        """A PIX way chosen by rule fills key type and transfer type."""
+        self._create_pix_employee_rules()
+        self.partner_a.employee = True
+        pix = self._create_pix_key("email", "fin@fornecedor.com.br")
+        other = self._create_partner_bank(self.bank_001)
+        order, line = self._create_salary_line_by_rule(other, pix)
+        self.assertNotEqual(order.payment_mode_id.payment_mode_domain, "pix_transfer")
+        self.assertEqual(line.cnab_pix_type_id.code, "02")
+        self.assertEqual(line.cnab_pix_transfer_type_id.code, "04")
+        _order, line = self._create_salary_line_by_rule(other)
+        self.assertFalse(line.cnab_pix_transfer_type_id)
+
+    def test_itau_salary_pix_email_segment_a_b(self):
+        """Employee salary by PIX e-mail key: forma 45, service 30, key intact."""
+        self._create_pix_employee_rules()
+        self.partner_a.employee = True
+        pix = self._create_pix_key("email", "fin@fornecedor.com.br")
+        other = self._create_partner_bank(self.bank_001)
+        order, _line = self._create_salary_line_by_rule(other, pix)
+        order.draft2open()
+        action = order.open2generated()
+        data = base64.b64decode(self.attachment_model.browse(action["res_id"]).datas)
+        lines = data.decode().splitlines()
+        header = [x for x in lines if len(x) > 8 and x[7] == "1"][0]
+        seg_a = [x for x in lines if len(x) > 13 and x[7] == "3" and x[13] == "A"][0]
+        seg_b = [x for x in lines if len(x) > 13 and x[7] == "3" and x[13] == "B"][0]
+        self.assertEqual(header[9:11], SVC_SALARY)
+        self.assertEqual(header[11:13], "45")
+        self.assertEqual(seg_a[112:114], "04")
+        self.assertEqual(seg_b[14:16], "02")
+        self.assertEqual(seg_b[127:227], "fin@fornecedor.com.br".ljust(100))
