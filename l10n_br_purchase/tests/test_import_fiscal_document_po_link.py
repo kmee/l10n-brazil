@@ -5,6 +5,7 @@ import base64
 import os
 
 from odoo import fields
+from odoo.exceptions import UserError
 from odoo.tests.common import tagged
 
 from odoo.addons.l10n_br_account.tests.common import AccountMoveBRCommon
@@ -261,37 +262,46 @@ class TestImportFiscalDocumentPOLink(AccountMoveBRCommon):
         move = self._import(document)
         self.assertEqual(move.invoice_line_ids.purchase_line_id, po.order_line)
 
-    def test_import_into_bill_from_po_has_no_duplicates(self):
+    def test_import_into_bill_from_po_is_refused_and_changes_nothing(self):
+        analytic = self._create_analytic_account("Bill from PO")
         po = self._create_po([(self.product_a, 10), (self.product_b, 4)])
+        po.order_line.analytic_distribution = {str(analytic.id): 100.0}
         po.action_create_invoice()
         bill = po.invoice_ids
         self.assertEqual(len(bill.invoice_line_ids), 2)
-        pol = po.order_line.filtered(lambda line: line.product_id == self.product_a)
+        before = {
+            line.id: (
+                line.product_id,
+                line.quantity,
+                line.price_unit,
+                line.purchase_line_id,
+                line.analytic_distribution,
+            )
+            for line in bill.invoice_line_ids
+        }
+        total = bill.amount_total
         document = self._create_fiscal_document(
             [{"product": self.product_a, "qty": 10}]
         )
-        bill.fiscal_document_id = document
-        move = self._import(document, move_id=bill.id)
-        self.assertEqual(move, bill)
-        self.assertEqual(len(move.invoice_line_ids), 1)
-        line = move.invoice_line_ids
-        self.assertEqual(line.purchase_line_id, pol)
-        self.assertEqual(line.fiscal_document_line_id.document_id, document)
-        self.assertEqual(pol.qty_invoiced, 10)
-        self.assertEqual(move.amount_total, document.fiscal_amount_total)
-        self.assertEqual(po.invoice_ids, bill)
-        # the PO line that is not in the document is released
-        self.assertEqual((po.order_line - pol).qty_invoiced, 0)
-        self.assertIn(po.name, move.message_ids[0].body)
-
-    def test_import_into_bill_from_po_with_latam_documents(self):
-        """The LATAM document number must not block the import into a bill
-        that already has a fiscal document."""
-        if "l10n_latam.document.type" not in self.env:
-            self.skipTest("l10n_latam_invoice_document not installed")
-        journal = self.company_data["default_journal_purchase"]
-        journal.l10n_latam_use_documents = True
-        self.test_import_into_bill_from_po_has_no_duplicates()
+        with self.assertRaisesRegex(UserError, "already has lines from purchase"):
+            self._import(document, move_id=bill.id)
+        self.assertEqual(bill.amount_total, total)
+        self.assertEqual(len(bill.invoice_line_ids), 2)
+        after = {
+            line.id: (
+                line.product_id,
+                line.quantity,
+                line.price_unit,
+                line.purchase_line_id,
+                line.analytic_distribution,
+            )
+            for line in bill.invoice_line_ids
+        }
+        self.assertEqual(before, after)
+        self.assertTrue(
+            all(line.analytic_distribution for line in bill.invoice_line_ids)
+        )
+        self.assertEqual(po.order_line[0].qty_invoiced, 10)
 
     def test_import_a_real_nfe_xml_through_the_wizard(self):
         if "nfe40_dup" not in self.env["l10n_br_fiscal.document"]._fields:

@@ -14,6 +14,12 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: l10n_br_purchase
+#. odoo-python
+#: code:addons/l10n_br_purchase/models/account_move.py:0
+msgid "This bill already has lines from purchase orders. Delete this draft bill and import the NF-e with \"Import Account Move\": the bill lines will be linked to the purchase order automatically."
+msgstr ""
+
+#. module: l10n_br_purchase
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase.l10n_br_purchase_order_form
 msgid "Accounting"
 msgstr ""
