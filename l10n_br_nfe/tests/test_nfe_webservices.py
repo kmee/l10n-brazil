@@ -7,6 +7,7 @@ import logging
 from types import SimpleNamespace
 from unittest import mock
 
+from odoo.exceptions import UserError
 from odoo.fields import Datetime
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
@@ -14,6 +15,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     SITUACAO_EDOC_AUTORIZADA,
     SITUACAO_EDOC_CANCELADA,
     SITUACAO_EDOC_ENVIADA,
+    SITUACAO_EDOC_INUTILIZADA,
 )
 from odoo.addons.l10n_br_nfe.models.document import NFe
 
@@ -161,3 +163,106 @@ class TestNFeWebServices(TestNFeExport):
             with mock.patch.object(event_model, "set_done") as set_done:
                 nfe._nfe_save_protocol(inf_prot)
             self.assertEqual(set_done.call_args.kwargs["protocol_date"], expected)
+
+    # ---- inutilizacao of numbers that already exist as company documents ----
+
+    def _set_authorization_protocol(self, nfe, protocol):
+        """Make the document look (un)authorized at SEFAZ."""
+        if not protocol:
+            nfe.authorization_event_id = False
+            return
+        event = self.env["l10n_br_fiscal.event"].create_event_save_xml(
+            company_id=nfe.company_id,
+            environment="2",
+            event_type="0",
+            xml_file="<xml/>",
+            document_id=nfe,
+        )
+        event.protocol_number = protocol
+        nfe.authorization_event_id = event
+
+    def _create_invalidate(self, number_start, number_end=None):
+        nfe = self.nfe_list[0]["nfe"]
+        return self.env["l10n_br_fiscal.invalidate.number"].create(
+            {
+                "company_id": nfe.company_id.id,
+                "document_type_id": nfe.document_type_id.id,
+                "document_serie_id": nfe.document_serie_id.id,
+                "number_start": number_start,
+                "number_end": number_end or number_start,
+                "justification": "Numero nunca autorizado na SEFAZ.",
+            }
+        )
+
+    def _inutilizar_and_count_docs(self, invalidate, nfe):
+        domain = [
+            ("company_id", "=", nfe.company_id.id),
+            ("document_serie_id", "=", nfe.document_serie_id.id),
+            ("document_number", "=", nfe.document_number),
+        ]
+        invalidate.action_invalidate()
+        return self.env["l10n_br_fiscal.document"].search(domain)
+
+    @nfe_mock({"nfeInutilizacaoNF": "retInutNFe/nfe_inutilizacao.xml"})
+    def test_inutilizar_existing_cancelled_without_protocol(self):
+        nfe = self.nfe_list[0]["nfe"]
+        nfe.write({"state_edoc": SITUACAO_EDOC_CANCELADA})
+        self._set_authorization_protocol(nfe, False)
+        number = int(nfe.document_number)
+        invalidate = self._create_invalidate(number)
+        docs = self._inutilizar_and_count_docs(invalidate, nfe)
+        self.assertEqual(invalidate.state, "done")
+        self.assertEqual(docs, nfe)
+        self.assertEqual(nfe.state_edoc, SITUACAO_EDOC_INUTILIZADA)
+        self.assertEqual(nfe.invalidate_event_id, invalidate.authorization_event_id)
+
+    @nfe_mock({"nfeInutilizacaoNF": "retInutNFe/nfe_inutilizacao.xml"})
+    def test_inutilizar_existing_enviada(self):
+        nfe = self.nfe_list[0]["nfe"]
+        nfe.write({"state_edoc": SITUACAO_EDOC_ENVIADA})
+        self._set_authorization_protocol(nfe, False)
+        invalidate = self._create_invalidate(int(nfe.document_number))
+        docs = self._inutilizar_and_count_docs(invalidate, nfe)
+        self.assertEqual(docs, nfe)
+        self.assertEqual(nfe.state_edoc, SITUACAO_EDOC_INUTILIZADA)
+
+    def test_inutilizar_existing_authorized_blocked_before_sefaz(self):
+        nfe = self.nfe_list[0]["nfe"]
+        nfe.write({"state_edoc": SITUACAO_EDOC_AUTORIZADA})
+        self._set_authorization_protocol(nfe, "135230000000002")
+        invalidate = self._create_invalidate(int(nfe.document_number))
+        with (
+            mock.patch.object(type(invalidate), "_edoc_processor") as processor,
+            self.assertRaises(UserError),
+        ):
+            invalidate.action_invalidate()
+        processor.assert_not_called()
+        self.assertEqual(invalidate.state, "draft")
+
+    def test_inutilizar_cancelled_with_protocol_blocked_before_sefaz(self):
+        nfe = self.nfe_list[0]["nfe"]
+        nfe.write({"state_edoc": SITUACAO_EDOC_CANCELADA})
+        self._set_authorization_protocol(nfe, "135230000000001")
+        invalidate = self._create_invalidate(int(nfe.document_number))
+        with (
+            mock.patch.object(type(invalidate), "_edoc_processor") as processor,
+            self.assertRaises(UserError),
+        ):
+            invalidate.action_invalidate()
+        processor.assert_not_called()
+
+    @nfe_mock({"nfeInutilizacaoNF": "retInutNFe/nfe_inutilizacao.xml"})
+    def test_inutilizar_number_not_existing(self):
+        nfe = self.nfe_list[0]["nfe"]
+        number = int(nfe.document_number) + 5000
+        invalidate = self._create_invalidate(number)
+        invalidate.action_invalidate()
+        created = self.env["l10n_br_fiscal.document"].search(
+            [
+                ("document_serie_id", "=", nfe.document_serie_id.id),
+                ("document_number", "=", str(number)),
+            ]
+        )
+        self.assertEqual(len(created), 1)
+        self.assertEqual(created.state_edoc, SITUACAO_EDOC_INUTILIZADA)
+        self.assertEqual(invalidate.state, "done")

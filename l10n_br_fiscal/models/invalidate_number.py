@@ -5,7 +5,12 @@
 from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
-from ..constants.fiscal import SITUACAO_EDOC_INUTILIZADA
+from ..constants.fiscal import (
+    SITUACAO_EDOC_AUTORIZADA,
+    SITUACAO_EDOC_DENEGADA,
+    SITUACAO_EDOC_INUTILIZADA,
+    SITUACAO_EDOC_REJEITADA,
+)
 
 
 class InvalidateNumber(models.Model):
@@ -115,6 +120,7 @@ class InvalidateNumber(models.Model):
         return super().unlink()
 
     def action_invalidate(self):
+        self._check_documents_before_invalidate()
         for record in self:
             record._invalidate()
 
@@ -131,12 +137,84 @@ class InvalidateNumber(models.Model):
             }
         )
 
+    def _get_existing_documents(self):
+        """Company documents already using a number of this range."""
+        self.ensure_one()
+        return self.env["l10n_br_fiscal.document"].search(
+            [
+                ("company_id", "=", self.company_id.id),
+                ("issuer", "=", "company"),
+                ("document_type_id", "=", self.document_type_id.id),
+                ("document_serie_id", "=", self.document_serie_id.id),
+                ("document_number", "in", self._get_range_numbers_str()),
+            ]
+        )
+
+    def _get_range_numbers_str(self):
+        """Document numbers as stored in the document (strings, with and
+        without zero padding)."""
+        self.ensure_one()
+        numbers = []
+        for number in range(self.number_start, self.number_end + 1):
+            numbers += [str(number), str(number).zfill(9)]
+        return numbers
+
+    @staticmethod
+    def _document_authorized_at_sefaz(document):
+        """True if the number was consumed at SEFAZ by an authorization (so it
+        can never be invalidated), as opposed to documents that were never
+        authorized (typed, queued, sent without answer, rejected, or
+        cancelled locally without protocol)."""
+        if document.state_edoc == SITUACAO_EDOC_AUTORIZADA:
+            return True
+        if document.state_edoc in (SITUACAO_EDOC_REJEITADA, SITUACAO_EDOC_DENEGADA):
+            # Rejected/denied documents are the regular use case of the
+            # per-document invalidation button.
+            return False
+        # Cancelled at SEFAZ (or any other state) with an authorization protocol
+        return bool(getattr(document, "authorization_protocol", False))
+
+    def _check_documents_before_invalidate(self):
+        """Validate everything on the Odoo side BEFORE transmitting to SEFAZ,
+        so that an Odoo error can never leave a number invalidated at SEFAZ
+        without a record in Odoo."""
+        for record in self:
+            documents = record._get_existing_documents()
+            authorized = documents.filtered(record._document_authorized_at_sefaz)
+            if authorized:
+                raise UserError(
+                    self.env._(
+                        "It is not possible to invalidate this range: the "
+                        "following numbers belong to documents authorized at "
+                        "SEFAZ: %(numbers)s",
+                        numbers=", ".join(
+                            sorted(authorized.mapped("document_number"), key=int)
+                        ),
+                    )
+                )
+        return True
+
     def _update_document_status(self, document_id=None):
         if document_id:
             document_id.state_edoc = SITUACAO_EDOC_INUTILIZADA
             document_id.invalidate_event_id = self.authorization_event_id
-        else:
-            for document_number in range(self.number_start, self.number_end + 1):
+            return
+        existing = {}
+        for document in self._get_existing_documents():
+            number = int(document.document_number)
+            existing[number] = existing.get(number, document.browse()) | document
+        for document_number in range(self.number_start, self.number_end + 1):
+            documents = existing.get(document_number)
+            if documents:
+                # Never authorized: reuse the existing record instead of
+                # creating a duplicate number.
+                documents.write(
+                    {
+                        "state_edoc": SITUACAO_EDOC_INUTILIZADA,
+                        "invalidate_event_id": self.authorization_event_id.id,
+                    }
+                )
+            else:
                 self._create_invalidate_document(document_number)
 
     def _invalidate(self, document_id=None):

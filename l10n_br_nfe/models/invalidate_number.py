@@ -37,6 +37,10 @@ class InvalidateNumber(models.Model):
         return edoc_nfe(**params)
 
     def _invalidate(self, document_id=False):
+        if not document_id:
+            # Validate on the Odoo side before transmitting: a SEFAZ success
+            # must never be lost by a later Odoo exception.
+            self._check_documents_before_invalidate()
         processador = self._edoc_processor()
         evento = processador.inutilizacao(
             cnpj=punctuation_rm(self.company_id.vat),
