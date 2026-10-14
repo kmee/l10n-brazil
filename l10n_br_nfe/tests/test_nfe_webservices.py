@@ -4,6 +4,7 @@
 
 
 import logging
+from types import SimpleNamespace
 from unittest import mock
 
 from odoo.fields import Datetime
@@ -66,7 +67,7 @@ class TestNFeWebServices(TestNFeExport):
             )
             self.assertEqual(
                 Datetime.to_string(nfe.cancel_event_id.protocol_date),
-                "2023-07-05 16:52:52",
+                "2023-07-05 19:52:52",
             )
 
     @nfe_mock({"nfeInutilizacaoNF": "retInutNFe/nfe_inutilizacao.xml"})
@@ -145,3 +146,18 @@ class TestNFeWebServices(TestNFeExport):
             self.assertEqual(nfe.state_edoc, SITUACAO_EDOC_A_ENVIAR)
             nfe._document_status()
             self.assertEqual(nfe.state_edoc, SITUACAO_EDOC_AUTORIZADA)
+
+    def test_save_protocol_converts_to_utc(self):
+        """dhRecbto with -03:00 offset must be stored as UTC (+3h)."""
+        nfe = self.nfe_list[0]["nfe"]
+        event_model = type(self.env["l10n_br_fiscal.event"])
+        for dh_recbto, expected in (
+            ("2026-10-13T08:45:28-03:00", "2026-10-13 11:45:28"),
+            ("2026-10-13T08:45:28", "2026-10-13 08:45:28"),
+        ):
+            inf_prot = SimpleNamespace(
+                dhRecbto=dh_recbto, cStat="100", xMotivo="ok", nProt="1"
+            )
+            with mock.patch.object(event_model, "set_done") as set_done:
+                nfe._nfe_save_protocol(inf_prot)
+            self.assertEqual(set_done.call_args.kwargs["protocol_date"], expected)
