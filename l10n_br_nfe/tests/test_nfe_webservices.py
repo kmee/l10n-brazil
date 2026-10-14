@@ -11,6 +11,7 @@ from odoo.exceptions import UserError
 from odoo.fields import Datetime
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
+    EVENT_ENV_HML,
     SITUACAO_EDOC_A_ENVIAR,
     SITUACAO_EDOC_AUTORIZADA,
     SITUACAO_EDOC_CANCELADA,
@@ -173,7 +174,7 @@ class TestNFeWebServices(TestNFeExport):
             return
         event = self.env["l10n_br_fiscal.event"].create_event_save_xml(
             company_id=nfe.company_id,
-            environment="2",
+            environment=EVENT_ENV_HML,
             event_type="0",
             xml_file="<xml/>",
             document_id=nfe,
