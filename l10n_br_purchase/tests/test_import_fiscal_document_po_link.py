@@ -365,3 +365,41 @@ class TestImportFiscalDocumentPOLink(AccountMoveBRCommon):
         self.assertAlmostEqual(by_code["FURN_8855"].price_unit, 3645.0)
         self.assertAlmostEqual(by_code["FURN_8855"].ipi_value, 182.25)
         self.assertAlmostEqual(by_code["FURN_8855"].icms_value, 459.27)
+
+    def _create_analytic_account(self, name):
+        plan = self.env["account.analytic.plan"].create({"name": f"Plan {name}"})
+        return self.env["account.analytic.account"].create(
+            {"name": name, "plan_id": plan.id}
+        )
+
+    def test_link_copies_the_po_line_analytic_distribution(self):
+        analytic = self._create_analytic_account("PO analytic")
+        po = self._create_po([(self.product_a, 5)])
+        distribution = {str(analytic.id): 100.0}
+        po.order_line.analytic_distribution = distribution
+        move = self._import(
+            self._create_fiscal_document([{"product": self.product_a, "qty": 5}])
+        )
+        line = move.invoice_line_ids
+        self.assertEqual(line.purchase_line_id, po.order_line)
+        self.assertEqual(line.analytic_distribution, distribution)
+
+    def test_link_keeps_an_existing_analytic_distribution(self):
+        """A bill line that already has an analytic distribution is never
+        overwritten by the one of the purchase order line."""
+        analytic = self._create_analytic_account("PO analytic")
+        other = self._create_analytic_account("Bill analytic")
+        po = self._create_po([(self.product_a, 5)])
+        po.order_line.analytic_distribution = {str(analytic.id): 100.0}
+        move = self._import(
+            self._create_fiscal_document([{"product": self.product_a, "qty": 5}])
+        )
+        line = move.invoice_line_ids
+        line.analytic_distribution = {str(other.id): 100.0}
+        # relink: drop the link and run the matching again on the same line
+        line.purchase_line_id = False
+        self.env["account.move"].sudo()._po_link_new_lines(
+            move, line.fiscal_document_line_id.document_id
+        )
+        self.assertEqual(line.purchase_line_id, po.order_line)
+        self.assertEqual(line.analytic_distribution, {str(other.id): 100.0})
