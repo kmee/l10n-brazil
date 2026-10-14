@@ -181,7 +181,10 @@ class AccountMove(models.Model):
             if not pol:
                 continue
             remaining[pol.id] -= self._po_link_required_quantity(aml, pol)
-            aml.with_context(check_move_validity=False).purchase_line_id = pol
+            vals = {"purchase_line_id": pol.id}
+            if pol.analytic_distribution and not aml.analytic_distribution:
+                vals["analytic_distribution"] = pol.analytic_distribution
+            aml.with_context(check_move_validity=False).write(vals)
             linked = True
         if linked:
             self._po_link_set_origin(move)
