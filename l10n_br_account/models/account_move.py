@@ -1101,31 +1101,6 @@ class AccountMove(models.Model):
             self.import_fiscal_document(move.fiscal_document_id, move_id=move.id)
 
     @api.model
-    def _get_fiscal_lines_to_import(self, fiscal_document, move):
-        """Hook: fiscal document lines that must be appended as new invoice
-        lines by import_fiscal_document. Default: all of them."""
-        return fiscal_document.fiscal_line_ids
-
-    @api.model
-    def _get_import_tax_amounts(self, line):
-        """Return the (included, not included) tax amounts of a fiscal line
-        in the invoice line price, per the SEFAZ rule about what vProd holds."""
-        amt_inc = (
-            (line.icms_value or 0.0)
-            + (line.pis_value or 0.0)
-            + (line.cofins_value or 0.0)
-            + (line.issqn_value or 0.0)
-            + (line.icmsfcp_value or 0.0)
-        )
-        amt_not_inc = (
-            (line.icmsst_value or 0.0)
-            + (line.ipi_value or 0.0)
-            + (line.ii_value or 0.0)
-            + (line.icmsfcpst_value or 0.0)
-        )
-        return amt_inc, amt_not_inc
-
-    @api.model
     def import_fiscal_document(
         self,
         fiscal_document,
@@ -1202,7 +1177,7 @@ class AccountMove(models.Model):
             move.invoice_line_ids if move_id else self.env["account.move.line"]
         )
         unit_and_prices = []
-        for line in self._get_fiscal_lines_to_import(fiscal_document, move):
+        for line in fiscal_document.fiscal_line_ids:
             with move_form.invoice_line_ids.new() as line_form:
                 line_form.cfop_id = line.cfop_id
                 line_form.fiscal_operation_id = (
@@ -1212,7 +1187,20 @@ class AccountMove(models.Model):
                 line_form.quantity = line.quantity
                 line_form.fiscal_document_line_id = line
 
-                amt_inc, amt_not_inc = self._get_import_tax_amounts(line)
+                # SEFAZ Standard: What is included in vProd?
+                amt_inc = (
+                    (line.icms_value or 0.0)
+                    + (line.pis_value or 0.0)
+                    + (line.cofins_value or 0.0)
+                    + (line.issqn_value or 0.0)
+                    + (line.icmsfcp_value or 0.0)
+                )
+                amt_not_inc = (
+                    (line.icmsst_value or 0.0)
+                    + (line.ipi_value or 0.0)
+                    + (line.ii_value or 0.0)
+                    + (line.icmsfcpst_value or 0.0)
+                )
 
                 unit_and_prices.append(
                     {
