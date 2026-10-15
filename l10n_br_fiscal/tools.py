@@ -84,6 +84,14 @@ def build_edoc_path(
     return caminho
 
 
+# Control characters (TAB etc.) are rejected by the NF-e XSD text patterns,
+# which only accept characters from space (0x20) upward.
+_CONTROL_CHARS_TABLE = {
+    **{code: "\x00" for code in range(0x20)},
+    0x7F: "\x00",
+}
+
+
 def remove_non_ascii_characters(value):
     result = ""
     if value and isinstance(value, str):
@@ -93,8 +101,13 @@ def remove_non_ascii_characters(value):
             .decode("ASCII")
             .replace("\n", "")
             .replace("\r", "")
-            .strip()
         )
+        # Remaining control chars (e.g. TABs pasted from a spreadsheet) become
+        # a single space; plain spaces are left untouched.
+        segments = result.translate(_CONTROL_CHARS_TABLE).split("\x00")
+        result = " ".join(seg.strip(" ") for seg in segments if seg.strip(" "))
+        if len(segments) == 1:
+            result = segments[0].strip()
 
     return result
 
