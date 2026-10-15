@@ -418,11 +418,16 @@ class AccountPaymentLine(models.Model):
         self.partner_pix_id = partner_pix
         return res
 
+    @api.depends(
+        "payment_mode_domain",
+        "partner_pix_id",
+        "partner_bank_id.transactional_acc_type",
+    )
     def _compute_pix_transfer_type(self):
         for line in self:
             line.pix_transfer_type = False
             if line.payment_mode_domain != "pix_transfer":
-                return
+                continue
             if line.partner_pix_id:
                 line.pix_transfer_type = "pix_key"
             elif line.partner_bank_id:
