@@ -3288,6 +3288,19 @@ msgstr "Você não pode Cancelar ordem CNAB."
 msgid "You cannot delete CNAB order."
 msgstr "Você não pode excluir ordem CNAB."
 
+#. module: l10n_br_account_payment_order
+#. odoo-python
+#: code:addons/l10n_br_account_payment_order/models/account_payment_line.py:0
+msgid ""
+"Boleto barcode missing or invalid on payment line %(line)s (partner: "
+"%(partner)s, amount: %(amount)s). Inform the 44 digits barcode or the 47/48 "
+"digits linha digitavel of the boleto, with a valid check digit."
+msgstr ""
+"Código de barras do boleto ausente ou inválido na linha de pagamento "
+"%(line)s (parceiro: %(partner)s, valor: %(amount)s). Informe o código de "
+"barras de 44 dígitos ou a linha digitável de 47/48 dígitos do boleto, com "
+"dígito verificador válido."
+
 #~ msgid "CNAB Movement Instruction Code"
 #~ msgstr "Código de Instrução de Movimento CNAB"
 
