@@ -3301,6 +3301,19 @@ msgstr ""
 "barras de 44 dígitos ou a linha digitável de 47/48 dígitos do boleto, com "
 "dígito verificador válido."
 
+#. module: l10n_br_account_payment_order
+#. odoo-python
+#: code:addons/l10n_br_account_payment_order/models/account_payment_line.py:0
+msgid ""
+"Bank account of the favored missing or incomplete on payment line %(line)s "
+"(partner: %(partner)s, amount: %(amount)s). TED, DOC and credit in account "
+"payments need the partner bank account with bank, agency and account number."
+msgstr ""
+"Conta bancária do favorecido ausente ou incompleta na linha de pagamento "
+"%(line)s (parceiro: %(partner)s, valor: %(amount)s). Pagamentos por TED, DOC "
+"e crédito em conta exigem a conta bancária do parceiro com banco, agência e "
+"número da conta."
+
 #~ msgid "CNAB Movement Instruction Code"
 #~ msgstr "Código de Instrução de Movimento CNAB"
 

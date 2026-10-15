@@ -247,6 +247,8 @@ class CNABStructure(models.Model):
         pay_order.payment_line_ids._check_cnab_pix_key_type()
         # Normalizes legacy 47 digits barcodes and blocks missing/invalid ones
         pay_order.payment_line_ids._check_boleto_barcode()
+        # Blocks TED/DOC/credit in account without the favored bank account
+        pay_order.payment_line_ids._check_bank_account_required()
         cnab = Cnab()
 
         # HEADER
