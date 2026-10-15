@@ -199,3 +199,89 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
                 line.fiscal_operation_id,
                 line.fiscal_document_line_id.fiscal_operation_id,
             )
+
+    def test_import_into_a_bill_with_lines_keeps_them(self):
+        """Importing into a bill that already has lines must map the imported
+        values to the new lines only, never to the existing ones."""
+        move = self._import_into_new_vendor_bill()
+        existing = move.invoice_line_ids
+        self.assertEqual(len(existing), 1)
+        existing_fiscal_line = existing.fiscal_document_line_id
+        second_document = self.env["l10n_br_fiscal.document"].create(
+            {
+                "fiscal_operation_id": self.env.ref("l10n_br_fiscal.fo_compras").id,
+                "document_type_id": self.document_type_55.id,
+                "document_serie": "1",
+                "document_number": "4954",
+                "document_date": fields.Date.from_string("2026-08-17"),
+                "issuer": "partner",
+                "partner_id": self.partner_a.id,
+                "fiscal_operation_type": "in",
+            }
+        )
+        second_line = self.env["l10n_br_fiscal.document.line"].create(
+            {
+                "document_id": second_document.id,
+                "name": "Second line",
+                "product_id": self.product_b.id,
+                "quantity": 4,
+                "price_unit": 5.0,
+                "fiscal_operation_type": "in",
+                "fiscal_operation_id": self.env.ref("l10n_br_fiscal.fo_compras").id,
+                "fiscal_operation_line_id": self.env.ref(
+                    "l10n_br_fiscal.fo_compras_compras"
+                ).id,
+            }
+        )
+        self.env["account.move"].sudo().import_fiscal_document(
+            second_document, move_id=move.id, move_type="in_invoice"
+        )
+        self.assertEqual(len(move.invoice_line_ids), 2)
+        self.assertIn(existing, move.invoice_line_ids)
+        self.assertEqual(existing.fiscal_document_line_id, existing_fiscal_line)
+        self.assertEqual(existing.product_id, self.product_a)
+        self.assertEqual(existing.quantity, self.fiscal_line_to_import.quantity)
+        self.assertEqual(existing.price_unit, self.fiscal_line_to_import.price_unit)
+        new_line = move.invoice_line_ids - existing
+        self.assertEqual(new_line.fiscal_document_line_id, second_line)
+        self.assertEqual(new_line.product_id, self.product_b)
+        self.assertEqual(new_line.quantity, 4)
+        self.assertEqual(new_line.price_unit, 5.0)
+
+    def test_latam_document_number_is_filled_on_a_bill_that_has_a_document(self):
+        if "l10n_latam.document.type" not in self.env:
+            self.skipTest("l10n_latam_invoice_document not installed")
+        move = self._import_into_new_vendor_bill()
+        move.journal_id.l10n_latam_use_documents = True
+        move.l10n_latam_document_number = False
+        document = self.env["l10n_br_fiscal.document"].create(
+            {
+                "fiscal_operation_id": self.env.ref("l10n_br_fiscal.fo_compras").id,
+                "document_type_id": self.document_type_55.id,
+                "document_serie": "1",
+                "document_number": "4955",
+                "document_date": fields.Date.from_string("2026-08-17"),
+                "issuer": "partner",
+                "partner_id": self.partner_a.id,
+                "fiscal_operation_type": "in",
+            }
+        )
+        self.env["l10n_br_fiscal.document.line"].create(
+            {
+                "document_id": document.id,
+                "name": "Latam line",
+                "product_id": self.product_b.id,
+                "quantity": 1,
+                "price_unit": 9.0,
+                "fiscal_operation_type": "in",
+                "fiscal_operation_id": self.env.ref("l10n_br_fiscal.fo_compras").id,
+                "fiscal_operation_line_id": self.env.ref(
+                    "l10n_br_fiscal.fo_compras_compras"
+                ).id,
+            }
+        )
+        self.env["account.move"].sudo().import_fiscal_document(
+            document, move_id=move.id, move_type="in_invoice"
+        )
+        self.assertEqual(len(move.invoice_line_ids), 2)
+        self.assertEqual(move.l10n_latam_document_number, "4955")
