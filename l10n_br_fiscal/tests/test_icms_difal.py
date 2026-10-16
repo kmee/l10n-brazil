@@ -166,3 +166,19 @@ class TestIcmsDifal(TransactionCase):
         self.assertAlmostEqual(taxes["icms"]["icms_dest_base"], 100.00, places=2)
         self.assertAlmostEqual(taxes["icms"]["icms_dest_value"], 13.50, places=2)
         self.assertAlmostEqual(taxes["icmsfcp"]["tax_value"], 2.00, places=2)
+
+    def test_difal_non_taxpayer_double_base_state(self):
+        """Non-taxpayer in MG (double base state): single base.
+
+        Base = 100.00, the operation value, even with FCP; ICMS MG = 100.00
+        x 18% = 18.00; DIFAL = 18.00 - 12.00 = 6.00; FCP = 100.00 x 2% = 2.00.
+        """
+        taxes = self._compute(
+            self.tax_icms_12 | self.tax_icmsfcp_2,
+            self.mg_non_taxpayer,
+            FINAL_CUSTOMER_YES,
+        )
+        self.assertAlmostEqual(taxes["icms"]["tax_value"], 12.00, places=2)
+        self.assertAlmostEqual(taxes["icms"]["icms_dest_base"], 100.00, places=2)
+        self.assertAlmostEqual(taxes["icms"]["icms_dest_value"], 6.00, places=2)
+        self.assertAlmostEqual(taxes["icmsfcp"]["tax_value"], 2.00, places=2)
