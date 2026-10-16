@@ -794,3 +794,140 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         self.assertFalse(cnab_field_id.content_source_field)
         field_select_wizard.action_confirm()
         self.assertEqual(cnab_field_id.content_source_field, "company_partner_bank_id")
+
+    # ------------------------------------------------------------------
+    # Batch trailer total of the Banco do Brasil, Sicoob and Santander layouts
+    # ------------------------------------------------------------------
+    BOLETO_DIGITABLE_LINE = "00190123435678901234356789012343399010000123456"
+
+    def _generate_cnab_lines(self, order):
+        order.draft2open()
+        action = order.open2generated()
+        data = base64.b64decode(self.attachment_model.browse(action["res_id"]).datas)
+        return data.decode().splitlines()
+
+    @staticmethod
+    def _segments(lines, segment):
+        return [x for x in lines if len(x) > 13 and x[7] == "3" and x[13] == segment]
+
+    def _create_bank_order(self, bank_xid, structure_xid, way_xid, domain, code):
+        bank = self.env.ref(bank_xid)
+        account = self.res_partner_bank_model.create(
+            {
+                "acc_number": "99887",
+                "bra_number": "4321",
+                "bank_id": bank.id,
+                "company_id": self.company.id,
+                "partner_id": self.company.partner_id.id,
+            }
+        )
+        journal = self.env["account.journal"].create(
+            {
+                "name": f"Bank {code}",
+                "type": "bank",
+                "code": code,
+                "bank_account_id": account.id,
+                "bank_id": bank.id,
+            }
+        )
+        mode = self.payment_mode_model.create(
+            {
+                "name": f"Mode {code}",
+                "bank_account_link": "fixed",
+                "company_id": self.company.id,
+                "payment_method_id": self.outbound_payment_method.id,
+                "payment_mode_domain": domain,
+                "payment_order_ok": True,
+                "fixed_journal_id": journal.id,
+                "cnab_structure_id": self.env.ref(structure_xid).id,
+                "cnab_payment_way_ids": [(6, 0, [self.env.ref(way_xid).id])],
+                "cnab_processor": "oca_processor",
+            }
+        )
+        return self.payment_order_model.create(
+            {
+                "payment_mode_id": mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": journal.id,
+            }
+        )
+
+    def _assert_boleto_trailer_matches_segment_j(self, bank_xid, prefix, code):
+        order = self._create_bank_order(
+            bank_xid,
+            f"l10n_br_cnab_structure.{prefix}",
+            f"l10n_br_cnab_structure.{prefix}_pay_way_31",
+            "boleto",
+            code,
+        )
+        self.payment_line_model.create(
+            {
+                "order_id": order.id,
+                "partner_id": self.partner_a.id,
+                "amount_currency": 1234.0,
+                "communication": "BOLETO TEST",
+                "date": fields.Date.today(),
+                "barcode": self.BOLETO_DIGITABLE_LINE,
+            }
+        )
+        lines = self._generate_cnab_lines(order)
+        segment_j = self._segments(lines, "J")[0]
+        trailer = [x for x in lines if len(x) > 7 and x[7] == "5"]
+        self.assertEqual(len(trailer), 1)
+        total = int(trailer[0][23:41])
+        self.assertTrue(total)
+        self.assertEqual(total, int(segment_j[152:167]))
+
+    def test_bb_boleto_trailer_total(self):
+        self._assert_boleto_trailer_matches_segment_j(
+            "l10n_br_base.res_bank_001", "cnab_bb_240", "BNKB"
+        )
+
+    def test_sicoob_boleto_trailer_total(self):
+        self._assert_boleto_trailer_matches_segment_j(
+            "l10n_br_base.res_bank_756", "cnab_sicoob_240", "BNKS"
+        )
+
+    def test_santander_boleto_trailer_total(self):
+        self._assert_boleto_trailer_matches_segment_j(
+            "l10n_br_base.res_bank_033", "cnab_santander_240", "BNKT"
+        )
+
+    def _assert_payment_trailer_matches_segment_a(self, bank_xid, prefix, code):
+        order = self._create_bank_order(
+            bank_xid,
+            f"l10n_br_cnab_structure.{prefix}",
+            f"l10n_br_cnab_structure.{prefix}_pay_way_45",
+            "pix_transfer",
+            code,
+        )
+        self.payment_line_model.create(
+            {
+                "order_id": order.id,
+                "partner_id": self.partner_a.id,
+                "partner_pix_id": self.partner_a.pix_key_ids[:1].id,
+                "amount_currency": 150.0,
+                "communication": "PIX TEST",
+                "date": fields.Date.today(),
+            }
+        )
+        lines = self._generate_cnab_lines(order)
+        segment_a = self._segments(lines, "A")[0]
+        trailer = [x for x in lines if len(x) > 7 and x[7] == "5"]
+        self.assertEqual(len(trailer), 1)
+        total = int(trailer[0][23:41])
+        self.assertTrue(total)
+        self.assertEqual(total, int(segment_a[119:134]))
+
+    def test_santander_payment_trailer_total(self):
+        """Santander payment batch trailer sums the segment A amounts."""
+        self._assert_payment_trailer_matches_segment_a(
+            "l10n_br_base.res_bank_033", "cnab_santander_240", "BNKP"
+        )
+
+    def test_sicoob_payment_trailer_total(self):
+        """Sicoob payment batch trailer sums the segment A amounts."""
+        self._assert_payment_trailer_matches_segment_a(
+            "l10n_br_base.res_bank_756", "cnab_sicoob_240", "BNKO"
+        )
