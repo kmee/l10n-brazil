@@ -27,7 +27,6 @@ from ..constants.icms import (
     ICMS_CST_RELIEF,
     ICMS_DIFAL_DOUBLE_BASE,
     ICMS_DIFAL_PARTITION,
-    ICMS_DIFAL_UNIQUE_BASE,
     ICMS_ORIGIN_TAX_IMPORTED,
     ICMS_SN_CST_WITH_CREDIT,
     ICMS_ST_BASE_TYPE,
@@ -519,15 +518,16 @@ class Tax(models.Model):
 
             # Difal - Base
             icms_base = tax_dict.get("base")
-            difal_icms_base = 0.00
+            difal_icms_base = icms_base
 
             # Difal - ICMS Dest Value
             icms_dest_value = currency.round(icms_base * (icms_dest_perc / 100))
 
-            if partner.state_id.code in ICMS_DIFAL_UNIQUE_BASE:
-                difal_icms_base = icms_base
-
-            if partner.state_id.code in ICMS_DIFAL_DOUBLE_BASE:
+            # Non-taxpayers always use the operation value as a single base
+            if (
+                partner.state_id.code in ICMS_DIFAL_DOUBLE_BASE
+                and partner.ind_ie_dest != NFE_IND_IE_DEST_9
+            ):
                 difal_icms_base = currency.round(
                     (icms_base - icms_origin_value)
                     / (1 - ((icms_dest_perc + icmsfcp_perc) / 100))
