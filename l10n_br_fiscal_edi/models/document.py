@@ -3,6 +3,8 @@
 # Copyright (C) 2026  Raphaël Valyi - Akretion
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
+from datetime import timedelta
+
 from erpbrasil.base.fiscal.edoc import ChaveEdoc
 from transitions import Machine, MachineError
 
@@ -32,6 +34,8 @@ from ..constants.fiscal import (
     DOCUMENT_STATE_SENDING,
     DOCUMENT_STATES,
 )
+
+DOCUMENT_DATE_FUTURE_TOLERANCE_MINUTES = 5
 
 
 def filter_processador(record):
@@ -441,8 +445,7 @@ class Document(models.Model):
             self._document_export()
 
     def _before_document_send(self):
-        # Placeholder for pre-send checks
-        pass
+        self._refresh_document_date_before_send()
 
     def _after_document_send(self):
         # Trigger actual sending logic
@@ -489,6 +492,43 @@ class Document(models.Model):
             self.document_date = fields.Datetime.now()
         if not self.date_in_out:
             self.date_in_out = fields.Datetime.now()
+
+    def _refresh_document_date_before_send(self):
+        """Avoid SEFAZ rejection 703 (dhEmi later than the reception date).
+
+        For electronic documents issued by the company, set document_date (and
+        date_in_out when it would be inconsistent) to now() when the stored
+        date is in the future (beyond a small tolerance) or when the document
+        is being resent after a rejection, so a stale date is never kept.
+        Past dates typed by the user are kept on the first send.
+        """
+        self.ensure_one()
+        if (
+            self.issuer != DOCUMENT_ISSUER_COMPANY
+            or not self.document_electronic
+            or self.document_type_id.code not in (MODELO_FISCAL_NFE, MODELO_FISCAL_NFCE)
+        ):
+            return
+        now = fields.Datetime.now()
+        tolerance = timedelta(minutes=DOCUMENT_DATE_FUTURE_TOLERANCE_MINUTES)
+        resend = self.state_edoc == DOCUMENT_STATE_REJECTED
+        future = self.document_date and self.document_date > now + tolerance
+        if not (resend or future):
+            return
+        # date_in_out cannot be earlier than the emission date nor in the future
+        vals = {"document_date": now, "date_in_out": now}
+        # The document key carries the emission year/month: build a new one
+        # when the month changes (key cleared first so the date/key
+        # constraint does not block the write).
+        key_stale = self.document_key and (
+            self.document_key[2:6]
+            != fields.Datetime.context_timestamp(self, now).strftime("%y%m")
+        )
+        if key_stale:
+            vals["document_key"] = False
+        self.write(vals)
+        if key_stale:
+            self._document_number()
 
     def _document_check(self):
         return True
