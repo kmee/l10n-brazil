@@ -18,6 +18,7 @@ from ..constants.fiscal import (
     TAX_BASE_TYPE_PERCENT,
     TAX_BASE_TYPE_VALUE,
     TAX_DOMAIN_ICMS,
+    TAX_DOMAIN_ICMS_FCP,
     TAX_DOMAIN_ICMS_ST,
 )
 from ..constants.icms import (
@@ -477,12 +478,16 @@ class Tax(models.Model):
         tax_dict.update({"icms_base_type": tax.icms_base_type})
 
         # DIFAL
-        # TODO
-        # and operation_line.ind_final == FINAL_CUSTOMER_YES):
+        # Non-taxpayers are final consumers by definition; taxpayers only owe
+        # DIFAL on goods for their own use, consumption or fixed assets.
+        difal_final_consumer = partner.ind_ie_dest == NFE_IND_IE_DEST_9 or (
+            fiscal_operation_type == FISCAL_OUT and ind_final == FINAL_CUSTOMER_YES
+        )
         if (
             cfop
+            and company.icms_regulation_id
             and cfop.destination == CFOP_DESTINATION_EXTERNAL
-            and partner.ind_ie_dest == NFE_IND_IE_DEST_9
+            and difal_final_consumer
             and tax_dict.get("tax_value")
             and (
                 fiscal_operation_type == FISCAL_OUT
@@ -495,7 +500,6 @@ class Tax(models.Model):
             icms_tax_difal, _ = company.icms_regulation_id.map_tax_def_icms_difal(
                 company, partner, product, ncm, nbm, cest, operation_line, ind_final
             )
-            icmsfcp_tax_difal = taxes_dict.get("icmsfcp", {})
 
             # Difal - Origin Percent
             icms_origin_perc = tax_dict.get("percent_amount")
@@ -509,9 +513,9 @@ class Tax(models.Model):
                 icms_dest_perc = icms_tax_difal[0].percent_amount
 
             # Difal - FCP Percent
-            icmsfcp_perc = 0.00
-            if icmsfcp_tax_difal:
-                icmsfcp_perc = icmsfcp_tax_difal.get("percent_amount")
+            # FCP is computed after ICMS, so its rate is read from the tax itself
+            icmsfcp_tax = self.filtered(lambda t: t.tax_domain == TAX_DOMAIN_ICMS_FCP)
+            icmsfcp_perc = icmsfcp_tax[:1].percent_amount
 
             # Difal - Base
             icms_base = tax_dict.get("base")

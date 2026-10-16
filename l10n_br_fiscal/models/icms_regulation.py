@@ -350,7 +350,10 @@ class ICMSRegulation(models.Model):
 
         if (
             company.state_id != partner.state_id
-            and partner.ind_ie_dest == NFE_IND_IE_DEST_9
+            and (
+                partner.ind_ie_dest == NFE_IND_IE_DEST_9
+                or ind_final == FINAL_CUSTOMER_YES
+            )
             and operation_line.fiscal_operation_type == FISCAL_OUT
             or operation_line.fiscal_operation_id.fiscal_type != "return_in"
             and operation_line.fiscal_operation_type == FISCAL_IN
