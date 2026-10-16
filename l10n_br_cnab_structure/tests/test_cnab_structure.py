@@ -1639,3 +1639,73 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         with self.assertRaises(UserError):
             order.cnab_structure_id.output(order)
         self.assertEqual(self.attachment_model.search_count([]), attachments_before)
+
+    def _create_account_line_without_bank(self, way_code, partner_pix=None):
+        """Line on a mode that only has the given Itau payment way, no rules."""
+        self.env["l10n_br_cnab.payment.rule"].search(
+            [("cnab_structure_id", "=", self.cnab_structure_itau_240.id)]
+        ).unlink()
+        way = self.env.ref(f"l10n_br_cnab_structure.cnab_itau_240_pay_way_{way_code}")
+        mode = self.payment_mode_model.create(
+            {
+                "name": f"Itau way {way_code}",
+                "bank_account_link": "fixed",
+                "company_id": self.company.id,
+                "payment_method_id": self.outbound_payment_method.id,
+                "fixed_journal_id": self.bank_journal_itau.id,
+                "cnab_structure_id": self.cnab_structure_itau_240.id,
+                "cnab_payment_way_ids": [(6, 0, [way.id])],
+                "cnab_processor": "oca_processor",
+            }
+        )
+        order = self.payment_order_model.create(
+            {
+                "payment_mode_id": mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": self.bank_journal_itau.id,
+            }
+        )
+        vals = {
+            "order_id": order.id,
+            "partner_id": self.partner_a.id,
+            "amount_currency": 1234.56,
+            "communication": "NO BANK TEST",
+        }
+        if partner_pix:
+            vals["partner_pix_id"] = partner_pix.id
+        line = self.payment_line_model.create(vals)
+        self.assertEqual(line.cnab_payment_way_id, way)
+        return order, line
+
+    def test_ted_without_partner_bank_blocks_generation(self):
+        """TED/credit in account without favored account must not leave zeroed."""
+        order, line = self._create_account_line_without_bank("41")
+        attachments_before = self.attachment_model.search_count([])
+        with self.assertRaises(UserError) as ctx:
+            order.draft2open()
+        message = str(ctx.exception)
+        self.assertIn(line.name, message)
+        self.assertIn(self.partner_a.name, message)
+        self.assertRegex(message, r"1[.,]234[.,]56")
+        with self.assertRaises(UserError):
+            order.cnab_structure_id.output(order)
+        self.assertEqual(self.attachment_model.search_count([]), attachments_before)
+
+    def test_credit_in_account_with_incomplete_bank_blocks(self):
+        order, line = self._create_account_line_without_bank("01")
+        line.partner_bank_id = self._create_partner_bank(self.bank_341, bra_number="")
+        with self.assertRaises(UserError):
+            order.draft2open()
+
+    def test_ted_with_complete_bank_is_not_blocked(self):
+        order, line = self._create_account_line_without_bank("41")
+        line.partner_bank_id = self._create_partner_bank(self.bank_001)
+        line._check_bank_account_required()  # no raise
+
+    def test_pix_key_and_boleto_without_bank_are_not_blocked(self):
+        pix_key = self._create_pix_key("evp", self.PIX_KEYS["evp"])
+        _order, pix_line = self._create_account_line_without_bank("45", pix_key)
+        pix_line._check_bank_account_required()  # no raise
+        _order, boleto_line = self._create_account_line_without_bank("30")
+        boleto_line._check_bank_account_required()  # no raise

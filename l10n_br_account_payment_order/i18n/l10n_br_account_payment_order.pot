@@ -3257,3 +3257,12 @@ msgid ""
 "%(partner)s, amount: %(amount)s). Inform the 44 digits barcode or the 47/48 "
 "digits linha digitavel of the boleto, with a valid check digit."
 msgstr ""
+
+#. module: l10n_br_account_payment_order
+#. odoo-python
+#: code:addons/l10n_br_account_payment_order/models/account_payment_line.py:0
+msgid ""
+"Bank account of the favored missing or incomplete on payment line %(line)s "
+"(partner: %(partner)s, amount: %(amount)s). TED, DOC and credit in account "
+"payments need the partner bank account with bank, agency and account number."
+msgstr ""

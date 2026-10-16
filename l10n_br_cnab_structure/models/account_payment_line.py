@@ -10,6 +10,10 @@ from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_account_payment_order.constants import TIPO_SERVICO
 
+# Payment way codes (FEBRABAN layout) that credit a bank account: credit in
+# checking/savings account, DOC and TED
+CNAB_ACCOUNT_PAYMENT_WAY_CODES = ("01", "03", "05", "06", "07", "41", "43")
+
 
 class AccountPaymentLine(models.Model):
     """
@@ -87,6 +91,20 @@ class AccountPaymentLine(models.Model):
             else:
                 bline.cnab_pix_transfer_type_id = False
 
+    def _cnab_line_requires_bank_account(self):
+        """Also consider the CNAB payment way of the line (credit in account,
+        TED and DOC codes of the FEBRABAN layout), PIX ways need the account only
+        when leaving without PIX key."""
+        self.ensure_one()
+        if super()._cnab_line_requires_bank_account():
+            return True
+        way = self.cnab_payment_way_id
+        if not way or self.payment_mode_domain == "boleto":
+            return False
+        if way.is_pix:
+            return not self.partner_pix_id
+        return way.code in CNAB_ACCOUNT_PAYMENT_WAY_CODES
+
     def _check_cnab_pix_key_type(self):
         """Block the CNAB when a line leaves as PIX key without a key type mapping.
 
@@ -94,10 +112,7 @@ class AccountPaymentLine(models.Model):
         bank would reject the file (or pay the wrong key).
         """
         for bline in self:
-            if (
-                bline.cnab_payment_way_id.is_pix
-                and not bline.cnab_pix_transfer_type_id
-            ):
+            if bline.cnab_payment_way_id.is_pix and not bline.cnab_pix_transfer_type_id:
                 raise UserError(
                     _(
                         "Não foi possível gerar o arquivo CNAB: %(partner)s foi "

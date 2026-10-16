@@ -286,6 +286,51 @@ class AccountPaymentLine(models.Model):
             if new_vals:
                 line.write(new_vals)
 
+    def _cnab_line_requires_bank_account(self):
+        """Whether the payment form of the line credits a bank account.
+
+        TED, DOC and PIX transfers without PIX key need the favored bank,
+        agency and account. Boleto and PIX by key do not. Hook extended by
+        l10n_br_cnab_structure with the CNAB payment way.
+        """
+        self.ensure_one()
+        if self.payment_mode_domain in ("ted", "doc"):
+            return True
+        return self.payment_mode_domain == "pix_transfer" and not self.partner_pix_id
+
+    def _check_bank_account_required(self):
+        """Block TED/DOC/credit in account lines without the favored account.
+
+        Without it the CNAB segment A would leave with bank, agency and account
+        filled with zeros and the bank would reject (or misroute) the payment.
+        """
+        for line in self:
+            if not line._cnab_line_requires_bank_account():
+                continue
+            bank = line.partner_bank_id
+            if (
+                bank
+                and bank.bank_id.code_bc
+                and (bank.bra_number or "").strip()
+                and (bank.acc_number or "").strip()
+            ):
+                continue
+            raise UserError(
+                self.env._(
+                    "Bank account of the favored missing or incomplete on payment "
+                    "line %(line)s (partner: %(partner)s, amount: %(amount)s). "
+                    "TED, DOC and credit in account payments need the partner bank "
+                    "account with bank, agency and account number.",
+                    line=line.name or line.display_name,
+                    partner=line.partner_id.display_name or "-",
+                    amount=formatLang(
+                        self.env,
+                        line.amount_currency,
+                        currency_obj=line.currency_id,
+                    ),
+                )
+            )
+
     def draft2open_payment_line_check(self):
         """
         Override to add brazilian validations
@@ -293,6 +338,7 @@ class AccountPaymentLine(models.Model):
         res = super().draft2open_payment_line_check()
         self._check_pix_transfer_type()
         self._check_boleto_barcode()
+        self._check_bank_account_required()
         return res
 
     @api.onchange("partner_id")
