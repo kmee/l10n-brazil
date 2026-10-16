@@ -17,12 +17,12 @@ msgstr ""
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields.selection,name:l10n_br_fiscal_subsequent_document.selection__l10n_br_fiscal_subsequent_operation__generation_situation__enviada
 msgid "Aguardando processamento"
-msgstr ""
+msgstr "Aguardando processamento"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields.selection,name:l10n_br_fiscal_subsequent_document.selection__l10n_br_fiscal_subsequent_operation__generation_situation__autorizada
 msgid "Autorizada"
-msgstr ""
+msgstr "Autorizado"
 
 #. module: l10n_br_fiscal_subsequent_document
 #. odoo-python
@@ -32,6 +32,8 @@ msgid ""
 "Canceling the document is not allowed: one or more associated documents have"
 " already been authorized."
 msgstr ""
+"O cancelamento do documento não é permitido: um ou mais documentos "
+"associados já foram autorizados."
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields.selection,name:l10n_br_fiscal_subsequent_document.selection__l10n_br_fiscal_subsequent_operation__generation_situation__cancelada
@@ -41,175 +43,175 @@ msgstr "Cancelada"
 #. module: l10n_br_fiscal_subsequent_document
 #: model_terms:ir.actions.act_window,help:l10n_br_fiscal_subsequent_document.subsequent_document_action
 msgid "Create a new Subsequent Document"
-msgstr ""
+msgstr "Crie um novo Documento Subsequente"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model_terms:ir.actions.act_window,help:l10n_br_fiscal_subsequent_document.subsequent_operation_action
 msgid "Create a new Subsequent operation"
-msgstr ""
+msgstr "Criar uma nova operação subsequente"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_document__create_uid
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_operation__create_uid
 msgid "Created by"
-msgstr ""
+msgstr "Criado por"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_document__create_date
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_operation__create_date
 msgid "Created on"
-msgstr ""
+msgstr "Criado em"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields.selection,name:l10n_br_fiscal_subsequent_document.selection__l10n_br_fiscal_subsequent_operation__generation_situation__denegada
 msgid "Denegada"
-msgstr ""
+msgstr "Denegada"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_document__display_name
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_operation__display_name
 msgid "Display Name"
-msgstr ""
+msgstr "Nome Exibido"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_document__document_subsequent_ids
 msgid "Document Subsequent"
-msgstr ""
+msgstr "Documento subsequente"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_operation__operation_document_type_id
 msgid "Document Type"
-msgstr ""
+msgstr "Tipo do Documento"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields.selection,name:l10n_br_fiscal_subsequent_document.selection__l10n_br_fiscal_subsequent_operation__generation_situation__em_digitacao
 msgid "Draft"
-msgstr ""
+msgstr "Rascunho"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model,name:l10n_br_fiscal_subsequent_document.model_l10n_br_fiscal_operation
 msgid "Fiscal Operation"
-msgstr ""
+msgstr "Operação Fiscal"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_operation__generation_situation
 msgid "Generation Situation"
-msgstr ""
+msgstr "Situação de Geração"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields.selection,name:l10n_br_fiscal_subsequent_document.selection__l10n_br_fiscal_subsequent_operation__generation_situation__nota_de_cupom
 msgid "Gerar Nota Fiscal de Cupons Fiscais"
-msgstr ""
+msgstr "Gerar Nota Fiscal de Cupons Fiscais"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields.selection,name:l10n_br_fiscal_subsequent_document.selection__l10n_br_fiscal_subsequent_operation__generation_situation__nota_de_remessa
 msgid "Gerar Nota Fiscal de Remessa"
-msgstr ""
+msgstr "Gerar Nota Fiscal de Remessa"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,help:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_operation__sequence
 msgid "Gives the sequence order when displaying a list"
-msgstr ""
+msgstr "Dá a ordem da sequência ao exibir uma lista"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_document__id
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_operation__id
 msgid "ID"
-msgstr ""
+msgstr "ID"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model,name:l10n_br_fiscal_subsequent_document.model_l10n_br_fiscal_document
 msgid "Informações de exportação"
-msgstr ""
+msgstr "Informações de exportação"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields.selection,name:l10n_br_fiscal_subsequent_document.selection__l10n_br_fiscal_subsequent_operation__generation_situation__inutilizada
 msgid "Inutilizada"
-msgstr ""
+msgstr "Inutilizada"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_document____last_update
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_operation____last_update
 msgid "Last Modified on"
-msgstr ""
+msgstr "Última Modificação em"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_document__write_uid
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_operation__write_uid
 msgid "Last Updated by"
-msgstr ""
+msgstr "Última Atualização por"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_document__write_date
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_operation__write_date
 msgid "Last Updated on"
-msgstr ""
+msgstr "Última Atualização em"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields.selection,name:l10n_br_fiscal_subsequent_document.selection__l10n_br_fiscal_subsequent_operation__generation_situation__manual
 msgid "Manualmente"
-msgstr ""
+msgstr "Manualmente"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields.selection,name:l10n_br_fiscal_subsequent_document.selection__l10n_br_fiscal_subsequent_operation__generation_situation__a_enviar
 msgid "Open"
-msgstr ""
+msgstr "Aberto"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_document__operation_performed
 msgid "Operation Performed"
-msgstr ""
+msgstr "Operação Realizada"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_operation__subsequent_operation_id
 msgid "Operation to be performed"
-msgstr ""
+msgstr "Operação a ser realizada"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_operation__fiscal_operation_id
 msgid "Origin operation"
-msgstr ""
+msgstr "Operação de origem"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_operation__partner_id
 msgid "Partner"
-msgstr ""
+msgstr "Parceiro"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_operation__reference_document
 msgid "Referencing source document"
-msgstr ""
+msgstr "Referenciando documento de origem"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields.selection,name:l10n_br_fiscal_subsequent_document.selection__l10n_br_fiscal_subsequent_operation__generation_situation__rejeitada
 msgid "Rejeitada"
-msgstr ""
+msgstr "Rejeitada"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_document__fiscal_operation_id
 msgid "Related operation"
-msgstr ""
+msgstr "Operação relacionada"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_operation__sequence
 msgid "Sequence"
-msgstr ""
+msgstr "Sequência"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_subsequent_document.source_document_tree
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_subsequent_document.subsequent_document_tree
 msgid "Show Document"
-msgstr ""
+msgstr "Mostrar documento"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_subsequent_document.source_document_tree
 msgid "Source Operation"
-msgstr ""
+msgstr "Operação fonte"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_subsequent_document__source_document_id
 msgid "Source document"
-msgstr ""
+msgstr "Documento de Origem"
 
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.actions.act_window,name:l10n_br_fiscal_subsequent_document.subsequent_document_action
@@ -231,7 +233,7 @@ msgstr "Operação subsequente"
 #. module: l10n_br_fiscal_subsequent_document
 #: model:ir.model.fields,field_description:l10n_br_fiscal_subsequent_document.field_l10n_br_fiscal_document__document_subsequent_generated
 msgid "Subsequent documents generated?"
-msgstr ""
+msgstr "Documentos subsequentes gerados?"
 
 #. module: l10n_br_fiscal_subsequent_document
 #. odoo-python
@@ -241,3 +243,4 @@ msgid ""
 "The document cannot be deleted: the subsequent document has already been "
 "generated."
 msgstr ""
+"O documento não pode ser excluído: o documento subsequente já foi gerado."

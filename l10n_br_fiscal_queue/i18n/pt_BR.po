@@ -17,12 +17,12 @@ msgstr ""
 #. module: l10n_br_fiscal_queue
 #: model:ir.model,name:l10n_br_fiscal_queue.model_l10n_br_fiscal_operation
 msgid "Fiscal Operation"
-msgstr ""
+msgstr "Operação Fiscal"
 
 #. module: l10n_br_fiscal_queue
 #: model:ir.model,name:l10n_br_fiscal_queue.model_l10n_br_fiscal_document
 msgid "Informações de exportação"
-msgstr ""
+msgstr "Informações de exportação"
 
 #. module: l10n_br_fiscal_queue
 #: model:ir.model.fields.selection,name:l10n_br_fiscal_queue.selection__l10n_br_fiscal_operation__queue_document_send__send_now
@@ -35,11 +35,13 @@ msgid ""
 "Send Immediately: transmit the fiscal document to SEFAZ in the same transaction (synchronous).\n"
 "Send Later: enqueue the transmission as a queue_job, so the SEFAZ round trip does not block the user request."
 msgstr ""
+"Enviar imediatamente: transmite o documento fiscal para a SEFAZ na mesma transação (síncrona).\n"
+"Enviar depois: enfileira a transmissão como um queue_job, para que a comunicação com a SEFAZ não bloqueie a requisição do usuário."
 
 #. module: l10n_br_fiscal_queue
 #: model:ir.model.fields.selection,name:l10n_br_fiscal_queue.selection__l10n_br_fiscal_operation__queue_document_send__with_delay
 msgid "Send Later"
-msgstr ""
+msgstr "Enviar depois"
 
 #. module: l10n_br_fiscal_queue
 #: model:ir.model.fields,field_description:l10n_br_fiscal_queue.field_l10n_br_fiscal_operation__queue_document_send
@@ -51,4 +53,4 @@ msgstr "Momento da transmissão"
 #: code:addons/l10n_br_fiscal_queue/models/document.py:0
 #, python-format
 msgid "Transmit fiscal document %s to SEFAZ"
-msgstr ""
+msgstr "Transmitir documento fiscal %s para a SEFAZ"
