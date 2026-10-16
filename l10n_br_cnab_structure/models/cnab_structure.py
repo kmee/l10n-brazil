@@ -245,6 +245,8 @@ class CNABStructure(models.Model):
         Receives a Payment Order record and returns a Cnab Data Object"
         """
         pay_order.payment_line_ids._check_cnab_pix_key_type()
+        # Normalizes legacy 47 digits barcodes and blocks missing/invalid ones
+        pay_order.payment_line_ids._check_boleto_barcode()
         cnab = Cnab()
 
         # HEADER

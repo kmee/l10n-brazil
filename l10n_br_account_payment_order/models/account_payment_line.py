@@ -7,7 +7,9 @@ from erpbrasil.base import misc
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
+from odoo.tools.misc import formatLang
 
+from .. import barcode_utils
 from ..constants import (
     AVISO_FAVORECIDO,
     CODIGO_FINALIDADE_TED,
@@ -50,7 +52,11 @@ class AccountPaymentLine(models.Model):
         string="Número documento",
     )
 
-    barcode = fields.Char(help="This field is used in the payment of supplier slips")
+    barcode = fields.Char(
+        help="Boleto barcode (44 digits) used in the payment of supplier slips. "
+        "A 47/48 digits linha digitavel is converted to the 44 digits barcode "
+        "when saved."
+    )
 
     company_title_identification = fields.Char(
         string="Identificação Titulo Empresa",
@@ -208,12 +214,85 @@ class AccountPaymentLine(models.Model):
 
         return res
 
+    @api.model
+    def _normalize_barcode_vals(self, vals):
+        """Normalize ``barcode``/``digitable_line`` keys of create/write values.
+
+        Accepts the 44 digits barcode or the 47/48 digits linha digitavel (with
+        spaces, dots or hyphens) in either field. A valid code is stored as the
+        44 digits barcode and ``digitable_line`` is kept filled. Invalid codes are
+        only cleaned (never raise on save), the boleto check blocks them later.
+        """
+        vals = dict(vals)
+        source = None
+        if vals.get("barcode"):
+            source = vals["barcode"]
+        elif vals.get("digitable_line") and not vals.get("barcode"):
+            source = vals["digitable_line"]
+        if not source:
+            return vals
+        barcode, digitable_line, valid = barcode_utils.normalize_barcode(source)
+        vals["barcode"] = barcode
+        if valid and digitable_line:
+            vals["digitable_line"] = digitable_line
+        elif vals.get("digitable_line"):
+            vals["digitable_line"] = barcode_utils.clean_digits(vals["digitable_line"])
+        return vals
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        vals_list = [self._normalize_barcode_vals(vals) for vals in vals_list]
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if vals.get("barcode") or vals.get("digitable_line"):
+            vals = self._normalize_barcode_vals(vals)
+        return super().write(vals)
+
+    def _check_boleto_barcode(self):
+        """Block boleto lines without a valid 44 digits barcode.
+
+        Lines saved before the normalization existed may hold the 47 digits
+        linha digitavel in ``barcode``: they are converted (and saved) here, so
+        the CNAB export always reads the 44 digits barcode.
+        """
+        for line in self:
+            if line.payment_mode_domain != "boleto":
+                continue
+            barcode, digitable_line, valid = barcode_utils.normalize_barcode(
+                line.barcode or line.digitable_line
+            )
+            if not valid:
+                raise UserError(
+                    self.env._(
+                        "Boleto barcode missing or invalid on payment line "
+                        "%(line)s (partner: %(partner)s, amount: %(amount)s). "
+                        "Inform the 44 digits barcode or the 47/48 digits "
+                        "linha digitavel of the boleto, with a valid check digit.",
+                        line=line.name or line.display_name,
+                        partner=line.partner_id.display_name or "-",
+                        amount=formatLang(
+                            self.env,
+                            line.amount_currency,
+                            currency_obj=line.currency_id,
+                        ),
+                    )
+                )
+            new_vals = {}
+            if line.barcode != barcode:
+                new_vals["barcode"] = barcode
+            if digitable_line and line.digitable_line != digitable_line:
+                new_vals["digitable_line"] = digitable_line
+            if new_vals:
+                line.write(new_vals)
+
     def draft2open_payment_line_check(self):
         """
         Override to add brazilian validations
         """
         res = super().draft2open_payment_line_check()
         self._check_pix_transfer_type()
+        self._check_boleto_barcode()
         return res
 
     @api.onchange("partner_id")
