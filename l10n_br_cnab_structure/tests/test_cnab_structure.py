@@ -1555,26 +1555,7 @@ class TestCNABStructure(AccountTestInvoicingCommon):
     BOLETO_BARCODE = "00193990100001234560123456789012345678901234"
     BOLETO_DIGITABLE_LINE = "00190123435678901234356789012343399010000123456"
 
-    def _fix_boleto_trailer_expression(self):
-        """Apply the production correction of the Itau boleto trailer total.
-
-        The CSV shipped with this branch has an unterminated string literal in
-        the 'TOTAL VALOR PRINCIPAL' expression (fixed by
-        18.0-zitron-fix-cnab-trailer-quote); production already has it fixed in
-        the database. Harmless when the data is already correct.
-        """
-        self.env.ref(
-            "l10n_br_cnab_structure.cnab_itau_240_boleto_trailer_24_41"
-        ).sending_dynamic_content = (
-            'sum(int(line.sorted_values().get("153_167_valor_pagamento", 0)) '
-            "for line in filter(lambda l: l.sorted_values().get("
-            '"15_17_tipo_de_movimento", "") in ("000", "001", "002", "003") '
-            'and l.sorted_values().get("18_19_codigo_do_registro", False) != 52, '
-            "batch_detail_lines))"
-        )
-
     def _create_boleto_order(self, **line_vals):
-        self._fix_boleto_trailer_expression()
         way_31 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_31")
         mode = self.payment_mode_model.create(
             {
@@ -1709,3 +1690,125 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         pix_line._check_bank_account_required()  # no raise
         _order, boleto_line = self._create_account_line_without_bank("30")
         boleto_line._check_bank_account_required()  # no raise
+
+    # Itau boleto (segment J) layout data
+
+    def test_boleto_batch_trailer_total(self):
+        """Itau boleto batch trailer sums the line amount (positions 24-41)."""
+        order, _line = self._create_boleto_order(barcode=self.BOLETO_DIGITABLE_LINE)
+        lines = self._generate_cnab_lines(order)
+        trailer = [x for x in lines if len(x) > 7 and x[7] == "5"]
+        self.assertEqual(len(trailer), 1)
+        self.assertEqual(trailer[0][23:41], "000000000000123456")
+
+    # Batch trailer total of the other banks (Banco do Brasil, Sicoob, Santander)
+    def _create_bank_order(self, bank_xid, structure_xid, way_xid, domain, code):
+        bank = self.env.ref(bank_xid)
+        account = self.res_partner_bank_model.create(
+            {
+                "acc_number": "99887",
+                "bra_number": "4321",
+                "bank_id": bank.id,
+                "company_id": self.company.id,
+                "partner_id": self.company.partner_id.id,
+            }
+        )
+        journal = self.env["account.journal"].create(
+            {
+                "name": f"Bank {code}",
+                "type": "bank",
+                "code": code,
+                "bank_account_id": account.id,
+                "bank_id": bank.id,
+            }
+        )
+        mode = self.payment_mode_model.create(
+            {
+                "name": f"Mode {code}",
+                "bank_account_link": "fixed",
+                "company_id": self.company.id,
+                "payment_method_id": self.outbound_payment_method.id,
+                "payment_mode_domain": domain,
+                "payment_order_ok": True,
+                "fixed_journal_id": journal.id,
+                "cnab_structure_id": self.env.ref(structure_xid).id,
+                "cnab_payment_way_ids": [(6, 0, [self.env.ref(way_xid).id])],
+                "cnab_processor": "oca_processor",
+            }
+        )
+        order = self.payment_order_model.create(
+            {
+                "payment_mode_id": mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": journal.id,
+            }
+        )
+        return order, mode
+
+    def _assert_boleto_trailer_matches_segment_j(self, bank_xid, prefix, code):
+        order, _mode = self._create_bank_order(
+            bank_xid,
+            f"l10n_br_cnab_structure.{prefix}",
+            f"l10n_br_cnab_structure.{prefix}_pay_way_31",
+            "boleto",
+            code,
+        )
+        self.payment_line_model.create(
+            {
+                "order_id": order.id,
+                "partner_id": self.partner_a.id,
+                "amount_currency": 1234.0,
+                "communication": "BOLETO TEST",
+                "date": fields.Date.today(),
+                "barcode": self.BOLETO_DIGITABLE_LINE,
+            }
+        )
+        lines = self._generate_cnab_lines(order)
+        segment_j = self._segments(lines, "J")[0]
+        trailer = [x for x in lines if len(x) > 7 and x[7] == "5"]
+        self.assertEqual(len(trailer), 1)
+        total = int(trailer[0][23:41])
+        self.assertTrue(total)
+        self.assertEqual(total, int(segment_j[152:167]))
+
+    def test_bb_boleto_trailer_total(self):
+        self._assert_boleto_trailer_matches_segment_j(
+            "l10n_br_base.res_bank_001", "cnab_bb_240", "BNKB"
+        )
+
+    def test_sicoob_boleto_trailer_total(self):
+        self._assert_boleto_trailer_matches_segment_j(
+            "l10n_br_base.res_bank_756", "cnab_sicoob_240", "BNKS"
+        )
+
+    def test_santander_boleto_trailer_total(self):
+        self._assert_boleto_trailer_matches_segment_j(
+            "l10n_br_base.res_bank_033", "cnab_santander_240", "BNKT"
+        )
+
+    def test_santander_payment_trailer_total(self):
+        """Santander payment batch trailer sums the segment A amounts (812)."""
+        order, mode = self._create_bank_order(
+            "l10n_br_base.res_bank_033",
+            "l10n_br_cnab_structure.cnab_santander_240",
+            "l10n_br_cnab_structure.cnab_santander_240_pay_way_45",
+            "pix_transfer",
+            "BNKP",
+        )
+        self.payment_line_model.create(
+            {
+                "order_id": order.id,
+                "partner_id": self.partner_a.id,
+                "partner_pix_id": self.partner_a.pix_key_ids[:1].id,
+                "amount_currency": 150.0,
+                "communication": "PIX TEST",
+                "date": fields.Date.today(),
+            }
+        )
+        lines = self._generate_cnab_lines(order)
+        segment_a = self._segments(lines, "A")[0]
+        trailer = [x for x in lines if len(x) > 7 and x[7] == "5"]
+        self.assertEqual(len(trailer), 1)
+        self.assertEqual(int(trailer[0][23:41]), 15000)
+        self.assertEqual(int(segment_a[119:134]), 15000)
