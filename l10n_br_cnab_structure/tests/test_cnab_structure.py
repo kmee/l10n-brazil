@@ -589,6 +589,7 @@ class TestCNABStructure(AccountTestInvoicingCommon):
             }
         )
         line_same._compute_cnab_payment_way_id()
+        line_same._compute_service_type()
         self.assertEqual(line_same.cnab_payment_way_id, way_same_bank)
         self.assertEqual(line_same.service_type, SVC_SUPPLIER)
 
@@ -604,6 +605,7 @@ class TestCNABStructure(AccountTestInvoicingCommon):
             }
         )
         line_other._compute_cnab_payment_way_id()
+        line_other._compute_service_type()
         self.assertEqual(line_other.cnab_payment_way_id, way_other_bank)
         self.assertEqual(line_other.service_type, SVC_SALARY)
 
@@ -794,3 +796,36 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         self.assertFalse(cnab_field_id.content_source_field)
         field_select_wizard.action_confirm()
         self.assertEqual(cnab_field_id.content_source_field, "company_partner_bank_id")
+
+    def test_payment_way_compute_without_cnab_structure(self):
+        """The payment way compute must not raise for a payment mode without CNAB."""
+        mode = self.payment_mode_model.create(
+            {
+                "name": "Manual mode without CNAB",
+                "bank_account_link": "variable",
+                "company_id": self.company.id,
+                "payment_method_id": self.env.ref(
+                    "account.account_payment_method_manual_out"
+                ).id,
+            }
+        )
+        order = self.payment_order_model.create(
+            {
+                "payment_mode_id": mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": self.bank_journal_itau.id,
+            }
+        )
+        line = self.payment_line_model.create(
+            {
+                "order_id": order.id,
+                "partner_id": self.partner_a.id,
+                "amount_currency": 10.0,
+                "communication": "NO CNAB",
+            }
+        )
+        line._compute_cnab_payment_way_id()
+        line._compute_service_type()
+        self.assertFalse(line.cnab_payment_way_id)
+        self.assertFalse(line.service_type)
