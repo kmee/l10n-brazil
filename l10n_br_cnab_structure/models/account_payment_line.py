@@ -28,6 +28,15 @@ CNAB_ACCOUNT_PAYMENT_WAY_CODES = ("01", "03", "05", "06", "07", "41", "43")
 ITAU_TAX_PAYMENT_WAY_CODES = ("16", "17", "18", "19", "22", "25", "27", "35", "91")
 ITAU_BANK_CODE = "341"
 
+# Payment ways whose batch carries segment J-52 (boleto beneficiary inscription)
+CNAB_BOLETO_J52_WAY_CODES = ("30", "31")
+
+# Itau SISPAG manual v085 (table of p. 4 and note 4 of p. 46): the payment type
+# 30 (Salarios) accepts exclusively the way 01 (credit in Itau checking account)
+# or 60 (cartao salario); DOC, TED, OP, cheque and the other ways are rejected
+# with the return code IM (TIPO X FORMA NAO COMPATIVEL).
+ITAU_SALARY_PAYMENT_WAY_CODES = ("01", "60")
+
 
 class CnabGroupedPaymentLine:
     """Read-only view of several payment lines paying the same barcode.
@@ -135,6 +144,126 @@ class AccountPaymentLine(models.Model):
         if way.is_pix:
             return not self.partner_pix_id
         return way.code in CNAB_ACCOUNT_PAYMENT_WAY_CODES
+
+    def _cnab_line_requires_favored_inscription(self):
+        """Also consider the CNAB payment way of the line: credit in account,
+        TED/DOC, PIX and the boleto ways that carry segment J-52."""
+        self.ensure_one()
+        way = self.cnab_payment_way_id
+        if not way:
+            return super()._cnab_line_requires_favored_inscription()
+        return (
+            way.is_pix
+            or way.code in CNAB_ACCOUNT_PAYMENT_WAY_CODES
+            or way.code in CNAB_BOLETO_J52_WAY_CODES
+        )
+
+    def _get_cnab_barcode_kind(self):
+        """Return ``(kind, preferred ways, wrong ways)`` of the barcode of the line.
+
+        ``kind`` is "same" (boleto of the paying bank), "other" (boleto of
+        another bank) or "utility"; False without barcode. ``wrong`` are the
+        ways that would put the barcode in a layout of another kind.
+        """
+        self.ensure_one()
+        code = clean_digits(self.barcode or self.digitable_line)
+        if not code:
+            return False, (), ()
+        if code[0] == "8":
+            return "utility", ("13", "91"), ("30", "31")
+        bank = self._normalize_cnab_bank_code(code[:3])
+        payer = self._normalize_cnab_bank_code(self.order_id.journal_id.bank_id.code_bc)
+        if bank and bank == payer:
+            return "same", ("30",), ("31",)
+        return "other", ("31",), ("30",)
+
+    def _check_cnab_barcode_way(self):
+        """Block a barcode paid in the way of another bank/kind.
+
+        With the preferred way missing from the payment mode the line falls on
+        the first way of the mode (e.g. one-way mode "30" with a barcode of
+        another bank, or the reverse): the bank rejects the file (bank 341 in
+        way 31, other bank in way 30, utility in 30/31). Mixed modes (all the
+        ways configured) never reach it.
+        """
+        for line in self:
+            kind, preferred, wrong = line._get_cnab_barcode_kind()
+            way = line.cnab_payment_way_id
+            if not kind or not way or way.code not in wrong:
+                continue
+            modes = self.env["account.payment.mode"].search(
+                [
+                    ("company_id", "=", line.order_id.company_id.id),
+                    ("payment_order_ok", "=", True),
+                    ("payment_mode_domain", "=", "boleto"),
+                    ("cnab_structure_id", "=", line.order_id.cnab_structure_id.id),
+                ]
+            )
+            suggestion = modes.filtered(
+                lambda m, p=preferred: any(
+                    w.code in p and w.batch_id for w in m.cnab_payment_way_ids
+                )
+            )[:1]
+            raise UserError(
+                _(
+                    "The barcode of payment line %(line)s (partner: %(partner)s) "
+                    "is %(kind)s, which must be paid in way %(preferred)s, but "
+                    "the payment mode %(mode)s only has way %(way)s and the bank "
+                    "would reject the file. Use %(suggestion)s for this line.",
+                    line=line.name or line.display_name,
+                    partner=line.partner_id.display_name or "-",
+                    kind={
+                        "same": _("a boleto of the paying bank"),
+                        "other": _("a boleto of another bank"),
+                        "utility": _("a utility/tax bill"),
+                    }[kind],
+                    preferred=" / ".join(preferred),
+                    mode=line.order_id.payment_mode_id.display_name,
+                    way=way.code,
+                    suggestion=(
+                        _("the payment mode %s", suggestion.display_name)
+                        if suggestion
+                        else _("a payment mode that has way %s", preferred[0])
+                    ),
+                )
+            )
+
+    def _check_cnab_service_type_way(self):
+        """Block Itau salary (service type 30) in a way other than 01/60.
+
+        Itau SISPAG manual v085, table of p. 4 and note 4 of p. 46: the type 30
+        accepts exclusively the way 01 (credit in Itau account) or 60 (cartao
+        salario); other ways are rejected by the bank (return code IM).
+        """
+        for line in self:
+            way = line.cnab_payment_way_id
+            if (
+                line.order_id.cnab_structure_id.bank_id.code_bc != ITAU_BANK_CODE
+                or line.service_type != "30"
+                or not way
+                or way.code in ITAU_SALARY_PAYMENT_WAY_CODES
+            ):
+                continue
+            raise UserError(
+                _(
+                    "Payment line %(line)s (partner: %(partner)s) is a salary "
+                    "payment (service type 30) in way %(way)s. Itau only accepts "
+                    "salary by credit in Itau account (way 01) or cartao salario "
+                    "(60); the bank would reject it as incompatible type x way. "
+                    "Pay the partner by credit in an Itau account or change the "
+                    "CNAB payment rule to service type 20.",
+                    line=line.name or line.display_name,
+                    partner=line.partner_id.display_name or "-",
+                    way=way.code,
+                )
+            )
+
+    def draft2open_payment_line_check(self):
+        """Also block barcode in the wrong way and salary in an Itau non credit way."""
+        res = super().draft2open_payment_line_check()
+        self._check_cnab_barcode_way()
+        self._check_cnab_service_type_way()
+        return res
 
     def _cnab_group_by_barcode(self):
         """Group lines that pay the same barcode (one boleto for N bills).

@@ -136,11 +136,33 @@ def normalize_barcode(value):
     if len(cleaned) in (47, 48):
         barcode = barcode_from_digitable_line(cleaned)
         if barcode and is_valid_barcode(barcode):
+            # utility blocks carry their own DV: a wrong one is a typo, never
+            # silently recalculated
+            if len(cleaned) == 48 and digitable_line_from_barcode(barcode) != cleaned:
+                return cleaned, False, False
             return barcode, cleaned, True
         return cleaned, False, False
     if is_valid_barcode(cleaned):
         return cleaned, digitable_line_from_barcode(cleaned), True
     return cleaned, False, False
+
+
+def has_wrong_block_dv(value):
+    """True for a 48 digits utility linha digitavel whose blocks DV are wrong.
+
+    Only when the general DV of the rebuilt barcode is valid: the typed blocks
+    are consistent with a barcode but at least one block DV differs from the
+    recalculated one.
+    """
+    cleaned = clean_digits(value)
+    if len(cleaned) != 48:
+        return False
+    barcode = barcode_from_digitable_line(cleaned)
+    return bool(
+        barcode
+        and is_valid_barcode(barcode)
+        and digitable_line_from_barcode(barcode) != cleaned
+    )
 
 
 def barcode_value(barcode):

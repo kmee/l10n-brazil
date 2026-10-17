@@ -83,3 +83,20 @@ class TestBankAccountRequired(AccountTestInvoicingCommon):
     def test_boleto_and_dinheiro_are_not_checked(self):
         for domain in ("boleto", "dinheiro"):
             self._line(domain)._check_bank_account_required()
+
+    def test_favored_without_inscription_blocks(self):
+        for number, domain in enumerate(("ted", "doc", "pix_transfer")):
+            line = self._line(
+                domain, partner_bank_id=self._bank_account(acc_number=str(number)).id
+            )
+            self.partner_a.vat = False
+            with self.assertRaises(UserError) as ctx:
+                line._check_favored_inscription()
+            self.assertIn(line.name, str(ctx.exception))
+            self.assertIn(self.partner_a.display_name, str(ctx.exception))
+            self.partner_a.vat = "45823449000198"
+            line._check_favored_inscription()
+
+    def test_dinheiro_does_not_need_inscription(self):
+        self.partner_a.vat = False
+        self._line("dinheiro")._check_favored_inscription()

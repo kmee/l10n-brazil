@@ -3,6 +3,8 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 
+import re
+
 from erpbrasil.base import misc
 
 from odoo import api, fields, models
@@ -263,6 +265,26 @@ class AccountPaymentLine(models.Model):
                 line.barcode or line.digitable_line
             )
             if not valid:
+                if barcode_utils.has_wrong_block_dv(
+                    line.barcode or line.digitable_line
+                ):
+                    raise UserError(
+                        self.env._(
+                            "The 48 digits linha digitavel of the utility boleto on "
+                            "payment line %(line)s (partner: %(partner)s, amount: "
+                            "%(amount)s) has a wrong check digit in one of its four "
+                            "blocks. Review the typed digits instead of letting the "
+                            "system recalculate them, and inform the linha digitavel "
+                            "exactly as printed on the bill.",
+                            line=line.name or line.display_name,
+                            partner=line.partner_id.display_name or "-",
+                            amount=formatLang(
+                                self.env,
+                                line.amount_currency,
+                                currency_obj=line.currency_id,
+                            ),
+                        )
+                    )
                 raise UserError(
                     self.env._(
                         "Boleto barcode missing or invalid on payment line "
@@ -331,6 +353,51 @@ class AccountPaymentLine(models.Model):
                 )
             )
 
+    def _cnab_line_requires_favored_inscription(self):
+        """Whether the CNAB layout of the line needs the CPF/CNPJ of the partner.
+
+        TED, DOC and PIX transfers (segments A/B, BACEN rule) and banking boletos
+        (segment J-52 beneficiary). Utility boletos do not carry it. Hook
+        extended by l10n_br_cnab_structure with the CNAB payment way.
+        """
+        self.ensure_one()
+        if self.payment_mode_domain in ("ted", "doc", "pix_transfer"):
+            return True
+        if self.payment_mode_domain == "boleto":
+            code = barcode_utils.clean_digits(self.barcode or self.digitable_line)
+            return not code.startswith("8")
+        return False
+
+    def _check_favored_inscription(self):
+        """Block lines whose favored party has no CPF/CNPJ when the layout needs it.
+
+        Without it the CNAB segments A/B (TED, PIX, credit) and J-52 (boleto
+        beneficiary) leave with the inscription zeroed and the bank rejects the
+        payment.
+        """
+        for line in self:
+            if not line._cnab_line_requires_favored_inscription():
+                continue
+            digits = re.sub(r"\D", "", line.partner_id.vat or "")
+            if digits.strip("0"):
+                continue
+            raise UserError(
+                self.env._(
+                    "CPF/CNPJ of the favored party missing on payment line "
+                    "%(line)s (partner: %(partner)s, amount: %(amount)s). The "
+                    "bank requires the inscription of the favored party (or of "
+                    "the boleto beneficiary) in this payment form: fill the "
+                    "CPF/CNPJ in the partner.",
+                    line=line.name or line.display_name,
+                    partner=line.partner_id.display_name or "-",
+                    amount=formatLang(
+                        self.env,
+                        line.amount_currency,
+                        currency_obj=line.currency_id,
+                    ),
+                )
+            )
+
     def draft2open_payment_line_check(self):
         """
         Override to add brazilian validations
@@ -339,6 +406,7 @@ class AccountPaymentLine(models.Model):
         self._check_pix_transfer_type()
         self._check_boleto_barcode()
         self._check_bank_account_required()
+        self._check_favored_inscription()
         return res
 
     @api.onchange("partner_id")

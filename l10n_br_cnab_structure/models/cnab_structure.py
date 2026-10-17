@@ -92,12 +92,11 @@ class CNABStructure(models.Model):
     )
 
     conf_segment_start_pos = fields.Integer(
-        help="Start position of segment of an detail record. Only for detail"
-        " records."
+        help="Start position of segment of an detail record. Only for detail records."
     )
 
     conf_segment_end_pos = fields.Integer(
-        help="Last position of segment of an detail record. Only for detail" " records."
+        help="Last position of segment of an detail record. Only for detail records."
     )
 
     record_type_file_header_id = fields.Integer(
@@ -249,6 +248,9 @@ class CNABStructure(models.Model):
         pay_order.payment_line_ids._check_boleto_barcode()
         # Blocks TED/DOC/credit in account without the favored bank account
         pay_order.payment_line_ids._check_bank_account_required()
+        pay_order.payment_line_ids._check_favored_inscription()
+        pay_order.payment_line_ids._check_cnab_barcode_way()
+        pay_order.payment_line_ids._check_cnab_service_type_way()
         cnab = Cnab()
 
         # HEADER

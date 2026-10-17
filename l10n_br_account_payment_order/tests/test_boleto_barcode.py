@@ -106,6 +106,7 @@ class TestBoletoBarcodeLine(AccountTestInvoicingCommon):
         super().setUpClass()
         cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
         cls.company = cls.company_data["company"]
+        cls.partner_a.vat = "45823449000198"
         method = cls.env.ref(
             "l10n_br_account_payment_order.payment_mode_type_cnab240_out"
         )
@@ -201,3 +202,17 @@ class TestBoletoBarcodeLine(AccountTestInvoicingCommon):
         pline.draft2open_payment_line_check()
         self.assertEqual(pline.barcode, barcode)
         self.assertEqual(pline.digitable_line, line)
+
+
+@tagged("post_install", "-at_install")
+class TestUtilityBlockDv(TransactionCase):
+    def test_wrong_block_dv_is_invalid_not_recalculated(self):
+        good = "826900000413526572026106260000123455678901234560"
+        bad = good[:11] + str((int(good[11]) + 1) % 10) + good[12:]
+        self.assertTrue(barcode_utils.normalize_barcode(good)[2])
+        barcode, digitable_line, valid = barcode_utils.normalize_barcode(bad)
+        self.assertFalse(valid)
+        self.assertEqual(barcode, bad)
+        self.assertFalse(digitable_line)
+        self.assertTrue(barcode_utils.has_wrong_block_dv(bad))
+        self.assertFalse(barcode_utils.has_wrong_block_dv(good))
