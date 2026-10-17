@@ -2531,6 +2531,20 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         self.assertIn(line_1.name, message)
         self.assertIn(line_2.name, message)
 
+    def test_same_barcode_different_partners_message_in_pt_br(self):
+        self.env["res.lang"]._activate_lang("pt_BR")
+        self.env["ir.module.module"]._load_module_terms(
+            ["l10n_br_cnab_structure"], ["pt_BR"], overwrite=True
+        )
+        order, line_1, line_2 = self._create_two_bills_order()
+        line_2.partner_id = self.partner_b
+        order.draft2open()
+        with self.assertRaises(UserError) as ctx:
+            order.with_context(lang="pt_BR").open2generated()
+        message = str(ctx.exception)
+        self.assertIn("parceiros diferentes", message)
+        self.assertNotIn("different partners", message)
+
     def test_grouped_barcode_without_value_blocks(self):
         # 3rd digit 7 (reference value): the barcode carries no effective value
         code = self._utility_barcode("2", "7", 3)

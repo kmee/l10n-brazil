@@ -1824,38 +1824,25 @@ msgstr ""
 #~ msgstr "Linhas de Pagamento Bancário"
 
 #. module: l10n_br_cnab_structure
-#: code:addons/l10n_br_cnab_structure/models/cnab_line_field.py:0
-msgid ""
-"Invalid value for CNAB field '%(field)s' (positions %(start)s-%(end)s).\n"
-"Payment line: %(line)s\n"
-"Beneficiary: %(partner)s\n"
-"Value received: '%(value)s'\n"
-"Reason: %(reason)s. Expected up to %(size)s digit(s).\n"
-"Fix the beneficiary's bank account (branch, account number and check digit) in the partner form."
-msgstr ""
-"Valor inválido para o campo CNAB '%(field)s' (posições %(start)s-%(end)s).\n"
-"Linha de pagamento: %(line)s\n"
-"Favorecido: %(partner)s\n"
-"Valor recebido: '%(value)s'\n"
-"Motivo: %(reason)s. Esperado até %(size)s dígito(s).\n"
-"Corrija a conta bancária do favorecido (agência, número da conta e dígito) no cadastro do parceiro."
-
-#. module: l10n_br_cnab_structure
+#. odoo-python
 #: code:addons/l10n_br_cnab_structure/models/cnab_line_field.py:0
 msgid "empty value"
 msgstr "valor vazio"
 
 #. module: l10n_br_cnab_structure
+#. odoo-python
 #: code:addons/l10n_br_cnab_structure/models/cnab_line_field.py:0
 msgid "only digits are allowed (no separators or letters)"
 msgstr "somente dígitos são permitidos (sem separadores ou letras)"
 
 #. module: l10n_br_cnab_structure
+#. odoo-python
 #: code:addons/l10n_br_cnab_structure/models/cnab_line_field.py:0
 msgid "value has more significant digits than the field size"
 msgstr "o valor tem mais dígitos significativos que o tamanho do campo"
 
 #. module: l10n_br_cnab_structure
+#. odoo-python
 #: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
 msgid ""
 "CNAB payment way not found.\n"
@@ -1867,12 +1854,69 @@ msgstr ""
 "Estrutura CNAB: %(cnab_structure)s"
 
 #. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/cnab_line_field.py:0
+msgid ""
+"Invalid value for CNAB field '%(field)s' (positions %(start)s-%(end)s).\n"
+"Payment line: %(line)s\n"
+"Beneficiary: %(partner)s\n"
+"Value received: '%(value)s'\n"
+"Reason: %(reason)s. Expected up to %(size)s digit(s).%(hint)s"
+msgstr ""
+"Valor inválido para o campo CNAB '%(field)s' (posições "
+"%(start)s-%(end)s).\n"
+"Linha de pagamento: %(line)s\n"
+"Favorecido: %(partner)s\n"
+"Valor recebido: '%(value)s'\n"
+"Motivo: %(reason)s. Esperado até %(size)s dígito(s).%(hint)s"
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/cnab_line_field.py:0
+msgid ""
+"\nFix the beneficiary's bank account (branch, account number and check "
+"digit) in the partner form."
+msgstr ""
+"\nCorrija a conta bancária do favorecido (agência, número da conta e "
+"dígito) no cadastro do parceiro."
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"The payment lines %(lines)s have the same barcode but different partners. "
+"A boleto belongs to one payee: fix the barcode or the partner of the "
+"lines."
+msgstr ""
+"As linhas de pagamento %(lines)s têm o mesmo código de barras, mas "
+"parceiros diferentes. Um boleto pertence a um único beneficiário: corrija "
+"o código de barras ou o parceiro das linhas."
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"The payment lines %(lines)s share the same barcode and it does not carry "
+"a value (open amount boleto), so the total to pay cannot be checked. Pay "
+"them in separate orders or join the bills in a single payment line."
+msgstr ""
+"As linhas de pagamento %(lines)s compartilham o mesmo código de barras e "
+"ele não traz valor (boleto de valor aberto), portanto o total a pagar não "
+"pode ser conferido. Pague-as em ordens separadas ou una os títulos em uma "
+"única linha de pagamento."
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
 #: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
 msgid ""
 "The payment lines %(lines)s share the same barcode, whose value is "
-"%(value)s, but their amounts sum %(total)s. A boleto paid by several lines "
-"must be paid in full: adjust the amounts of the lines."
+"%(value)s, but their amounts sum %(total)s. Interest, fine and discount "
+"are not applied to a boleto paid by several lines: adjust the amounts so "
+"that they sum the value of the boleto, or pay the lines separately "
+"(remove the repeated barcode)."
 msgstr ""
-"As linhas de pagamento %(lines)s compartilham o mesmo código de barras, cujo "
-"valor é %(value)s, mas seus valores somam %(total)s. Um boleto pago por "
-"várias linhas deve ser pago integralmente: ajuste os valores das linhas."
+"As linhas de pagamento %(lines)s compartilham o mesmo código de barras, "
+"cujo valor é %(value)s, mas seus valores somam %(total)s. Juros, multa e "
+"desconto não são aplicados a um boleto pago por várias linhas: ajuste os "
+"valores para que somem o valor do boleto ou pague as linhas separadamente "
+"(remova o código de barras repetido)."
