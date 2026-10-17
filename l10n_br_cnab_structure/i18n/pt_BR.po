@@ -1865,3 +1865,14 @@ msgstr ""
 "Forma de pagamento CNAB não encontrada.\n"
 "Modo de pagamento: %(payment_mode)s\n"
 "Estrutura CNAB: %(cnab_structure)s"
+
+#. module: l10n_br_cnab_structure
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"The payment lines %(lines)s share the same barcode, whose value is "
+"%(value)s, but their amounts sum %(total)s. A boleto paid by several lines "
+"must be paid in full: adjust the amounts of the lines."
+msgstr ""
+"As linhas de pagamento %(lines)s compartilham o mesmo código de barras, cujo "
+"valor é %(value)s, mas seus valores somam %(total)s. Um boleto pago por "
+"várias linhas deve ser pago integralmente: ajuste os valores das linhas."

@@ -8,6 +8,7 @@ import base64
 from datetime import timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from unidecode import unidecode
 
@@ -2127,6 +2128,9 @@ class TestCNABStructure(AccountTestInvoicingCommon):
     def test_way_by_barcode_file_has_three_lots(self):
         pay_date = fields.Date.today() + timedelta(days=5)
         order, lines = self._mixed_barcode_order(self._barcode_ways_mode())
+        # the same barcode on two lines leaves as one record (one boleto for N
+        # bills): use two different utility bills to get two segments O
+        lines[5].barcode = self._utility_barcode("2", "6", 2)
         order.write({"date_prefered": "fixed", "date_scheduled": pay_date})
         file_lines = self._generate_cnab_lines(order)
         for rec in file_lines:
@@ -2137,8 +2141,10 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         seg_j = self._segments(file_lines, "J")
         # 4 boletos: J + J-52 each
         self.assertEqual(len(seg_j), 8)
-        for seg in self._segments(file_lines, "O"):
-            self.assertEqual(seg[17:65], self.UTILITY_DIGITABLE_LINE)
+        self.assertEqual(
+            {seg[17:65] for seg in self._segments(file_lines, "O")},
+            {self.UTILITY_DIGITABLE_LINE, lines[5].digitable_line},
+        )
         # Lot header history of C/C (133-142) must be blank (manual note 7)
         header_13 = [h for h in headers if h[11:13] == "13"][0]
         self.assertEqual(header_13[132:142], " " * 10)
@@ -2323,6 +2329,69 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         self.assertFalse(self._segments(lines, "B"))
 
     # ------------------------------------------------------------------
+    # One boleto paying several bills (same barcode on several lines)
+    # ------------------------------------------------------------------
+    def _add_boleto_line(self, order, amount, barcode):
+        return self.payment_line_model.create(
+            {
+                "order_id": order.id,
+                "partner_id": self.partner_a.id,
+                "amount_currency": amount,
+                "communication": "BOLETO TEST",
+                "date": fields.Date.today(),
+                "barcode": barcode,
+            }
+        )
+
+    def _create_two_bills_order(self, amount_2=234.56):
+        # the barcode carries the value R$ 1234,56 (positions 10-19)
+        order, line_1 = self._create_boleto_order(
+            barcode=self.BOLETO_BARCODE, amount_currency=1000.0
+        )
+        line_2 = self._add_boleto_line(order, amount_2, self.BOLETO_BARCODE)
+        return order, line_1, line_2
+
+    def test_one_boleto_for_two_bills_generates_one_segment_j(self):
+        order, line_1, line_2 = self._create_two_bills_order()
+        lines = self._generate_cnab_lines(order)
+        segments = self._segments(lines, "J")
+        # one J (barcode) + one J-52, not two of each
+        self.assertEqual(len(segments), 2)
+        seg_j = segments[0]
+        self.assertEqual(seg_j[17:61], self.BOLETO_BARCODE)
+        self.assertEqual(seg_j[99:114], "000000000123456")  # nominal
+        self.assertEqual(seg_j[152:167], "000000000123456")  # paid: sum of the bills
+        self.assertEqual(seg_j[182:202].strip(), line_1.name)
+        trailer = [x for x in lines if len(x) > 7 and x[7] == "5"]
+        self.assertEqual(trailer[0][23:41], "000000000000123456")
+        self.assertEqual(len(order.payment_line_ids), 2)
+
+    def test_one_boleto_for_two_bills_sum_must_match_barcode_value(self):
+        order, line_1, line_2 = self._create_two_bills_order(amount_2=200.0)
+        order.draft2open()
+        with self.assertRaises(UserError) as ctx:
+            order.open2generated()
+        message = str(ctx.exception)
+        self.assertIn(line_1.name, message)
+        self.assertIn(line_2.name, message)
+
+    def test_different_barcodes_keep_one_segment_j_each(self):
+        order, _line_1 = self._create_boleto_order(
+            barcode=self.BOLETO_BARCODE, amount_currency=1234.56
+        )
+        self._add_boleto_line(order, 1234.56, self._boleto_barcode("001", 7))
+        lines = self._generate_cnab_lines(order)
+        self.assertEqual(len(self._segments(lines, "J")), 4)
+
+    def test_return_of_one_boleto_for_two_bills_links_all_lines(self):
+        order, line_1, line_2 = self._create_two_bills_order()
+        events = self._return_events(order, "J", "671234567890123")
+        event = events.filtered(lambda e: e.your_number == line_1.name)
+        self.assertEqual(len(event), 1)
+        self.assertEqual(event.payment_line_ids, line_1 | line_2)
+        self.assertNotIn("PAYMENT LINES NOT FOUND", event.occurrences or "")
+
+    # ------------------------------------------------------------------
     # Service type (tipo de pagamento) by payment way
     # ------------------------------------------------------------------
     def _service_type_of(self, codes, barcode=False):
@@ -2368,6 +2437,96 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         _order, line = self._service_type_of(("91",))
         self.assertEqual(line.cnab_payment_way_id.code, "91")
         self.assertEqual(line.service_type, "22")
+
+    # ------------------------------------------------------------------
+    # Review of the grouping, return, fallback and messages
+    # ------------------------------------------------------------------
+    def test_same_barcode_different_partners_is_not_merged(self):
+        order, line_1, line_2 = self._create_two_bills_order()
+        line_2.partner_id = self.partner_b
+        order.draft2open()
+        with self.assertRaises(UserError) as ctx:
+            order.open2generated()
+        message = str(ctx.exception)
+        self.assertIn("different partners", message)
+        self.assertIn(line_1.name, message)
+        self.assertIn(line_2.name, message)
+
+    def test_grouped_barcode_without_value_blocks(self):
+        # 3rd digit 7 (reference value): the barcode carries no effective value
+        code = self._utility_barcode("2", "7", 3)
+        order, _line = self._create_utility_order(barcode=code)
+        line_2 = self.payment_line_model.create(
+            {
+                "order_id": order.id,
+                "partner_id": self.partner_a.id,
+                "amount_currency": 10.0,
+                "communication": "UTILITY TEST",
+                "date": fields.Date.today(),
+                "barcode": code,
+            }
+        )
+        order.draft2open()
+        with self.assertRaises(UserError) as ctx:
+            order.open2generated()
+        self.assertIn("does not carry a value", str(ctx.exception))
+        self.assertIn(line_2.name, str(ctx.exception))
+
+    def test_grouped_mismatch_message_says_what_to_do(self):
+        order, _l1, _l2 = self._create_two_bills_order(amount_2=200.0)
+        order.draft2open()
+        with self.assertRaises(UserError) as ctx:
+            order.open2generated()
+        self.assertIn("pay the lines separately", str(ctx.exception))
+
+    def test_one_utility_bill_for_two_bills_generates_one_segment_o(self):
+        # the utility barcode carries the value R$ 4152,65
+        order, line_1 = self._create_utility_order(amount_currency=2000.0)
+        self.payment_line_model.create(
+            {
+                "order_id": order.id,
+                "partner_id": self.partner_a.id,
+                "amount_currency": 2152.65,
+                "communication": "UTILITY TEST",
+                "date": fields.Date.today(),
+                "barcode": self.UTILITY_DIGITABLE_LINE,
+            }
+        )
+        lines = self._generate_cnab_lines(order)
+        segments = self._segments(lines, "O")
+        self.assertEqual(len(segments), 1)
+        self.assertEqual(segments[0][121:136], "000000000415265")
+        self.assertEqual(segments[0][174:194].strip(), line_1.name)
+
+    def test_return_does_not_link_reconciled_sibling(self):
+        order, line_1, line_2 = self._create_two_bills_order()
+        invoice = self._create_test_invoice()
+        invoice.action_post()
+        move_line = invoice.line_ids.filtered(
+            lambda x: x.account_id.account_type == "liability_payable"
+        )
+        line_2.move_line_id = move_line
+        self.env.cr.execute(
+            "UPDATE account_move_line SET reconciled = true WHERE id = %s",
+            (move_line.id,),
+        )
+        move_line.invalidate_recordset(["reconciled"])
+        events = self._return_events(order, "J", "671234567890123")
+        event = events.filtered(lambda e: e.your_number == line_1.name)
+        self.assertEqual(event.payment_line_ids, line_1)
+
+    def test_return_of_old_file_with_two_records_links_one_line_each(self):
+        """File generated before the grouping: one J per line, own amount."""
+        order, line_1, line_2 = self._create_two_bills_order()
+        with patch.object(
+            type(line_1),
+            "_cnab_group_by_barcode",
+            lambda recs: [rec for rec in recs],
+        ):
+            events = self._return_events(order, "J", "671234567890123")
+        by_name = {e.your_number: e for e in events}
+        self.assertEqual(by_name[line_1.name].payment_line_ids, line_1)
+        self.assertEqual(by_name[line_2.name].payment_line_ids, line_2)
 
     def test_rule_skipped_by_mode_keeps_its_service_type(self):
         """Employee salary in a TED mode: PIX rule refused, type 30 kept."""

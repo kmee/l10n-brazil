@@ -256,7 +256,8 @@ class CNABStructure(models.Model):
 
         # BATCHES
         grouped_bank_lines = {}
-        for bline in pay_order.payment_line_ids:
+        # Lines paying the same barcode (one boleto for N bills) leave as one
+        for bline in pay_order.payment_line_ids._cnab_group_by_barcode():
             way_code = bline.cnab_payment_way_id.code
             type_code = bline.service_type
             batch_key = tuple([way_code, type_code])

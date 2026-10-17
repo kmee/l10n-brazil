@@ -8,7 +8,10 @@ from unidecode import unidecode
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
-from odoo.addons.l10n_br_account_payment_order.barcode_utils import clean_digits
+from odoo.addons.l10n_br_account_payment_order.barcode_utils import (
+    barcode_value,
+    clean_digits,
+)
 from odoo.addons.l10n_br_account_payment_order.constants import (
     PAGAMENTO_CONTAS_TRIBUTOS_IMPOSTOS,
     PAGAMENTO_FORNECEDOR,
@@ -24,6 +27,23 @@ CNAB_ACCOUNT_PAYMENT_WAY_CODES = ("01", "03", "05", "06", "07", "41", "43")
 # type 22. Concessionarias (13) stay 20. DARJ (21) does not exist in v085.
 ITAU_TAX_PAYMENT_WAY_CODES = ("16", "17", "18", "19", "22", "25", "27", "35", "91")
 ITAU_BANK_CODE = "341"
+
+
+class CnabGroupedPaymentLine:
+    """Read-only view of several payment lines paying the same barcode.
+
+    Exposes the first line (its name is the "seu numero" sent to the bank) with
+    ``amount_currency`` replaced by the sum of the grouped lines, so the CNAB
+    field expressions need no change. The grouped records are in ``lines``.
+    """
+
+    def __init__(self, lines, amount):
+        self.lines = lines
+        self._main = lines[0]
+        self.amount_currency = amount
+
+    def __getattr__(self, name):
+        return getattr(self._main, name)
 
 
 class AccountPaymentLine(models.Model):
@@ -115,6 +135,67 @@ class AccountPaymentLine(models.Model):
         if way.is_pix:
             return not self.partner_pix_id
         return way.code in CNAB_ACCOUNT_PAYMENT_WAY_CODES
+
+    def _cnab_group_by_barcode(self):
+        """Group lines that pay the same barcode (one boleto for N bills).
+
+        Returns the list of records to export: lines with a unique barcode
+        (or none) as they are, and one CnabGroupedPaymentLine for each barcode
+        shared by several lines, with the summed amount. When the barcode
+        carries a value the sum must be equal to it.
+        """
+        groups = {}
+        for line in self:
+            # lines of different partners with the same barcode are detected
+            # (and blocked) below, never merged silently
+            key = clean_digits(line.barcode or line.digitable_line) or line.id
+            groups[key] = groups.get(key, self.browse()) | line
+        result = []
+        for key, lines in groups.items():
+            if len(lines) == 1:
+                result.append(lines)
+                continue
+            names = ", ".join(lines.mapped(lambda x: x.name or ""))
+            if len(lines.partner_id) > 1:
+                raise UserError(
+                    _(
+                        "The payment lines %(lines)s have the same barcode but "
+                        "different partners. A boleto belongs to one payee: fix "
+                        "the barcode or the partner of the lines.",
+                        lines=names,
+                    )
+                )
+            total = sum(lines.mapped("amount_currency"))
+            value = barcode_value(key)
+            if value is None:
+                raise UserError(
+                    _(
+                        "The payment lines %(lines)s share the same barcode and "
+                        "it does not carry a value (open amount boleto), so the "
+                        "total to pay cannot be checked. Pay them in separate "
+                        "orders or join the bills in a single payment line.",
+                        lines=names,
+                    )
+                )
+            if lines[0].currency_id.compare_amounts(total, float(value)):
+                # Discount, interest and fine of the lines are not exported for
+                # a grouped boleto (J 115-144 would carry only the first line),
+                # so no adjustment is allowed: the sum must be the barcode value.
+                raise UserError(
+                    _(
+                        "The payment lines %(lines)s share the same barcode, whose "
+                        "value is %(value)s, but their amounts sum %(total)s. "
+                        "Interest, fine and discount are not applied to a boleto "
+                        "paid by several lines: adjust the amounts so that they "
+                        "sum the value of the boleto, or pay the lines separately "
+                        "(remove the repeated barcode).",
+                        lines=names,
+                        value=value,
+                        total=total,
+                    )
+                )
+            result.append(CnabGroupedPaymentLine(lines, total))
+        return result
 
     def _check_cnab_pix_key_type(self):
         """Block the CNAB when a line leaves as PIX key without a key type mapping.

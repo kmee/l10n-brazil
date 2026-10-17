@@ -13,6 +13,7 @@ of 11 digits, each followed by its own DV, that build a 44 digit barcode.
 """
 
 import re
+from decimal import Decimal
 
 _NON_DIGIT_SEPARATORS = re.compile(r"[\s.\-]")
 
@@ -140,3 +141,23 @@ def normalize_barcode(value):
     if is_valid_barcode(cleaned):
         return cleaned, digitable_line_from_barcode(cleaned), True
     return cleaned, False, False
+
+
+def barcode_value(barcode):
+    """Value (Decimal, in currency units) written in a 44 digits barcode.
+
+    Banking boleto: positions 10-19 (zero means "any value"). Utility and tax
+    barcode (starts with 8): positions 5-15, only when the value identifier
+    (3rd digit) says it is the effective value (6 and 8). Returns ``None``
+    when the barcode has no value, so the caller must not validate amounts.
+    """
+    code = clean_digits(barcode)
+    if len(code) != 44 or not code.isdigit():
+        return None
+    if code[0] == "8":
+        raw = code[4:15] if code[2] in ("6", "8") else ""
+    else:
+        raw = code[9:19]
+    if not raw or not int(raw):
+        return None
+    return Decimal(int(raw)) / 100

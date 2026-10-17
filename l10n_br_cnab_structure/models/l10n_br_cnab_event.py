@@ -6,6 +6,8 @@
 from odoo import Command, _, api, fields, models
 from odoo.exceptions import UserError
 
+from odoo.addons.l10n_br_account_payment_order.barcode_utils import clean_digits
+
 
 class CNABReturnEvent(models.Model):
     _inherit = "l10n_br_cnab.return.event"
@@ -99,6 +101,7 @@ class CNABReturnEvent(models.Model):
                 continue
             event.load_description_occurrences()
             event.load_bank_payment_line()
+            event._release_lines_claimed_by_own_record()
             event.check_gen_liquidation_move()
             event.set_move_line_ids()
             event.set_occurrence_date()
@@ -164,10 +167,57 @@ class CNABReturnEvent(models.Model):
                 payment_lines = self.env["account.payment.line"].search(
                     [("name", "=", event.your_number)]
                 )
+                payment_lines |= event._get_grouped_payment_lines(payment_lines)
                 if not payment_lines:
                     event.state = "error"
                     event.occurrences = "PAYMENT LINES NOT FOUND"
                 event.payment_line_ids = payment_lines.ids
+
+    def _get_grouped_payment_lines(self, payment_lines):
+        """Siblings paid by the same record of a grouped boleto.
+
+        One boleto paying several bills leaves as one record named after the
+        first line. Siblings are the other lines of the same order with the same
+        barcode and partner that are not reconciled yet. A return of a file
+        generated before the grouping (one record per line) must not link the
+        siblings, see ``_release_lines_claimed_by_own_record``.
+        """
+        self.ensure_one()
+        siblings = self.env["account.payment.line"]
+        for line in payment_lines:
+            code = clean_digits(line.barcode or line.digitable_line)
+            if not code:
+                continue
+            group = line.order_id.payment_line_ids.filtered(
+                lambda x, c=code, p=line.partner_id, ln=line: (
+                    clean_digits(x.barcode or x.digitable_line) == c
+                    and x.partner_id == p
+                    and (x == ln or not x.move_line_id.reconciled)
+                )
+            )
+            # a sibling that has its own record in this return (file generated
+            # before the grouping) is paid by that record, not by this one
+            own = self.cnab_return_log_id.event_ids.mapped("your_number")
+            group = group.filtered(lambda x, o=own, ln=line: x == ln or x.name not in o)
+            siblings |= group
+        return siblings
+
+    def _release_lines_claimed_by_own_record(self):
+        """Undo the grouping of earlier events of the same return.
+
+        When this event's "seu numero" is the name of a line that an earlier
+        event of the same return took as sibling, the file was generated
+        before the grouping: that line belongs to this record only.
+        """
+        self.ensure_one()
+        earlier = self.cnab_return_log_id.event_ids - self
+        for event in earlier.filtered(lambda e: e.your_number != self.your_number):
+            claimed = event.payment_line_ids.filtered(
+                lambda x: x.name == self.your_number
+            )
+            if claimed:
+                event.payment_line_ids -= claimed
+                event.move_line_ids -= claimed.move_line_id
 
     def get_description_occurrence(self, event_code):
         """Get occurrence description by occurrence code"""
