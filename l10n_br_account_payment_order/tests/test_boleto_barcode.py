@@ -77,6 +77,26 @@ class TestBoletoBarcodeUtils(TransactionCase):
         self.assertEqual(len(line), 48)
         self.assertEqual(barcode_utils.normalize_barcode(line), (barcode, line, True))
 
+    def test_utility_48_digits_mod11(self):
+        # Utility barcode with mod 11 blocks (reference 8) and its 48 digit line
+        body = "8" + "3" + "8" + "0" + "00000012345" + "6" * 29
+        dv = barcode_utils.mod11_utility(body[:3] + body[4:])
+        barcode = body[:3] + str(dv) + body[4:]
+        self.assertTrue(barcode_utils.is_valid_barcode(barcode))
+        line = barcode_utils.digitable_line_from_barcode(barcode)
+        self.assertEqual(len(line), 48)
+        self.assertEqual(
+            line,
+            "".join(
+                block + str(barcode_utils.mod11_utility(block))
+                for block in (barcode[i : i + 11] for i in range(0, 44, 11))
+            ),
+        )
+        self.assertEqual(barcode_utils.barcode_from_digitable_line(line), barcode)
+        self.assertEqual(
+            barcode_utils.normalize_barcode(barcode), (barcode, line, True)
+        )
+
 
 @tagged("post_install", "-at_install")
 class TestBoletoBarcodeLine(AccountTestInvoicingCommon):

@@ -8,11 +8,22 @@ from unidecode import unidecode
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
-from odoo.addons.l10n_br_account_payment_order.constants import TIPO_SERVICO
+from odoo.addons.l10n_br_account_payment_order.barcode_utils import clean_digits
+from odoo.addons.l10n_br_account_payment_order.constants import (
+    PAGAMENTO_CONTAS_TRIBUTOS_IMPOSTOS,
+    PAGAMENTO_FORNECEDOR,
+    TIPO_SERVICO,
+)
 
 # Payment way codes (FEBRABAN layout) that credit a bank account: credit in
 # checking/savings account, DOC and TED
 CNAB_ACCOUNT_PAYMENT_WAY_CODES = ("01", "03", "05", "06", "07", "41", "43")
+
+# Itau SISPAG manual v085 (note 4 and table of p. 4): payment ways of taxes
+# (GPS, DARF, GARE, IPVA, DPVAT, FGTS and taxes with barcode) require service
+# type 22. Concessionarias (13) stay 20. DARJ (21) does not exist in v085.
+ITAU_TAX_PAYMENT_WAY_CODES = ("16", "17", "18", "19", "22", "25", "27", "35", "91")
+ITAU_BANK_CODE = "341"
 
 
 class AccountPaymentLine(models.Model):
@@ -162,12 +173,15 @@ class AccountPaymentLine(models.Model):
 
     @api.depends(
         "payment_mode_id",
+        "payment_mode_id.payment_mode_domain",
         "partner_id",
         "partner_bank_id",
         "partner_id.employee",
         "partner_pix_id",
         "partner_bank_id.bank_id",
         "partner_bank_id.bank_id.code_bc",
+        "barcode",
+        "digitable_line",
         "order_id.journal_id.bank_id",
         "order_id.payment_mode_id.cnab_structure_id",
     )
@@ -177,18 +191,33 @@ class AccountPaymentLine(models.Model):
                 continue
             mode = line.order_id.payment_mode_id
             cnab_structure = line.order_id.cnab_structure_id
-            rule = line._get_matching_rule()
+            ways = mode.cnab_payment_way_ids.filtered(
+                lambda w, s=cnab_structure: w.cnab_structure_id == s
+            )
+            # Lines with barcode: the way follows the barcode (30/31/13/91) and
+            # no rule is evaluated, so a rule meant for TED/credit/salary (e.g.
+            # same bank supplier -> 01) never hijacks a boleto.
+            barcode_way = line._get_cnab_barcode_way(ways) if ways else False
+            rule, skipped_rule = (
+                (False, False) if barcode_way else line._match_cnab_rule()
+            )
 
-            if rule:
+            if barcode_way:
+                line.cnab_payment_way_id = barcode_way
+                line.service_type = line._get_cnab_default_service_type(barcode_way)
+            elif rule:
                 line.cnab_payment_way_id = rule.payment_way_id
                 line.service_type = rule.service_type
             else:
-                ways = mode.cnab_payment_way_ids.filtered(
-                    lambda w, s=cnab_structure: w.cnab_structure_id == s
-                )
                 if ways:
                     line.cnab_payment_way_id = ways[0]
-                    line.service_type = "20"
+                    # rules refused for the mode still say the service type
+                    # (e.g. salary 30) of the payee
+                    line.service_type = (
+                        skipped_rule.service_type
+                        if skipped_rule
+                        else line._get_cnab_default_service_type(ways[0])
+                    )
                 else:
                     line.cnab_payment_way_id = False
                     line.service_type = False
@@ -204,6 +233,60 @@ class AccountPaymentLine(models.Model):
                                 "cnab_structure": cnab_structure.name,
                             }
                         )
+
+    def _get_cnab_default_service_type(self, way):
+        """Service type (tipo de pagamento) of a way chosen without payment rule.
+
+        20 (fornecedor), except the tax ways of Itau that require 22. Mapped by
+        way code, so no new field is needed; a payment rule keeps deciding its
+        own service type.
+        """
+        self.ensure_one()
+        structure = self.order_id.cnab_structure_id
+        if (
+            structure.bank_id.code_bc == ITAU_BANK_CODE
+            and way.code in ITAU_TAX_PAYMENT_WAY_CODES
+        ):
+            return PAGAMENTO_CONTAS_TRIBUTOS_IMPOSTOS
+        return PAGAMENTO_FORNECEDOR
+
+    def _get_cnab_barcode_way(self, ways):
+        """Pick the payment way of a line with barcode, among ``ways``.
+
+        Takes precedence over the payment rules for lines with barcode. Keyed
+        by the FEBRABAN way code, so it works with any structure that has them:
+
+        * utility/tax barcode (starts with 8): the 2nd digit is the segment.
+          Tributos (1 prefeituras, 5 orgaos governamentais, 7 multas) prefer 91
+          (tributos com codigo de barras), then 13; the others (2 saneamento,
+          3 energia/gas, 4 telecom, 6, 9) prefer 13 (concessionarias), then 91;
+        * banking boleto of the paying bank (341 and 409 are the same bank): 30;
+        * banking boleto of another bank: 31.
+
+        Ways without batch template are skipped (not exportable). Returns an
+        empty recordset when the line has no barcode or no preferred way is
+        configured in the payment mode (caller keeps its previous behavior).
+        """
+        self.ensure_one()
+        code = clean_digits(self.barcode or self.digitable_line)
+        if not code:
+            return ways.browse()
+        if code[0] == "8":
+            if len(code) > 1 and code[1] in ("1", "5", "7"):
+                preferred = ("91", "13")
+            else:
+                preferred = ("13", "91")
+        else:
+            bank = self._normalize_cnab_bank_code(code[:3])
+            payer = self._normalize_cnab_bank_code(
+                self.order_id.journal_id.bank_id.code_bc
+            )
+            preferred = ("30",) if bank and bank == payer else ("31",)
+        for wanted in preferred:
+            way = ways.filtered(lambda w, c=wanted: w.code == c and w.batch_id)[:1]
+            if way:
+                return way
+        return ways.browse()
 
     def _cnab_freeze_exported(self):
         """Keep stored service type and payment way of exported orders.
@@ -237,7 +320,8 @@ class AccountPaymentLine(models.Model):
             ways = self.order_id.payment_mode_id.cnab_payment_way_ids.filtered(
                 lambda w, s=structure: w.cnab_structure_id == s
             )
-            self.cnab_payment_way_id = (
+            barcode_way = self._get_cnab_barcode_way(ways)
+            self.cnab_payment_way_id = barcode_way or (
                 rule.payment_way_id if rule else (ways[:1] or False)
             )
         return True
@@ -267,7 +351,17 @@ class AccountPaymentLine(models.Model):
 
     def _get_matching_rule(self):
         """Finds the best matching CNAB rule based on bank and partner attributes."""
+        return self._match_cnab_rule()[0]
+
+    def _match_cnab_rule(self):
+        """Return ``(rule, skipped_rule)``.
+
+        ``rule`` is the best matching rule that fits the payment mode;
+        ``skipped_rule`` is the first matching rule refused because it
+        contradicts the mode (only meaningful when ``rule`` is empty).
+        """
         self.ensure_one()
+        skipped = False
         cnab_structure = self.order_id.cnab_structure_id
         bank_type = self._get_cnab_bank_type()
         partner_type = "employee" if self._is_cnab_employee() else "supplier"
@@ -287,5 +381,38 @@ class AccountPaymentLine(models.Model):
                 continue
             if rule.match_pix_key not in ("any", pix_key):
                 continue
-            return rule
-        return False
+            if not self._cnab_rule_fits_payment_mode(rule):
+                skipped = skipped or rule
+                continue
+            return rule, False
+        return False, skipped
+
+    def _cnab_rule_fits_payment_mode(self, rule):
+        """Whether ``rule`` may take this line given its payment mode.
+
+        Narrow on purpose: a PIX rule on a non-PIX mode (and the reverse) stays
+        legitimate, e.g. salary by PIX key in a generic mode. Only the clear
+        contradictions between the mode and the data of the line are refused:
+
+        * PIX transfer mode, line with PIX key: a rule pointing to a way that is
+          not PIX (credit in account 01, TED 41/43...) would drop the key and
+          pay by account, so the rule is skipped;
+        * TED/DOC mode, line with favored bank account and without PIX key: a
+          PIX way rule is skipped (it would block generation, or send PIX
+          without a key).
+
+        When every matching rule is skipped the caller falls back to the first
+        way of the payment mode.
+        """
+        self.ensure_one()
+        way = rule.payment_way_id
+        domain = self.payment_mode_domain
+        if domain == "pix_transfer" and self.partner_pix_id:
+            return way.is_pix
+        if (
+            domain in ("ted", "doc")
+            and self.partner_bank_id
+            and not self.partner_pix_id
+        ):
+            return not way.is_pix
+        return True
