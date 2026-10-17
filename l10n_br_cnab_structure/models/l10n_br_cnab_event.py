@@ -129,7 +129,7 @@ class CNABReturnEvent(models.Model):
 
     def set_move_line_ids(self):
         payment_lines = self.payment_line_ids
-        for payment_line in payment_lines:
+        for payment_line in payment_lines.filtered("move_line_id"):
             self.move_line_ids = [Command.link(payment_line.move_line_id.id)]
 
     def check_gen_liquidation_move(self):
