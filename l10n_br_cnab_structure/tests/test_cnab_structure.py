@@ -1694,11 +1694,11 @@ class TestCNABStructure(AccountTestInvoicingCommon):
 
     # Itau boleto (segment J) layout data
 
-    def test_boleto_segment_j_dates(self):
-        """Segment J exports the dates of the line (not today)."""
+    def test_boleto_segment_j_dates_and_your_number(self):
+        """Segment J exports the dates of the line (not today) and its name."""
         pay_date = fields.Date.today() + timedelta(days=5)
         due_date = fields.Date.today() + timedelta(days=10)
-        order, _line = self._create_boleto_order(
+        order, line = self._create_boleto_order(
             barcode=self.BOLETO_DIGITABLE_LINE,
             date=pay_date,
             ml_maturity_date=due_date,
@@ -1708,6 +1708,7 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         segment_j = self._segments(lines, "J")[0]
         self.assertEqual(segment_j[91:99], due_date.strftime("%d%m%Y"))
         self.assertEqual(segment_j[144:152], pay_date.strftime("%d%m%Y"))
+        self.assertEqual(segment_j[182:202].strip(), line.name)
 
     def test_boleto_batch_trailer_total(self):
         """Itau boleto batch trailer sums the line amount (positions 24-41)."""
@@ -1716,6 +1717,58 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         trailer = [x for x in lines if len(x) > 7 and x[7] == "5"]
         self.assertEqual(len(trailer), 1)
         self.assertEqual(trailer[0][23:41], "000000000000123456")
+
+    def _return_events(self, order, segment, bank_number):
+        """Generate the remessa, fake the bank number and import it as return."""
+        order.draft2open()
+        action = order.open2generated()
+        data = base64.b64decode(self.attachment_model.browse(action["res_id"]).datas)
+        lines = data.decode().splitlines()
+        # The bank return carries only the J record (no J-52 optional record)
+        lines = [
+            x for x in lines if not (x[7] == "3" and x[13] == "J" and x[17:19] == "52")
+        ]
+        for idx, rec in enumerate(lines):
+            if len(rec) > 13 and rec[7] == "3" and rec[13] == segment:
+                lines[idx] = replace_chars(rec, 215, bank_number)
+                self.assertEqual(rec[215:230], " " * 15)  # sent blank
+        wizard = self.env["cnab.import.wizard"].create(
+            {
+                "journal_id": self.bank_journal_itau.id,
+                "return_file": base64.b64encode("\r\n".join(lines).encode()),
+                "filename": "TEST.RET",
+                "type": "outbound",
+                "cnab_structure_id": self.cnab_structure_itau_240.id,
+            }
+        )
+        action = wizard.with_context(default_type="outbound").import_cnab()
+        log = self.env["l10n_br_cnab.return.log"].browse(action["res_id"])
+        return log.event_ids
+
+    def _assert_return_keeps_bank_number(self, order, line, segment):
+        bank_number = "671234567890123"
+        field_xid = {
+            "J": "cnab_itau_240_boleto_segmento_j_216_230",
+        }[segment]
+        events = self._return_events(order, segment, bank_number)
+        event = events.filtered(lambda e: e.your_number == line.name)
+        self.assertEqual(len(event), 1)
+        self.assertEqual(event.own_number, bank_number)
+        self.assertEqual(event.payment_line_ids, line)
+        self.assertNotIn("PAYMENT LINES NOT FOUND", event.occurrences or "")
+        event.cnab_return_log_id.unlink()
+        # wrong production config: nosso numero mapped to your_number
+        self.env.ref(
+            f"l10n_br_cnab_structure.{field_xid}"
+        ).content_dest_field = "your_number"
+        order2, line2 = self._create_boleto_order(barcode=self.BOLETO_DIGITABLE_LINE)
+        events = self._return_events(order2, segment, bank_number)
+        self.assertFalse(events.filtered(lambda e: e.your_number == line2.name))
+        self.assertIn("PAYMENT LINES NOT FOUND", " ".join(events.mapped("occurrences")))
+
+    def test_return_segment_j_keeps_bank_number(self):
+        order, line = self._create_boleto_order(barcode=self.BOLETO_DIGITABLE_LINE)
+        self._assert_return_keeps_bank_number(order, line, "J")
 
     # Batch trailer total of the other banks (Banco do Brasil, Sicoob, Santander)
     def _create_bank_order(self, bank_xid, structure_xid, way_xid, domain, code):
