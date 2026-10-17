@@ -6,11 +6,15 @@ import base64
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
-from .declaration_xml import (
+from odoo.addons.l10n_br_fiscal.parsers.declaration_xml import (
+    IPI_NORMAL_REGIME_CODE,
     DeclarationXmlError,
     parse_declaration,
     parse_txt_declaration,
 )
+
+IPI_SUSPENSION_REGIME_CODE = "5"
+IPI_SUSPENSION_CST = "l10n_br_fiscal.cst_ipi_05"
 
 INTERMEDIATION = [
     ("1", "1 - Por conta propria"),
@@ -65,12 +69,18 @@ class ImportDeclarationAddition(models.TransientModel):
     )
     ii_rate = fields.Float(string="II %")
     ii_value = fields.Monetary(string="II", currency_field="company_currency_id")
+    ii_regime_code = fields.Char(string="II Regime Code")
     ipi_value = fields.Monetary(string="IPI", currency_field="company_currency_id")
+    ipi_regime_code = fields.Char(string="IPI Regime Code")
     pis_value = fields.Monetary(string="PIS", currency_field="company_currency_id")
     cofins_value = fields.Monetary(
         string="COFINS", currency_field="company_currency_id"
     )
+    pis_cofins_regime_code = fields.Char(string="PIS/COFINS Regime Code")
     manufacturer_code = fields.Char(string="Foreign Manufacturer Code")
+    exporter_code = fields.Char(string="Addition Exporter Code")
+    incoterm = fields.Char(string="Incoterm")
+    drawback_act = fields.Char(string="Drawback Act")
     line_ids = fields.Many2many(
         comodel_name="account.move.line",
         # Named by hand because the one Odoo derives from the two models is
@@ -164,6 +174,14 @@ class ImportDeclarationWizard(models.TransientModel):
         help="Lines of the invoice that no addition of the declaration "
         "answered for.",
     )
+    unmapped_fields = fields.Text(
+        string="Fields the file has and this reader ignores",
+        readonly=True,
+    )
+    regime_warning = fields.Text(
+        string="Regimes the declaration signals",
+        readonly=True,
+    )
 
     di_number = fields.Char(string="Declaration Number", required=True)
     di_date = fields.Date(string="Registration Date", required=True)
@@ -185,6 +203,14 @@ class ImportDeclarationWizard(models.TransientModel):
         default="1",
         help="Mandatory in the schema and it comes before the exporter code, so "
         "leaving it out makes the validation blame cExportador instead.",
+    )
+    acquirer_partner_id = fields.Many2one(
+        comodel_name="res.partner",
+        string="Acquirer",
+        help="The buyer on whose behalf the goods were imported, on an "
+        "intermediated import. The declaration never states who this is, only "
+        "that the import was intermediated: the operator has to pick the "
+        "partner by hand.",
     )
     afrmm_value = fields.Monetary(
         string="AFRMM",
@@ -217,6 +243,18 @@ class ImportDeclarationWizard(models.TransientModel):
         string="Generated Document",
         readonly=True,
     )
+    declaration_id = fields.Many2one(
+        comodel_name="l10n_br_fiscal.import.declaration",
+        string="Declaration Record",
+        readonly=True,
+        help="The full declaration as read from the file, kept whether or "
+        "not this wizard's own reading of it is complete: nothing the file "
+        "stated is lost even when a field here has no place to go yet.",
+    )
+    divergence_ids = fields.One2many(
+        related="declaration_id.divergence_ids",
+        string="Divergences",
+    )
 
     @api.model
     def default_get(self, fields_list):
@@ -232,6 +270,12 @@ class ImportDeclarationWizard(models.TransientModel):
             res["fiscal_operation_id"] = operation.id
             if operation.line_ids and "fiscal_operation_line_id" in fields_list:
                 res["fiscal_operation_line_id"] = operation.line_ids[0].id
+        if (
+            move.document_type_id
+            and "document_type_id" in fields_list
+            and not res.get("document_type_id")
+        ):
+            res["document_type_id"] = move.document_type_id.id
         if (
             move.document_serie_id
             and "document_serie_id" in fields_list
@@ -284,6 +328,7 @@ class ImportDeclarationWizard(models.TransientModel):
         self.ensure_one()
         content = base64.b64decode(self.di_file)
         is_xml = content.lstrip()[:1] in (b"<", b"\xef")
+        source_format = "xml" if is_xml else "txt"
         try:
             if is_xml:
                 declaration = parse_declaration(content)
@@ -291,7 +336,15 @@ class ImportDeclarationWizard(models.TransientModel):
                 declaration = parse_txt_declaration(content)
         except DeclarationXmlError as error:
             raise UserError(str(error)) from error
-        self.update(self._values_from_declaration(declaration))
+        record = self.env["l10n_br_fiscal.import.declaration"].create_from_parsed(
+            declaration,
+            source_format,
+            raw_file=content,
+            raw_filename=self.di_filename,
+        )
+        values = self._values_from_declaration(declaration)
+        values["declaration_id"] = record.id
+        self.update(values)
 
     def _values_from_declaration(self, declaration):
         self.ensure_one()
@@ -303,15 +356,30 @@ class ImportDeclarationWizard(models.TransientModel):
             limit=1,
         )
         prepared_additions = self._additions_from_declaration(declaration)
+        transport_via = declaration["transport_via"]
+        unmapped_notes = list(declaration.get("unmapped_tags", []))
         values = {
             "di_number": declaration["number"],
             "di_date": declaration["registration_date"],
             "clearance_date": declaration["clearance_date"],
             "clearance_place": declaration["clearance_place"],
-            "transport_via": declaration["transport_via"],
             "addition_ids": [(5, 0, 0)]
             + [(0, 0, prepared) for prepared in prepared_additions],
         }
+        if transport_via in dict(TRANSPORT_VIA):
+            values["transport_via"] = transport_via
+        elif transport_via:
+            # A code the file states but this list does not recognize: left
+            # blank rather than written unchecked, because a Selection field
+            # accepts any string on write and only the form's dropdown would
+            # ever have caught it, silently, long after the file was read.
+            unmapped_notes.append(
+                _(
+                    "tpViaTransp: the file states code %(code)r, which is not "
+                    "one of the known transport codes."
+                )
+                % {"code": transport_via}
+            )
         if prepared_additions:
             values["customs_value"] = sum(
                 prepared["customs_value"] for prepared in prepared_additions
@@ -341,6 +409,9 @@ class ImportDeclarationWizard(models.TransientModel):
         )
         if exporter and not self.exporter_code:
             values["exporter_code"] = exporter[:60]
+        operation_type = declaration.get("operation_type_code", "")
+        if operation_type in dict(INTERMEDIATION) and self.intermediation == "1":
+            values["intermediation"] = operation_type
         # The other half of what the matching learns. A line the declaration
         # never mentions and a good with no line are the two faces of an invoice
         # that disagrees with the declaration, and seeing only one of them sends
@@ -356,6 +427,10 @@ class ImportDeclarationWizard(models.TransientModel):
                 for line in left
             )
             or False
+        )
+        values["unmapped_fields"] = ", ".join(unmapped_notes) or False
+        values["regime_warning"] = (
+            "\n".join(declaration.get("regime_signals", [])) or False
         )
         return values
 
@@ -374,10 +449,16 @@ class ImportDeclarationWizard(models.TransientModel):
                     "customs_value": addition["customs_value"],
                     "ii_rate": addition["ii_rate"],
                     "ii_value": addition["ii_value"],
+                    "ii_regime_code": addition["ii_regime_code"],
                     "ipi_value": addition["ipi_value"],
+                    "ipi_regime_code": addition["ipi_regime_code"],
                     "pis_value": addition["pis_value"],
                     "cofins_value": addition["cofins_value"],
+                    "pis_cofins_regime_code": addition["pis_cofins_regime_code"],
                     "manufacturer_code": addition["manufacturer"][:60] or False,
+                    "exporter_code": addition["exporter"][:60] or False,
+                    "incoterm": addition["incoterm"] or False,
+                    "drawback_act": addition["drawback_act"] or False,
                     "line_ids": [(6, 0, matched.ids)],
                     "unmatched": "\n".join(unmatched) or False,
                 }
@@ -499,15 +580,59 @@ class ImportDeclarationWizard(models.TransientModel):
             "quantity": quantity,
             "price_unit": gross / quantity,
             "uom_id": bill_line.product_uom_id.id,
+            # The line's own share of the addition's valor aduaneiro — the
+            # legal base of II, IPI and PIS/COFINS on an import (see
+            # customs_declared_value's help). Written here so the engine
+            # itself now computes those bases correctly; the manual
+            # gross_parts-based rewrite below is unrelated to this and
+            # still stands until it is proven redundant.
+            "customs_declared_value": gross,
         }
 
     @staticmethod
     def _rate(value, base):
         return (value / base * 100.0) if base else 0.0
 
-    def _di_values(self, number=None, manufacturer=None):
+    def _persisted_addition(self, number):
+        """The addition of `declaration_id` this block's number names, if any.
+
+        Not every addition of the declaration necessarily made it here: only
+        the one this block covers is tied to its own persisted record, and
+        one that finds no match returns empty rather than the wrong addition.
+
+        Compared as a number, not as a string: the persisted addition keeps
+        the parser's own zero-padded "001", while `_di_values` strips the
+        padding to "1" for the NF-e's own nAdicao field, and both name the
+        same addition.
+        """
+        self.ensure_one()
+        if not self.declaration_id:
+            return self.env["l10n_br_fiscal.import.declaration.addition"]
+        wanted = number.lstrip("0") or "0"
+        return self.declaration_id.addition_ids.filtered(
+            lambda a, wanted=wanted: (
+                (a.number or "").lstrip("0") or "0"
+            )
+            == wanted
+        )[:1]
+
+    def _di_values(
+        self, number=None, manufacturer=None, exporter=None, drawback_act=None
+    ):
         self.ensure_one()
         addition_number = str(int(number or self.addition_number))
+        adi_values = {
+            "nfe40_nAdicao": addition_number,
+            "nfe40_nSeqAdic": "1",
+            "nfe40_cFabricante": manufacturer
+            or self.manufacturer_code
+            or self.exporter_code,
+        }
+        if drawback_act:
+            adi_values["nfe40_nDraw"] = drawback_act
+        persisted_addition = self._persisted_addition(addition_number)
+        if persisted_addition:
+            adi_values["addition_id"] = persisted_addition.id
         values = {
             "nfe40_nDI": self.di_number,
             "nfe40_dDI": self.di_date,
@@ -515,27 +640,20 @@ class ImportDeclarationWizard(models.TransientModel):
             "nfe40_dDesemb": self.clearance_date or self.di_date,
             "nfe40_tpViaTransp": self.transport_via,
             "nfe40_tpIntermedio": self.intermediation,
-            "nfe40_cExportador": self.exporter_code,
+            "nfe40_cExportador": exporter or self.exporter_code,
             "state_clearance_id": self.clearance_state_id.id,
-            "nfe40_adi": [
-                (
-                    0,
-                    0,
-                    {
-                        "nfe40_nAdicao": addition_number,
-                        "nfe40_nSeqAdic": "1",
-                        "nfe40_cFabricante": manufacturer
-                        or self.manufacturer_code
-                        or self.exporter_code,
-                    },
-                )
-            ],
+            "declaration_id": self.declaration_id.id,
+            "nfe40_adi": [(0, 0, adi_values)],
         }
         if self.afrmm_value:
             values["nfe40_vAFRMM"] = self.afrmm_value
+        if self.intermediation != "1" and self.acquirer_partner_id:
+            values["partner_acquirer_id"] = self.acquirer_partner_id.id
         return values
 
-    def _write_declaration(self, line, number=None, manufacturer=None):
+    def _write_declaration(
+        self, line, number=None, manufacturer=None, exporter=None, drawback_act=None
+    ):
         """Attach the declaration to the line, when the NF-e module is there.
 
         Soft dependency: the DI fields come from the NF-e schema and live on the
@@ -551,7 +669,14 @@ class ImportDeclarationWizard(models.TransientModel):
         declaration = (
             self.env["nfe.40.di"]
             .sudo()
-            .create(self._di_values(number=number, manufacturer=manufacturer))
+            .create(
+                self._di_values(
+                    number=number,
+                    manufacturer=manufacturer,
+                    exporter=exporter,
+                    drawback_act=drawback_act,
+                )
+            )
         )
         line.sudo().nfe40_DI = [(6, 0, declaration.ids)]
         return declaration
@@ -646,8 +771,12 @@ class ImportDeclarationWizard(models.TransientModel):
                     "lines": self._bill_lines(),
                     "customs_value": self.customs_value,
                     "taxes": dict(self._tax_fields()),
+                    "forced_taxes": {},
                     "number": self.addition_number,
                     "manufacturer": self.manufacturer_code,
+                    "exporter": self.exporter_code,
+                    "ipi_regime_code": False,
+                    "drawback_act": False,
                 }
             ]
         blocks = []
@@ -671,11 +800,25 @@ class ImportDeclarationWizard(models.TransientModel):
                         "ii_declared_value": addition.ii_value,
                         "ii_value": addition.ii_value,
                     },
+                    "forced_taxes": self._forced_taxes(addition),
                     "number": addition.number,
                     "manufacturer": addition.manufacturer_code,
+                    "exporter": addition.exporter_code,
+                    "ipi_regime_code": addition.ipi_regime_code,
+                    "drawback_act": addition.drawback_act,
                 }
             )
         return blocks
+
+    @staticmethod
+    def _has_special_ipi_regime(code):
+        return bool(code) and code != IPI_NORMAL_REGIME_CODE
+
+    def _forced_taxes(self, addition):
+        forced = {}
+        if self._has_special_ipi_regime(addition.ipi_regime_code):
+            forced["ipi_value"] = addition.ipi_value
+        return forced
 
     def _customhouse_charges_by_line(self, blocks):
         """The Siscomex fee and the AFRMM both ride the ICMS "por dentro"
@@ -695,6 +838,22 @@ class ImportDeclarationWizard(models.TransientModel):
         parts = self._split(total_charges, shares, self.company_currency_id)
         return dict(zip(all_lines.ids, parts))
 
+    def _apply_forced_taxes(self, line, block, forced, gross, declared):
+        if "ipi_value" not in forced:
+            return
+        ipi_base = gross + declared
+        line.write(
+            {
+                "ipi_base": ipi_base,
+                "ipi_percent": self._rate(forced["ipi_value"], ipi_base),
+                "ipi_value": forced["ipi_value"],
+            }
+        )
+        if block["ipi_regime_code"] == IPI_SUSPENSION_REGIME_CODE:
+            line.ipi_cst_id = self.env.ref(
+                IPI_SUSPENSION_CST, raise_if_not_found=False
+            )
+
     def _write_block(self, document, block, customhouse_by_line):
         """Write the lines of one group, with the tax that belongs to it."""
         self.ensure_one()
@@ -705,6 +864,10 @@ class ImportDeclarationWizard(models.TransientModel):
         tax_parts = {
             fname: self._split(amount, shares, currency)
             for fname, amount in block["taxes"].items()
+        }
+        forced_parts = {
+            fname: self._split(amount, shares, currency)
+            for fname, amount in block["forced_taxes"].items()
         }
         Line = self.env["l10n_br_fiscal.document.line"]
         pairs = []
@@ -732,50 +895,47 @@ class ImportDeclarationWizard(models.TransientModel):
             )
             pairs.append((bill_line, line))
             self._write_declaration(
-                line, number=block["number"], manufacturer=block["manufacturer"]
+                line,
+                number=block["number"],
+                manufacturer=block["manufacturer"],
+                exporter=block["exporter"],
+                drawback_act=block["drawback_act"],
             )
-            # On an import CFOP the fiscal amount already adds II, PIS, COFINS,
-            # ICMS and the customs charges to the untaxed amount, so the only
-            # tax left outside the price is the IPI. Without writing it here the
-            # document total keeps the IPI the engine computed from the product
-            # rate instead of the one the declaration charged.
-            values = {"amount_tax_included": 0.0}
-            # The base of the IPI and of the contributions is composed by the
-            # engine, which takes the Import Tax the declaration charged. The
-            # ICMS is not: the engine only puts the IPI inside its base for
-            # some kinds of recipient, and on an import it always belongs
-            # there, so the base is grossed up here with everything in it. The
-            # rate stays the one of the product file, and keeping it is what
-            # makes base times rate reproduce the amount: the SEFAZ recomputes
-            # that product and refuses the note with 528 otherwise.
-            # Base and rate of the Import Tax follow the amount charged, so
-            # base times rate reproduces it. The engine only derives them when
-            # the product file carries an Import Tax of its own; on a line
-            # without one there is no compute to run, and the SEFAZ recomputes
-            # that product and refuses the note with 528 when it does not close.
+            persisted_addition = self._persisted_addition(str(block["number"]))
+            if persisted_addition:
+                persisted_addition.fiscal_line_ids = [(4, line.id)]
+            forced_here = {
+                fname: parts[position]
+                for fname, parts in forced_parts.items()
+                if parts[position]
+            }
+            if forced_here:
+                self._apply_forced_taxes(
+                    line,
+                    block,
+                    forced_here,
+                    gross_parts[position],
+                    declared_taxes.get("ii_declared_value", 0.0),
+                )
+            # The base and the value of II, IPI, PIS, COFINS and ICMS are all
+            # the engine's own doing now: it took customs_declared_value as
+            # the legal base (Art. 75, Decreto 6.759/09) when `_prepare_line_
+            # values` set it above, and it grosses up the ICMS base with the
+            # IPI unconditionally on an import (LC 87/96 art. 13, V). What is
+            # left to fix by hand is not a tax figure at all: it is where the
+            # NF-e schema expects each of those already-correct amounts to
+            # sit — II inside vProd, PIS/COFINS/customs charges inside
+            # vOutro, and every tax marked as already included in the total,
+            # so the goods line does not book any of them a second time.
             gross = gross_parts[position]
             declared = declared_taxes.get("ii_declared_value", 0.0)
-            if declared:
-                values["ii_base"] = gross
-                values["ii_percent"] = self._rate(declared, gross)
-            before_icms = (
-                gross
-                + declared_taxes.get("ii_declared_value", 0.0)
-                + declared_taxes.get("ii_customhouse_charges", 0.0)
-                + line.ipi_value
-                + line.pis_value
-                + line.cofins_value
-            )
-            rate = line.icms_percent or 0.0
-            if rate:
-                icms_base = before_icms / (1 - rate / 100.0)
-                values["icms_base"] = icms_base
-                values["icms_value"] = icms_base * rate / 100.0
-            values["other_value"] = (
-                line.pis_value
-                + line.cofins_value
-                + declared_taxes.get("ii_customhouse_charges", 0.0)
-            )
+            values = {
+                "other_value": (
+                    line.pis_value
+                    + line.cofins_value
+                    + declared_taxes.get("ii_customhouse_charges", 0.0)
+                )
+            }
             if declared:
                 vprod_gross = gross + declared
                 # freight_value and insurance_value are added back on top of
@@ -784,15 +944,6 @@ class ImportDeclarationWizard(models.TransientModel):
                 # customs value's own freight and insurance twice.
                 vprod_gross -= line.freight_value + line.insurance_value
                 values["price_unit"] = vprod_gross / line.quantity
-                values["ipi_base"] = line.ipi_base
-                values["ipi_percent"] = line.ipi_percent
-                values["ipi_value"] = line.ipi_value
-                values["pis_base"] = line.pis_base
-                values["pis_percent"] = line.pis_percent
-                values["pis_value"] = line.pis_value
-                values["cofins_base"] = line.cofins_base
-                values["cofins_percent"] = line.cofins_percent
-                values["cofins_value"] = line.cofins_value
             # II sits inside vProd, PIS/COFINS inside vOutro and ICMS inside
             # its own grossed base: the fiscal total already carries them all,
             # and each one still gets its own tax line in the accounting. They
@@ -801,7 +952,7 @@ class ImportDeclarationWizard(models.TransientModel):
             # only stated in 2026, not charged, so they come out the same way.
             values["amount_tax_included"] = (
                 declared
-                + values.get("icms_value", line.icms_value)
+                + line.icms_value
                 + line.pis_value
                 + line.cofins_value
                 + line.ibs_value
@@ -830,6 +981,8 @@ class ImportDeclarationWizard(models.TransientModel):
 
         document.invalidate_recordset()
         self._check_against_declaration(document)
+        if self.declaration_id:
+            self.declaration_id._reconcile()
         # The values are the declaration's now, not the product file's. Marking
         # the document as imported freezes them against any later recompute and
         # makes the accounting book them as-is, the way an imported NF-e is.

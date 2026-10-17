@@ -290,16 +290,12 @@ class ResPartner(spec_models.SpecModel):
 
     @api.model
     def _match_cnpj_cpf(self, rec_dict, parent_dict):
-        if parent_dict.get("nfe40_CNPJ", False):
-            rec_dict["cnpj_cpf"] = parent_dict["nfe40_CNPJ"]
+        cnpj_cpf = rec_dict.get("nfe40_CNPJ") or parent_dict.get("nfe40_CNPJ")
 
-        if rec_dict.get("nfe40_CNPJ", False):
-            rec_dict["cnpj_cpf"] = rec_dict["nfe40_CNPJ"]
-
-        if not rec_dict.get("cnpj_cpf", False):
+        if not cnpj_cpf:
             return False
 
-        cnpj_cpf_stripped = punctuation_rm(str(rec_dict["cnpj_cpf"]))
+        cnpj_cpf_stripped = punctuation_rm(str(cnpj_cpf))
         domain_cnpj = [
             "|",
             ("cnpj_cpf_stripped", "=", cnpj_cpf_stripped),
@@ -323,6 +319,11 @@ class ResPartner(spec_models.SpecModel):
         vals = self._prepare_import_dict(
             rec_dict, model=model, parent_dict=parent_dict, defaults_model=model
         )
+        if not vals.get("name") and vals.get("type", "contact") == "contact":
+            # Optional groups such as transp/transporta may come with neither
+            # name nor CNPJ/CPF (e.g. only <UF>): there is nothing to register
+            # and creating it would violate res_partner_check_name.
+            return False
         if self._context.get("dry_run", False):
             rec_id = self.new(vals).id
         else:

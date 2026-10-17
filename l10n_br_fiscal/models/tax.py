@@ -271,12 +271,27 @@ class Tax(models.Model):
         insurance_value = kwargs.get("insurance_value", 0.00)
         freight_value = kwargs.get("freight_value", 0.00)
         other_value = kwargs.get("other_value", 0.00)
+        customs_declared_value = kwargs.get("customs_declared_value") or 0.00
+        cfop = kwargs.get("cfop")
+        operation_line = kwargs.get("operation_line")
+        is_import = bool(
+            cfop
+            and operation_line
+            and cfop.destination == CFOP_DESTINATION_EXPORT
+            and operation_line.fiscal_operation_type == FISCAL_IN
+        )
 
-        if tax.tax_group_id.base_with_additional_values:
+        # The valor aduaneiro already carries freight, insurance and other
+        # customs charges (Art. 77, Decreto 6.759/09): summing them again on
+        # top of a stated customs_declared_value double-counts them.
+        if tax.tax_group_id.base_with_additional_values and not (
+            is_import and customs_declared_value
+        ):
             tax_dict["add_to_base"] += sum(
                 [freight_value, insurance_value, other_value]
             )
-        tax_dict["remove_from_base"] += sum([discount_value])
+        if not (is_import and customs_declared_value):
+            tax_dict["remove_from_base"] += sum([discount_value])
 
         base = 0.00
 
@@ -288,7 +303,22 @@ class Tax(models.Model):
 
         if tax_dict["base_type"] == "percent":
             # Compute initial Tax Base for base_type Percent
-            base = currency.round(fiscal_price * fiscal_quantity)
+            #
+            # On an import, the legal base of II (Art. 75, Decreto 6.759/09),
+            # IPI (Art. 190, I, "a", Decreto 7.212/10) and PIS/COFINS (Art.
+            # 7º, I, Lei 10.865/04) is the valor aduaneiro the customs
+            # authority fixed — a fact the DI states, not a figure this
+            # engine derives from the commercial invoice. price × quantity is
+            # the wrong quantity whenever the invoice is in foreign currency
+            # or freight/insurance are billed apart from the goods, so a
+            # stated customs_declared_value wins over it; every operation
+            # that is not an import never sets this kwarg, so this line does
+            # not change what it does today.
+            customs_declared_value = kwargs.get("customs_declared_value") or 0.00
+            if customs_declared_value:
+                base = currency.round(customs_declared_value)
+            else:
+                base = currency.round(fiscal_price * fiscal_quantity)
 
         if tax_dict["base_type"] == "quantity":
             # Compute initial Tax Base for base_type Quantity
@@ -344,11 +374,17 @@ class Tax(models.Model):
 
         Falls back to the computed amount when no declaration was informed, which
         is every operation that is not an import.
+
+        Whether a declaration was informed is read from `customs_declared_value`,
+        never from `ii_declared_value` alone: an addition can legitimately
+        declare Import Tax of exactly zero, and `ii_declared_value or 0.00`
+        cannot tell that zero apart from the field being absent -- it fell
+        back to the product's registered rate and taxed an exemption the
+        declaration had already granted.
         """
-        declared = kwargs.get("ii_declared_value") or 0.00
-        if declared:
-            return declared
-        return taxes_dict.get("ii", {}).get("tax_value", 0.00)
+        if not kwargs.get("customs_declared_value"):
+            return taxes_dict.get("ii", {}).get("tax_value", 0.00)
+        return kwargs.get("ii_declared_value") or 0.00
 
     @api.model
     def _compute_ii(self, tax, taxes_dict, **kwargs):
@@ -357,18 +393,27 @@ class Tax(models.Model):
         The rate follows the amount, so base times rate reproduces what was paid:
         the SEFAZ recomputes it and refuses the note with 528 when the two do not
         agree to the cent.
+
+        Gated on `customs_declared_value`, for the same reason `_import_tax_in_base`
+        above is: a declared Import Tax of exactly zero must still win over the
+        product's rate, and only the customs value reliably says a declaration is
+        there at all.
         """
-        declared = kwargs.get("ii_declared_value") or 0.00
-        if not declared:
+        if not kwargs.get("customs_declared_value"):
             return self._compute_tax(tax, taxes_dict, **kwargs)
+        declared = kwargs.get("ii_declared_value") or 0.00
 
         tax_dict = taxes_dict.get(tax.tax_domain)
         # Seeding the rate before the base is what makes the base exist at all:
         # a tax of zero percent and zero amount gets a base of zero, and a
         # declaration charging over a classification the product file keeps at
-        # zero is precisely the case this method is here for.
-        gross = (kwargs.get("fiscal_price") or 0.00) * (
-            kwargs.get("fiscal_quantity") or 0.00
+        # zero is precisely the case this method is here for. The declared
+        # customs value is the legal base (Art. 75, Decreto 6.759/09) when the
+        # declaration states one; the commercial line is only the fallback for
+        # a line the declaration never covers.
+        gross = kwargs.get("customs_declared_value") or (
+            (kwargs.get("fiscal_price") or 0.00)
+            * (kwargs.get("fiscal_quantity") or 0.00)
         )
         if gross and not tax_dict.get("percent_amount"):
             tax_dict["percent_amount"] = declared / gross * 100.0
@@ -480,18 +525,26 @@ class Tax(models.Model):
         # Get Computed IPI Tax
         tax_dict_ipi = taxes_dict.get("ipi", {})
 
-        if partner.ind_ie_dest in (NFE_IND_IE_DEST_2, NFE_IND_IE_DEST_9) or (
-            ind_final == FINAL_CUSTOMER_YES
+        is_import = bool(
+            cfop
+            and cfop.destination == CFOP_DESTINATION_EXPORT
+            and fiscal_operation_type == FISCAL_IN
+        )
+        # LC 87/96 art. 13, V lists the IPI as a component of the ICMS base of
+        # an import in its own right, apart from the general domestic rule
+        # below (the §2º exception, which the art. 13, V import case is not
+        # subject to): the recipient's classification never keeps the IPI out
+        # of the base of an import the way it does for a domestic operation.
+        if (
+            partner.ind_ie_dest in (NFE_IND_IE_DEST_2, NFE_IND_IE_DEST_9)
+            or ind_final == FINAL_CUSTOMER_YES
+            or is_import
         ):
             # Add IPI in ICMS Base
             tax_dict["add_to_base"] += tax_dict_ipi.get("tax_value", 0.00)
 
         # Adiciona na base de calculo do ICMS nos casos de entrada de importação
-        if (
-            cfop
-            and cfop.destination == CFOP_DESTINATION_EXPORT
-            and fiscal_operation_type == FISCAL_IN
-        ):
+        if is_import:
             tax_dict["add_to_base"] += self._import_tax_in_base(taxes_dict, **kwargs)
 
             tax_dict_pis = taxes_dict.get("pis", {})
@@ -501,6 +554,7 @@ class Tax(models.Model):
             tax_dict["add_to_base"] += tax_dict_cofins.get("tax_value", 0.00)
 
             tax_dict["add_to_base"] += kwargs.get("ii_customhouse_charges", 0.00)
+            tax_dict["add_to_base"] += kwargs.get("ii_iof_value", 0.00)
 
             other_value = kwargs.get("other_value", 0.00)
             tax_dict["remove_from_base"] += sum([other_value])

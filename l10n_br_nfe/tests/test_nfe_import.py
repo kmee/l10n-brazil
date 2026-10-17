@@ -241,7 +241,7 @@ class NFeImportTest(TransactionCase):
             "<pICMS>7.00</pICMS><vICMS>2.36</vICMS>"
             "</ICMS20>"
         )
-        xml = re.sub(r"<ICMS00>.*?</ICMS00>", icms20, xml, count=1, flags=re.S)
+        xml = re.sub(r"<ICMS00>.*?</ICMS00>", icms20, xml, count=1, flags=re.DOTALL)
 
         existing = self.env["l10n_br_fiscal.tax"].search(
             [
@@ -330,7 +330,7 @@ class NFeImportTest(TransactionCase):
             "<CST>50</CST><vBC>50.60</vBC><pIPI>6.50</pIPI><vIPI>3.29</vIPI>"
             "</IPITrib></IPI>"
         )
-        xml = re.sub(r"<IPI>.*?</IPI>", ipi, xml, count=1, flags=re.S)
+        xml = re.sub(r"<IPI>.*?</IPI>", ipi, xml, count=1, flags=re.DOTALL)
 
         binding = TnfeProc.from_xml(xml)
         nfe = self.env["l10n_br_fiscal.document"].import_binding_nfe(
@@ -378,3 +378,31 @@ class NFeImportTest(TransactionCase):
             self.env["res.partner"].search_count([("vat", "=", "09270492000100")]),
             1,
         )
+
+    def test_import_in_nfe_creates_the_unknown_authorized_partner(self):
+        res_items = (
+            "nfe",
+            "samples",
+            "v4_0",
+            "leiauteNFe",
+            "35180834128745000152550010000474281920007498-nfe.xml",
+        )
+        xml = (
+            importlib.resources.files(nfelib.__name__)
+            .joinpath(*res_items)
+            .read_bytes()
+            .decode()
+        )
+        self.assertFalse(
+            self.env["res.partner"].search([("vat", "=", "09270492000100")])
+        )
+        xml = xml.replace(
+            "</dest>",
+            "</dest><autXML><CNPJ>09270492000100</CNPJ></autXML>",
+            1,
+        )
+        binding = TnfeProc.from_xml(xml)
+        nfe = self.env["l10n_br_fiscal.document"].import_binding_nfe(
+            binding, edoc_type="in", dry_run=False
+        )
+        self.assertEqual(nfe.nfe40_autXML.vat, "09270492000100")

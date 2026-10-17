@@ -252,7 +252,7 @@
                                         options="{'no_create': True, 'no_create_edit': True}"
                                     />
                                 </group>
-                                <group>
+                                <group invisible="not issqn_wh_tax_id">
                                     <group>
                                         <field
                                             name="issqn_wh_base"
@@ -473,6 +473,10 @@
                                             invisible="icms_cst_code == '500'"
                                             options="{'no_create': True, 'no_create_edit': True}"
                                         />
+                                    </group>
+                                    <group
+                                        invisible="icms_cst_code in ('40', '41', '50', '101', '102', '103', '300', '400') or not icmsfcp_tax_id"
+                                    >
                                         <field
                                             name="icmsfcp_base"
                                             force_save="1"
@@ -517,6 +521,10 @@
                                             invisible="icms_cst_code == '500'"
                                             options="{'no_create': True, 'no_create_edit': True}"
                                         />
+                                    </group>
+                                    <group
+                                        invisible="icms_cst_code not in ('10', '30', '70', '90', '201', '202', '203', '500', '900') or not icmsfcpst_tax_id"
+                                    >
                                         <field
                                             name="icmsfcpst_base"
                                             force_save="1"
@@ -539,7 +547,7 @@
                                     <group
                                         name="icms_difal"
                                         string="ICMS DIFAL"
-                                        invisible="partner_company_type in ('company', False) and tax_framework == '1' and cfop_destination in ('1', '3', False)"
+                                        invisible="(partner_company_type in ('company', False) and tax_framework == '1' and cfop_destination in ('1', '3', False)) or not icms_destination_percent"
                                     >
                                         <field
                                             name="icms_destination_base"
@@ -769,7 +777,7 @@
                                         invisible="1"
                                     />
                                 </group>
-                                <group>
+                                <group invisible="not pisst_tax_id">
                                     <group>
                                         <field
                                             name="pisst_base_type"
@@ -806,7 +814,7 @@
                                         options="{'no_create': True, 'no_create_edit': True}"
                                     />
                                 </group>
-                                <group>
+                                <group invisible="not pis_wh_tax_id">
                                     <group>
                                         <field
                                             name="pis_wh_base"
@@ -913,7 +921,7 @@
                                         invisible="1"
                                     />
                                 </group>
-                                <group>
+                                <group invisible="not cofinsst_tax_id">
                                     <group>
                                         <field
                                             name="cofinsst_base_type"
@@ -950,7 +958,7 @@
                                         options="{'no_create': True, 'no_create_edit': True}"
                                     />
                                 </group>
-                                <group>
+                                <group invisible="not cofins_wh_tax_id">
                                     <group>
                                         <field
                                             name="cofins_wh_base"

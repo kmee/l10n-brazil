@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ListaDeclaracoes>
+    <declaracaoImportacao>
+        <numeroDI>0000000001</numeroDI>
+        <dataRegistro>20260909</dataRegistro>
+        <dataDesembaraco>20260909</dataDesembaraco>
+        <viaTransporteCodigo>01</viaTransporteCodigo>
+        <cargaUrfEntradaNome>PORTO DE SANTOS</cargaUrfEntradaNome>
+        <armazenamentoRecintoAduaneiroNome>ARMAZEM DE TESTE LTDA</armazenamentoRecintoAduaneiroNome>
+        <importadorNumero>11222333000181</importadorNumero>
+        <importadorNome>IMPORTADORA DE TESTE LTDA</importadorNome>
+        <freteTotalReais>0000000001809378</freteTotalReais>
+        <seguroTotalReais>0000000000307476</seguroTotalReais>
+        <cargaPesoBruto>0000000891400000</cargaPesoBruto>
+        <cargaPesoLiquido>0000000669053000</cargaPesoLiquido>
+        <icms>
+            <ufIcms>SP</ufIcms>
+            <valorTotalIcms>0000000029944559</valorTotalIcms>
+        </icms>
+        <pagamento>
+            <codigoReceita>7811</codigoReceita>
+            <valorReceita>000000015423</valorReceita>
+        </pagamento>
+        <adicao>
+            <numeroAdicao>001</numeroAdicao>
+            <dadosMercadoriaCodigoNcm>84149020</dadosMercadoriaCodigoNcm>
+            <dadosMercadoriaPesoLiquido>0000000160000000</dadosMercadoriaPesoLiquido>
+            <fornecedorNome>FORNECEDOR DE TESTE S.A.</fornecedorNome>
+            <fabricanteNome>FORNECEDOR DE TESTE S.A.</fabricanteNome>
+            <paisOrigemMercadoriaNome>ESPANHA</paisOrigemMercadoriaNome>
+            <condicaoVendaValorReais>0000000038386725</condicaoVendaValorReais>
+            <iiBaseCalculo>0000000038386725</iiBaseCalculo>
+            <iiAliquotaAdValorem>01180</iiAliquotaAdValorem>
+            <iiAliquotaValorRecolher>000000000004529634</iiAliquotaValorRecolher>
+            <ipiAliquotaAdValorem>00325</ipiAliquotaAdValorem>
+            <ipiAliquotaValorRecolher>000000000001394782</ipiAliquotaValorRecolher>
+            <pisPasepAliquotaAdValorem>00210</pisPasepAliquotaAdValorem>
+            <pisPasepAliquotaValorRecolher>000000000000806121</pisPasepAliquotaValorRecolher>
+            <cofinsAliquotaValorRecolher>000000000003704319</cofinsAliquotaValorRecolher>
+            <mercadoria>
+                <numeroSequencialItem>01</numeroSequencialItem>
+                <descricaoMercadoria>ZBR_PI_0260 - ROTOR JZRI 1-14-75/4</descricaoMercadoria>
+                <quantidade>0000001600000</quantidade>
+                <unidadeMedida>PECAS</unidadeMedida>
+                <valorUnitario>00000040000000000</valorUnitario>
+            </mercadoria>
+        </adicao>
+        <adicao>
+            <numeroAdicao>002</numeroAdicao>
+            <dadosMercadoriaCodigoNcm>84149020</dadosMercadoriaCodigoNcm>
+            <dadosMercadoriaPesoLiquido>0000000230000000</dadosMercadoriaPesoLiquido>
+            <fornecedorNome>FORNECEDOR DE TESTE S.A.</fornecedorNome>
+            <fabricanteNome>FORNECEDOR DE TESTE S.A.</fabricanteNome>
+            <paisOrigemMercadoriaNome>ESPANHA</paisOrigemMercadoriaNome>
+            <condicaoVendaValorReais>0000000055180918</condicaoVendaValorReais>
+            <iiBaseCalculo>0000000055180918</iiBaseCalculo>
+            <iiAliquotaAdValorem>01180</iiAliquotaAdValorem>
+            <iiAliquotaValorRecolher>000000000006511348</iiAliquotaValorRecolher>
+            <ipiAliquotaAdValorem>00325</ipiAliquotaAdValorem>
+            <ipiAliquotaValorRecolher>000000000002004999</ipiAliquotaValorRecolher>
+            <pisPasepAliquotaAdValorem>00210</pisPasepAliquotaAdValorem>
+            <pisPasepAliquotaValorRecolher>000000000001158799</pisPasepAliquotaValorRecolher>
+            <cofinsAliquotaValorRecolher>000000000005324959</cofinsAliquotaValorRecolher>
+            <mercadoria>
+                <numeroSequencialItem>01</numeroSequencialItem>
+                <descricaoMercadoria>ZBR_PI_0261 - ROTOR JZRI 1-14-90/4</descricaoMercadoria>
+                <quantidade>0000002300000</quantidade>
+                <unidadeMedida>PECAS</unidadeMedida>
+                <valorUnitario>00000040000000000</valorUnitario>
+            </mercadoria>
+        </adicao>
+        <adicao>
+            <numeroAdicao>003</numeroAdicao>
+            <dadosMercadoriaCodigoNcm>84149020</dadosMercadoriaCodigoNcm>
+            <dadosMercadoriaPesoLiquido>0000000117920000</dadosMercadoriaPesoLiquido>
+            <fornecedorNome>FORNECEDOR DE TESTE S.A.</fornecedorNome>
+            <fabricanteNome>FORNECEDOR DE TESTE S.A.</fabricanteNome>
+            <paisOrigemMercadoriaNome>ESPANHA</paisOrigemMercadoriaNome>
+            <condicaoVendaValorReais>0000000004702591</condicaoVendaValorReais>
+            <iiBaseCalculo>0000000004702591</iiBaseCalculo>
+            <iiAliquotaAdValorem>01180</iiAliquotaAdValorem>
+            <iiAliquotaValorRecolher>000000000000554906</iiAliquotaValorRecolher>
+            <ipiAliquotaAdValorem>00325</ipiAliquotaAdValorem>
+            <ipiAliquotaValorRecolher>000000000000170869</ipiAliquotaValorRecolher>
+            <pisPasepAliquotaAdValorem>00210</pisPasepAliquotaAdValorem>
+            <pisPasepAliquotaValorRecolher>000000000000098754</pisPasepAliquotaValorRecolher>
+            <cofinsAliquotaValorRecolher>000000000000453800</cofinsAliquotaValorRecolher>
+            <mercadoria>
+                <numeroSequencialItem>01</numeroSequencialItem>
+                <descricaoMercadoria>ZBR_PI_0199 - CABECOTE DO SILENCIADOR I1400 (ref PJF-EXT-HEA1400-0002)</descricaoMercadoria>
+                <quantidade>0000008000000</quantidade>
+                <unidadeMedida>PECAS</unidadeMedida>
+                <valorUnitario>00000000924000000</valorUnitario>
+            </mercadoria>
+        </adicao>
+        <adicao>
+            <numeroAdicao>004</numeroAdicao>
+            <dadosMercadoriaCodigoNcm>84149020</dadosMercadoriaCodigoNcm>
+            <dadosMercadoriaPesoLiquido>0000000066495000</dadosMercadoriaPesoLiquido>
+            <fornecedorNome>FORNECEDOR DE TESTE S.A.</fornecedorNome>
+            <fabricanteNome>FORNECEDOR DE TESTE S.A.</fabricanteNome>
+            <paisOrigemMercadoriaNome>ESPANHA</paisOrigemMercadoriaNome>
+            <condicaoVendaValorReais>0000000002608293</condicaoVendaValorReais>
+            <iiBaseCalculo>0000000002608293</iiBaseCalculo>
+            <iiAliquotaAdValorem>01180</iiAliquotaAdValorem>
+            <iiAliquotaValorRecolher>000000000000307779</iiAliquotaValorRecolher>
+            <ipiAliquotaAdValorem>00325</ipiAliquotaAdValorem>
+            <ipiAliquotaValorRecolher>000000000000094772</ipiAliquotaValorRecolher>
+            <pisPasepAliquotaAdValorem>00210</pisPasepAliquotaAdValorem>
+            <pisPasepAliquotaValorRecolher>000000000000054774</pisPasepAliquotaValorRecolher>
+            <cofinsAliquotaValorRecolher>000000000000251700</cofinsAliquotaValorRecolher>
+            <mercadoria>
+                <numeroSequencialItem>01</numeroSequencialItem>
+                <descricaoMercadoria>ZBR_PI_0198 - BOCAL AERODINAMICO PARA SILENCIADOR I1400 (ref PJF-EXT-INN1400-0001)</descricaoMercadoria>
+                <quantidade>0000003900000</quantidade>
+                <unidadeMedida>PECAS</unidadeMedida>
+                <valorUnitario>00000001050000000</valorUnitario>
+            </mercadoria>
+        </adicao>
+        <adicao>
+            <numeroAdicao>005</numeroAdicao>
+            <dadosMercadoriaCodigoNcm>84149020</dadosMercadoriaCodigoNcm>
+            <dadosMercadoriaPesoLiquido>0000000002000000</dadosMercadoriaPesoLiquido>
+            <fornecedorNome>FORNECEDOR DE TESTE S.A.</fornecedorNome>
+            <fabricanteNome>FORNECEDOR DE TESTE S.A.</fabricanteNome>
+            <paisOrigemMercadoriaNome>ESPANHA</paisOrigemMercadoriaNome>
+            <condicaoVendaValorReais>0000000000153667</condicaoVendaValorReais>
+            <iiBaseCalculo>0000000000153667</iiBaseCalculo>
+            <iiAliquotaAdValorem>01180</iiAliquotaAdValorem>
+            <iiAliquotaValorRecolher>000000000000018133</iiAliquotaValorRecolher>
+            <ipiAliquotaAdValorem>00325</ipiAliquotaAdValorem>
+            <ipiAliquotaValorRecolher>000000000000005583</ipiAliquotaValorRecolher>
+            <pisPasepAliquotaAdValorem>00210</pisPasepAliquotaAdValorem>
+            <pisPasepAliquotaValorRecolher>000000000000003227</pisPasepAliquotaValorRecolher>
+            <cofinsAliquotaValorRecolher>000000000000014829</cofinsAliquotaValorRecolher>
+            <mercadoria>
+                <numeroSequencialItem>01</numeroSequencialItem>
+                <descricaoMercadoria>ZBR_PI_0265 - TAMPAO INTERNO DO SILENCIADOR DIAM 10X1</descricaoMercadoria>
+                <quantidade>0000050000000</quantidade>
+                <unidadeMedida>PECAS</unidadeMedida>
+                <valorUnitario>00000000005000000</valorUnitario>
+            </mercadoria>
+        </adicao>
+        <adicao>
+            <numeroAdicao>006</numeroAdicao>
+            <dadosMercadoriaCodigoNcm>84149020</dadosMercadoriaCodigoNcm>
+            <dadosMercadoriaPesoLiquido>0000000091388000</dadosMercadoriaPesoLiquido>
+            <fornecedorNome>FORNECEDOR DE TESTE S.A.</fornecedorNome>
+            <fabricanteNome>FORNECEDOR DE TESTE S.A.</fabricanteNome>
+            <paisOrigemMercadoriaNome>ESPANHA</paisOrigemMercadoriaNome>
+            <condicaoVendaValorReais>0000000003644508</condicaoVendaValorReais>
+            <iiBaseCalculo>0000000003644508</iiBaseCalculo>
+            <iiAliquotaAdValorem>01180</iiAliquotaAdValorem>
+            <iiAliquotaValorRecolher>000000000000430052</iiAliquotaValorRecolher>
+            <ipiAliquotaAdValorem>00325</ipiAliquotaAdValorem>
+            <ipiAliquotaValorRecolher>000000000000132423</ipiAliquotaValorRecolher>
+            <pisPasepAliquotaAdValorem>00210</pisPasepAliquotaAdValorem>
+            <pisPasepAliquotaValorRecolher>000000000000076535</pisPasepAliquotaValorRecolher>
+            <cofinsAliquotaValorRecolher>000000000000351695</cofinsAliquotaValorRecolher>
+            <mercadoria>
+                <numeroSequencialItem>01</numeroSequencialItem>
+                <descricaoMercadoria>ZBR_PI_0199 - CABECOTE DO SILENCIADOR I1400 (ref X5919.02.01.01.01.02-001)</descricaoMercadoria>
+                <quantidade>0000006200000</quantidade>
+                <unidadeMedida>PECAS</unidadeMedida>
+                <valorUnitario>00000000924000000</valorUnitario>
+            </mercadoria>
+        </adicao>
+        <adicao>
+            <numeroAdicao>007</numeroAdicao>
+            <dadosMercadoriaCodigoNcm>84149020</dadosMercadoriaCodigoNcm>
+            <dadosMercadoriaPesoLiquido>0000000012500000</dadosMercadoriaPesoLiquido>
+            <fornecedorNome>FORNECEDOR DE TESTE S.A.</fornecedorNome>
+            <fabricanteNome>FORNECEDOR DE TESTE S.A.</fabricanteNome>
+            <paisOrigemMercadoriaNome>ESPANHA</paisOrigemMercadoriaNome>
+            <condicaoVendaValorReais>0000000002434810</condicaoVendaValorReais>
+            <iiBaseCalculo>0000000002434810</iiBaseCalculo>
+            <iiAliquotaAdValorem>01180</iiAliquotaAdValorem>
+            <iiAliquotaValorRecolher>000000000000287308</iiAliquotaValorRecolher>
+            <ipiAliquotaAdValorem>00325</ipiAliquotaAdValorem>
+            <ipiAliquotaValorRecolher>000000000000088469</ipiAliquotaValorRecolher>
+            <pisPasepAliquotaAdValorem>00210</pisPasepAliquotaAdValorem>
+            <pisPasepAliquotaValorRecolher>000000000000051131</pisPasepAliquotaValorRecolher>
+            <cofinsAliquotaValorRecolher>000000000000234959</cofinsAliquotaValorRecolher>
+            <mercadoria>
+                <numeroSequencialItem>01</numeroSequencialItem>
+                <descricaoMercadoria>ZBR_PI_0264 - ACELEROMETRO VTV122 COM CABO</descricaoMercadoria>
+                <quantidade>0000005000000</quantidade>
+                <unidadeMedida>PECAS</unidadeMedida>
+                <valorUnitario>00000000820000000</valorUnitario>
+            </mercadoria>
+        </adicao>
+    </declaracaoImportacao>
+</ListaDeclaracoes>

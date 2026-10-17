@@ -445,6 +445,7 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         "ii_customhouse_charges",
         "ii_iof_value",
         "ii_declared_value",
+        "customs_declared_value",
         "other_value",
         "freight_value",
         "ncm_id",
@@ -506,6 +507,7 @@ class FiscalDocumentLineMixin(models.AbstractModel):
                     ii_customhouse_charges=line.ii_customhouse_charges,
                     ii_iof_value=line.ii_iof_value,
                     ii_declared_value=line.ii_declared_value,
+                    customs_declared_value=line.customs_declared_value,
                     other_value=line.other_value,
                     freight_value=line.freight_value,
                     ncm=line.ncm_id,
@@ -2217,6 +2219,18 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         "no way to know it. When informed it wins over the rate of the product "
         "file, and it is what composes the base of the IPI, of the ICMS, of the "
         "CBS and of the IS.",
+    )
+
+    customs_declared_value = fields.Monetary(
+        string="Customs value charged by the declaration",
+        help="Valor aduaneiro the import declaration fixed for this line: the "
+        "legal base of II (Art. 75, Decreto 6.759/09), of IPI (Art. 190, I, "
+        "'a', Decreto 7.212/10) and of PIS/COFINS-Importação (Art. 7º, I, Lei "
+        "10.865/04). A commercial invoice in foreign currency, or with "
+        "freight and insurance billed apart from the goods, gives a "
+        "price × quantity that is not this value; when the declaration "
+        "states it, it wins over that product instead of the engine trying "
+        "to recompute a customs authority's own figure from the invoice.",
     )
 
     # PIS/COFINS Fields

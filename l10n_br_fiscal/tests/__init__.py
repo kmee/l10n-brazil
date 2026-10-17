@@ -21,6 +21,7 @@ from . import (
     test_cfop,
     test_comment,
     test_document_import_wizard,
+    test_document_import_wizard_cnpj_compare,
     test_document_imported,
     test_import_tax_base,
     test_taxable_unit,

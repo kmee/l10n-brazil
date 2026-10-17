@@ -6496,3 +6496,29 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_nfe_40_avulsa__nfe40_xOrgao
 msgid "Órgão emitente"
 msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_nfe_40_di__declaration_id
+msgid "Import Declaration"
+msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_nfe_40_adi__addition_id
+msgid "Import Declaration Addition"
+msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,help:l10n_br_nfe.field_nfe_40_adi__addition_id
+msgid ""
+"The persisted addition this adi group was built from, when one exists. See "
+"nfe.40.di.declaration_id for why this can be empty."
+msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,help:l10n_br_nfe.field_nfe_40_di__declaration_id
+msgid ""
+"The persisted declaration this DI group was built from, when one exists. A "
+"note imported straight from an inbound DF-e, with no declaration file behind"
+" it, keeps this empty; every field of the DI group is still written the way "
+"it always was."
+msgstr ""
