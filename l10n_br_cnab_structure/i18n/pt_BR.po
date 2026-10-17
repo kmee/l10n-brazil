@@ -1920,3 +1920,74 @@ msgstr ""
 "desconto não são aplicados a um boleto pago por várias linhas: ajuste os "
 "valores para que somem o valor do boleto ou pague as linhas separadamente "
 "(remova o código de barras repetido)."
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"The barcode of payment line %(line)s (partner: %(partner)s) is "
+"%(kind)s, which must be paid in way %(preferred)s, but the payment "
+"mode %(mode)s only has way %(way)s and the bank would reject the file."
+" Use %(suggestion)s for this line."
+msgstr ""
+"O código de barras da linha de pagamento %(line)s (parceiro: "
+"%(partner)s) é %(kind)s, que deve ser pago na forma %(preferred)s, mas"
+" o modo de pagamento %(mode)s só tem a forma %(way)s e o banco "
+"rejeitaria o arquivo. Use %(suggestion)s para esta linha."
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"a boleto of the paying bank"
+msgstr ""
+"um boleto do banco pagador"
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"a boleto of another bank"
+msgstr ""
+"um boleto de outro banco"
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"a utility/tax bill"
+msgstr ""
+"uma conta de concessionária/tributo"
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"the payment mode %s"
+msgstr ""
+"o modo de pagamento %s"
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"a payment mode that has way %s"
+msgstr ""
+"um modo de pagamento que tenha a forma %s"
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"Payment line %(line)s (partner: %(partner)s) is a salary payment "
+"(service type 30) in way %(way)s. Itau only accepts salary by credit "
+"in Itau account (way 01) or cartao salario (60); the bank would reject"
+" it as incompatible type x way. Pay the partner by credit in an Itau "
+"account or change the CNAB payment rule to service type 20."
+msgstr ""
+"A linha de pagamento %(line)s (parceiro: %(partner)s) é um pagamento "
+"de salário (tipo de serviço 30) na forma %(way)s. O Itaú só aceita "
+"salário por crédito em conta Itaú (forma 01) ou cartão salário (60); o"
+" banco rejeitaria como tipo x forma incompatível. Pague o parceiro por"
+" crédito em conta Itaú ou altere a regra de pagamento CNAB para o tipo"
+" de serviço 20."

@@ -3266,3 +3266,24 @@ msgid ""
 "(partner: %(partner)s, amount: %(amount)s). TED, DOC and credit in account "
 "payments need the partner bank account with bank, agency and account number."
 msgstr ""
+
+#. module: l10n_br_account_payment_order
+#. odoo-python
+#: code:addons/l10n_br_account_payment_order/models/account_payment_line.py:0
+msgid ""
+"The 48 digits linha digitavel of the utility boleto on payment line "
+"%(line)s (partner: %(partner)s, amount: %(amount)s) has a wrong check "
+"digit in one of its four blocks. Review the typed digits instead of "
+"letting the system recalculate them, and inform the linha digitavel "
+"exactly as printed on the bill."
+msgstr ""
+
+#. module: l10n_br_account_payment_order
+#. odoo-python
+#: code:addons/l10n_br_account_payment_order/models/account_payment_line.py:0
+msgid ""
+"CPF/CNPJ of the favored party missing on payment line %(line)s "
+"(partner: %(partner)s, amount: %(amount)s). The bank requires the "
+"inscription of the favored party (or of the boleto beneficiary) in "
+"this payment form: fill the CPF/CNPJ in the partner."
+msgstr ""

@@ -3397,3 +3397,33 @@ msgstr ""
 
 #~ msgid "pix transfer type identification"
 #~ msgstr "identificação do tipo de transferência pix"
+
+#. module: l10n_br_account_payment_order
+#. odoo-python
+#: code:addons/l10n_br_account_payment_order/models/account_payment_line.py:0
+msgid ""
+"The 48 digits linha digitavel of the utility boleto on payment line "
+"%(line)s (partner: %(partner)s, amount: %(amount)s) has a wrong check "
+"digit in one of its four blocks. Review the typed digits instead of "
+"letting the system recalculate them, and inform the linha digitavel "
+"exactly as printed on the bill."
+msgstr ""
+"A linha digitável de 48 dígitos da conta de concessionária na linha de"
+" pagamento %(line)s (parceiro: %(partner)s, valor: %(amount)s) tem "
+"dígito verificador errado em um dos quatro blocos. Revise os dígitos "
+"digitados em vez de deixar o sistema recalcular e informe a linha "
+"digitável exatamente como impressa na conta."
+
+#. module: l10n_br_account_payment_order
+#. odoo-python
+#: code:addons/l10n_br_account_payment_order/models/account_payment_line.py:0
+msgid ""
+"CPF/CNPJ of the favored party missing on payment line %(line)s "
+"(partner: %(partner)s, amount: %(amount)s). The bank requires the "
+"inscription of the favored party (or of the boleto beneficiary) in "
+"this payment form: fill the CPF/CNPJ in the partner."
+msgstr ""
+"CPF/CNPJ do favorecido ausente na linha de pagamento %(line)s "
+"(parceiro: %(partner)s, valor: %(amount)s). O banco exige a inscrição "
+"do favorecido (ou do beneficiário do boleto) nesta forma de pagamento:"
+" preencha o CPF/CNPJ no parceiro."

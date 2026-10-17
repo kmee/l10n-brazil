@@ -2966,3 +2966,59 @@ msgid ""
 "that they sum the value of the boleto, or pay the lines separately "
 "(remove the repeated barcode)."
 msgstr ""
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"The barcode of payment line %(line)s (partner: %(partner)s) is "
+"%(kind)s, which must be paid in way %(preferred)s, but the payment "
+"mode %(mode)s only has way %(way)s and the bank would reject the file."
+" Use %(suggestion)s for this line."
+msgstr ""
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"a boleto of the paying bank"
+msgstr ""
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"a boleto of another bank"
+msgstr ""
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"a utility/tax bill"
+msgstr ""
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"the payment mode %s"
+msgstr ""
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"a payment mode that has way %s"
+msgstr ""
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"Payment line %(line)s (partner: %(partner)s) is a salary payment "
+"(service type 30) in way %(way)s. Itau only accepts salary by credit "
+"in Itau account (way 01) or cartao salario (60); the bank would reject"
+" it as incompatible type x way. Pay the partner by credit in an Itau "
+"account or change the CNAB payment rule to service type 20."
+msgstr ""
