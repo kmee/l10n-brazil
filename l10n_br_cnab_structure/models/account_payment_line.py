@@ -183,10 +183,17 @@ class AccountPaymentLine(models.Model):
         With the preferred way missing from the payment mode the line falls on
         the first way of the mode (e.g. one-way mode "30" with a barcode of
         another bank, or the reverse): the bank rejects the file (bank 341 in
-        way 31, other bank in way 30, utility in 30/31). Mixed modes (all the
-        ways configured) never reach it.
+        way 31, other bank in way 30, utility in 30/31). Itau structures only;
+        mixed modes (all the ways configured) never reach it.
         """
         for line in self:
+            structure = line.order_id.cnab_structure_id
+            # Only Itau 30/31/13/91 semantics are verified (manual v085)
+            if (
+                structure.bank_id.code_bc != ITAU_BANK_CODE
+                or not line.order_id.journal_id.bank_id.code_bc
+            ):
+                continue
             kind, preferred, wrong = line._get_cnab_barcode_kind()
             way = line.cnab_payment_way_id
             if not kind or not way or way.code not in wrong:

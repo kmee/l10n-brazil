@@ -47,6 +47,8 @@ PAY_WAY_OTHER_BANK = "41"
 
 SVC_SUPPLIER = "20"
 SVC_SALARY = "30"
+# Tax service type (not salary): no restriction of way in Itau
+SVC_TAX = "22"
 # Service type used for employee payments (PIX, TED and same-bank credit).
 # Decided by Daniel at GATE 2 (2026-10-06): 20 (Fornecedores) for everyone.
 SVC_EMPLOYEE = SVC_SUPPLIER
@@ -1066,7 +1068,7 @@ class TestCNABStructure(AccountTestInvoicingCommon):
     # ------------------------------------------------------------------
     # Service type reproduction (real flow: invoice -> payment line multi)
     # ------------------------------------------------------------------
-    def _create_employee_rule(self):
+    def _create_employee_rule(self, service_type=SVC_SALARY):
         way_45 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_45")
         return self.env["l10n_br_cnab.payment.rule"].create(
             {
@@ -1075,7 +1077,7 @@ class TestCNABStructure(AccountTestInvoicingCommon):
                 "match_bank_type": "any",
                 "match_partner_type": "employee",
                 "payment_way_id": way_45.id,
-                "service_type": SVC_SALARY,
+                "service_type": service_type,
             }
         )
 
@@ -1167,23 +1169,23 @@ class TestCNABStructure(AccountTestInvoicingCommon):
 
     def test_exported_order_keeps_service_type(self):
         """Recompute never rewrites service type of an exported order."""
-        self._create_employee_rule()
+        self._create_employee_rule(service_type=SVC_TAX)
         self.partner_a.employee = True
         invoice = self._create_test_invoice()
         order = self._create_payment_order(invoice)
         line = order.payment_line_ids
-        self.assertEqual(line.service_type, SVC_SALARY)
-        # (a salary by PIX would be blocked: only the frozen state matters here)
-        order.state = "generated"
-        self.env.flush_all()
+        self.assertEqual(line.service_type, SVC_TAX)
+        order.draft2open()
+        order.open2generated()
+        self.assertEqual(order.state, "generated")
         # flag change: recompute leaves the stored service type alone
         self.partner_a.employee = False
         line._compute_cnab_payment_way_id()
-        self.assertEqual(line.service_type, SVC_SALARY)
+        self.assertEqual(line.service_type, SVC_TAX)
         # bank code change: same
         self.bank_341.code_bc = "237"
         line._compute_cnab_payment_way_id()
-        self.assertEqual(line.service_type, SVC_SALARY)
+        self.assertEqual(line.service_type, SVC_TAX)
         self.bank_341.code_bc = "341"
         # payment way is frozen too, and no UserError is raised even when no
         # way/rule matches any more
@@ -1194,7 +1196,7 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         order.payment_mode_id.cnab_structure_ok = True
         line._compute_cnab_payment_way_id()
         self.assertEqual(line.cnab_payment_way_id, way)
-        self.assertEqual(line.service_type, SVC_SALARY)
+        self.assertEqual(line.service_type, SVC_TAX)
         # in a draft order the recompute does apply
         order.payment_mode_id.cnab_payment_way_ids = mode_ways
         order.state = "draft"
@@ -1203,14 +1205,14 @@ class TestCNABStructure(AccountTestInvoicingCommon):
 
     def test_exported_legacy_line_without_stored_way(self):
         """Upgrade case: exported line with service type but no stored way."""
-        self._create_employee_rule()
+        self._create_employee_rule(service_type=SVC_TAX)
         self.partner_a.employee = True
         invoice = self._create_test_invoice()
         order = self._create_payment_order(invoice)
         line = order.payment_line_ids
         way = line.cnab_payment_way_id
-        order.state = "generated"
-        self.env.flush_all()
+        order.draft2open()
+        order.open2generated()
         self.env.cr.execute(
             "UPDATE account_payment_line SET cnab_payment_way_id = NULL WHERE id = %s",
             (line.id,),
@@ -1218,7 +1220,7 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         line.invalidate_recordset()
         line._compute_cnab_payment_way_id()
         self.assertEqual(line.cnab_payment_way_id, way)
-        self.assertEqual(line.service_type, SVC_SALARY)
+        self.assertEqual(line.service_type, SVC_TAX)
 
     def test_order_computes_handle_multiple_records(self):
         """The computes must fill every record, not only the first one."""
