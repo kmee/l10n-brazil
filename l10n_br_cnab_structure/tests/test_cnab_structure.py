@@ -5,6 +5,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 import base64
+from datetime import timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -1692,6 +1693,21 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         boleto_line._check_bank_account_required()  # no raise
 
     # Itau boleto (segment J) layout data
+
+    def test_boleto_segment_j_dates(self):
+        """Segment J exports the dates of the line (not today)."""
+        pay_date = fields.Date.today() + timedelta(days=5)
+        due_date = fields.Date.today() + timedelta(days=10)
+        order, _line = self._create_boleto_order(
+            barcode=self.BOLETO_DIGITABLE_LINE,
+            date=pay_date,
+            ml_maturity_date=due_date,
+        )
+        order.write({"date_prefered": "fixed", "date_scheduled": pay_date})
+        lines = self._generate_cnab_lines(order)
+        segment_j = self._segments(lines, "J")[0]
+        self.assertEqual(segment_j[91:99], due_date.strftime("%d%m%Y"))
+        self.assertEqual(segment_j[144:152], pay_date.strftime("%d%m%Y"))
 
     def test_boleto_batch_trailer_total(self):
         """Itau boleto batch trailer sums the line amount (positions 24-41)."""

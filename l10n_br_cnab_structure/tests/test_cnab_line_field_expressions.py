@@ -31,6 +31,23 @@ class TestCnabLineFieldExpressions(TransactionCase):
                 except SyntaxError as e:
                     self.fail(f"Invalid {fname} on {field.display_name}: {e}")
 
+    def test_date_fields_use_line_date(self):
+        """A date field fed by a payment line date must not always send today."""
+        checked = 0
+        for field in self._fields_with_expression():
+            expr = field.sending_dynamic_content or ""
+            if field.content_source_field not in ("date", "ml_maturity_date"):
+                continue
+            if "strftime" not in expr:
+                continue
+            checked += 1
+            self.assertIn(
+                "content",
+                expr.replace("time.strftime", ""),
+                f"{field.display_name} ignores the line date (always today)",
+            )
+        self.assertTrue(checked)
+
     def test_expression_keys_exist_in_layout(self):
         """Keys read by the expressions must be ref_names of the same batch."""
         key_re = re.compile(
