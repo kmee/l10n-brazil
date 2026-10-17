@@ -10,7 +10,7 @@
 "cnab_itau_240_boleto_segmento_j52pix","J-52 PIX","8","Segment","l10n_br_cnab_structure.cnab_itau_240_boleto","Sending and Return","cnab_itau_240","cnab_itau_240_pay_way_47","False"
 "cnab_itau_240_boleto_trailer","","9","Trailer","l10n_br_cnab_structure.cnab_itau_240_boleto","Sending and Return","cnab_itau_240","cnab_itau_240_pay_way_31,cnab_itau_240_pay_way_30","False"
 "cnab_itau_240_conc_tributo_bc_header","","10","Header","l10n_br_cnab_structure.cnab_itau_240_conc_tributo_bc","Sending and Return","cnab_itau_240","cnab_itau_240_pay_way_91,cnab_itau_240_pay_way_17,cnab_itau_240_pay_way_13","False"
-"cnab_itau_240_conc_tributo_bc_segmento_o","O","11","Segment","l10n_br_cnab_structure.cnab_itau_240_conc_tributo_bc","Sending and Return","cnab_itau_240","","False"
+"cnab_itau_240_conc_tributo_bc_segmento_o","O","11","Segment","l10n_br_cnab_structure.cnab_itau_240_conc_tributo_bc","Sending and Return","cnab_itau_240","cnab_itau_240_pay_way_13,cnab_itau_240_pay_way_91","False"
 "cnab_itau_240_conc_tributo_bc_trailer","","12","Trailer","l10n_br_cnab_structure.cnab_itau_240_conc_tributo_bc","Sending and Return","cnab_itau_240","","False"
 "cnab_itau_240_tributo_sem_bc_header","","13","Header","l10n_br_cnab_structure.cnab_itau_240_tributo_sem_bc","Sending and Return","cnab_itau_240","","False"
 "cnab_itau_240_tributo_sem_bc_segmento_n","N","14","Segment","l10n_br_cnab_structure.cnab_itau_240_tributo_sem_bc","Sending and Return","cnab_itau_240","","True"
