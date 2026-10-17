@@ -194,7 +194,8 @@ class CNABField(models.Model):
         if self.type != "num":
             return
         if isinstance(value, float):
-            value = f"{value:.{self.assumed_comma}f}"
+            # amounts: the decimal separator is dropped by the formatting
+            value = f"{value:.{self.assumed_comma}f}".replace(".", "")
         raw = str(value).strip()
         reason = False
         if not raw:
@@ -213,6 +214,12 @@ class CNABField(models.Model):
             if resource_ref and "partner_id" in resource_ref._fields
             else ""
         ) or ""
+        hint = ""
+        if (self.content_source_field or "").startswith("partner_bank_id"):
+            hint = _(
+                "\nFix the beneficiary's bank account (branch, account number "
+                "and check digit) in the partner form."
+            )
         raise UserError(
             _(
                 "Invalid value for CNAB field '%(field)s' (positions "
@@ -220,9 +227,7 @@ class CNABField(models.Model):
                 "Payment line: %(line)s\n"
                 "Beneficiary: %(partner)s\n"
                 "Value received: '%(value)s'\n"
-                "Reason: %(reason)s. Expected up to %(size)s digit(s).\n"
-                "Fix the beneficiary's bank account (branch, account number "
-                "and check digit) in the partner form."
+                "Reason: %(reason)s. Expected up to %(size)s digit(s).%(hint)s"
             )
             % {
                 "field": self.name,
@@ -233,6 +238,7 @@ class CNABField(models.Model):
                 "value": raw,
                 "reason": reason,
                 "size": self.size,
+                "hint": hint,
             }
         )
 
@@ -253,7 +259,9 @@ class CNABField(models.Model):
             value = value.zfill(size)
         if value_type == "raw":
             # Verbatim content (PIX key): keeps case, "@", ".", "-" and "+".
-            value = value.strip().ljust(size)
+            # Only accents are removed (ASCII safe); the case of the e-mail
+            # key (lowercase in DICT) was not confirmed, so it is not changed.
+            value = unidecode(value).strip().ljust(size)
         if value_type == "alpha":
             value = unidecode(value).upper()
             value = re.sub(r"[^A-Z0-9\s]", "", value)

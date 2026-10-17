@@ -1279,15 +1279,22 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         )
 
     def test_pix_key_other_banks_unchanged(self):
-        """Santander stays alpha (separate PR); BB and Sicoob are untouched."""
+        """Itau and Santander keep the key verbatim; BB and Sicoob are untouched."""
         santander = self.env.ref(
             "l10n_br_cnab_structure.cnab_santander_240_pagamentos_segmento_b_128_226"
         )
-        self.assertEqual(santander.type, "alpha")
+        self.assertEqual(santander.type, "raw")
+        self.assertEqual(santander.content_source_field, "partner_pix_id.key")
+        key = "Fin@Fornecedor.com.br"
+        self.assertEqual(
+            santander.format(santander.size, santander.type, key),
+            key.ljust(santander.size),
+        )
         raws = self.env["l10n_br_cnab.line.field"].search([("type", "=", "raw")])
         self.assertEqual(
             raws,
-            self.env.ref(
+            santander
+            | self.env.ref(
                 "l10n_br_cnab_structure.cnab_itau_240_pagamentos_segmento_b_128_227"
             ),
         )
@@ -2439,6 +2446,78 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         self.assertEqual(line.service_type, "22")
 
     # ------------------------------------------------------------------
+    # Strict validation of mandatory numeric fields of Itau A/J/O
+    # ------------------------------------------------------------------
+    STRICT_AMOUNT_DATE_FIELDS = (
+        "pagamentos_segmento_a_94_101",
+        "pagamentos_segmento_a_120_134",
+        "boleto_segmento_j_92_99",
+        "boleto_segmento_j_100_114",
+        "boleto_segmento_j_145_152",
+        "boleto_segmento_j_153_167",
+        "conc_tributo_bc_segmento_o_96_103",
+        "conc_tributo_bc_segmento_o_122_136",
+        "conc_tributo_bc_segmento_o_137_144",
+    )
+
+    def test_itau_strict_flag_on_amounts_and_dates(self):
+        for suffix in self.STRICT_AMOUNT_DATE_FIELDS:
+            field = self.env.ref(f"l10n_br_cnab_structure.cnab_itau_240_{suffix}")
+            self.assertTrue(field.raise_on_overflow, suffix)
+
+    def test_itau_strict_amount_valid_value_passes(self):
+        order, line = self._create_boleto_order(barcode=self.BOLETO_DIGITABLE_LINE)
+        field = self.env.ref(
+            "l10n_br_cnab_structure.cnab_itau_240_boleto_segmento_j_153_167"
+        )
+        self.assertEqual(field.output(line, strict=True)[1], "000000000123456")
+        self.assertEqual(len(self._segments(self._generate_cnab_lines(order), "J")), 2)
+
+    def test_itau_strict_zero_amount_blocks_generation(self):
+        """Zero amount never leaves as 000...0 in segments A, J or O."""
+        cases = {}
+        cases["J"] = self._create_boleto_order(barcode=self.BOLETO_DIGITABLE_LINE)
+        cases["O"] = self._create_utility_order()
+        self._create_itau_salary_rules()
+        cases["A"] = self._create_itau_salary_line(
+            self._create_partner_bank(self.bank_341), self.way_01
+        )
+        for segment, (order, line) in cases.items():
+            line.amount_currency = 0.0
+            with self.assertRaises(UserError, msg=segment) as ctx:
+                order.cnab_structure_id.output(order)
+            self.assertIn("empty value", str(ctx.exception), segment)
+
+    def test_itau_strict_amount_overflow_blocks_generation(self):
+        order, line = self._create_boleto_order(barcode=self.BOLETO_DIGITABLE_LINE)
+        line.amount_currency = 10.0**13
+        with self.assertRaises(UserError) as ctx:
+            order.cnab_structure_id.output(order)
+        self.assertIn("more significant digits", str(ctx.exception))
+
+    def test_pix_key_without_transfer_type_mapping_message(self):
+        """A key without the structure PIX transfer type is not "no key"."""
+        self._create_pix_employee_rules(same_bank_first=False)
+        self.env["cnab.pix.transfer.type"].search(
+            [
+                ("cnab_structure_id", "=", self.cnab_structure_itau_240.id),
+                ("type_domain", "=", "pix_key"),
+            ]
+        ).unlink()
+        other = self._create_partner_bank(self.bank_001)
+        order, line = self._create_salary_line_by_rule(
+            other, self._create_pix_key("email", self.PIX_KEYS["email"])
+        )
+        self.assertTrue(line.partner_pix_id)
+        order.draft2open()
+        with self.assertRaises(UserError) as ctx:
+            order.open2generated()
+        message = str(ctx.exception)
+        self.assertIn(self.partner_a.name, message)
+        self.assertIn("mapeamento", message)
+        self.assertNotIn("não possui chave PIX cadastrada", message)
+
+    # ------------------------------------------------------------------
     # Review of the grouping, return, fallback and messages
     # ------------------------------------------------------------------
     def test_same_barcode_different_partners_is_not_merged(self):
@@ -2551,3 +2630,29 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         )
         self.assertNotEqual(line.cnab_payment_way_id, way_45)
         self.assertEqual(line.service_type, SVC_SALARY)
+
+    def test_strict_message_is_generic_per_field(self):
+        order, line = self._create_boleto_order(barcode=self.BOLETO_DIGITABLE_LINE)
+        line.amount_currency = 0.0
+        amount = self.env.ref(
+            "l10n_br_cnab_structure.cnab_itau_240_boleto_segmento_j_153_167"
+        )
+        message = self._assert_strict_error(amount, line, "VALOR PAGAMENTO", "153")
+        self.assertNotIn("bank account", message)
+        self._create_itau_salary_rules()
+        _order, sline = self._create_itau_salary_line(
+            self._create_partner_bank(self.bank_341, acc_number="1234567"), self.way_01
+        )
+        message = self._assert_strict_error(
+            self._strict_field("36_41b"), sline, "1234567"
+        )
+        self.assertIn("bank account", message)
+
+    def test_santander_pix_key_is_ascii_safe(self):
+        field = self.env.ref(
+            "l10n_br_cnab_structure.cnab_santander_240_pagamentos_segmento_b_128_226"
+        )
+        self.assertEqual(
+            field.format(field.size, "raw", "Fín@Fornecedor.com.br"),
+            "Fin@Fornecedor.com.br".ljust(field.size),
+        )
