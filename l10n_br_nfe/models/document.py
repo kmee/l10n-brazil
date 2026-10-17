@@ -929,6 +929,15 @@ class NFe(spec_models.StackedModel):
 
             return ibscbs_tot
 
+        if xsd_field == "nfe40_natOp":
+            # The NF-e schema limits natOp to 60 characters (TString 1-60)
+            nat_op = super()._export_field(
+                xsd_field, class_obj, member_spec, export_value
+            )
+            if isinstance(nat_op, str):
+                nat_op = nat_op[:60].strip()
+            return nat_op
+
         return super()._export_field(xsd_field, class_obj, member_spec, export_value)
 
     def _export_many2one(self, field_name, xsd_required, class_obj=None):
