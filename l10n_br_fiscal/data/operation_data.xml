@@ -304,6 +304,23 @@
         <field name="state">approved</field>
     </record>
 
+    <record
+        id="fo_compras_compras_combustivel_uso_consumo"
+        model="l10n_br_fiscal.operation.line"
+    >
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_compras" />
+        <field
+            name="name"
+        >Compras de Combustível e Lubrificante para Uso e Consumo</field>
+        <field name="tax_icms_or_issqn">icms</field>
+        <field name="product_type">07</field>
+        <field name="fiscal_genre_id" ref="l10n_br_fiscal.product_genre_27" />
+        <field name="cfop_internal_id" ref="l10n_br_fiscal.cfop_1653" />
+        <field name="cfop_external_id" ref="l10n_br_fiscal.cfop_2653" />
+        <field name="cfop_export_id" ref="l10n_br_fiscal.cfop_3653" />
+        <field name="state">approved</field>
+    </record>
+
     <record id="fo_compras_compras_uso_consumost" model="l10n_br_fiscal.operation.line">
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_compras" />
         <field name="name">Compras para Uso e Consumo com ST</field>

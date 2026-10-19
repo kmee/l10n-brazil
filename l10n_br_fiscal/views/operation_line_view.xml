@@ -47,6 +47,7 @@
                         </group>
                         <group string="Product Information">
                             <field name="product_type" />
+                            <field name="fiscal_genre_id" />
                             <field name="tax_icms_or_issqn" />
                             <field name="icms_origin" />
                         </group>

@@ -146,3 +146,37 @@ class TestOperation(TransactionCase):
         product.cest_id = self.env.ref("l10n_br_fiscal.cest_2112300")
 
         self.assertEqual(operation.line_definition(company, partner, product), line)
+
+    def _purchase_line_for(self, fiscal_genre):
+        """Operation line that "Compras" picks for a product for own use."""
+        operation_compras = self.env.ref("l10n_br_fiscal.fo_compras")
+        company = self.env.ref("base.main_company")
+        partner = self.env.ref("l10n_br_base.res_partner_akretion")
+        product = self.env.ref("product.product_product_1")
+        company.icms_regulation_id = self.env.ref("l10n_br_fiscal.tax_icms_regulation")
+        company.state_id = self.env.ref("base.state_br_sp")
+        partner.state_id = self.env.ref("base.state_br_sp")
+        product.tax_icms_or_issqn = "icms"
+        product.fiscal_type = "07"
+        product.fiscal_genre_id = fiscal_genre
+        return operation_compras.line_definition(company, partner, product)
+
+    def test_line_definition_fuel_for_own_use(self):
+        """Fuel bought for own use takes CFOP 1.653 (2.653 out of the state),
+        not 1.556: the line is chosen by the product genre too (27 for fuels
+        and lubricants), on top of the "own use" fiscal type."""
+        line = self._purchase_line_for(self.env.ref("l10n_br_fiscal.product_genre_27"))
+        self.assertEqual(
+            line,
+            self.env.ref("l10n_br_fiscal.fo_compras_compras_combustivel_uso_consumo"),
+        )
+        self.assertEqual(line.cfop_internal_id.code, "1653")
+        self.assertEqual(line.cfop_external_id.code, "2653")
+
+    def test_line_definition_material_for_own_use_keeps_cfop_1556(self):
+        """Any other product for own use is still "Compras para Uso e Consumo"."""
+        line = self._purchase_line_for(self.env.ref("l10n_br_fiscal.product_genre_48"))
+        self.assertEqual(
+            line, self.env.ref("l10n_br_fiscal.fo_compras_compras_uso_consumo")
+        )
+        self.assertEqual(line.cfop_internal_id.code, "1556")

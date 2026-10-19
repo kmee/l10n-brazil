@@ -124,6 +124,14 @@ class OperationLine(models.Model):
         selection=PRODUCT_FISCAL_TYPE, string="Product Fiscal Type"
     )
 
+    fiscal_genre_id = fields.Many2one(
+        comodel_name="l10n_br_fiscal.product.genre",
+        string="Product Genre",
+        help="When set, the line is only chosen for products of this fiscal "
+        "genre (the first two digits of the NCM, e.g. 27 for fuels), as an "
+        "addition to the product fiscal type.",
+    )
+
     company_tax_framework = fields.Selection(selection=TAX_FRAMEWORK)
 
     add_to_amount = fields.Boolean(string="Add to Document Amount?", default=True)

@@ -265,6 +265,12 @@ class Operation(models.Model):
 
         domain += [
             "|",
+            ("fiscal_genre_id", "=", product.fiscal_genre_id.id),
+            ("fiscal_genre_id", "=", False),
+        ]
+
+        domain += [
+            "|",
             ("tax_icms_or_issqn", "=", product.tax_icms_or_issqn),
             ("tax_icms_or_issqn", "=", False),
         ]
@@ -320,6 +326,7 @@ class Operation(models.Model):
                 "ind_ie_dest",
                 "partner_tax_framework",
                 "product_type",
+                "fiscal_genre_id",
                 "tax_icms_or_issqn",
                 "icms_origin",
             ]
