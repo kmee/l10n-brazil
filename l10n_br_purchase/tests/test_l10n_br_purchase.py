@@ -786,3 +786,37 @@ class L10nBrPurchaseBaseTest(TransactionCase):
             #    partner_delivery,
             #    "The Invoice should be created with Partner to Shipping.",
             # )
+
+
+class TestL10nBrPurchaseOwnUseIcmsCredit(TransactionCase):
+    """Material for own use or consumption gives no ICMS credit (LC 87/1996,
+    art. 33, I): the purchase line has no ICMS account tax to book it."""
+
+    def test_own_use_line_takes_no_icms_credit(self):
+        env = self.env(context=dict(self.env.context, tracking_disable=True))
+        company = env.ref("l10n_br_base.empresa_lucro_presumido")
+        env.user.company_ids += company
+        env.user.company_id = company
+        order = env.ref("l10n_br_purchase.lp_po_only_products")
+        order.onchange_partner_id()
+        order._onchange_fiscal_operation_id()
+        line = order.order_line[0]
+
+        def icms_taxes():
+            return line.taxes_id.filtered(
+                lambda tax: tax.tax_group_id.fiscal_tax_group_id.tax_domain == "icms"
+            )
+
+        line.fiscal_operation_line_id = env.ref(
+            "l10n_br_fiscal.fo_compras_compras_comercializacao"
+        )
+        line._onchange_fiscal_tax_ids()
+        self.assertTrue(icms_taxes(), "Resale takes the ICMS credit.")
+
+        line.fiscal_operation_line_id = env.ref(
+            "l10n_br_fiscal.fo_compras_compras_uso_consumo"
+        )
+        line._onchange_fiscal_tax_ids()
+        self.assertEqual(line.cfop_id.type_move, "purchase_ownuse")
+        self.assertFalse(icms_taxes(), "Own use takes no ICMS credit.")
+        self.assertTrue(line.taxes_id, "The other taxes are still there.")

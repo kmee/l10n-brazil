@@ -3,12 +3,30 @@
 
 from odoo import Command, api, fields, models
 
+from odoo.addons.l10n_br_fiscal.constants.fiscal import TAX_DOMAIN_ICMS
+
 
 class FiscalTax(models.Model):
     _inherit = "l10n_br_fiscal.tax"
 
-    def account_taxes(self, user_type="sale", fiscal_operation=False, company=False):
+    @api.model
+    def _no_icms_credit(self, user_type, cfop):
+        """Tell if a line takes no ICMS credit because of its CFOP.
+
+        Material for own use or consumption (CFOP of the "purchase_ownuse" kind,
+        e.g. 1.556 and 1.653) gives no ICMS credit (LC 87/1996, art. 33, I).
+        Booking the ICMS of such a purchase on an account tax would send it to
+        "ICMS a Compensar" and take it out of the cost of the item.
+        """
+        return bool(
+            user_type == "purchase" and cfop and cfop.type_move == "purchase_ownuse"
+        )
+
+    def account_taxes(
+        self, user_type="sale", fiscal_operation=False, company=False, cfop=False
+    ):
         account_taxes = self.env["account.tax"]
+        no_icms_credit = self._no_icms_credit(user_type, cfop)
         # `deductible_taxes` is company dependent, so reading it off the record
         # as it comes answers for whatever company sits in the environment, not
         # for the one the caller asked about. Every caller passes the company of
@@ -18,6 +36,8 @@ class FiscalTax(models.Model):
         if fiscal_operation and company:
             fiscal_operation = fiscal_operation.with_company(company)
         for fiscal_tax in self:
+            if no_icms_credit and fiscal_tax.tax_domain == TAX_DOMAIN_ICMS:
+                continue
             taxes = fiscal_tax._account_taxes(company)
             # Atualiza os impostos contábeis relacionados aos impostos fiscais
             account_taxes |= taxes.filtered(

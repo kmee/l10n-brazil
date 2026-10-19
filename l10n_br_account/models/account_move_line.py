@@ -7,7 +7,10 @@ from contextlib import contextmanager
 from odoo import Command, _, api, fields, models
 from odoo.tools import frozendict
 
-from odoo.addons.l10n_br_fiscal.constants.fiscal import FISCAL_TAX_ID_FIELDS
+from odoo.addons.l10n_br_fiscal.constants.fiscal import (
+    FISCAL_TAX_ID_FIELDS,
+    TAX_DOMAIN_ICMS,
+)
 
 
 class AccountMoveLine(models.Model):
@@ -273,6 +276,7 @@ class AccountMoveLine(models.Model):
                                 amount_total
                                 - line.amount_tax_included
                                 - line.amount_tax_not_included
+                                + line._get_icms_without_credit()
                                 if line.tax_ids
                                 else amount_total
                             )
@@ -618,10 +622,12 @@ class AccountMoveLine(models.Model):
         "product_uom_id",
         "fiscal_tax_ids",
         "fiscal_operation_id",
+        "cfop_id",
     )
     def _compute_tax_ids(self):
         # Adding 'fiscal_tax_ids' as a dependency to ensure that the taxes
-        # are recalculated when this field changes.
+        # are recalculated when this field changes. The CFOP too: material for
+        # own use or consumption takes no ICMS credit (see `account_taxes`).
         return super()._compute_tax_ids()
 
     def _get_computed_taxes(self):
@@ -645,7 +651,24 @@ class AccountMoveLine(models.Model):
             user_type=user_type,
             fiscal_operation=self.fiscal_operation_id,
             company=self.company_id,
+            cfop=self.cfop_id,
         )
+
+    def _get_icms_without_credit(self):
+        """ICMS embedded in the price of a line that takes no ICMS credit.
+
+        The line has no account tax for it (see `FiscalTax.account_taxes`), so
+        the amount stays in the cost of the item instead of leaving it.
+        """
+        self.ensure_one()
+        user_type = "purchase" if self.move_id.is_purchase_document(True) else None
+        if not self.env["l10n_br_fiscal.tax"]._no_icms_credit(user_type, self.cfop_id):
+            return 0.0
+        icms_taxes = self.fiscal_document_line_id.fiscal_tax_ids.filtered(
+            lambda tax: tax.tax_domain == TAX_DOMAIN_ICMS
+            and tax.tax_group_id.tax_include
+        )
+        return self.icms_value if icms_taxes else 0.0
 
     @api.constrains("product_uom_id")
     def _check_product_uom_category_id(self):

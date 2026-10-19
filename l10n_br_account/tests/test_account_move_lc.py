@@ -2131,3 +2131,75 @@ class AccountMoveLucroPresumido(AccountMoveBRCommon):
         )
         self.assertEqual(len(self.move_in_compra_para_revenda.line_ids), 11)
         self.assertEqual(self.move_in_compra_para_revenda.amount_total, 2065.0)
+
+    # ICMS credit of purchases for own use or consumption
+    def _purchase_move(self, operation_line, number):
+        self.env.ref("l10n_br_fiscal.fo_compras").deductible_taxes = False
+        return self.init_invoice(
+            "in_invoice",
+            products=[self.product_a],
+            document_type=self.env.ref("l10n_br_fiscal.document_55"),
+            fiscal_operation=self.env.ref("l10n_br_fiscal.fo_compras"),
+            fiscal_operation_lines=[operation_line],
+            document_serie="1",
+            document_number=number,
+        )
+
+    @staticmethod
+    def _icms_tax_lines(move):
+        return move.line_ids.filtered(
+            lambda line: line.tax_line_id.tax_group_id.fiscal_tax_group_id.tax_domain
+            == "icms"
+        )
+
+    def test_compra_uso_consumo_sem_credito_de_icms(self):
+        """Material for own use or consumption (CFOP 1.556) gives no ICMS
+        credit (LC 87/1996, art. 33, I): the ICMS stays in the cost of the item
+        instead of going to "ICMS a Compensar", and the payable is the total."""
+        revenda = self._purchase_move(
+            self.env.ref("l10n_br_fiscal.fo_compras_compras_comercializacao"), "51"
+        )
+        uso_consumo = self._purchase_move(
+            self.env.ref("l10n_br_fiscal.fo_compras_compras_uso_consumo"), "52"
+        )
+        uso_line = uso_consumo.invoice_line_ids
+        self.assertEqual(uso_line.cfop_id.type_move, "purchase_ownuse")
+        self.assertGreater(uso_line.icms_value, 0)
+
+        # Control: the same purchase for resale takes the credit.
+        self.assertTrue(self._icms_tax_lines(revenda))
+        self.assertFalse(self._icms_tax_lines(uso_consumo))
+        self.assertFalse(
+            uso_line.tax_ids.filtered(
+                lambda tax: tax.tax_group_id.fiscal_tax_group_id.tax_domain == "icms"
+            )
+        )
+
+        # The ICMS the resale purchase books as credit is part of the cost here.
+        resale_line = revenda.invoice_line_ids
+        self.assertAlmostEqual(
+            self._product_balance(uso_consumo) - self._product_balance(revenda),
+            uso_line.icms_value,
+            places=2,
+        )
+        # The payable is still the total of the document and the move balances.
+        self.assertEqual(uso_consumo.amount_total, resale_line.fiscal_amount_total)
+        payable = uso_consumo.line_ids.filtered(
+            lambda line: line.display_type == "payment_term"
+        )
+        self.assertAlmostEqual(
+            sum(payable.mapped("credit")), uso_consumo.amount_total, places=2
+        )
+        self.assertAlmostEqual(
+            sum(uso_consumo.line_ids.mapped("debit")),
+            sum(uso_consumo.line_ids.mapped("credit")),
+            places=2,
+        )
+
+    @staticmethod
+    def _product_balance(move):
+        return sum(
+            move.line_ids.filtered(lambda line: line.display_type == "product").mapped(
+                "balance"
+            )
+        )
