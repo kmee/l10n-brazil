@@ -198,11 +198,38 @@ class AccountChartTemplate(models.AbstractModel):
 
     @api.model
     def _populate_default_br_tax_accounts(
-        self, company, flavor="cfc", review_suffix=".GEN", template_module="l10n_br_coa"
+        self,
+        company,
+        flavor="cfc",
+        review_suffix=".GEN",
+        template_module="l10n_br_coa",
+        only_tax_templates=None,
     ):
         """
         Populate a default Brazilian tax accounts and configure tax repartition lines.
+
+        :param only_tax_templates: optional list of tax template xmlids. When
+            given, only the accounts these taxes need are created and only
+            their repartition lines are touched. Migrations use it to add new
+            taxes to a company without rewriting the accounts that the other
+            taxes of the company already have.
         """
+        tax_templates_accounts = DEFAULT_TAX_TEMPLATES_ACCOUNTS
+        tax_accounts = DEFAULT_TAX_ACCOUNTS
+        if only_tax_templates is not None:
+            tax_templates_accounts = {
+                xmlid: keys
+                for xmlid, keys in DEFAULT_TAX_TEMPLATES_ACCOUNTS.items()
+                if xmlid in only_tax_templates
+            }
+            needed_keys = {
+                key for keys in tax_templates_accounts.values() for key in keys if key
+            }
+            tax_accounts = {
+                key: value
+                for key, value in DEFAULT_TAX_ACCOUNTS.items()
+                if key in needed_keys
+            }
         Account = self.env["account.account"]
         IrModelData = self.env["ir.model.data"].sudo()
         created_accounts_refs = {}
@@ -216,7 +243,7 @@ class AccountChartTemplate(models.AbstractModel):
             code_itg,
             name,
             acc_type,
-        ) in DEFAULT_TAX_ACCOUNTS.items():
+        ) in tax_accounts.items():
             # Use fixed codes. Ensure they don't clash with base CoA or handle it.
             # We assume these codes are specific enough.
             code = code_cfc if flavor == "cfc" else code_itg
@@ -294,7 +321,7 @@ class AccountChartTemplate(models.AbstractModel):
         for (
             tax_template_xmlid,
             acc_mapping_keys,
-        ) in DEFAULT_TAX_TEMPLATES_ACCOUNTS.items():
+        ) in tax_templates_accounts.items():
             tax_xmlid = (
                 f"{template_module}.{company.id}_{tax_template_xmlid.split('.')[1]}"
             )

@@ -1,7 +1,10 @@
 # Copyright 2026 KMEE
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
+import importlib.util
+
 from odoo import Command
+from odoo.modules.module import get_module_path
 from odoo.tests import tagged
 
 from .common import AccountMoveBRCommon
@@ -127,3 +130,31 @@ class TestIbsCbsDeductible(AccountMoveBRCommon):
             sum(receivable.mapped("balance")), move.amount_total, places=2
         )
         self.assertAlmostEqual(move.amount_residual, move.amount_total, places=2)
+
+    def test_migration_links_the_is_group_to_the_fiscal_group(self):
+        """Only the IS group is linked; the other groups are left alone."""
+        path = get_module_path("l10n_br_account")
+        spec = importlib.util.spec_from_file_location(
+            "l10n_br_account_post_migration_18_0_3_9_0",
+            f"{path}/migrations/18.0.3.9.0/post-migration.py",
+        )
+        migration = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(migration)
+
+        group_is = self.env.ref(f"l10n_br_coa.{self.company.id}_tax_group_is")
+        group_issqn = self.env.ref(f"l10n_br_coa.{self.company.id}_tax_group_issqn")
+        fiscal_issqn = group_issqn.fiscal_tax_group_id
+        self.assertEqual(
+            group_is.fiscal_tax_group_id, self.env.ref("l10n_br_fiscal.tax_group_is")
+        )
+        group_is.fiscal_tax_group_id = False
+        group_issqn.fiscal_tax_group_id = False
+
+        migration.migrate(self.env.cr, "18.0.3.8.1")
+        self.env.invalidate_all()
+
+        self.assertEqual(
+            group_is.fiscal_tax_group_id, self.env.ref("l10n_br_fiscal.tax_group_is")
+        )
+        self.assertFalse(group_issqn.fiscal_tax_group_id)
+        self.assertTrue(fiscal_issqn)
