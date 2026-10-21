@@ -213,5 +213,8 @@ class TestIbsCbsDeductible(AccountMoveBRCommon):
 class TestIbsCbsDeductibleGenericChart(TestIbsCbsDeductible):
     """Same flows with the Brazilian generic chart: no suffix on the accounts."""
 
+    # The tests are inherited from the class above: Odoo only collects them
+    # from the subclass when it asks for the inherited ones.
+    allow_inherited_tests_method = True
     chart_template = "br_oca_generic"
     account_suffix = ""
