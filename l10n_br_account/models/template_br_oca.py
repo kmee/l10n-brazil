@@ -172,6 +172,10 @@ class AccountChartTemplate(models.AbstractModel):
             )
             _logger.info(f"Created {tax_count} taxes for company {company.name}")
 
-            self.env["account.chart.template"]._populate_default_br_tax_accounts(
-                company, flavor="cfc", review_suffix=".BR"
+            # Same codes the chart load looks for, so the accounts of the chart
+            # are reused and no second set is created beside them.
+            chart_template = self.env["account.chart.template"]
+            flavor, review_suffix = chart_template._get_br_tax_accounts_params(company)
+            chart_template._populate_default_br_tax_accounts(
+                company, flavor=flavor, review_suffix=review_suffix
             )
