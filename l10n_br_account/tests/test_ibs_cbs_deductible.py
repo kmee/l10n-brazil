@@ -41,8 +41,9 @@ class TestIbsCbsDeductible(AccountMoveBRCommon):
 
     chart_template = "generic_coa"
     # The core chart has none of the Brazilian codes: `load_fiscal_taxes`
-    # creates the tax accounts with the review suffix. The Brazilian charts use
-    # their own accounts, with no suffix (see the subclass below).
+    # creates the tax accounts with the review suffix. The accounts of the
+    # Brazilian charts (no suffix) are tested in l10n_br_coa_generic and
+    # l10n_br_coa_simple, which load those charts in a company of their own.
     account_suffix = ".BR"
 
     @classmethod
@@ -202,7 +203,7 @@ class TestIbsCbsDeductible(AccountMoveBRCommon):
         # `link_is_groups` is the body of `migrate`: the openupgrade decorator
         # logs an ERROR when Odoo is not the caller, which fails the CI log
         # check.
-        migration.link_is_groups(self.env)
+        migration.link_is_groups(self.env(su=True))
         self.env.invalidate_all()
 
         self.assertEqual(
@@ -210,14 +211,3 @@ class TestIbsCbsDeductible(AccountMoveBRCommon):
         )
         self.assertFalse(group_issqn.fiscal_tax_group_id)
         self.assertTrue(fiscal_issqn)
-
-
-@tagged("post_install", "-at_install")
-class TestIbsCbsDeductibleGenericChart(TestIbsCbsDeductible):
-    """Same flows with the Brazilian generic chart: no suffix on the accounts."""
-
-    # The tests are inherited from the class above: Odoo only collects them
-    # from the subclass when it asks for the inherited ones.
-    allow_inherited_tests_method = True
-    chart_template = "br_oca_generic"
-    account_suffix = ""
