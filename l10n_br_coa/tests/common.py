@@ -61,6 +61,9 @@ class IbsCbsTaxesMixin:
     * `new_plan_account_codes`: accounts that this version added to the chart.
     """
 
+    # Odoo collects only the test methods defined in the class itself, unless
+    # the class asks for the inherited ones: the tests live in this mixin.
+    allow_inherited_tests_method = True
     chart_template = None
     tax_framework = None
     expected_accounts = None
