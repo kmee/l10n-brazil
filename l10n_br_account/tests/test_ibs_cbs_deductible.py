@@ -199,7 +199,10 @@ class TestIbsCbsDeductible(AccountMoveBRCommon):
         group_is.fiscal_tax_group_id = False
         group_issqn.fiscal_tax_group_id = False
 
-        migration.migrate(self.env.cr, "18.0.3.8.1")
+        # `link_is_groups` is the body of `migrate`: the openupgrade decorator
+        # logs an ERROR when Odoo is not the caller, which fails the CI log
+        # check.
+        migration.link_is_groups(self.env)
         self.env.invalidate_all()
 
         self.assertEqual(

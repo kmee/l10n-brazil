@@ -15,8 +15,7 @@ from openupgradelib import openupgrade
 _logger = logging.getLogger(__name__)
 
 
-@openupgrade.migrate()
-def migrate(env, version):
+def link_is_groups(env):
     fiscal_group = env.ref("l10n_br_fiscal.tax_group_is", raise_if_not_found=False)
     if not fiscal_group:
         return
@@ -35,3 +34,8 @@ def migrate(env, version):
     groups = groups.filtered(lambda group: not group.fiscal_tax_group_id)
     groups.write({"fiscal_tax_group_id": fiscal_group.id})
     _logger.info("l10n_br_account: %s IS tax group(s) linked", len(groups))
+
+
+@openupgrade.migrate()
+def migrate(env, version):
+    link_is_groups(env)
