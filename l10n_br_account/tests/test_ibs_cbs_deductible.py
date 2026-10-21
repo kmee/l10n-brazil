@@ -9,6 +9,23 @@ from odoo.tests import tagged
 
 from .common import AccountMoveBRCommon
 
+# Tax -> (invoice account, refund account), without the review suffix. The
+# codes are the ones of l10n_br_coa_generic.
+EXPECTED_ACCOUNTS = {
+    "tax_template_out_ibs": ("2.1.7.1.14", "1.1.4.1.12"),
+    "tax_template_in_ibs": ("1.1.4.1.12", "2.1.7.1.14"),
+    "tax_template_out_cbs": ("2.1.7.1.15", "1.1.4.1.13"),
+    "tax_template_in_cbs": ("1.1.4.1.13", "2.1.7.1.15"),
+    "tax_template_out_is": ("2.1.7.1.16", "1.1.4.1.14"),
+    "tax_template_in_is": ("1.1.4.1.14", "2.1.7.1.16"),
+    "tax_template_out_ibs_deductible": ("6.1.1.2.12", "6.1.1.2.32"),
+    "tax_template_in_ibs_deductible": ("6.1.1.2.12", "2.1.7.1.14"),
+    "tax_template_out_cbs_deductible": ("6.1.1.2.13", "6.1.1.2.33"),
+    "tax_template_in_cbs_deductible": ("6.1.1.2.13", "2.1.7.1.15"),
+    "tax_template_out_is_deductible": ("6.1.1.2.14", "6.1.1.2.34"),
+    "tax_template_in_is_deductible": ("6.1.1.2.14", "2.1.7.1.16"),
+}
+
 
 @tagged("post_install", "-at_install")
 class TestIbsCbsDeductible(AccountMoveBRCommon):
@@ -23,6 +40,10 @@ class TestIbsCbsDeductible(AccountMoveBRCommon):
     """
 
     chart_template = "generic_coa"
+    # The core chart has none of the Brazilian codes: `load_fiscal_taxes`
+    # creates the tax accounts with the review suffix. The Brazilian charts use
+    # their own accounts, with no suffix (see the subclass below).
+    account_suffix = ".BR"
 
     @classmethod
     def setUpClass(cls):
@@ -80,26 +101,45 @@ class TestIbsCbsDeductible(AccountMoveBRCommon):
     def _product_line(self, move):
         return move.invoice_line_ids.filtered(lambda line: line.product_id)[:1]
 
+    def _tax(self, key):
+        return self.env.ref(
+            f"l10n_br_coa.{self.company.id}_{key}", raise_if_not_found=False
+        ) or self.env.ref(f"account.{self.company.id}_{key}", raise_if_not_found=False)
+
+    def _account_code(self, tax, refund=False):
+        lines = (
+            tax.refund_repartition_line_ids
+            if refund
+            else tax.invoice_repartition_line_ids
+        )
+        line = lines.filtered(lambda rline: rline.repartition_type == "tax")
+        return line.account_id.with_company(self.company).code
+
     def test_chart_has_the_deductible_taxes(self):
         """The chart carries IBS, CBS and IS, plain and deductible."""
-        for group in ("ibs", "cbs", "is"):
-            for use in ("out", "in"):
-                for suffix in ("", "_deductible"):
-                    key = f"tax_template_{use}_{group}{suffix}"
-                    tax = self.env.ref(
-                        f"l10n_br_coa.{self.company.id}_{key}",
-                        raise_if_not_found=False,
-                    )
-                    self.assertTrue(tax, f"{key} is missing from the chart")
-                    self.assertEqual(tax.deductible, bool(suffix))
-                    line = tax.invoice_repartition_line_ids.filtered(
-                        lambda rline: rline.repartition_type == "tax"
-                    )
-                    self.assertEqual(
-                        line.factor_percent,
-                        -100 if suffix else 100,
-                        f"{key} has the wrong repartition factor",
-                    )
+        for key, (invoice_code, refund_code) in EXPECTED_ACCOUNTS.items():
+            tax = self._tax(key)
+            self.assertTrue(tax, f"{key} is missing from the chart")
+            deductible = "deductible" in key
+            self.assertEqual(tax.deductible, deductible)
+            line = tax.invoice_repartition_line_ids.filtered(
+                lambda rline: rline.repartition_type == "tax"
+            )
+            self.assertEqual(
+                line.factor_percent,
+                -100 if deductible else 100,
+                f"{key} has the wrong repartition factor",
+            )
+            self.assertEqual(
+                self._account_code(tax),
+                invoice_code + self.account_suffix,
+                f"{key}: invoice account",
+            )
+            self.assertEqual(
+                self._account_code(tax, refund=True),
+                refund_code + self.account_suffix,
+                f"{key}: refund account",
+            )
 
     def test_receivable_equals_invoice_total(self):
         """With deductible taxes the title is the invoice total."""
@@ -115,6 +155,11 @@ class TestIbsCbsDeductible(AccountMoveBRCommon):
         move.action_post()
         self.assertEqual(move.state, "posted")
         self.assertAlmostEqual(move.amount_residual, move.amount_total, places=2)
+        # IBS and CBS are owed ("a Recolher") and the deductible tax gives the
+        # amount back in the revenue deduction ("s/ Vendas").
+        codes = set(move.line_ids.account_id.with_company(self.company).mapped("code"))
+        for code in ("2.1.7.1.14", "2.1.7.1.15", "6.1.1.2.12", "6.1.1.2.13"):
+            self.assertIn(code + self.account_suffix, codes)
 
     def test_payment_term_in_three_installments_posts(self):
         """Splitting the title in three keeps the entry balanced."""
@@ -133,6 +178,10 @@ class TestIbsCbsDeductible(AccountMoveBRCommon):
 
     def test_migration_links_the_is_group_to_the_fiscal_group(self):
         """Only the IS group is linked; the other groups are left alone."""
+        # The folder of a migration is named after the version (`18.0.3.9.0`)
+        # and the file has a dash (`post-migration.py`): neither is a valid
+        # module name, so a plain `import` cannot reach it. It is loaded by
+        # path; it is the same file Odoo runs on `-u`.
         path = get_module_path("l10n_br_account")
         spec = importlib.util.spec_from_file_location(
             "l10n_br_account_post_migration_18_0_3_9_0",
@@ -158,3 +207,11 @@ class TestIbsCbsDeductible(AccountMoveBRCommon):
         )
         self.assertFalse(group_issqn.fiscal_tax_group_id)
         self.assertTrue(fiscal_issqn)
+
+
+@tagged("post_install", "-at_install")
+class TestIbsCbsDeductibleGenericChart(TestIbsCbsDeductible):
+    """Same flows with the Brazilian generic chart: no suffix on the accounts."""
+
+    chart_template = "br_oca_generic"
+    account_suffix = ""
