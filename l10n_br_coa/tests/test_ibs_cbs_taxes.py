@@ -1,169 +1,34 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html).
 
-import importlib.util
+from types import SimpleNamespace
 
-from odoo.modules.module import get_module_path
+from openupgradelib import openupgrade
+
 from odoo.tests import TransactionCase, tagged
 
-NEW_GROUP = "tax_group_is"
-NEW_TAXES = [
-    "tax_template_out_ibs_deductible",
-    "tax_template_in_ibs_deductible",
-    "tax_template_out_cbs_deductible",
-    "tax_template_in_cbs_deductible",
-    "tax_template_out_is",
-    "tax_template_in_is",
-    "tax_template_out_is_deductible",
-    "tax_template_in_is_deductible",
-]
-
-
-def _load_migration():
-    path = get_module_path("l10n_br_coa")
-    spec = importlib.util.spec_from_file_location(
-        "l10n_br_coa_post_migration_18_0_3_4_0",
-        f"{path}/migrations/18.0.3.4.0/post-migration.py",
-    )
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+from .common import IbsCbsTaxesMixin, load_migration
 
 
 @tagged("post_install", "-at_install")
-class TestIbsCbsTaxes(TransactionCase):
-    """IBS, CBS and IS come with their deductible taxes and the IS group.
+class TestIbsCbsTaxes(IbsCbsTaxesMixin, TransactionCase):
+    """The basic chart (`br_oca`) brings the taxes, but no account of its own.
 
-    An operation that uses deductible taxes gives the tax back with a
-    deductible account tax. Without the IBS and CBS ones the amount is added
-    to the receivable a second time.
+    The generic and simple charts run the same tests with their exact
+    accounts, in their own modules.
     """
 
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.company = cls.env["res.company"].create(
-            {
-                "name": "Empresa IBS CBS",
-                "country_id": cls.env.ref("base.br").id,
-            }
-        )
-        cls.env.user.company_ids = [(4, cls.company.id)]
-        cls.env.user.company_id = cls.company
-        cls.env["account.chart.template"].try_loading("br_oca", cls.company)
+    chart_template = "br_oca"
 
-    def _tax(self, key):
-        return self.env.ref(
-            f"account.{self.company.id}_{key}", raise_if_not_found=False
-        )
-
-    def _tax_repartition(self, tax):
-        return tax.invoice_repartition_line_ids.filtered(
-            lambda line: line.repartition_type == "tax"
-        )
-
-    def test_loaded_chart_has_the_new_taxes(self):
-        for key in NEW_TAXES:
-            tax = self._tax(key)
-            self.assertTrue(tax, f"{key} was not loaded")
-            deductible = "deductible" in key
-            self.assertEqual(tax.deductible, deductible, key)
-            line = self._tax_repartition(tax)
-            self.assertEqual(line.factor_percent, -100 if deductible else 100, key)
-            self.assertTrue(line.account_id, f"{key} has no account")
-        self.assertTrue(self._tax(NEW_GROUP), "the IS tax group was not loaded")
-        for key in (
-            "tax_template_out_ibs",
-            "tax_template_in_ibs",
-            "tax_template_out_cbs",
-            "tax_template_in_cbs",
-        ):
-            line = self._tax_repartition(self._tax(key))
-            self.assertTrue(line.account_id, f"{key} has no account")
-
-    def _remove_new_taxes(self):
-        for key in NEW_TAXES:
-            tax = self._tax(key)
-            tax.unlink()
-        self._tax(NEW_GROUP).unlink()
-        self.assertFalse(self._tax(NEW_TAXES[0]))
-        self.assertFalse(self._tax(NEW_GROUP))
-
-    def test_migration_adds_the_missing_taxes(self):
-        """A database loaded before this version gets the taxes."""
-        self._remove_new_taxes()
-        other = self.env["account.tax"].search(
-            [("company_id", "=", self.company.id), ("name", "=", "ICMS Saída")]
-        )
-        other_account = self._tax_repartition(other).account_id
-        # An account the migration must not rewrite.
-        custom = self.env["account.account"].create(
-            {
-                "name": "Conta do cliente",
-                "code": "9.9.9.99",
-                "account_type": "liability_current",
-                "company_ids": [(4, self.company.id)],
-            }
-        )
-        self._tax_repartition(other).account_id = custom
-
-        _load_migration().migrate(self.env.cr, "18.0.3.3.0")
-        self.env.invalidate_all()
-
-        self.test_loaded_chart_has_the_new_taxes()
-        self.assertEqual(
-            self._tax_repartition(other).account_id,
-            custom,
-            "the migration rewrote the accounts of a tax that already existed",
-        )
-        self.assertNotEqual(custom, other_account)
-
-    def test_migration_gives_accounts_to_the_plain_ibs_and_cbs_taxes(self):
-        """18.0 shipped the plain IBS and CBS taxes with no account."""
-        empty = self._tax("tax_template_out_ibs")
-        self._tax_repartition(empty).account_id = False
-        refund = empty.refund_repartition_line_ids.filtered(
-            lambda line: line.repartition_type == "tax"
-        )
-        refund.account_id = False
-        # A plain tax whose account somebody chose is left alone.
-        custom_tax = self._tax("tax_template_out_cbs")
-        custom = self.env["account.account"].create(
-            {
-                "name": "Conta escolhida",
-                "code": "9.9.9.98",
-                "account_type": "liability_current",
-                "company_ids": [(4, self.company.id)],
-            }
-        )
-        self._tax_repartition(custom_tax).account_id = custom
-
-        _load_migration().migrate(self.env.cr, "18.0.3.3.0")
-        self.env.invalidate_all()
-
-        self.assertTrue(self._tax_repartition(empty).account_id)
-        self.assertEqual(self._tax_repartition(custom_tax).account_id, custom)
-
-    def test_migration_is_idempotent(self):
-        before = self.env["account.tax"].search_count(
-            [("company_id", "=", self.company.id)]
-        )
-        _load_migration().migrate(self.env.cr, "18.0.3.3.0")
-        after = self.env["account.tax"].search_count(
-            [("company_id", "=", self.company.id)]
-        )
-        self.assertEqual(before, after)
-
-    def test_migration_keeps_the_tax_made_by_hand(self):
-        """The deductible tax somebody created is not applied twice."""
-        key = "tax_template_out_ibs_deductible"
+    def test_migration_links_the_tax_by_hand_with_the_module_of_the_chart(self):
+        """The xmlid has the module the chart load would have used."""
+        key = "tax_template_out_cbs_deductible"
         generated = self._tax(key)
-        name = generated.name
         group = generated.tax_group_id
         generated.unlink()
         by_hand = self.env["account.tax"].create(
             {
-                "name": name,
+                "name": "CBS feita a mao",
                 "company_id": self.company.id,
                 "tax_group_id": group.id,
                 "type_tax_use": "sale",
@@ -171,11 +36,71 @@ class TestIbsCbsTaxes(TransactionCase):
                 "amount": 0.0,
             }
         )
+        # Brazilian taxes added to another chart (`load_fiscal_taxes`) are
+        # named in `l10n_br_coa`, not in `account`.
+        self.company.chart_template = False
 
-        _load_migration().migrate(self.env.cr, "18.0.3.3.0")
+        load_migration()._migrate_company(self.env, self.company)
 
-        taxes = self.env["account.tax"].search(
-            [("company_id", "=", self.company.id), ("name", "=", name)]
+        self.assertEqual(
+            by_hand.get_external_id()[by_hand.id],
+            f"l10n_br_coa.{self.company.id}_{key}",
         )
-        self.assertEqual(taxes, by_hand)
-        self.assertEqual(self._tax(key), by_hand)
+
+    def test_populate_without_the_chart_module(self):
+        """The chart of the company may not be installed (or may not exist)."""
+        company = self.env["res.company"].create(
+            {
+                "name": "Empresa sem plano",
+                "country_id": self.env.ref("base.br").id,
+                "currency_id": self.env.ref("base.BRL").id,
+            }
+        )
+        self.assertNotIn(
+            company.chart_template, self.chart._get_chart_template_mapping()
+        )
+
+        accounts = self.chart._populate_default_br_tax_accounts(
+            company, only_tax_templates=["l10n_br_coa.tax_template_out_ibs"]
+        )
+
+        self.assertTrue(accounts)
+        for key, account in accounts.items():
+            xmlid = self.env["ir.model.data"].search(
+                [
+                    ("model", "=", "account.account"),
+                    ("res_id", "=", account.id),
+                    ("name", "=", f"{company.id}_{key}"),
+                ]
+            )
+            self.assertEqual(xmlid.module, "l10n_br_coa", key)
+
+    def test_flavor_follows_the_regime_and_the_chart(self):
+        params = self.chart._get_br_tax_accounts_params
+        company = self.company
+        self.assertEqual(params(company, "br_oca_generic"), ("cfc", ".GEN"))
+        self.assertEqual(params(company, "br_oca", tax_framework="3"), ("cfc", ".GEN"))
+        self.assertEqual(params(company, "br_oca", tax_framework="1"), ("itg", ".GEN"))
+        self.assertEqual(
+            params(company, "br_oca_simple", tax_framework="1"), ("itg", ".GEN")
+        )
+        # Brazilian taxes added to a chart that is not Brazilian.
+        self.assertEqual(params(company, "other_chart"), ("cfc", ".BR"))
+
+    def test_migration_reads_the_regime_from_the_database(self):
+        """The fiscal field is not loaded yet when this migration runs.
+
+        The company stands in for the one the migration sees: no field in the
+        registry, the column (when `l10n_br_fiscal` was ever installed) in the
+        database.
+        """
+        migration = load_migration()
+        stand_in = SimpleNamespace(id=self.company.id, _fields={})
+        expected = False
+        if openupgrade.column_exists(self.env.cr, "res_company", "tax_framework"):
+            self.env.cr.execute(
+                "UPDATE res_company SET tax_framework = '1' WHERE id = %s",
+                (self.company.id,),
+            )
+            expected = "1"
+        self.assertEqual(migration._tax_framework(self.env, stand_in), expected)

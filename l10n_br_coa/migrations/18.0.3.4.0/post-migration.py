@@ -11,20 +11,27 @@ the receivable again, and the invoice total no longer matches the title.
 For each company that has the Brazilian tax groups the script creates only
 what is missing, by xmlid, and never touches a tax that already exists:
 
-* a tax with the same name that somebody created by hand (the workaround
-  that was in use) is kept as it is and only gets the xmlid, so the
-  deductible tax is not applied twice;
+* a tax that somebody created by hand (the workaround that was in use) is
+  kept as it is and only gets the xmlid, so the deductible tax is not applied
+  twice. It is found by what it does (company, tax group, use and
+  `deductible`), whatever its name; the name only reinforces, with a warning
+  in the log;
 * the repartition accounts of the other taxes are not rewritten, only the
   ones of the taxes created here and of the plain IBS and CBS taxes that were
   shipped with no account at all (`only_tax_templates`).
 
-Accounts that the new taxes need and the company does not have are created
-by the same helper the chart load uses.
+Accounts that the new taxes need and the company does not have are the ones
+the chart load would have given a new company: for the generic and simple
+charts they are loaded from the chart template (same code and xmlid), and the
+helper the chart load uses creates only what the chart does not have, with the
+review suffix. The flavor and suffix come from the same rule as the chart load.
 """
 
 import logging
 
 from openupgradelib import openupgrade
+
+from odoo import Command
 
 _logger = logging.getLogger(__name__)
 
@@ -46,7 +53,9 @@ TAXES_WITHOUT_ACCOUNT = [
     "tax_template_out_cbs",
     "tax_template_in_cbs",
 ]
-BR_CHARTS = ("br_oca", "br_oca_generic", "br_oca_simple")
+# Charts whose accounts the company shares with the chart template.
+PLAN_CHARTS = ("br_oca_generic", "br_oca_simple")
+BR_CHARTS = PLAN_CHARTS + ("br_oca",)
 
 
 def _company_xmlid(env, company, key):
@@ -66,29 +75,138 @@ def _has_br_tax_groups(env, company):
     return bool(_company_xmlid(env, company, "tax_group_ibs"))
 
 
-def _accounts_flavor(company):
-    """Same rule the chart load uses to pick the account codes."""
-    if company.chart_template in BR_CHARTS:
-        flavor = "itg"
-        if company.chart_template == "br_oca_generic" or (
-            getattr(company, "tax_framework", False) == "3"
-        ):
-            flavor = "cfc"
-        return flavor, ".GEN"
-    # Brazilian taxes added to another chart by `load_fiscal_taxes`.
-    return "cfc", ".BR"
+def _tax_framework(env, company):
+    """Tax framework of the company, read where the field may not exist yet.
+
+    This migration of `l10n_br_coa` runs while the modules that depend on it
+    are not loaded: `tax_framework` belongs to `l10n_br_fiscal`, so the
+    registry has no such field here (and `getattr` would say "no framework"
+    and pick the ITG codes for a company of the normal regime). The column is
+    already in the database, so it is read from there.
+    """
+    if "tax_framework" in company._fields:
+        return company.tax_framework
+    if openupgrade.column_exists(env.cr, "res_company", "tax_framework"):
+        env.cr.execute(
+            "SELECT tax_framework FROM res_company WHERE id = %s", (company.id,)
+        )
+        return env.cr.fetchone()[0]
+    return False
 
 
 def _link_existing_tax(env, company, key, tax):
+    """Give the xmlid the chart load would have given to the tax.
+
+    The chart load of the Brazilian charts names it `account.<company>_<key>`;
+    `load_fiscal_taxes` (Brazilian taxes added to another chart) names it
+    `l10n_br_coa.<company>_<key>`.
+    """
+    module = "account" if company.chart_template in BR_CHARTS else "l10n_br_coa"
     env["ir.model.data"].sudo().create(
         {
             "name": f"{company.id}_{key}",
-            "module": "account",
+            "module": module,
             "model": "account.tax",
             "res_id": tax.id,
             "noupdate": True,
         }
     )
+
+
+def _find_tax_made_by_hand(env, company, vals):
+    """Tax somebody created for the same job as the one the chart adds.
+
+    The match is by what the tax does (company, tax group, use and
+    `deductible`), not by name: the workaround that was in use had any name
+    ("IBS Dedutível", "IBS Saída Dedutível"...). The name only reinforces: a
+    tax with the very same name has to be reused anyway, because the name is
+    unique per company and use.
+    """
+    Tax = env["account.tax"].with_context(active_test=False)
+    group = env.ref(vals["tax_group_id"], raise_if_not_found=False)
+    domain = [
+        ("company_id", "=", company.id),
+        ("type_tax_use", "=", vals["type_tax_use"]),
+        ("deductible", "=", vals.get("deductible", False)),
+    ]
+    if group:
+        by_structure = Tax.search(
+            domain + [("tax_group_id", "=", group.id)], order="id"
+        )
+        # A tax that already is a record of the chart (it has a chart xmlid)
+        # is not a tax made by hand.
+        by_structure = by_structure.filtered(
+            lambda tax: not tax.get_external_id().get(tax.id)
+        )
+        if by_structure:
+            if len(by_structure) > 1:
+                _logger.warning(
+                    "l10n_br_coa: company %s has %s taxes of group %s, use %s and "
+                    "deductible=%s; %s (id %s) is kept as the chart tax %r",
+                    company.name,
+                    len(by_structure),
+                    group.name,
+                    vals["type_tax_use"],
+                    vals.get("deductible", False),
+                    by_structure[0].name,
+                    by_structure[0].id,
+                    vals["name"],
+                )
+            return by_structure[0]
+    by_name = Tax.search(
+        [
+            ("company_id", "=", company.id),
+            ("type_tax_use", "=", vals["type_tax_use"]),
+            ("name", "=", vals["name"]),
+        ],
+        limit=1,
+    )
+    if by_name:
+        _logger.warning(
+            "l10n_br_coa: company %s: the tax %r (id %s) was matched by name "
+            "only; its group, use or deductible flag are not the ones of the "
+            "chart tax. Check it.",
+            company.name,
+            by_name.name,
+            by_name.id,
+        )
+    return by_name
+
+
+def _load_missing_plan_accounts(env, company, chart, templates, flavor):
+    """Create the chart accounts of the tax accounts that the company lacks.
+
+    A chart load takes the account from the chart template, with its own
+    code, name, type and tags. A company loaded before this version has not
+    got the accounts the new CSV added to the chart, and the helper would
+    create them with the review suffix: the same account would have a code
+    for new companies and another one for this one. Load them from the chart
+    data, like the chart load does (same record, same xmlid).
+    """
+    if company.chart_template not in PLAN_CHARTS or company.parent_id:
+        # A branch uses the accounts of the parent company.
+        return
+    _templates, accounts = chart._get_default_tax_accounts(templates)
+    index = 0 if flavor == "cfc" else 1
+    codes = {value[index] for value in accounts.values() if value[index]}
+    Account = env["account.account"].with_company(company)
+    plan = chart._get_chart_template_data(company.chart_template).get(
+        "account.account", {}
+    )
+    missing = {}
+    for key, vals in plan.items():
+        code = vals.get("code")
+        if code not in codes:
+            continue
+        if Account.search_count(
+            [("code", "=", code), ("company_ids", "parent_of", company.id)]
+        ):
+            continue
+        missing[key] = dict(vals, company_ids=[Command.link(company.id)])
+    if missing:
+        chart._load_data({"account.account": missing})
+        env.flush_all()
+    return missing
 
 
 def _migrate_company(env, company):
@@ -115,9 +233,7 @@ def _migrate_company(env, company):
         vals["tax_group_id"] = (
             _company_xmlid(env, company, vals["tax_group_id"]) or vals["tax_group_id"]
         )
-        by_hand = env["account.tax"].search(
-            [("name", "=", vals["name"]), ("company_id", "=", company.id)], limit=1
-        )
+        by_hand = _find_tax_made_by_hand(env, company, vals)
         if by_hand:
             _link_existing_tax(env, company, key, by_hand)
             kept_by_hand += 1
@@ -139,12 +255,16 @@ def _migrate_company(env, company):
         if lines and not lines.account_id:
             to_populate.append(key)
     if to_populate:
-        flavor, suffix = _accounts_flavor(company)
+        templates = [f"l10n_br_coa.{key}" for key in to_populate]
+        flavor, suffix = chart._get_br_tax_accounts_params(
+            company, tax_framework=_tax_framework(env, company)
+        )
+        _load_missing_plan_accounts(env, company, chart, templates, flavor)
         chart._populate_default_br_tax_accounts(
             company,
             flavor=flavor,
             review_suffix=suffix,
-            only_tax_templates=[f"l10n_br_coa.{key}" for key in to_populate],
+            only_tax_templates=templates,
         )
     _logger.info(
         "l10n_br_coa: company %s: %s tax group(s) and %s tax(es) created, "
