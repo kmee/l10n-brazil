@@ -6,6 +6,7 @@ import importlib.util
 from odoo import Command
 from odoo.modules.module import get_module_path
 
+LOGGER_NAME = "l10n_br_coa_post_migration_18_0_3_4_0"
 NEW_GROUP = "tax_group_is"
 NEW_TAXES = [
     "tax_template_out_ibs_deductible",
@@ -36,7 +37,7 @@ def load_migration():
     """
     path = get_module_path("l10n_br_coa")
     spec = importlib.util.spec_from_file_location(
-        "l10n_br_coa_post_migration_18_0_3_4_0",
+        LOGGER_NAME,
         f"{path}/migrations/18.0.3.4.0/post-migration.py",
     )
     module = importlib.util.module_from_spec(spec)
@@ -183,7 +184,10 @@ class IbsCbsTaxesMixin:
         accounts.unlink()
 
     def _migrate(self):
-        load_migration().migrate(self.env.cr, "18.0.3.3.0")
+        # `migrate_companies` is the body of the `migrate` entry point: the
+        # openupgrade decorator logs an ERROR when it is not called by Odoo
+        # (it inspects the caller frame), which fails the log check of the CI.
+        load_migration().migrate_companies(self.env)
         self.env.invalidate_all()
 
     def _custom_account(self, code, name):
@@ -319,6 +323,54 @@ class IbsCbsTaxesMixin:
                 ]
             )
         )
+
+    def test_migration_warns_when_the_tax_matches_only_by_name(self):
+        """A tax with the name but not the job is reused, with a warning."""
+        key = "tax_template_out_ibs_deductible"
+        generated = self._tax(key)
+        name = generated.name
+        generated.unlink()
+        by_name = self.env["account.tax"].create(
+            {
+                "name": name,
+                "company_id": self.company.id,
+                "tax_group_id": self._tax("tax_template_out_icms").tax_group_id.id,
+                "type_tax_use": "sale",
+                "deductible": False,
+                "amount": 0.0,
+            }
+        )
+
+        with self.assertLogs(LOGGER_NAME, level="WARNING") as logs:
+            self._migrate()
+
+        self.assertEqual(self._tax(key), by_name)
+        self.assertTrue(any("matched by name only" in line for line in logs.output))
+
+    def test_migration_warns_when_there_are_many_taxes_by_hand(self):
+        """The first tax of the job is kept and the others are reported."""
+        key = "tax_template_out_ibs_deductible"
+        generated = self._tax(key)
+        group = generated.tax_group_id
+        generated.unlink()
+        taxes = self.env["account.tax"]
+        for name in ("IBS A", "IBS B"):
+            taxes |= self.env["account.tax"].create(
+                {
+                    "name": name,
+                    "company_id": self.company.id,
+                    "tax_group_id": group.id,
+                    "type_tax_use": "sale",
+                    "deductible": True,
+                    "amount": 0.0,
+                }
+            )
+
+        with self.assertLogs(LOGGER_NAME, level="WARNING") as logs:
+            self._migrate()
+
+        self.assertEqual(self._tax(key), taxes[0])
+        self.assertTrue(any("IBS A" in line for line in logs.output))
 
     def test_migration_keeps_the_default_taxes_of_the_company(self):
         """Adding taxes to a company in use does not reset its default taxes."""

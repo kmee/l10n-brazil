@@ -277,9 +277,13 @@ def _migrate_company(env, company):
     )
 
 
-@openupgrade.migrate()
-def migrate(env, version):
+def migrate_companies(env):
     for company in env["res.company"].with_context(active_test=False).search([]):
         if not _has_br_tax_groups(env, company):
             continue
         _migrate_company(env, company.with_company(company))
+
+
+@openupgrade.migrate()
+def migrate(env, version):
+    migrate_companies(env)
