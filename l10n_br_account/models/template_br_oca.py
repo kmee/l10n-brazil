@@ -72,6 +72,12 @@ class AccountChartTemplate(models.AbstractModel):
             )
 
         for company in companies:
+            if company.parent_id:
+                # A branch uses the taxes, tax groups and accounts of its
+                # parent company (Odoo 17+): creating its own copies breaks the
+                # unique tax name check.
+                _logger.info(f"Skipping branch {company.name} (ID: {company.id})")
+                continue
             _logger.info(f"Processing company {company.name} (ID: {company.id})")
             for key, value in tax_group_data.items():
                 id_key = f"{company.id}_{key}"

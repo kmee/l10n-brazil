@@ -110,3 +110,7 @@ class TestTaxAccountsCompany(TransactionCase):
         self.chart.try_loading("br_oca_generic", branch, install_demo=False)
         self.assertEqual(sorted(self._codes(self.company)), before)
         self._assert_no_duplicates(self.company)
+        # The taxes are the ones of the parent; the branch has none of its own.
+        self.assertFalse(
+            self.env["account.tax"].search_count([("company_id", "=", branch.id)])
+        )
