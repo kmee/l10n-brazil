@@ -21,6 +21,7 @@
         # Security
         "security/ir.model.access.csv",
         # Wizards
+        "wizards/vol_stock_invoice_onshipping_view.xml",
         "wizards/stock_invoice_onshipping_view.xml",
         "wizards/stock_generate_volumes_view.xml",
         # Views

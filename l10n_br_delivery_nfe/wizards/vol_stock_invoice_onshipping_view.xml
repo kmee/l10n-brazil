@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_stock_invoice_onshipping_vol_form" model="ir.ui.view">
+        <field name="name">stock.invoice.onshipping.vol.form</field>
+        <field name="model">stock.invoice.onshipping.vol</field>
+        <field name="arch" type="xml">
+            <form string="Volume Data">
+                <group>
+                    <group>
+                        <field name="picking_id" string="Transfer" />
+                        <field name="nfe40_qVol" string="Qt Vol" />
+                        <field name="nfe40_esp" string="Esp." />
+                        <field name="nfe40_marca" string="Marca" />
+                    </group>
+                    <group>
+                        <field name="nfe40_nVol" string="N. Vol." />
+                        <field name="nfe40_pesoL" string="Peso L." />
+                        <field name="nfe40_pesoB" string="Peso B." />
+                    </group>
+                </group>
+            </form>
+        </field>
+    </record>
+</odoo>
