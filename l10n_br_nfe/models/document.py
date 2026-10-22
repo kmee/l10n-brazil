@@ -19,7 +19,6 @@ from nfelib.nfe.ws.edoc_legacy import NFCeAdapter as edoc_nfce
 from nfelib.nfe.ws.edoc_legacy import NFeAdapter as edoc_nfe
 from requests import Session
 from xsdata.formats.dataclass.parsers import XmlParser
-from xsdata.models.datatype import XmlDateTime
 
 from odoo import Command, _, api, fields
 from odoo.exceptions import UserError, ValidationError
@@ -57,12 +56,14 @@ from odoo.addons.spec_driven_model.models import spec_models
 
 from ..constants.nfe import (
     FISCAL_PAYMENT_MODE,
+    IND_PRES_NON_PRESENTIAL,
     NFCE_DANFE_LAYOUTS,
     NFE_DANFE_LAYOUTS,
     NFE_ENVIRONMENTS,
     NFE_TRANSMISSIONS,
     NFE_VERSIONS,
 )
+from ..tools import tax_authority_date_to_utc
 
 SITUACAO_EDOC_CANCELADA = DOCUMENT_STATE_CANCEL
 SITUACAO_EDOC_EM_DIGITACAO = DOCUMENT_STATE_DRAFT
@@ -283,6 +284,8 @@ class NFe(spec_models.StackedModel):
 
     nfe40_indPres = fields.Selection(related="ind_pres")
 
+    nfe40_indIntermed = fields.Selection(compute="_compute_nfe40_indIntermed")
+
     nfe40_tpEnteGov = fields.Selection(related="public_entity_type")
 
     nfe40_procEmi = fields.Selection(default="0")
@@ -320,6 +323,17 @@ class NFe(spec_models.StackedModel):
 
                 if record.document_type_id.code == MODELO_FISCAL_NFCE:
                     record.nfe40_tpImp = record.company_id.nfce_danfe_layout
+
+    @api.depends("ind_pres", "intermediary_partner_id", "nfe40_infIntermed")
+    def _compute_nfe40_indIntermed(self):
+        for doc in self:
+            intermediated = doc.intermediary_partner_id or doc.nfe40_infIntermed
+            if doc.ind_pres in IND_PRES_NON_PRESENTIAL:
+                doc.nfe40_indIntermed = "1" if intermediated else "0"
+            elif doc.ind_pres == "1" and intermediated:
+                doc.nfe40_indIntermed = "1"
+            else:
+                doc.nfe40_indIntermed = False
 
     @api.depends("partner_id", "company_id", "partner_shipping_id")
     def _compute_nfe40_idDest(self):
@@ -517,11 +531,31 @@ class NFe(spec_models.StackedModel):
 
     # <vICMSDeson>0.00</vICMSDeson> TODO
 
-    nfe40_vFCPUFDest = fields.Monetary(related="amount_icmsfcp_value")
+    # Must match the sum of the items that carry ICMSUFDest
+    nfe40_vFCPUFDest = fields.Monetary(compute="_compute_nfe40_ICMSUFDest_totals")
 
-    nfe40_vICMSUFDest = fields.Monetary(related="amount_icms_destination_value")
+    nfe40_vICMSUFDest = fields.Monetary(compute="_compute_nfe40_ICMSUFDest_totals")
 
-    nfe40_vICMSUFRemet = fields.Monetary(related="amount_icms_origin_value")
+    nfe40_vICMSUFRemet = fields.Monetary(compute="_compute_nfe40_ICMSUFDest_totals")
+
+    @api.depends(
+        "company_id.state_id",
+        "partner_id.ind_ie_dest",
+        "partner_id.state_id",
+        "fiscal_line_ids.partner_id",
+        "fiscal_line_ids.icms_value",
+        "fiscal_line_ids.icmsfcp_value",
+        "fiscal_line_ids.icms_destination_value",
+        "fiscal_line_ids.icms_origin_value",
+    )
+    def _compute_nfe40_ICMSUFDest_totals(self):
+        for record in self:
+            lines = record.fiscal_line_ids.filtered(
+                lambda line: line._nfe40_has_ICMSUFDest()
+            )
+            record.nfe40_vFCPUFDest = sum(lines.mapped("icmsfcp_value"))
+            record.nfe40_vICMSUFDest = sum(lines.mapped("icms_destination_value"))
+            record.nfe40_vICMSUFRemet = sum(lines.mapped("icms_origin_value"))
 
     # <vFCP>0.00</vFCP> TODO
 
@@ -566,7 +600,15 @@ class NFe(spec_models.StackedModel):
         related="amount_other_value",
     )
 
-    nfe40_vNF = fields.Monetary(related="fiscal_amount_total")
+    # The NF-e total is the value of the operation: the withholdings go in the
+    # retTrib group and do not reduce vNF (MOC, grupo W, vNF). The fiscal
+    # total of the document is net of them, so they are added back here.
+    nfe40_vNF = fields.Monetary(compute="_compute_nfe40_vNF")
+
+    @api.depends("fiscal_amount_total", "amount_tax_withholding")
+    def _compute_nfe40_vNF(self):
+        for doc in self:
+            doc.nfe40_vNF = doc.fiscal_amount_total + doc.amount_tax_withholding
 
     nfe40_vTotTrib = fields.Monetary(related="amount_estimate_tax")
 
@@ -781,6 +823,65 @@ class NFe(spec_models.StackedModel):
     nfe40_transporta = fields.Many2one(comodel_name="res.partner")
 
     ##########################
+    # NF-e tag: infIntermed
+    ##########################
+
+    intermediary_partner_id = fields.Many2one(
+        comodel_name="res.partner",
+        string="Intermediary",
+        help="Platform where the sale was made (marketplace, delivery app...), "
+        "informed in the infIntermed group.",
+    )
+
+    intermediary_seller_code = fields.Char(
+        string="Seller Id at the Intermediary",
+        help="Identifier of the seller registered at the intermediary "
+        "platform (idCadIntTran).",
+    )
+
+    def _export_tag_nfe_40_infintermed(self, xsd_fields, class_obj, export_dict):
+        """infIntermed group (NT 2020.006)."""
+        intermediary = self.intermediary_partner_id
+        if self.nfe40_indIntermed != "1":
+            if intermediary:
+                raise UserError(
+                    _(
+                        "The buyer presence indicator does not accept the "
+                        "intermediary %s (NT 2020.006, rule B25c-20): change "
+                        "the indicator or remove the intermediary."
+                    )
+                    % intermediary.display_name
+                )
+            return
+        if not cnpj_cpf.validar_cnpj(intermediary.cnpj_cpf or ""):
+            raise UserError(
+                _("The intermediary %s needs a valid CNPJ.") % intermediary.display_name
+            )
+        if intermediary.cnpj_cpf_stripped == (
+            self.company_id.partner_id.cnpj_cpf_stripped
+        ):
+            raise UserError(
+                _(
+                    "The intermediary %s has the issuer CNPJ: a sale on the own "
+                    "platform is not intermediated."
+                )
+                % intermediary.display_name
+            )
+        code = (self.intermediary_seller_code or "").strip()
+        if not code:
+            raise UserError(
+                _("Inform the seller id at the intermediary %s.")
+                % intermediary.display_name
+            )
+        if not 2 <= len(code) <= 60:
+            raise UserError(
+                _("The seller id at the intermediary %s must have 2 to 60 characters.")
+                % intermediary.display_name
+            )
+        export_dict["CNPJ"] = intermediary.cnpj_cpf_stripped
+        export_dict["idCadIntTran"] = code
+
+    ##########################
     # NF-e tag: infAdic
     ##########################
 
@@ -885,7 +986,16 @@ class NFe(spec_models.StackedModel):
             # total automatically, with no code change.
             if not self._nfe_export_ibscbs_totals():
                 return False
-            return f"{self.fiscal_amount_total:.2f}"
+            return f"{self.nfe40_vNF:.2f}"
+
+        if xsd_field == "nfe40_natOp":
+            # The NF-e schema limits natOp to 60 characters (TString 1-60)
+            nat_op = super()._export_field(
+                xsd_field, class_obj, member_spec, export_value
+            )
+            if isinstance(nat_op, str):
+                nat_op = nat_op[:60].strip()
+            return nat_op
 
         return super()._export_field(xsd_field, class_obj, member_spec, export_value)
 
@@ -933,6 +1043,13 @@ class NFe(spec_models.StackedModel):
             if self.company_l10n_br_ie_code_st:
                 res.IEST = self.company_l10n_br_ie_code_st
             return res
+
+        if field_name == "nfe40_infIntermed":
+            # the new fields win over an imported infIntermed record
+            if self.intermediary_partner_id:
+                return self._export_m2o_via_tag_hooks(field_name, class_obj)
+            if self.nfe40_indIntermed != "1":
+                return False
 
         return super()._export_many2one(field_name, xsd_required, class_obj)
 
@@ -1288,16 +1405,7 @@ class NFe(spec_models.StackedModel):
         if not self.authorization_event_id:
             # TODO: create new event.
             pass
-        if type(inf_prot.dhRecbto) is datetime:
-            protocol_date = fields.Datetime.to_string(inf_prot.dhRecbto)
-        # When the bidding comes from xsdata, the date comes as XmlDateTime
-        elif type(inf_prot.dhRecbto) is XmlDateTime:
-            dt = inf_prot.dhRecbto.to_datetime()
-            protocol_date = fields.Datetime.to_string(dt)
-        else:
-            protocol_date = fields.Datetime.to_string(
-                datetime.fromisoformat(inf_prot.dhRecbto)
-            )
+        protocol_date = tax_authority_date_to_utc(inf_prot.dhRecbto)
         self.authorization_event_id.set_done(
             status_code=inf_prot.cStat,
             response=inf_prot.xMotivo,
@@ -1732,8 +1840,8 @@ class NFe(spec_models.StackedModel):
                 self.cancel_event_id.set_done(
                     status_code=retevento.infEvento.cStat,
                     response=retevento.infEvento.xMotivo,
-                    protocol_date=fields.Datetime.to_string(
-                        datetime.fromisoformat(retevento.infEvento.dhRegEvento)
+                    protocol_date=tax_authority_date_to_utc(
+                        retevento.infEvento.dhRegEvento
                     ),
                     protocol_number=retevento.infEvento.nProt,
                     file_response_xml=processo.retorno.content.decode("utf-8"),
