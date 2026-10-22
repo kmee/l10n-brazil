@@ -1,6 +1,8 @@
 # Copyright 2024 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+from lxml import etree
+
 from odoo.exceptions import ValidationError
 from odoo.tests.common import TransactionCase
 
@@ -212,3 +214,20 @@ class TestOperation(TransactionCase):
         )
         line_unrestricted.state = "approved"
         self.assertEqual(line_unrestricted.state, "approved")
+
+    def test_operation_line_form_title_label_apart_from_name(self):
+        """The label goes above the name, not glued to it ("NomeRevenda")."""
+        arch = self.env["l10n_br_fiscal.operation.line"].get_views([(False, "form")])[
+            "views"
+        ]["form"]["arch"]
+        tree = etree.fromstring(arch)
+        title = tree.xpath("//sheet/div[hasclass('oe_title')]")
+        self.assertEqual(len(title), 1)
+        self.assertEqual(
+            [child.tag for child in title[0]],
+            ["label", "h2"],
+            "The label must be a sibling of the heading holding the name",
+        )
+        self.assertEqual(title[0].xpath("label/@for"), ["name"])
+        self.assertEqual(title[0].xpath("h2/field/@name"), ["name"])
+        self.assertFalse(tree.xpath("//h2/label"))
