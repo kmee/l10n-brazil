@@ -16,3 +16,4 @@ from . import test_nfe_icmsufdest
 from . import test_nfe_workflow
 from . import test_autxml
 from . import test_nfe_duplicate
+from . import test_nfe_icms_relief
