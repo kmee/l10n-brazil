@@ -337,6 +337,11 @@ class ResPartner(spec_models.SpecModel):
             x_nome = super()._export_field(
                 xsd_field, class_obj, member_spec, export_value
             )
+            if not x_nome:
+                # partners created without legal name (website checkout,
+                # portal) would send the NF-e without the recipient name,
+                # rejected by SEFAZ in production (724)
+                x_nome = self.name
             if isinstance(x_nome, str):
                 x_nome = x_nome[:60].strip()
             return x_nome

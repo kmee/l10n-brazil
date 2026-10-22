@@ -101,6 +101,18 @@ class TestXMLValidation(TransactionCase):
         self.assertEqual(partner.legal_name, long_name)
         self.assertEqual(company.partner_id.legal_name, long_name)
 
+    def test_xml_nfe_xnome_without_legal_name(self):
+        """A partner without legal name (e.g. created by the website checkout)
+        must export its name as xNome: the SEFAZ rejects an NF-e without the
+        recipient name (724) in production, while homologation hides it."""
+        partner = self.env.ref("l10n_br_base.res_partner_cliente7_rs")
+        partner.legal_name = False
+        for class_name in ("nfe.40.dest", "nfe.40.tlocal", "nfe.40.transporta"):
+            binding = partner._build_binding(
+                spec_schema="nfe", spec_version="40", class_name=class_name
+            )
+            self.assertEqual(binding.xNome, partner.name, class_name)
+
     def test_xml_nfe_taxes(self):
         """This method tests multiple tax fields for NFe lines and NFe totals.
         warning: failures in this method could indicate errors in fiscal or account
