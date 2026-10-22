@@ -87,6 +87,46 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         return domain
 
     @api.model
+    def _fiscal_view_compute_methods(self):
+        """Compute methods whose (stored) fields must be kept available in the
+        business-document line views (invisible), so the fiscal onchange
+        protocol can round-trip them. Formalizes the implicit triad used by
+        ``inject_fiscal_fields``. A submodule adding a fiscal compute to the
+        line can extend it::
+
+            @api.model
+            def _fiscal_view_compute_methods(self):
+                return super()._fiscal_view_compute_methods() + [
+                    "_compute_my_tax_fields",
+                ]
+        """
+        return [
+            "_compute_tax_fields",
+            "_compute_fiscal_tax_ids",
+            "_compute_product_fiscal_fields",
+        ]
+
+    @api.model
+    def _fiscal_view_pruned_fields(self):
+        """Stored fiscal computes that no business-document line view reads,
+        displays, edits or references in a modifier/domain (C4 census "dead"):
+        they are *not* injected into the invisible onchange collection. They
+        keep being recomputed server-side on write, so dropping them from the
+        view is value-preserving. Override to force one back in::
+
+            @api.model
+            def _fiscal_view_pruned_fields(self):
+                return super()._fiscal_view_pruned_fields() - {"ii_percent"}
+        """
+        return {
+            "ii_percent",
+            "simple_value",
+            "simple_without_icms_value",
+            "cofins_wh_base_type",
+            "pis_wh_base_type",
+        }
+
+    @api.model
     def inject_fiscal_fields(
         self,
         doc,
@@ -99,20 +139,15 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         """
 
         # the list of computed fields we will add to the view when missing
-        missing_line_fields = set(
-            [
-                fname
-                for fname, _field in filter(
-                    lambda item: item[1].compute
-                    in (
-                        "_compute_tax_fields",
-                        "_compute_fiscal_tax_ids",
-                        "_compute_product_fiscal_fields",
-                    ),
-                    self.env["l10n_br_fiscal.document.line.mixin"]._fields.items(),
-                )
-            ]
-        )
+        compute_methods = tuple(self._fiscal_view_compute_methods())
+        pruned_fields = self._fiscal_view_pruned_fields()
+        missing_line_fields = {
+            fname
+            for fname, _field in self.env[
+                "l10n_br_fiscal.document.line.mixin"
+            ]._fields.items()
+            if _field.compute in compute_methods and fname not in pruned_fields
+        }
 
         fiscal_view = self.env.ref(
             "l10n_br_fiscal.document_fiscal_line_mixin_form"
@@ -164,6 +199,9 @@ class FiscalDocumentLineMixin(models.AbstractModel):
                     for fiscal_node in fiscal_nodes:
                         if fiscal_node.attrib["name"] in missing_line_fields:
                             missing_line_fields.remove(fiscal_node.attrib["name"])
+                        if fiscal_node.attrib["name"] in pruned_fields:
+                            # dead fiscal computes never belong in the views
+                            continue
                         if fiscal_node.attrib["name"] in existing_fields:
                             continue
                         field = deepcopy(fiscal_node)
@@ -193,6 +231,7 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         "fiscal_operation_line_id",
         "cfop_id",
         "icms_relief_value",
+        "icms_relief_type",
         "insurance_value",
         "other_value",
         "freight_value",
@@ -316,13 +355,30 @@ class FiscalDocumentLineMixin(models.AbstractModel):
                     service_type=line.service_type_id,
                     ind_final=line.ind_final,
                 )
+                if line._is_imported():
+                    # Remapping the CFOP to the company operation is the very
+                    # goal of the de-para, but the classification imported
+                    # from the fiscal file must not be cleared when the
+                    # mapping has nothing to say about it. Taxes are kept
+                    # exactly as imported.
+                    if mapping_result["cfop"] and not line.cfop_manual:
+                        # A CFOP the user chose explicitly survives any later
+                        # recompute: the mapping suggests, the human decides.
+                        line.cfop_id = mapping_result["cfop"]
+                    if mapping_result["ipi_guideline"]:
+                        line.ipi_guideline_id = mapping_result["ipi_guideline"]
+                    if mapping_result["tax_classification"]:
+                        line.tax_classification_id = mapping_result[
+                            "tax_classification"
+                        ]
+                    if mapping_result["icms_tax_benefit_id"]:
+                        line.icms_tax_benefit_id = mapping_result["icms_tax_benefit_id"]
+                    continue
+
                 line.cfop_id = mapping_result["cfop"]
                 line.ipi_guideline_id = mapping_result["ipi_guideline"]
                 line.tax_classification_id = mapping_result["tax_classification"]
                 line.icms_tax_benefit_id = mapping_result["icms_tax_benefit_id"]
-
-                if line._is_imported():
-                    continue
 
                 taxes = line.env["l10n_br_fiscal.tax"]
                 for tax in mapping_result["taxes"].values():
@@ -510,6 +566,11 @@ class FiscalDocumentLineMixin(models.AbstractModel):
     )
     def _compute_price_unit_fiscal(self):  # OK when edited from aml?? c-> check
         for line in self:
+            if line._is_imported():
+                # Preserve the price faithfully imported from the fiscal file;
+                # the de-para is applied explicitly via _apply_import_depara().
+                line.price_unit = line.price_unit
+                continue
             line.price_unit = {
                 "sale_price": line.product_id.list_price,
                 "cost_price": line.product_id.standard_price,
@@ -549,7 +610,14 @@ class FiscalDocumentLineMixin(models.AbstractModel):
                 continue
             p = line.product_id
             line.fiscal_type = p.fiscal_type
-            line.ncm_id = p.ncm_id
+            if line._is_imported() and line.ncm_id:
+                # Preserve the fiscal classification declared in the file:
+                # what the SPED books of an inbound document must carry is
+                # what the counterparty declared, and the internal product
+                # may even have no NCM at all.
+                line.ncm_id = line.ncm_id
+            else:
+                line.ncm_id = p.ncm_id
             line.nbm_id = p.nbm_id
             line.tax_icms_or_issqn = p.tax_icms_or_issqn
             line.icms_origin = p.icms_origin
@@ -876,12 +944,21 @@ class FiscalDocumentLineMixin(models.AbstractModel):
     @api.depends("product_id", "uom_id")
     def _compute_uot_id(self):
         for line in self:
+            if line._is_imported() and line.uot_id:
+                # Preserve the taxation unit imported from the fiscal file
+                # (uTrib), which is independent from the internal product.
+                line.uot_id = line.uot_id
+                continue
             p = line.product_id
             line.uot_id = (p.uot_id if p else False) or line.uom_id
 
     @api.depends("price_unit")
     def _compute_fiscal_price(self):
         for line in self:
+            if line._is_imported() and line.fiscal_price:
+                # Preserve vUnTrib imported from the fiscal file.
+                line.fiscal_price = line.fiscal_price
+                continue
             if line.product_id and line.price_unit:
                 line.fiscal_price = line.price_unit / (
                     line.product_id.uot_factor or 1.0
@@ -892,6 +969,10 @@ class FiscalDocumentLineMixin(models.AbstractModel):
     @api.depends("quantity")
     def _compute_fiscal_quantity(self):
         for line in self:
+            if line._is_imported() and line.fiscal_quantity:
+                # Preserve qTrib imported from the fiscal file.
+                line.fiscal_quantity = line.fiscal_quantity
+                continue
             if line.product_id and line.quantity:
                 line.fiscal_quantity = line.quantity * (
                     line.product_id.uot_factor or 1.0
@@ -915,7 +996,12 @@ class FiscalDocumentLineMixin(models.AbstractModel):
 
     @api.model
     def _rm_fields_to_amount(self):
-        return ["icms_relief_value"]
+        fields_to_remove = []
+        # indDeduzDeson (NT 2023.004): the ICMS relief is only deducted
+        # from vProd/vNF when explicitly indicated.
+        if self.icms_relief_type == "1":
+            fields_to_remove.append("icms_relief_value")
+        return fields_to_remove
 
     def _is_imported(self):
         # When the mixin is used for instance
@@ -1086,7 +1172,15 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         string="Partner CFOP",
         help="CFOP as declared by the counterparty in the imported document. "
         "It is preserved as-is for fiscal bookkeeping / SPED (e.g. C197), "
-        "while cfop_id reflects the company's own operation after the de-para.",
+        "while cfop_id reflects the company's own operation after the mapping.",
+    )
+
+    cfop_manual = fields.Boolean(
+        string="CFOP Set Manually",
+        copy=False,
+        help="Set when the CFOP of an imported line was chosen explicitly "
+        "instead of coming from the fiscal operation mapping. The automatic "
+        "remap does not overwrite it.",
     )
 
     fiscal_price = fields.Float(
@@ -1482,6 +1576,19 @@ class FiscalDocumentLineMixin(models.AbstractModel):
     # motDesICMS - Motivo da desoneração do ICMS
     icms_relief_id = fields.Many2one(
         comodel_name="l10n_br_fiscal.icms.relief", string="ICMS Relief"
+    )
+
+    # indDeduzDeson - Indicador de dedução do valor do ICMS desonerado
+    icms_relief_type = fields.Selection(
+        selection=[
+            ("0", "0 - Do not deduct the ICMS Relief"),
+            ("1", "1 - Deduct ICMS Relief from Product Amount"),
+        ],
+        string="ICMS Relief Deduction",
+        default="0",
+        help="indDeduzDeson (NT 2023.004): indicates whether the ICMS relief "
+        "value (vICMSDeson) is deducted from the item value (vProd) and "
+        "from the document total (vNF).",
     )
 
     # vICMSDeson - Valor do ICMS desonerado

@@ -10,7 +10,7 @@
     "maintainers": ["renatonlima", "rvalyi"],
     "website": "https://github.com/OCA/l10n-brazil",
     "development_status": "Production/Stable",
-    "version": "16.0.26.0.3",
+    "version": "16.0.27.0.0",
     "depends": [
         "product",
         "uom_alias",
@@ -52,6 +52,23 @@
         "data/l10n_br_fiscal.operation.indicator.csv",
         "data/simplified_tax_data.xml",
         "data/operation_data.xml",
+        "data/fiscal_operation_consignacao.xml",
+        "data/fiscal_operation_venda.xml",
+        "data/fiscal_operation_compras.xml",
+        "data/fiscal_operation_devolucao.xml",
+        "data/fiscal_operation_bonificacao.xml",
+        "data/fiscal_operation_comodato.xml",
+        "data/fiscal_operation_triangular.xml",
+        "data/fiscal_operation_industrializacao.xml",
+        "data/fiscal_operation_ativo.xml",
+        "data/fiscal_operation_demonstracao.xml",
+        "data/fiscal_operation_transferencia.xml",
+        "data/fiscal_operation_comex_ajustes.xml",
+        "data/fiscal_operation_armazem_vasilhame.xml",
+        "data/fiscal_operation_entrega_futura.xml",
+        "data/fiscal_operation_venda_fora_estabelecimento.xml",
+        "data/fiscal_operation_importacao.xml",
+        "data/fiscal_operation_importacao_especiais.xml",
         "data/l10n_br_fiscal_tax_icms_data.xml",
         # the following csv data files will be loaded as noupdate=True
         # and will be trimmed down when demo mode is True (faster):
@@ -130,13 +147,14 @@
         "demo/res_users_demo.xml",
         "demo/icms_tax_definition_demo.xml",
         "demo/fiscal_document_demo.xml",
+        "demo/fiscal_document_consignacao_demo.xml",
     ],
     "installable": True,
     "application": True,
     "auto_install": False,
     "external_dependencies": {
         "python": [
-            "erpbrasil-base>=2.4.2",
+            "erpbrasil-base>=2.5.0",
         ]
     },
 }
