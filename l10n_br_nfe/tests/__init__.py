@@ -14,3 +14,4 @@ from . import test_nfe_ibscbs
 from . import test_nfe_intermediary
 from . import test_nfe_workflow
 from . import test_autxml
+from . import test_nfe_duplicate
