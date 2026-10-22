@@ -3,6 +3,8 @@
 
 import base64
 
+from lxml import etree
+
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase
 from odoo.tools import mute_logger
@@ -41,3 +43,13 @@ class TestDocumentImportWizardFile(TransactionCase):
             self._parse(b'<invoice xmlns="urn:example"><line/></invoice>')
 
         self.assertIn("Could not read this file", str(error.exception))
+
+
+class TestDocumentImportWizardView(TransactionCase):
+    def test_the_file_field_shows_the_file_name_and_not_the_base64(self):
+        """Without ``filename`` the Odoo 18 binary widget prints the content."""
+        wizard = self.env["l10n_br_fiscal.document.import.wizard"]
+        arch = wizard.get_views([(False, "form")])["views"]["form"]["arch"]
+        tree = etree.fromstring(arch)
+        self.assertEqual(tree.xpath("//field[@name='file']/@filename"), ["file_name"])
+        self.assertTrue(tree.xpath("//field[@name='file_name'][@invisible='1']"))
