@@ -23,4 +23,5 @@ from . import (
     test_simplified_tax,
     test_catalog_consignacao,
     test_regime,
+    test_catalog_venda_compras,
 )
