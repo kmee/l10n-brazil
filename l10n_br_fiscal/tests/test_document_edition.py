@@ -466,3 +466,105 @@ class TestDocumentEdition(TransactionCase):
         self.assertEqual(line.icms_origin_percent, 7.0)
         self.assertEqual(line.icms_destination_percent, 20.5)
         self.assertEqual(line.icms_destination_value, 13.5)
+
+    def _prepare_costs_doc_vals(self, extra_vals=None):
+        product = self.env.ref("product.product_product_6")
+        operation_line = self.env.ref("l10n_br_fiscal.fo_venda_venda")
+        vals = {
+            "company_id": self.company.id,
+            "partner_id": self.env.ref("l10n_br_base.res_partner_cliente1_sp").id,
+            "fiscal_operation_id": self.env.ref("l10n_br_fiscal.fo_venda").id,
+            "fiscal_line_ids": [
+                (
+                    0,
+                    0,
+                    {
+                        "product_id": product.id,
+                        "fiscal_operation_line_id": operation_line.id,
+                        "price_unit": price,
+                        "quantity": 1.0,
+                    },
+                )
+                for price in (1000.0, 1000.0, 1800.0)
+            ],
+        }
+        vals.update(extra_vals or {})
+        return vals
+
+    def _check_costs_distribution(self, doc, field_name, line_field_name, total):
+        lines = doc.fiscal_line_ids
+        self.assertAlmostEqual(doc[field_name], total)
+        self.assertEqual(
+            [line[line_field_name] for line in lines],
+            [26.32, 26.32, 47.36],
+        )
+
+    def test_delivery_costs_by_total_typed_before_lines_are_saved(self):
+        """Costs typed on the document before its lines are saved must be
+        distributed proportionally to the lines, not sent to the last one."""
+        self.env.user.groups_id |= self.env.ref("l10n_br_fiscal.group_user")
+        self.company.delivery_costs = "total"
+        doc = self.env["l10n_br_fiscal.document"].create(
+            self._prepare_costs_doc_vals(
+                {
+                    "amount_freight_value": 100.0,
+                    "amount_insurance_value": 100.0,
+                    "amount_other_value": 100.0,
+                }
+            )
+        )
+        self._check_costs_distribution(
+            doc, "amount_freight_value", "freight_value", 100.0
+        )
+        self._check_costs_distribution(
+            doc, "amount_insurance_value", "insurance_value", 100.0
+        )
+        self._check_costs_distribution(doc, "amount_other_value", "other_value", 100.0)
+        # 3800 + 3 * 100 spread over the lines
+        self.assertAlmostEqual(doc.fiscal_amount_untaxed, 4100.0)
+
+    def test_delivery_costs_by_total_form_typed_before_lines(self):
+        """Same as above, going through the form (freight typed first)."""
+        self.env.user.groups_id |= self.env.ref("l10n_br_fiscal.group_user")
+        self.company.delivery_costs = "total"
+        product = self.env.ref("product.product_product_6")
+        doc_form = Form(self.env["l10n_br_fiscal.document"])
+        doc_form.company_id = self.company
+        doc_form.partner_id = self.env.ref("l10n_br_base.res_partner_cliente1_sp")
+        doc_form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_venda")
+        doc_form.amount_freight_value = 100.0
+        for price in (1000.0, 1000.0, 1800.0):
+            with doc_form.fiscal_line_ids.new() as line_form:
+                line_form.product_id = product
+                line_form.fiscal_operation_line_id = self.env.ref(
+                    "l10n_br_fiscal.fo_venda_venda"
+                )
+                line_form.price_unit = price
+                line_form.quantity = 1.0
+        doc = doc_form.save()
+        self._check_costs_distribution(
+            doc, "amount_freight_value", "freight_value", 100.0
+        )
+
+    def test_delivery_costs_by_total_form_typed_after_lines(self):
+        """Costs typed after the (still unsaved) lines are distributed too."""
+        self.env.user.groups_id |= self.env.ref("l10n_br_fiscal.group_user")
+        self.company.delivery_costs = "total"
+        product = self.env.ref("product.product_product_6")
+        doc_form = Form(self.env["l10n_br_fiscal.document"])
+        doc_form.company_id = self.company
+        doc_form.partner_id = self.env.ref("l10n_br_base.res_partner_cliente1_sp")
+        doc_form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_venda")
+        for price in (1000.0, 1000.0, 1800.0):
+            with doc_form.fiscal_line_ids.new() as line_form:
+                line_form.product_id = product
+                line_form.fiscal_operation_line_id = self.env.ref(
+                    "l10n_br_fiscal.fo_venda_venda"
+                )
+                line_form.price_unit = price
+                line_form.quantity = 1.0
+        doc_form.amount_freight_value = 100.0
+        doc = doc_form.save()
+        self._check_costs_distribution(
+            doc, "amount_freight_value", "freight_value", 100.0
+        )

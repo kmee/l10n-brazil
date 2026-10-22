@@ -284,12 +284,18 @@ class FiscalDocumentMixin(models.AbstractModel):
             if not lines:
                 continue
             amount_to_distribute = record[amount_field_name]
-            total_gross = sum(lines.mapped("price_gross"))
+            # price_gross is a computed field that may not be computed yet when
+            # the lines are still unsaved, so derive the weight from its inputs
+            gross = {
+                line: record.currency_id.round(line.price_unit * line.quantity)
+                for line in lines
+            }
+            total_gross = sum(gross.values())
             if total_gross > 0:
                 distributed_amount = 0
                 for line in lines[:-1]:
                     proportional_amount = record.currency_id.round(
-                        amount_to_distribute * (line.price_gross / total_gross)
+                        amount_to_distribute * (gross[line] / total_gross)
                     )
                     line[line_field_name] = proportional_amount
                     distributed_amount += proportional_amount
