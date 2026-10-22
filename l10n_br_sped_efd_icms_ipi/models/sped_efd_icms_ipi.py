@@ -208,6 +208,19 @@ class Registro0002(models.Model):
     _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.efd_icms_ipi.0002"
     _inherit = "l10n_br_sped.efd_icms_ipi.20.0002"
+    _odoo_model = "res.company"
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        """Only exists for industry or the equivalent.
+
+        `IND_ATIV` equal to "0" means industrial; any other activity must not
+        report this record, and the PVA rejects the import with "the record
+        must not be reported for this profile and/or operation type".
+        """
+        if declaration.IND_ATIV != "0":
+            return [(0, "=", 1)]
+        return [("id", "=", declaration.company_id.id)]
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
@@ -4492,6 +4505,23 @@ class RegistroK010(models.Model):
     _inherit = "l10n_br_sped.efd_icms_ipi.20.k010"
 
     @api.model
+    def _pull_records_from_odoo(
+        self, kind, level, parent_register=None, parent_record=None, log_msg=None
+    ):
+        """Block K covers production and stock control.
+
+        It only applies to industry or the equivalent (`IND_ATIV` = "0").
+        Writing it for any other activity makes the PVA reject every K200 item
+        missing from 0200, because 0200 only carries what had fiscal movement
+        while stock carries the whole catalogue.
+        """
+        if self._context["declaration"].IND_ATIV != "0":
+            return
+        return super()._pull_records_from_odoo(
+            kind, level, parent_register, parent_record, log_msg
+        )
+
+    @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         return {
             "IND_TP_LEIAUTE": declaration.ind_tp_leiaute or "2",
@@ -4504,6 +4534,23 @@ class RegistroK100(models.Model):
     _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.efd_icms_ipi.k100"
     _inherit = "l10n_br_sped.efd_icms_ipi.20.k100"
+
+    @api.model
+    def _pull_records_from_odoo(
+        self, kind, level, parent_register=None, parent_record=None, log_msg=None
+    ):
+        """O bloco K e do controle da producao e do estoque.
+
+        So se aplica a industria ou equiparado a industria (`IND_ATIV` = "0").
+        Escritura-lo para outra atividade faz o PVA recusar cada item do K200
+        que nao esteja no 0200, porque o 0200 so traz o que teve movimento
+        fiscal enquanto o estoque traz o catalogo inteiro.
+        """
+        if self._context["declaration"].IND_ATIV != "0":
+            return
+        return super()._pull_records_from_odoo(
+            kind, level, parent_register, parent_record, log_msg
+        )
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
