@@ -7,7 +7,7 @@
             <form string="Volume Data">
                 <group>
                     <group>
-                        <field name="picking_id" string="Transfer" />
+                        <field name="picking_id" />
                         <field name="nfe40_qVol" string="Qt Vol" />
                         <field name="nfe40_esp" string="Esp." />
                         <field name="nfe40_marca" string="Marca" />
