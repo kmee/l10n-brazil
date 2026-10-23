@@ -1065,23 +1065,34 @@ class CTe(spec_models.StackedModel):
 
     ##########################
     # CT-e tag: autXML
-    # Compute Methods
     ##########################
 
-    def _default_cte40_autxml(self):
-        company = self.env.company
-        authorized_partners = []
-        if company.accountant_id:
-            authorized_partners.append(company.accountant_id.id)
-        if company.technical_support_id:
-            authorized_partners.append(company.technical_support_id.id)
-        return authorized_partners
+    def _get_cte40_autxml_values(self, company):
+        """Partners of the company authorized to download the XML."""
+        partners = company.accountant_id | company.technical_support_id
+        return [Command.link(partner_id) for partner_id in partners.ids]
 
-    ##########################
-    # CT-e tag: autXML
-    ##########################
+    @api.model_create_multi
+    def create(self, vals_list):
+        """Authorize the company partners to download the XML of a new document.
 
-    cte40_autXML = fields.One2many(default=_default_cte40_autxml)
+        This is not a field default on purpose: account.move delegates to the
+        fiscal document through _inherits and its copy of cte40_autXML still
+        points to the abstract cte.40.tcte_autxml model, so a default would
+        break the creation of any invoice of a company that has an accountant.
+        """
+        company_model = self.env["res.company"]
+        for vals in vals_list:
+            if "cte40_autXML" in vals:
+                continue
+            company = (
+                company_model.browse(vals["company_id"])
+                if vals.get("company_id")
+                else self.env.company
+            )
+            authorized = self._get_cte40_autxml_values(company)
+            vals["cte40_autXML"] = authorized
+        return super().create(vals_list)
 
     ##########################
     # CT-e tag: infCTeSupl

@@ -667,16 +667,32 @@ class MDFe(spec_models.StackedModel):
     # MDF-e tag: autXML
     ##########################
 
-    def _default_mdfe30_autxml(self):
-        company = self.env.company
-        authorized_partners = []
-        if company.accountant_id:
-            authorized_partners.append(company.accountant_id.id)
-        if company.technical_support_id:
-            authorized_partners.append(company.technical_support_id.id)
-        return authorized_partners
+    def _get_mdfe30_autxml_values(self, company):
+        """Partners of the company authorized to download the XML."""
+        partners = company.accountant_id | company.technical_support_id
+        return [Command.link(partner_id) for partner_id in partners.ids]
 
-    mdfe30_autXML = fields.One2many(default=_default_mdfe30_autxml)
+    @api.model_create_multi
+    def create(self, vals_list):
+        """Authorize the company partners to download the XML of a new document.
+
+        This is not a field default on purpose: account.move delegates to the
+        fiscal document through _inherits and its copy of mdfe30_autXML still
+        points to the abstract mdfe.30.autxml model, so a default would break
+        the creation of any invoice of a company that has an accountant.
+        """
+        company_model = self.env["res.company"]
+        for vals in vals_list:
+            if "mdfe30_autXML" in vals:
+                continue
+            company = (
+                company_model.browse(vals["company_id"])
+                if vals.get("company_id")
+                else self.env.company
+            )
+            authorized = self._get_mdfe30_autxml_values(company)
+            vals["mdfe30_autXML"] = authorized
+        return super().create(vals_list)
 
     ##########################
     # NF-e tag: tot
