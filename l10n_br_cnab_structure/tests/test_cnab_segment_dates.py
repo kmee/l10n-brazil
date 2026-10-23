@@ -90,3 +90,21 @@ class TestCnabSegmentDates(TransactionCase):
         )
         self.assertEqual(field.type, "num")
         self.assertEqual(field.output(None)[1], "0" * 15)
+
+    def test_segment_j_money_fields_keep_cents(self):
+        """Itau discount and Sicoob amounts of segment J keep two decimals."""
+
+        class Line:
+            discount_value = 10.5
+            amount_currency = 1234.56
+
+        cases = {
+            "cnab_itau_240_boleto_segmento_j_115_129": "1050",
+            "cnab_sicoob_240_boleto_segmento_j_100_114": "123456",
+            "cnab_sicoob_240_boleto_segmento_j_115_129": "1050",
+            "cnab_sicoob_240_boleto_segmento_j_153_167": "123456",
+        }
+        for xml_id, expected in cases.items():
+            value = self._output(xml_id, Line())
+            self.assertEqual(len(value), 15, xml_id)
+            self.assertEqual(value, expected.zfill(15), xml_id)
