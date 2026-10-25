@@ -53,3 +53,44 @@ class TestTaxIcmsRelief(TransactionCase):
                 self.icms_relief,
                 "Document line must have ICMS relief",
             )
+
+    def test_new_line_gets_relief_type_from_benefit(self):
+        self.tax_benefit.icms_relief_type = "1"
+        line = self.env["l10n_br_fiscal.document.line"].create(
+            {
+                "document_id": self.nfe_tax_benefit.id,
+                "name": "Teste",
+                "product_id": self.env.ref("product.product_product_7").id,
+                "uom_id": self.env.ref("uom.product_uom_unit").id,
+                "quantity": 1,
+                "fiscal_operation_type": "out",
+                "fiscal_operation_id": self.env.ref("l10n_br_fiscal.fo_venda").id,
+                "fiscal_operation_line_id": self.env.ref(
+                    "l10n_br_fiscal.fo_venda_venda_nao_contribuinte"
+                ).id,
+            }
+        )
+        self.assertEqual(line.icms_relief_id, self.icms_relief)
+        self.assertEqual(line.icms_relief_type, "1")
+
+    def test_benefit_without_relief_keeps_line_relief(self):
+        line = self.nfe_tax_benefit.fiscal_line_ids
+        line.icms_relief_type = "1"
+        self.tax_benefit.icms_relief_id = False
+        line._compute_fiscal_tax_ids()
+        self.assertEqual(line.icms_relief_id, self.icms_relief)
+        self.assertEqual(line.icms_relief_type, "1")
+
+    def test_exempt_cst_relief_uses_standard_rate(self):
+        self.tax_benefit.write(
+            {
+                "tax_id": self.env.ref("l10n_br_fiscal.tax_icms_isento").id,
+                "cst_id": self.env.ref("l10n_br_fiscal.cst_icms_40").id,
+            }
+        )
+        line = self.nfe_tax_benefit.fiscal_line_ids
+        line.write({"price_unit": 1000.0, "quantity": 1.0})
+        line._compute_fiscal_tax_ids()
+        # ICMS 12% from SP to MG without the benefit
+        self.assertEqual(line.icms_relief_value, 120.0)
+        self.assertEqual(self.nfe_tax_benefit.amount_icms_relief_value, 120.0)
