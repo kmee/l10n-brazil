@@ -3,7 +3,8 @@
 
 import logging
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import SITUACAO_EDOC
 
@@ -239,6 +240,26 @@ class PosOrder(models.Model):
         """Compute the total amounts of the SO."""
         for order in self:
             order._compute_amount()
+
+    def write(self, vals):
+        # An issued document cannot become another one: the new document has to
+        # reference the old one. Filling a type that is still empty is allowed.
+        if "document_type_id" in vals:
+            new_type = vals["document_type_id"] or False
+            for order in self:
+                if (
+                    order.document_type_id
+                    and order.document_type_id.id != new_type
+                    and order.account_move.fiscal_document_id
+                ):
+                    raise UserError(
+                        _(
+                            "The fiscal document type of an order with an issued "
+                            "document cannot change. Issue a new document that "
+                            "references it."
+                        )
+                    )
+        return super().write(vals)
 
     def _l10n_br_pos_document_type(self):
         """Fiscal document type used to invoice the order.

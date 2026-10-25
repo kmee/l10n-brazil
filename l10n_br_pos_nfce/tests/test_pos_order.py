@@ -5,6 +5,7 @@ from datetime import datetime
 from unittest import mock
 
 import odoo
+from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.models.document import Document
 from odoo.addons.l10n_br_nfe.models.document import NFe
@@ -209,3 +210,7 @@ class TestNFCePosOrder(TestNFCePosOrderCommon):
         order = self.env["pos.order"].browse(result["pos.order"][0]["id"])
 
         self.assertTrue(order.account_move.fiscal_document_id)
+
+        # an issued document cannot become another one
+        with self.assertRaises(UserError):
+            order.document_type_id = self.env.ref("l10n_br_fiscal.document_55")
