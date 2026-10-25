@@ -3,7 +3,8 @@
 
 import logging
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import SITUACAO_EDOC
 
@@ -84,9 +85,11 @@ class PosOrder(models.Model):
         readonly=True,
     )
 
+    # The cashier chooses the type of the order in the PoS, so it must be writable:
+    # a read only computed field would drop the value sent by the frontend.
     document_type_id = fields.Many2one(
         comodel_name="l10n_br_fiscal.document.type",
-        readonly=True,
+        readonly=False,
     )
 
     document_type = fields.Char(
@@ -238,6 +241,43 @@ class PosOrder(models.Model):
         for order in self:
             order._compute_amount()
 
+    def write(self, vals):
+        # An issued document cannot become another one: the new document has to
+        # reference the old one. Filling a type that is still empty is allowed.
+        if "document_type_id" in vals:
+            new_type = vals["document_type_id"] or False
+            for order in self:
+                if (
+                    order.document_type_id
+                    and order.document_type_id.id != new_type
+                    and order.account_move.fiscal_document_id
+                ):
+                    raise UserError(
+                        _(
+                            "The fiscal document type of an order with an issued "
+                            "document cannot change. Issue a new document that "
+                            "references it."
+                        )
+                    )
+        return super().write(vals)
+
+    def _l10n_br_pos_document_type(self):
+        """Fiscal document type used to invoice the order.
+
+        The PoS config enables the types and the order carries the one chosen by
+        the cashier: the simplified type is the default of every sale and the
+        detailed one is chosen when the cashier asks for the invoice. A PoS with
+        no simplified type issues no document unless the order carries the
+        detailed one, so it keeps the regular Odoo receipt.
+        Returns an empty recordset when the order has no fiscal document.
+        """
+        self.ensure_one()
+        config = self.session_id.config_id
+        enabled = config.simplified_document_type_id | config.detailed_document_type_id
+        if self.document_type_id and self.document_type_id in enabled:
+            return self.document_type_id
+        return config.simplified_document_type_id
+
     @api.model
     def _process_order(self, order, existing_order):
         order_id = super(
@@ -249,6 +289,12 @@ class PosOrder(models.Model):
                 mail_notrack=True,
             ),
         )._process_order(order, existing_order)
+
+        # Keep the decided document type on the order: the frontend reads it back.
+        pos_order = self.browse(order_id)
+        document_type = pos_order._l10n_br_pos_document_type()
+        if pos_order.document_type_id != document_type:
+            pos_order.document_type_id = document_type
 
         return order_id
 

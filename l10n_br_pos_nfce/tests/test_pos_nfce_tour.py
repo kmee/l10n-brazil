@@ -34,3 +34,26 @@ class TestPosNfceTour(odoo.tests.HttpCase):
                 "l10n_br_pos_nfce_tour",
                 login="admin",
             )
+
+    def test_pos_nfce_detailed_type_tour(self):
+        admin = self.env.ref("base.user_admin")
+        config = self.env.ref("l10n_br_pos.pos_config_presumido")
+        admin.write(
+            {
+                "company_ids": [(4, config.company_id.id)],
+                "company_id": config.company_id.id,
+            }
+        )
+        config.nfce_document_serie_id = self.env.ref(
+            "l10n_br_pos_nfce.document_65_serie_2"
+        )
+        config.simplified_document_type_id = False
+        config.detailed_document_type_id = self.env.ref("l10n_br_fiscal.document_65")
+        config.cash_control = False
+        config.with_user(admin).open_ui()
+        config.current_session_id.set_opening_control(0, None)
+        self.start_tour(
+            f"/pos/ui?config_id={config.id}",
+            "l10n_br_pos_nfce_detailed_type_tour",
+            login="admin",
+        )

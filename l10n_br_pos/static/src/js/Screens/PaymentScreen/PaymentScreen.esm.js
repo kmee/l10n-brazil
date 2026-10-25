@@ -30,6 +30,25 @@ patch(PaymentScreen.prototype, {
     },
 
     /**
+     * The Invoice button asks for the detailed document when the PoS enables it.
+     * @override
+     */
+    toggleIsToInvoice() {
+        super.toggleIsToInvoice(...arguments);
+
+        const config = this.pos.config;
+        if (!config.detailed_document_type_id) {
+            return;
+        }
+
+        const order = this.currentOrder;
+        const type = order.is_to_invoice()
+            ? config.detailed_document_type_id
+            : config.simplified_document_type_id;
+        order.update({document_type_id: type || false});
+    },
+
+    /**
      * @override
      */
     async _isOrderValid() {
@@ -39,8 +58,9 @@ patch(PaymentScreen.prototype, {
             return false;
         }
 
-        if (this.pos.config.simplified_document_type) {
-            const order = this.currentOrder;
+        const order = this.currentOrder;
+
+        if (order.document_type_id) {
             const isValid = this.check_valid_cpf_cnpj(order);
 
             if (isValid) {

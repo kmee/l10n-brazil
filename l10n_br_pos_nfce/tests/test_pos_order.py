@@ -5,6 +5,7 @@ from datetime import datetime
 from unittest import mock
 
 import odoo
+from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.models.document import Document
 from odoo.addons.l10n_br_nfe.models.document import NFe
@@ -170,3 +171,46 @@ class TestNFCePosOrder(TestNFCePosOrderCommon):
             refund_order.pos_reference,
             f"{order.pos_reference}-cancelled",
         )
+
+    def test_nfce_detailed_type_without_invoice(self):
+        self.env = self.env(user=self.env.ref("base.user_admin"))
+        self.env.user.company_ids = [(4, self.company.id)]
+        self.env.user.company_id = self.company
+
+        self.open_new_session()
+        self.config.simplified_document_type_id = False
+        self.config.detailed_document_type_id = self.env.ref(
+            "l10n_br_fiscal.document_65"
+        )
+
+        order_data = self._prepare_order_data()
+        order_data["to_invoice"] = False
+
+        result = self.env["pos.order"].sync_from_ui([order_data])
+        order = self.env["pos.order"].browse(result["pos.order"][0]["id"])
+
+        self.assertFalse(order.account_move)
+        self.assertEqual(order.state, "paid")
+
+    def test_nfce_detailed_type_with_invoice(self):
+        self.env = self.env(user=self.env.ref("base.user_admin"))
+        self.env.user.company_ids = [(4, self.company.id)]
+        self.env.user.company_id = self.company
+
+        self.open_new_session()
+        nfce = self.env.ref("l10n_br_fiscal.document_65")
+        self.config.simplified_document_type_id = False
+        self.config.detailed_document_type_id = nfce
+
+        order_data = self._prepare_order_data()
+        order_data["document_type_id"] = nfce.id
+        order_data["authorization_protocol"] = "123456789012345"
+
+        result = self.env["pos.order"].sync_from_ui([order_data])
+        order = self.env["pos.order"].browse(result["pos.order"][0]["id"])
+
+        self.assertTrue(order.account_move.fiscal_document_id)
+
+        # an issued document cannot become another one
+        with self.assertRaises(UserError):
+            order.document_type_id = self.env.ref("l10n_br_fiscal.document_55")

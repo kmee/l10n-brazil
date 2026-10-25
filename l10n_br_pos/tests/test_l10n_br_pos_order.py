@@ -114,3 +114,52 @@ class TestL10nBrPosOrder(TransactionCase):
             len(orders_exported_to_ui),
             "Orders not exported to UI.",
         )
+
+    def test_document_type_enabled_by_the_config(self):
+        session = self.env["pos.session"].create(
+            {"config_id": self.pos_config.id, "user_id": self.env.uid}
+        )
+        session.action_pos_session_open()
+        self._generate_order()
+        order = self.pos_config.current_session_id.order_ids[0]
+
+        nfce = self.env.ref("l10n_br_fiscal.document_65")
+        nfe = self.env.ref("l10n_br_fiscal.document_55")
+        self.pos_config.simplified_document_type_id = nfce
+        self.pos_config.detailed_document_type_id = nfe
+
+        # the type chosen for the order wins when the config enables it
+        order.document_type_id = nfe
+        self.assertEqual(order._l10n_br_pos_document_type(), nfe)
+        order.document_type_id = nfce
+        self.assertEqual(order._l10n_br_pos_document_type(), nfce)
+
+        # a type that the config does not enable falls back to the simplified one
+        self.pos_config.detailed_document_type_id = False
+        order.document_type_id = nfe
+        self.assertEqual(order._l10n_br_pos_document_type(), nfce)
+
+    def test_document_type_without_simplified_type(self):
+        session = self.env["pos.session"].create(
+            {"config_id": self.pos_config.id, "user_id": self.env.uid}
+        )
+        session.action_pos_session_open()
+        self._generate_order()
+        order = self.pos_config.current_session_id.order_ids[0]
+
+        nfce = self.env.ref("l10n_br_fiscal.document_65")
+        nfe = self.env.ref("l10n_br_fiscal.document_55")
+        self.pos_config.simplified_document_type_id = False
+        self.pos_config.detailed_document_type_id = nfce
+
+        # no simplified type: the sale keeps the regular PoS receipt
+        order.document_type_id = False
+        self.assertFalse(order._l10n_br_pos_document_type())
+
+        # the detailed type is issued when the order carries it, even a NFC-e
+        order.document_type_id = nfce
+        self.assertEqual(order._l10n_br_pos_document_type(), nfce)
+
+        # a type that the config does not enable is ignored
+        order.document_type_id = nfe
+        self.assertFalse(order._l10n_br_pos_document_type())

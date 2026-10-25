@@ -12,7 +12,7 @@ patch(PaymentScreen.prototype, {
     },
 
     shouldDownloadInvoice() {
-        if (this.pos.config.simplified_document_type === "65") {
+        if (this.currentOrder.document_type_id?.code === "65") {
             return false;
         }
 
@@ -20,7 +20,7 @@ patch(PaymentScreen.prototype, {
     },
 
     get nextScreen() {
-        if (this.pos.config.simplified_document_type === "65") {
+        if (this.currentOrder.document_type_id?.code === "65") {
             return "ReceiptScreen";
         }
         return super.nextScreen;

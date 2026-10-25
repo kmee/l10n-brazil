@@ -4,7 +4,7 @@ import {patch} from "@web/core/utils/patch";
 
 patch(PosOrder.prototype, {
     async document_send() {
-        if (this.document_type !== "65") {
+        if (this.document_type_id?.code !== "65") {
             return super.document_send(...arguments);
         }
 
@@ -21,7 +21,7 @@ patch(PosOrder.prototype, {
     export_for_printing() {
         const result = super.export_for_printing(...arguments);
 
-        if (this.config.simplified_document_type !== "65") {
+        if (this.document_type_id?.code !== "65") {
             return result;
         }
 
@@ -79,8 +79,11 @@ patch(PosStore.prototype, {
     async postSyncAllOrders(orders) {
         await super.postSyncAllOrders(...arguments);
 
-        if (this.config.simplified_document_type === "65") {
-            await this._fillNFCeAdditionalInfo(orders);
+        const nfceOrders = (orders || []).filter(
+            (order) => order.document_type_id?.code === "65"
+        );
+        if (nfceOrders.length) {
+            await this._fillNFCeAdditionalInfo(nfceOrders);
         }
     },
 

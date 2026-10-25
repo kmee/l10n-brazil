@@ -25,7 +25,7 @@ const SITUACAO_EDOC = {
 const getFirst = (val) => (Array.isArray(val) ? val[0] : val);
 
 patch(PosOrder.prototype, {
-    setup(vals) {
+    setup() {
         super.setup(...arguments);
         // The fiscal fields are declared in the python model: only the
         // defaults of an order created by the PoS are set here.
@@ -33,19 +33,20 @@ patch(PosOrder.prototype, {
         this.cnpj_cpf = this.cnpj_cpf || null;
         this.document_event_messages = this.document_event_messages || [];
 
-        if (!vals.id) {
+        if (typeof this.id !== "number") {
             const config = this.config;
 
             this.fiscal_operation_id =
                 this.fiscal_operation_id ||
                 getFirst(config.out_pos_fiscal_operation_id) ||
                 null;
-            this.document_type_id =
-                this.document_type_id ||
-                getFirst(config.simplified_document_type_id) ||
-                null;
-            this.document_type =
-                this.document_type || config.simplified_document_type || null;
+            // The simplified type is the default of every sale.
+            this.update({
+                document_type_id:
+                    this.document_type_id ||
+                    getFirst(config.simplified_document_type_id) ||
+                    false,
+            });
         }
     },
 
