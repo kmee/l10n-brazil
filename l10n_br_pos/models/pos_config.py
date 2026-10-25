@@ -63,6 +63,14 @@ class PosConfig(models.Model):
         default=200000,
     )
 
+    fiscal_document_optional = fields.Boolean(
+        help="The fiscal document is issued only when the cashier asks for it "
+        "(Invoice button). Without it the sale is a regular PoS order, with no "
+        "fiscal document. A detailed document (NF-e) is always issued. Check the "
+        "rules of your state before enabling it.",
+        default=False,
+    )
+
     simplified_document_type_id = fields.Many2one(
         comodel_name="l10n_br_fiscal.document.type",
     )

@@ -20,3 +20,27 @@ registry.category("web_tour.tours").add("l10n_br_pos_nfce_tour", {
             },
         ].flat(),
 });
+
+registry.category("web_tour.tours").add("l10n_br_pos_nfce_optional_tour", {
+    steps: () =>
+        [
+            Chrome.startPoS(),
+            ProductScreen.clickDisplayedProduct("Led Lamp"),
+            ProductScreen.selectedOrderlineHas("Led Lamp", "1"),
+            ProductScreen.clickPayButton(),
+            PaymentScreen.clickPaymentMethod("Dinheiro"),
+            PaymentScreen.clickValidate(),
+            ReceiptScreen.receiptIsThere(),
+            {
+                content: "the regular receipt is used when no invoice is asked",
+                trigger: ".receipt-screen",
+                run: () => {
+                    if (document.querySelector(".headerNfce")) {
+                        throw new Error(
+                            "The NFC-e receipt was used without an invoice"
+                        );
+                    }
+                },
+            },
+        ].flat(),
+});

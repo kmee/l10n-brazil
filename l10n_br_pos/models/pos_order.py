@@ -238,6 +238,33 @@ class PosOrder(models.Model):
         for order in self:
             order._compute_amount()
 
+    def _l10n_br_pos_document_type(self):
+        """Fiscal document type used to invoice the order.
+
+        The PoS config enables the types (simplified and detailed) and the order
+        carries the one chosen by the cashier. An order without a valid choice
+        uses the simplified type, which keeps the behavior of a single type PoS.
+        Returns an empty recordset when the order has no fiscal document.
+        """
+        self.ensure_one()
+        config = self.session_id.config_id
+        enabled = config.simplified_document_type_id | config.detailed_document_type_id
+        if self.document_type_id and self.document_type_id in enabled:
+            document_type = self.document_type_id
+        else:
+            document_type = (
+                config.simplified_document_type_id or config.detailed_document_type_id
+            )
+        # With the optional issuance, a simplified order is only fiscal when the
+        # cashier asks for it. The detailed document is always issued.
+        if (
+            config.fiscal_document_optional
+            and not self.to_invoice
+            and document_type == config.simplified_document_type_id
+        ):
+            return self.env["l10n_br_fiscal.document.type"]
+        return document_type
+
     @api.model
     def _process_order(self, order, existing_order):
         order_id = super(

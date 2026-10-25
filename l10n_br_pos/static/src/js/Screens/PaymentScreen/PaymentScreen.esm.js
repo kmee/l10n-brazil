@@ -39,8 +39,11 @@ patch(PaymentScreen.prototype, {
             return false;
         }
 
-        if (this.pos.config.simplified_document_type) {
-            const order = this.currentOrder;
+        const order = this.currentOrder;
+        const isFiscal =
+            !this.pos.config.fiscal_document_optional || order.is_to_invoice();
+
+        if (this.pos.config.simplified_document_type && isFiscal) {
             const isValid = this.check_valid_cpf_cnpj(order);
 
             if (isValid) {

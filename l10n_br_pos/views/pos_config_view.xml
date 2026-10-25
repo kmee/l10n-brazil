@@ -15,6 +15,7 @@
                             <group string="Simplified">
                                 <field name="simplified_document_type_id" />
                                 <field name="simplified_document_type" />
+                                <field name="fiscal_document_optional" />
                                 <field name="anonymous_simplified_limit" />
                                 <field name="simplified_invoice_limit" />
                             </group>

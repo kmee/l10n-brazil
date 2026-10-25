@@ -12,8 +12,11 @@ patch(PosOrder.prototype, {
             this.set_partner(this.config.partner_id);
         }
 
-        // The NFC-e is issued by the backend while the order is invoiced.
-        this.set_to_invoice(true);
+        // The NFC-e is issued by the backend while the order is invoiced. With the
+        // optional issuance the cashier decides, so the invoice is not forced.
+        if (!this.config.fiscal_document_optional) {
+            this.set_to_invoice(true);
+        }
 
         return true;
     },
@@ -21,7 +24,10 @@ patch(PosOrder.prototype, {
     export_for_printing() {
         const result = super.export_for_printing(...arguments);
 
-        if (this.config.simplified_document_type !== "65") {
+        if (
+            this.config.simplified_document_type !== "65" ||
+            (this.config.fiscal_document_optional && !this.is_to_invoice())
+        ) {
             return result;
         }
 

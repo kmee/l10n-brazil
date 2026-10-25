@@ -21,7 +21,7 @@ class PosOrder(models.Model):
         vals = super()._prepare_invoice_vals()
 
         pos_config = self.session_id.config_id
-        if pos_config.simplified_document_type != MODELO_FISCAL_NFCE:
+        if self._l10n_br_pos_document_type().code != MODELO_FISCAL_NFCE:
             return vals
 
         nfce_vals = self._prepare_nfce_vals(pos_config)
@@ -56,7 +56,7 @@ class PosOrder(models.Model):
 
         payment_mode_id = self.payment_ids[0].payment_method_id.payment_mode_id
         return {
-            "document_type_id": pos_config_id.simplified_document_type_id.id,
+            "document_type_id": self._l10n_br_pos_document_type().id,
             "fiscal_operation_id": pos_config_id.out_pos_fiscal_operation_id.id,
             "ind_pres": "1",
             "document_serie_id": pos_config_id.nfce_document_serie_id.id,
@@ -70,8 +70,7 @@ class PosOrder(models.Model):
         res = super()._process_order(pos_order_vals, existing_order)
 
         created_order = self.browse(res)
-        pos_config_id = created_order.session_id.config_id
-        if pos_config_id.simplified_document_type == MODELO_FISCAL_NFCE:
+        if created_order._l10n_br_pos_document_type().code == MODELO_FISCAL_NFCE:
             fiscal_document_id = created_order.account_move.fiscal_document_id
             if created_order.is_contingency:
                 fiscal_document_id.write(
@@ -138,7 +137,7 @@ class PosOrder(models.Model):
     def _prepare_invoice_line(self, order_line):
         vals = super()._prepare_invoice_line(order_line)
 
-        if self.config_id.simplified_document_type == MODELO_FISCAL_NFCE:
+        if self._l10n_br_pos_document_type().code == MODELO_FISCAL_NFCE:
             vals.update(order_line._prepare_nfce_tax_dict())
 
         return vals

@@ -1,7 +1,6 @@
 # Copyright 2023 KMEE
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-from odoo.addons.l10n_br_fiscal.constants.fiscal import MODELO_FISCAL_NFCE
 from odoo.addons.point_of_sale.tests.common import TestPoSCommon
 
 
@@ -21,7 +20,9 @@ class TestNFCePosOrderCommon(TestPoSCommon):
         )
 
         cls.config = cls.basic_config
-        cls.config.simplified_document_type = MODELO_FISCAL_NFCE
+        cls.config.simplified_document_type_id = cls.env.ref(
+            "l10n_br_fiscal.document_65"
+        )
 
         cls.cash_journal = cls.env["account.journal"].create(
             {
