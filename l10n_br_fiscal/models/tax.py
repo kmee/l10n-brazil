@@ -549,11 +549,11 @@ class Tax(models.Model):
             )
 
         if kwargs.get("icms_relief_id") and cst["code"] in ICMS_CST_RELIEF:
-            icms_base = tax_dict.get("base")
+            icms_base = kwargs.get("price_unit", 0.00) * kwargs.get("quantity", 0.00)
             icms_percent = tax_dict.get("percent_amount", 0.00) / 100
             icms_reduction = tax_dict.get("percent_reduction", 0.00) / 100
-            icms_relief_value = 0.0
-            if float_is_zero(tax_dict.get("base", 0.00), currency.decimal_places):
+            if cst["code"] in ["30", "40"]:
+                icms_relief = icms_base * icms_percent
                 if not icms_percent and company.icms_regulation_id:
                     (
                         _standard_taxes,
@@ -577,13 +577,21 @@ class Tax(models.Model):
                         standard_tax_dict = self._compute_tax(
                             standard_tax, standard_tax_dict, **kwargs
                         )
-                        icms_relief_value = standard_tax_dict.get("tax_value")
-            elif not float_is_zero(1 - icms_reduction, currency.decimal_places):
-                icms_relief_value = (
-                    icms_base * icms_percent * icms_reduction / (1 - icms_reduction)
+                        icms_relief = standard_tax_dict.get("tax_value")
+                tax_dict.update({"icms_relief": icms_relief})
+            elif cst["code"] in ["20", "70"]:
+                icms_relief = (
+                    icms_base
+                    * (1 - (icms_percent * (1 - icms_reduction)))
+                    / (1 - icms_percent)
+                    - icms_base
                 )
-
-            tax_dict.update({"icms_relief": icms_relief_value})
+                tax_dict.update({"icms_relief": icms_relief})
+            else:
+                icms_relief = (icms_base / (1 - icms_percent)) * icms_percent
+                tax_dict.update({"icms_relief": icms_relief})
+        else:
+            tax_dict.update({"icms_relief": 0})
 
         return taxes_dict
 
