@@ -308,7 +308,7 @@ class TaxDefinition(models.Model):
     icms_relief_type = fields.Selection(
         selection=[
             ("0", "0 - Do not deduct the ICMS Relief"),
-            ("1", "1 -  Deduct ICMS Relief from Product Amount"),
+            ("1", "1 - Deduct ICMS Relief from Product Amount"),
         ],
         default="0",
     )

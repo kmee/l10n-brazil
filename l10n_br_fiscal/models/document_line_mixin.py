@@ -303,6 +303,7 @@ class FiscalDocumentLineMixin(models.AbstractModel):
     )
     def _compute_fiscal_tax_ids(self):
         for line in self:
+            line.icms_relief_type = line.icms_relief_type or "0"
             if line.fiscal_operation_line_id:
                 mapping_result = line.fiscal_operation_line_id.map_fiscal_taxes(
                     company=line.company_id,
@@ -321,11 +322,13 @@ class FiscalDocumentLineMixin(models.AbstractModel):
                 line.ipi_guideline_id = mapping_result["ipi_guideline"]
                 line.tax_classification_id = mapping_result["tax_classification"]
                 line.icms_tax_benefit_id = mapping_result["icms_tax_benefit_id"]
-                line.icms_relief_id = mapping_result["icms_relief_id"]
-                line.icms_relief_type = mapping_result["icms_relief_type"]
 
                 if line._is_imported():
                     continue
+
+                if mapping_result["icms_relief_id"]:
+                    line.icms_relief_id = mapping_result["icms_relief_id"]
+                    line.icms_relief_type = mapping_result["icms_relief_type"]
 
                 taxes = line.env["l10n_br_fiscal.tax"]
                 for tax in mapping_result["taxes"].values():
@@ -703,8 +706,9 @@ class FiscalDocumentLineMixin(models.AbstractModel):
     def _onchange_icms_fields(self):
         if self.icms_tax_benefit_id:
             self.icms_tax_id = self.icms_tax_benefit_id.tax_id
-            self.icms_relief_id = self.icms_tax_benefit_id.icms_relief_id
-            self.icms_relief_type = self.icms_tax_benefit_id.icms_relief_type
+            if self.icms_tax_benefit_id.icms_relief_id:
+                self.icms_relief_id = self.icms_tax_benefit_id.icms_relief_id
+                self.icms_relief_type = self.icms_tax_benefit_id.icms_relief_type
         else:
             self.icms_relief_id = False
             self.icms_relief_type = "0"
@@ -1509,7 +1513,6 @@ class FiscalDocumentLineMixin(models.AbstractModel):
             ("1", "1 - Deduct ICMS Relief from Product Amount"),
         ],
         string="ICMS Relief Deduction",
-        default="0",
         compute="_compute_fiscal_tax_ids",
         store=True,
         precompute=True,
