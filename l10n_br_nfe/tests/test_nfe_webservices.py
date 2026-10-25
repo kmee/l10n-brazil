@@ -68,6 +68,14 @@ class TestNFeWebServices(TestNFeExport):
                 Datetime.to_string(nfe.cancel_event_id.protocol_date),
                 "2023-07-05 16:52:52",
             )
+            self.assertEqual(
+                nfe.cancel_event_id.event_type_id,
+                self.env.ref("l10n_br_nfe.document_55_110111"),
+            )
+            self.assertEqual(
+                nfe.cancel_event_id.service_id,
+                self.env.ref("l10n_br_nfe.document_55_65_service_nferecepcaoevento"),
+            )
 
     @nfe_mock({"nfeInutilizacaoNF": "retInutNFe/nfe_inutilizacao.xml"})
     def test_inutilizar(self):

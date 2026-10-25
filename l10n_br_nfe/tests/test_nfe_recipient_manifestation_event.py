@@ -100,10 +100,12 @@ class TestNFeMDE(TransactionCase):
             self.mde_id.event_type = "confirmado"
             self.mde_id.action_confirm()
             self.assertEqual(self.mde_id.event_type, "confirmado")
+            self.assertEqual(self.mde_id.event_type_id.code, "210200")
 
             self.mde_id.event_type = "ciente"
             self.mde_id.action_confirm()
             self.assertEqual(self.mde_id.event_type, "ciente")
+            self.assertEqual(self.mde_id.event_type_id.code, "210210")
             self.assertEqual(
                 self.mde_id.display_name,
                 "31201010588201000105550010038421171838422178",
@@ -112,10 +114,12 @@ class TestNFeMDE(TransactionCase):
             self.mde_id.event_type = "desconhecido"
             self.mde_id.action_confirm()
             self.assertEqual(self.mde_id.event_type, "desconhecido")
+            self.assertEqual(self.mde_id.event_type_id.code, "210220")
 
             self.mde_id.event_type = "nao_realizado"
             self.mde_id.action_confirm()
             self.assertEqual(self.mde_id.event_type, "nao_realizado")
+            self.assertEqual(self.mde_id.event_type_id.code, "210240")
 
     def test_event_error(self):
         proc_http = _FakeProcessor(

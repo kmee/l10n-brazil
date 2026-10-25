@@ -805,7 +805,10 @@ class TestDFe(TransactionCase):
         dfe = DfeRecord.search([("company_id", "=", self.company.id)], limit=1)
         # Known event type
         dfe.event_type_dfe = "110111"
-        self.assertTrue(dfe.event_type_dfe_label)
+        self.assertEqual(
+            dfe.event_type_dfe_label,
+            self.env.ref("l10n_br_nfe.document_55_110111").name,
+        )
 
         # Unknown event type
         dfe.event_type_dfe = "999999"

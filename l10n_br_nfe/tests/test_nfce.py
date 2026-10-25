@@ -86,6 +86,14 @@ class TestNFCe(TestNFeExport):
             Datetime.to_string(self.document_id.cancel_event_id.protocol_date),
             "2023-07-05 16:52:52",
         )
+        self.assertEqual(
+            self.document_id.cancel_event_id.event_type_id,
+            self.env.ref("l10n_br_nfe.document_55_110111"),
+        )
+        correction_log = self.env["l10n_br_fiscal.event"].new(
+            {"type": "14", "document_type_id": self.document_id.document_type_id.id}
+        )
+        self.assertFalse(correction_log.event_type_id)
 
     @nfe_mock({"nfeAutorizacaoLote": "retEnviNFe/rejeitada.xml"})
     def test_nfce_rejeitada(self):
