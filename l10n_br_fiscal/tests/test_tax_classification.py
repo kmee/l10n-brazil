@@ -24,6 +24,8 @@ class TestTaxClassification(TransactionCase):
         cls.classification_line = cls.env.ref(
             "l10n_br_fiscal.tax_classification_200001"
         )
+        cls.classification_ncm = cls.env.ref("l10n_br_fiscal.tax_classification_200003")
+        cls.classification_nbs = cls.env.ref("l10n_br_fiscal.tax_classification_200028")
 
     def _map_kwargs(self):
         return {
@@ -73,6 +75,40 @@ class TestTaxClassification(TransactionCase):
             result["taxes"][self.classification_line.tax_ibs_id.tax_domain],
             self.classification_line.tax_ibs_id,
         )
+
+    def test_map_fiscal_taxes_tax_classification_from_ncm(self):
+        """NCM tax classification must override operation line and company."""
+        self.company.tax_classification_id = self.classification_company
+        self.operation_line.tax_classification_id = self.classification_line
+        ncm = self.product.ncm_id
+        ncm.tax_classification_id = self.classification_ncm
+
+        result = self.operation_line.map_fiscal_taxes(**self._map_kwargs())
+
+        self.assertEqual(result["tax_classification"], self.classification_ncm)
+        self.assertEqual(
+            result["taxes"][self.classification_ncm.tax_ibs_id.tax_domain],
+            self.classification_ncm.tax_ibs_id,
+        )
+
+        ncm.tax_classification_id = False
+        result = self.operation_line.map_fiscal_taxes(**self._map_kwargs())
+        self.assertEqual(result["tax_classification"], self.classification_line)
+
+    def test_map_fiscal_taxes_tax_classification_from_nbs(self):
+        """NBS tax classification is used when the NCM has none, NCM wins over it."""
+        self.operation_line.tax_classification_id = self.classification_line
+        self.product.ncm_id.tax_classification_id = False
+        nbs = self.env["l10n_br_fiscal.nbs"].search([], limit=1)
+        nbs.tax_classification_id = self.classification_nbs
+        kwargs = dict(self._map_kwargs(), nbs=nbs)
+
+        result = self.operation_line.map_fiscal_taxes(**kwargs)
+        self.assertEqual(result["tax_classification"], self.classification_nbs)
+
+        self.product.ncm_id.tax_classification_id = self.classification_ncm
+        result = self.operation_line.map_fiscal_taxes(**kwargs)
+        self.assertEqual(result["tax_classification"], self.classification_ncm)
 
     def test_document_line_receives_cbs_ibs_from_tax_classification(self):
         """Fiscal document line must receive tax classification and CBS/IBS taxes."""
