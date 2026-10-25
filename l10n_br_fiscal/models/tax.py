@@ -548,6 +548,7 @@ class Tax(models.Model):
                 }
             )
 
+        cst = tax_dict.get("cst_id") or cst
         if kwargs.get("icms_relief_id") and cst["code"] in ICMS_CST_RELIEF:
             icms_base = kwargs.get("price_unit", 0.00) * kwargs.get("quantity", 0.00)
             icms_percent = tax_dict.get("percent_amount", 0.00) / 100
