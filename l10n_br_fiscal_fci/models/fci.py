@@ -41,18 +41,14 @@ class FCI(models.Model):
     date = fields.Datetime(
         string="Creation Date",
         required=True,
-        readonly=True,
         default=fields.Datetime.now,
-        states={"draft": [("readonly", False)]},
         help="Date used to build the file name, as required by the layout.",
     )
 
     company_id = fields.Many2one(
         comodel_name="res.company",
         required=True,
-        readonly=True,
         default=lambda self: self.env.company,
-        states={"draft": [("readonly", False)]},
     )
 
     currency_id = fields.Many2one(
@@ -82,8 +78,6 @@ class FCI(models.Model):
         comodel_name="l10n_br_fiscal.fci.line",
         inverse_name="fci_id",
         string="Goods",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
         copy=True,
     )
 
@@ -145,8 +139,6 @@ class FCI(models.Model):
 
     protocol_number = fields.Char(
         string="Reception Protocol",
-        readonly=True,
-        states={"generated": [("readonly", False)]},
         copy=False,
         tracking=True,
         help="Protocol number returned by the TED after the transmission of "
@@ -247,7 +239,7 @@ class FCI(models.Model):
         if errors:
             raise UserError(
                 _("The FCI %(name)s can not be generated:\n\n%(errors)s")
-                % {"name": self.name, "errors": "\n".join("- %s" % e for e in errors)}
+                % {"name": self.name, "errors": "\n".join(f"- {e}" for e in errors)}
             )
 
     def _prepare_register(self, *fields_values):

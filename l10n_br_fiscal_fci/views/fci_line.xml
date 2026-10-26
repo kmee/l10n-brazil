@@ -4,7 +4,6 @@
     License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 -->
 <odoo>
-
     <record id="fci_line_search" model="ir.ui.view">
         <field name="name">l10n_br_fiscal.fci.line.search</field>
         <field name="model">l10n_br_fiscal.fci.line</field>
@@ -50,7 +49,7 @@
         <field name="name">l10n_br_fiscal.fci.line.tree</field>
         <field name="model">l10n_br_fiscal.fci.line</field>
         <field name="arch" type="xml">
-            <tree create="false">
+            <list create="false">
                 <field name="fci_id" />
                 <field name="currency_id" invisible="1" />
                 <field name="product_id" />
@@ -63,8 +62,7 @@
                 <field name="fci_code" />
                 <field name="validation_indicator" optional="hide" />
                 <field name="state" widget="badge" optional="hide" />
-            </tree>
+            </list>
         </field>
     </record>
-
 </odoo>
