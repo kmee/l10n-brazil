@@ -1087,11 +1087,16 @@ class MDFe(spec_models.StackedModel):
         check(company.state_id, _("Company State"))
         check(certificate, _("Digital Certificate"))
         if certificate:
+            # ATENCAO: nomes do l10n_br_fiscal_certificate desta base.
+            # O modulo upstream chama certificate.content e .pkcs12_password,
+            # que sao de uma versao MAIS NOVA do modulo de certificado. Nesta
+            # imagem os campos sao .file e .password. Ver o comentario do
+            # _mdfe_certificate() logo abaixo.
             check(
-                certificate.with_context(bin_size=False).content,
+                certificate.with_context(bin_size=False).file,
                 _("Digital Certificate File"),
             )
-            check(certificate.pkcs12_password, _("Digital Certificate Password"))
+            check(certificate.password, _("Digital Certificate Password"))
 
         check(self.document_type_id, _("Document Type"))
         check(self.document_serie, _("Document Serie"))
@@ -1185,6 +1190,22 @@ class MDFe(spec_models.StackedModel):
             check(condutor.mdfe30_xNome, _("Driver Name"))
             check(condutor.mdfe30_CPF, _("Driver CPF"))
 
+    def _mdfe_certificate(self):
+        """O registro de certificado da empresa, nos nomes desta base.
+
+        O l10n_br_mdfe upstream chama company._get_br_certificate(), que nao
+        existe no l10n_br_fiscal_certificate desta imagem: aqui o que existe e
+        o campo calculado company.certificate, e os campos do registro sao
+        .file e .password, nao .content e .pkcs12_password.
+
+        A causa e de fundo, e vale registrar: este l10n_br_mdfe veio da 18.0 da
+        OCA de hoje, e a base agregada da imagem e de 03/09/2026. O modulo e
+        mais novo que os irmaos dele. Quando a base da imagem for atualizada,
+        este metodo sai junto com os dois usos acima.
+        """
+        self.ensure_one()
+        return self.company_id.sudo().certificate
+
     def _document_export(self, pretty_print=True):
         result = super()._document_export()
         for record in self.filtered(filtered_processador_edoc_mdfe):
@@ -1210,11 +1231,11 @@ class MDFe(spec_models.StackedModel):
                 document_id=self,
             )
             record.authorization_event_id = event_id
-            certificate = self.company_id._get_br_certificate()
+            certificate = self._mdfe_certificate()
             signed_xml = edoc.sign_xml(
                 xml_file,
-                certificate.with_context(bin_size=False).content,
-                certificate.pkcs12_password,
+                certificate.with_context(bin_size=False).file,
+                certificate.password,
                 edoc.infMDFe.Id,
             )
             self._validate_xml(signed_xml)

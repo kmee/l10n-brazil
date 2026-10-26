@@ -134,7 +134,14 @@ class NFeRelated(spec_models.StackedModel):
             if record.nfe40_refCTe:
                 record.document_key = record.nfe40_refCTe
 
-    def _export_fields(self, xsd_fields, class_obj, export_dict):
+    def _export_fields(self, xsd_fields, class_obj, export_dict, field_name=None):
+        # O field_name vem do spec_driven_model, que o passa desde a versao
+        # desta base. Este override tinha ficado para tras com a assinatura
+        # antiga, e por isso o export do MDF-e estourava com
+        # "NFeRelated._export_fields() got an unexpected keyword argument
+        # 'field_name'". A NF-e nunca tropecou porque o caminho dela nao passa
+        # o argumento. Acrescentado e repassado ao super, sem mudar o que o
+        # metodo faz.
         if class_obj._name == "nfe.40.nfref":
             xsd_fields = [
                 f
@@ -142,4 +149,6 @@ class NFeRelated(spec_models.StackedModel):
                 if f not in [i[0] for i in self._fields["nfe40_choice_nfref"].selection]
             ]
             xsd_fields += [self.nfe40_choice_nfref]
-        return super()._export_fields(xsd_fields, class_obj, export_dict)
+        return super()._export_fields(
+            xsd_fields, class_obj, export_dict, field_name=field_name
+        )
