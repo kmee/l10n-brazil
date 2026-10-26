@@ -668,13 +668,20 @@ class MDFe(spec_models.StackedModel):
     ##########################
 
     def _default_mdfe30_autxml(self):
+        # Um One2many espera COMANDOS, nao uma lista de ids: devolver [id] faz
+        # o Odoo tratar o inteiro como comando e estourar com
+        # "'mdfe.30.autxml' object has no attribute 'id'" na criacao de
+        # QUALQUER l10n_br_fiscal.document, NF-e inclusive, porque o default
+        # roda sempre. So aparece quando a empresa tem contador ou responsavel
+        # tecnico preenchido, que e a empresa bem configurada: com os dois
+        # vazios a lista sai vazia e o defeito fica escondido.
         company = self.env.company
         authorized_partners = []
         if company.accountant_id:
             authorized_partners.append(company.accountant_id.id)
         if company.technical_support_id:
             authorized_partners.append(company.technical_support_id.id)
-        return authorized_partners
+        return [Command.link(partner_id) for partner_id in authorized_partners]
 
     mdfe30_autXML = fields.One2many(default=_default_mdfe30_autxml)
 
