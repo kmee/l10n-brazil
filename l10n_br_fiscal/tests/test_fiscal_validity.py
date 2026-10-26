@@ -2,7 +2,7 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 from odoo import Command, fields
-from odoo.tests import TransactionCase
+from odoo.tests import Form, TransactionCase, tagged
 
 
 class TestFiscalDataValidity(TransactionCase):
@@ -102,3 +102,40 @@ class TestTaxDefinitionValidity(TransactionCase):
             reference_date=fields.Datetime.add(self.today, days=6),
         )
         self.assertIn(tax_definition, result)
+
+
+@tagged("post_install", "-at_install")
+class TestDocumentReferenceDate(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
+        cls.company = cls.env.ref("l10n_br_base.empresa_lucro_presumido")
+        cls.today = fields.Datetime.now()
+        cls.old_line = cls.env.ref("l10n_br_fiscal.fo_venda_revenda").copy(
+            {
+                "name": "Revenda (old rule)",
+                "icms_origin": "5",
+                "state": "approved",
+                "date_start": fields.Datetime.subtract(cls.today, days=90),
+                "date_end": fields.Datetime.subtract(cls.today, days=30),
+            }
+        )
+
+    def _new_line_operation_line(self, document_date):
+        doc_form = Form(
+            self.env["l10n_br_fiscal.document"]
+            .with_company(self.company)
+            .with_context(default_fiscal_operation_type="out")
+        )
+        doc_form.partner_id = self.env.ref("l10n_br_base.res_partner_cliente1_sp")
+        doc_form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_venda")
+        doc_form.document_date = document_date
+        with doc_form.fiscal_line_ids.new() as line_form:
+            line_form.product_id = self.env.ref("product.product_product_6")
+            return line_form.fiscal_operation_line_id
+
+    def test_backdated_document_uses_line_valid_on_its_date(self):
+        backdated = fields.Datetime.subtract(self.today, days=60)
+        self.assertEqual(self._new_line_operation_line(backdated), self.old_line)
+        self.assertNotEqual(self._new_line_operation_line(self.today), self.old_line)
