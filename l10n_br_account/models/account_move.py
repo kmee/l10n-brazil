@@ -119,6 +119,15 @@ class AccountMove(models.Model):
     def _get_fiscal_lines_field_name(self):
         return "invoice_line_ids"
 
+    def _get_report_fiscal_totals(self):
+        # _inherits brings the fields of the fiscal document, not its methods
+        self.ensure_one()
+        return (
+            self.fiscal_document_id._get_report_fiscal_totals()
+            if self.fiscal_document_id
+            else False
+        )
+
     def ensure_one_doc(self):
         self.ensure_one()
         if len(self.fiscal_document_ids) > 1:
