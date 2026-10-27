@@ -113,6 +113,38 @@ class TestPaymentOrderOutboundPIX(AccountTestInvoicingCommon):
         # Open payment order
         payment_order.draft2open()
 
+    def test_line_create_wizard_cnab_state_filter(self):
+        """The wizard domain must skip lines by cnab_state and honor checkboxes."""
+        self.invoice.action_post()
+        line = self.invoice.line_ids.filtered(
+            lambda m: m.account_id.account_type == "liability_payable"
+        )
+        order = self.payment_order_model.create({"payment_mode_id": self.pix_mode.id})
+        wizard_model = self.env["account.payment.line.create"].with_context(
+            active_model="account.payment.order", active_id=order.id
+        )
+
+        def _found(state, **flags):
+            line.cnab_state = state
+            wizard = wizard_model.create(
+                dict(
+                    date_type="due",
+                    due_on="<=",
+                    filter_date=fields.Date.today(),
+                    payment_mode="any",
+                    target_move="posted",
+                    **flags,
+                )
+            )
+            return line in self.env["account.move.line"].search(wizard.move_line_domain)
+
+        for state in ("exported", "added", "accepted", "done"):
+            self.assertFalse(_found(state, allow_error=True, allow_rejected=True))
+        self.assertFalse(_found("not_accepted"))
+        self.assertTrue(_found("not_accepted", allow_rejected=True))
+        self.assertFalse(_found("exporting_error"))
+        self.assertTrue(_found("exporting_error", allow_error=True))
+
     def test_payment_line_change_partner(self):
         payorder = self.payment_order_model.create(
             {"payment_mode_id": self.pix_mode.id}
@@ -207,35 +239,3 @@ class TestPaymentOrderOutboundPIX(AccountTestInvoicingCommon):
         )
         lines.invalidate_recordset(["pix_transfer_type"])
         self.assertEqual(lines.mapped("pix_transfer_type"), ["pix_key", False, False])
-
-    def test_line_create_wizard_cnab_state_filter(self):
-        """The wizard domain must skip lines by cnab_state and honor checkboxes."""
-        self.invoice.action_post()
-        line = self.invoice.line_ids.filtered(
-            lambda m: m.account_id.account_type == "liability_payable"
-        )
-        order = self.payment_order_model.create({"payment_mode_id": self.pix_mode.id})
-        wizard_model = self.env["account.payment.line.create"].with_context(
-            active_model="account.payment.order", active_id=order.id
-        )
-
-        def _found(state, **flags):
-            line.cnab_state = state
-            wizard = wizard_model.create(
-                dict(
-                    date_type="due",
-                    due_on="<=",
-                    filter_date=fields.Date.today(),
-                    payment_mode="any",
-                    target_move="posted",
-                    **flags,
-                )
-            )
-            return line in self.env["account.move.line"].search(wizard.move_line_domain)
-
-        for state in ("exported", "added", "accepted", "done"):
-            self.assertFalse(_found(state, allow_error=True, allow_rejected=True))
-        self.assertFalse(_found("not_accepted"))
-        self.assertTrue(_found("not_accepted", allow_rejected=True))
-        self.assertFalse(_found("exporting_error"))
-        self.assertTrue(_found("exporting_error", allow_error=True))
