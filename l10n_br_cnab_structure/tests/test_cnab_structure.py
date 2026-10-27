@@ -1491,6 +1491,44 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         self.assertEqual(header[11:13], "41")
         self.assertNotEqual(self._segments(lines, "A")[0][112:114], "04")
 
+    def test_itau_pix_key_line_sends_zero_favored_bank(self):
+        """PIX by key never sends the bank of the partner account (DICT decides)."""
+        self._create_pix_employee_rules(same_bank_first=False)
+        other = self._create_partner_bank(self.bank_001)
+        order = self._create_salary_order()
+        self._add_salary_line(order, other, self._create_pix_key("email", "a@b.com"))
+        seg_a = self._segments(self._generate_cnab_lines(order), "A")[0]
+        self.assertEqual(seg_a[112:114], "04")
+        self.assertEqual(seg_a[20:23], "000")
+        self.assertEqual(seg_a[23:43], "0" * 20)
+
+    def test_itau_ted_line_keeps_favored_bank(self):
+        """Without a key (TED) the favored bank code is still sent."""
+        self._create_pix_employee_rules(same_bank_first=False)
+        other = self._create_partner_bank(self.bank_001)
+        order, line = self._create_salary_line_by_rule(other)
+        self.assertEqual(line.cnab_favored_bank_code, "001")
+        seg_a = self._segments(self._generate_cnab_lines(order), "A")[0]
+        self.assertEqual(seg_a[20:23], "001")
+
+    def test_cnab_time_strftime_uses_local_timezone(self):
+        """File header date/hour follow the Brazilian clock, not the server UTC."""
+        from freezegun import freeze_time
+
+        field = self.env["l10n_br_cnab.line.field"].search(
+            [("sending_dynamic_content", "like", "%H%M%S")], limit=1
+        )
+        self.assertTrue(field)
+        with freeze_time("2026-10-21 01:30:15"):  # UTC; 22:30:15 on the 20th BRT
+            hour = field.eval_compute_value("", 'time.strftime("%H%M%S")')
+            day = field.eval_compute_value("", 'time.strftime("%d%m%Y")')
+            ts = field.with_context(tz="UTC").eval_compute_value(
+                "", 'time.strftime("%H%M%S")'
+            )
+        self.assertEqual(hour, "223015")
+        self.assertEqual(day, "20102026")
+        self.assertEqual(ts, "013015")
+
     def test_pix_key_without_type_mapping_blocks_generation(self):
         """A key whose type has no Itau mapping aborts the CNAB with the name."""
         self._create_pix_employee_rules(same_bank_first=False)

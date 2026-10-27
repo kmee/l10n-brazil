@@ -5,13 +5,38 @@
 
 import operator
 import re
+import time as _time
 from datetime import datetime
+
+import pytz
 
 from unidecode import unidecode
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
-from odoo.tools.safe_eval import safe_eval, time
+from odoo.tools.safe_eval import safe_eval
+
+DEFAULT_CNAB_TZ = "America/Sao_Paulo"
+
+
+class _LocalTime:
+    """``time`` for CNAB expressions: ``strftime`` uses the local time zone.
+
+    The server runs in UTC, so ``time.strftime`` wrote the generation date and
+    hour of the file header 3 hours ahead of the Brazilian clock (and the wrong
+    day after 21h). Anything else is delegated to the standard ``time`` module.
+    """
+
+    def __init__(self, tz_name):
+        self._tz = pytz.timezone(tz_name or DEFAULT_CNAB_TZ)
+
+    def strftime(self, fmt, t=None):
+        if t is not None:
+            return _time.strftime(fmt, t)
+        return datetime.now(self._tz).strftime(fmt)
+
+    def __getattr__(self, name):
+        return getattr(_time, name)
 
 
 class CNABField(models.Model):
@@ -269,12 +294,21 @@ class CNABField(models.Model):
         value = value[:size]
         return value
 
+    def _cnab_tz_name(self):
+        """Time zone of the file: context, user, company partner, else Brazil."""
+        tz_name = (
+            self.env.context.get("tz")
+            or self.env.user.tz
+            or self.env.company.partner_id.tz
+        )
+        return tz_name if tz_name in pytz.all_timezones_set else DEFAULT_CNAB_TZ
+
     def eval_compute_value(self, content, python_expression, **kwargs):
         "Execute python code and return computed value"
         self.ensure_one()
         safe_eval_dict = {
             "content": content,
-            "time": time,
+            "time": _LocalTime(self._cnab_tz_name()),
             "datetime": datetime,
             "seq_batch": kwargs.get("seq_batch", ""),
             "seq_record_detail": kwargs.get("seq_record_detail", ""),

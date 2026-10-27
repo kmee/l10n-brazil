@@ -75,6 +75,13 @@ class AccountPaymentLine(models.Model):
         " in the CNAB.",
     )
 
+    cnab_favored_bank_code = fields.Char(
+        compute="_compute_cnab_favored_bank_code",
+        help="Bank code of the favored sent in the CNAB. Empty for PIX by key: "
+        "the DICT resolves the bank and a code that does not match it may be "
+        "rejected.",
+    )
+
     cnab_pix_transfer_type_id = fields.Many2one(
         comodel_name="cnab.pix.transfer.type",
         compute="_compute_cnab_pix_transfer_type_id",
@@ -97,6 +104,19 @@ class AccountPaymentLine(models.Model):
         compute="_compute_cnab_payment_way_id",
         store=True,
     )
+
+    @api.depends(
+        "partner_bank_id.bank_id.code_bc",
+        "cnab_pix_transfer_type_id.type_domain",
+    )
+    def _compute_cnab_favored_bank_code(self):
+        for bline in self:
+            if bline.cnab_pix_transfer_type_id.type_domain == "pix_key":
+                bline.cnab_favored_bank_code = ""
+            else:
+                bline.cnab_favored_bank_code = (
+                    bline.partner_bank_id.bank_id.code_bc or ""
+                )
 
     @api.depends("partner_pix_id", "partner_pix_id.key_type")
     def _compute_cnab_pix_type_id(self):
