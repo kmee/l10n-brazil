@@ -122,7 +122,7 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
         move = self.env["account.move"].sudo().browse(move_form.id)
         self.assertEqual(move.move_type, "in_invoice")
         self.assertEqual(move.fiscal_document_id, self.fiscal_document_to_import)
-        if move.l10n_latam_use_documents:
+        if "l10n_latam_use_documents" in move._fields and move.l10n_latam_use_documents:
             self.assertEqual(
                 move.l10n_latam_document_type_id.code, self.document_type_55.code
             )
