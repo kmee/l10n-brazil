@@ -2,10 +2,10 @@
 <!-- Copyright 2026 KMEE
      License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
 <odoo>
-    <record id="gnre_obligation_tree" model="ir.ui.view">
+    <record id="gnre_obligation_list" model="ir.ui.view">
         <field name="model">l10n_br_gnre.obligation</field>
         <field name="arch" type="xml">
-            <tree>
+            <list>
                 <field name="date_due" />
                 <field name="fiscal_state_id" />
                 <field name="revenue_code" />
@@ -14,7 +14,7 @@
                 <field name="guide_id" />
                 <field name="state" widget="badge" />
                 <field name="currency_id" invisible="1" />
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -27,7 +27,7 @@
                         name="action_cancel"
                         string="Cancelar"
                         type="object"
-                        attrs="{'invisible': [('state', 'not in', ['pending', 'grouped'])]}"
+                        invisible="state not in ('pending', 'grouped')"
                     />
                     <field name="state" widget="statusbar" />
                 </header>
@@ -102,7 +102,7 @@
     <record id="gnre_obligation_action" model="ir.actions.act_window">
         <field name="name">Obrigações de GNRE</field>
         <field name="res_model">l10n_br_gnre.obligation</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="context">{'search_default_pending': 1}</field>
     </record>
 </odoo>

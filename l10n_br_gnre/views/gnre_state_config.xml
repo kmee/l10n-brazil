@@ -2,10 +2,10 @@
 <!-- Copyright 2026 KMEE
      License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
 <odoo>
-    <record id="gnre_state_config_tree" model="ir.ui.view">
+    <record id="gnre_state_config_list" model="ir.ui.view">
         <field name="model">l10n_br_gnre.state.config</field>
         <field name="arch" type="xml">
-            <tree>
+            <list>
                 <field name="fiscal_state_id" />
                 <field name="tax_group_id" />
                 <field name="revenue_code" />
@@ -13,7 +13,7 @@
                 <field name="due_days" />
                 <field name="authority_partner_id" />
                 <field name="company_id" groups="base.group_multi_company" />
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -52,6 +52,6 @@
     <record id="gnre_state_config_action" model="ir.actions.act_window">
         <field name="name">Regras de GNRE por UF</field>
         <field name="res_model">l10n_br_gnre.state.config</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 </odoo>
