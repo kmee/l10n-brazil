@@ -1,7 +1,7 @@
 # Copyright 2026 KMEE INFORMATICA LTDA - Luis Felipe Mileo
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import _, fields, models
+from odoo import fields, models
 from odoo.exceptions import UserError
 
 BY_CUSTOMS_VALUE = "by_customs_value"
@@ -33,7 +33,7 @@ class StockLandedCost(models.Model):
         without_item = adjustments.move_id.filtered(lambda move: not move.duimp_item_id)
         if without_item:
             raise UserError(
-                _(
+                self.env._(
                     "Splitting by customs value needs every receipt line to be"
                     " linked to a DUIMP item. Not linked: %(products)s",
                     products=", ".join(without_item.product_id.mapped("display_name")),
@@ -50,7 +50,7 @@ class StockLandedCost(models.Model):
             total = sum(customs_values)
             if currency.is_zero(total):
                 raise UserError(
-                    _(
+                    self.env._(
                         "The DUIMP items of these receipts have no customs value:"
                         " the cost %(cost)s cannot be split by customs value.",
                         cost=cost_line.name,

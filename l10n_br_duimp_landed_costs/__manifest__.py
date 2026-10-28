@@ -11,7 +11,7 @@
     "maintainers": ["mileo"],
     "website": "https://github.com/OCA/l10n-brazil",
     "development_status": "Alpha",
-    "version": "16.0.1.0.0",
+    "version": "18.0.1.0.0",
     "depends": [
         "l10n_br_duimp",
         "l10n_br_stock_landed_costs",

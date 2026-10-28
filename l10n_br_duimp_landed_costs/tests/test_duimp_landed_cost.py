@@ -28,6 +28,9 @@ class TestDuimpLandedCost(TransactionCase):
         cls.company = cls.env.ref("l10n_br_base.empresa_lucro_real")
         cls.env.user.company_ids += cls.company
         cls.env.user.company_id = cls.company
+        cls.env = cls.env(
+            context=dict(cls.env.context, allowed_company_ids=cls.company.ids)
+        )
         grant_nfe_access(cls.env)
         cls.warehouse = cls.env["stock.warehouse"].search(
             [("company_id", "=", cls.company.id)], limit=1
@@ -42,7 +45,7 @@ class TestDuimpLandedCost(TransactionCase):
                     "name": name,
                     "code": code,
                     "account_type": "asset_current",
-                    "company_id": cls.company.id,
+                    "company_ids": [Command.set(cls.company.ids)],
                 }
             )
             for name, code in (
@@ -70,9 +73,7 @@ class TestDuimpLandedCost(TransactionCase):
                 "property_cost_method": "fifo",
             }
         )
-        cls.company.write(
-            {"stock_valuation_via_stock_price": True, "lc_journal_id": journal.id}
-        )
+        cls.company.write({"landed_cost_net_cost": True, "lc_journal_id": journal.id})
 
         # II and IPI come from the NCM; the ICMS of the import is configured
         # on the operation line, as a company does for its imports.
@@ -122,7 +123,8 @@ class TestDuimpLandedCost(TransactionCase):
             {
                 "name": "Imported bearing (test)",
                 "default_code": PRODUCT_CODE_1,
-                "detailed_type": "product",
+                "type": "consu",
+                "is_storable": True,
                 "categ_id": categ.id,
                 "ncm_id": ncm_1.id,
             }
@@ -131,7 +133,8 @@ class TestDuimpLandedCost(TransactionCase):
             {
                 "name": "Imported sensor (test)",
                 "default_code": PRODUCT_CODE_2,
-                "detailed_type": "product",
+                "type": "consu",
+                "is_storable": True,
                 "categ_id": categ.id,
                 "ncm_id": ncm_2.id,
             }
@@ -139,7 +142,7 @@ class TestDuimpLandedCost(TransactionCase):
         cls.broker_service = Product.create(
             {
                 "name": "Customs broker (test)",
-                "detailed_type": "service",
+                "type": "service",
                 "landed_cost_ok": True,
                 "categ_id": categ.id,
                 "tax_icms_or_issqn": "issqn",
@@ -148,7 +151,7 @@ class TestDuimpLandedCost(TransactionCase):
         cls.freight = Product.create(
             {
                 "name": "Freight from the port (test)",
-                "detailed_type": "service",
+                "type": "service",
                 "landed_cost_ok": True,
                 "categ_id": categ.id,
                 "ncm_id": cls.env.ref("l10n_br_fiscal.ncm_00000000").id,
@@ -226,10 +229,9 @@ class TestDuimpLandedCost(TransactionCase):
         picking.action_confirm()
         if validate:
             picking.action_assign()
-            picking.move_ids.move_line_ids.qty_done = quantity
-            picking.with_context(
-                skip_immediate=True, skip_backorder=True
-            ).button_validate()
+            picking.move_ids.quantity = quantity
+            picking.move_ids.picked = True
+            picking.with_context(skip_backorder=True).button_validate()
             self.assertEqual(picking.state, "done")
         return picking
 
@@ -313,32 +315,18 @@ class TestDuimpLandedCost(TransactionCase):
         )
         self.assertEqual(document.fiscal_line_ids.mapped("ii_value"), [848.0, 693.0])
 
-        # Two receipts, valued at the net acquisition cost: the II stays in
-        # the cost, the ICMS, IPI, PIS and COFINS of the import are credits.
+        # Two receipts, valued by the standard Odoo price of the move: the 16.0
+        # net cost stack (valuation at the net acquisition cost, OCA #4965 to
+        # #4970) is not in 18.0, see the ROADMAP. The II is still computed on
+        # the receipt line, from the NCM.
         receipts = self._receive_items()
         for picking, customs_value, ii_value in zip(
             receipts, (CUSTOMS_VALUE_1, CUSTOMS_VALUE_2), (848.0, 693.0), strict=True
         ):
             move = picking.move_ids
             self.assertAlmostEqual(move.ii_value, ii_value, places=2)
-            for domain in ("icms", "ipi", "pis", "cofins"):
-                self.assertGreater(move[f"{domain}_value"], 0.0)
-                self.assertTrue(move[f"{domain}_tax_is_creditable"])
-            tax_credits = move.icms_value + move.ipi_value + move.pis_value
-            tax_credits += move.cofins_value
             layer_value = sum(move.stock_valuation_layer_ids.mapped("value"))
-            self.assertAlmostEqual(
-                layer_value, move.cost_unit * move.product_qty, places=2
-            )
-            # The unit cost is rounded to the product price precision: 141.075
-            # becomes 141.08 for the 40 units of item 2.
-            half_cent = 0.005 * move.product_qty
-            self.assertAlmostEqual(
-                layer_value, customs_value + ii_value, delta=half_cent
-            )
-            self.assertAlmostEqual(
-                layer_value, move.fiscal_amount_total - tax_credits, delta=half_cent
-            )
+            self.assertAlmostEqual(layer_value, customs_value, places=2)
 
         # The receipts are linked to the DUIMP items by a suggestion the user
         # confirms.

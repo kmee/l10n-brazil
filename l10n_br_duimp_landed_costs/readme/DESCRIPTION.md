@@ -5,8 +5,8 @@ aquisição das mercadorias importadas (art. 301 do RIR/2018, CPC 16) e
 precisam ser rateadas sobre os recebimentos daquela importação.
 
 Este módulo liga a DUIMP (`l10n_br_duimp`) aos recebimentos e lança as
-despesas aduaneiras como *landed cost* pelo `l10n_br_stock_landed_costs`,
-a custo líquido:
+despesas aduaneiras como *landed cost* pelo `l10n_br_stock_landed_costs`
+(a custo líquido quando a empresa marca *Landed Costs at Net Cost*):
 
 - cada item da DUIMP é ligado à linha do recebimento que o trouxe. O
   sistema sugere a linha pelo produto e pela quantidade, e quem confirma

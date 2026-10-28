@@ -1,7 +1,7 @@
 # Copyright 2026 KMEE INFORMATICA LTDA - Luis Felipe Mileo
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import Command, _, api, fields, models
+from odoo import Command, api, fields, models
 from odoo.exceptions import UserError
 
 from .stock_landed_cost import BY_CUSTOMS_VALUE
@@ -72,7 +72,7 @@ class L10nBrDuimpDeclaracao(models.Model):
         pending = self.item_ids.filtered("receipt_pending")
         if pending:
             raise UserError(
-                _(
+                self.env._(
                     "Link the receipts of every DUIMP item before allocating its"
                     " expenses. Pending items: %(items)s",
                     items=", ".join(pending.mapped("numero_item")),
@@ -81,7 +81,7 @@ class L10nBrDuimpDeclaracao(models.Model):
         not_done = self.picking_ids.filtered(lambda picking: picking.state != "done")
         if not_done:
             raise UserError(
-                _(
+                self.env._(
                     "Validate the receipts before allocating the expenses: %(names)s",
                     names=", ".join(not_done.mapped("name")),
                 )
@@ -99,7 +99,9 @@ class L10nBrDuimpDeclaracao(models.Model):
         )
         if not documents:
             raise UserError(
-                _("Every customs expense of this DUIMP already has a landed cost.")
+                self.env._(
+                    "Every customs expense of this DUIMP already has a landed cost."
+                )
             )
         for document in documents:
             vals = {"landed_cost_picking_ids": [Command.set(self.picking_ids.ids)]}

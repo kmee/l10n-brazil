@@ -369,7 +369,7 @@ ul.auto-toc {
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! source digest: sha256:659c00607eeecffad261489fb7c560f2cac75e9324bdd6bd5727c8e26548a4e8
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
-<p><a class="reference external image-reference" href="https://odoo-community.org/page/development-status"><img alt="Alpha" src="https://img.shields.io/badge/maturity-Alpha-red.png" /></a> <a class="reference external image-reference" href="http://www.gnu.org/licenses/agpl-3.0-standalone.html"><img alt="License: AGPL-3" src="https://img.shields.io/badge/licence-AGPL--3-blue.png" /></a> <a class="reference external image-reference" href="https://github.com/OCA/l10n-brazil/tree/16.0/l10n_br_duimp_landed_costs"><img alt="OCA/l10n-brazil" src="https://img.shields.io/badge/github-OCA%2Fl10n--brazil-lightgray.png?logo=github" /></a> <a class="reference external image-reference" href="https://translation.odoo-community.org/projects/l10n-brazil-16-0/l10n-brazil-16-0-l10n_br_duimp_landed_costs"><img alt="Translate me on Weblate" src="https://img.shields.io/badge/weblate-Translate%20me-F47D42.png" /></a> <a class="reference external image-reference" href="https://runboat.odoo-community.org/builds?repo=OCA/l10n-brazil&amp;target_branch=16.0"><img alt="Try me on Runboat" src="https://img.shields.io/badge/runboat-Try%20me-875A7B.png" /></a></p>
+<p><a class="reference external image-reference" href="https://odoo-community.org/page/development-status"><img alt="Alpha" src="https://img.shields.io/badge/maturity-Alpha-red.png" /></a> <a class="reference external image-reference" href="http://www.gnu.org/licenses/agpl-3.0-standalone.html"><img alt="License: AGPL-3" src="https://img.shields.io/badge/licence-AGPL--3-blue.png" /></a> <a class="reference external image-reference" href="https://github.com/OCA/l10n-brazil/tree/18.0/l10n_br_duimp_landed_costs"><img alt="OCA/l10n-brazil" src="https://img.shields.io/badge/github-OCA%2Fl10n--brazil-lightgray.png?logo=github" /></a> <a class="reference external image-reference" href="https://translation.odoo-community.org/projects/l10n-brazil-18-0/l10n-brazil-18-0-l10n_br_duimp_landed_costs"><img alt="Translate me on Weblate" src="https://img.shields.io/badge/weblate-Translate%20me-F47D42.png" /></a> <a class="reference external image-reference" href="https://runboat.odoo-community.org/builds?repo=OCA/l10n-brazil&amp;target_branch=18.0"><img alt="Try me on Runboat" src="https://img.shields.io/badge/runboat-Try%20me-875A7B.png" /></a></p>
 <p>Uma importação gera despesas que chegam em documentos fiscais separados
 da DUIMP: o despachante aduaneiro (NFS-e), a armazenagem, o frete
 rodoviário do porto até o armazém (CT-e). Elas compõem o custo de
@@ -377,7 +377,8 @@ aquisição das mercadorias importadas (art. 301 do RIR/2018, CPC 16) e
 precisam ser rateadas sobre os recebimentos daquela importação.</p>
 <p>Este módulo liga a DUIMP (<tt class="docutils literal">l10n_br_duimp</tt>) aos recebimentos e lança as
 despesas aduaneiras como <em>landed cost</em> pelo
-<tt class="docutils literal">l10n_br_stock_landed_costs</tt>, a custo líquido:</p>
+<tt class="docutils literal">l10n_br_stock_landed_costs</tt> (a custo líquido quando a empresa marca
+<em>Landed Costs at Net Cost</em>):</p>
 <ul class="simple">
 <li>cada item da DUIMP é ligado à linha do recebimento que o trouxe. O
 sistema sugere a linha pelo produto e pela quantidade, e quem confirma
@@ -447,6 +448,16 @@ do terceiro (NFS-e do recinto, fatura do armador) como despesa
 aduaneira. Nesse caso deixe a capatazia da DUIMP em zero, porque o
 valor informado nela vai para o <em>other_value</em> da nota de importação e
 seria contado duas vezes.</li>
+<li>Na 16.0 este módulo foi escrito sobre a pilha de “custo líquido”
+(<tt class="docutils literal">l10n_br_fiscal.stock.price.mixin</tt>, OCA #4965 a #4970), que não
+existe na 18.0. O módulo não usa nada dela diretamente: as despesas
+são lançadas pelo <tt class="docutils literal">l10n_br_stock_landed_costs</tt> 18.0, que só as
+rateia a custo líquido (descontando os créditos de ICMS, IPI, PIS e
+COFINS) quando a empresa marca <em>landed_cost_net_cost</em>. Os recebimentos
+das mercadorias continuam valorados pelo preço padrão do Odoo, sem
+dedução dos créditos da importação. Quando a pilha for migrada, o
+teste de ponta a ponta deve voltar a conferir a valoração dos
+recebimentos pelo <tt class="docutils literal">cost_unit</tt>.</li>
 </ul>
 </div>
 <div class="section" id="bug-tracker">
@@ -454,7 +465,7 @@ seria contado duas vezes.</li>
 <p>Bugs are tracked on <a class="reference external" href="https://github.com/OCA/l10n-brazil/issues">GitHub Issues</a>.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
-<a class="reference external" href="https://github.com/OCA/l10n-brazil/issues/new?body=module:%20l10n_br_duimp_landed_costs%0Aversion:%2016.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**">feedback</a>.</p>
+<a class="reference external" href="https://github.com/OCA/l10n-brazil/issues/new?body=module:%20l10n_br_duimp_landed_costs%0Aversion:%2018.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**">feedback</a>.</p>
 <p>Do not contact contributors directly about support or help with technical issues.</p>
 </div>
 <div class="section" id="credits">
@@ -485,7 +496,7 @@ mission is to support the collaborative development of Odoo features and
 promote its widespread use.</p>
 <p>Current <a class="reference external" href="https://odoo-community.org/page/maintainer-role">maintainer</a>:</p>
 <p><a class="reference external image-reference" href="https://github.com/mileo"><img alt="mileo" src="https://github.com/mileo.png?size=40px" /></a></p>
-<p>This module is part of the <a class="reference external" href="https://github.com/OCA/l10n-brazil/tree/16.0/l10n_br_duimp_landed_costs">OCA/l10n-brazil</a> project on GitHub.</p>
+<p>This module is part of the <a class="reference external" href="https://github.com/OCA/l10n-brazil/tree/18.0/l10n_br_duimp_landed_costs">OCA/l10n-brazil</a> project on GitHub.</p>
 <p>You are welcome to contribute. To learn how please visit <a class="reference external" href="https://odoo-community.org/page/Contribute">https://odoo-community.org/page/Contribute</a>.</p>
 </div>
 </div>

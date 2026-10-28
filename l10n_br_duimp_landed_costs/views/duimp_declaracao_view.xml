@@ -12,14 +12,14 @@
                     name="action_link_receipts"
                     string="Link Receipts"
                     type="object"
-                    states="open,locked"
+                    invisible="state not in ('open', 'locked')"
                     groups="stock.group_stock_manager"
                 />
                 <button
                     name="action_create_landed_costs"
                     string="Create Landed Costs"
                     type="object"
-                    states="open,locked"
+                    invisible="state not in ('open', 'locked')"
                     groups="stock.group_stock_manager"
                 />
             </button>
@@ -29,7 +29,7 @@
                     type="object"
                     class="oe_stat_button"
                     icon="fa-truck"
-                    attrs="{'invisible': [('picking_count', '=', 0)]}"
+                    invisible="picking_count == 0"
                     groups="stock.group_stock_user"
                 >
                     <field name="picking_count" widget="statinfo" string="Receipts" />
@@ -39,7 +39,7 @@
                     type="object"
                     class="oe_stat_button"
                     icon="fa-plus-square"
-                    attrs="{'invisible': [('landed_cost_count', '=', 0)]}"
+                    invisible="landed_cost_count == 0"
                     groups="stock.group_stock_manager"
                 >
                     <field
@@ -51,7 +51,7 @@
             </div>
             <field name="valor_aduaneiro" position="after">
                 <field name="received_qty" />
-                <field name="receipt_pending" invisible="1" />
+                <field name="receipt_pending" column_invisible="True" />
             </field>
             <page name="costs" position="after">
                 <page
@@ -63,7 +63,7 @@
                     <field
                         name="expense_document_ids"
                         options="{'no_create': True}"
-                        context="{'tree_view_ref': 'l10n_br_fiscal.document_tree'}"
+                        context="{'list_view_ref': 'l10n_br_fiscal.document_tree'}"
                     />
                 </page>
             </page>

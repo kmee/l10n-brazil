@@ -1,7 +1,7 @@
 # Copyright 2026 KMEE INFORMATICA LTDA - Luis Felipe Mileo
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
 
@@ -23,7 +23,7 @@ class StockMove(models.Model):
             item = move.duimp_item_id
             if item.product_id != move.product_id:
                 raise ValidationError(
-                    _(
+                    self.env._(
                         "The receipt of %(product)s cannot be linked to the DUIMP"
                         " item %(item)s, which is another product.",
                         product=move.product_id.display_name,
@@ -32,7 +32,9 @@ class StockMove(models.Model):
                 )
             if item.company_id != move.company_id:
                 raise ValidationError(
-                    _("A receipt can only be linked to a DUIMP of its company.")
+                    self.env._(
+                        "A receipt can only be linked to a DUIMP of its company."
+                    )
                 )
 
     def _get_duimp_item_qty(self, item=None):
