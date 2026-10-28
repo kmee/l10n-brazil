@@ -21,6 +21,15 @@ class ResCompany(models.Model):
         help="Certificate used to sign and transmit the fiscal documents.",
     )
 
+    certificate_ecpf_id = fields.Many2one(
+        comodel_name="certificate.certificate",
+        string="e-CPF Certificate",
+        domain="[('company_id', '=', id), ('scope', '=', 'l10n_br')]",
+        help="e-CPF certificate of the person who represents the company, for "
+        "the services that require it instead of the e-CNPJ (e.g. the DUIMP "
+        "query on the Portal Unico Siscomex).",
+    )
+
     certificate = fields.Many2one(
         comodel_name="certificate.certificate",
         string="Certificate in Use",
@@ -38,11 +47,21 @@ class ResCompany(models.Model):
             # tax authorities accept a certificate with the same CNPJ root.
             record.certificate = record.certificate_id or record.parent_id.certificate
 
-    def _get_br_certificate(self, only_ecnpj=False):
+    def _get_br_certificate(self, only_ecnpj=False, only_ecpf=False):
         """Return the certificate to sign and transmit the fiscal documents of
-        the company, as superuser: the users don't need to read it."""
+        the company, as superuser: the users don't need to read it.
+
+        With only_ecpf, return the e-CPF certificate of the person who
+        represents the company instead."""
         self.ensure_one()
-        certificate = self.sudo().certificate
+        if only_ecpf:
+            certificate = self.sudo().certificate_ecpf_id
+            if not certificate:
+                raise ValidationError(
+                    _("No e-CPF certificate set for the company %s.", self.display_name)
+                )
+        else:
+            certificate = self.sudo().certificate
         if not certificate:
             raise ValidationError(
                 _("No certificate set for the company %s.", self.display_name)
@@ -64,10 +83,16 @@ class ResCompany(models.Model):
             raise ValidationError(
                 _("Only an e-CNPJ certificate can be used for this operation.")
             )
+        if only_ecpf and len(re.sub(r"\D", "", certificate.owner_cnpj_cpf or "")) != 11:
+            raise ValidationError(
+                _("Only an e-CPF certificate can be used for this operation.")
+            )
         return certificate
 
-    def _get_br_ecertificate(self, only_ecnpj=False):
-        certificate = self._get_br_certificate(only_ecnpj=only_ecnpj)
+    def _get_br_ecertificate(self, only_ecnpj=False, only_ecpf=False):
+        certificate = self._get_br_certificate(
+            only_ecnpj=only_ecnpj, only_ecpf=only_ecpf
+        )
         return cert.Certificado(
             arquivo=certificate.with_context(bin_size=False).content,
             senha=certificate.pkcs12_password,
