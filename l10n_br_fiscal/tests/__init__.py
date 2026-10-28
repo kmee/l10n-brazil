@@ -25,4 +25,5 @@ from . import (
     test_icmssn,
     test_simplified_tax,
     test_taxable_unit,
+    test_tax_definition_validity,
 )
