@@ -41,7 +41,7 @@ class AccountMove(models.Model):
             "type": "ir.actions.act_window",
             "name": _("Obrigações de GNRE"),
             "res_model": "l10n_br_gnre.obligation",
-            "view_mode": "tree,form",
+            "view_mode": "list,form",
             "domain": [("move_id", "=", self.id)],
         }
 

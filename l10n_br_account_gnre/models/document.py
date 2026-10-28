@@ -68,10 +68,10 @@ class Document(models.Model):
             payable.line_ids.filtered(
                 lambda line: line.account_id.account_type == "liability_payable"
             ).write({"account_id": config.payable_account_id.id})
-        payable.message_post_with_view(
+        payable.message_post_with_source(
             "mail.message_origin_link",
-            values={"self": payable, "origin": self},
-            subtype_id=self.env.ref("mail.mt_note").id,
+            render_values={"self": payable, "origin": self},
+            subtype_xmlid="mail.mt_note",
         )
         obligations.write({"payable_move_id": payable.id})
         return payable
