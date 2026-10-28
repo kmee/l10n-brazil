@@ -185,6 +185,46 @@ class TestCertificate(TransactionCase):
         self.assertEqual(company.certificate.owner_cnpj_cpf, "42245642000109")
         self.assertTrue(company._get_br_ecertificate(only_ecnpj=True))
 
+    def test_only_ecpf(self):
+        """The e-CPF certificate of the company is used when only_ecpf is set"""
+        company = self.env.company
+        company.certificate_id = self.certificate_model.create(
+            self._certificate_vals(self.certificate_valid)
+        )
+        with self.assertRaises(ValidationError):
+            company._get_br_ecertificate(only_ecpf=True)
+
+        company.certificate_ecpf_id = self.certificate_model.create(
+            self._certificate_vals(
+                misc.create_fake_certificate_file(
+                    valid=True,
+                    passwd=self.cert_passwd,
+                    issuer=self.cert_issuer_a,
+                    country=self.cert_country,
+                    subject="COMPANY TEST FISCAL BR:42245642000109",
+                )
+            )
+        )
+        with self.assertRaises(ValidationError):
+            company._get_br_ecertificate(only_ecpf=True)
+
+        ecpf = self.certificate_model.create(
+            self._certificate_vals(
+                misc.create_fake_certificate_file(
+                    valid=True,
+                    passwd=self.cert_passwd,
+                    issuer=self.cert_issuer_a,
+                    country=self.cert_country,
+                    subject="FULANO DE TAL:52998224725",
+                )
+            )
+        )
+        company.certificate_ecpf_id = ecpf
+        self.assertEqual(company._get_br_certificate(only_ecpf=True), ecpf)
+        self.assertTrue(company._get_br_ecertificate(only_ecpf=True))
+        # The e-CPF doesn't replace the certificate used for the documents
+        self.assertEqual(company._get_br_certificate(), company.certificate_id)
+
     def test_fiscal_user_cannot_read_certificate(self):
         """A fiscal user can't read the certificate, but can still sign with it"""
         cert = self.certificate_model.create(
