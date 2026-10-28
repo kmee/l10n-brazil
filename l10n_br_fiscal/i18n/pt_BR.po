@@ -12380,7 +12380,7 @@ msgstr "Relatórios impressos"
 #. odoo-python
 #: code:addons/l10n_br_fiscal/models/document_mixin.py:0
 msgid "Products and services"
-msgstr "Valor dos produtos e serviços"
+msgstr "Produtos e serviços"
 
 #. module: l10n_br_fiscal
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.l10n_br_fiscal_res_config_settings_form
