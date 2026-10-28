@@ -162,6 +162,53 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
         self.assertEqual(move.date, move.invoice_date)
         self.assertEqual(move.invoice_line_ids.product_id, self.product_a)
 
+    def test_import_company_issued_document_into_a_vendor_bill(self):
+        """An inbound document issued by the company (e.g. the NF-e of an
+        import) has no vendor number to type in: its serie numbers it."""
+        serie = self.env["l10n_br_fiscal.document.serie"].create(
+            {
+                "name": "Serie 1",
+                "code": "1",
+                "document_type_id": self.document_type_55.id,
+                "company_id": self.fiscal_document_to_import.company_id.id,
+            }
+        )
+        document = self.env["l10n_br_fiscal.document"].create(
+            {
+                "fiscal_operation_id": self.env.ref("l10n_br_fiscal.fo_compras").id,
+                "document_type_id": self.document_type_55.id,
+                "document_serie_id": serie.id,
+                "document_date": fields.Date.from_string("2026-08-17"),
+                "issuer": "company",
+                "partner_id": self.partner_a.id,
+                "fiscal_operation_type": "in",
+            }
+        )
+        self.env["l10n_br_fiscal.document.line"].create(
+            {
+                "document_id": document.id,
+                "name": "Import Test",
+                "product_id": self.product_a.id,
+                "fiscal_operation_type": "in",
+                "fiscal_operation_id": self.env.ref("l10n_br_fiscal.fo_compras").id,
+                "fiscal_operation_line_id": self.env.ref(
+                    "l10n_br_fiscal.fo_compras_compras"
+                ).id,
+            }
+        )
+        move_form = (
+            self.env["account.move"]
+            .sudo()
+            .import_fiscal_document(document, move_type="in_invoice")
+        )
+        move = self.env["account.move"].sudo().browse(move_form.id)
+
+        self.assertEqual(move.move_type, "in_invoice")
+        self.assertEqual(move.fiscal_document_id, document)
+        self.assertEqual(move.document_serie_id, serie)
+        if "l10n_latam.document.type" in self.env:
+            self.assertFalse(move.l10n_latam_manual_document_number)
+
     def test_import_customer_invoice_without_serie_is_refused(self):
         document = self.fiscal_document_to_import.copy(
             {
