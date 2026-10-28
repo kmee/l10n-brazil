@@ -361,6 +361,22 @@ class AccountMove(models.Model):
             limit=1,
         )
 
+    @api.depends(
+        "l10n_latam_document_type_id", "journal_id", "issuer", "document_type_id"
+    )
+    def _compute_l10n_latam_manual_document_number(self):
+        # Soft dependency: only called when l10n_latam_invoice_document is
+        # installed, which defines the field and this compute.
+        return super()._compute_l10n_latam_manual_document_number()
+
+    def _is_manual_document_number(self):
+        # A fiscal document issued by the company is numbered by its serie,
+        # also when it is booked in a purchase journal (e.g. the inbound NF-e
+        # of an import): there is no vendor number to type in.
+        if self.document_type_id and self.issuer == DOCUMENT_ISSUER_COMPANY:
+            return False
+        return super()._is_manual_document_number()
+
     def _compute_imported_terms(self):
         self.ensure_one()
         pass  # meant to be overriden
