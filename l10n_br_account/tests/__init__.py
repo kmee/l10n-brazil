@@ -21,3 +21,4 @@ from . import test_imported_tax_override
 from . import test_imported_due_date
 from . import test_import_declaration_wizard
 from . import test_import_declaration_file
+from . import test_imported_line_taxes
