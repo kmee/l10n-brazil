@@ -318,7 +318,21 @@ def _name_like_load_fiscal_taxes(env, company, data):
     records.write({"module": "l10n_br_coa"})
 
 
-def _migrate_company(env, company):
+def _migrate_company(
+    env, company, tax_groups=None, taxes=None, taxes_without_account=None
+):
+    """Create what the company lacks of `taxes` and `tax_groups`.
+
+    The lists default to the ones of this version. A later migration that adds
+    other taxes to the chart passes its own lists and reuses the same rules
+    (taxes made by hand are adopted, accounts only where there is none).
+    """
+    if tax_groups is None:
+        tax_groups = NEW_TAX_GROUPS
+    if taxes is None:
+        taxes = NEW_TAXES
+    if taxes_without_account is None:
+        taxes_without_account = TAXES_WITHOUT_ACCOUNT
     # The environment of the company carries its context (`active_test`), the
     # one passed in does not.
     env = company.env
@@ -329,7 +343,7 @@ def _migrate_company(env, company):
     data = {}
     new_groups = {
         key: group_data[key]
-        for key in NEW_TAX_GROUPS
+        for key in tax_groups
         if key in group_data and not _company_xmlid(env, company, key)
     }
     if new_groups:
@@ -337,7 +351,7 @@ def _migrate_company(env, company):
 
     new_taxes = {}
     kept_by_hand = 0
-    for key in NEW_TAXES:
+    for key in taxes:
         if key not in tax_data or _company_xmlid(env, company, key):
             continue
         vals = dict(tax_data[key])
@@ -360,7 +374,7 @@ def _migrate_company(env, company):
         env.flush_all()
         _name_like_load_fiscal_taxes(env, company, data)
     to_populate = list(new_taxes)
-    for key in TAXES_WITHOUT_ACCOUNT:
+    for key in taxes_without_account:
         xmlid = _company_xmlid(env, company, key)
         tax = env.ref(xmlid) if xmlid else env["account.tax"]
         lines = (
@@ -391,7 +405,7 @@ def _migrate_company(env, company):
     )
 
 
-def migrate_companies(env):
+def migrate_companies(env, **lists):
     """Migrate every company with the Brazilian tax groups, archived or not.
 
     An archived company is migrated too: it keeps its books and, when it is
@@ -400,6 +414,9 @@ def migrate_companies(env):
     created for an archived company would look as if it had no company and
     the constraint of the account would fail. The archived company is then
     migrated with `active_test=False`, which also makes the field see it.
+
+    `lists` (`tax_groups`, `taxes`, `taxes_without_account`) goes to
+    `_migrate_company`.
     """
     for company in env["res.company"].with_context(active_test=False).search([]):
         if not _has_br_tax_groups(env, company):
@@ -415,7 +432,7 @@ def migrate_companies(env):
             # is migrated with the context of the caller, so the rules that
             # look only at active records (the unique name of a tax) still do.
             company = company.with_env(env)
-        _migrate_company(env, company.with_company(company))
+        _migrate_company(env, company.with_company(company), **lists)
 
 
 @openupgrade.migrate()
