@@ -1,6 +1,7 @@
 # Copyright 2026 KMEE - Luis Felipe Mileo <mileo@kmee.com.br>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+from odoo import Command
 from odoo.exceptions import UserError
 from odoo.tests import tagged
 
@@ -30,14 +31,18 @@ class TestAccountGnre(AccountMoveBRCommon):
         )
         cls.company_data["company"].partner_id.state_id = cls.state_sp
 
-        cls.sefaz_rj = cls.env["res.partner"].create(
-            {
-                "name": "SEFAZ RJ",
-                "state_id": cls.state_rj.id,
-                "country_id": cls.env.ref("base.br").id,
-                "wh_state_treasury": True,
-            }
-        )
+        sefaz_values = {
+            "name": "SEFAZ RJ",
+            "state_id": cls.state_rj.id,
+            "country_id": cls.env.ref("base.br").id,
+        }
+        # Com o l10n_br_account_withholding instalado, a SEFAZ é achada pela
+        # UF; sem ele (caso da 18.0, onde ainda não foi migrado), a regra da UF
+        # informa o credor diretamente.
+        cls.has_wh_lookup = "wh_state_treasury" in cls.env["res.partner"]._fields
+        if cls.has_wh_lookup:
+            sefaz_values["wh_state_treasury"] = True
+        cls.sefaz_rj = cls.env["res.partner"].create(sefaz_values)
         cls.customer_rj = cls.env["res.partner"].create(
             {
                 "name": "Cliente RJ",
@@ -57,6 +62,8 @@ class TestAccountGnre(AccountMoveBRCommon):
                 "due_days": 0,
             }
         )
+        if not cls.has_wh_lookup:
+            cls.config_rj.authority_partner_id = cls.sefaz_rj
 
     def _create_invoice(self, icmsst=100.0, fcpst=0.0, partner=None):
         move = self.init_invoice(
@@ -97,6 +104,18 @@ class TestAccountGnre(AccountMoveBRCommon):
         move.action_post()
 
         self.assertEqual(move.gnre_obligation_ids.authority_partner_id, self.sefaz_rj)
+
+    def test_authority_falls_back_to_the_tax_group_partner(self):
+        """Sem credor na regra nem busca por UF, vale o parceiro do grupo."""
+        if self.has_wh_lookup:
+            self.skipTest("l10n_br_account_withholding resolve o credor pela UF")
+        group_partner = self.env["res.partner"].create({"name": "Credor do Grupo"})
+        self.config_rj.authority_partner_id = False
+        self.config_rj.tax_group_id.partner_id = group_partner
+        move = self._create_invoice()
+        move.action_post()
+
+        self.assertEqual(move.gnre_obligation_ids.authority_partner_id, group_partner)
 
     def test_internal_operation_creates_nothing(self):
         """Operação dentro do estado não gera GNRE."""
@@ -215,7 +234,7 @@ class TestAccountGnre(AccountMoveBRCommon):
                 "code": "GNRE210",
                 "account_type": "liability_payable",
                 "reconcile": True,
-                "company_id": self.company_data["company"].id,
+                "company_ids": [Command.set(self.company_data["company"].ids)],
             }
         )
         self.config_rj.payable_account_id = account

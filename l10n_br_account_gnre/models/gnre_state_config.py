@@ -29,11 +29,21 @@ class GnreStateConfig(models.Model):
     def _gnre_authority(self, move):
         """Resolve a Secretaria da Fazenda favorecida.
 
-        Reusa o `_get_tax_authority_partner` do `l10n_br_account_withholding`,
-        que já sabe procurar o parceiro marcado como SEFAZ do estado, em vez de
-        duplicar a busca aqui.
+        Ordem de resolução:
+
+        1. o parceiro informado na própria regra da UF;
+        2. o `_get_tax_authority_partner` do `l10n_br_account_withholding`,
+           quando esse módulo estiver instalado (ele procura o parceiro
+           marcado como SEFAZ do estado de destino);
+        3. o parceiro do grupo fiscal.
+
+        Na 18.0 o `l10n_br_account_withholding` ainda não foi migrado, por
+        isso ele deixou de ser dependência: o passo 2 é opcional.
         """
         self.ensure_one()
         if self.authority_partner_id:
             return self.authority_partner_id
-        return self.tax_group_id._get_tax_authority_partner(move)
+        tax_group = self.tax_group_id
+        if hasattr(tax_group, "_get_tax_authority_partner"):
+            return tax_group._get_tax_authority_partner(move)
+        return tax_group.partner_id
