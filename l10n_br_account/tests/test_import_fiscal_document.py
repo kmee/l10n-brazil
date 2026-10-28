@@ -66,6 +66,10 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
         self.assertEqual(
             move.amount_total, self.fiscal_document_to_import.fiscal_amount_total
         )
+        # the serie typed for a partner issued document survives the form
+        self.assertEqual(move.issuer, "partner")
+        self.assertEqual(move.document_serie, "1")
+        self.assertFalse(move.document_serie_id)
 
         if "l10n_latam.document.type" in self.env:
             self.assertTrue(move.journal_id.l10n_latam_use_documents)
@@ -89,7 +93,7 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
         move = self.env["account.move"].sudo().browse(move_form.id)
         self.assertEqual(move.move_type, "in_invoice")
         self.assertEqual(move.fiscal_document_id, self.fiscal_document_to_import)
-        if move.l10n_latam_use_documents:
+        if "l10n_latam.document.type" in self.env and move.l10n_latam_use_documents:
             self.assertEqual(
                 move.l10n_latam_document_type_id.code, self.document_type_55.code
             )
@@ -156,3 +160,44 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
             self.env["account.move"].sudo().import_fiscal_document(
                 document, move_type="out_invoice"
             )
+
+    def test_import_company_issued_entry_into_a_vendor_bill(self):
+        """An entry document issued by the company (e.g. the NF-e of an
+        import declaration) becomes a vendor bill: document_serie is
+        invisible for a company issuer, so only the serie record is set
+        (no "can't write on invisible field document_serie")."""
+        document = self.fiscal_document_to_import.copy(
+            {
+                "issuer": "company",
+                "document_serie": "3",
+                "document_number": "77",
+                "document_date": fields.Date.from_string("2026-08-20"),
+                "imported_document": True,
+            }
+        )
+        self.fiscal_document_to_import.fiscal_line_ids.copy(
+            {"document_id": document.id}
+        )
+        self.assertEqual(document.fiscal_operation_type, "in")
+        serie = self.env["l10n_br_fiscal.document.serie"].create(
+            {
+                "name": "Serie 3",
+                "code": "3",
+                "document_type_id": self.document_type_55.id,
+                "company_id": document.company_id.id,
+            }
+        )
+        move_form = (
+            self.env["account.move"]
+            .sudo()
+            .import_fiscal_document(document, move_type="in_invoice")
+        )
+        move = self.env["account.move"].sudo().browse(move_form.id)
+
+        self.assertEqual(move.move_type, "in_invoice")
+        self.assertEqual(move.fiscal_document_id, document)
+        self.assertEqual(move.issuer, "company")
+        self.assertEqual(move.document_serie_id, serie)
+        self.assertEqual(move.document_serie, "3")
+        self.assertEqual(move.document_number, "77")
+        self.assertEqual(move.invoice_line_ids.product_id, self.product_a)
