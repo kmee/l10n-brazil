@@ -126,7 +126,7 @@ class DuimpSearchWizard(models.TransientModel):
             "name": _("DUIMP Imports"),
             "type": "ir.actions.act_window",
             "res_model": "l10n_br_duimp.declaracao",
-            "view_mode": "tree,form",
+            "view_mode": "list,form",
             "domain": [("id", "in", declaracoes.ids)],
             "target": "current",
         }

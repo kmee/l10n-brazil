@@ -86,8 +86,6 @@ class L10nBrDuimpDeclaracao(models.Model):
         comodel_name="l10n_br_fiscal.operation",
         default=_default_fiscal_operation,
         domain="[('state', '=', 'approved')]",
-        readonly=True,
-        states={"draft": [("readonly", False)], "open": [("readonly", False)]},
     )
     fiscal_document_id = fields.Many2one(
         comodel_name="l10n_br_fiscal.document", string="Fiscal Document", copy=False

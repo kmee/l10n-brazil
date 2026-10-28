@@ -6,7 +6,6 @@
      currencies are seeded here; complete the table from the official
      Siscomex currency table (Tabela de Moedas) when needed. -->
 <odoo noupdate="1">
-
     <record id="base.USD" model="res.currency">
         <field name="siscomex_code">220</field>
     </record>
@@ -22,5 +21,4 @@
     <record id="base.CNY" model="res.currency">
         <field name="siscomex_code">715</field>
     </record>
-
 </odoo>

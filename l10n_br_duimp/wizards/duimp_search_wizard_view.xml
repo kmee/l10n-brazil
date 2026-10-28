@@ -3,16 +3,16 @@
      License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html -->
 <odoo>
     <record id="duimp_search_wizard_line_tree" model="ir.ui.view">
-        <field name="name">l10n_br_duimp.search_wizard.line.tree</field>
+        <field name="name">l10n_br_duimp.search_wizard.line.list</field>
         <field name="model">l10n_br_duimp.search_wizard.line</field>
         <field name="arch" type="xml">
-            <tree editable="bottom" create="0" delete="0">
+            <list editable="bottom" create="0" delete="0">
                 <field name="selected" widget="boolean_toggle" />
                 <field name="duimp_number" readonly="1" />
                 <field name="duimp_version" readonly="1" />
                 <field name="registration_date" readonly="1" />
                 <field name="situation" readonly="1" />
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -32,11 +32,8 @@
                     <field name="date_from" />
                     <field name="date_to" />
                 </group>
-                <separator
-                    string="DUIMPs Found"
-                    attrs="{'invisible': [('line_ids', '=', [])]}"
-                />
-                <field name="line_ids" attrs="{'invisible': [('line_ids', '=', [])]}" />
+                <separator string="DUIMPs Found" invisible="not line_ids" />
+                <field name="line_ids" invisible="not line_ids" />
                 <footer>
                     <button
                         name="action_search_duimp"
@@ -49,7 +46,7 @@
                         string="Import Selected"
                         class="btn-primary"
                         type="object"
-                        attrs="{'invisible': [('line_ids', '=', [])]}"
+                        invisible="not line_ids"
                     />
                     <button string="Cancel" class="btn-default" special="cancel" />
                 </footer>
