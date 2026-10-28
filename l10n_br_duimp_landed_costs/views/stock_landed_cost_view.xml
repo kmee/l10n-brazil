@@ -8,7 +8,7 @@
         <field name="inherit_id" ref="stock_landed_costs.view_stock_landed_cost_form" />
         <field name="arch" type="xml">
             <xpath
-                expr="//field[@name='valuation_adjustment_lines']/tree/field[@name='quantity']"
+                expr="//field[@name='valuation_adjustment_lines']/list/field[@name='quantity']"
                 position="after"
             >
                 <field name="customs_value" optional="show" />

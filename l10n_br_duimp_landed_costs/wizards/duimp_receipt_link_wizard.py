@@ -1,7 +1,7 @@
 # Copyright 2026 KMEE INFORMATICA LTDA - Luis Felipe Mileo
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.tools.float_utils import float_compare
 
@@ -66,13 +66,15 @@ class DuimpReceiptLinkWizard(models.TransientModel):
         self.ensure_one()
         lines = self.line_ids.filtered("move_id")
         if not lines:
-            raise UserError(_("Choose the receipt line of at least one item."))
+            raise UserError(self.env._("Choose the receipt line of at least one item."))
         if len(lines.move_id) != len(lines):
-            raise UserError(_("A receipt line can only receive one DUIMP item."))
+            raise UserError(
+                self.env._("A receipt line can only receive one DUIMP item.")
+            )
         already_linked = lines.move_id.filtered("duimp_item_id")
         if already_linked:
             raise UserError(
-                _(
+                self.env._(
                     "These receipt lines are already linked to a DUIMP item:"
                     " %(products)s",
                     products=", ".join(
