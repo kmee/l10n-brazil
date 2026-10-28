@@ -135,7 +135,7 @@ class Document(models.Model):
             "type": "ir.actions.act_window",
             "name": _("Obrigações"),
             "res_model": "l10n_br_gnre.obligation",
-            "view_mode": "tree,form",
+            "view_mode": "list,form",
             "domain": [("guide_id", "=", self.id)],
         }
 

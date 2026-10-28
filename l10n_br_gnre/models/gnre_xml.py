@@ -48,10 +48,10 @@ class GnreXml(models.AbstractModel):
         partner = company.partner_id
         emitente = self._element(guia, "contribuinteEmitente")
         identificacao = self._element(emitente, "identificacao")
-        self._element(identificacao, "CNPJ", self._digits(partner.cnpj_cpf))
+        self._element(identificacao, "CNPJ", self._digits(partner.vat))
         # A IE vai sem mascara: o XSD exige o pattern [0-9]{2,16}.
-        if partner.inscr_est:
-            self._element(identificacao, "IE", self._digits(partner.inscr_est))
+        if partner.l10n_br_ie_code:
+            self._element(identificacao, "IE", self._digits(partner.l10n_br_ie_code))
         if partner.legal_name or partner.name:
             self._element(
                 emitente, "razaoSocial", (partner.legal_name or partner.name)[:60]

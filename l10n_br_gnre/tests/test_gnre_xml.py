@@ -31,8 +31,8 @@ class TestGnreXml(TransactionCase):
         # constraint de unicidade de vat.
         cls.company.partner_id.write(
             {
-                "cnpj_cpf": "99.001.100/2200-51",
-                "inscr_est": "633.606.400.022",
+                "vat": "99.001.100/2200-51",
+                "l10n_br_ie_code": "633.606.400.022",
                 "legal_name": "Empresa Emitente de Testes LTDA",
             }
         )

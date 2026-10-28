@@ -87,6 +87,6 @@ class GnreGenerateWizard(models.TransientModel):
             "type": "ir.actions.act_window",
             "name": _("Guias GNRE"),
             "res_model": "l10n_br_fiscal.document",
-            "view_mode": "tree,form",
+            "view_mode": "list,form",
             "domain": [("id", "in", guides.ids)],
         }
