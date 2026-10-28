@@ -78,6 +78,20 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
                 self.fiscal_document_to_import.document_number,
             )
 
+    def test_import_document_without_date(self):
+        self.fiscal_document_to_import.document_date = False
+        move_form = (
+            self.env["account.move"]
+            .sudo()
+            .import_fiscal_document(
+                self.fiscal_document_to_import, move_type="in_invoice"
+            )
+        )
+        move = self.env["account.move"].sudo().browse(move_form.id)
+        self.assertEqual(move.fiscal_document_id, self.fiscal_document_to_import)
+        self.assertFalse(move.invoice_date)
+        self.assertEqual(move.date, fields.Date.context_today(move))
+
     def test_import_without_sudo(self):
         # The very same import as a regular billing user: this only passes
         # because the ir.rule domain override in models/ir_rule.py keys its
