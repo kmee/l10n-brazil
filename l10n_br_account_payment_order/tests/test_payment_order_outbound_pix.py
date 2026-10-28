@@ -138,12 +138,16 @@ class TestPaymentOrderOutboundPIX(AccountTestInvoicingCommon):
             )
             return line in self.env["account.move.line"].search(wizard.move_line_domain)
 
-        for state in ("exported", "added", "accepted", "done"):
+        # account.move.line.write() refuses to move cnab_state back from
+        # accepted/done, so the locked states are checked last.
+        for state in ("exported", "added"):
             self.assertFalse(_found(state, allow_error=True, allow_rejected=True))
         self.assertFalse(_found("not_accepted"))
         self.assertTrue(_found("not_accepted", allow_rejected=True))
         self.assertFalse(_found("exporting_error"))
         self.assertTrue(_found("exporting_error", allow_error=True))
+        for state in ("accepted", "done"):
+            self.assertFalse(_found(state, allow_error=True, allow_rejected=True))
 
     def test_payment_line_change_partner(self):
         payorder = self.payment_order_model.create(
