@@ -1089,7 +1089,9 @@ class AccountMove(models.Model):
                 ("date", fiscal_document.document_date),
                 ("document_serie", fiscal_document.document_serie),
             ):
-                if not move_form._get_modifier(field_name, "invisible"):
+                # A fiscal document without date (e.g. created from a DUIMP)
+                # keeps the default accounting date of the move.
+                if value and not move_form._get_modifier(field_name, "invisible"):
                     setattr(move_form, field_name, value)
             if not move_form._get_modifier("document_serie_id", "invisible"):
                 move_form.document_serie_id = fiscal_document._import_document_serie()
