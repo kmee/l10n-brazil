@@ -1,0 +1,278 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* l10n_br_stock_landed_costs
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 16.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields.selection,name:l10n_br_stock_landed_costs.selection__l10n_br_fiscal_document__landed_cost_split_method__by_current_cost_price
+msgid "By Current Cost"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields.selection,name:l10n_br_stock_landed_costs.selection__l10n_br_fiscal_document__landed_cost_split_method__by_quantity
+msgid "By Quantity"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields.selection,name:l10n_br_stock_landed_costs.selection__l10n_br_fiscal_document__landed_cost_split_method__by_volume
+msgid "By Volume"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields.selection,name:l10n_br_stock_landed_costs.selection__l10n_br_fiscal_document__landed_cost_split_method__by_weight
+msgid "By Weight"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document_line__cofins_tax_is_creditable
+msgid "COFINS Creditable"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model_terms:ir.ui.view,arch_db:l10n_br_stock_landed_costs.document_form_landed_costs
+msgid "Create Landed Cost"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document_line__creditability_origin
+msgid "Creditability Origin"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document_line__creditability_reason_id
+msgid "Creditability Reason"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields.selection,name:l10n_br_stock_landed_costs.selection__l10n_br_fiscal_document__landed_cost_split_method__equal
+msgid "Equal"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model,name:l10n_br_stock_landed_costs.model_l10n_br_fiscal_document
+msgid "Fiscal Document"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model,name:l10n_br_stock_landed_costs.model_l10n_br_fiscal_document_line
+msgid "Fiscal Document Line"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,help:l10n_br_stock_landed_costs.field_stock_landed_cost__fiscal_document_id
+msgid ""
+"Fiscal document (a freight CT-e, for instance) this landed cost was created "
+"from."
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document_line__freight_value_to_stock
+msgid "Freight in Stock Value"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,help:l10n_br_stock_landed_costs.field_account_bank_statement_line__landed_cost_split_method
+#: model:ir.model.fields,help:l10n_br_stock_landed_costs.field_account_move__landed_cost_split_method
+#: model:ir.model.fields,help:l10n_br_stock_landed_costs.field_account_payment__landed_cost_split_method
+#: model:ir.model.fields,help:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document__landed_cost_split_method
+msgid ""
+"How the cost is split among the receipts. When empty, the default split "
+"method of each cost product applies."
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document_line__icms_tax_is_creditable
+msgid "ICMS Creditable"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document_line__icmsst_tax_is_creditable
+msgid "ICMS ST Creditable"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document_line__ipi_tax_is_creditable
+msgid "IPI Creditable"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document_line__irpj_tax_is_creditable
+msgid "IRPJ Creditable"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document_line__issqn_tax_is_creditable
+msgid "ISSQN Creditable"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document_line__insurance_value_to_stock
+msgid "Insurance in Stock Value"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_account_bank_statement_line__landed_cost_count
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_account_move__landed_cost_count
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_account_payment__landed_cost_count
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document__landed_cost_count
+msgid "Landed Cost Count"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model_terms:ir.ui.view,arch_db:l10n_br_stock_landed_costs.document_form_landed_costs
+msgid "Landed Costs"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_account_bank_statement_line__landed_cost_ids
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_account_move__landed_cost_ids
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_account_payment__landed_cost_ids
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document__landed_cost_ids
+msgid "Landed Costs of the Document"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#. odoo-python
+#: code:addons/l10n_br_stock_landed_costs/models/fiscal_document.py:0
+#, python-format
+msgid "Landed costs can only be created from incoming documents."
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,help:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document_line__cost_unit
+msgid ""
+"Net acquisition cost per unit: line total minus recoverable taxes (art. 301 "
+"RIR/2018, CPC 16)."
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#. odoo-python
+#: code:addons/l10n_br_stock_landed_costs/models/fiscal_document.py:0
+#, python-format
+msgid "No line of this document has a cost to allocate."
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document_line__other_value_to_stock
+msgid "Other Costs in Stock Value"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document_line__pis_tax_is_creditable
+msgid "PIS Creditable"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,help:l10n_br_stock_landed_costs.field_account_bank_statement_line__landed_cost_picking_ids
+#: model:ir.model.fields,help:l10n_br_stock_landed_costs.field_account_move__landed_cost_picking_ids
+#: model:ir.model.fields,help:l10n_br_stock_landed_costs.field_account_payment__landed_cost_picking_ids
+#: model:ir.model.fields,help:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document__landed_cost_picking_ids
+msgid ""
+"Receipts the cost of this document (freight, expenses) is allocated to."
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_account_bank_statement_line__landed_cost_picking_ids
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_account_move__landed_cost_picking_ids
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_account_payment__landed_cost_picking_ids
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document__landed_cost_picking_ids
+msgid "Receipts to Allocate"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#. odoo-python
+#: code:addons/l10n_br_stock_landed_costs/models/fiscal_document.py:0
+#, python-format
+msgid "Select the receipts the cost is allocated to."
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#. odoo-python
+#: code:addons/l10n_br_stock_landed_costs/models/fiscal_document.py:0
+#, python-format
+msgid ""
+"Set a cost product on these lines before creating the landed cost: %(lines)s"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#. odoo-python
+#: code:addons/l10n_br_stock_landed_costs/models/fiscal_document.py:0
+#, python-format
+msgid ""
+"Set a landed cost journal on the company, or create a miscellaneous journal "
+"for it."
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_stock_landed_cost__fiscal_document_id
+msgid "Source Fiscal Document"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_account_bank_statement_line__landed_cost_split_method
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_account_move__landed_cost_split_method
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_account_payment__landed_cost_split_method
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document__landed_cost_split_method
+msgid "Split Method"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model,name:l10n_br_stock_landed_costs.model_stock_landed_cost
+msgid "Stock Landed Cost"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#. odoo-python
+#: code:addons/l10n_br_stock_landed_costs/models/fiscal_document.py:0
+#, python-format
+msgid ""
+"This document already has a landed cost. Cancel it before creating another "
+"one, otherwise the cost is counted twice."
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document_line__cost_unit
+msgid "Unit Cost"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,field_description:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document_line__valuation_via_stock_price
+msgid "Valuation Via Stock Price"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,help:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document_line__valuation_via_stock_price
+msgid ""
+"Whether stock valuation uses the Odoo default price or the net acquisition cost held by cost_unit.\n"
+"\n"
+"    * True values incoming stock net of recoverable taxes"
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,help:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document_line__creditability_origin
+msgid ""
+"Who decided the creditable taxes of this line.\n"
+"\n"
+"    * Derived: the tax rules decided, and they keep deciding when the line changes.\n"
+"    * Decided by the user: the rules no longer overwrite the flags, and a reason with a legal basis is required.\n"
+"    * Taken from the incoming document: the document itself stated the credit.\n"
+"    * Undetermined: there was not enough information to decide, so the goods are valued gross, which never understates inventory."
+msgstr ""
+
+#. module: l10n_br_stock_landed_costs
+#: model:ir.model.fields,help:l10n_br_stock_landed_costs.field_l10n_br_fiscal_document_line__creditability_reason_id
+msgid ""
+"Why this line departs from the derived creditability. The user never types a"
+" cost: picking the reason is what the law allows, and the system recomputes "
+"from it."
+msgstr ""
