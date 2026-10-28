@@ -163,6 +163,22 @@
     </template>
 
     <template id="external_layout_folder" inherit_id="web.external_layout_folder">
+        <!-- the folder shape has a fixed height: make room for the fiscal lines
+             so the document title does not overlap the company data -->
+        <xpath expr="//t[@t-set='header_shape_height']" position="attributes">
+            <attribute
+                name="t-value"
+            >str(174 + 21 * len(company.partner_id._get_report_fiscal_data(tax_framework=company.report_tax_framework)) if company._get_report_option('report_company_fiscal_data') else 174)</attribute>
+        </xpath>
+        <!-- the PDF header is measured without the shape, so the body is pushed
+             down by the same extra height -->
+        <xpath expr="//div[contains(@t-attf-class, 'o_report_layout_folder')]" position="attributes">
+            <attribute
+                name="t-attf-style"
+                separator=" "
+                add="{{report_type == 'pdf' and 'padding-top:' + str(int(header_shape_height) - 174) + 'px;'}}"
+            />
+        </xpath>
         <!-- the company tax ID is already in the company fiscal data -->
         <xpath
             expr="//li[@t-if='not forced_vat']/t[@t-if='company.vat']"
