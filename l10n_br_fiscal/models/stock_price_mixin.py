@@ -367,6 +367,7 @@ class StockPriceMixin(models.AbstractModel):
         "other_value_to_stock",
         "icmssn_credit_value",
         "amount_tax_withholding",
+        "ii_iof_value",
         "cfop_id",
         "creditability_origin",
         # `quantity` is the fiscal mixin field each model relates to its own
@@ -380,16 +381,18 @@ class StockPriceMixin(models.AbstractModel):
             quantity = record._get_cost_unit_qty()
 
             if record.fiscal_operation_line_id and quantity:
-                # TODO: the import IOF (ii_iof_value) stays out of the cost,
-                # because _add_fields_to_amount of the document line mixin
-                # does not add it to fiscal_amount_total. Fix it there.
-
                 # Withholdings are added back: _compute_fiscal_amounts already
                 # deducted them from fiscal_amount_total, but a withholding is
                 # a financial obligation of the buyer towards the tax
                 # authority, not a reduction of what the goods cost. The
                 # acquisition cost is the gross amount (CPC 16, item 11).
                 price = record.fiscal_amount_total + record.amount_tax_withholding
+
+                # The import IOF is a non-recoverable tax on the importation,
+                # so it is cost (RIR/2018, art. 301, par. 1). It stays out of
+                # fiscal_amount_total because vNF does not sum vIOF and the
+                # supplier is not paid for it.
+                price += record.ii_iof_value
 
                 if not record.freight_value_to_stock:
                     price -= record.freight_value

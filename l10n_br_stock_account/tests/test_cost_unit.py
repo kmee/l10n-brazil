@@ -82,7 +82,7 @@ class TestCostUnit(TransactionCase):
             }
         )
 
-    def _make_in_move(self, company, qty=1.0, price=800.0):
+    def _make_in_move(self, company, qty=1.0, price=800.0, partner=None):
         move = (
             self.env["stock.move"]
             .with_company(company)
@@ -96,7 +96,7 @@ class TestCostUnit(TransactionCase):
                     "location_id": self.env.ref("stock.stock_location_suppliers").id,
                     "location_dest_id": self.env.ref("stock.stock_location_stock").id,
                     "company_id": company.id,
-                    "partner_id": self.supplier.id,
+                    "partner_id": (partner or self.supplier).id,
                     "fiscal_operation_id": self.fiscal_operation.id,
                     "fiscal_operation_line_id": self.fiscal_operation_line.id,
                 }
@@ -345,6 +345,48 @@ class TestCostUnit(TransactionCase):
         move.amount_tax_withholding = 70.0
 
         self.assertAlmostEqual(move.cost_unit, cost_before, places=2)
+
+    def _make_import_move(self, company, qty=2.0):
+        """A purchase from a supplier abroad, so the operation line gives
+        the import CFOP by itself."""
+        move = self._make_in_move(
+            company, qty=qty, partner=self.env.ref("l10n_br_base.res_partner_exterior")
+        )
+        self.assertEqual(move.cfop_id.code, "3101")
+        return move
+
+    def _credited(self, move):
+        tax_map = move._get_stock_cost_tax_map()
+        return sum(
+            move[f"{d}_value"] for d, kind in tax_map.items() if kind == "credit"
+        )
+
+    def test_import_iof_is_cost_not_credit(self):
+        """Given an import line of a buyer that credits every tax, when the
+        exchange IOF is stated, then the cost carries the whole IOF, the
+        fiscal total (vNF) does not move and the map never credits it."""
+        move = self._make_import_move(self.company_real)
+        total = move.fiscal_amount_total
+        credited = self._credited(move)
+        self.assertGreater(credited, 0)
+        # Without IOF the cost is the total minus the credits, nothing else.
+        self.assertAlmostEqual(move.cost_unit * 2, total - credited, delta=0.02)
+
+        move.ii_iof_value = 38.0
+
+        self.assertAlmostEqual(move.fiscal_amount_total, total, places=2)
+        self.assertNotIn("iof", move._get_stock_cost_tax_map())
+        self.assertAlmostEqual(self._credited(move), credited, places=2)
+        self.assertAlmostEqual(move.cost_unit * 2, total + 38.0 - credited, delta=0.02)
+
+    def test_import_iof_on_an_undetermined_line(self):
+        """Given an undetermined import line, then it is valued gross and
+        the IOF is still in the cost."""
+        move = self._make_import_move(self.company_real)
+        move.write({"ii_iof_value": 38.0, "creditability_origin": "undetermined"})
+        self.assertAlmostEqual(
+            move.cost_unit * 2, move.fiscal_amount_total + 38.0, delta=0.02
+        )
 
     def test_cst_data_defaults(self):
         """Key audited defaults on the CST data (creditability by nature)."""

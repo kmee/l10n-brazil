@@ -210,6 +210,30 @@ class TestStockValuationNetCost(TransactionCase):
             places=2,
         )
 
+    def test_import_iof_in_the_layer(self):
+        """Given an import receipt with exchange IOF, when it is validated,
+        then the layer and its entry carry the IOF inside the net cost."""
+        self._set_valuation("fifo")
+        supplier_abroad = self.env.ref("l10n_br_base.res_partner_exterior")
+        picking, move = self._make_incoming(supplier_abroad, qty=2.0)
+        move.ii_iof_value = 38.0
+        self._receive(picking)
+        self.assertEqual(move.cfop_id.code, "3101")
+
+        tax_map = move._get_stock_cost_tax_map()
+        credited = sum(
+            move[f"{d}_value"] for d, kind in tax_map.items() if kind == "credit"
+        )
+        svl = move.stock_valuation_layer_ids
+        self.assertAlmostEqual(svl.unit_cost, move.cost_unit, places=2)
+        self.assertAlmostEqual(
+            svl.value, move.fiscal_amount_total + 38.0 - credited, delta=0.02
+        )
+        line_val = svl.account_move_id.line_ids.filtered(
+            lambda ln: ln.account_id == self.account_valuation
+        )
+        self.assertAlmostEqual(line_val.debit, svl.value, places=2)
+
     # ------------------------------------------------------------------
     # Where the net cost does not reach
     # ------------------------------------------------------------------
