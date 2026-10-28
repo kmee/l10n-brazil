@@ -19,6 +19,9 @@ class FiscalDocumentLine(models.Model):
         inverse_name="nfe40_DI_prod_id",
         compute="_compute_nfe40_DI_duimp",
         store=True,
+        # The DI group can still be typed in on the line form (l10n_br_nfe)
+        # or written by the import declaration wizard (l10n_br_account).
+        readonly=False,
     )
 
     @api.model
@@ -49,8 +52,9 @@ class FiscalDocumentLine(models.Model):
 
             item = line.duimp_item_id
             if not item:
-                if line.nfe40_DI:
-                    line.nfe40_DI = [(5, 0, 0)]
+                # Not a DUIMP line: keep the DI group that was typed in or
+                # written by the import declaration wizard.
+                line.nfe40_DI = line.nfe40_DI
                 continue
 
             declaracao = item.declaracao_id
