@@ -73,12 +73,12 @@ class TestDuimpWebservice(TransactionCase):
         for environment, expected_url in cases:
             with self.subTest(environment=environment):
                 webservice = DuimpWebservice(
-                    certificate=self.certificate, environment=environment
+                    self.env, certificate=self.certificate, environment=environment
                 )
                 self.assertEqual(webservice.base_url, expected_url)
 
     def test_authenticate_success(self):
-        webservice = DuimpWebservice(certificate=self.certificate)
+        webservice = DuimpWebservice(self.env, certificate=self.certificate)
         response = FakeResponse(
             status_code=200, headers={"Set-Token": "tok", "X-CSRF-Token": "csrf"}
         )
@@ -103,14 +103,14 @@ class TestDuimpWebservice(TransactionCase):
         self.assertEqual(cert_contents, ["FAKE CERT PEM", "FAKE KEY PEM"])
 
     def test_authenticate_bad_status(self):
-        webservice = DuimpWebservice(certificate=self.certificate)
+        webservice = DuimpWebservice(self.env, certificate=self.certificate)
         response = FakeResponse(status_code=401, text="denied")
         with patch(f"{MODULE_PATH}.requests.request", return_value=response):
             with self.assertRaises(DuimpWebserviceError):
                 webservice._authenticate()
 
     def test_authenticate_cooldown_gives_friendly_message(self):
-        webservice = DuimpWebservice(certificate=self.certificate)
+        webservice = DuimpWebservice(self.env, certificate=self.certificate)
         response = FakeResponse(
             status_code=422, text='{"code":"PLAT-ER2033","message":"..."}'
         )
@@ -120,14 +120,14 @@ class TestDuimpWebservice(TransactionCase):
         self.assertIn("60 seconds", str(capture.exception))
 
     def test_authenticate_missing_headers(self):
-        webservice = DuimpWebservice(certificate=self.certificate)
+        webservice = DuimpWebservice(self.env, certificate=self.certificate)
         response = FakeResponse(status_code=200, headers={})
         with patch(f"{MODULE_PATH}.requests.request", return_value=response):
             with self.assertRaises(DuimpWebserviceError):
                 webservice._authenticate()
 
     def test_auth_headers_reuses_existing_token(self):
-        webservice = DuimpWebservice(certificate=self.certificate)
+        webservice = DuimpWebservice(self.env, certificate=self.certificate)
         webservice._token = "tok"
         webservice._csrf_token = "csrf"
         with patch(f"{MODULE_PATH}.requests.request") as request_mock:
@@ -136,7 +136,7 @@ class TestDuimpWebservice(TransactionCase):
         self.assertEqual(headers, {"Authorization": "tok", "X-CSRF-Token": "csrf"})
 
     def test_auth_headers_authenticates_when_missing_token(self):
-        webservice = DuimpWebservice(certificate=self.certificate)
+        webservice = DuimpWebservice(self.env, certificate=self.certificate)
         response = FakeResponse(
             status_code=200, headers={"Set-Token": "tok", "X-CSRF-Token": "csrf"}
         )
@@ -147,7 +147,7 @@ class TestDuimpWebservice(TransactionCase):
     def test_token_store_preloads_token_on_init(self):
         token_store = FakeTokenStore(cached=("cached-tok", "cached-csrf"))
         webservice = DuimpWebservice(
-            certificate=self.certificate, token_store=token_store
+            self.env, certificate=self.certificate, token_store=token_store
         )
         with patch(f"{MODULE_PATH}.requests.request") as request_mock:
             headers = webservice._auth_headers()
@@ -159,7 +159,7 @@ class TestDuimpWebservice(TransactionCase):
     def test_authenticate_persists_to_token_store(self):
         token_store = FakeTokenStore()
         webservice = DuimpWebservice(
-            certificate=self.certificate, token_store=token_store
+            self.env, certificate=self.certificate, token_store=token_store
         )
         response = FakeResponse(
             status_code=200, headers={"Set-Token": "tok", "X-CSRF-Token": "csrf"}
@@ -169,7 +169,7 @@ class TestDuimpWebservice(TransactionCase):
         self.assertEqual(token_store.saved, [("tok", "csrf")])
 
     def test_get_401_retries_once_then_succeeds(self):
-        webservice = DuimpWebservice(certificate=self.certificate)
+        webservice = DuimpWebservice(self.env, certificate=self.certificate)
         webservice._token = "stale-tok"
         webservice._csrf_token = "stale-csrf"
         responses = [
@@ -187,7 +187,7 @@ class TestDuimpWebservice(TransactionCase):
         self.assertEqual(request_mock.call_count, 3)
 
     def test_get_401_twice_raises(self):
-        webservice = DuimpWebservice(certificate=self.certificate)
+        webservice = DuimpWebservice(self.env, certificate=self.certificate)
         webservice._token = "tok"
         webservice._csrf_token = "csrf"
         response = FakeResponse(status_code=401, text="denied")
@@ -196,7 +196,7 @@ class TestDuimpWebservice(TransactionCase):
                 webservice._get("/x")
 
     def test_request_network_error(self):
-        webservice = DuimpWebservice(certificate=self.certificate)
+        webservice = DuimpWebservice(self.env, certificate=self.certificate)
         with patch(
             f"{MODULE_PATH}.requests.request",
             side_effect=requests_lib.exceptions.ConnectionError("boom"),
@@ -205,7 +205,7 @@ class TestDuimpWebservice(TransactionCase):
                 webservice._request("GET", "/x")
 
     def test_get_error_statuses(self):
-        webservice = DuimpWebservice(certificate=self.certificate)
+        webservice = DuimpWebservice(self.env, certificate=self.certificate)
         webservice._token = "tok"
         webservice._csrf_token = "csrf"
         for status_code in (404, 500):
@@ -216,7 +216,7 @@ class TestDuimpWebservice(TransactionCase):
                         webservice._get("/duimp/123")
 
     def test_get_not_found_returns_empty_when_requested(self):
-        webservice = DuimpWebservice(certificate=self.certificate)
+        webservice = DuimpWebservice(self.env, certificate=self.certificate)
         webservice._token = "tok"
         webservice._csrf_token = "csrf"
         response = FakeResponse(status_code=404, text="not found")
@@ -225,7 +225,7 @@ class TestDuimpWebservice(TransactionCase):
         self.assertEqual(result, [])
 
     def test_get_success_status_codes(self):
-        webservice = DuimpWebservice(certificate=self.certificate)
+        webservice = DuimpWebservice(self.env, certificate=self.certificate)
         webservice._token = "tok"
         webservice._csrf_token = "csrf"
         for status_code in (200, 206):
@@ -236,7 +236,7 @@ class TestDuimpWebservice(TransactionCase):
                 self.assertEqual(result, {"ok": True})
 
     def test_get_general_data_with_and_without_version(self):
-        webservice = DuimpWebservice(certificate=self.certificate)
+        webservice = DuimpWebservice(self.env, certificate=self.certificate)
         webservice._token = "tok"
         webservice._csrf_token = "csrf"
         response = FakeResponse(status_code=200, json_data={"identificacao": {}})
@@ -255,7 +255,7 @@ class TestDuimpWebservice(TransactionCase):
                 self.assertTrue(called_url.endswith(expected_suffix))
 
     def test_get_items_response_shapes(self):
-        webservice = DuimpWebservice(certificate=self.certificate)
+        webservice = DuimpWebservice(self.env, certificate=self.certificate)
         webservice._token = "tok"
         webservice._csrf_token = "csrf"
         cases = [
@@ -272,7 +272,7 @@ class TestDuimpWebservice(TransactionCase):
                 self.assertEqual(result, expected)
 
     def test_get_items_with_version(self):
-        webservice = DuimpWebservice(certificate=self.certificate)
+        webservice = DuimpWebservice(self.env, certificate=self.certificate)
         webservice._token = "tok"
         webservice._csrf_token = "csrf"
         response = FakeResponse(status_code=200, json_data=[{"a": 1}])
@@ -285,7 +285,7 @@ class TestDuimpWebservice(TransactionCase):
         self.assertTrue(called_url.endswith("/duimp-api/api/ext/duimp/26BR000/3/itens"))
 
     def test_search_access_keys_by_importer_response_shapes(self):
-        webservice = DuimpWebservice(certificate=self.certificate)
+        webservice = DuimpWebservice(self.env, certificate=self.certificate)
         webservice._token = "tok"
         webservice._csrf_token = "csrf"
         cases = [
@@ -303,7 +303,7 @@ class TestDuimpWebservice(TransactionCase):
                 self.assertEqual(result, expected)
 
     def test_search_access_keys_by_importer_404_returns_empty(self):
-        webservice = DuimpWebservice(certificate=self.certificate)
+        webservice = DuimpWebservice(self.env, certificate=self.certificate)
         webservice._token = "tok"
         webservice._csrf_token = "csrf"
         response = FakeResponse(status_code=404, text="not found")
@@ -314,7 +314,7 @@ class TestDuimpWebservice(TransactionCase):
         self.assertEqual(result, [])
 
     def test_search_access_keys_by_importer_builds_url_and_params(self):
-        webservice = DuimpWebservice(certificate=self.certificate)
+        webservice = DuimpWebservice(self.env, certificate=self.certificate)
         webservice._token = "tok"
         webservice._csrf_token = "csrf"
         response = FakeResponse(status_code=200, json_data=[])
@@ -355,7 +355,7 @@ class TestResCompanyDuimpWebservice(TransactionCase):
         cls.company = cls.env["res.company"].create(
             {
                 "name": "Company Test DUIMP Webservice",
-                "cnpj_cpf": "42.245.642/0001-09",
+                "vat": "42.245.642/0001-09",
                 "country_id": cls.env.ref("base.br").id,
                 "state_id": cls.env.ref("base.state_br_sp").id,
             }
@@ -365,14 +365,14 @@ class TestResCompanyDuimpWebservice(TransactionCase):
             passwd="123456",
             issuer="EMISSOR TESTE",
             country="BR",
-            subject="TITULAR TESTE",
+            subject="TITULAR TESTE:52998224725",
         )
-        certificate = cls.env["l10n_br_fiscal.certificate"].create(
+        certificate = cls.env["certificate.certificate"].create(
             {
-                "type": "e-cpf",
-                "subtype": "a1",
-                "password": "123456",
-                "file": cert_file,
+                "scope": "l10n_br",
+                "pkcs12_password": "123456",
+                "content": cert_file,
+                "company_id": cls.company.id,
             }
         )
         cls.company.certificate_ecpf_id = certificate

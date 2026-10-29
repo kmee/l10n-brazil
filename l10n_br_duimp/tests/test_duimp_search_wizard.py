@@ -34,12 +34,12 @@ class FakeDuimpSearchWebservice(FakeDuimpWebservice):
 @tagged("post_install", "-at_install")
 class TestDuimpSearchWizard(AccountMoveBRCommon):
     @classmethod
-    def setUpClass(cls, chart_template_ref=None):
-        super().setUpClass(chart_template_ref or "l10n_br_coa.l10n_br_coa_template")
+    def setUpClass(cls):
+        super().setUpClass()
         grant_nfe_access(cls.env)
         cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
         cls.company = cls.company_data["company"]
-        cls.company.cnpj_cpf = "42.245.642/0001-09"
+        cls.company.vat = "42.245.642/0001-09"
 
     def _create_wizard(self):
         return self.env["l10n_br_duimp.search_wizard"].create(
@@ -103,7 +103,7 @@ class TestDuimpSearchWizard(AccountMoveBRCommon):
 
     def test_action_search_duimp_requires_cnpj(self):
         wizard = self._create_wizard()
-        self.company.cnpj_cpf = False
+        self.company.vat = False
         with self.assertRaises(UserError):
             wizard.action_search_duimp()
 

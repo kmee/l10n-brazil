@@ -7,7 +7,6 @@ import time
 import requests
 from erpbrasil.assinatura.certificado import ArquivoCertificado
 
-from odoo import _
 from odoo.exceptions import UserError
 
 from ..constants.duimp import (
@@ -91,11 +90,15 @@ class DuimpWebservice:
 
     def __init__(
         self,
+        env,
         certificate,
         environment=DUIMP_ENVIRONMENT_VALIDATION,
         role_type=DUIMP_ROLE_TYPE_DEFAULT,
         token_store=None,
     ):
+        # The client is not a model: it keeps the environment to translate
+        # its messages in the language of the user.
+        self.env = env
         self.certificate = certificate
         self.base_url = DUIMP_ENVIRONMENTS.get(
             environment, DUIMP_ENVIRONMENTS[DUIMP_ENVIRONMENT_VALIDATION]
@@ -121,7 +124,7 @@ class DuimpWebservice:
                 )
             except requests.exceptions.RequestException as exc:
                 raise DuimpWebserviceError(
-                    _("Error connecting to the Portal Único Siscomex: %s") % exc
+                    self.env._("Error connecting to the Portal Único Siscomex: %s", exc)
                 ) from exc
 
     def _authenticate(self):
@@ -133,7 +136,7 @@ class DuimpWebservice:
         if response.status_code != 200:
             if "PLAT-ER2033" in response.text:
                 raise DuimpWebserviceError(
-                    _(
+                    self.env._(
                         "The Portal Único Siscomex rejected a new login because "
                         "this same e-CPF certificate authenticated less than 60 "
                         "seconds ago (this happens if someone also logged in "
@@ -142,17 +145,18 @@ class DuimpWebservice:
                     )
                 )
             raise DuimpWebserviceError(
-                _(
+                self.env._(
                     "Authentication to the Portal Único Siscomex failed "
-                    "(HTTP %(status)s): %(body)s"
+                    "(HTTP %(status)s): %(body)s",
+                    status=response.status_code,
+                    body=response.text,
                 )
-                % {"status": response.status_code, "body": response.text}
             )
         self._token = response.headers.get("Set-Token")
         self._csrf_token = response.headers.get("X-CSRF-Token")
         if not self._token or not self._csrf_token:
             raise DuimpWebserviceError(
-                _(
+                self.env._(
                     "Authentication to the Portal Único Siscomex did not "
                     "return the expected Set-Token/X-CSRF-Token headers."
                 )
@@ -187,15 +191,16 @@ class DuimpWebservice:
             if not_found_returns_empty:
                 return []
             raise DuimpWebserviceError(
-                _("DUIMP not found in the Portal Único Siscomex (%s).") % path
+                self.env._("DUIMP not found in the Portal Único Siscomex (%s).", path)
             )
         if response.status_code not in (200, 206):
             raise DuimpWebserviceError(
-                _(
+                self.env._(
                     "Unexpected response from the Portal Único Siscomex "
-                    "(HTTP %(status)s): %(body)s"
+                    "(HTTP %(status)s): %(body)s",
+                    status=response.status_code,
+                    body=response.text,
                 )
-                % {"status": response.status_code, "body": response.text}
             )
         return response.json()
 

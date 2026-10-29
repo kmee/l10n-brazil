@@ -2,17 +2,16 @@
 <!-- Copyright (C) 2026 – TODAY, KMEE (<https://kmee.com.br>)
      License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html -->
 <odoo>
-
     <record id="product_duimp_demo_1" model="product.product">
         <field name="name">DUIMP Demo - Imported Bearing</field>
         <field name="default_code">DUIMP-BRG-001</field>
-        <field name="type">product</field>
+        <field name="type">consu</field>
         <field name="purchase_ok" eval="True" />
     </record>
     <record id="product_duimp_demo_2" model="product.product">
         <field name="name">DUIMP Demo - Imported Sensor</field>
         <field name="default_code">DUIMP-SNS-002</field>
-        <field name="type">product</field>
+        <field name="type">consu</field>
         <field name="purchase_ok" eval="True" />
     </record>
 
@@ -88,5 +87,4 @@
         <field name="ad_valorem_rate">14.0</field>
         <field name="amount_due">693.00</field>
     </record>
-
 </odoo>

@@ -169,14 +169,14 @@ class DuimpCommon(TransactionCase):
             {
                 "name": "Test Imported Bearing",
                 "default_code": PRODUCT_CODE_1,
-                "type": "product",
+                "type": "consu",
             }
         )
         cls.product_2 = cls.env["product.product"].create(
             {
                 "name": "Test Imported Sensor",
                 "default_code": PRODUCT_CODE_2,
-                "type": "product",
+                "type": "consu",
             }
         )
         cls.vendor = cls.env["res.partner"].create(

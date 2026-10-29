@@ -2,12 +2,11 @@
 <!-- Copyright (C) 2026 – TODAY, KMEE (<https://kmee.com.br>)
      License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html -->
 <odoo>
-
     <record id="l10n_br_duimp_declaration_tree" model="ir.ui.view">
-        <field name="name">l10n_br_duimp.declaration.tree</field>
+        <field name="name">l10n_br_duimp.declaration.list</field>
         <field name="model">l10n_br_duimp.declaration</field>
         <field name="arch" type="xml">
-            <tree>
+            <list>
                 <field name="number" />
                 <field name="version" />
                 <field name="registration_date" />
@@ -15,7 +14,7 @@
                 <field name="total_customs_value" />
                 <field name="account_move_id" />
                 <field name="state" widget="badge" />
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -30,32 +29,32 @@
                         string="Open"
                         type="object"
                         class="oe_highlight"
-                        states="draft"
+                        invisible="state != 'draft'"
                     />
                     <button
                         name="action_refresh_from_siscomex"
                         string="Refresh from Siscomex"
                         type="object"
-                        states="draft,open"
+                        invisible="state not in ('draft', 'open')"
                     />
                     <button
                         name="action_generate_vendor_bill"
                         string="Generate Vendor Bill"
                         type="object"
                         class="oe_highlight"
-                        states="open"
+                        invisible="state != 'open'"
                     />
                     <button
                         name="action_cancel"
                         string="Cancel"
                         type="object"
-                        states="draft,open"
+                        invisible="state not in ('draft', 'open')"
                     />
                     <button
                         name="action_draft"
                         string="Reset to Draft"
                         type="object"
-                        states="canceled"
+                        invisible="state != 'canceled'"
                     />
                     <field
                         name="state"
@@ -75,7 +74,7 @@
                             type="object"
                             class="oe_stat_button"
                             icon="fa-pencil-square-o"
-                            attrs="{'invisible': [('account_move_id', '=', False)]}"
+                            invisible="not account_move_id"
                         >
                             <span class="o_stat_text">Vendor Bill</span>
                         </button>
@@ -84,7 +83,7 @@
                             type="object"
                             class="oe_stat_button"
                             icon="fa-file-text-o"
-                            attrs="{'invisible': [('fiscal_document_id', '=', False)]}"
+                            invisible="not fiscal_document_id"
                         >
                             <span class="o_stat_text">Fiscal Document</span>
                         </button>
@@ -94,7 +93,7 @@
                     <div
                         class="alert alert-warning"
                         role="alert"
-                        attrs="{'invisible': [('reconciliation_warning', '=', False)]}"
+                        invisible="not reconciliation_warning"
                         style="margin-top: 16px; margin-bottom: 16px;"
                     >
                         <field name="reconciliation_warning" readonly="1" nolabel="1" />
@@ -130,6 +129,7 @@
                             <field
                                 name="fiscal_operation_id"
                                 options="{'no_create': True}"
+                                readonly="state not in ('draft', 'open')"
                             />
                         </group>
                     </group>
@@ -161,7 +161,7 @@
                         </page>
                         <page string="Items &amp; Costs" name="items">
                             <field name="item_ids">
-                                <tree editable="bottom">
+                                <list editable="bottom">
                                     <field
                                         name="item_number"
                                         readonly="1"
@@ -270,7 +270,7 @@
                                         sum="Total"
                                     />
                                     <field name="currency_id" invisible="1" />
-                                </tree>
+                                </list>
                             </field>
                             <separator string="Costs &amp; Taxes Summary" />
                             <group>
@@ -308,7 +308,7 @@
                         </page>
                         <page string="Taxes by Item" name="item_taxes">
                             <field name="tax_ids">
-                                <tree default_order="item_id, type">
+                                <list default_order="item_id, type">
                                     <field name="item_id" />
                                     <field name="type" />
                                     <field name="tax_base" />
@@ -322,16 +322,16 @@
                                     <field name="cst" optional="hide" />
                                     <field name="cclass_trib" optional="hide" />
                                     <field name="currency_id" invisible="1" />
-                                </tree>
+                                </list>
                             </field>
                         </page>
                         <page
                             string="Acréscimos/Deduções"
                             name="additions"
-                            attrs="{'invisible': [('addition_deduction_ids', '=', [])]}"
+                            invisible="not addition_deduction_ids"
                         >
                             <field name="addition_deduction_ids">
-                                <tree>
+                                <list>
                                     <field name="item_id" />
                                     <field name="code" />
                                     <field name="description" />
@@ -343,12 +343,12 @@
                                     <field name="trade_currency_id" optional="hide" />
                                     <field name="exchange_rate" optional="hide" />
                                     <field name="company_currency_id" invisible="1" />
-                                </tree>
+                                </list>
                             </field>
                         </page>
                         <page string="Recolhimentos" name="payments">
                             <field name="payment_ids">
-                                <tree>
+                                <list>
                                     <field name="revenue_code" />
                                     <field name="payment_type_name" />
                                     <field name="payment_date" />
@@ -360,7 +360,7 @@
                                     <field name="bank_branch" optional="hide" />
                                     <field name="bank_account" optional="hide" />
                                     <field name="currency_id" invisible="1" />
-                                </tree>
+                                </list>
                             </field>
                         </page>
                         <page
@@ -376,11 +376,7 @@
                         </page>
                     </notebook>
                 </sheet>
-                <div class="oe_chatter">
-                    <field name="message_follower_ids" />
-                    <field name="activity_ids" />
-                    <field name="message_ids" />
-                </div>
+                <chatter />
             </form>
         </field>
     </record>
@@ -388,7 +384,7 @@
     <record id="l10n_br_duimp_declaration_action" model="ir.actions.act_window">
         <field name="name">DUIMP</field>
         <field name="res_model">l10n_br_duimp.declaration</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 
     <menuitem
@@ -399,5 +395,4 @@
         sequence="10"
         groups="l10n_br_fiscal.group_user"
     />
-
 </odoo>

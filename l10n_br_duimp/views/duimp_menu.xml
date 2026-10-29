@@ -10,5 +10,4 @@
         sequence="100"
         groups="l10n_br_fiscal.group_user,l10n_br_fiscal.group_manager"
     />
-
 </odoo>

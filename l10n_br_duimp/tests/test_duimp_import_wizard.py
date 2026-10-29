@@ -13,6 +13,7 @@ from unittest.mock import patch
 
 from odoo.exceptions import UserError
 from odoo.tests import tagged
+from odoo.tools import mute_logger
 
 from odoo.addons.l10n_br_account.tests.common import AccountMoveBRCommon
 from odoo.addons.l10n_br_duimp.models.res_company import ResCompany
@@ -132,8 +133,8 @@ class FakeDuimpWebservice:
 @tagged("post_install", "-at_install")
 class TestDuimpImportWizard(AccountMoveBRCommon):
     @classmethod
-    def setUpClass(cls, chart_template_ref=None):
-        super().setUpClass(chart_template_ref or "l10n_br_coa.l10n_br_coa_template")
+    def setUpClass(cls):
+        super().setUpClass()
         grant_nfe_access(cls.env)
         cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
         cls.company = cls.company_data["company"]
@@ -162,6 +163,29 @@ class TestDuimpImportWizard(AccountMoveBRCommon):
         )
         cls.fiscal_operation = cls.env.ref("l10n_br_fiscal.fo_compras")
         cls.cfop = cls.env.ref("l10n_br_fiscal.cfop_3102")
+        if "l10n_latam.document.type" in cls.env:
+            # The vendor bill journal uses documents when l10n_latam is
+            # installed: the NF-e type needs its l10n_latam counterpart.
+            cls._mirror_latam_document_type(cls.env.ref("l10n_br_fiscal.document_55"))
+
+    @classmethod
+    def _mirror_latam_document_type(cls, document_type):
+        fiscal_country = cls.company.account_fiscal_country_id
+        domain = [
+            ("code", "=", document_type.code),
+            ("country_id", "=", fiscal_country.id),
+        ]
+        if cls.env["l10n_latam.document.type"].search_count(domain):
+            return
+        cls.env["l10n_latam.document.type"].create(
+            {
+                "name": document_type.name,
+                "code": document_type.code,
+                "country_id": fiscal_country.id,
+                "internal_type": "invoice",
+                "doc_code_prefix": "NFe",
+            }
+        )
 
     def _create_wizard(self):
         return self.env["l10n_br_fiscal.document.import.wizard"].create(
@@ -259,6 +283,7 @@ class TestDuimpImportWizard(AccountMoveBRCommon):
         # at most one serie is created, and only when none existed yet
         self.assertEqual(serie_model.search_count(domain), before or 1)
 
+    @mute_logger("odoo.addons.l10n_br_duimp.models.duimp_declaration")
     def test_consult_and_generate_invoice(self):
         """Query a DUIMP, match its item to a product/CFOP, generate the
         vendor bill, and confirm the imported tax values survive a save
@@ -291,6 +316,7 @@ class TestDuimpImportWizard(AccountMoveBRCommon):
         fiscal_line.write({"quantity": fiscal_line.quantity})
         self.assertAlmostEqual(fiscal_line.ii_value, 20625.01, places=2)
 
+    @mute_logger("odoo.addons.l10n_br_duimp.models.duimp_declaration")
     def test_two_items_header_tax_allocation(self):
         """Without a per-item tax breakdown in the payload, the header
         totals are allocated by customs value (80000/100000 and
