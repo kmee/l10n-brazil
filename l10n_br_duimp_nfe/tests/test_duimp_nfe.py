@@ -13,21 +13,21 @@ class TestDuimpNfe(DuimpCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.declaracao = cls.env["l10n_br_duimp.declaracao"].create(
+        cls.declaration = cls.env["l10n_br_duimp.declaration"].create(
             {
-                "numero": DUIMP_NUMBER,
-                "data_registro": "2026-01-15",
-                "data_desembaraco": "2026-01-20",
-                "urf_despacho_nome": "PORTO DE SANTOS",
-                "uf_desembaraco": "SP",
-                "via_transporte_codigo": "01",
-                "caracterizacao_operacao_codigo": "1",
-                "afrmm_total": 1000.0,
+                "number": DUIMP_NUMBER,
+                "registration_date": "2026-01-15",
+                "clearance_date": "2026-01-20",
+                "clearance_office_name": "PORTO DE SANTOS",
+                "clearance_state": "SP",
+                "transport_mode_code": "01",
+                "operation_type_code": "1",
+                "afrmm_amount": 1000.0,
                 "company_id": cls.company.id,
             }
         )
-        cls.declaracao._import_from_payload(cls.dados_gerais, cls.itens)
-        cls.item = cls.declaracao.item_ids.filtered(lambda i: i.numero_item == "1")
+        cls.declaration._import_from_payload(cls.dados_gerais, cls.itens)
+        cls.item = cls.declaration.item_ids.filtered(lambda i: i.item_number == "1")
 
     def _make_document_line(self):
         document = self.env["l10n_br_fiscal.document"].create(
