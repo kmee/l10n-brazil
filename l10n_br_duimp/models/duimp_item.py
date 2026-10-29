@@ -86,11 +86,13 @@ class L10nBrDuimpItem(models.Model):
         comodel_name="l10n_br_duimp.addition.deduction",
         inverse_name="item_id",
         string="Additions/Deductions",
+        copy=True,
     )
     tax_ids = fields.One2many(
         comodel_name="l10n_br_duimp.item.tax",
         inverse_name="item_id",
         string="Taxes",
+        copy=True,
     )
     addition_deduction = fields.Monetary(
         string="Additions/Deductions (BRL)", compute="_compute_totals", store=True
