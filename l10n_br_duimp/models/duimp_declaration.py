@@ -161,6 +161,7 @@ class L10nBrDuimpDeclaration(models.Model):
         comodel_name="l10n_br_duimp.item",
         inverse_name="declaration_id",
         string="Items",
+        copy=True,
     )
     # Flat views over the items' children, so the per-item tax breakdown
     # the payload carries (base, rate, amount due, legal regime) is
@@ -181,6 +182,7 @@ class L10nBrDuimpDeclaration(models.Model):
         comodel_name="l10n_br_duimp.payment",
         inverse_name="declaration_id",
         string="Payments",
+        copy=True,
     )
 
     _sql_constraints = [
