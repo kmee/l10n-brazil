@@ -197,7 +197,9 @@ class ResPartner(spec_models.SpecModel):
                 if rec.country_id.code != "BR":
                     rec.nfe40_choice_dest = "nfe40_idEstrangeiro"
                     rec.nfe40_choice_tlocal = False
-                elif rec.is_company:
+                # A contact or invoice address of a company is not a company
+                # but carries its CNPJ, which SEFAZ refuses in a CPF tag.
+                elif rec.is_company or len(rec.cnpj_cpf_stripped) == 14:
                     rec.nfe40_choice_tlocal = "nfe40_CNPJ"
                     rec.nfe40_choice_emit = "nfe40_CNPJ"
                     rec.nfe40_choice_dest = "nfe40_CNPJ"
