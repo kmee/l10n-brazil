@@ -414,6 +414,18 @@
                 <field name="price_total" force_save="1" invisible="1" />
                 <field name="ind_final" force_save="1" />
             </xpath>
+            <!-- The line form has no options for the analytic distribution
+                widget, which then only shows percentages. Same options as the
+                editable list so the amount column is available in the dialog.
+            -->
+            <xpath
+                expr="//field[@name='invoice_line_ids']/form/sheet/group/field[@name='analytic_distribution']"
+                position="attributes"
+            >
+                <attribute
+                    name="options"
+                >{'product_field': 'product_id', 'account_field': 'account_id', 'amount_field': 'price_subtotal'}</attribute>
+            </xpath>
             <!-- The next fields are defined in a superficial way in the inherited
                 form that is considered specific for mobile edition by Odoo but not
                 for us in the Brazilian localization. To make it work properly
