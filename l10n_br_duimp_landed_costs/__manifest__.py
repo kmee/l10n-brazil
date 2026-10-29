@@ -19,7 +19,7 @@
     "data": [
         "security/ir.model.access.csv",
         "wizards/duimp_receipt_link_wizard_view.xml",
-        "views/duimp_declaracao_view.xml",
+        "views/duimp_declaration_view.xml",
         "views/stock_landed_cost_view.xml",
     ],
     "installable": True,

@@ -27,7 +27,7 @@ class L10nBrDuimpItem(models.Model):
         help="The linked receipts do not cover the item quantity yet.",
     )
 
-    @api.depends("move_ids.product_qty", "move_ids.state", "quantidade")
+    @api.depends("move_ids.product_qty", "move_ids.state", "quantity")
     def _compute_received_qty(self):
         precision = self.env["decimal.precision"].precision_get(
             "Product Unit of Measure"
@@ -37,7 +37,7 @@ class L10nBrDuimpItem(models.Model):
             item.received_qty = sum(move._get_duimp_item_qty() for move in moves)
             item.receipt_pending = (
                 float_compare(
-                    item.received_qty, item.quantidade, precision_digits=precision
+                    item.received_qty, item.quantity, precision_digits=precision
                 )
                 < 0
             )

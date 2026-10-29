@@ -2,10 +2,10 @@
 <!-- Copyright 2026 KMEE INFORMATICA LTDA - Luis Felipe Mileo
      License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
 <odoo>
-    <record id="l10n_br_duimp_declaracao_form" model="ir.ui.view">
-        <field name="name">l10n_br_duimp.declaracao.form.landed.costs</field>
-        <field name="model">l10n_br_duimp.declaracao</field>
-        <field name="inherit_id" ref="l10n_br_duimp.l10n_br_duimp_declaracao_form" />
+    <record id="l10n_br_duimp_declaration_form" model="ir.ui.view">
+        <field name="name">l10n_br_duimp.declaration.form.landed.costs</field>
+        <field name="model">l10n_br_duimp.declaration</field>
+        <field name="inherit_id" ref="l10n_br_duimp.l10n_br_duimp_declaration_form" />
         <field name="arch" type="xml">
             <button name="action_cancel" position="before">
                 <button
@@ -49,11 +49,11 @@
                     />
                 </button>
             </div>
-            <field name="valor_aduaneiro" position="after">
+            <field name="customs_value" position="after">
                 <field name="received_qty" />
                 <field name="receipt_pending" column_invisible="True" />
             </field>
-            <page name="costs" position="after">
+            <page name="items" position="after">
                 <page
                     string="Customs Expenses"
                     name="customs_expenses"

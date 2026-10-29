@@ -1,4 +1,4 @@
-from . import duimp_declaracao
+from . import duimp_declaration
 from . import duimp_item
 from . import fiscal_document
 from . import product_template
