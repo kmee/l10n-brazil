@@ -1,7 +1,7 @@
 # Copyright 2026 KMEE (Ygor Carvalho <ygor.carvalho@kmee.com.br>)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
-from datetime import date
+from datetime import date, timedelta
 from unittest.mock import patch
 
 from odoo.tests.common import tagged
@@ -92,3 +92,73 @@ class TestImportedDueDate(AccountMoveBRCommon):
             next(iter(terms))["date_maturity"],
             self.move.invoice_date_due,
         )
+
+    def _split_term(self):
+        return self.env["account.payment.term"].create(
+            {
+                "name": "70% 18 days / 30% 48 days",
+                "line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "value": "percent",
+                            "value_amount": 70.0,
+                            "delay_type": "days_after",
+                            "nb_days": 18,
+                        },
+                    ),
+                    (
+                        0,
+                        0,
+                        {
+                            "value": "percent",
+                            "value_amount": 30.0,
+                            "delay_type": "days_after",
+                            "nb_days": 48,
+                        },
+                    ),
+                ],
+            }
+        )
+
+    def test_the_payment_term_splits_a_file_without_installments(self):
+        """The term the user chose is not ignored on an imported bill."""
+        self.move.invoice_payment_term_id = self._split_term()
+        terms = self._terms_with([])
+
+        invoice_date = self.move.invoice_date or self.move.date
+        by_date = {key["date_maturity"]: values for key, values in terms.items()}
+        self.assertEqual(
+            sorted(by_date),
+            [invoice_date + timedelta(days=18), invoice_date + timedelta(days=48)],
+        )
+        # Whatever the split, it has to close on what the move balances against.
+        self.assertAlmostEqual(
+            sum(values["balance"] for values in terms.values()),
+            self.move.amount_total_signed,
+            places=2,
+        )
+        self.assertAlmostEqual(
+            by_date[invoice_date + timedelta(days=18)]["balance"],
+            self.move.amount_total_signed * 0.7,
+            places=2,
+        )
+
+    def test_the_installments_of_the_file_win_over_the_payment_term(self):
+        self.move.invoice_payment_term_id = self._split_term()
+        terms = self._terms_with(
+            [(date(2026, 9, 4), 300.0), (date(2026, 10, 4), 700.0)]
+        )
+
+        self.assertEqual(
+            sorted(key["date_maturity"] for key in terms),
+            [date(2026, 9, 4), date(2026, 10, 4)],
+        )
+
+    def test_no_installments_and_no_payment_term_keeps_the_single_term(self):
+        self.move.invoice_payment_term_id = False
+        terms = self._terms_with([])
+
+        self.assertEqual(len(terms), 1)
+        self.assertEqual(next(iter(terms))["date_maturity"], self.move.invoice_date_due)

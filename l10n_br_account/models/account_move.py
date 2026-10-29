@@ -444,7 +444,9 @@ class AccountMove(models.Model):
             if invoice.is_invoice(True) and invoice.invoice_line_ids:
                 if invoice.imported_document:
                     invoice._compute_imported_terms()
-                elif invoice.invoice_payment_term_id:
+                # The installments of the file win. Without them, the payment
+                # term the user chose is what splits the bill.
+                if not invoice.needed_terms and invoice.invoice_payment_term_id:
                     if is_draft:
                         tax_amount_currency = 0.0
                         untaxed_amount_currency = 0.0
