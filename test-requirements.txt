@@ -16,3 +16,4 @@ requests_pkcs12<1.23
 pyopenssl==22.1.0
 brbank>=0.0.9  # Needed by l10n_br_bank_connection
 brbank[pdf]>=0.0.16  # Needed by l10n_br_bank_connection; [pdf] draws the boleto
+brbank>=0.0.9  # Needed by l10n_br_payment_schedule
