@@ -1176,8 +1176,8 @@ msgstr "Base para ICMS Efetivo"
 
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__icms_destination_percent
-msgid "ICMS External %"
-msgstr "% ICMS Externo"
+msgid "ICMS Internal %"
+msgstr "% ICMS Interno"
 
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__icmsfcp_percent
@@ -1217,8 +1217,8 @@ msgstr "Valor do ICMS FCP"
 
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__icms_origin_percent
-msgid "ICMS Internal %"
-msgstr "% ICMS Interno"
+msgid "ICMS External %"
+msgstr "% ICMS Externo"
 
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__icms_origin

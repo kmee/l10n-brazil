@@ -13,6 +13,7 @@ from . import (
     test_ibpt_product,
     test_ibpt_service,
     test_icms_regulation,
+    test_icms_difal_labels,
     test_ncm,
     test_partner_profile,
     test_service_type,
