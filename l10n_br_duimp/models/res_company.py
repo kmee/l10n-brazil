@@ -31,6 +31,7 @@ class ResCompany(models.Model):
         environment = self.duimp_environment or DUIMP_ENVIRONMENT_VALIDATION
         token_store = DuimpInMemoryTokenStore(f"{self.id}.{environment}")
         return DuimpWebservice(
+            self.env,
             certificate=certificate,
             environment=environment,
             token_store=token_store,

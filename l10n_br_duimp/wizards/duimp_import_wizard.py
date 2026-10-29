@@ -22,6 +22,7 @@ class DocumentImportWizard(models.TransientModel):
 
     company_currency_id = fields.Many2one(
         comodel_name="res.currency",
+        string="Company Currency",
         related="company_id.currency_id",
     )
 

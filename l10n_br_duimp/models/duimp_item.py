@@ -2,7 +2,7 @@
 # Copyright 2026 - TODAY, Cristiano Mafra Junior <cristiano.mafra@escodoo.com.br>
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 
 from ..constants.duimp import DUIMP_UOM_XMLID
 
@@ -15,17 +15,16 @@ class L10nBrDuimpItem(models.Model):
     _description = "DUIMP Item"
     _order = "declaration_id, item_number"
 
-    def name_get(self):
+    @api.depends("item_number", "product_id", "product_code")
+    def _compute_display_name(self):
         """Without this the item shows up as "l10n_br_duimp.item,36"
         wherever it is referenced, e.g. in the per-item tax breakdown."""
-        result = []
         for item in self:
-            label = _("Item %s") % (item.item_number or "?")
+            label = self.env._("Item %s", item.item_number or "?")
             detail = item.product_id.display_name or item.product_code
             if detail:
                 label = f"{label} - {detail}"
-            result.append((item.id, label))
-        return result
+            item.display_name = label
 
     declaration_id = fields.Many2one(
         comodel_name="l10n_br_duimp.declaration",
