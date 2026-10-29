@@ -447,7 +447,16 @@ class AccountMove(models.Model):
                 # The installments of the file win. Without them, the payment
                 # term the user chose is what splits the bill.
                 if not invoice.needed_terms and invoice.invoice_payment_term_id:
-                    if is_draft:
+                    if invoice.imported_document:
+                        # Same base as the single term fallback and the
+                        # installments of the file: the document total, which
+                        # includes IPI, ST, freight and the withholdings.
+                        tax_amount_currency = tax_amount = 0.0
+                        untaxed_amount_currency = (
+                            invoice.amount_total_in_currency_signed
+                        )
+                        untaxed_amount = invoice.amount_total_signed
+                    elif is_draft:
                         tax_amount_currency = 0.0
                         untaxed_amount_currency = 0.0
                         for line in invoice.invoice_line_ids:

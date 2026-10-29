@@ -4,7 +4,7 @@
 from datetime import date, timedelta
 from unittest.mock import patch
 
-from odoo.tests.common import tagged
+from odoo.tests.common import Form, tagged
 
 from .common import AccountMoveBRCommon
 
@@ -162,3 +162,50 @@ class TestImportedDueDate(AccountMoveBRCommon):
 
         self.assertEqual(len(terms), 1)
         self.assertEqual(next(iter(terms))["date_maturity"], self.move.invoice_date_due)
+
+    def _assert_terms_close_on_the_document_total(self, move):
+        subtotal = sum(move.invoice_line_ids.mapped("price_subtotal"))
+        # The freight is in the document total, not in the line subtotal.
+        self.assertNotAlmostEqual(abs(move.amount_total_signed), subtotal, places=2)
+        payment_lines = move.line_ids.filtered(
+            lambda line: line.display_type == "payment_term"
+        )
+        self.assertTrue(move.amount_total_signed)
+        self.assertEqual(len(payment_lines), 2)
+        self.assertAlmostEqual(
+            sum(payment_lines.mapped("balance")), move.amount_total_signed, places=2
+        )
+        self.assertAlmostEqual(sum(move.line_ids.mapped("balance")), 0.0, places=2)
+
+    def test_the_terms_include_the_freight_of_the_document(self):
+        self.move.invoice_line_ids[0].freight_value = 50.0
+        self.move.invoice_payment_term_id = self._split_term()
+
+        self._assert_terms_close_on_the_document_total(self.move)
+
+    def test_the_terms_include_the_freight_when_editing_the_term_in_a_form(self):
+        self.move.invoice_line_ids[0].freight_value = 50.0
+        with Form(self.move) as move_form:
+            move_form.invoice_payment_term_id = self._split_term()
+
+        self._assert_terms_close_on_the_document_total(self.move)
+
+    def _not_in_the_financial_total(self):
+        """The financial total is 0 for these lines, the document total is not."""
+        line = self.move.invoice_line_ids[0]
+        line.fiscal_operation_line_id.sudo().add_to_amount = False
+        line.freight_value = 50.0
+        self.move.invalidate_recordset()
+
+    def test_the_terms_follow_the_document_total_not_the_financial_total(self):
+        self._not_in_the_financial_total()
+        self.move.invoice_payment_term_id = self._split_term()
+
+        self._assert_terms_close_on_the_document_total(self.move)
+
+    def test_the_terms_follow_the_document_total_when_editing_in_a_form(self):
+        self._not_in_the_financial_total()
+        with Form(self.move) as move_form:
+            move_form.invoice_payment_term_id = self._split_term()
+
+        self._assert_terms_close_on_the_document_total(self.move)
