@@ -7,7 +7,7 @@
         <field name="model">l10n_br_duimp.receipt.link.wizard</field>
         <field name="arch" type="xml">
             <form>
-                <field name="declaracao_id" invisible="1" />
+                <field name="declaration_id" invisible="1" />
                 <p>
                     Lines marked as suggested match the item by product and quantity.
                     Review them before confirming; items left without a receipt line

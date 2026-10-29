@@ -57,32 +57,32 @@ class FiscalDocumentLine(models.Model):
                 line.nfe40_DI = line.nfe40_DI
                 continue
 
-            declaracao = item.declaracao_id
+            declaration = item.declaration_id
             nfe40_adi_dict = {
                 "nfe40_nAdicao": "1",
                 # nfe40_nSeqAdic is Char in the layout; int() only drops
                 # leading zeros ("01" -> "1")
-                "nfe40_nSeqAdic": str(int(item.numero_item or 1)),
-                "nfe40_cFabricante": item.codigo_produto,
+                "nfe40_nSeqAdic": str(int(item.item_number or 1)),
+                "nfe40_cFabricante": item.product_code,
             }
             nfe40_DI_dict = {
                 "nfe40_DI_prod_id": line.id,
-                "nfe40_nDI": declaracao.numero,
-                "nfe40_dDI": declaracao.data_registro,
-                "nfe40_xLocDesemb": declaracao.urf_despacho_nome,
+                "nfe40_nDI": declaration.number,
+                "nfe40_dDI": declaration.registration_date,
+                "nfe40_xLocDesemb": declaration.clearance_office_name,
                 # nfe40_UFDesemb is related to state_clearance_id.code, so it
                 # has to be set through the state, not written directly
                 "state_clearance_id": self._duimp_clearance_state(
-                    declaracao.uf_desembaraco
+                    declaration.clearance_state
                 ).id,
-                "nfe40_dDesemb": declaracao.data_desembaraco,
+                "nfe40_dDesemb": declaration.clearance_date,
                 "nfe40_vAFRMM": item.amount_afrmm,
-                "nfe40_tpViaTransp": (declaracao.via_transporte_codigo or "").lstrip(
+                "nfe40_tpViaTransp": (declaration.transport_mode_code or "").lstrip(
                     "0"
                 )
                 or False,
-                "nfe40_tpIntermedio": declaracao.caracterizacao_operacao_codigo,
-                "nfe40_cExportador": item.codigo_produto,
+                "nfe40_tpIntermedio": declaration.operation_type_code,
+                "nfe40_cExportador": item.product_code,
                 "nfe40_adi": [(0, 0, nfe40_adi_dict)],
             }
             line.nfe40_DI = [(5, 0, 0), (0, 0, nfe40_DI_dict)]

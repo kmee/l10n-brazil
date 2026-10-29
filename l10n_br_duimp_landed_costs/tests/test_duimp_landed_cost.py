@@ -180,19 +180,19 @@ class TestDuimpLandedCost(TransactionCase):
         cls.carrier.tax_framework = "3"
 
         dados_gerais, itens = duimp_fake_payload()
-        cls.declaracao = cls.env["l10n_br_duimp.declaracao"].create(
+        cls.declaration = cls.env["l10n_br_duimp.declaration"].create(
             {
-                "numero": dados_gerais["identificacao"]["numero"],
+                "number": dados_gerais["identificacao"]["numero"],
                 "company_id": cls.company.id,
                 "fiscal_operation_id": cls.fiscal_operation.id,
-                "fornecedor_partner_id": cls.exporter.id,
+                "partner_id": cls.exporter.id,
             }
         )
-        cls.declaracao._import_from_payload(dados_gerais, itens)
-        cls.declaracao.item_ids.cfop_id = cls.env.ref("l10n_br_fiscal.cfop_3102")
-        cls.declaracao.action_open()
-        cls.item_1 = cls.declaracao.item_ids.filtered(lambda i: i.numero_item == "1")
-        cls.item_2 = cls.declaracao.item_ids - cls.item_1
+        cls.declaration._import_from_payload(dados_gerais, itens)
+        cls.declaration.item_ids.cfop_id = cls.env.ref("l10n_br_fiscal.cfop_3102")
+        cls.declaration.action_open()
+        cls.item_1 = cls.declaration.item_ids.filtered(lambda i: i.item_number == "1")
+        cls.item_2 = cls.declaration.item_ids - cls.item_1
         cls.document_number = 7000
 
     # ------------------------------------------------------------------
@@ -238,7 +238,7 @@ class TestDuimpLandedCost(TransactionCase):
     def _receive_items(self):
         """Receive each DUIMP item in its own receipt, at its customs value."""
         return [
-            self._receive(item.product_id, item.quantidade, value / item.quantidade)
+            self._receive(item.product_id, item.quantity, value / item.quantity)
             for item, value in (
                 (self.item_1, CUSTOMS_VALUE_1),
                 (self.item_2, CUSTOMS_VALUE_2),
@@ -246,7 +246,7 @@ class TestDuimpLandedCost(TransactionCase):
         ]
 
     def _link_wizard(self):
-        action = self.declaracao.action_link_receipts()
+        action = self.declaration.action_link_receipts()
         return self.env[action["res_model"]].browse(action["res_id"])
 
     def _link_receipts(self):
@@ -309,7 +309,7 @@ class TestDuimpLandedCost(TransactionCase):
     def test_end_to_end(self):
         # DUIMP -> incoming fiscal document, one line per item. The vendor bill
         # is left out: it needs a chart of accounts the landed cost does not.
-        document = self.declaracao._create_fiscal_document()
+        document = self.declaration._create_fiscal_document()
         self.assertEqual(
             document.fiscal_line_ids.duimp_item_id, self.item_1 + self.item_2
         )
@@ -338,11 +338,11 @@ class TestDuimpLandedCost(TransactionCase):
         )
         wizard.action_confirm()
         self.assertEqual(self.item_1.move_ids, receipts[0].move_ids)
-        self.assertFalse(self.declaracao.item_ids.filtered("receipt_pending"))
-        self.assertEqual(self.declaracao.picking_count, 2)
+        self.assertFalse(self.declaration.item_ids.filtered("receipt_pending"))
+        self.assertEqual(self.declaration.picking_count, 2)
         self.assertEqual(
-            self.declaracao.action_view_receipts()["domain"],
-            [("id", "in", self.declaracao.picking_ids.ids)],
+            self.declaration.action_view_receipts()["domain"],
+            [("id", "in", self.declaration.picking_ids.ids)],
         )
 
         # Customs expenses: the ISS of the broker stays in the cost, its PIS
@@ -367,9 +367,9 @@ class TestDuimpLandedCost(TransactionCase):
             product: product.with_company(self.company).value_svl
             for product in (self.product_1, self.product_2)
         }
-        self.declaracao.expense_document_ids = nfse + cte
-        action = self.declaracao.action_create_landed_costs()
-        landed_costs = self.declaracao.landed_cost_ids
+        self.declaration.expense_document_ids = nfse + cte
+        action = self.declaration.action_create_landed_costs()
+        landed_costs = self.declaration.landed_cost_ids
         self.assertEqual(action["domain"], [("id", "in", landed_costs.ids)])
         self.assertEqual(landed_costs.fiscal_document_id, nfse + cte)
         self.assertEqual(nfse.landed_cost_split_method, "by_customs_value")
@@ -439,9 +439,9 @@ class TestDuimpLandedCost(TransactionCase):
 
         self.assertEqual(self.item_1.move_ids, receipt.move_ids)
         self.assertTrue(self.item_2.receipt_pending)
-        self.declaracao.expense_document_ids = self._broker_nfse()
+        self.declaration.expense_document_ids = self._broker_nfse()
         with self.assertRaisesRegex(UserError, "Pending items: 2"):
-            self.declaracao.action_create_landed_costs()
+            self.declaration.action_create_landed_costs()
 
     def test_ambiguous_receipt_is_not_suggested(self):
         self._receive(self.product_1, 100.0, 53.0)
@@ -489,27 +489,27 @@ class TestDuimpLandedCost(TransactionCase):
     def test_expense_is_not_allocated_twice(self):
         self._link_receipts()
         nfse = self._broker_nfse()
-        self.declaracao.expense_document_ids = nfse
-        self.declaracao.action_create_landed_costs()
+        self.declaration.expense_document_ids = nfse
+        self.declaration.action_create_landed_costs()
         with self.assertRaisesRegex(UserError, "already has a landed cost"):
-            self.declaracao.action_create_landed_costs()
+            self.declaration.action_create_landed_costs()
         with self.assertRaisesRegex(UserError, "already has a landed cost"):
             nfse.action_create_landed_cost()
 
     def test_receipts_must_be_done(self):
         for item in self.item_1 + self.item_2:
-            self._receive(item.product_id, item.quantidade, 50.0, validate=False)
+            self._receive(item.product_id, item.quantity, 50.0, validate=False)
         self._link_wizard().action_confirm()
-        self.declaracao.expense_document_ids = self._broker_nfse()
+        self.declaration.expense_document_ids = self._broker_nfse()
         with self.assertRaisesRegex(UserError, "Validate the receipts"):
-            self.declaracao.action_create_landed_costs()
+            self.declaration.action_create_landed_costs()
 
     def test_zero_customs_value(self):
         self._link_receipts()
-        self.declaracao.item_ids.valor_aduaneiro = 0.0
-        self.declaracao.expense_document_ids = self._freight_cte()
+        self.declaration.item_ids.customs_value = 0.0
+        self.declaration.expense_document_ids = self._freight_cte()
         with self.assertRaisesRegex(UserError, "no customs value"):
-            self.declaracao.action_create_landed_costs()
+            self.declaration.action_create_landed_costs()
 
     def test_receipt_without_duimp_item_is_refused(self):
         picking = self._receive(self.product_1, 100.0, 53.0)
@@ -523,8 +523,8 @@ class TestDuimpLandedCost(TransactionCase):
         receipts = self._link_receipts()
         document = self._freight_cte()
         document.landed_cost_split_method = "by_quantity"
-        self.declaracao.expense_document_ids = document
-        self.declaracao.action_create_landed_costs()
+        self.declaration.expense_document_ids = document
+        self.declaration.action_create_landed_costs()
 
         landed_cost = document.landed_cost_ids
         self.assertEqual(landed_cost.picking_ids, receipts[0] + receipts[1])

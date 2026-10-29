@@ -10,8 +10,8 @@ class DuimpReceiptLinkWizard(models.TransientModel):
     _name = "l10n_br_duimp.receipt.link.wizard"
     _description = "Link DUIMP Items to Receipts"
 
-    declaracao_id = fields.Many2one(
-        comodel_name="l10n_br_duimp.declaracao",
+    declaration_id = fields.Many2one(
+        comodel_name="l10n_br_duimp.declaration",
         required=True,
         ondelete="cascade",
     )
@@ -42,8 +42,8 @@ class DuimpReceiptLinkWizard(models.TransientModel):
         )
         suggested = self.env["stock.move"]
         lines = []
-        for item in self.declaracao_id.item_ids.filtered("receipt_pending"):
-            missing_qty = item.quantidade - item.received_qty
+        for item in self.declaration_id.item_ids.filtered("receipt_pending"):
+            missing_qty = item.quantity - item.received_qty
             candidates = self._candidate_moves(item) - suggested
             matches = candidates.filtered(
                 lambda move, item=item, missing_qty=missing_qty: float_compare(
@@ -104,7 +104,7 @@ class DuimpReceiptLinkWizardLine(models.TransientModel):
     )
     product_id = fields.Many2one(related="item_id.product_id")
     company_id = fields.Many2one(related="item_id.company_id")
-    quantity = fields.Float(related="item_id.quantidade")
+    quantity = fields.Float(related="item_id.quantity")
     received_qty = fields.Float(related="item_id.received_qty")
     move_id = fields.Many2one(
         comodel_name="stock.move",

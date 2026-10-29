@@ -27,7 +27,7 @@ class StockMove(models.Model):
                         "The receipt of %(product)s cannot be linked to the DUIMP"
                         " item %(item)s, which is another product.",
                         product=move.product_id.display_name,
-                        item=item.numero_item,
+                        item=item.item_number,
                     )
                 )
             if item.company_id != move.company_id:
@@ -53,6 +53,6 @@ class StockMove(models.Model):
         """
         self.ensure_one()
         item = self.duimp_item_id
-        if not item.quantidade:
+        if not item.quantity:
             return 0.0
-        return item.valor_aduaneiro * self._get_duimp_item_qty() / item.quantidade
+        return item.customs_value * self._get_duimp_item_qty() / item.quantity

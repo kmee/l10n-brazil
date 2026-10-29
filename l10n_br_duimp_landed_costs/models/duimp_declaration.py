@@ -7,8 +7,8 @@ from odoo.exceptions import UserError
 from .stock_landed_cost import BY_CUSTOMS_VALUE
 
 
-class L10nBrDuimpDeclaracao(models.Model):
-    _inherit = "l10n_br_duimp.declaracao"
+class L10nBrDuimpDeclaration(models.Model):
+    _inherit = "l10n_br_duimp.declaration"
 
     picking_ids = fields.Many2many(
         comodel_name="stock.picking",
@@ -21,13 +21,13 @@ class L10nBrDuimpDeclaracao(models.Model):
 
     expense_document_ids = fields.Many2many(
         comodel_name="l10n_br_fiscal.document",
-        relation="l10n_br_duimp_declaracao_expense_document_rel",
-        column1="declaracao_id",
+        relation="l10n_br_duimp_declaration_expense_document_rel",
+        column1="declaration_id",
         column2="document_id",
         string="Customs Expenses",
         domain="[('company_id', '=', company_id),"
         " ('fiscal_operation_type', '=', 'in'),"
-        " ('duimp_declaracao_id', '=', False)]",
+        " ('duimp_declaration_id', '=', False)]",
         copy=False,
         help="Incoming fiscal documents of the costs of this import (customs"
         " broker, storage, freight) that are allocated to its receipts.",
@@ -56,7 +56,7 @@ class L10nBrDuimpDeclaracao(models.Model):
     def action_link_receipts(self):
         self.ensure_one()
         wizard = self.env["l10n_br_duimp.receipt.link.wizard"].create(
-            {"declaracao_id": self.id}
+            {"declaration_id": self.id}
         )
         wizard._suggest_moves()
         return {
@@ -75,7 +75,7 @@ class L10nBrDuimpDeclaracao(models.Model):
                 self.env._(
                     "Link the receipts of every DUIMP item before allocating its"
                     " expenses. Pending items: %(items)s",
-                    items=", ".join(pending.mapped("numero_item")),
+                    items=", ".join(pending.mapped("item_number")),
                 )
             )
         not_done = self.picking_ids.filtered(lambda picking: picking.state != "done")
