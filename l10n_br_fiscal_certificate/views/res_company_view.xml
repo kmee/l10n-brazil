@@ -13,6 +13,7 @@
                         </group>
                         <group>
                             <field name="certificate_nfe_id" />
+                            <field name="certificate_ecpf_id" />
                         </group>
                     </group>
                 </page>

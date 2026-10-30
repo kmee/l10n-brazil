@@ -367,12 +367,17 @@ class TestResCompanyDuimpWebservice(TransactionCase):
             country="BR",
             subject="TITULAR TESTE:52998224725",
         )
-        certificate = cls.env["certificate.certificate"].create(
+        # Imagem do Grupo Prevencao: esta base ainda usa o
+        # l10n_br_fiscal.certificate, e nao o certificate.certificate nativo
+        # para o qual o modulo de certificado foi reescrito em 18.0.2.0.0.
+        # Quando a base alcancar essa versao, este bloco volta a ser o de
+        # upstream.
+        certificate = cls.env["l10n_br_fiscal.certificate"].create(
             {
-                "scope": "l10n_br",
-                "pkcs12_password": "123456",
-                "content": cert_file,
-                "company_id": cls.company.id,
+                "type": "e-cpf",
+                "subtype": "a1",
+                "password": "123456",
+                "file": cert_file,
             }
         )
         cls.company.certificate_ecpf_id = certificate

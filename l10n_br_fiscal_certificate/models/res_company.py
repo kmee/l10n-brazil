@@ -24,6 +24,15 @@ class ResCompany(models.Model):
         domain="[('type', '=', 'nf-e')]",
     )
 
+    certificate_ecpf_id = fields.Many2one(
+        comodel_name="l10n_br_fiscal.certificate",
+        string="E-CPF",
+        domain="[('type', '=', 'e-cpf')]",
+        help="Certificate of the individual who represents the company before "
+        "services that reject an e-CNPJ, such as the Portal Unico Siscomex "
+        "(DUIMP).",
+    )
+
     certificate = fields.Many2one(
         comodel_name="l10n_br_fiscal.certificate",
         compute="_compute_certificate",
@@ -48,7 +57,17 @@ class ResCompany(models.Model):
             record.certificate = certificate
 
     @api.model
-    def _get_br_ecertificate(self, only_ecnpj=False):
+    def _get_br_ecertificate(self, only_ecnpj=False, only_ecpf=False):
+        if only_ecpf:
+            certificate = self.sudo().certificate_ecpf_id
+            if not certificate:
+                raise ValidationError(
+                    _("Only an e-CPF Certificate can be used for this case.")
+                )
+            return cert.Certificado(
+                arquivo=certificate.file,
+                senha=certificate.password,
+            )
         certificate = self.certificate
         if only_ecnpj:
             if certificate != self.sudo().certificate_ecnpj_id:

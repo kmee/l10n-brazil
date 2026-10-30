@@ -1,3 +1,4 @@
+from . import account_move
 from . import duimp_mixin
 from . import duimp_webservice
 from . import res_currency
