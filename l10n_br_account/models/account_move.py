@@ -365,6 +365,26 @@ class AccountMove(models.Model):
             limit=1,
         )
 
+    @api.depends(
+        "l10n_latam_document_type_id",
+        "journal_id",
+        "issuer",
+        "document_type_id",
+        "fiscal_document_id",
+    )
+    def _compute_l10n_latam_manual_document_number(self):
+        # Soft dependency: only called when l10n_latam_invoice_document is
+        # installed, which defines the field and this compute.
+        return super()._compute_l10n_latam_manual_document_number()
+
+    def _is_manual_document_number(self):
+        # A fiscal document issued by the company is numbered by its serie,
+        # also when it is booked in a purchase journal (e.g. the inbound NF-e
+        # of an import): there is no vendor number to type in.
+        if self.document_type_id and self.issuer == DOCUMENT_ISSUER_COMPANY:
+            return False
+        return super()._is_manual_document_number()
+
     def _compute_imported_terms(self):
         """Build the payment terms of an imported document from its file.
 
@@ -1136,11 +1156,21 @@ class AccountMove(models.Model):
         if not move_id or not move.fiscal_document_id:
             move_form.partner_id = fiscal_document.partner_id
             move_form.invoice_date = fiscal_document.document_date
-            move_form.date = fiscal_document.document_date
             move_form.document_type_id = fiscal_document.document_type_id
             move_form.fiscal_document_id = fiscal_document
             move_form.fiscal_operation_id = fiscal_document.fiscal_operation_id
-            move_form.document_serie = fiscal_document.document_serie
+            for field_name, value in (
+                ("date", fiscal_document.document_date),
+                ("document_serie", fiscal_document.document_serie),
+            ):
+                # A fiscal document without date (e.g. created from a DUIMP)
+                # keeps the default accounting date of the move. And a document
+                # issued by the company has document_serie invisible: the serie
+                # goes in document_serie_id instead.
+                if value and not move_form._get_modifier(field_name, "invisible"):
+                    setattr(move_form, field_name, value)
+            if not move_form._get_modifier("document_serie_id", "invisible"):
+                move_form.document_serie_id = fiscal_document._import_document_serie()
             if (
                 "l10n_latam.document.type" in self.env
                 and move_form.l10n_latam_use_documents
