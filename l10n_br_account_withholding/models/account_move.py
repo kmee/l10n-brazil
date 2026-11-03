@@ -153,10 +153,10 @@ class AccountMove(models.Model):
                             payable_lines.write(
                                 {"account_id": fiscal_group.wh_payable_account_id.id}
                             )
-                        wh_invoice.message_post_with_view(
+                        wh_invoice.message_post_with_source(
                             "mail.message_origin_link",
-                            values={"self": wh_invoice, "origin": move},
-                            subtype_id=self.env.ref("mail.mt_note").id,
+                            render_values={"self": wh_invoice, "origin": move},
+                            subtype_xmlid="mail.mt_note",
                         )
                         wh_invoice.action_post()
 
