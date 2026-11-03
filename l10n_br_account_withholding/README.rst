@@ -1,7 +1,3 @@
-.. image:: https://odoo-community.org/readme-banner-image
-   :target: https://odoo-community.org/get-involved?utm_source=readme
-   :alt: Odoo Community Association
-
 ===========================
 L10n Br Account Withholding
 ===========================
@@ -17,17 +13,17 @@ L10n Br Account Withholding
 .. |badge1| image:: https://img.shields.io/badge/maturity-Beta-yellow.png
     :target: https://odoo-community.org/page/development-status
     :alt: Beta
-.. |badge2| image:: https://img.shields.io/badge/license-AGPL--3-blue.png
+.. |badge2| image:: https://img.shields.io/badge/licence-AGPL--3-blue.png
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-OCA%2Fl10n--brazil-lightgray.png?logo=github
-    :target: https://github.com/OCA/l10n-brazil/tree/16.0/l10n_br_account_withholding
+    :target: https://github.com/OCA/l10n-brazil/tree/17.0/l10n_br_account_withholding
     :alt: OCA/l10n-brazil
 .. |badge4| image:: https://img.shields.io/badge/weblate-Translate%20me-F47D42.png
-    :target: https://translation.odoo-community.org/projects/l10n-brazil-16-0/l10n-brazil-16-0-l10n_br_account_withholding
+    :target: https://translation.odoo-community.org/projects/l10n-brazil-17-0/l10n-brazil-17-0-l10n_br_account_withholding
     :alt: Translate me on Weblate
 .. |badge5| image:: https://img.shields.io/badge/runboat-Try%20me-875A7B.png
-    :target: https://runboat.odoo-community.org/builds?repo=OCA/l10n-brazil&target_branch=16.0
+    :target: https://runboat.odoo-community.org/builds?repo=OCA/l10n-brazil&target_branch=17.0
     :alt: Try me on Runboat
 
 |badge1| |badge2| |badge3| |badge4| |badge5|
@@ -49,12 +45,12 @@ Automatize a conformidade fiscal, reduza erros de entrada manual e
 aprimore seus processos financeiros relacionados à retenção de impostos
 de fornecedores.
 
-- **Automatize a Conformidade Fiscal:** Crie contas a pagar para
-  impostos retidos em compras de fornecedores automaticamente.
-- **Reduza Erros:** Minimize erros manuais e assegure a precisão nas
-  retenções de impostos.
-- **Aprimore a Eficiência:** Melhore seus processos financeiros para
-  lidar com retenções de impostos de fornecedores.
+-  **Automatize a Conformidade Fiscal:** Crie contas a pagar para
+   impostos retidos em compras de fornecedores automaticamente.
+-  **Reduza Erros:** Minimize erros manuais e assegure a precisão nas
+   retenções de impostos.
+-  **Aprimore a Eficiência:** Melhore seus processos financeiros para
+   lidar com retenções de impostos de fornecedores.
 
 Installation
 ============
@@ -64,32 +60,32 @@ Odoo:
 
 1. **Adicione o Repositório:**
 
-   - Adicione o repositório ``l10n-brazil`` da OCA no seu projeto
-     adicionando a URL: ``https://github.com/OCA/l10n-brazil``.
-   - Verifique os arquivos requirements.txt e oca_dependencies.txt
-     localizados na raiz do repositório ``l10n-brazil``. Estes arquivos
-     contêm, respectivamente, as dependências Python necessárias para o
-     Odoo e os repositórios da OCA dos quais os módulos da localização
-     brasileira dependem.
+   -  Adicione o repositório ``l10n-brazil`` da OCA no seu projeto
+      adicionando a URL: ``https://github.com/OCA/l10n-brazil``.
+   -  Verifique os arquivos requirements.txt e oca_dependencies.txt
+      localizados na raiz do repositório ``l10n-brazil``. Estes arquivos
+      contêm, respectivamente, as dependências Python necessárias para o
+      Odoo e os repositórios da OCA dos quais os módulos da localização
+      brasileira dependem.
 
 2. **Configure o Caminho dos Addons:**
 
-   - Adicione o caminho do repositório na configuração do Odoo em
-     ``addons-path``.
+   -  Adicione o caminho do repositório na configuração do Odoo em
+      ``addons-path``.
 
 3. **Atualize a Lista de Módulos:**
 
-   - Atualize sua lista de módulos para que o Odoo reconheça o novo
-     módulo.
+   -  Atualize sua lista de módulos para que o Odoo reconheça o novo
+      módulo.
 
 4. **Busque pelo Módulo:**
 
-   - Pesquise por ``"L10n Br Account Withholding"`` nos addons do Odoo
-     para localizar o módulo.
+   -  Pesquise por ``"L10n Br Account Withholding"`` nos addons do Odoo
+      para localizar o módulo.
 
 5. **Instale o Módulo:**
 
-   - Prossiga com a instalação do módulo no ambiente Odoo.
+   -  Prossiga com a instalação do módulo no ambiente Odoo.
 
 Configuration
 =============
@@ -135,7 +131,7 @@ Bug Tracker
 Bugs are tracked on `GitHub Issues <https://github.com/OCA/l10n-brazil/issues>`_.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
-`feedback <https://github.com/OCA/l10n-brazil/issues/new?body=module:%20l10n_br_account_withholding%0Aversion:%2016.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
+`feedback <https://github.com/OCA/l10n-brazil/issues/new?body=module:%20l10n_br_account_withholding%0Aversion:%2017.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**>`_.
 
 Do not contact contributors directly about support or help with technical issues.
 
@@ -151,13 +147,13 @@ Authors
 Contributors
 ------------
 
-- ``Escodoo <https://www.escodoo.com.br>``\ \_:
+-  ``Escodoo <https://www.escodoo.com.br>``\ \_:
 
-  - Marcel Savegnago marcel.savegnago@escodoo.com.br
+   -  Marcel Savegnago marcel.savegnago@escodoo.com.br
 
-- ``Akretion <https://www.akretion.com.br>``\ \_:
+-  ``Akretion <https://www.akretion.com.br>``\ \_:
 
-  - Renato Lima renato.lima@akretion.com.br
+   -  Renato Lima renato.lima@akretion.com.br
 
 Maintainers
 -----------
@@ -183,6 +179,6 @@ Current `maintainers <https://odoo-community.org/page/maintainer-role>`__:
 
 |maintainer-marcelsavegnago| |maintainer-renatonlima| 
 
-This module is part of the `OCA/l10n-brazil <https://github.com/OCA/l10n-brazil/tree/16.0/l10n_br_account_withholding>`_ project on GitHub.
+This module is part of the `OCA/l10n-brazil <https://github.com/OCA/l10n-brazil/tree/17.0/l10n_br_account_withholding>`_ project on GitHub.
 
 You are welcome to contribute. To learn how please visit https://odoo-community.org/page/Contribute.
