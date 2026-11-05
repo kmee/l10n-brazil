@@ -6,7 +6,7 @@
     "summary": """
         This module allows defining the structure for generating the CNAB file.
         Used to exchange information with Brazilian banks.""",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.0.1",
     "author": "Engenere, Escodoo, Odoo Community Association (OCA)",
     "maintainers": ["antoniospneto", "felipemotter", "marcelsavegnago", "kaynnan"],
     "website": "https://github.com/OCA/l10n-brazil",
@@ -26,6 +26,7 @@
         "data/cnab.occurrence.csv",
         "data/cnab.pix.key.type.csv",
         "data/cnab.pix.transfer.type.csv",
+        "data/cnab.payment.way_pix.xml",
         "wizard/field_select_wizard.xml",
         "wizard/cnab_preview_wizard.xml",
         "wizard/cnab_import_wizard.xml",

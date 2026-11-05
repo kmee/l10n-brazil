@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Itau SISPAG "forma de pagamento" 45 (PIX transferencia). -->
+    <record id="cnab_itau_240_pay_way_45" model="cnab.payment.way">
+        <field name="is_pix" eval="True" />
+    </record>
+</odoo>

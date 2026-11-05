@@ -11,6 +11,7 @@ from tempfile import TemporaryDirectory
 from unidecode import unidecode
 
 from odoo import fields
+from odoo.exceptions import UserError
 from odoo.tests import Form
 from odoo.tests.common import tagged
 
@@ -43,6 +44,9 @@ PAY_WAY_OTHER_BANK = "41"
 
 SVC_SUPPLIER = "20"
 SVC_SALARY = "30"
+# Service type used for employee payments (PIX, TED and same-bank credit).
+# Decided by Daniel at GATE 2 (2026-10-06): 20 (Fornecedores) for everyone.
+SVC_EMPLOYEE = SVC_SUPPLIER
 
 TEST_CNPJ = "82688625000152"
 TEST_PARTNER_CNPJ = "45823449000198"
@@ -94,6 +98,7 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         cls.partner_a_itau_bank = cls.res_partner_bank_model.create(
             {
                 "acc_number": "123456",
+                "acc_number_dig": "7",
                 "bra_number": "0001",
                 "bank_id": cls.bank_341.id,
                 "partner_id": cls.partner_a.id,
@@ -401,8 +406,9 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         )
 
         self.assertIsNotNone(preview_wizard.output_yaml)
+        bank_name = unidecode(self.bank_341.name).upper()[:30].ljust(30)
         self.assertIn(
-            "    103_132_nome_do_banco: 'ITAU UNIBANCO SA              '\n",
+            f"    103_132_nome_do_banco: '{bank_name}'\n",
             preview_wizard.output_yaml,
         )
 
@@ -706,29 +712,55 @@ class TestCNABStructure(AccountTestInvoicingCommon):
             }
         )
 
-        self.env["account.payment.line"].create(
+        # The service type is computed from the rules (it is no longer taken
+        # from the vals): supplier -> TED/20, employee -> current account/30.
+        rule_model = self.env["l10n_br_cnab.payment.rule"]
+        rule_model.create(
+            {
+                "cnab_structure_id": cnab_structure.id,
+                "sequence": 10,
+                "match_bank_type": "any",
+                "match_partner_type": "employee",
+                "payment_way_id": way_cc.id,
+                "service_type": SVC_SALARY,
+            }
+        )
+        rule_model.create(
+            {
+                "cnab_structure_id": cnab_structure.id,
+                "sequence": 20,
+                "match_bank_type": "any",
+                "match_partner_type": "supplier",
+                "payment_way_id": way_ted.id,
+                "service_type": SVC_SUPPLIER,
+            }
+        )
+        employee_partner = self.partner_b
+        employee_partner.employee = True
+        employee_bank = self._create_partner_bank(
+            self.bank_341, partner_id=employee_partner.id
+        )
+
+        line_supplier = self.env["account.payment.line"].create(
             {
                 "order_id": payment_order.id,
                 "partner_id": self.partner_a.id,
                 "partner_bank_id": self.partner_a_itau_bank.id,
                 "amount_currency": 100.0,
-                "service_type": SVC_SUPPLIER,
-                "cnab_payment_way_id": way_ted.id,
                 "communication": "TEST BATCH 1",
             }
         )
-
-        self.env["account.payment.line"].create(
+        line_employee = self.env["account.payment.line"].create(
             {
                 "order_id": payment_order.id,
-                "partner_id": self.partner_a.id,
-                "partner_bank_id": self.partner_a_itau_bank.id,
+                "partner_id": employee_partner.id,
+                "partner_bank_id": employee_bank.id,
                 "amount_currency": 200.0,
-                "service_type": SVC_SALARY,
-                "cnab_payment_way_id": way_cc.id,
                 "communication": "TEST BATCH 2",
             }
         )
+        self.assertEqual(line_supplier.service_type, SVC_SUPPLIER)
+        self.assertEqual(line_employee.service_type, SVC_SALARY)
 
         payment_order._compute_cnab_processor()
         payment_order._compute_cnab_structure_id()
@@ -793,3 +825,727 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         self.assertFalse(cnab_field_id.content_source_field)
         field_select_wizard.action_confirm()
         self.assertEqual(cnab_field_id.content_source_field, "company_partner_bank_id")
+
+    # ------------------------------------------------------------------
+    # Itau SISPAG segment A (salary): same bank group and strict validation
+    # ------------------------------------------------------------------
+    def _create_itau_salary_rules(self):
+        cnab_structure = self.cnab_structure_itau_240
+        self.way_01 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_01")
+        self.way_41 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_41")
+        rule_model = self.env["l10n_br_cnab.payment.rule"]
+        rule_model.create(
+            {
+                "cnab_structure_id": cnab_structure.id,
+                "sequence": 10,
+                "match_bank_type": "same",
+                "match_partner_type": "any",
+                "payment_way_id": self.way_01.id,
+                "service_type": SVC_SALARY,
+            }
+        )
+        rule_model.create(
+            {
+                "cnab_structure_id": cnab_structure.id,
+                "sequence": 20,
+                "match_bank_type": "other",
+                "match_partner_type": "any",
+                "payment_way_id": self.way_41.id,
+                "service_type": SVC_SALARY,
+            }
+        )
+
+    def _create_itau_salary_mode(self):
+        return self.env["account.payment.mode"].create(
+            {
+                "name": "Itau Salary Mode",
+                "bank_account_link": "fixed",
+                "company_id": self.company.id,
+                "payment_method_id": self.outbound_payment_method.id,
+                "fixed_journal_id": self.bank_journal_itau.id,
+                "cnab_structure_id": self.cnab_structure_itau_240.id,
+                "cnab_payment_way_ids": [(6, 0, [self.way_01.id, self.way_41.id])],
+                "cnab_processor": "oca_processor",
+            }
+        )
+
+    def _create_itau_salary_line(self, partner_bank, way):
+        mode = self._create_itau_salary_mode()
+        order = self.payment_order_model.create(
+            {
+                "payment_mode_id": mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": self.bank_journal_itau.id,
+            }
+        )
+        line = self.payment_line_model.create(
+            {
+                "order_id": order.id,
+                "partner_id": self.partner_a.id,
+                "partner_bank_id": partner_bank.id,
+                "amount_currency": 100.0,
+                "service_type": SVC_SALARY,
+                "cnab_payment_way_id": way.id,
+                "communication": "SALARY TEST",
+            }
+        )
+        return order, line
+
+    def _generate_segment_a(self, order):
+        order.draft2open()
+        action = order.open2generated()
+        data = base64.b64decode(self.attachment_model.browse(action["res_id"]).datas)
+        lines = data.decode().splitlines()
+        batch_headers = [x for x in lines if len(x) > 8 and x[7] == "1"]
+        segments = [x for x in lines if len(x) > 13 and x[7] == "3" and x[13] == "A"]
+        self.assertEqual(len(segments), 1)
+        return batch_headers, segments[0]
+
+    def _create_partner_bank(self, bank, **vals):
+        values = {
+            "bank_id": bank.id,
+            "partner_id": self.env["res.partner"].create({"name": "Bank Holder"}).id,
+            "acc_number": "123456",
+            "bra_number": "1234",
+            "acc_number_dig": "7",
+        }
+        values.update(vals)
+        return self.res_partner_bank_model.create(values)
+
+    def test_itau_salary_same_bank_segment_a(self):
+        """Group 1 (same bank) must fill branch, account and DAC."""
+        self._create_itau_salary_rules()
+        partner_bank = self._create_partner_bank(self.bank_341)
+        order, _line = self._create_itau_salary_line(partner_bank, self.way_01)
+        batch_headers, seg = self._generate_segment_a(order)
+        self.assertEqual(batch_headers[0][9:11], SVC_SALARY)
+        self.assertEqual(seg[20:23], "341")
+        self.assertEqual(seg[23], "0")
+        self.assertEqual(seg[24:28], "1234")
+        self.assertEqual(seg[28], " ")
+        self.assertEqual(seg[29:35], "000000")
+        self.assertEqual(seg[35:41], "123456")
+        self.assertEqual(seg[41], " ")
+        self.assertEqual(seg[42], "7")
+
+    def test_itau_salary_other_bank_segment_a(self):
+        """Group 2 (other banks) layout is unchanged; format only."""
+        self._create_itau_salary_rules()
+        partner_bank = self._create_partner_bank(
+            self.bank_001, acc_number="789012", bra_number="2", acc_number_dig="X"
+        )
+        order, _line = self._create_itau_salary_line(partner_bank, self.way_41)
+        batch_headers, seg = self._generate_segment_a(order)
+        self.assertEqual(batch_headers[0][9:11], SVC_SALARY)
+        self.assertEqual(seg[20:23], "001")
+        self.assertEqual(seg[23:28], "00002")
+        self.assertEqual(seg[28], " ")
+        self.assertEqual(seg[29:41], "000000789012")
+        self.assertEqual(seg[41], " ")
+        self.assertEqual(seg[42], "X")
+
+    def _strict_field(self, suffix):
+        return self.env.ref(
+            "l10n_br_cnab_structure.cnab_itau_240_pagamentos_segmento_a_" + suffix
+        )
+
+    def _assert_strict_error(self, field, line, *fragments):
+        with self.assertRaises(UserError) as ctx:
+            field.output(line, strict=True)
+        message = str(ctx.exception)
+        for fragment in fragments:
+            self.assertIn(fragment, message)
+        return message
+
+    def test_itau_strict_validation(self):
+        self._create_itau_salary_rules()
+        field_branch = self._strict_field("25_28b")
+        field_account = self._strict_field("36_41b")
+        field_dac = self._strict_field("43_43b")
+        for field in (field_branch, field_account, field_dac):
+            self.assertTrue(field.raise_on_overflow)
+        partner_bank = self._create_partner_bank(self.bank_341)
+        _order, line = self._create_itau_salary_line(partner_bank, self.way_01)
+
+        # Valid values
+        self.assertEqual(field_branch.output(line, strict=True)[1], "1234")
+        self.assertEqual(field_account.output(line, strict=True)[1], "123456")
+        self.assertEqual(field_dac.output(line, strict=True)[1], "7")
+
+        # Account with embedded check digit and separator
+        partner_bank.acc_number = "12345-6"
+        message = self._assert_strict_error(
+            field_account, line, "12345-6", self.partner_a.name, "36", "41"
+        )
+        self.assertNotIn(TEST_PARTNER_CNPJ, message)
+        # Account with 7 significant digits (embedded DAC, no separator)
+        partner_bank.acc_number = "1234567"
+        self._assert_strict_error(field_account, line, "1234567")
+        # Leading zeros do not count against the limit
+        partner_bank.acc_number = "0012345"
+        self.assertEqual(field_account.output(line, strict=True)[1], "012345")
+        # Shorter values are zero filled
+        partner_bank.acc_number = "123"
+        self.assertEqual(field_account.output(line, strict=True)[1], "000123")
+        # Empty account
+        partner_bank.acc_number = False
+        self._assert_strict_error(field_account, line)
+        partner_bank.acc_number = "123456"
+
+        # Empty branch
+        partner_bank.bra_number = False
+        self._assert_strict_error(field_branch, line)
+        partner_bank.bra_number = "1234"
+
+        # DAC: empty, letter and two digits
+        for dac in (False, "A", "12"):
+            partner_bank.acc_number_dig = dac
+            self._assert_strict_error(field_dac, line)
+
+        # Legacy branch with 5 digits (the ORM constraint blocks it)
+        partner_bank.acc_number_dig = "7"
+        with self.assertRaises(UserError):
+            partner_bank.bra_number = "12345"
+        self.env.cr.execute(
+            "UPDATE res_partner_bank SET bra_number = %s WHERE id = %s",
+            ("12345", partner_bank.id),
+        )
+        partner_bank.invalidate_recordset()
+        self._assert_strict_error(field_branch, line, "12345")
+
+        # Without strict the behaviour is unchanged (silent truncation)
+        self.assertEqual(field_branch.output(line)[1], "1234")
+
+    def test_itau_strict_validation_not_applied_to_other_fields(self):
+        """Fields without the flag keep the legacy behaviour."""
+        self._create_itau_salary_rules()
+        field_other = self._strict_field("30_41")
+        self.assertFalse(field_other.raise_on_overflow)
+        partner_bank = self._create_partner_bank(
+            self.bank_001, acc_number="12345-6789012345"
+        )
+        _order, line = self._create_itau_salary_line(partner_bank, self.way_41)
+        self.assertEqual(field_other.output(line, strict=True)[1], "123456789012")
+
+    def test_format_leading_zeros_only_with_strict_flag(self):
+        """Stripping leading zeros is Itau strict only; other fields unchanged."""
+        field_strict = self._strict_field("36_41b")
+        self.assertTrue(field_strict.raise_on_overflow)
+        field_other = self._strict_field("30_41")
+        self.assertFalse(field_other.raise_on_overflow)
+        self.assertEqual(field_strict.format(6, "num", "0012345"), "012345")
+        # Legacy behaviour for fields without the flag: plain truncation
+        self.assertEqual(field_other.format(6, "num", "0012345"), "001234")
+        self.assertEqual(field_other.format(6, "num", "123"), "000123")
+
+    def test_itau_strict_preview_does_not_raise(self):
+        """The CNAB line form preview must never raise on invalid data."""
+        self._create_itau_salary_rules()
+        partner_bank = self._create_partner_bank(self.bank_341, acc_number="12345-6")
+        _order, line = self._create_itau_salary_line(partner_bank, self.way_01)
+        field_account = self._strict_field("36_41b")
+        field_account.cnab_line_id.resource_ref = f"account.payment.line,{line.id}"
+        field_account.invalidate_recordset(["preview_field"])
+        self.assertTrue(field_account.preview_field)
+        # Same for a field of another bank layout
+        other_field = self.env.ref(
+            "l10n_br_cnab_structure.cnab_bb_240_pagamentos_segmento_a_24_28"
+        )
+        other_field.cnab_line_id.resource_ref = f"account.payment.line,{line.id}"
+        other_field.invalidate_recordset(["preview_field"])
+        self.assertTrue(other_field.preview_field)
+
+    # ------------------------------------------------------------------
+    # Service type reproduction (real flow: invoice -> payment line multi)
+    # ------------------------------------------------------------------
+    def _create_employee_rule(self):
+        way_45 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_45")
+        return self.env["l10n_br_cnab.payment.rule"].create(
+            {
+                "cnab_structure_id": self.cnab_structure_itau_240.id,
+                "sequence": 5,
+                "match_bank_type": "any",
+                "match_partner_type": "employee",
+                "payment_way_id": way_45.id,
+                "service_type": SVC_SALARY,
+            }
+        )
+
+    def test_service_type_supplier_without_rule(self):
+        """PAY0005 reproduction: supplier PIX, no rule at all.
+
+        Cause (i) + vals: with no rule the compute is not involved and the
+        "20" comes from _prepare_payment_line_vals (in_invoice default),
+        confirmed by this test. PAY0005 was not a salary. Passes before and
+        after the fix.
+        """
+        self.assertFalse(self.cnab_structure_itau_240.cnab_payment_rule_ids)
+        invoice = self._create_test_invoice()
+        order = self._create_payment_order(invoice)
+        line = order.payment_line_ids
+        self.assertEqual(len(line), 1)
+        self.assertEqual(line.service_type, SVC_SUPPLIER)
+        self.assertEqual(
+            line.cnab_payment_way_id,
+            self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_45"),
+        )
+
+    def test_service_type_salary_with_employee_rule(self):
+        """Employee flag + active "employee" rule must give service type 30.
+
+        Cause (ii): before the fix this test FAILS, because the "20" passed
+        in the vals by _prepare_payment_line_vals prevails: the surviving
+        _compute_cnab_payment_way_id has no @api.depends, so it never runs
+        on create and the stored value is the one from the vals.
+        """
+        self._create_employee_rule()
+        self.partner_a.employee = True
+        invoice = self._create_test_invoice()
+        order = self._create_payment_order(invoice)
+        line = order.payment_line_ids
+        self.assertEqual(len(line), 1)
+        self.assertEqual(line.service_type, SVC_SALARY)
+        self.assertEqual(
+            line.cnab_payment_way_id,
+            self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_45"),
+        )
+
+    # ------------------------------------------------------------------
+    # Same bank by code, employee flag, exported orders, order computes
+    # ------------------------------------------------------------------
+    def test_same_bank_by_code_with_duplicated_bank(self):
+        """Two res.bank records with code 341 must still be the "same bank"."""
+        duplicated = self.env["res.bank"].create(
+            {"name": "Itau duplicated", "code_bc": "341"}
+        )
+        self.assertNotEqual(duplicated, self.bank_341)
+        payee_bank = self._create_partner_bank(duplicated)
+        _order, line = self._create_itau_salary_line_for_rules(payee_bank)
+        self.assertEqual(line.order_id.journal_id.bank_id, self.bank_341)
+        self.assertEqual(line._get_cnab_bank_type(), "same")
+        self.assertEqual(line._get_matching_rule().payment_way_id, self.way_01)
+        # 409 (Unibanco) is treated as 341
+        duplicated.code_bc = "409"
+        line.invalidate_recordset()
+        self.assertEqual(line._get_cnab_bank_type(), "same")
+        # Different code or empty code is "other"
+        duplicated.code_bc = "001"
+        self.assertEqual(line._get_cnab_bank_type(), "other")
+        duplicated.code_bc = False
+        self.assertEqual(line._get_cnab_bank_type(), "other")
+
+    def _create_itau_salary_line_for_rules(self, partner_bank):
+        self._create_itau_salary_rules()
+        return self._create_itau_salary_line(partner_bank, self.way_01)
+
+    def test_employee_by_flag(self):
+        """Only the res.partner.employee flag is used by the base module."""
+        partner_bank = self._create_partner_bank(self.bank_341)
+        _order, line = self._create_itau_salary_line_for_rules(partner_bank)
+        self.assertFalse(self.partner_a.employee)
+        self.assertFalse(line._is_cnab_employee())
+        self.partner_a.employee = True
+        self.assertTrue(line._is_cnab_employee())
+
+    def test_employee_rule_matches_by_flag(self):
+        rule = self._create_employee_rule()
+        self.partner_a.employee = True
+        invoice = self._create_test_invoice()
+        order = self._create_payment_order(invoice)
+        line = order.payment_line_ids
+        self.assertEqual(line._get_matching_rule(), rule)
+        self.partner_a.employee = False
+        self.assertFalse(line._get_matching_rule())
+
+    def test_exported_order_keeps_service_type(self):
+        """Recompute never rewrites service type of an exported order."""
+        self._create_employee_rule()
+        self.partner_a.employee = True
+        invoice = self._create_test_invoice()
+        order = self._create_payment_order(invoice)
+        line = order.payment_line_ids
+        self.assertEqual(line.service_type, SVC_SALARY)
+        order.draft2open()
+        order.open2generated()
+        self.assertEqual(order.state, "generated")
+        # flag change: recompute leaves the stored service type alone
+        self.partner_a.employee = False
+        line._compute_cnab_payment_way_id()
+        self.assertEqual(line.service_type, SVC_SALARY)
+        # bank code change: same
+        self.bank_341.code_bc = "237"
+        line._compute_cnab_payment_way_id()
+        self.assertEqual(line.service_type, SVC_SALARY)
+        self.bank_341.code_bc = "341"
+        # payment way is frozen too, and no UserError is raised even when no
+        # way/rule matches any more
+        way = line.cnab_payment_way_id
+        self.assertTrue(way)
+        mode_ways = order.payment_mode_id.cnab_payment_way_ids
+        order.payment_mode_id.cnab_payment_way_ids = False
+        order.payment_mode_id.cnab_structure_ok = True
+        line._compute_cnab_payment_way_id()
+        self.assertEqual(line.cnab_payment_way_id, way)
+        self.assertEqual(line.service_type, SVC_SALARY)
+        # in a draft order the recompute does apply
+        order.payment_mode_id.cnab_payment_way_ids = mode_ways
+        order.state = "draft"
+        line._compute_cnab_payment_way_id()
+        self.assertEqual(line.service_type, SVC_SUPPLIER)
+
+    def test_exported_legacy_line_without_stored_way(self):
+        """Upgrade case: exported line with service type but no stored way."""
+        self._create_employee_rule()
+        self.partner_a.employee = True
+        invoice = self._create_test_invoice()
+        order = self._create_payment_order(invoice)
+        line = order.payment_line_ids
+        way = line.cnab_payment_way_id
+        order.draft2open()
+        order.open2generated()
+        self.env.cr.execute(
+            "UPDATE account_payment_line SET cnab_payment_way_id = NULL WHERE id = %s",
+            (line.id,),
+        )
+        line.invalidate_recordset()
+        line._compute_cnab_payment_way_id()
+        self.assertEqual(line.cnab_payment_way_id, way)
+        self.assertEqual(line.service_type, SVC_SALARY)
+
+    def test_order_computes_handle_multiple_records(self):
+        """The computes must fill every record, not only the first one."""
+        invoice_1 = self._create_test_invoice()
+        order_1 = self._create_payment_order(invoice_1)
+        order_2 = self.payment_order_model.create(
+            {
+                "payment_mode_id": self.pix_mode_bb.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": self.bank_journal_bb.id,
+            }
+        )
+        orders = order_1 | order_2
+        orders._compute_cnab_processor()
+        orders._compute_cnab_structure_id()
+        self.assertEqual(order_1.cnab_structure_id, self.cnab_structure_itau_240)
+        self.assertEqual(order_2.cnab_structure_id, self.cnab_structure_bb_240)
+        self.assertEqual(order_1.cnab_processor, "oca_processor")
+        self.assertEqual(order_2.cnab_processor, "oca_processor")
+
+    # ------------------------------------------------------------------
+    # PIX key verbatim formatting, PIX segment A and match_pix_key criterion
+    # ------------------------------------------------------------------
+    PIX_KEYS = {
+        "phone": "+5511987654321",
+        "email": "fin@fornecedor.com.br",
+        "cnpj_cpf": "12345678909",
+        "evp": "123e4567-e89b-12d3-a456-426614174000",
+    }
+    PIX_CODES = {"phone": "01", "email": "02", "cnpj_cpf": "03", "evp": "04"}
+
+    def test_pix_key_field_is_verbatim(self):
+        """The Itau PIX key field keeps the exact key, left-aligned and padded."""
+        field = self.env.ref(
+            "l10n_br_cnab_structure.cnab_itau_240_pagamentos_segmento_b_128_227"
+        )
+        self.assertEqual(field.type, "raw")
+        self.assertEqual(field.content_source_field, "partner_pix_id.key")
+        for key in (*self.PIX_KEYS.values(), "ABC-Def@X.com"):
+            result = field.format(field.size, field.type, key)
+            self.assertEqual(result, key.ljust(field.size))
+            self.assertEqual(len(result), field.size)
+
+    def test_pix_key_field_raw_keeps_uppercase_evp(self):
+        """Documents current behaviour: raw does not change the case of the key."""
+        field = self.env.ref(
+            "l10n_br_cnab_structure.cnab_itau_240_pagamentos_segmento_b_128_227"
+        )
+        evp = "123E4567-E89B-12D3-A456-426614174000"
+        self.assertEqual(field.format(field.size, "raw", evp), evp.ljust(field.size))
+
+    def test_alpha_field_format_unchanged(self):
+        """Regular alphanumeric fields still strip symbols and uppercase."""
+        field = self.env.ref(
+            "l10n_br_cnab_structure.cnab_itau_240_pagamentos_segmento_b_15_16"
+        )
+        self.assertEqual(field.type, "alpha")
+        self.assertEqual(
+            field.format(30, "alpha", "fin@fornecedor.com.br"),
+            "FINFORNECEDORCOMBR".ljust(30),
+        )
+
+    def test_pix_key_other_banks_unchanged(self):
+        """Santander stays alpha (separate PR); BB and Sicoob are untouched."""
+        santander = self.env.ref(
+            "l10n_br_cnab_structure.cnab_santander_240_pagamentos_segmento_b_128_226"
+        )
+        self.assertEqual(santander.type, "alpha")
+        raws = self.env["l10n_br_cnab.line.field"].search([("type", "=", "raw")])
+        self.assertEqual(
+            raws,
+            self.env.ref(
+                "l10n_br_cnab_structure.cnab_itau_240_pagamentos_segmento_b_128_227"
+            ),
+        )
+
+    def _create_pix_key(self, key_type, key):
+        return self.res_partner_pix_model.create(
+            {"partner_id": self.partner_a.id, "key_type": key_type, "key": key}
+        )
+
+    def _create_salary_order(self):
+        mode = self._create_itau_salary_mode()
+        return self.payment_order_model.create(
+            {
+                "payment_mode_id": mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": self.bank_journal_itau.id,
+            }
+        )
+
+    def _add_salary_line(self, order, partner_bank, pix_key=None):
+        vals = {
+            "order_id": order.id,
+            "partner_id": self.partner_a.id,
+            "partner_bank_id": partner_bank.id,
+            "amount_currency": 100.0,
+            "communication": "SALARY TEST",
+        }
+        if pix_key:
+            vals["partner_pix_id"] = pix_key.id
+        return self.payment_line_model.create(vals)
+
+    def _create_salary_line_by_rule(self, partner_bank, pix_key=None):
+        """Employee line on a non-PIX mode: way and service come from rules."""
+        order = self._create_salary_order()
+        return order, self._add_salary_line(order, partner_bank, pix_key)
+
+    def _create_pix_employee_rules(self, same_bank_first=True, with_key=True):
+        """Employee rules; all use the service type decided for employees."""
+        self._create_itau_salary_rules()
+        self.env["l10n_br_cnab.payment.rule"].search(
+            [("cnab_structure_id", "=", self.cnab_structure_itau_240.id)]
+        ).unlink()
+        self.way_45 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_45")
+        rule_model = self.env["l10n_br_cnab.payment.rule"]
+
+        def rule(sequence, bank, pix, way):
+            rule_model.create(
+                {
+                    "cnab_structure_id": self.cnab_structure_itau_240.id,
+                    "sequence": sequence,
+                    "match_bank_type": bank,
+                    "match_partner_type": "any",
+                    "match_pix_key": pix,
+                    "payment_way_id": way.id,
+                    "service_type": SVC_EMPLOYEE,
+                }
+            )
+
+        if same_bank_first:
+            rule(1, "same", "any", self.way_01)
+            if with_key:
+                rule(2, "any", "with_key", self.way_45)
+        else:
+            if with_key:
+                rule(1, "any", "with_key", self.way_45)
+            rule(2, "same", "any", self.way_01)
+        rule(3, "any", "any", self.way_41)
+
+    def _generate_cnab_lines(self, order):
+        order.draft2open()
+        action = order.open2generated()
+        data = base64.b64decode(self.attachment_model.browse(action["res_id"]).datas)
+        return data.decode().splitlines()
+
+    @staticmethod
+    def _segments(lines, segment):
+        return [x for x in lines if len(x) > 13 and x[7] == "3" and x[13] == segment]
+
+    def test_rule_match_pix_key_default_is_any(self):
+        """Existing rules keep the old behaviour: any PIX key condition."""
+        self._create_itau_salary_rules()
+        rules = self.env["l10n_br_cnab.payment.rule"].search(
+            [("cnab_structure_id", "=", self.cnab_structure_itau_240.id)]
+        )
+        self.assertTrue(rules)
+        self.assertEqual(set(rules.mapped("match_pix_key")), {"any"})
+        pix = self._create_pix_key("email", self.PIX_KEYS["email"])
+        same = self._create_partner_bank(self.bank_341)
+        _order, line = self._create_salary_line_by_rule(same, pix)
+        self.assertEqual(line._get_matching_rule().payment_way_id, self.way_01)
+        _order, line = self._create_salary_line_by_rule(same)
+        self.assertEqual(line._get_matching_rule().payment_way_id, self.way_01)
+
+    def test_rule_match_pix_key_with_and_without(self):
+        """with_key only matches lines with a key; without_key the opposite."""
+        self._create_pix_employee_rules(same_bank_first=False)
+        rule_model = self.env["l10n_br_cnab.payment.rule"]
+        rule_model.search([("match_pix_key", "=", "any")]).filtered(
+            lambda r: r.match_bank_type == "any"
+        ).write({"match_pix_key": "without_key"})
+        pix = self._create_pix_key("email", self.PIX_KEYS["email"])
+        other = self._create_partner_bank(self.bank_001)
+        _order, line = self._create_salary_line_by_rule(other, pix)
+        self.assertEqual(line.cnab_payment_way_id, self.way_45)
+        _order, line = self._create_salary_line_by_rule(other)
+        self.assertEqual(line.cnab_payment_way_id, self.way_41)
+        self.assertEqual(line._get_matching_rule().match_pix_key, "without_key")
+
+    def test_rule_precedence_same_bank_first(self):
+        """Same bank before with_key: Itau account stays on way 01 even with key."""
+        self._create_pix_employee_rules(same_bank_first=True)
+        pix = self._create_pix_key("email", self.PIX_KEYS["email"])
+        same = self._create_partner_bank(self.bank_341)
+        other = self._create_partner_bank(self.bank_001)
+        _order, line = self._create_salary_line_by_rule(same, pix)
+        self.assertEqual(line.cnab_payment_way_id, self.way_01)
+        self.assertEqual(line.service_type, SVC_EMPLOYEE)
+        _order, line = self._create_salary_line_by_rule(other, pix)
+        self.assertEqual(line.cnab_payment_way_id, self.way_45)
+        self.assertEqual(line.service_type, SVC_EMPLOYEE)
+        _order, line = self._create_salary_line_by_rule(other)
+        self.assertEqual(line.cnab_payment_way_id, self.way_41)
+
+    def test_rule_precedence_key_first(self):
+        """Inverse order proves that sequence decides the winner."""
+        self._create_pix_employee_rules(same_bank_first=False)
+        pix = self._create_pix_key("email", self.PIX_KEYS["email"])
+        same = self._create_partner_bank(self.bank_341)
+        _order, line = self._create_salary_line_by_rule(same, pix)
+        self.assertEqual(line.cnab_payment_way_id, self.way_45)
+        _order, line = self._create_salary_line_by_rule(same)
+        self.assertEqual(line.cnab_payment_way_id, self.way_01)
+
+    def test_rule_line_created_before_key_does_not_match_with_key(self):
+        """partner_pix_id is stored once on the line: no key then no with_key."""
+        self._create_pix_employee_rules(same_bank_first=False)
+        other = self._create_partner_bank(self.bank_001)
+        _order, line = self._create_salary_line_by_rule(other)
+        self._create_pix_key("email", self.PIX_KEYS["email"])
+        line.invalidate_recordset()
+        self.assertFalse(line.partner_pix_id)
+        self.assertEqual(line.cnab_payment_way_id, self.way_41)
+
+    def test_pix_way_fills_pix_types_on_non_pix_mode(self):
+        """A PIX way chosen by rule fills key type and transfer type."""
+        self._create_pix_employee_rules(same_bank_first=False)
+        pix = self._create_pix_key("email", self.PIX_KEYS["email"])
+        other = self._create_partner_bank(self.bank_001)
+        order, line = self._create_salary_line_by_rule(other, pix)
+        self.assertNotEqual(order.payment_mode_id.payment_mode_domain, "pix_transfer")
+        self.assertEqual(line.cnab_pix_type_id.code, "02")
+        self.assertEqual(line.cnab_pix_transfer_type_id.code, "04")
+        _order, line = self._create_salary_line_by_rule(other)
+        self.assertFalse(line.cnab_pix_transfer_type_id)
+
+    def test_itau_pix_keys_segment_a_b_all_types(self):
+        """PIX salary: seg. A 113-114 = 04; seg. B key intact; per-line key type."""
+        self._create_pix_employee_rules(same_bank_first=False)
+        other = self._create_partner_bank(self.bank_001)
+        order = self._create_salary_order()
+        keys = list(self.PIX_KEYS.items())
+        for key_type, key in keys:
+            self._add_salary_line(order, other, self._create_pix_key(key_type, key))
+        for line, (key_type, _key) in zip(order.payment_line_ids, keys, strict=True):
+            self.assertEqual(line.cnab_pix_type_id.code, self.PIX_CODES[key_type])
+        lines = self._generate_cnab_lines(order)
+        header = [x for x in lines if len(x) > 8 and x[7] == "1"][0]
+        self.assertEqual(header[9:11], SVC_EMPLOYEE)
+        self.assertEqual(header[11:13], "45")
+        seg_a = self._segments(lines, "A")
+        seg_b = self._segments(lines, "B")
+        self.assertEqual(len(seg_a), len(keys))
+        self.assertEqual(len(seg_b), len(keys))
+        for a_rec in seg_a:
+            self.assertEqual(a_rec[112:114], "04")
+        for b_rec, (key_type, key) in zip(seg_b, keys, strict=True):
+            self.assertEqual(b_rec[14:16], self.PIX_CODES[key_type])
+            self.assertEqual(b_rec[127:227], key.ljust(100))
+
+    def test_itau_salary_without_key_is_not_pix(self):
+        """Employee without key leaves as TED (way 41), not as PIX key."""
+        self._create_pix_employee_rules(same_bank_first=False)
+        other = self._create_partner_bank(self.bank_001)
+        order, _line = self._create_salary_line_by_rule(other)
+        lines = self._generate_cnab_lines(order)
+        header = [x for x in lines if len(x) > 8 and x[7] == "1"][0]
+        self.assertEqual(header[11:13], "41")
+        self.assertNotEqual(self._segments(lines, "A")[0][112:114], "04")
+
+    def test_pix_key_without_type_mapping_blocks_generation(self):
+        """A key whose type has no Itau mapping aborts the CNAB with the name."""
+        self._create_pix_employee_rules(same_bank_first=False)
+        self.env["cnab.pix.key.type"].search(
+            [
+                ("cnab_structure_id", "=", self.cnab_structure_itau_240.id),
+                ("key_type", "=", "evp"),
+            ]
+        ).unlink()
+        other = self._create_partner_bank(self.bank_001)
+        order, line = self._create_salary_line_by_rule(
+            other, self._create_pix_key("evp", self.PIX_KEYS["evp"])
+        )
+        self.assertFalse(line.cnab_pix_type_id)
+        attachments_before = self.attachment_model.search_count([])
+        order.draft2open()
+        with self.assertRaises(UserError) as ctx:
+            order.open2generated()
+        self.assertIn(self.partner_a.name, str(ctx.exception))
+        self.assertEqual(self.attachment_model.search_count([]), attachments_before)
+
+    def test_pix_key_without_mapping_does_not_block_non_pix_line(self):
+        """Only lines leaving as PIX key are blocked (narrow condition)."""
+        self._create_pix_employee_rules(same_bank_first=True)
+        self.env["cnab.pix.key.type"].search(
+            [
+                ("cnab_structure_id", "=", self.cnab_structure_itau_240.id),
+                ("key_type", "=", "evp"),
+            ]
+        ).unlink()
+        same = self._create_partner_bank(self.bank_341)
+        order, line = self._create_salary_line_by_rule(
+            same, self._create_pix_key("evp", self.PIX_KEYS["evp"])
+        )
+        self.assertEqual(line.cnab_payment_way_id, self.way_01)
+        line._check_cnab_pix_key_type()
+
+    def test_pix_way_without_key_blocks_generation(self):
+        """A line on a PIX way (rule 'any') without a PIX key aborts the CNAB."""
+        self._create_pix_employee_rules(same_bank_first=False)
+        self.env["l10n_br_cnab.payment.rule"].search(
+            [
+                ("cnab_structure_id", "=", self.cnab_structure_itau_240.id),
+                ("payment_way_id", "=", self.way_45.id),
+            ]
+        ).write({"match_pix_key": "any"})
+        other = self._create_partner_bank(self.bank_001)
+        order, line = self._create_salary_line_by_rule(other)
+        self.assertEqual(line.cnab_payment_way_id, self.way_45)
+        order.draft2open()
+        with self.assertRaises(UserError) as ctx:
+            order.open2generated()
+        self.assertIn(self.partner_a.name, str(ctx.exception))
+
+    def test_pix_transfer_mode_by_account_without_key_generates(self):
+        """pix_transfer mode, Itau way 45, no key but transactional account."""
+        partner_bank = self._create_partner_bank(
+            self.bank_341, transactional_acc_type="checking"
+        )
+        order = self.payment_order_model.create(
+            {
+                "payment_mode_id": self.pix_mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": self.bank_journal_itau.id,
+            }
+        )
+        line = self._add_salary_line(order, partner_bank)
+        self.assertFalse(line.partner_pix_id)
+        way_45 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_45")
+        self.assertEqual(line.cnab_payment_way_id, way_45)
+        self.assertEqual(line.cnab_pix_transfer_type_id.code, "01")
+        lines = self._generate_cnab_lines(order)
+        self.assertEqual(self._segments(lines, "A")[0][112:114], "01")

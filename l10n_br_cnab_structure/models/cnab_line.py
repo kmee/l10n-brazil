@@ -138,7 +138,7 @@ class CNABLine(models.Model):
         line = CnabLine(record_type)
 
         def add_field(field_id):
-            name, value = field_id.output(resource_ref, **kwargs)
+            name, value = field_id.output(resource_ref, strict=True, **kwargs)
             line.add_field(name=name, value=value, pos=field_id.start_pos)
 
         fields_without_group = self.field_ids.filtered(lambda x: not x.cnab_group_id)

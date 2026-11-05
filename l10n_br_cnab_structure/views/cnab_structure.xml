@@ -318,6 +318,7 @@
                                     <field name="sequence" widget="handle" />
                                     <field name="match_bank_type" />
                                     <field name="match_partner_type" />
+                                    <field name="match_pix_key" />
                                     <field name="payment_way_id" />
                                     <field name="service_type" />
                                 </list>
