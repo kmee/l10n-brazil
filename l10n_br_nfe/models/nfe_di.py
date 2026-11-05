@@ -31,6 +31,15 @@ TPINTERMEDIO_DI = [
 class NFeDI(models.AbstractModel):
     _inherit = "nfe.40.di"
 
+    declaration_id = fields.Many2one(
+        comodel_name="l10n_br_fiscal.import.declaration",
+        string="Import Declaration",
+        help="The persisted declaration this DI group was built from, when "
+        "one exists. A note imported straight from an inbound DF-e, with no "
+        "declaration file behind it, keeps this empty; every field of the DI "
+        "group is still written the way it always was.",
+    )
+
     state_clearance_id = fields.Many2one(
         comodel_name="res.country.state",
         string="State Customs Clearance",

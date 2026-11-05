@@ -49,6 +49,15 @@
         parent="document_menu"
         sequence="20"
     />
+    <!-- Import Declarations (DI/DUIMP) -->
+    <menuitem
+        id="import_declaration_menu"
+        action="import_declaration_action"
+        name="Import Declarations"
+        groups="l10n_br_fiscal.group_user,l10n_br_fiscal.group_manager"
+        parent="document_menu"
+        sequence="30"
+    />
     <!-- Sub Menu for All Documents-->
     <menuitem
         id="document_sub_menu"

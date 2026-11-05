@@ -27,10 +27,38 @@ class DeclarationXmlError(ValueError):
     """The file is not an import declaration this reader understands."""
 
 
+class DeclarationParseError(DeclarationXmlError):
+    """A field of the declaration does not hold the value its record promises.
+
+    Names the record, the field and the raw value so whoever reads the
+    message can go straight to the line that needs fixing, instead of a bare
+    traceback pointing at a cast three layers removed from the file.
+    """
+
+    def __init__(self, record, field, raw_value, line_number=None):
+        self.record = record
+        self.field = field
+        self.raw_value = raw_value
+        self.line_number = line_number
+        where = f"record {record}"
+        if line_number is not None:
+            where += f", line {line_number}"
+        super().__init__(
+            f"{where}, field {field}: {raw_value!r} is not a number in the "
+            "layout's format."
+        )
+
+
 def _number(element, scale):
     if element is None or not (element.text or "").strip():
         return 0.0
-    return int(element.text) / (10**scale)
+    raw = element.text.strip()
+    try:
+        return int(raw) / (10**scale)
+    except ValueError as error:
+        raise DeclarationParseError(
+            record=element.tag, field=element.tag, raw_value=raw
+        ) from error
 
 
 def _text(parent, tag):
@@ -46,7 +74,10 @@ def _date(parent, tag):
     raw = _text(parent, tag)
     if len(raw) != 8 or not raw.isdigit():
         return False
-    return date(int(raw[:4]), int(raw[4:6]), int(raw[6:8]))
+    try:
+        return date(int(raw[:4]), int(raw[4:6]), int(raw[6:8]))
+    except ValueError:
+        return False
 
 
 def _ncm(raw):
@@ -85,6 +116,11 @@ def _items(addition):
     return items
 
 
+def _drawback_act(addition):
+    value = _text(addition, "dcrIdentificacao")
+    return value if value.strip("0") else ""
+
+
 def _additions(declaration):
     additions = []
     for addition in declaration.findall("adicao"):
@@ -99,15 +135,28 @@ def _additions(declaration):
                 "goods_value": _amount(addition, "condicaoVendaValorReais"),
                 "ii_rate": _amount(addition, "iiAliquotaAdValorem", RATE),
                 "ii_value": _amount(addition, "iiAliquotaValorRecolher"),
+                "ii_regime_code": _text(addition, "iiRegimeTributacaoCodigo"),
+                # The DI never states an IPI base of its own — it is II's
+                # base plus II, not a separate declared figure — so this
+                # stays 0.0 here and only the TXT reader (O10's vBC) ever
+                # fills it.
+                "ipi_base": 0.0,
                 "ipi_rate": _amount(addition, "ipiAliquotaAdValorem", RATE),
                 "ipi_value": _amount(addition, "ipiAliquotaValorRecolher"),
+                "ipi_regime_code": _text(addition, "ipiRegimeTributacaoCodigo"),
                 "pis_rate": _amount(addition, "pisPasepAliquotaAdValorem", RATE),
                 "pis_value": _amount(addition, "pisPasepAliquotaValorRecolher"),
+                "cofins_rate": _amount(addition, "cofinsAliquotaAdValorem", RATE),
                 "cofins_value": _amount(addition, "cofinsAliquotaValorRecolher"),
+                "pis_cofins_regime_code": _text(
+                    addition, "pisCofinsRegimeTributacaoCodigo"
+                ),
                 "net_weight": _amount(addition, "dadosMercadoriaPesoLiquido", WEIGHT),
                 "exporter": _text(addition, "fornecedorNome"),
                 "manufacturer": _text(addition, "fabricanteNome"),
                 "origin_country": _text(addition, "paisOrigemMercadoriaNome"),
+                "incoterm": _text(addition, "condicaoVendaIncoterm"),
+                "drawback_act": _drawback_act(addition),
                 "items": _items(addition),
             }
         )
@@ -123,6 +172,115 @@ def _customhouse_charges(declaration):
         for pagamento in declaration.findall("pagamento")
         if _text(pagamento, "codigoReceita") == SISCOMEX_REVENUE_CODE
     )
+
+
+STRUCTURAL_TAGS = {
+    "ListaDeclaracoes",
+    "declaracaoImportacao",
+    "icms",
+    "pagamento",
+    "adicao",
+    "mercadoria",
+}
+
+MAPPED_TAGS = STRUCTURAL_TAGS | {
+    "numeroDI",
+    "dataRegistro",
+    "dataDesembaraco",
+    "viaTransporteCodigo",
+    "armazenamentoRecintoAduaneiroNome",
+    "cargaUrfEntradaNome",
+    "importadorNumero",
+    "freteTotalReais",
+    "seguroTotalReais",
+    "cargaPesoBruto",
+    "cargaPesoLiquido",
+    "ufIcms",
+    "valorTotalIcms",
+    "codigoReceita",
+    "valorReceita",
+    "numeroAdicao",
+    "dadosMercadoriaCodigoNcm",
+    "iiBaseCalculo",
+    "condicaoVendaValorReais",
+    "iiAliquotaAdValorem",
+    "iiAliquotaValorRecolher",
+    "ipiAliquotaAdValorem",
+    "ipiAliquotaValorRecolher",
+    "pisPasepAliquotaAdValorem",
+    "pisPasepAliquotaValorRecolher",
+    "cofinsAliquotaAdValorem",
+    "cofinsAliquotaValorRecolher",
+    "dadosMercadoriaPesoLiquido",
+    "fornecedorNome",
+    "fabricanteNome",
+    "paisOrigemMercadoriaNome",
+    "numeroSequencialItem",
+    "descricaoMercadoria",
+    "quantidade",
+    "valorUnitario",
+    "unidadeMedida",
+    "iiRegimeTributacaoCodigo",
+    "ipiRegimeTributacaoCodigo",
+    "pisCofinsRegimeTributacaoCodigo",
+    "dcrIdentificacao",
+    "condicaoVendaIncoterm",
+    "caracterizacaoOperacaoCodigoTipo",
+}
+
+
+def unmapped_tags(root):
+    present = {element.tag for element in root.iter()}
+    return sorted(present - MAPPED_TAGS)
+
+
+NORMAL_REGIME_CODE = "1"
+IPI_NORMAL_REGIME_CODE = "4"
+
+REGIME_SIGNALS = {
+    "iiRegimeTributacaoCodigo": (
+        (
+            "II sob regime de tributação diferente do comum "
+            "(tabela de códigos não confirmada, todo código não-zero é sinalizado)"
+        ),
+        set(),
+    ),
+    "iiAliquotaReduzida": ("alíquota de II reduzida", set()),
+    "iiAcordoTarifarioTipoCodigo": ("II sob acordo tarifário", set()),
+    "iiMotivoAdmissaoTemporariaCodigo": ("admissão temporária", set()),
+    "dcrIdentificacao": ("drawback", set()),
+    "numeroRetificacao": ("DI retificada", set()),
+    "destaqueNcm": ("ex-tarifário", set()),
+    "ipiRegimeTributacaoCodigo": (
+        "IPI sob regime de tributação diferente do comum",
+        {IPI_NORMAL_REGIME_CODE},
+    ),
+    "pisCofinsRegimeTributacaoCodigo": (
+        (
+            "PIS/COFINS sob regime de tributação diferente do comum "
+            "(tabela de códigos não confirmada, todo código não-zero é sinalizado)"
+        ),
+        set(),
+    ),
+    "caracterizacaoOperacaoCodigoTipo": (
+        "importação por conta e ordem ou por encomenda",
+        {NORMAL_REGIME_CODE},
+    ),
+}
+
+
+def regime_signals(root):
+    found = set()
+    for tag, (label, trivial_values) in REGIME_SIGNALS.items():
+        for element in root.iter(tag):
+            value = (element.text or "").strip()
+            if not value or value in trivial_values:
+                continue
+            if not value.strip("0"):
+                continue
+            found.add(label)
+            break
+    return sorted(found)
 
 
 def parse_declaration(content):
@@ -157,6 +315,7 @@ def parse_declaration(content):
         or _text(declaration, "cargaUrfEntradaNome"),
         "clearance_state": _text(icms, "ufIcms") if icms is not None else "",
         "importer_document": _text(declaration, "importadorNumero"),
+        "operation_type_code": _text(declaration, "caracterizacaoOperacaoCodigoTipo"),
         "freight": _amount(declaration, "freteTotalReais"),
         "insurance": _amount(declaration, "seguroTotalReais"),
         "icms_value": _amount(icms, "valorTotalIcms") if icms is not None else 0.0,
@@ -169,6 +328,8 @@ def parse_declaration(content):
         "gross_weight": _amount(declaration, "cargaPesoBruto", WEIGHT),
         "net_weight": _amount(declaration, "cargaPesoLiquido", WEIGHT),
         "additions": _additions(declaration),
+        "unmapped_tags": unmapped_tags(root),
+        "regime_signals": regime_signals(root),
     }
 
 
@@ -179,6 +340,49 @@ def _brl_to_float(raw):
 
 def _txt_field(parts, index, default=""):
     return parts[index].strip() if index < len(parts) else default
+
+
+def _txt_number(parts, index, record, field, line_number, default=0.0):
+    """A numeric field of a TXT record, or a named error, never a bare crash.
+
+    An empty field is 0.0 — the despachante leaves a column blank rather than
+    typing a zero. Anything else that fails to parse names the record, the
+    line and the field: a broker's extra or reshuffled column shows up here
+    as a clear message, not a traceback three layers removed from the file.
+    """
+    raw = _txt_field(parts, index)
+    if not raw:
+        return default
+    try:
+        return float(raw)
+    except ValueError as error:
+        raise DeclarationParseError(
+            record=record, field=field, raw_value=raw, line_number=line_number
+        ) from error
+
+
+# Every record tag actually seen, letters or digits, of any length: this only
+# decides what counts as "a tag" for the unmapped-fields report, never what
+# gets parsed. A record this reader has no branch for must still be visible
+# there instead of vanishing because its name does not fit an assumed shape.
+TXT_TAG_PATTERN = re.compile(r"^[A-Za-z0-9]+$")
+
+TXT_MAPPED_TAGS = {
+    "C02",
+    "E",
+    "E05",
+    "H",
+    "I",
+    "I18",
+    "I25",
+    "N02",
+    "O07",
+    "O10",
+    "P",
+    "Q02",
+    "S02",
+    "Z",
+}
 
 
 def _txt_date(raw):
@@ -197,9 +401,9 @@ def parse_txt_declaration(content):
     despachante already worked it out here, item by item, precisely because
     nobody types nine tariff lines by hand. One line per record, fields
     separated by "|": `H` opens an item block, `I` carries the item, `I18`
-    carries the DI reference and the addition number (field 6, constant
-    across every item of the same addition — `I25`'s own field 2 is only the
-    item's sequence in the draft invoice, not the addition), `N02` is the
+    carries the DI reference (field 6 is `tpViaTransp`, the transport mode,
+    not the addition), `I25` carries the addition number itself (field 1,
+    `nAdicao` — field 2 is only the item's sequence inside it), `N02` is the
     ICMS, `O07`+`O10` the IPI, `P` the Import Tax (base at position 1, value
     at position 3), `Q02` the PIS, `S02` the COFINS.
 
@@ -217,11 +421,14 @@ def parse_txt_declaration(content):
     header = {}
     additions = []
     current = None
-    for raw_line in lines:
+    tags_seen = set()
+    for line_number, raw_line in enumerate(lines, start=1):
         if not raw_line.strip():
             continue
         parts = raw_line.split("|")
         tag = parts[0].strip()
+        if TXT_TAG_PATTERN.match(tag):
+            tags_seen.add(tag)
         if tag == "C02":
             header["importer_document"] = _txt_field(parts, 1)
         elif tag == "E" and "exporter" not in header:
@@ -232,12 +439,16 @@ def parse_txt_declaration(content):
             current = {
                 "customs_value": 0.0,
                 "ii_value": 0.0,
+                "ipi_base": 0.0,
                 "ipi_rate": 0.0,
                 "ipi_value": 0.0,
                 "pis_rate": 0.0,
                 "pis_value": 0.0,
+                "cofins_rate": 0.0,
                 "cofins_value": 0.0,
                 "icms_value": 0.0,
+                "manufacturer": "",
+                "drawback_act": "",
             }
             additions.append(current)
         elif tag == "I" and current is not None:
@@ -245,28 +456,69 @@ def parse_txt_declaration(content):
             current["description"] = _txt_field(parts, 4)
             current["ncm"] = _ncm(_txt_field(parts, 5))
             current["uom"] = _txt_field(parts, 7)
-            current["quantity"] = float(_txt_field(parts, 8) or 0)
-            current["net_weight"] = float(_txt_field(parts, 14) or 0)
+            current["quantity"] = _txt_number(
+                parts, 8, "I", "quantidade", line_number
+            )
+            current["net_weight"] = _txt_number(
+                parts, 14, "I", "pesoLiquido", line_number
+            )
         elif tag == "I18" and current is not None:
+            # Official chain (Padrão de Integração TXT NF-e 4.00, grupo I18):
+            # I18|nDI|dDI|xLocDesemb|UFDesemb|dDesemb|tpViaTransp|vAFRMM|
+            # tpIntermedio|CNPJ|UFTerceiro|cExportador|CPF
             header.setdefault("number", _txt_field(parts, 1))
             header.setdefault("registration_date", _txt_field(parts, 2))
             header.setdefault("clearance_place", _txt_field(parts, 3))
             header.setdefault("clearance_state", _txt_field(parts, 4))
-            current["addition_number"] = _txt_field(parts, 6)
+            header.setdefault("clearance_date_raw", _txt_field(parts, 5))
+            header.setdefault("transport_via_stated", _txt_field(parts, 6))
+            header.setdefault(
+                "afrmm_stated",
+                _txt_number(parts, 7, "I18", "vAFRMM", line_number),
+            )
+            header.setdefault("intermediation_code", _txt_field(parts, 8))
+            header.setdefault("exporter_code", _txt_field(parts, 11))
+        elif tag == "I25" and current is not None:
+            # I25|nAdicao|nSeqAdic|cFabricante|vDescDI|nDraw
+            current["addition_number"] = _txt_field(parts, 1)
+            current["manufacturer"] = _txt_field(parts, 3)
+            current["drawback_act"] = _txt_field(parts, 5)
         elif tag == "N02" and current is not None:
-            current["icms_value"] = float(_txt_field(parts, 6) or 0)
+            current["icms_value"] = _txt_number(
+                parts, 6, "N02", "vICMS", line_number
+            )
         elif tag == "O07" and current is not None:
-            current["ipi_value"] = float(_txt_field(parts, 2) or 0)
+            current["ipi_value"] = _txt_number(
+                parts, 2, "O07", "vIPI", line_number
+            )
         elif tag == "O10" and current is not None:
-            current["ipi_rate"] = float(_txt_field(parts, 2) or 0)
+            # O10|vBC|pIPI
+            current["ipi_base"] = _txt_number(
+                parts, 1, "O10", "vBC", line_number
+            )
+            current["ipi_rate"] = _txt_number(
+                parts, 2, "O10", "pIPI", line_number
+            )
         elif tag == "P" and current is not None:
-            current["customs_value"] = float(_txt_field(parts, 1) or 0)
-            current["ii_value"] = float(_txt_field(parts, 3) or 0)
+            current["customs_value"] = _txt_number(
+                parts, 1, "P", "vBC", line_number
+            )
+            current["ii_value"] = _txt_number(parts, 3, "P", "vII", line_number)
         elif tag == "Q02" and current is not None:
-            current["pis_rate"] = float(_txt_field(parts, 3) or 0)
-            current["pis_value"] = float(_txt_field(parts, 4) or 0)
+            current["pis_rate"] = _txt_number(
+                parts, 3, "Q02", "pPIS", line_number
+            )
+            current["pis_value"] = _txt_number(
+                parts, 4, "Q02", "vPIS", line_number
+            )
         elif tag == "S02" and current is not None:
-            current["cofins_value"] = float(_txt_field(parts, 4) or 0)
+            # S02|CST|vBC|pCOFINS|vCOFINS
+            current["cofins_rate"] = _txt_number(
+                parts, 3, "S02", "pCOFINS", line_number
+            )
+            current["cofins_value"] = _txt_number(
+                parts, 4, "S02", "vCOFINS", line_number
+            )
         elif tag == "Z":
             afrmm = re.search(r"A\.F\.R\.M\.M\.?\s*[:\-]*\s*R\$\s*([\d.,]+)", raw_line)
             if afrmm:
@@ -312,15 +564,26 @@ def parse_txt_declaration(content):
                 "goods_value": customs_value,
                 "ii_rate": ii_rate,
                 "ii_value": ii_value,
+                "ii_regime_code": "",
+                "ipi_base": sum(item["ipi_base"] for item in items),
                 "ipi_rate": first["ipi_rate"],
                 "ipi_value": sum(item["ipi_value"] for item in items),
+                "ipi_regime_code": "",
                 "pis_rate": first["pis_rate"],
                 "pis_value": sum(item["pis_value"] for item in items),
+                "cofins_rate": first["cofins_rate"],
                 "cofins_value": sum(item["cofins_value"] for item in items),
+                "pis_cofins_regime_code": "",
                 "net_weight": sum(item.get("net_weight", 0.0) for item in items),
                 "exporter": exporter,
-                "manufacturer": "",
+                # I25's cFabricante and nDraw are the same for every item of a
+                # real addition, so the first block's reading stands for all
+                # of them — the same reasoning `ipi_rate`/`pis_rate` already
+                # rely on above.
+                "manufacturer": first["manufacturer"],
                 "origin_country": origin_country,
+                "incoterm": "",
+                "drawback_act": first["drawback_act"],
                 "items": [
                     {
                         "sequence": f"{sequence:02d}",
@@ -338,25 +601,36 @@ def parse_txt_declaration(content):
         )
 
     registration_date = _txt_date(header.get("registration_date"))
+    # I18 states dDesemb, tpViaTransp and vAFRMM directly (positions 5, 6 and
+    # 7 of the record) whenever the despachante fills them in. Only a file
+    # that leaves I18 blank on these three falls back to the guesses this
+    # reader used before it read them: the registration date standing in for
+    # the clearance date, and AFRMM's mere presence standing in for the
+    # transport being maritime.
+    clearance_date = _txt_date(header.get("clearance_date_raw")) or registration_date
+    transport_via = header.get("transport_via_stated") or (
+        "1" if header.get("afrmm_stated") else ""
+    )
+    afrmm = header.get("afrmm_stated") or header.get("afrmm", 0.0)
     return {
         "number": header.get("number", ""),
         "registration_date": registration_date,
-        # The despachante's draft never states whether it cleared yet — this
-        # file is drawn up the moment the DUIMP registers, not when customs
-        # releases the goods. Registration date is the only one there is.
-        "clearance_date": registration_date,
-        # Not a field the TXT states either. AFRMM only applies to maritime
-        # freight, so its presence is the signal this shipment came by sea.
-        "transport_via": "1" if header.get("afrmm") else "",
+        "clearance_date": clearance_date,
+        "transport_via": transport_via,
         "clearance_place": header.get("clearance_place", ""),
         "clearance_state": header.get("clearance_state", ""),
         "importer_document": header.get("importer_document", ""),
+        "operation_type_code": "",
+        "exporter_code": header.get("exporter_code", ""),
+        "intermediation_code": header.get("intermediation_code", ""),
         "freight": 0.0,
         "insurance": 0.0,
         "icms_value": sum(a["icms_value"] for a in additions),
         "customhouse_charges": header.get("customhouse_charges", 0.0),
-        "afrmm": header.get("afrmm", 0.0),
+        "afrmm": afrmm,
         "gross_weight": 0.0,
         "net_weight": sum(a.get("net_weight", 0.0) for a in additions),
         "additions": prepared_additions,
+        "unmapped_tags": sorted(tags_seen - TXT_MAPPED_TAGS),
+        "regime_signals": [],
     }

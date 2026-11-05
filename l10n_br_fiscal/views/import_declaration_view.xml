@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="import_declaration_addition_line_view_form" model="ir.ui.view">
+        <field name="name">import.declaration.addition.line.form</field>
+        <field name="model">l10n_br_fiscal.import.declaration.addition.line</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="sequence" />
+                    <field name="product_code" />
+                    <field name="description" />
+                    <field name="quantity" />
+                    <field name="unit_value" />
+                    <field name="uom_name" />
+                    <field name="product_id" />
+                </group>
+            </form>
+        </field>
+    </record>
+
+    <record id="import_declaration_addition_line_view_list" model="ir.ui.view">
+        <field name="name">import.declaration.addition.line.list</field>
+        <field name="model">l10n_br_fiscal.import.declaration.addition.line</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle" />
+                <field name="product_code" />
+                <field name="description" />
+                <field name="quantity" />
+                <field name="unit_value" />
+                <field name="uom_name" />
+                <field name="product_id" />
+            </list>
+        </field>
+    </record>
+
+    <record id="import_declaration_addition_view_form" model="ir.ui.view">
+        <field name="name">import.declaration.addition.form</field>
+        <field name="model">l10n_br_fiscal.import.declaration.addition</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="number" />
+                            <field name="ncm_id" />
+                            <field name="incoterm" />
+                            <field name="exporter_name" />
+                            <field name="manufacturer_name" />
+                        </group>
+                        <group>
+                            <field name="currency_id" />
+                            <field name="amount_foreign" />
+                            <field name="amount_brl" />
+                            <field name="freight_value" />
+                            <field name="insurance_value" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="II">
+                            <group>
+                                <field name="ii_base" />
+                                <field name="ii_rate" />
+                                <field name="ii_reduced_rate" />
+                                <field name="ii_value" />
+                                <field name="ii_regime_code" />
+                            </group>
+                        </page>
+                        <page string="IPI">
+                            <group>
+                                <field name="ipi_base" />
+                                <field name="ipi_rate" />
+                                <field name="ipi_value" />
+                                <field name="ipi_regime_code" />
+                            </group>
+                        </page>
+                        <page string="PIS/COFINS">
+                            <group>
+                                <field name="pis_cofins_base" />
+                                <field name="pis_rate" />
+                                <field name="pis_value" />
+                                <field name="cofins_rate" />
+                                <field name="cofins_value" />
+                                <field name="pis_cofins_regime_code" />
+                            </group>
+                        </page>
+                        <page string="Goods">
+                            <field name="line_ids" />
+                        </page>
+                        <page string="Adjustments">
+                            <field name="adjustment_ids" />
+                        </page>
+                        <page string="Unmapped Fields">
+                            <field name="extra_field_ids" readonly="1" />
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="import_declaration_addition_view_list" model="ir.ui.view">
+        <field name="name">import.declaration.addition.list</field>
+        <field name="model">l10n_br_fiscal.import.declaration.addition</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle" />
+                <field name="number" />
+                <field name="ncm_id" />
+                <field name="amount_brl" />
+                <field name="ii_value" />
+                <field name="ipi_value" />
+                <field name="pis_value" />
+                <field name="cofins_value" />
+            </list>
+        </field>
+    </record>
+
+    <record id="import_declaration_view_form" model="ir.ui.view">
+        <field name="name">import.declaration.form</field>
+        <field name="model">l10n_br_fiscal.import.declaration</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="number" placeholder="DI/DUIMP Number" />
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="declaration_type" />
+                            <field name="company_id" />
+                            <field name="registration_date" />
+                            <field name="clearance_date" />
+                            <field name="clearance_place" />
+                            <field name="clearance_state_id" />
+                            <field name="source_format" />
+                        </group>
+                        <group>
+                            <field name="importer_document" />
+                            <field name="importer_partner_id" />
+                            <field name="exporter_name" />
+                            <field name="origin_country_id" />
+                            <field name="currency_id" />
+                            <field name="exchange_rate" />
+                        </group>
+                    </group>
+                    <group>
+                        <group>
+                            <field name="customs_value" />
+                            <field name="freight_value" />
+                            <field name="insurance_value" />
+                        </group>
+                        <group>
+                            <field name="afrmm_value" />
+                            <field name="customhouse_charges" />
+                            <field name="icms_value" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Additions">
+                            <field name="addition_ids" />
+                        </page>
+                        <page string="Payments">
+                            <field name="payment_ids" />
+                        </page>
+                        <page string="Documents">
+                            <field name="document_ids" />
+                        </page>
+                        <page string="Divergences">
+                            <field name="divergence_ids" readonly="1" />
+                        </page>
+                        <page string="Unmapped Fields">
+                            <field name="extra_field_ids" readonly="1" />
+                        </page>
+                        <page string="Source File">
+                            <field name="raw_filename" />
+                            <field name="raw_file" filename="raw_filename" />
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="import_declaration_view_list" model="ir.ui.view">
+        <field name="name">import.declaration.list</field>
+        <field name="model">l10n_br_fiscal.import.declaration</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="number" />
+                <field name="declaration_type" />
+                <field name="registration_date" />
+                <field name="clearance_date" />
+                <field name="customs_value" />
+                <field name="source_format" />
+            </list>
+        </field>
+    </record>
+
+    <record id="import_declaration_action" model="ir.actions.act_window">
+        <field name="name">Import Declarations</field>
+        <field name="res_model">l10n_br_fiscal.import.declaration</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

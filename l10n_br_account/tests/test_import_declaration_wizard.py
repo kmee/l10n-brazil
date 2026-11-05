@@ -135,6 +135,22 @@ class TestImportDeclarationWizard(AccountMoveBRCommon):
             wizard.write(self._expected_totals(wizard))
         return wizard
 
+    def test_the_wizard_takes_the_document_type_from_the_bill(self):
+        """default_get has to fill it: the field is invisible on the form.
+
+        document_type_id is required but hidden, and document_serie_id's own
+        domain filters by it. Left empty, the wizard fails at save with a
+        required-field error, no matter what the operator filled in — this is
+        the bug of ticket #1697.
+        """
+        defaults = (
+            self.env["l10n_br_account.import.declaration.wizard"]
+            .with_context(default_move_id=self.bill.id)
+            .default_get(["move_id", "document_type_id"])
+        )
+
+        self.assertEqual(defaults["document_type_id"], self.bill.document_type_id.id)
+
     def test_the_note_closes_on_the_declaration(self):
         """The generated note has to total what the declaration charged.
 
@@ -270,3 +286,121 @@ class TestImportDeclarationWizard(AccountMoveBRCommon):
 
         with self.assertRaises(UserError):
             wizard.action_generate_document()
+
+    def _addition_wizard(self, ipi_regime_code="4", declared_ipi=None, **extra):
+        line = self.bill.invoice_line_ids.filtered(
+            lambda invoice_line: invoice_line.product_id == self.product_a
+        )
+        Line = self.env["l10n_br_fiscal.document.line"]
+        probe = Line.new(
+            {
+                "product_id": self.product_a.id,
+                "fiscal_operation_id": self.operation.id,
+                "fiscal_operation_line_id": self.operation_line.id,
+                "quantity": line.quantity,
+                "price_unit": VALOR_ADUANEIRO / line.quantity,
+                "uom_id": line.product_uom_id.id,
+                "partner_id": self.foreign_partner.id,
+                "ii_declared_value": II,
+                "ii_value": II,
+            }
+        )
+        ipi_value = probe.ipi_value if declared_ipi is None else declared_ipi
+        rate = probe.icms_percent or 0.0
+        before_icms = (
+            VALOR_ADUANEIRO + II + ipi_value + probe.pis_value + probe.cofins_value
+        )
+        expected_icms = before_icms / (1 - rate / 100.0) * rate / 100.0 if rate else 0.0
+        wizard = self.env["l10n_br_account.import.declaration.wizard"].create(
+            {
+                "move_id": self.bill.id,
+                "fiscal_operation_id": self.operation.id,
+                "fiscal_operation_line_id": self.operation_line.id,
+                "document_type_id": self.env.ref("l10n_br_fiscal.document_55").id,
+                "document_date": "2026-07-10 12:00:00",
+                "customs_value": VALOR_ADUANEIRO,
+                "di_number": "26/0755042-3",
+                "di_date": date(2026, 7, 10),
+                "clearance_date": date(2026, 7, 10),
+                "clearance_place": "ALF - URUGUAIANA",
+                "clearance_state_id": self.env.ref("base.state_br_rs").id,
+                "transport_via": "7",
+                "exporter_code": "76900150",
+                "intermediation": "1",
+                "customhouse_charges": 0.0,
+                "icms_value": expected_icms,
+                "addition_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "number": "001",
+                            "customs_value": VALOR_ADUANEIRO,
+                            "ii_value": II,
+                            "ipi_value": ipi_value,
+                            "ipi_regime_code": ipi_regime_code,
+                            "pis_value": probe.pis_value,
+                            "cofins_value": probe.cofins_value,
+                            "line_ids": [(6, 0, line.ids)],
+                            **extra,
+                        },
+                    )
+                ],
+            }
+        )
+        return wizard
+
+    def test_the_common_ipi_regime_code_does_not_force_anything(self):
+        wizard = self._addition_wizard(ipi_regime_code="4")
+
+        wizard.action_generate_document()
+
+        line = wizard.document_id.fiscal_line_ids[0]
+        self.assertNotEqual(line.ipi_cst_id, self.env.ref("l10n_br_fiscal.cst_ipi_05"))
+
+    def test_ipi_suspension_forces_the_declared_value(self):
+        declared_ipi = 500.0
+        wizard = self._addition_wizard(ipi_regime_code="5", declared_ipi=declared_ipi)
+
+        wizard.action_generate_document()
+
+        line = wizard.document_id.fiscal_line_ids[0]
+        self.assertAlmostEqual(line.ipi_value, declared_ipi, places=2)
+        self.assertEqual(line.ipi_cst_id, self.env.ref("l10n_br_fiscal.cst_ipi_05"))
+
+    def test_an_ipi_regime_code_outside_the_known_table_only_warns(self):
+        declared_ipi = 500.0
+        wizard = self._addition_wizard(ipi_regime_code="2", declared_ipi=declared_ipi)
+
+        wizard.action_generate_document()
+
+        line = wizard.document_id.fiscal_line_ids[0]
+        self.assertAlmostEqual(line.ipi_value, declared_ipi, places=2)
+        self.assertNotEqual(line.ipi_cst_id, self.env.ref("l10n_br_fiscal.cst_ipi_05"))
+
+    def test_pis_and_cofins_are_never_forced_by_their_own_regime_code(self):
+        wizard = self._addition_wizard(pis_cofins_regime_code="5")
+
+        wizard.action_generate_document()
+
+        line = wizard.document_id.fiscal_line_ids[0]
+        self.assertNotEqual(line.pis_cst_id, self.env.ref("l10n_br_fiscal.cst_pis_72"))
+        self.assertNotEqual(
+            line.cofins_cst_id, self.env.ref("l10n_br_fiscal.cst_cofins_72")
+        )
+
+    def test_drawback_is_written_onto_the_addition(self):
+        wizard = self._addition_wizard(drawback_act="12345678")
+
+        wizard.action_generate_document()
+
+        line = wizard.document_id.fiscal_line_ids[0]
+        self.assertEqual(line.nfe40_DI.nfe40_adi[:1].nfe40_nDraw, "12345678")
+
+    def test_the_addition_exporter_wins_over_the_header_one(self):
+        wizard = self._addition_wizard(exporter_code="99887766")
+
+        wizard.action_generate_document()
+
+        line = wizard.document_id.fiscal_line_ids[0]
+        self.assertEqual(line.nfe40_DI.nfe40_cExportador, "99887766")

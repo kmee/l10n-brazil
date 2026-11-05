@@ -241,7 +241,7 @@ class NFeImportTest(TransactionCase):
             "<pICMS>7.00</pICMS><vICMS>2.36</vICMS>"
             "</ICMS20>"
         )
-        xml = re.sub(r"<ICMS00>.*?</ICMS00>", icms20, xml, count=1, flags=re.S)
+        xml = re.sub(r"<ICMS00>.*?</ICMS00>", icms20, xml, count=1, flags=re.DOTALL)
 
         existing = self.env["l10n_br_fiscal.tax"].search(
             [
@@ -330,7 +330,7 @@ class NFeImportTest(TransactionCase):
             "<CST>50</CST><vBC>50.60</vBC><pIPI>6.50</pIPI><vIPI>3.29</vIPI>"
             "</IPITrib></IPI>"
         )
-        xml = re.sub(r"<IPI>.*?</IPI>", ipi, xml, count=1, flags=re.S)
+        xml = re.sub(r"<IPI>.*?</IPI>", ipi, xml, count=1, flags=re.DOTALL)
 
         binding = TnfeProc.from_xml(xml)
         nfe = self.env["l10n_br_fiscal.document"].import_binding_nfe(
