@@ -16,6 +16,21 @@
                     <field name="nfe_environment" />
                 </strong></div>
             </xpath>
+            <xpath
+                expr="//field[@name='fiscal_line_ids']/list/field[@name='fiscal_amount_total']"
+                position="before"
+            >
+                <field
+                    name="ref_document_related_id"
+                    optional="show"
+                    column_invisible="parent.edoc_purpose != '4'"
+                />
+                <field
+                    name="ref_document_item"
+                    optional="show"
+                    column_invisible="parent.edoc_purpose != '4'"
+                />
+            </xpath>
             <page name="delivery" position="inside">
                 <group
                     name="nfe_transport"

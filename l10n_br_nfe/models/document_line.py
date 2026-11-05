@@ -1226,6 +1226,54 @@ class NFeLine(spec_models.StackedModel):
             else:
                 record.nfe40_infAdProd = False
 
+    ####################################################
+    # NF-e tag: DFeReferenciado
+    # Grupo VC. Referenciamento de item de outros DF-e
+    ####################################################
+
+    # Item level reference to another fiscal document (e.g. the item of the
+    # original NF-e being returned). The document key comes from the
+    # document related records: the line only points to one of them (needed
+    # only when the document has more than one) and to the item number.
+    ref_document_related_id = fields.Many2one(
+        comodel_name="l10n_br_fiscal.document.related",
+        string="Referenced Document",
+        domain="[('document_id', '=', document_id)]",
+        help="Related document of this line item. Leave empty when the "
+        "document has a single related document.",
+    )
+
+    ref_document_item = fields.Integer(
+        string="Referenced Item",
+        help="Number of the item (nItem) in the referenced document.",
+    )
+
+    def _get_ref_document_related(self):
+        """Return the related document referenced by the line: the one set
+        on the line or, if the document has only one, that one."""
+        self.ensure_one()
+        if self.ref_document_related_id:
+            return self.ref_document_related_id
+        related = self.document_id.document_related_ids
+        return related if len(related) == 1 else related.browse()
+
+    def _export_tag_nfe_40_dfereferenciado(self, xsd_fields, class_obj, export_dict):
+        """Export the item reference of a return NF-e (NT 2025.002, VC02-14).
+
+        The key comes from the related document of the line (see
+        _get_ref_document_related). Only return documents get the group:
+        other purposes keep the NFref of the ide group, which cannot be
+        exported together with DFeReferenciado (VC02-05).
+        """
+        if self.document_id.edoc_purpose != EDOC_PURPOSE_DEVOLUCAO:
+            return
+        related = self._get_ref_document_related()
+        if not related.document_key:
+            return
+        export_dict["chaveAcesso"] = related.document_key
+        if self.ref_document_item:
+            export_dict["nItem"] = str(self.ref_document_item)
+
     @api.model
     def _prepare_import_dict(
         self, values, model=None, parent_dict=None, defaults_model=None

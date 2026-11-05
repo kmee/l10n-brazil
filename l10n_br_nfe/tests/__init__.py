@@ -1,5 +1,6 @@
 from . import test_nfce
 from . import test_nfe_structure
+from . import test_nfe_dfereferenciado
 from . import test_nfe_import
 from . import test_nfe_import_unidentified_partner
 from . import test_nfe_import_wizard
