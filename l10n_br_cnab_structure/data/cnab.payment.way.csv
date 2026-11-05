@@ -19,7 +19,7 @@ cnab_itau_240_pay_way_19,19,IPTU/ISS/OUTROS TRIBUTOS MUNICIPAIS,cnab_itau_240_tr
 cnab_itau_240_pay_way_25,25,IPVA,,cnab_itau_240,
 cnab_itau_240_pay_way_32,32,NOTA FISCAL – LIQUIDAÇÃO ELETRÔNICA,cnab_itau_240_pagamentos,cnab_itau_240,
 cnab_itau_240_pay_way_10,10,ORDEM DE PAGAMENTO À DISPOSIÇÃO,cnab_itau_240_pagamentos,cnab_itau_240,
-cnab_itau_240_pay_way_13,13,PAGAMENTO DE CONCESSIONÁRIAS,,cnab_itau_240,
+cnab_itau_240_pay_way_13,13,PAGAMENTO DE CONCESSIONÁRIAS,cnab_itau_240_conc_tributo_bc,cnab_itau_240,
 cnab_itau_240_pay_way_31,31,PAGAMENTO DE TÍTULOS EM COBRANÇA EM OUTROS BANCOS,cnab_itau_240_boleto,cnab_itau_240,
 cnab_itau_240_pay_way_30,30,PAGAMENTO DE TÍTULOS EM COBRANÇA NO ITAÚ,cnab_itau_240_boleto,cnab_itau_240,
 cnab_itau_240_pay_way_47,47,PIX QR-CODE,cnab_itau_240_boleto,cnab_itau_240,

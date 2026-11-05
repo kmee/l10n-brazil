@@ -5,8 +5,10 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 import base64
+from datetime import timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from unidecode import unidecode
 
@@ -16,6 +18,7 @@ from odoo.tests import Form
 from odoo.tests.common import tagged
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
+from odoo.addons.l10n_br_account_payment_order import barcode_utils
 
 CNAB_240 = "240"
 CNAB_400 = "400"
@@ -44,12 +47,16 @@ PAY_WAY_OTHER_BANK = "41"
 
 SVC_SUPPLIER = "20"
 SVC_SALARY = "30"
+# Tax service type (not salary): no restriction of way in Itau
+SVC_TAX = "22"
 # Service type used for employee payments (PIX, TED and same-bank credit).
 # Decided by Daniel at GATE 2 (2026-10-06): 20 (Fornecedores) for everyone.
 SVC_EMPLOYEE = SVC_SUPPLIER
 
 TEST_CNPJ = "82688625000152"
 TEST_PARTNER_CNPJ = "45823449000198"
+TEST_PARTNER_B_CNPJ = "11222333000181"
+TEST_NO_VAT_PARTNER_CNPJ = "11444777000161"
 TEST_INVOICE_AMOUNT = 300.0
 
 
@@ -94,6 +101,7 @@ class TestCNABStructure(AccountTestInvoicingCommon):
     @classmethod
     def _setup_partner_data(cls):
         cls.partner_a.update({"vat": TEST_PARTNER_CNPJ})
+        cls.partner_b.update({"vat": TEST_PARTNER_B_CNPJ})
 
         cls.partner_a_itau_bank = cls.res_partner_bank_model.create(
             {
@@ -851,7 +859,8 @@ class TestCNABStructure(AccountTestInvoicingCommon):
                 "match_bank_type": "other",
                 "match_partner_type": "any",
                 "payment_way_id": self.way_41.id,
-                "service_type": SVC_SALARY,
+                # Itau SISPAG v085 (p. 4, p. 46): type 30 only with way 01/60
+                "service_type": SVC_SUPPLIER,
             }
         )
 
@@ -937,7 +946,7 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         )
         order, _line = self._create_itau_salary_line(partner_bank, self.way_41)
         batch_headers, seg = self._generate_segment_a(order)
-        self.assertEqual(batch_headers[0][9:11], SVC_SALARY)
+        self.assertEqual(batch_headers[0][9:11], SVC_SUPPLIER)
         self.assertEqual(seg[20:23], "001")
         self.assertEqual(seg[23:28], "00002")
         self.assertEqual(seg[28], " ")
@@ -1059,7 +1068,7 @@ class TestCNABStructure(AccountTestInvoicingCommon):
     # ------------------------------------------------------------------
     # Service type reproduction (real flow: invoice -> payment line multi)
     # ------------------------------------------------------------------
-    def _create_employee_rule(self):
+    def _create_employee_rule(self, service_type=SVC_SALARY):
         way_45 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_45")
         return self.env["l10n_br_cnab.payment.rule"].create(
             {
@@ -1068,7 +1077,7 @@ class TestCNABStructure(AccountTestInvoicingCommon):
                 "match_bank_type": "any",
                 "match_partner_type": "employee",
                 "payment_way_id": way_45.id,
-                "service_type": SVC_SALARY,
+                "service_type": service_type,
             }
         )
 
@@ -1160,23 +1169,23 @@ class TestCNABStructure(AccountTestInvoicingCommon):
 
     def test_exported_order_keeps_service_type(self):
         """Recompute never rewrites service type of an exported order."""
-        self._create_employee_rule()
+        self._create_employee_rule(service_type=SVC_TAX)
         self.partner_a.employee = True
         invoice = self._create_test_invoice()
         order = self._create_payment_order(invoice)
         line = order.payment_line_ids
-        self.assertEqual(line.service_type, SVC_SALARY)
+        self.assertEqual(line.service_type, SVC_TAX)
         order.draft2open()
         order.open2generated()
         self.assertEqual(order.state, "generated")
         # flag change: recompute leaves the stored service type alone
         self.partner_a.employee = False
         line._compute_cnab_payment_way_id()
-        self.assertEqual(line.service_type, SVC_SALARY)
+        self.assertEqual(line.service_type, SVC_TAX)
         # bank code change: same
         self.bank_341.code_bc = "237"
         line._compute_cnab_payment_way_id()
-        self.assertEqual(line.service_type, SVC_SALARY)
+        self.assertEqual(line.service_type, SVC_TAX)
         self.bank_341.code_bc = "341"
         # payment way is frozen too, and no UserError is raised even when no
         # way/rule matches any more
@@ -1187,7 +1196,7 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         order.payment_mode_id.cnab_structure_ok = True
         line._compute_cnab_payment_way_id()
         self.assertEqual(line.cnab_payment_way_id, way)
-        self.assertEqual(line.service_type, SVC_SALARY)
+        self.assertEqual(line.service_type, SVC_TAX)
         # in a draft order the recompute does apply
         order.payment_mode_id.cnab_payment_way_ids = mode_ways
         order.state = "draft"
@@ -1196,7 +1205,7 @@ class TestCNABStructure(AccountTestInvoicingCommon):
 
     def test_exported_legacy_line_without_stored_way(self):
         """Upgrade case: exported line with service type but no stored way."""
-        self._create_employee_rule()
+        self._create_employee_rule(service_type=SVC_TAX)
         self.partner_a.employee = True
         invoice = self._create_test_invoice()
         order = self._create_payment_order(invoice)
@@ -1211,7 +1220,7 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         line.invalidate_recordset()
         line._compute_cnab_payment_way_id()
         self.assertEqual(line.cnab_payment_way_id, way)
-        self.assertEqual(line.service_type, SVC_SALARY)
+        self.assertEqual(line.service_type, SVC_TAX)
 
     def test_order_computes_handle_multiple_records(self):
         """The computes must fill every record, not only the first one."""
@@ -1276,15 +1285,22 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         )
 
     def test_pix_key_other_banks_unchanged(self):
-        """Santander stays alpha (separate PR); BB and Sicoob are untouched."""
+        """Itau and Santander keep the key verbatim; BB and Sicoob are untouched."""
         santander = self.env.ref(
             "l10n_br_cnab_structure.cnab_santander_240_pagamentos_segmento_b_128_226"
         )
-        self.assertEqual(santander.type, "alpha")
+        self.assertEqual(santander.type, "raw")
+        self.assertEqual(santander.content_source_field, "partner_pix_id.key")
+        key = "Fin@Fornecedor.com.br"
+        self.assertEqual(
+            santander.format(santander.size, santander.type, key),
+            key.ljust(santander.size),
+        )
         raws = self.env["l10n_br_cnab.line.field"].search([("type", "=", "raw")])
         self.assertEqual(
             raws,
-            self.env.ref(
+            santander
+            | self.env.ref(
                 "l10n_br_cnab_structure.cnab_itau_240_pagamentos_segmento_b_128_227"
             ),
         )
@@ -1475,6 +1491,44 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         self.assertEqual(header[11:13], "41")
         self.assertNotEqual(self._segments(lines, "A")[0][112:114], "04")
 
+    def test_itau_pix_key_line_sends_zero_favored_bank(self):
+        """PIX by key never sends the bank of the partner account (DICT decides)."""
+        self._create_pix_employee_rules(same_bank_first=False)
+        other = self._create_partner_bank(self.bank_001)
+        order = self._create_salary_order()
+        self._add_salary_line(order, other, self._create_pix_key("email", "a@b.com"))
+        seg_a = self._segments(self._generate_cnab_lines(order), "A")[0]
+        self.assertEqual(seg_a[112:114], "04")
+        self.assertEqual(seg_a[20:23], "000")
+        self.assertEqual(seg_a[23:43], "0" * 20)
+
+    def test_itau_ted_line_keeps_favored_bank(self):
+        """Without a key (TED) the favored bank code is still sent."""
+        self._create_pix_employee_rules(same_bank_first=False)
+        other = self._create_partner_bank(self.bank_001)
+        order, line = self._create_salary_line_by_rule(other)
+        self.assertEqual(line.cnab_favored_bank_code, "001")
+        seg_a = self._segments(self._generate_cnab_lines(order), "A")[0]
+        self.assertEqual(seg_a[20:23], "001")
+
+    def test_cnab_time_strftime_uses_local_timezone(self):
+        """File header date/hour follow the Brazilian clock, not the server UTC."""
+        from freezegun import freeze_time
+
+        field = self.env["l10n_br_cnab.line.field"].search(
+            [("sending_dynamic_content", "like", "%H%M%S")], limit=1
+        )
+        self.assertTrue(field)
+        with freeze_time("2026-10-21 01:30:15"):  # UTC; 22:30:15 on the 20th BRT
+            hour = field.eval_compute_value("", 'time.strftime("%H%M%S")')
+            day = field.eval_compute_value("", 'time.strftime("%d%m%Y")')
+            ts = field.with_context(tz="UTC").eval_compute_value(
+                "", 'time.strftime("%H%M%S")'
+            )
+        self.assertEqual(hour, "223015")
+        self.assertEqual(day, "20102026")
+        self.assertEqual(ts, "013015")
+
     def test_pix_key_without_type_mapping_blocks_generation(self):
         """A key whose type has no Itau mapping aborts the CNAB with the name."""
         self._create_pix_employee_rules(same_bank_first=False)
@@ -1555,26 +1609,7 @@ class TestCNABStructure(AccountTestInvoicingCommon):
     BOLETO_BARCODE = "00193990100001234560123456789012345678901234"
     BOLETO_DIGITABLE_LINE = "00190123435678901234356789012343399010000123456"
 
-    def _fix_boleto_trailer_expression(self):
-        """Apply the production correction of the Itau boleto trailer total.
-
-        The CSV shipped with this branch has an unterminated string literal in
-        the 'TOTAL VALOR PRINCIPAL' expression (fixed by
-        18.0-zitron-fix-cnab-trailer-quote); production already has it fixed in
-        the database. Harmless when the data is already correct.
-        """
-        self.env.ref(
-            "l10n_br_cnab_structure.cnab_itau_240_boleto_trailer_24_41"
-        ).sending_dynamic_content = (
-            'sum(int(line.sorted_values().get("153_167_valor_pagamento", 0)) '
-            "for line in filter(lambda l: l.sorted_values().get("
-            '"15_17_tipo_de_movimento", "") in ("000", "001", "002", "003") '
-            'and l.sorted_values().get("18_19_codigo_do_registro", False) != 52, '
-            "batch_detail_lines))"
-        )
-
     def _create_boleto_order(self, **line_vals):
-        self._fix_boleto_trailer_expression()
         way_31 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_31")
         mode = self.payment_mode_model.create(
             {
@@ -1639,3 +1674,1225 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         with self.assertRaises(UserError):
             order.cnab_structure_id.output(order)
         self.assertEqual(self.attachment_model.search_count([]), attachments_before)
+
+    def _create_account_line_without_bank(self, way_code, partner_pix=None):
+        """Line on a mode that only has the given Itau payment way, no rules."""
+        self.env["l10n_br_cnab.payment.rule"].search(
+            [("cnab_structure_id", "=", self.cnab_structure_itau_240.id)]
+        ).unlink()
+        way = self.env.ref(f"l10n_br_cnab_structure.cnab_itau_240_pay_way_{way_code}")
+        mode = self.payment_mode_model.create(
+            {
+                "name": f"Itau way {way_code}",
+                "bank_account_link": "fixed",
+                "company_id": self.company.id,
+                "payment_method_id": self.outbound_payment_method.id,
+                "fixed_journal_id": self.bank_journal_itau.id,
+                "cnab_structure_id": self.cnab_structure_itau_240.id,
+                "cnab_payment_way_ids": [(6, 0, [way.id])],
+                "cnab_processor": "oca_processor",
+            }
+        )
+        order = self.payment_order_model.create(
+            {
+                "payment_mode_id": mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": self.bank_journal_itau.id,
+            }
+        )
+        vals = {
+            "order_id": order.id,
+            "partner_id": self.partner_a.id,
+            "amount_currency": 1234.56,
+            "communication": "NO BANK TEST",
+        }
+        if partner_pix:
+            vals["partner_pix_id"] = partner_pix.id
+        line = self.payment_line_model.create(vals)
+        self.assertEqual(line.cnab_payment_way_id, way)
+        return order, line
+
+    def test_ted_without_partner_bank_blocks_generation(self):
+        """TED/credit in account without favored account must not leave zeroed."""
+        order, line = self._create_account_line_without_bank("41")
+        attachments_before = self.attachment_model.search_count([])
+        with self.assertRaises(UserError) as ctx:
+            order.draft2open()
+        message = str(ctx.exception)
+        self.assertIn(line.name, message)
+        self.assertIn(self.partner_a.name, message)
+        self.assertRegex(message, r"1[.,]234[.,]56")
+        with self.assertRaises(UserError):
+            order.cnab_structure_id.output(order)
+        self.assertEqual(self.attachment_model.search_count([]), attachments_before)
+
+    def test_credit_in_account_with_incomplete_bank_blocks(self):
+        order, line = self._create_account_line_without_bank("01")
+        line.partner_bank_id = self._create_partner_bank(self.bank_341, bra_number="")
+        with self.assertRaises(UserError):
+            order.draft2open()
+
+    def test_ted_with_complete_bank_is_not_blocked(self):
+        order, line = self._create_account_line_without_bank("41")
+        line.partner_bank_id = self._create_partner_bank(self.bank_001)
+        line._check_bank_account_required()  # no raise
+
+    def test_pix_key_and_boleto_without_bank_are_not_blocked(self):
+        pix_key = self._create_pix_key("evp", self.PIX_KEYS["evp"])
+        _order, pix_line = self._create_account_line_without_bank("45", pix_key)
+        pix_line._check_bank_account_required()  # no raise
+        _order, boleto_line = self._create_account_line_without_bank("30")
+        boleto_line._check_bank_account_required()  # no raise
+
+    # Itau boleto (segment J) and utility bills (segment O) layout data
+    # Synthetic utility code (product 8, segment 2, mod 10), 48 digits
+    UTILITY_DIGITABLE_LINE = "826900000413526572026106260000123455678901234560"
+
+    def _create_utility_order(self, **line_vals):
+        way_13 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_13")
+        mode = self.payment_mode_model.create(
+            {
+                "name": "Itau Utility Mode",
+                "bank_account_link": "fixed",
+                "company_id": self.company.id,
+                "payment_method_id": self.outbound_payment_method.id,
+                "payment_mode_domain": "boleto",
+                "payment_order_ok": True,
+                "fixed_journal_id": self.bank_journal_itau.id,
+                "cnab_structure_id": self.cnab_structure_itau_240.id,
+                "cnab_payment_way_ids": [(6, 0, [way_13.id])],
+                "cnab_processor": "oca_processor",
+            }
+        )
+        order = self.payment_order_model.create(
+            {
+                "payment_mode_id": mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": self.bank_journal_itau.id,
+            }
+        )
+        vals = {
+            "order_id": order.id,
+            "partner_id": self.partner_a.id,
+            "amount_currency": 1234.56,
+            "communication": "UTILITY TEST",
+            "date": fields.Date.today() + timedelta(days=5),
+            "ml_maturity_date": fields.Date.today() + timedelta(days=10),
+            "barcode": self.UTILITY_DIGITABLE_LINE,
+        }
+        vals.update(line_vals)
+        return order, self.payment_line_model.create(vals)
+
+    def test_boleto_segment_j_dates_and_your_number(self):
+        """Segment J exports the dates of the line (not today) and its name."""
+        pay_date = fields.Date.today() + timedelta(days=5)
+        due_date = fields.Date.today() + timedelta(days=10)
+        order, line = self._create_boleto_order(
+            barcode=self.BOLETO_DIGITABLE_LINE,
+            date=pay_date,
+            ml_maturity_date=due_date,
+        )
+        order.write({"date_prefered": "fixed", "date_scheduled": pay_date})
+        lines = self._generate_cnab_lines(order)
+        segment_j = self._segments(lines, "J")[0]
+        self.assertEqual(segment_j[91:99], due_date.strftime("%d%m%Y"))
+        self.assertEqual(segment_j[144:152], pay_date.strftime("%d%m%Y"))
+        self.assertEqual(segment_j[182:202].strip(), line.name)
+
+    def test_boleto_batch_trailer_total(self):
+        """Itau boleto batch trailer sums the line amount (positions 24-41)."""
+        order, _line = self._create_boleto_order(barcode=self.BOLETO_DIGITABLE_LINE)
+        lines = self._generate_cnab_lines(order)
+        trailer = [x for x in lines if len(x) > 7 and x[7] == "5"]
+        self.assertEqual(len(trailer), 1)
+        self.assertEqual(trailer[0][23:41], "000000000000123456")
+
+    def test_utility_bill_segment_o(self):
+        """Forma 13 (utility): batch header, segment O and batch trailer."""
+        pay_date = fields.Date.today() + timedelta(days=5)
+        due_date = fields.Date.today() + timedelta(days=10)
+        order, line = self._create_utility_order(ml_maturity_date=due_date)
+        order.write({"date_prefered": "fixed", "date_scheduled": pay_date})
+        self.assertEqual(line.digitable_line, self.UTILITY_DIGITABLE_LINE)
+        lines = self._generate_cnab_lines(order)
+        for rec in lines:
+            self.assertEqual(len(rec), 240)
+
+        header = [x for x in lines if x[7] == "1"]
+        self.assertEqual(len(header), 1)
+        self.assertEqual(header[0][11:13], "13")
+
+        segments = self._segments(lines, "O")
+        self.assertEqual(len(segments), 1)
+        seg = segments[0]
+        self.assertEqual(seg[3:7], header[0][3:7])
+        self.assertEqual(seg[8:13], "00001")
+        self.assertEqual(seg[14:17], "000")
+        self.assertEqual(seg[17:65], self.UTILITY_DIGITABLE_LINE)
+        self.assertEqual(seg[95:103], due_date.strftime("%d%m%Y"))
+        self.assertEqual(seg[121:136], "000000000123456")
+        self.assertEqual(seg[136:144], pay_date.strftime("%d%m%Y"))
+        self.assertEqual(seg[174:194].strip(), line.name)
+
+        trailer = [x for x in lines if x[7] == "5"]
+        self.assertEqual(len(trailer), 1)
+        self.assertEqual(trailer[0][3:7], header[0][3:7])
+        self.assertEqual(trailer[0][17:23], "000003")
+        self.assertEqual(trailer[0][23:41], "000000000000123456")
+
+    # Payment way chosen by barcode (no rule): 30 / 31 / 13
+    def _barcode_ways_mode(self, codes=("30", "31", "13"), domain="boleto"):
+        ways = [
+            self.env.ref(f"l10n_br_cnab_structure.cnab_itau_240_pay_way_{c}").id
+            for c in codes
+        ]
+        return self.payment_mode_model.create(
+            {
+                "name": "Itau Boleto 30/31/13",
+                "bank_account_link": "fixed",
+                "company_id": self.company.id,
+                "payment_method_id": self.outbound_payment_method.id,
+                "payment_mode_domain": domain,
+                "payment_order_ok": True,
+                "fixed_journal_id": self.bank_journal_itau.id,
+                "cnab_structure_id": self.cnab_structure_itau_240.id,
+                "cnab_payment_way_ids": [(6, 0, ways)],
+                "cnab_processor": "oca_processor",
+            }
+        )
+
+    def _boleto_barcode(self, bank, seed):
+        """Valid synthetic 44 digits boleto barcode of ``bank``."""
+        body = bank + "9" + "0" + "1000" + "0000123456" + str(seed).zfill(25)
+        dv = barcode_utils.mod11_barcode(body[:4] + body[5:])
+        return body[:4] + str(dv) + body[5:]
+
+    def _utility_barcode_44(self):
+        return barcode_utils.barcode_from_digitable_line(self.UTILITY_DIGITABLE_LINE)
+
+    def _mixed_barcode_order(self, mode):
+        order = self.payment_order_model.create(
+            {
+                "payment_mode_id": mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": self.bank_journal_itau.id,
+            }
+        )
+        codes = [
+            self._boleto_barcode("341", 1),
+            self._boleto_barcode("409", 2),
+            self._boleto_barcode("237", 3),
+            self._boleto_barcode("001", 4),
+            self.UTILITY_DIGITABLE_LINE,
+            self._utility_barcode_44(),
+        ]
+        lines = self.payment_line_model
+        for idx, code in enumerate(codes):
+            lines |= self.payment_line_model.create(
+                {
+                    "order_id": order.id,
+                    "partner_id": self.partner_a.id,
+                    "amount_currency": 100.0 + idx,
+                    "communication": f"BARCODE {idx}",
+                    "date": fields.Date.today(),
+                    "barcode": code,
+                }
+            )
+        return order, lines
+
+    def test_way_by_barcode(self):
+        """Boleto 341/409 -> 30, other bank -> 31, utility (44 or 48) -> 13."""
+        order, lines = self._mixed_barcode_order(self._barcode_ways_mode())
+        self.assertEqual(
+            [ln.cnab_payment_way_id.code for ln in lines],
+            ["30", "30", "31", "31", "13", "13"],
+        )
+        self.assertEqual(set(lines.mapped("service_type")), {"20"})
+
+    def test_utility_44_digits_gets_digitable_line(self):
+        _order, lines = self._mixed_barcode_order(self._barcode_ways_mode())
+        self.assertEqual(lines[4].digitable_line, self.UTILITY_DIGITABLE_LINE)
+        self.assertEqual(lines[5].barcode, self._utility_barcode_44())
+        self.assertEqual(lines[5].digitable_line, self.UTILITY_DIGITABLE_LINE)
+
+    def test_way_by_barcode_recomputes_on_change(self):
+        _order, lines = self._mixed_barcode_order(self._barcode_ways_mode())
+        line = lines[0]
+        self.assertEqual(line.cnab_payment_way_id.code, "30")
+        line.barcode = self._boleto_barcode("237", 9)
+        self.assertEqual(line.cnab_payment_way_id.code, "31")
+        line.barcode = self.UTILITY_DIGITABLE_LINE
+        self.assertEqual(line.cnab_payment_way_id.code, "13")
+
+    def test_way_by_barcode_falls_back_to_first_way(self):
+        """Preferred way not configured in the mode: first way, no error."""
+        mode = self._barcode_ways_mode(codes=("30",))
+        _order, lines = self._mixed_barcode_order(mode)
+        # 2 other bank boletos and utilities have no 31/13: stay on way 30
+        self.assertEqual({ln.cnab_payment_way_id.code for ln in lines}, {"30"})
+
+    @staticmethod
+    def _utility_barcode(segment, reference="6", seed=1):
+        body = "8" + segment + reference + "0" + str(seed).zfill(40)
+        dv = barcode_utils._utility_dv(body[:3] + body[4:], reference)
+        return body[:3] + str(dv) + body[4:]
+
+    def test_utility_segment_routes_way_13_or_91(self):
+        """Tributos (segment 1/5/7) prefer 91, concessionarias prefer 13."""
+        mode = self._barcode_ways_mode(codes=("13", "91"))
+        order = self.payment_order_model.create(
+            {
+                "payment_mode_id": mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": self.bank_journal_itau.id,
+            }
+        )
+        expected = {"1": "91", "5": "91", "7": "91", "2": "13", "3": "13", "4": "13"}
+        for segment, code in expected.items():
+            for reference in ("6", "8"):  # mod 10 and mod 11 utility DV
+                line = self.payment_line_model.create(
+                    {
+                        "order_id": order.id,
+                        "partner_id": self.partner_a.id,
+                        "amount_currency": 10.0,
+                        "communication": "UT",
+                        "date": fields.Date.today(),
+                        "barcode": self._utility_barcode(segment, reference),
+                    }
+                )
+                self.assertEqual(line.cnab_payment_way_id.code, code, segment)
+                self.assertEqual(len(line.digitable_line), 48)
+        # only one of them configured: use it
+        for only, segment in (("13", "5"), ("91", "2")):
+            mode.cnab_payment_way_ids = self._barcode_ways_mode(
+                codes=(only,)
+            ).cnab_payment_way_ids
+            line = self.payment_line_model.create(
+                {
+                    "order_id": order.id,
+                    "partner_id": self.partner_a.id,
+                    "amount_currency": 10.0,
+                    "communication": "UT",
+                    "date": fields.Date.today(),
+                    "barcode": self._utility_barcode(segment),
+                }
+            )
+            self.assertEqual(line.cnab_payment_way_id.code, only)
+
+    def test_way_without_batch_is_not_preferred(self):
+        """BB/Santander/Sicoob way 13 has no batch template: never picked."""
+        ways = self.env["cnab.payment.way"].search(
+            [
+                (
+                    "cnab_structure_id",
+                    "=",
+                    self.env.ref("l10n_br_cnab_structure.cnab_bb_240").id,
+                ),
+                ("code", "in", ("13", "31")),
+            ]
+        )
+        self.assertFalse(ways.filtered(lambda w: w.code == "13").batch_id)
+        _order, lines = self._mixed_barcode_order(self._barcode_ways_mode())
+        self.assertFalse(lines[4]._get_cnab_barcode_way(ways))
+
+    def _create_supplier_rules(self):
+        way_01 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_01")
+        way_41 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_41")
+        way_45 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_45")
+        rule_model = self.env["l10n_br_cnab.payment.rule"]
+        rule_model.search(
+            [("cnab_structure_id", "=", self.cnab_structure_itau_240.id)]
+        ).unlink()
+        for seq, bank_type, partner_type, way in (
+            (5, "any", "employee", way_45),
+            (10, "same", "supplier", way_01),
+            (20, "other", "supplier", way_41),
+        ):
+            rule_model.create(
+                {
+                    "cnab_structure_id": self.cnab_structure_itau_240.id,
+                    "sequence": seq,
+                    "match_bank_type": bank_type,
+                    "match_partner_type": partner_type,
+                    "payment_way_id": way.id,
+                    "service_type": "30" if partner_type == "employee" else "20",
+                }
+            )
+
+    def test_way_by_barcode_wins_over_rules(self):
+        """Rules (TED/credit) never hijack lines with barcode; and vice versa."""
+        self._create_supplier_rules()
+        mode = self._barcode_ways_mode(codes=("30", "31", "13", "01", "41", "45"))
+        order, lines = self._mixed_barcode_order(mode)
+        # boleto lines of a supplier with Itau account: still 30/31/13 by barcode
+        lines.write({"partner_bank_id": self.partner_a_itau_bank.id})
+        self.assertEqual(
+            [ln.cnab_payment_way_id.code for ln in lines],
+            ["30", "30", "31", "31", "13", "13"],
+        )
+        vals = {
+            "order_id": order.id,
+            "partner_id": self.partner_a.id,
+            "amount_currency": 50.0,
+            "communication": "TED",
+            "date": fields.Date.today(),
+        }
+        ted_same = self.payment_line_model.create(
+            dict(vals, partner_bank_id=self.partner_a_itau_bank.id)
+        )
+        ted_other = self.payment_line_model.create(
+            dict(vals, partner_bank_id=self.partner_a_bb_bank.id)
+        )
+        self.assertEqual(ted_same.cnab_payment_way_id.code, "01")
+        self.assertEqual(ted_other.cnab_payment_way_id.code, "41")
+        # employee salary rule still applies to lines without barcode
+        self.partner_a.employee = True
+        self.assertEqual(ted_same.cnab_payment_way_id.code, "45")
+        self.assertEqual(ted_same.service_type, "30")
+
+    def test_forma_01_supplier_segment_a(self):
+        """Supplier with Itau account: forma 01 lot, segment A with bank data."""
+        self._create_supplier_rules()
+        mode = self._barcode_ways_mode(codes=("01", "41"), domain=False)
+        order = self.payment_order_model.create(
+            {
+                "payment_mode_id": mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": self.bank_journal_itau.id,
+            }
+        )
+        line = self.payment_line_model.create(
+            {
+                "order_id": order.id,
+                "partner_id": self.partner_a.id,
+                "partner_bank_id": self.partner_a_itau_bank.id,
+                "amount_currency": 100.0,
+                "communication": "CREDITO CC",
+                "date": fields.Date.today(),
+            }
+        )
+        self.assertEqual(line.cnab_payment_way_id.code, "01")
+        headers, seg = self._generate_segment_a(order)
+        self.assertEqual(headers[0][11:13], "01")
+        self.assertEqual(headers[0][13:16], "040")
+        self.assertEqual(seg[20:23], "341")
+        self.assertEqual(seg[23], "0")
+        self.assertEqual(seg[24:28], "0001")
+        self.assertEqual(seg[35:41], "123456")
+        self.assertEqual(seg[42], "7")
+
+    def _return_events(self, order, segment, bank_number):
+        """Generate the remessa, fake the bank number and import it as return."""
+        order.draft2open()
+        action = order.open2generated()
+        data = base64.b64decode(self.attachment_model.browse(action["res_id"]).datas)
+        lines = data.decode().splitlines()
+        # The bank return carries only the J record (no J-52 optional record)
+        lines = [
+            x for x in lines if not (x[7] == "3" and x[13] == "J" and x[17:19] == "52")
+        ]
+        for idx, rec in enumerate(lines):
+            if len(rec) > 13 and rec[7] == "3" and rec[13] == segment:
+                lines[idx] = replace_chars(rec, 215, bank_number)
+                self.assertEqual(rec[215:230], " " * 15)  # sent blank
+        wizard = self.env["cnab.import.wizard"].create(
+            {
+                "journal_id": self.bank_journal_itau.id,
+                "return_file": base64.b64encode("\r\n".join(lines).encode()),
+                "filename": "TEST.RET",
+                "type": "outbound",
+                "cnab_structure_id": self.cnab_structure_itau_240.id,
+            }
+        )
+        action = wizard.with_context(default_type="outbound").import_cnab()
+        log = self.env["l10n_br_cnab.return.log"].browse(action["res_id"])
+        return log.event_ids
+
+    def _assert_return_keeps_bank_number(self, order, line, segment):
+        bank_number = "671234567890123"
+        field_xid = {
+            "J": "cnab_itau_240_boleto_segmento_j_216_230",
+            "O": "cnab_itau_240_conc_tributo_bc_segmento_o_216_230",
+        }[segment]
+        events = self._return_events(order, segment, bank_number)
+        event = events.filtered(lambda e: e.your_number == line.name)
+        self.assertEqual(len(event), 1)
+        self.assertEqual(event.own_number, bank_number)
+        self.assertEqual(event.payment_line_ids, line)
+        self.assertNotIn("PAYMENT LINES NOT FOUND", event.occurrences or "")
+        event.cnab_return_log_id.unlink()
+        # wrong production config: nosso numero mapped to your_number
+        self.env.ref(
+            f"l10n_br_cnab_structure.{field_xid}"
+        ).content_dest_field = "your_number"
+        order2, line2 = (
+            self._create_boleto_order(barcode=self.BOLETO_DIGITABLE_LINE)
+            if segment == "J"
+            else self._create_utility_order()
+        )
+        events = self._return_events(order2, segment, bank_number)
+        self.assertFalse(events.filtered(lambda e: e.your_number == line2.name))
+        self.assertIn("PAYMENT LINES NOT FOUND", " ".join(events.mapped("occurrences")))
+
+    def test_return_segment_j_keeps_bank_number(self):
+        order, line = self._create_boleto_order(barcode=self.BOLETO_DIGITABLE_LINE)
+        self._assert_return_keeps_bank_number(order, line, "J")
+
+    def test_return_segment_o_keeps_bank_number(self):
+        order, line = self._create_utility_order()
+        self._assert_return_keeps_bank_number(order, line, "O")
+
+    def test_way_91_uses_segment_o(self):
+        """Forma 91 (tributos com codigo de barras) exports segment O."""
+        mode = self._barcode_ways_mode(codes=("91",))
+        order = self.payment_order_model.create(
+            {
+                "payment_mode_id": mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": self.bank_journal_itau.id,
+            }
+        )
+        self.payment_line_model.create(
+            {
+                "order_id": order.id,
+                "partner_id": self.partner_a.id,
+                "amount_currency": 100.0,
+                "communication": "TRIBUTO",
+                "date": fields.Date.today(),
+                "barcode": self.UTILITY_DIGITABLE_LINE,
+            }
+        )
+        file_lines = self._generate_cnab_lines(order)
+        header = [x for x in file_lines if x[7] == "1"][0]
+        self.assertEqual(header[11:13], "91")
+        self.assertEqual(header[132:142], " " * 10)
+        segments = self._segments(file_lines, "O")
+        self.assertEqual(len(segments), 1)
+        self.assertEqual(segments[0][17:65], self.UTILITY_DIGITABLE_LINE)
+
+    def test_way_by_barcode_file_has_three_lots(self):
+        pay_date = fields.Date.today() + timedelta(days=5)
+        order, lines = self._mixed_barcode_order(self._barcode_ways_mode())
+        # the same barcode on two lines leaves as one record (one boleto for N
+        # bills): use two different utility bills to get two segments O
+        lines[5].barcode = self._utility_barcode("2", "6", 2)
+        order.write({"date_prefered": "fixed", "date_scheduled": pay_date})
+        file_lines = self._generate_cnab_lines(order)
+        for rec in file_lines:
+            self.assertEqual(len(rec), 240)
+        headers = [x for x in file_lines if x[7] == "1"]
+        self.assertEqual(sorted(h[11:13] for h in headers), ["13", "30", "31"])
+        self.assertEqual(len(self._segments(file_lines, "O")), 2)
+        seg_j = self._segments(file_lines, "J")
+        # 4 boletos: J + J-52 each
+        self.assertEqual(len(seg_j), 8)
+        self.assertEqual(
+            {seg[17:65] for seg in self._segments(file_lines, "O")},
+            {self.UTILITY_DIGITABLE_LINE, lines[5].digitable_line},
+        )
+        # Lot header history of C/C (133-142) must be blank (manual note 7)
+        header_13 = [h for h in headers if h[11:13] == "13"][0]
+        self.assertEqual(header_13[132:142], " " * 10)
+        for seg in [x for x in seg_j if x[17:19] != "52"]:
+            self.assertEqual(seg[167:182], "0" * 15)
+            self.assertEqual(seg[215:230], " " * 15)
+        # frozen after generation: a barcode change no longer moves the way
+        ways_before = lines.mapped("cnab_payment_way_id")
+        lines[0].barcode = self._boleto_barcode("237", 8)
+        self.assertEqual(lines.mapped("cnab_payment_way_id"), ways_before)
+
+    # Batch trailer total of the other banks (Banco do Brasil, Sicoob, Santander)
+    def _create_bank_order(self, bank_xid, structure_xid, way_xid, domain, code):
+        bank = self.env.ref(bank_xid)
+        account = self.res_partner_bank_model.create(
+            {
+                "acc_number": "99887",
+                "bra_number": "4321",
+                "bank_id": bank.id,
+                "company_id": self.company.id,
+                "partner_id": self.company.partner_id.id,
+            }
+        )
+        journal = self.env["account.journal"].create(
+            {
+                "name": f"Bank {code}",
+                "type": "bank",
+                "code": code,
+                "bank_account_id": account.id,
+                "bank_id": bank.id,
+            }
+        )
+        mode = self.payment_mode_model.create(
+            {
+                "name": f"Mode {code}",
+                "bank_account_link": "fixed",
+                "company_id": self.company.id,
+                "payment_method_id": self.outbound_payment_method.id,
+                "payment_mode_domain": domain,
+                "payment_order_ok": True,
+                "fixed_journal_id": journal.id,
+                "cnab_structure_id": self.env.ref(structure_xid).id,
+                "cnab_payment_way_ids": [(6, 0, [self.env.ref(way_xid).id])],
+                "cnab_processor": "oca_processor",
+            }
+        )
+        order = self.payment_order_model.create(
+            {
+                "payment_mode_id": mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": journal.id,
+            }
+        )
+        return order, mode
+
+    def _assert_boleto_trailer_matches_segment_j(
+        self, bank_xid, prefix, code, way="31"
+    ):
+        order, _mode = self._create_bank_order(
+            bank_xid,
+            f"l10n_br_cnab_structure.{prefix}",
+            f"l10n_br_cnab_structure.{prefix}_pay_way_{way}",
+            "boleto",
+            code,
+        )
+        self.payment_line_model.create(
+            {
+                "order_id": order.id,
+                "partner_id": self.partner_a.id,
+                "amount_currency": 1234.0,
+                "communication": "BOLETO TEST",
+                "date": fields.Date.today(),
+                "barcode": self.BOLETO_DIGITABLE_LINE,
+            }
+        )
+        lines = self._generate_cnab_lines(order)
+        segment_j = self._segments(lines, "J")[0]
+        trailer = [x for x in lines if len(x) > 7 and x[7] == "5"]
+        self.assertEqual(len(trailer), 1)
+        total = int(trailer[0][23:41])
+        self.assertTrue(total)
+        self.assertEqual(total, int(segment_j[152:167]))
+
+    def test_bb_boleto_trailer_total(self):
+        self._assert_boleto_trailer_matches_segment_j(
+            # barcode of the paying bank (001): way 30
+            "l10n_br_base.res_bank_001",
+            "cnab_bb_240",
+            "BNKB",
+            way="30",
+        )
+
+    def test_sicoob_boleto_trailer_total(self):
+        self._assert_boleto_trailer_matches_segment_j(
+            "l10n_br_base.res_bank_756", "cnab_sicoob_240", "BNKS"
+        )
+
+    def test_santander_boleto_trailer_total(self):
+        self._assert_boleto_trailer_matches_segment_j(
+            "l10n_br_base.res_bank_033", "cnab_santander_240", "BNKT"
+        )
+
+    def test_santander_payment_trailer_total(self):
+        """Santander payment batch trailer sums the segment A amounts (812)."""
+        order, mode = self._create_bank_order(
+            "l10n_br_base.res_bank_033",
+            "l10n_br_cnab_structure.cnab_santander_240",
+            "l10n_br_cnab_structure.cnab_santander_240_pay_way_45",
+            "pix_transfer",
+            "BNKP",
+        )
+        self.payment_line_model.create(
+            {
+                "order_id": order.id,
+                "partner_id": self.partner_a.id,
+                "partner_pix_id": self.partner_a.pix_key_ids[:1].id,
+                "amount_currency": 150.0,
+                "communication": "PIX TEST",
+                "date": fields.Date.today(),
+            }
+        )
+        lines = self._generate_cnab_lines(order)
+        segment_a = self._segments(lines, "A")[0]
+        trailer = [x for x in lines if len(x) > 7 and x[7] == "5"]
+        self.assertEqual(len(trailer), 1)
+        self.assertEqual(int(trailer[0][23:41]), 15000)
+        self.assertEqual(int(segment_a[119:134]), 15000)
+
+    # ------------------------------------------------------------------
+    # Payment rule x payment mode compatibility
+    # ------------------------------------------------------------------
+    def _create_mode_order(self, domain):
+        mode = self._create_itau_salary_mode()
+        mode.payment_mode_domain = domain
+        return self.payment_order_model.create(
+            {
+                "payment_mode_id": mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": self.bank_journal_itau.id,
+            }
+        )
+
+    def test_pix_mode_skips_credit_rule_when_line_has_pix_key(self):
+        """Employee with Itau account and key in PIX mode leaves as PIX (45)."""
+        self._create_pix_employee_rules(same_bank_first=True)
+        pix = self._create_pix_key("email", self.PIX_KEYS["email"])
+        same = self._create_partner_bank(self.bank_341)
+        order = self._create_mode_order("pix_transfer")
+        line = self._add_salary_line(order, same, pix)
+        self.assertEqual(line.cnab_payment_way_id, self.way_45)
+        lines = self._generate_cnab_lines(order)
+        header = [x for x in lines if len(x) > 8 and x[7] == "1"][0]
+        self.assertEqual(header[11:13], "45")
+        seg_b = self._segments(lines, "B")
+        self.assertEqual(len(seg_b), 1)
+        self.assertEqual(seg_b[0][127:227], self.PIX_KEYS["email"].ljust(100))
+
+    def test_pix_mode_credit_rule_still_applies_without_pix_key(self):
+        """No key in a PIX mode: the credit rule is legitimate (unchanged)."""
+        self._create_pix_employee_rules(same_bank_first=True)
+        same = self._create_partner_bank(self.bank_341)
+        order = self._create_mode_order("pix_transfer")
+        line = self._add_salary_line(order, same)
+        self.assertEqual(line.cnab_payment_way_id, self.way_01)
+
+    def test_ted_mode_skips_pix_rule_when_line_has_account_without_key(self):
+        """TED mode: a PIX rule never takes a line with account and no key."""
+        self._create_pix_employee_rules(same_bank_first=False)
+        self.env["l10n_br_cnab.payment.rule"].search(
+            [
+                ("cnab_structure_id", "=", self.cnab_structure_itau_240.id),
+                ("payment_way_id", "=", self.way_45.id),
+            ]
+        ).write({"match_pix_key": "any"})
+        same = self._create_partner_bank(self.bank_341)
+        order = self._create_mode_order("ted")
+        line = self._add_salary_line(order, same)
+        self.assertEqual(line.cnab_payment_way_id, self.way_01)
+        lines = self._generate_cnab_lines(order)
+        header = [x for x in lines if len(x) > 8 and x[7] == "1"][0]
+        self.assertEqual(header[11:13], "01")
+        seg_a = self._segments(lines, "A")[0]
+        self.assertEqual(seg_a[24:28], "1234")
+        self.assertEqual(seg_a[35:41], "123456")
+        self.assertEqual(seg_a[42], "7")
+        self.assertFalse(self._segments(lines, "B"))
+
+    # ------------------------------------------------------------------
+    # One boleto paying several bills (same barcode on several lines)
+    # ------------------------------------------------------------------
+    def _add_boleto_line(self, order, amount, barcode):
+        return self.payment_line_model.create(
+            {
+                "order_id": order.id,
+                "partner_id": self.partner_a.id,
+                "amount_currency": amount,
+                "communication": "BOLETO TEST",
+                "date": fields.Date.today(),
+                "barcode": barcode,
+            }
+        )
+
+    def _create_two_bills_order(self, amount_2=234.56):
+        # the barcode carries the value R$ 1234,56 (positions 10-19)
+        order, line_1 = self._create_boleto_order(
+            barcode=self.BOLETO_BARCODE, amount_currency=1000.0
+        )
+        line_2 = self._add_boleto_line(order, amount_2, self.BOLETO_BARCODE)
+        return order, line_1, line_2
+
+    def test_one_boleto_for_two_bills_generates_one_segment_j(self):
+        order, line_1, line_2 = self._create_two_bills_order()
+        lines = self._generate_cnab_lines(order)
+        segments = self._segments(lines, "J")
+        # one J (barcode) + one J-52, not two of each
+        self.assertEqual(len(segments), 2)
+        seg_j = segments[0]
+        self.assertEqual(seg_j[17:61], self.BOLETO_BARCODE)
+        self.assertEqual(seg_j[99:114], "000000000123456")  # nominal
+        self.assertEqual(seg_j[152:167], "000000000123456")  # paid: sum of the bills
+        self.assertEqual(seg_j[182:202].strip(), line_1.name)
+        trailer = [x for x in lines if len(x) > 7 and x[7] == "5"]
+        self.assertEqual(trailer[0][23:41], "000000000000123456")
+        self.assertEqual(len(order.payment_line_ids), 2)
+
+    def test_one_boleto_for_two_bills_sum_must_match_barcode_value(self):
+        order, line_1, line_2 = self._create_two_bills_order(amount_2=200.0)
+        order.draft2open()
+        with self.assertRaises(UserError) as ctx:
+            order.open2generated()
+        message = str(ctx.exception)
+        self.assertIn(line_1.name, message)
+        self.assertIn(line_2.name, message)
+
+    def test_different_barcodes_keep_one_segment_j_each(self):
+        order, _line_1 = self._create_boleto_order(
+            barcode=self.BOLETO_BARCODE, amount_currency=1234.56
+        )
+        self._add_boleto_line(order, 1234.56, self._boleto_barcode("001", 7))
+        lines = self._generate_cnab_lines(order)
+        self.assertEqual(len(self._segments(lines, "J")), 4)
+
+    def test_return_of_one_boleto_for_two_bills_links_all_lines(self):
+        order, line_1, line_2 = self._create_two_bills_order()
+        events = self._return_events(order, "J", "671234567890123")
+        event = events.filtered(lambda e: e.your_number == line_1.name)
+        self.assertEqual(len(event), 1)
+        self.assertEqual(event.payment_line_ids, line_1 | line_2)
+        self.assertNotIn("PAYMENT LINES NOT FOUND", event.occurrences or "")
+
+    # ------------------------------------------------------------------
+    # Service type (tipo de pagamento) by payment way
+    # ------------------------------------------------------------------
+    def _service_type_of(self, codes, barcode=False):
+        mode = self._barcode_ways_mode(codes=codes)
+        order = self.payment_order_model.create(
+            {
+                "payment_mode_id": mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": self.bank_journal_itau.id,
+            }
+        )
+        vals = {
+            "order_id": order.id,
+            "partner_id": self.partner_a.id,
+            "amount_currency": 100.0,
+            "communication": "SERVICE TYPE",
+            "date": fields.Date.today(),
+        }
+        if barcode:
+            vals["barcode"] = barcode
+        return order, self.payment_line_model.create(vals)
+
+    def test_service_type_tributos_with_barcode_is_22(self):
+        """Itau way 91 (tributos com codigo de barras) requires type 22."""
+        barcode = self._utility_barcode("1")
+        order, line = self._service_type_of(("91", "13"), barcode)
+        self.assertEqual(line.cnab_payment_way_id.code, "91")
+        self.assertEqual(line.service_type, "22")
+        lines = self._generate_cnab_lines(order)
+        header = [x for x in lines if len(x) > 8 and x[7] == "1"][0]
+        self.assertEqual(header[9:11], "22")
+        self.assertEqual(header[11:13], "91")
+
+    def test_service_type_concessionaria_is_20(self):
+        """Itau way 13 (concessionarias) keeps type 20 (manual table)."""
+        _order, line = self._service_type_of(("91", "13"), self._utility_barcode("2"))
+        self.assertEqual(line.cnab_payment_way_id.code, "13")
+        self.assertEqual(line.service_type, "20")
+
+    def test_service_type_first_way_without_rule_follows_way(self):
+        """No barcode, no rule: the type follows the first way of the mode."""
+        _order, line = self._service_type_of(("91",))
+        self.assertEqual(line.cnab_payment_way_id.code, "91")
+        self.assertEqual(line.service_type, "22")
+
+    # ------------------------------------------------------------------
+    # Strict validation of mandatory numeric fields of Itau A/J/O
+    # ------------------------------------------------------------------
+    STRICT_AMOUNT_DATE_FIELDS = (
+        "pagamentos_segmento_a_94_101",
+        "pagamentos_segmento_a_120_134",
+        "boleto_segmento_j_92_99",
+        "boleto_segmento_j_100_114",
+        "boleto_segmento_j_145_152",
+        "boleto_segmento_j_153_167",
+        "conc_tributo_bc_segmento_o_96_103",
+        "conc_tributo_bc_segmento_o_122_136",
+        "conc_tributo_bc_segmento_o_137_144",
+    )
+
+    def test_itau_strict_flag_on_amounts_and_dates(self):
+        for suffix in self.STRICT_AMOUNT_DATE_FIELDS:
+            field = self.env.ref(f"l10n_br_cnab_structure.cnab_itau_240_{suffix}")
+            self.assertTrue(field.raise_on_overflow, suffix)
+
+    def test_itau_strict_amount_valid_value_passes(self):
+        order, line = self._create_boleto_order(barcode=self.BOLETO_DIGITABLE_LINE)
+        field = self.env.ref(
+            "l10n_br_cnab_structure.cnab_itau_240_boleto_segmento_j_153_167"
+        )
+        self.assertEqual(field.output(line, strict=True)[1], "000000000123456")
+        self.assertEqual(len(self._segments(self._generate_cnab_lines(order), "J")), 2)
+
+    def test_itau_strict_zero_amount_blocks_generation(self):
+        """Zero amount never leaves as 000...0 in segments A, J or O."""
+        cases = {}
+        cases["J"] = self._create_boleto_order(barcode=self.BOLETO_DIGITABLE_LINE)
+        cases["O"] = self._create_utility_order()
+        self._create_itau_salary_rules()
+        cases["A"] = self._create_itau_salary_line(
+            self._create_partner_bank(self.bank_341), self.way_01
+        )
+        for segment, (order, line) in cases.items():
+            line.amount_currency = 0.0
+            with self.assertRaises(UserError, msg=segment) as ctx:
+                order.cnab_structure_id.output(order)
+            self.assertIn("empty value", str(ctx.exception), segment)
+
+    def test_itau_strict_amount_overflow_blocks_generation(self):
+        order, line = self._create_boleto_order(barcode=self.BOLETO_DIGITABLE_LINE)
+        line.amount_currency = 10.0**13
+        with self.assertRaises(UserError) as ctx:
+            order.cnab_structure_id.output(order)
+        self.assertIn("more significant digits", str(ctx.exception))
+
+    def test_pix_key_without_transfer_type_mapping_message(self):
+        """A key without the structure PIX transfer type is not "no key"."""
+        self._create_pix_employee_rules(same_bank_first=False)
+        self.env["cnab.pix.transfer.type"].search(
+            [
+                ("cnab_structure_id", "=", self.cnab_structure_itau_240.id),
+                ("type_domain", "=", "pix_key"),
+            ]
+        ).unlink()
+        other = self._create_partner_bank(self.bank_001)
+        order, line = self._create_salary_line_by_rule(
+            other, self._create_pix_key("email", self.PIX_KEYS["email"])
+        )
+        self.assertTrue(line.partner_pix_id)
+        order.draft2open()
+        with self.assertRaises(UserError) as ctx:
+            order.open2generated()
+        message = str(ctx.exception)
+        self.assertIn(self.partner_a.name, message)
+        self.assertIn("mapeamento", message)
+        self.assertNotIn("não possui chave PIX cadastrada", message)
+
+    # ------------------------------------------------------------------
+    # Review of the grouping, return, fallback and messages
+    # ------------------------------------------------------------------
+    def test_same_barcode_different_partners_is_not_merged(self):
+        order, line_1, line_2 = self._create_two_bills_order()
+        line_2.partner_id = self.partner_b
+        order.draft2open()
+        with self.assertRaises(UserError) as ctx:
+            order.open2generated()
+        message = str(ctx.exception)
+        self.assertIn("different partners", message)
+        self.assertIn(line_1.name, message)
+        self.assertIn(line_2.name, message)
+
+    def test_same_barcode_different_partners_message_in_pt_br(self):
+        self.env["res.lang"]._activate_lang("pt_BR")
+        self.env["ir.module.module"]._load_module_terms(
+            ["l10n_br_cnab_structure"], ["pt_BR"], overwrite=True
+        )
+        order, line_1, line_2 = self._create_two_bills_order()
+        line_2.partner_id = self.partner_b
+        order.draft2open()
+        with self.assertRaises(UserError) as ctx:
+            order.with_context(lang="pt_BR").open2generated()
+        message = str(ctx.exception)
+        self.assertIn("parceiros diferentes", message)
+        self.assertNotIn("different partners", message)
+
+    def test_grouped_barcode_without_value_blocks(self):
+        # 3rd digit 7 (reference value): the barcode carries no effective value
+        code = self._utility_barcode("2", "7", 3)
+        order, _line = self._create_utility_order(barcode=code)
+        line_2 = self.payment_line_model.create(
+            {
+                "order_id": order.id,
+                "partner_id": self.partner_a.id,
+                "amount_currency": 10.0,
+                "communication": "UTILITY TEST",
+                "date": fields.Date.today(),
+                "barcode": code,
+            }
+        )
+        order.draft2open()
+        with self.assertRaises(UserError) as ctx:
+            order.open2generated()
+        self.assertIn("does not carry a value", str(ctx.exception))
+        self.assertIn(line_2.name, str(ctx.exception))
+
+    def test_grouped_mismatch_message_says_what_to_do(self):
+        order, _l1, _l2 = self._create_two_bills_order(amount_2=200.0)
+        order.draft2open()
+        with self.assertRaises(UserError) as ctx:
+            order.open2generated()
+        self.assertIn("pay the lines separately", str(ctx.exception))
+
+    def test_one_utility_bill_for_two_bills_generates_one_segment_o(self):
+        # the utility barcode carries the value R$ 4152,65
+        order, line_1 = self._create_utility_order(amount_currency=2000.0)
+        self.payment_line_model.create(
+            {
+                "order_id": order.id,
+                "partner_id": self.partner_a.id,
+                "amount_currency": 2152.65,
+                "communication": "UTILITY TEST",
+                "date": fields.Date.today(),
+                "barcode": self.UTILITY_DIGITABLE_LINE,
+            }
+        )
+        lines = self._generate_cnab_lines(order)
+        segments = self._segments(lines, "O")
+        self.assertEqual(len(segments), 1)
+        self.assertEqual(segments[0][121:136], "000000000415265")
+        self.assertEqual(segments[0][174:194].strip(), line_1.name)
+
+    def test_return_does_not_link_reconciled_sibling(self):
+        order, line_1, line_2 = self._create_two_bills_order()
+        invoice = self._create_test_invoice()
+        invoice.action_post()
+        move_line = invoice.line_ids.filtered(
+            lambda x: x.account_id.account_type == "liability_payable"
+        )
+        line_2.move_line_id = move_line
+        self.env.cr.execute(
+            "UPDATE account_move_line SET reconciled = true WHERE id = %s",
+            (move_line.id,),
+        )
+        move_line.invalidate_recordset(["reconciled"])
+        events = self._return_events(order, "J", "671234567890123")
+        event = events.filtered(lambda e: e.your_number == line_1.name)
+        self.assertEqual(event.payment_line_ids, line_1)
+
+    def test_return_of_old_file_with_two_records_links_one_line_each(self):
+        """File generated before the grouping: one J per line, own amount."""
+        order, line_1, line_2 = self._create_two_bills_order()
+        with patch.object(
+            type(line_1),
+            "_cnab_group_by_barcode",
+            lambda recs: [rec for rec in recs],
+        ):
+            events = self._return_events(order, "J", "671234567890123")
+        by_name = {e.your_number: e for e in events}
+        self.assertEqual(by_name[line_1.name].payment_line_ids, line_1)
+        self.assertEqual(by_name[line_2.name].payment_line_ids, line_2)
+
+    def test_rule_skipped_by_mode_keeps_its_service_type(self):
+        """Employee salary in a TED mode: PIX rule refused, type 30 kept."""
+        self._create_itau_salary_rules()
+        way_45 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_45")
+        self.env["l10n_br_cnab.payment.rule"].search(
+            [("cnab_structure_id", "=", self.cnab_structure_itau_240.id)]
+        ).unlink()
+        self.env["l10n_br_cnab.payment.rule"].create(
+            {
+                "cnab_structure_id": self.cnab_structure_itau_240.id,
+                "match_bank_type": "any",
+                "match_partner_type": "any",
+                "payment_way_id": way_45.id,
+                "service_type": SVC_SALARY,
+            }
+        )
+        order = self._create_mode_order("ted")
+        line = self._add_salary_line(order, self._create_partner_bank(self.bank_341))
+        self.assertIn(
+            line.cnab_payment_way_id, order.payment_mode_id.cnab_payment_way_ids
+        )
+        self.assertNotEqual(line.cnab_payment_way_id, way_45)
+        self.assertEqual(line.service_type, SVC_SALARY)
+
+    def test_strict_message_is_generic_per_field(self):
+        order, line = self._create_boleto_order(barcode=self.BOLETO_DIGITABLE_LINE)
+        line.amount_currency = 0.0
+        amount = self.env.ref(
+            "l10n_br_cnab_structure.cnab_itau_240_boleto_segmento_j_153_167"
+        )
+        message = self._assert_strict_error(amount, line, "VALOR PAGAMENTO", "153")
+        self.assertNotIn("bank account", message)
+        self._create_itau_salary_rules()
+        _order, sline = self._create_itau_salary_line(
+            self._create_partner_bank(self.bank_341, acc_number="1234567"), self.way_01
+        )
+        message = self._assert_strict_error(
+            self._strict_field("36_41b"), sline, "1234567"
+        )
+        self.assertIn("bank account", message)
+
+    def test_santander_pix_key_is_ascii_safe(self):
+        field = self.env.ref(
+            "l10n_br_cnab_structure.cnab_santander_240_pagamentos_segmento_b_128_226"
+        )
+        self.assertEqual(
+            field.format(field.size, "raw", "Fín@Fornecedor.com.br"),
+            "Fin@Fornecedor.com.br".ljust(field.size),
+        )
+
+    # Blocks at order confirmation (favored inscription, barcode way, salary)
+    def _check_line(self, mode, partner=None, **vals):
+        order = self.payment_order_model.create(
+            {
+                "payment_mode_id": mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": self.bank_journal_itau.id,
+            }
+        )
+        values = {
+            "order_id": order.id,
+            "partner_id": (partner or self.partner_a).id,
+            "amount_currency": 321.0,
+            "communication": "CHECK",
+            "date": fields.Date.today(),
+        }
+        values.update(vals)
+        return self.payment_line_model.create(values)
+
+    def _partner_without_vat(self):
+        return self.env["res.partner"].create({"name": "Sem Documento SA"})
+
+    def test_block_favored_without_inscription_ted_and_pix(self):
+        partner = self._partner_without_vat()
+        bank = self.res_partner_bank_model.create(
+            {
+                "acc_number": "555",
+                "bra_number": "0001",
+                "bank_id": self.bank_001.id,
+                "partner_id": partner.id,
+            }
+        )
+        self._create_supplier_rules()
+        mode = self._barcode_ways_mode(codes=("01", "41"), domain=False)
+        line = self._check_line(mode, partner, partner_bank_id=bank.id)
+        with self.assertRaises(UserError) as ctx:
+            line.draft2open_payment_line_check()
+        self.assertIn("CPF/CNPJ", str(ctx.exception))
+        self.assertIn(line.name, str(ctx.exception))
+        self.assertIn("Sem Documento SA", str(ctx.exception))
+        with self.assertRaises(UserError):
+            line.order_id.payment_line_ids._check_favored_inscription()
+        partner.vat = TEST_NO_VAT_PARTNER_CNPJ
+        line.draft2open_payment_line_check()
+
+    def test_block_boleto_without_beneficiary_inscription(self):
+        partner = self._partner_without_vat()
+        mode = self._barcode_ways_mode()
+        line = self._check_line(mode, partner, barcode=self._boleto_barcode("341", 7))
+        with self.assertRaises(UserError) as ctx:
+            line.draft2open_payment_line_check()
+        self.assertIn("Sem Documento SA", str(ctx.exception))
+        # utility bill has no J-52: no inscription needed
+        utility = self._check_line(mode, partner, barcode=self.UTILITY_DIGITABLE_LINE)
+        utility.draft2open_payment_line_check()
+        # the file generation blocks too
+        with self.assertRaises(UserError):
+            line.order_id.payment_mode_id.cnab_structure_id.output_dicts(line.order_id)
+
+    def test_block_barcode_bank_in_single_way_mode(self):
+        other = self._barcode_ways_mode(codes=("31",))
+        other.name = "Boleto Outros Bancos TESTE"
+        mode_itau = self._barcode_ways_mode(codes=("30",))
+        mode_itau.name = "Boleto Itau TESTE"
+        # 341 barcode in the only way 31
+        line = self._check_line(other, barcode=self._boleto_barcode("341", 1))
+        with self.assertRaises(UserError) as ctx:
+            line.draft2open_payment_line_check()
+        self.assertIn("Boleto Itau TESTE", str(ctx.exception))
+        # other bank barcode in the only way 30
+        line = self._check_line(mode_itau, barcode=self._boleto_barcode("237", 2))
+        with self.assertRaises(UserError) as ctx:
+            line.draft2open_payment_line_check()
+        self.assertIn("Boleto Outros Bancos TESTE", str(ctx.exception))
+        # utility in boleto only modes
+        for mode in (other, mode_itau):
+            line = self._check_line(mode, barcode=self.UTILITY_DIGITABLE_LINE)
+            with self.assertRaises(UserError):
+                line.draft2open_payment_line_check()
+        with self.assertRaises(UserError):
+            line.order_id.payment_mode_id.cnab_structure_id.output_dicts(line.order_id)
+
+    def test_mixed_mode_barcode_way_is_not_blocked(self):
+        mode = self._barcode_ways_mode()
+        for code in (
+            self._boleto_barcode("341", 1),
+            self._boleto_barcode("237", 2),
+            self.UTILITY_DIGITABLE_LINE,
+        ):
+            self._check_line(mode, barcode=code).draft2open_payment_line_check()
+        # single way mode with the matching barcode is fine as well
+        single = self._barcode_ways_mode(codes=("31",))
+        self._check_line(
+            single, barcode=self._boleto_barcode("237", 3)
+        ).draft2open_payment_line_check()
+
+    def test_utility_48_wrong_block_dv_blocks(self):
+        mode = self._barcode_ways_mode()
+        good = self.UTILITY_DIGITABLE_LINE
+        # change the DV of the first block only (digit 12)
+        bad = good[:11] + str((int(good[11]) + 1) % 10) + good[12:]
+        self.assertNotEqual(good, bad)
+        self.assertFalse(barcode_utils.normalize_barcode(bad)[2])
+        self.assertTrue(barcode_utils.has_wrong_block_dv(bad))
+        self.assertFalse(barcode_utils.has_wrong_block_dv(good))
+        line = self._check_line(mode, barcode=bad)
+        # kept as typed, never recalculated
+        self.assertEqual(line.barcode, bad)
+        with self.assertRaises(UserError) as ctx:
+            line.draft2open_payment_line_check()
+        self.assertIn("check digit", str(ctx.exception))
+        self.assertIn(line.name, str(ctx.exception))
+        self._check_line(mode, barcode=good).draft2open_payment_line_check()
+
+    def test_salary_service_type_only_credit_in_itau(self):
+        self._create_itau_salary_rules()
+        mode = self._create_itau_salary_mode()
+        partner = self.partner_a
+        self.env["l10n_br_cnab.payment.rule"].search(
+            [("payment_way_id", "=", self.way_41.id)]
+        ).service_type = SVC_SALARY
+        itau_bank = self._create_partner_bank(self.bank_341, acc_number="1234567")
+        other_bank = self._create_partner_bank(self.bank_001, acc_number="7654321")
+        for bank in (itau_bank, other_bank):
+            bank.partner_id = partner
+        line_01 = self._check_line(mode, partner_bank_id=itau_bank.id)
+        self.assertEqual(
+            (line_01.cnab_payment_way_id.code, line_01.service_type), ("01", "30")
+        )
+        line_01.draft2open_payment_line_check()
+        line_41 = self._check_line(mode, partner_bank_id=other_bank.id)
+        self.assertEqual(
+            (line_41.cnab_payment_way_id.code, line_41.service_type), ("41", "30")
+        )
+        with self.assertRaises(UserError) as ctx:
+            line_41.draft2open_payment_line_check()
+        self.assertIn("service type 30", str(ctx.exception))
+        self.assertIn(line_41.name, str(ctx.exception))
+        with self.assertRaises(UserError):
+            line_41.order_id.payment_mode_id.cnab_structure_id.output_dicts(
+                line_41.order_id
+            )
+        # supplier payment (type 20) by TED is not affected
+        self.env["l10n_br_cnab.payment.rule"].search(
+            [("cnab_structure_id", "=", self.cnab_structure_itau_240.id)]
+        ).write({"service_type": "20"})
+        line_41._compute_cnab_payment_way_id()
+        self.assertEqual(line_41.service_type, "20")
+        line_41.draft2open_payment_line_check()
+
+    def test_block_messages_in_pt_br(self):
+        self.env["res.lang"]._activate_lang("pt_BR")
+        self.env["ir.module.module"]._load_module_terms(
+            ["l10n_br_cnab_structure", "l10n_br_account_payment_order"],
+            ["pt_BR"],
+            overwrite=True,
+        )
+        single = self._barcode_ways_mode(codes=("31",))
+        line = self._check_line(single, barcode=self._boleto_barcode("341", 1))
+        with self.assertRaises(UserError) as ctx:
+            line.with_context(lang="pt_BR").draft2open_payment_line_check()
+        self.assertIn("código de barras", str(ctx.exception))
+        self.assertIn("um boleto do banco pagador", str(ctx.exception))
+        partner = self._partner_without_vat()
+        mode = self._barcode_ways_mode()
+        line = self._check_line(mode, partner, barcode=self._boleto_barcode("341", 7))
+        with self.assertRaises(UserError) as ctx:
+            line.with_context(lang="pt_BR").draft2open_payment_line_check()
+        self.assertIn("CPF/CNPJ do favorecido ausente", str(ctx.exception))
+        bad = self.UTILITY_DIGITABLE_LINE[:11] + "9" + self.UTILITY_DIGITABLE_LINE[12:]
+        line = self._check_line(mode, barcode=bad)
+        with self.assertRaises(UserError) as ctx:
+            line.with_context(lang="pt_BR").draft2open_payment_line_check()
+        self.assertIn("dígito verificador errado", str(ctx.exception))

@@ -2902,27 +2902,123 @@ msgid "records"
 msgstr ""
 
 #. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/cnab_line_field.py:0
+msgid "empty value"
+msgstr ""
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/cnab_line_field.py:0
+msgid "only digits are allowed (no separators or letters)"
+msgstr ""
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/cnab_line_field.py:0
+msgid "value has more significant digits than the field size"
+msgstr ""
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
 #: code:addons/l10n_br_cnab_structure/models/cnab_line_field.py:0
 msgid ""
 "Invalid value for CNAB field '%(field)s' (positions %(start)s-%(end)s).\n"
 "Payment line: %(line)s\n"
 "Beneficiary: %(partner)s\n"
 "Value received: '%(value)s'\n"
-"Reason: %(reason)s. Expected up to %(size)s digit(s).\n"
-"Fix the beneficiary's bank account (branch, account number and check digit) in the partner form."
+"Reason: %(reason)s. Expected up to %(size)s digit(s).%(hint)s"
 msgstr ""
 
 #. module: l10n_br_cnab_structure
+#. odoo-python
 #: code:addons/l10n_br_cnab_structure/models/cnab_line_field.py:0
-msgid "empty value"
+msgid ""
+"\nFix the beneficiary's bank account (branch, account number and check "
+"digit) in the partner form."
 msgstr ""
 
 #. module: l10n_br_cnab_structure
-#: code:addons/l10n_br_cnab_structure/models/cnab_line_field.py:0
-msgid "only digits are allowed (no separators or letters)"
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"The payment lines %(lines)s have the same barcode but different partners. "
+"A boleto belongs to one payee: fix the barcode or the partner of the "
+"lines."
 msgstr ""
 
 #. module: l10n_br_cnab_structure
-#: code:addons/l10n_br_cnab_structure/models/cnab_line_field.py:0
-msgid "value has more significant digits than the field size"
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"The payment lines %(lines)s share the same barcode and it does not carry "
+"a value (open amount boleto), so the total to pay cannot be checked. Pay "
+"them in separate orders or join the bills in a single payment line."
+msgstr ""
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"The payment lines %(lines)s share the same barcode, whose value is "
+"%(value)s, but their amounts sum %(total)s. Interest, fine and discount "
+"are not applied to a boleto paid by several lines: adjust the amounts so "
+"that they sum the value of the boleto, or pay the lines separately "
+"(remove the repeated barcode)."
+msgstr ""
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"The barcode of payment line %(line)s (partner: %(partner)s) is "
+"%(kind)s, which must be paid in way %(preferred)s, but the payment "
+"mode %(mode)s only has way %(way)s and the bank would reject the file."
+" Use %(suggestion)s for this line."
+msgstr ""
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"a boleto of the paying bank"
+msgstr ""
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"a boleto of another bank"
+msgstr ""
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"a utility/tax bill"
+msgstr ""
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"the payment mode %s"
+msgstr ""
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"a payment mode that has way %s"
+msgstr ""
+
+#. module: l10n_br_cnab_structure
+#. odoo-python
+#: code:addons/l10n_br_cnab_structure/models/account_payment_line.py:0
+msgid ""
+"Payment line %(line)s (partner: %(partner)s) is a salary payment "
+"(service type 30) in way %(way)s. Itau only accepts salary by credit "
+"in Itau account (way 01) or cartao salario (60); the bank would reject"
+" it as incompatible type x way. Pay the partner by credit in an Itau "
+"account or change the CNAB payment rule to service type 20."
 msgstr ""

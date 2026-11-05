@@ -13,6 +13,7 @@ of 11 digits, each followed by its own DV, that build a 44 digit barcode.
 """
 
 import re
+from decimal import Decimal
 
 _NON_DIGIT_SEPARATORS = re.compile(r"[\s.\-]")
 
@@ -93,11 +94,19 @@ def barcode_from_digitable_line(line):
 
 
 def digitable_line_from_barcode(barcode):
-    """Build the 47 digit linha digitavel of a banking barcode (False if not)."""
+    """Build the linha digitavel of a barcode (False if not a 44 digit code).
+
+    Banking barcodes give the 47 digit line (3 fields with mod 10 DV). Utility
+    barcodes (prefix 8) give the 48 digit line: four blocks of 11 digits, each
+    followed by its own DV (mod 10 when the value reference, 3rd digit, is 6 or
+    7, mod 11 otherwise), as required by CNAB segment O.
+    """
     if not barcode or len(barcode) != 44 or not barcode.isdigit():
         return False
     if barcode[0] == "8":
-        return False
+        reference = barcode[2]
+        blocks = (barcode[i : i + 11] for i in range(0, 44, 11))
+        return "".join(block + str(_utility_dv(block, reference)) for block in blocks)
     field1 = barcode[0:4] + barcode[19:24]
     field2 = barcode[24:34]
     field3 = barcode[34:44]
@@ -127,8 +136,50 @@ def normalize_barcode(value):
     if len(cleaned) in (47, 48):
         barcode = barcode_from_digitable_line(cleaned)
         if barcode and is_valid_barcode(barcode):
+            # utility blocks carry their own DV: a wrong one is a typo, never
+            # silently recalculated
+            if len(cleaned) == 48 and digitable_line_from_barcode(barcode) != cleaned:
+                return cleaned, False, False
             return barcode, cleaned, True
         return cleaned, False, False
     if is_valid_barcode(cleaned):
         return cleaned, digitable_line_from_barcode(cleaned), True
     return cleaned, False, False
+
+
+def has_wrong_block_dv(value):
+    """True for a 48 digits utility linha digitavel whose blocks DV are wrong.
+
+    Only when the general DV of the rebuilt barcode is valid: the typed blocks
+    are consistent with a barcode but at least one block DV differs from the
+    recalculated one.
+    """
+    cleaned = clean_digits(value)
+    if len(cleaned) != 48:
+        return False
+    barcode = barcode_from_digitable_line(cleaned)
+    return bool(
+        barcode
+        and is_valid_barcode(barcode)
+        and digitable_line_from_barcode(barcode) != cleaned
+    )
+
+
+def barcode_value(barcode):
+    """Value (Decimal, in currency units) written in a 44 digits barcode.
+
+    Banking boleto: positions 10-19 (zero means "any value"). Utility and tax
+    barcode (starts with 8): positions 5-15, only when the value identifier
+    (3rd digit) says it is the effective value (6 and 8). Returns ``None``
+    when the barcode has no value, so the caller must not validate amounts.
+    """
+    code = clean_digits(barcode)
+    if len(code) != 44 or not code.isdigit():
+        return None
+    if code[0] == "8":
+        raw = code[4:15] if code[2] in ("6", "8") else ""
+    else:
+        raw = code[9:19]
+    if not raw or not int(raw):
+        return None
+    return Decimal(int(raw)) / 100

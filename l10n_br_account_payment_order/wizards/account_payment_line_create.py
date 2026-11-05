@@ -6,7 +6,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
 
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class AccountPaymentLineCreate(models.TransientModel):
@@ -21,24 +21,26 @@ class AccountPaymentLineCreate(models.TransientModel):
         string="Permitir linhas com retorno rejeitado",
     )
 
-    def _prepare_move_line_domain(self):
-        domain = super()._prepare_move_line_domain()
+    @api.depends("allow_error", "allow_rejected")
+    def _compute_move_line_domain(self):
+        super()._compute_move_line_domain()
+        for rec in self:
+            # States that must always be skipped
+            ignored_states = {
+                "added",
+                "added_paid",
+                "exported",
+                "accepted",
+                "accepted_hml",
+                "done",
+            }
 
-        # States that must always be skipped
-        ignored_states = {
-            "added",
-            "added_paid",
-            "exported",
-            "accepted",
-            "accepted_hml",
-            "done",
-        }
+            # Optional skips, controlled by the wizard’s check‑boxes
+            if not rec.allow_error:
+                ignored_states.add("exporting_error")
+            if not rec.allow_rejected:
+                ignored_states.add("not_accepted")
 
-        # Optional skips, controlled by the wizard’s check‑boxes
-        if not self.allow_error:
-            ignored_states.add("exporting_error")
-        if not self.allow_rejected:
-            ignored_states.add("not_accepted")
-
-        domain.append(("cnab_state", "not in", list(ignored_states)))
-        return domain
+            rec.move_line_domain = list(rec.move_line_domain or []) + [
+                ("cnab_state", "not in", sorted(ignored_states))
+            ]

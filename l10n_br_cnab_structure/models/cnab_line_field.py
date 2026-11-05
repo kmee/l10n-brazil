@@ -5,13 +5,38 @@
 
 import operator
 import re
+import time as _time
 from datetime import datetime
+
+import pytz
 
 from unidecode import unidecode
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
-from odoo.tools.safe_eval import safe_eval, time
+from odoo.tools.safe_eval import safe_eval
+
+DEFAULT_CNAB_TZ = "America/Sao_Paulo"
+
+
+class _LocalTime:
+    """``time`` for CNAB expressions: ``strftime`` uses the local time zone.
+
+    The server runs in UTC, so ``time.strftime`` wrote the generation date and
+    hour of the file header 3 hours ahead of the Brazilian clock (and the wrong
+    day after 21h). Anything else is delegated to the standard ``time`` module.
+    """
+
+    def __init__(self, tz_name):
+        self._tz = pytz.timezone(tz_name or DEFAULT_CNAB_TZ)
+
+    def strftime(self, fmt, t=None):
+        if t is not None:
+            return _time.strftime(fmt, t)
+        return datetime.now(self._tz).strftime(fmt)
+
+    def __getattr__(self, name):
+        return getattr(_time, name)
 
 
 class CNABField(models.Model):
@@ -194,7 +219,8 @@ class CNABField(models.Model):
         if self.type != "num":
             return
         if isinstance(value, float):
-            value = f"{value:.{self.assumed_comma}f}"
+            # amounts: the decimal separator is dropped by the formatting
+            value = f"{value:.{self.assumed_comma}f}".replace(".", "")
         raw = str(value).strip()
         reason = False
         if not raw:
@@ -213,6 +239,12 @@ class CNABField(models.Model):
             if resource_ref and "partner_id" in resource_ref._fields
             else ""
         ) or ""
+        hint = ""
+        if (self.content_source_field or "").startswith("partner_bank_id"):
+            hint = _(
+                "\nFix the beneficiary's bank account (branch, account number "
+                "and check digit) in the partner form."
+            )
         raise UserError(
             _(
                 "Invalid value for CNAB field '%(field)s' (positions "
@@ -220,9 +252,7 @@ class CNABField(models.Model):
                 "Payment line: %(line)s\n"
                 "Beneficiary: %(partner)s\n"
                 "Value received: '%(value)s'\n"
-                "Reason: %(reason)s. Expected up to %(size)s digit(s).\n"
-                "Fix the beneficiary's bank account (branch, account number "
-                "and check digit) in the partner form."
+                "Reason: %(reason)s. Expected up to %(size)s digit(s).%(hint)s"
             )
             % {
                 "field": self.name,
@@ -233,6 +263,7 @@ class CNABField(models.Model):
                 "value": raw,
                 "reason": reason,
                 "size": self.size,
+                "hint": hint,
             }
         )
 
@@ -253,7 +284,9 @@ class CNABField(models.Model):
             value = value.zfill(size)
         if value_type == "raw":
             # Verbatim content (PIX key): keeps case, "@", ".", "-" and "+".
-            value = value.strip().ljust(size)
+            # Only accents are removed (ASCII safe); the case of the e-mail
+            # key (lowercase in DICT) was not confirmed, so it is not changed.
+            value = unidecode(value).strip().ljust(size)
         if value_type == "alpha":
             value = unidecode(value).upper()
             value = re.sub(r"[^A-Z0-9\s]", "", value)
@@ -261,12 +294,21 @@ class CNABField(models.Model):
         value = value[:size]
         return value
 
+    def _cnab_tz_name(self):
+        """Time zone of the file: context, user, company partner, else Brazil."""
+        tz_name = (
+            self.env.context.get("tz")
+            or self.env.user.tz
+            or self.env.company.partner_id.tz
+        )
+        return tz_name if tz_name in pytz.all_timezones_set else DEFAULT_CNAB_TZ
+
     def eval_compute_value(self, content, python_expression, **kwargs):
         "Execute python code and return computed value"
         self.ensure_one()
         safe_eval_dict = {
             "content": content,
-            "time": time,
+            "time": _LocalTime(self._cnab_tz_name()),
             "datetime": datetime,
             "seq_batch": kwargs.get("seq_batch", ""),
             "seq_record_detail": kwargs.get("seq_record_detail", ""),
