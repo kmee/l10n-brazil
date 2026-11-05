@@ -1549,3 +1549,93 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         self.assertEqual(line.cnab_pix_transfer_type_id.code, "01")
         lines = self._generate_cnab_lines(order)
         self.assertEqual(self._segments(lines, "A")[0][112:114], "01")
+
+    # Boleto barcode (segment J)
+    # Synthetic pair, valid DVs: 44 digits barcode <-> 47 digits linha digitavel
+    BOLETO_BARCODE = "00193990100001234560123456789012345678901234"
+    BOLETO_DIGITABLE_LINE = "00190123435678901234356789012343399010000123456"
+
+    def _fix_boleto_trailer_expression(self):
+        """Apply the production correction of the Itau boleto trailer total.
+
+        The CSV shipped with this branch has an unterminated string literal in
+        the 'TOTAL VALOR PRINCIPAL' expression (fixed by
+        18.0-zitron-fix-cnab-trailer-quote); production already has it fixed in
+        the database. Harmless when the data is already correct.
+        """
+        self.env.ref(
+            "l10n_br_cnab_structure.cnab_itau_240_boleto_trailer_24_41"
+        ).sending_dynamic_content = (
+            'sum(int(line.sorted_values().get("153_167_valor_pagamento", 0)) '
+            "for line in filter(lambda l: l.sorted_values().get("
+            '"15_17_tipo_de_movimento", "") in ("000", "001", "002", "003") '
+            'and l.sorted_values().get("18_19_codigo_do_registro", False) != 52, '
+            "batch_detail_lines))"
+        )
+
+    def _create_boleto_order(self, **line_vals):
+        self._fix_boleto_trailer_expression()
+        way_31 = self.env.ref("l10n_br_cnab_structure.cnab_itau_240_pay_way_31")
+        mode = self.payment_mode_model.create(
+            {
+                "name": "Itau Boleto Mode",
+                "bank_account_link": "fixed",
+                "company_id": self.company.id,
+                "payment_method_id": self.outbound_payment_method.id,
+                "payment_mode_domain": "boleto",
+                "payment_order_ok": True,
+                "fixed_journal_id": self.bank_journal_itau.id,
+                "cnab_structure_id": self.cnab_structure_itau_240.id,
+                "cnab_payment_way_ids": [(6, 0, [way_31.id])],
+                "cnab_processor": "oca_processor",
+            }
+        )
+        order = self.payment_order_model.create(
+            {
+                "payment_mode_id": mode.id,
+                "state": "draft",
+                "company_id": self.company.id,
+                "journal_id": self.bank_journal_itau.id,
+            }
+        )
+        vals = {
+            "order_id": order.id,
+            "partner_id": self.partner_a.id,
+            "amount_currency": 1234.56,
+            "communication": "BOLETO TEST",
+            "date": fields.Date.today(),
+        }
+        vals.update(line_vals)
+        return order, self.payment_line_model.create(vals)
+
+    def test_boleto_segment_j_carries_44_digits_barcode(self):
+        """A linha digitavel typed by the user is exported as the 44 digits code."""
+        order, line = self._create_boleto_order(barcode=self.BOLETO_DIGITABLE_LINE)
+        self.assertEqual(line.barcode, self.BOLETO_BARCODE)
+        lines = self._generate_cnab_lines(order)
+        segments = self._segments(lines, "J")
+        # J (barcode) followed by J-52 (payer/beneficiary data)
+        self.assertEqual(len(segments), 2)
+        self.assertEqual(segments[0][17:61], self.BOLETO_BARCODE)
+
+    def test_boleto_segment_j_legacy_47_digits_line(self):
+        """A line saved with the 47 digits code before the fix is healed on export."""
+        order, line = self._create_boleto_order()
+        self.env.cr.execute(
+            "UPDATE account_payment_line SET barcode=%s WHERE id=%s",
+            (self.BOLETO_DIGITABLE_LINE, line.id),
+        )
+        line.invalidate_recordset()
+        lines = self._generate_cnab_lines(order)
+        self.assertEqual(self._segments(lines, "J")[0][17:61], self.BOLETO_BARCODE)
+
+    def test_boleto_without_barcode_blocks_generation(self):
+        order, line = self._create_boleto_order()
+        attachments_before = self.attachment_model.search_count([])
+        with self.assertRaises(UserError) as ctx:
+            order.draft2open()
+        self.assertIn(line.name, str(ctx.exception))
+        self.assertIn(self.partner_a.name, str(ctx.exception))
+        with self.assertRaises(UserError):
+            order.cnab_structure_id.output(order)
+        self.assertEqual(self.attachment_model.search_count([]), attachments_before)
