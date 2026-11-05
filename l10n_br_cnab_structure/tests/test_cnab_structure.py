@@ -2896,3 +2896,87 @@ class TestCNABStructure(AccountTestInvoicingCommon):
         with self.assertRaises(UserError) as ctx:
             line.with_context(lang="pt_BR").draft2open_payment_line_check()
         self.assertIn("dígito verificador errado", str(ctx.exception))
+
+    # Itau return of boleto (segment J) and utility bill (segment O)
+    def _return_from_remittance(self, lines, segment, values):
+        """Bank return built from the remittance: J-52 is not returned."""
+        out = []
+        for rec in lines:
+            if rec[7] == "3" and rec[13] == "J" and rec[17:19] == "52":
+                continue
+            if rec[7] == "3" and rec[13] == segment:
+                for pos, value in values.items():
+                    rec = replace_chars(rec, pos, value)
+            out.append(rec)
+        return "\r\n".join(out).encode()
+
+    def _import_return(self, return_data):
+        wizard = self.env["cnab.import.wizard"].create(
+            {
+                "journal_id": self.bank_journal_itau.id,
+                "return_file": base64.b64encode(return_data),
+                "filename": "TEST.RET",
+                "type": "outbound",
+                "cnab_structure_id": self.cnab_structure_itau_240.id,
+            }
+        )
+        action = wizard.with_context(default_type="outbound").import_cnab()
+        return self.env["l10n_br_cnab.return.log"].browse(action["res_id"])
+
+    def test_itau_segment_j_return_reads_payment(self):
+        """Segment J return carries the paid amount, date and occurrence."""
+        order, line = self._create_boleto_order(barcode=self.BOLETO_DIGITABLE_LINE)
+        lines = self._generate_cnab_lines(order)
+        segment_j = self._segments(lines, "J")[0]
+        # return-only positions leave blank in the remittance
+        self.assertEqual(segment_j[230:240], " " * 10)
+        log = self._import_return(
+            self._return_from_remittance(
+                lines,
+                "J",
+                {144: "04112026", 152: "000000000123456", 230: "00        "},
+            )
+        )
+        event = log.event_ids
+        self.assertEqual(len(event), 1)
+        self.assertEqual(event.your_number, line.name)
+        self.assertEqual(event.occurrence_code_1, "00")
+        self.assertEqual(event.payment_value, 1234.56)
+        self.assertEqual(event.title_value, 1234.56)
+        self.assertEqual(str(event.real_payment_date), "2026-11-04")
+        self.assertTrue(event.gen_liquidation_move)
+        self.assertEqual(event.state, "ready")
+
+    def test_itau_segment_j_return_rejected(self):
+        """A rejected J (RJ plus reason codes) never liquidates."""
+        order, _line = self._create_boleto_order(barcode=self.BOLETO_DIGITABLE_LINE)
+        lines = self._generate_cnab_lines(order)
+        log = self._import_return(
+            self._return_from_remittance(lines, "J", {230: "RJAL      "})
+        )
+        event = log.event_ids
+        self.assertEqual(event.occurrence_code_1, "RJ")
+        self.assertEqual(event.occurrence_code_2, "AL")
+        self.assertFalse(event.gen_liquidation_move)
+
+    def test_itau_segment_o_return_reads_payment(self):
+        """Segment O return carries the paid amount, date and occurrence."""
+        order, line = self._create_utility_order()
+        lines = self._generate_cnab_lines(order)
+        segment_o = self._segments(lines, "O")[0]
+        self.assertEqual(segment_o[144:159], "0" * 15)
+        self.assertEqual(segment_o[230:240], " " * 10)
+        log = self._import_return(
+            self._return_from_remittance(
+                lines,
+                "O",
+                {136: "05112026", 144: "000000000123456", 230: "00        "},
+            )
+        )
+        event = log.event_ids
+        self.assertEqual(len(event), 1)
+        self.assertEqual(event.your_number, line.name)
+        self.assertEqual(event.occurrence_code_1, "00")
+        self.assertEqual(event.payment_value, 1234.56)
+        self.assertEqual(str(event.real_payment_date), "2026-11-05")
+        self.assertTrue(event.gen_liquidation_move)
