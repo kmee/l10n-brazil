@@ -836,7 +836,7 @@ class ImportDeclarationWizard(models.TransientModel):
             return {}
         shares = self._shares(all_lines)
         parts = self._split(total_charges, shares, self.company_currency_id)
-        return dict(zip(all_lines.ids, parts))
+        return dict(zip(all_lines.ids, parts, strict=False))
 
     def _apply_forced_taxes(self, line, block, forced, gross, declared):
         if "ipi_value" not in forced:
@@ -996,7 +996,9 @@ class ImportDeclarationWizard(models.TransientModel):
         self.document_id = document
         self.move_id.fiscal_document_id = document
         if shadow_document and shadow_document.state_edoc == "em_digitacao":
-            shadow_document.action_document_cancel()
+            # The shadow's move was reassigned to ``document`` above: cancel only
+            # the fiscal document, never the freshly imported bill.
+            shadow_document.with_context(in_button_cancel=True).action_document_cancel()
         return {
             "name": _("Import Entry Note"),
             "type": "ir.actions.act_window",

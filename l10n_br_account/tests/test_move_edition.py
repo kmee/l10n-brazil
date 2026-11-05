@@ -11,6 +11,7 @@ from odoo.tests import Form, TransactionCase, tagged
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_STATE_CANCEL,
     DOCUMENT_STATE_DRAFT,
+    SITUACAO_EDOC_AUTORIZADA,
 )
 
 _logger = logging.getLogger(__name__)
@@ -395,6 +396,77 @@ class TestMoveEdition(TransactionCase):
         move.button_draft()
         self.assertEqual(move.state, "draft")
         self.assertEqual(move.state_edoc, DOCUMENT_STATE_DRAFT)
+
+    def _posted_nfe_move(self):
+        self.user.groups_id += self.env.ref("l10n_br_fiscal.group_user")
+        self.user.groups_id += self.env.ref("uom.group_uom")
+        nfe_user_group = self.env.ref(
+            "l10n_br_nfe.group_user", raise_if_not_found=False
+        )
+        if nfe_user_group:
+            self.user.groups_id += nfe_user_group
+        move_form = Form(
+            self.env["account.move"].with_context(default_move_type="out_invoice")
+        )
+        move_form.partner_id = self.env.ref("l10n_br_base.res_partner_cliente5_pe")
+        move_form.document_type_id = self.env.ref("l10n_br_fiscal.document_55")
+        move_form.document_serie_id = self.env.ref(
+            "l10n_br_fiscal.empresa_lc_document_55_serie_1"
+        )
+        move_form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_venda")
+        move_form.ind_final = "1"
+        with move_form.invoice_line_ids.new() as line_form:
+            line_form.product_id = self.product_id
+            line_form.price_unit = 42
+        move = move_form.save()
+        move.action_post()
+        self.assertEqual(move.state, "posted")
+        return move
+
+    def test_cancel_untransmitted_document_cancels_posted_invoice(self):
+        """Cancelling the fiscal document of a never transmitted NF-e (button on
+        the document, not on the invoice) must also cancel the posted invoice."""
+        move = self._posted_nfe_move()
+        document = move.fiscal_document_id
+        self.assertNotEqual(document.state_edoc, DOCUMENT_STATE_CANCEL)
+        self.assertFalse(document.cancel_event_id)
+
+        document.action_document_cancel()
+
+        self.assertEqual(document.state_edoc, DOCUMENT_STATE_CANCEL)
+        self.assertEqual(move.state, "cancel")
+
+    def test_cancel_untransmitted_document_via_fsm_trigger_path(self):
+        """With l10n_br_fiscal_edi the cancel goes through the FSM trigger."""
+        if not hasattr(self.env["l10n_br_fiscal.document"], "_trigger_fsm"):
+            self.skipTest("l10n_br_fiscal_edi not installed")
+        move = self._posted_nfe_move()
+        document = move.fiscal_document_id
+        document.action_document_cancel()
+        self.assertEqual(document.state_edoc, DOCUMENT_STATE_CANCEL)
+        self.assertEqual(move.state, "cancel")
+
+    def test_cancel_from_invoice_button_is_not_recursive(self):
+        """The invoice-side cancel keeps working and cancels both records."""
+        move = self._posted_nfe_move()
+        move.button_cancel()
+        self.assertEqual(move.state, "cancel")
+        self.assertEqual(move.fiscal_document_id.state_edoc, DOCUMENT_STATE_CANCEL)
+
+    def test_cancel_authorized_document_does_not_cancel_invoice(self):
+        """An authorized NF-e still requires the SEFAZ cancel wizard: the
+        direct cancel must not touch the invoice."""
+        if not hasattr(self.env["l10n_br_fiscal.document"], "_trigger_fsm"):
+            self.skipTest("l10n_br_fiscal_edi not installed")
+        move = self._posted_nfe_move()
+        document = move.fiscal_document_id
+        document.write({"state_edoc": SITUACAO_EDOC_AUTORIZADA})
+        action = document.action_document_cancel()
+        self.assertEqual(
+            action.get("res_model"), "l10n_br_fiscal.document.cancel.wizard"
+        )
+        self.assertEqual(document.state_edoc, SITUACAO_EDOC_AUTORIZADA)
+        self.assertEqual(move.state, "posted")
 
     def test_in_non_fiscal_invoice(self):
         """
