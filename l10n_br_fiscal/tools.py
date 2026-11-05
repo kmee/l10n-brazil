@@ -4,6 +4,7 @@
 
 import logging
 import os
+from datetime import datetime, timezone
 from unicodedata import normalize
 
 from erpbrasil.base.misc import punctuation_rm
@@ -113,3 +114,26 @@ def set_journal_in_fiscal_operation(cr, company, values):
         operation = env.ref(fiscal_operation)
         journal_record = env.ref(journal)
         operation.with_company(company).journal_id = journal_record
+
+
+def to_utc_naive_datetime_string(value):
+    """Convert a datetime received from a webservice into the string Odoo stores.
+
+    Odoo Datetime fields are stored as naive UTC. SEFAZ returns timestamps
+    with a local offset (e.g. ``2026-10-13T08:45:28-03:00``);
+    ``fields.Datetime.to_string`` drops tzinfo without converting, which would
+    store local time as if it were UTC. Aware values are converted to UTC,
+    naive values are kept unchanged.
+
+    :param value: ``datetime``, xsdata ``XmlDateTime`` or ISO 8601 string
+    :return: string in ``YYYY-MM-DD HH:MM:SS`` (Odoo server format)
+    """
+    if not value:
+        return value
+    if isinstance(value, str):
+        value = datetime.fromisoformat(value)
+    elif not isinstance(value, datetime) and hasattr(value, "to_datetime"):
+        value = value.to_datetime()
+    if value.tzinfo is not None:
+        value = value.astimezone(timezone.utc).replace(tzinfo=None)
+    return value.strftime("%Y-%m-%d %H:%M:%S")

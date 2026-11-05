@@ -19,7 +19,6 @@ from nfelib.nfe.ws.edoc_legacy import NFCeAdapter as edoc_nfce
 from nfelib.nfe.ws.edoc_legacy import NFeAdapter as edoc_nfe
 from requests import Session
 from xsdata.formats.dataclass.parsers import XmlParser
-from xsdata.models.datatype import XmlDateTime
 
 from odoo import _, api, fields
 from odoo.exceptions import UserError, ValidationError
@@ -48,7 +47,10 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     SITUACAO_FISCAL_CANCELADO,
     SITUACAO_FISCAL_CANCELADO_EXTEMPORANEO,
 )
-from odoo.addons.l10n_br_fiscal.tools import remove_non_ascii_characters
+from odoo.addons.l10n_br_fiscal.tools import (
+    remove_non_ascii_characters,
+    to_utc_naive_datetime_string,
+)
 from odoo.addons.l10n_br_fiscal_edi.constants.fiscal import (
     DOCUMENT_STATE_AUTHORIZED,
     DOCUMENT_STATE_DENIED,
@@ -1389,16 +1391,7 @@ class NFe(spec_models.StackedModel):
         if not self.authorization_event_id:
             # TODO: create new event.
             pass
-        if type(inf_prot.dhRecbto) is datetime:
-            protocol_date = fields.Datetime.to_string(inf_prot.dhRecbto)
-        # When the bidding comes from xsdata, the date comes as XmlDateTime
-        elif type(inf_prot.dhRecbto) is XmlDateTime:
-            dt = inf_prot.dhRecbto.to_datetime()
-            protocol_date = fields.Datetime.to_string(dt)
-        else:
-            protocol_date = fields.Datetime.to_string(
-                datetime.fromisoformat(inf_prot.dhRecbto)
-            )
+        protocol_date = to_utc_naive_datetime_string(inf_prot.dhRecbto)
         self.authorization_event_id.set_done(
             status_code=inf_prot.cStat,
             response=inf_prot.xMotivo,
@@ -1827,8 +1820,8 @@ class NFe(spec_models.StackedModel):
                 self.cancel_event_id.set_done(
                     status_code=retevento.infEvento.cStat,
                     response=retevento.infEvento.xMotivo,
-                    protocol_date=fields.Datetime.to_string(
-                        datetime.fromisoformat(retevento.infEvento.dhRegEvento)
+                    protocol_date=to_utc_naive_datetime_string(
+                        retevento.infEvento.dhRegEvento
                     ),
                     protocol_number=retevento.infEvento.nProt,
                     file_response_xml=processo.retorno.content.decode("utf-8"),
@@ -1882,8 +1875,8 @@ class NFe(spec_models.StackedModel):
             event_id.set_done(
                 status_code=retevento.infEvento.cStat,
                 response=retevento.infEvento.xMotivo,
-                protocol_date=fields.Datetime.to_string(
-                    datetime.fromisoformat(retevento.infEvento.dhRegEvento)
+                protocol_date=to_utc_naive_datetime_string(
+                    retevento.infEvento.dhRegEvento
                 ),
                 protocol_number=retevento.infEvento.nProt,
                 file_response_xml=processo.retorno.content.decode("utf-8"),

@@ -8874,6 +8874,16 @@ msgstr ""
 
 #. module: l10n_br_fiscal
 #. odoo-python
+#: code:addons/l10n_br_fiscal/models/invalidate_number.py:0
+msgid ""
+"It is not possible to invalidate this range: the following numbers belong "
+"to documents authorized at SEFAZ: %(numbers)s"
+msgstr ""
+"Não é possível inutilizar esta faixa: os seguintes números pertencem a "
+"documentos autorizados na SEFAZ: %(numbers)s"
+
+#. module: l10n_br_fiscal
+#. odoo-python
 #: code:addons/l10n_br_fiscal/models/document.py:0
 msgid ""
 "There is already a fiscal document with this Serie: %(serie)s, Number: %"

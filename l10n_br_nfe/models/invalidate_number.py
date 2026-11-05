@@ -1,17 +1,16 @@
 # Copyright (C) 2020  KMEE - www.kmee.com.br
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
-from datetime import datetime
-
 from erpbrasil.base.misc import punctuation_rm
 from erpbrasil.transmissao import TransmissaoSOAP
 from nfelib.nfe.ws.edoc_legacy import NFCeAdapter as edoc_nfce
 from nfelib.nfe.ws.edoc_legacy import NFeAdapter as edoc_nfe
 from requests import Session
 
-from odoo import fields, models
+from odoo import models
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import EVENT_ENV_HML, EVENT_ENV_PROD
+from odoo.addons.l10n_br_fiscal.tools import to_utc_naive_datetime_string
 
 
 class InvalidateNumber(models.Model):
@@ -38,6 +37,10 @@ class InvalidateNumber(models.Model):
         return edoc_nfe(**params)
 
     def _invalidate(self, document_id=False):
+        if not document_id:
+            # Validate on the Odoo side before transmitting: a SEFAZ success
+            # must never be lost by a later Odoo exception.
+            self._check_documents_before_invalidate()
         processador = self._edoc_processor()
         evento = processador.inutilizacao(
             cnpj=punctuation_rm(self.company_id.vat),
@@ -75,9 +78,7 @@ class InvalidateNumber(models.Model):
         event_id.set_done(
             status_code=processo.resposta.infInut.cStat,
             response=processo.resposta.infInut.xMotivo,
-            protocol_date=fields.Datetime.to_string(
-                datetime.fromisoformat(date_response)
-            ),
+            protocol_date=to_utc_naive_datetime_string(date_response),
             protocol_number=processo.resposta.infInut.nProt,
             file_response_xml=processo.retorno.content.decode("utf-8"),
         )
