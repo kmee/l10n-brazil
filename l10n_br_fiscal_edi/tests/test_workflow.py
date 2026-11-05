@@ -1,8 +1,10 @@
 # Copyright (C) 2020  KMEE INFORMATICA LTDA
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
+from datetime import timedelta
 from unittest.mock import patch
 
+from odoo import fields
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase
 
@@ -259,3 +261,61 @@ class TestWorkflow(TransactionCase):
         ):
             self.fiscal_document.action_document_confirm()
         self.assertEqual(self.fiscal_document.state_edoc, DOCUMENT_STATE_AUTHORIZED)
+
+
+class TestDocumentDateBeforeSend(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
+        cls.doc = cls.env["l10n_br_fiscal.document"].create(
+            {
+                "document_type_id": cls.env.ref("l10n_br_fiscal.document_55").id,
+                "company_id": cls.env.ref("l10n_br_base.empresa_lucro_presumido").id,
+                "document_serie_id": cls.env.ref(
+                    "l10n_br_fiscal.empresa_lc_document_55_serie_1"
+                ).id,
+                "fiscal_operation_type": "out",
+                "document_electronic": True,
+            }
+        )
+        # Validate only: confirming would send right away (No Processor)
+        cls.doc._trigger_fsm("action_validate")
+
+    def _assert_now(self, value):
+        self.assertLess(abs(value - fields.Datetime.now()), timedelta(minutes=1))
+
+    def test_future_date_is_replaced_by_now_on_send(self):
+        future = fields.Datetime.now() + timedelta(days=3)
+        self.doc.write({"document_date": future, "date_in_out": future})
+        self.doc.action_document_send()
+        self._assert_now(self.doc.document_date)
+        self._assert_now(self.doc.date_in_out)
+
+    def test_small_future_within_tolerance_is_kept(self):
+        near = fields.Datetime.now() + timedelta(minutes=2)
+        self.doc.write({"document_date": near})
+        self.doc.action_document_send()
+        self.assertEqual(self.doc.document_date, near)
+
+    def test_past_date_is_kept_on_first_send(self):
+        past = fields.Datetime.now() - timedelta(hours=5)
+        self.doc.write({"document_date": past, "date_in_out": past})
+        self.doc.action_document_send()
+        self.assertEqual(self.doc.document_date, past)
+        self.assertEqual(self.doc.date_in_out, past)
+
+    def test_resend_after_rejection_refreshes_date(self):
+        stale = fields.Datetime.now() - timedelta(hours=5)
+        self.doc.write({"document_date": stale, "date_in_out": stale})
+        self.doc.state_edoc = DOCUMENT_STATE_REJECTED
+        self.doc.action_document_send()
+        self._assert_now(self.doc.document_date)
+        self._assert_now(self.doc.date_in_out)
+
+    def test_not_company_electronic_is_untouched(self):
+        future = fields.Datetime.now() + timedelta(days=3)
+        self.doc.document_electronic = False
+        self.doc.write({"document_date": future})
+        self.doc._refresh_document_date_before_send()
+        self.assertEqual(self.doc.document_date, future)
