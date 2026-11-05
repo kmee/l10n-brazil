@@ -1,0 +1,13 @@
+<envEvento xmlns="http://www.portalfiscal.inf.br/nfe" versao="1.00">
+ <idLote>1</idLote>
+ <evento versao="1.00"><infEvento Id="ID1101103526091122233300018155001000000123100000123401">
+  <cOrgao>35</cOrgao><tpAmb>1</tpAmb><CNPJ>11222333000181</CNPJ>
+  <chNFe>35260911222333000181550010000001231000001234</chNFe><dhEvento>2026-09-09T21:28:34-03:00</dhEvento>
+  <tpEvento>110110</tpEvento><nSeqEvento>1</nSeqEvento><verEvento>1.00</verEvento>
+  <detEvento versao="1.00"><descEvento>Carta de Correcao</descEvento>
+   <xCorrecao>DADOS DO TRANSPORTADOR: INCLUIR CNPJ 00.000.000/0001-00 – TRANSPORTADORA
+EXEMPLO LTDA, IE 000000000000, SANTOS/SP.</xCorrecao>
+   <xCondUso>A Carta de Correcao e disciplinada pelo paragrafo 1o-A do art. 7o
+ do Convenio S/N</xCondUso>
+  </detEvento></infEvento></evento>
+</envEvento>
