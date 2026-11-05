@@ -47,6 +47,16 @@
                         readonly="state_edoc not in ('em_digitacao', 'a_enviar', 'rejeitada')"
                     />
                 </group>
+                <group
+                    name="nfse_foreign_trade"
+                    string="Foreign Trade"
+                    invisible="document_type != 'SE'"
+                >
+                    <field name="nfse_foreign_trade_mode" />
+                    <field name="nfse_foreign_trade_link" />
+                    <field name="nfse_foreign_trade_support_provider" />
+                    <field name="nfse_foreign_trade_support_recipient" />
+                </group>
             </group>
         </field>
     </record>
