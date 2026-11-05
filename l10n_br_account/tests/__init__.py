@@ -17,3 +17,4 @@ from . import test_move_edition
 from . import test_move_workflow
 from . import test_payment_status
 from . import test_tax_computation
+from . import test_tax_totals_summary
