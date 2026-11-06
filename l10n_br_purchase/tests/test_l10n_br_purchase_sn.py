@@ -7,6 +7,8 @@ from .tools import load_purchase_fixture_files
 
 
 class TestL10nBrPurchaseSN(L10nBrPurchaseBaseTest):
+    allow_inherited_tests_method = True
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
