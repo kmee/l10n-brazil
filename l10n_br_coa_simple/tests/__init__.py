@@ -3,3 +3,4 @@
 from . import test_l10n_br_coa_simple
 from . import test_tax_accounts_company
 from . import test_ibs_cbs_taxes
+from . import test_account_types
