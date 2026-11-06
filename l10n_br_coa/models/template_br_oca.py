@@ -293,6 +293,11 @@ class AccountChartTemplate(models.AbstractModel):
             # Use fixed codes. Ensure they don't clash with base CoA or handle it.
             # We assume these codes are specific enough.
             code = code_cfc if flavor == "cfc" else code_itg
+            if not code:
+                # The chart of this flavor has no account for this key (and
+                # no tax uses it): creating one would only put a `None.GEN`
+                # account in the chart.
+                continue
             code_gen = f"{code}{review_suffix}"
 
             # Reuse account if same code was already processed in this loop
@@ -395,6 +400,15 @@ class AccountChartTemplate(models.AbstractModel):
             refund_account = (
                 created_accounts_refs.get(ref_rep_acc_key) if ref_rep_acc_key else False
             )
+            if not invoice_account or not refund_account:
+                _logger.warning(
+                    "tax %s: no %s account in the %s flavor, repartition lines"
+                    " left as they are",
+                    tax_xmlid,
+                    inv_rep_acc_key if not invoice_account else ref_rep_acc_key,
+                    flavor,
+                )
+                continue
             company_tax.sudo()._update_repartition_lines(
                 invoice_account.id, refund_account.id
             )
