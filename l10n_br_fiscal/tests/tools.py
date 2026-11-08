@@ -132,3 +132,30 @@ def load_fiscal_fixture_files(env):
             "fiscal_document_demo.xml",
         ],
     )
+
+
+def get_undefined_view_fields(env, model_name, arch):
+    """Return the (model, field) pairs of the <field> nodes of a view arch
+    that do not exist on the model of their (sub)view.
+
+    The fiscal line mixin form is injected into the views of every model
+    inheriting the mixin, so a field added there that only exists on some
+    of them breaks the other views in the web client."""
+    undefined = []
+
+    def walk(node, model):
+        for child in node:
+            if not isinstance(child.tag, str):
+                continue
+            if child.tag != "field":
+                walk(child, model)
+                continue
+            field = env[model]._fields.get(child.get("name"))
+            if field is None:
+                undefined.append((model, child.get("name")))
+                continue
+            # the children of a relational field node are its subviews
+            walk(child, field.comodel_name or model)
+
+    walk(arch, model_name)
+    return undefined

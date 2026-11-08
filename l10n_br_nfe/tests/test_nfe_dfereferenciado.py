@@ -7,6 +7,8 @@ from lxml import etree
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, tagged
 
+from odoo.addons.l10n_br_fiscal.tests.tools import get_undefined_view_fields
+
 KEY_1 = "35200159594315000157550010000000032062777166"
 KEY_2 = "35200159594315000157550010000000022062777169"
 KEY_OTHER_ISSUER = "35200681583054000129550010000000012760018057"
@@ -247,3 +249,37 @@ class TestNFeDFeReferenciado(TransactionCase):
         ]
         self.assertEqual(refs, [([KEY_1], ["2"]), ([KEY_1], ["5"])])
         self.assertFalse(document.xml_error_message)
+
+    def test_mixin_form_injection(self):
+        """The item reference fields come with the fiscal line mixin form,
+        which is injected into the views of every model inheriting the mixin
+        (purchase.order.line, stock.move...): they must only be kept for the
+        models that have them."""
+        placeholder = (
+            "<form><group name='fiscal_fields' invisible='1'/>"
+            "<notebook><page name='fiscal_line_extra_info'/></notebook></form>"
+        )
+        line_model = self.env["l10n_br_fiscal.document.line"]
+        arch = line_model.inject_fiscal_fields(etree.fromstring(placeholder))
+        self.assertTrue(arch.xpath("//field[@name='ref_document_item']"))
+        self.assertTrue(arch.xpath("//group[@name='ref_document']"))
+
+        # the abstract mixin itself does not have the fields, like the
+        # business lines that only inherit it
+        mixin = self.env["l10n_br_fiscal.document.line.mixin"]
+        self.assertNotIn("ref_document_item", mixin._fields)
+        arch = mixin.inject_fiscal_fields(etree.fromstring(placeholder))
+        self.assertTrue(arch.xpath("//field[@name='fiscal_operation_id']"))
+        self.assertFalse(arch.xpath("//field[@name='ref_document_item']"))
+        self.assertFalse(arch.xpath("//field[@name='ref_document_related_id']"))
+        self.assertFalse(arch.xpath("//group[@name='ref_document']"))
+
+    def test_mixin_form_fields_defined(self):
+        """Every field of the fiscal line mixin form exists on the fiscal
+        document line, the model of the view"""
+        arch, _view = self.env["l10n_br_fiscal.document.line"]._get_view(
+            view_type="form"
+        )
+        self.assertFalse(
+            get_undefined_view_fields(self.env, "l10n_br_fiscal.document.line", arch)
+        )

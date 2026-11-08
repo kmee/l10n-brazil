@@ -12,6 +12,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     TAX_FRAMEWORK_SIMPLES,
     TAX_FRAMEWORK_SIMPLES_ALL,
 )
+from odoo.addons.l10n_br_fiscal.tests.tools import get_undefined_view_fields
 
 from .tools import load_purchase_fixture_files
 
@@ -549,6 +550,20 @@ class L10nBrPurchaseBaseTest(TransactionCase):
             arch.findall(".//field[@name='fiscal_operation_id']"),
             "Error to included Operation Line from Purchase Order Line.",
         )
+
+    def test_get_view_line_fields(self):
+        """Every field injected from the fiscal line mixin form must exist on
+        purchase.order.line (e.g. fields only defined on the fiscal document
+        line, like ref_document_item from l10n_br_nfe)."""
+        purchase_order = self.env["purchase.order"].with_company(self.company)
+        arch, _view = purchase_order._get_view(view_type="form")
+        self.assertTrue(
+            arch.xpath(
+                "//field[@name='order_line']//field[@name='fiscal_operation_id']"
+            ),
+            "Fiscal fields were not injected into the order lines.",
+        )
+        self.assertFalse(get_undefined_view_fields(self.env, "purchase.order", arch))
 
     def test_fields_freight_insurance_other_costs(self):
         """Test fields Freight, Insurance and Other Costs when
