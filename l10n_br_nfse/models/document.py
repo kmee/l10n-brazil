@@ -116,7 +116,16 @@ class Document(models.Model):
             im_prestador=misc.punctuation_rm(
                 self.company_id.partner_id.l10n_br_im_code or ""
             ),
+            **self._get_nfse_factory_kwargs(),
         )
+
+    def _get_nfse_factory_kwargs(self):
+        """Extra keyword arguments forwarded to erpbrasil.edoc NFSeFactory.
+
+        Hook for city providers that need provider specific parameters
+        (e.g. the schema version of the Sao Paulo provider).
+        """
+        return {}
 
     def _document_export(self, pretty_print=True):
         result = super()._document_export()
