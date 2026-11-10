@@ -236,3 +236,24 @@ class AccountMoveSimpleNacional(AccountMoveBRCommon):
             ],
             move_vals,
         )
+
+    def test_imported_icmssn_credit_is_not_an_included_tax(self):
+        # The Simples Nacional credit of a supplier NF-e is informative only.
+        imported_taxes = {
+            "icmssn": {
+                "tax_domain": "icmssn",
+                "tax_include": True,
+                "tax_withholding": False,
+                "tax_value": 4.63,
+            },
+            "ipi": {
+                "tax_domain": "ipi",
+                "tax_include": False,
+                "tax_withholding": False,
+                "tax_value": 10.0,
+            },
+        }
+        result = self.env["account.tax"]._sum_imported_tax_amounts(imported_taxes)
+        self.assertEqual(result["amount_included"], 0.0)
+        self.assertEqual(result["amount_not_included"], 10.0)
+        self.assertEqual(result["amount_withholding"], 0.0)

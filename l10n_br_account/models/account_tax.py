@@ -3,7 +3,10 @@
 
 from odoo import api, fields, models
 
-from odoo.addons.l10n_br_fiscal.constants.fiscal import FINAL_CUSTOMER_NO
+from odoo.addons.l10n_br_fiscal.constants.fiscal import (
+    FINAL_CUSTOMER_NO,
+    TAX_DOMAIN_ICMS_SN,
+)
 
 
 class AccountTax(models.Model):
@@ -209,6 +212,9 @@ class AccountTax(models.Model):
         """
         amount_included = amount_not_included = amount_withholding = 0.0
         for tax_values in imported_taxes.values():
+            if tax_values.get("tax_domain") == TAX_DOMAIN_ICMS_SN:
+                # Informative Simples Nacional credit, not a charged tax.
+                continue
             tax_value = tax_values.get("tax_value", 0.0)
             if tax_values.get("tax_withholding"):
                 amount_withholding += tax_value
