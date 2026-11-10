@@ -187,6 +187,14 @@ class TestFiscalDocumentNFSePaulistana(TestFiscalDocumentNFSeCommon):
             ),
         )
         self.assertIsNone(rps.cPaisPrestacao)
+
+        carga = self.nfse_same_state.amount_estimate_tax
+        if carga:
+            self.assertEqual(rps.ValorCargaTributaria, round(carga, 2))
+            self.assertTrue(rps.FonteCargaTributaria.startswith("IBPT"))
+        else:
+            self.assertIsNone(rps.ValorCargaTributaria)
+            self.assertIsNone(rps.PercentualCargaTributaria)
         self.assertEqual(rps.NBS, self.nbs_id.code_unmasked)
 
     def test_assinatura_rps_bytes(self):

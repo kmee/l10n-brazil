@@ -206,6 +206,37 @@ class Document(models.Model):
             descricao += "|{}|".format(adicional.replace("\n", "|"))
         return unidecode(descricao)
 
+    def _percentual_carga_tributaria(self, dados_lote_rps, dados_servico):
+        """Estimated tax burden as a fraction of the service amount.
+
+        Derived from the estimated amount so both values stay consistent
+        (tpPercentualCargaTributaria allows 4 decimals).
+        """
+        carga = float(dados_lote_rps.get("carga_tributaria_estimada") or 0)
+        valor = float(dados_servico.get("valor_servicos") or 0)
+        if not carga or not valor:
+            return None
+        return carga / valor
+
+    def _fonte_carga_tributaria(self):
+        """Source of the estimated tax burden, e.g. 'IBPT26.1.L'.
+
+        Uses the version of the latest IBPT estimate (tax.estimate) of the
+        line NBS, the same record used for the estimated amount.
+        tpFonteCargaTributaria is limited to 10 characters.
+        """
+        fonte = "IBPT"
+        nbs = self.fiscal_line_ids[:1].nbs_id
+        if nbs:
+            estimate = self.env["l10n_br_fiscal.tax.estimate"].search(
+                [("nbs_id", "=", nbs.id), ("company_id", "=", self.company_id.id)],
+                order="id desc",
+                limit=1,
+            )
+            if estimate.version:
+                fonte += estimate.version
+        return fonte[:10]
+
     def _serialize_lote_rps(self, dados_lote_rps, dados_servico):
         dados_tomador = self._prepare_dados_tomador()
         gIBSCBS = tpGIBSCBS(
@@ -312,6 +343,22 @@ class Document(models.Model):
                 or self.company_id.partner_id.city_id.ibge_code,
             ),
             ValorIPI=self._convert_type_nfselib_paulistana(tpRPS, "ValorIPI", 0),
+            # Estimated tax burden (Lei 12.741/2012, IBPT)
+            ValorCargaTributaria=self._convert_type_nfselib_paulistana(
+                tpRPS,
+                "ValorCargaTributaria",
+                dados_lote_rps.get("carga_tributaria_estimada"),
+            ),
+            PercentualCargaTributaria=self._convert_type_nfselib_paulistana(
+                tpRPS,
+                "PercentualCargaTributaria",
+                self._percentual_carga_tributaria(dados_lote_rps, dados_servico),
+            ),
+            FonteCargaTributaria=self._convert_type_nfselib_paulistana(
+                tpRPS, "FonteCargaTributaria", self._fonte_carga_tributaria()
+            )
+            if dados_lote_rps.get("carga_tributaria_estimada")
+            else None,
             AliquotaServicos=self._convert_type_nfselib_paulistana(
                 tpRPS, "AliquotaServicos", dados_servico["aliquota"]
             ),
