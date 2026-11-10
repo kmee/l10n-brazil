@@ -1025,15 +1025,6 @@ class NFeLine(spec_models.StackedModel):
         # adjustment (811) groups have no export hook yet: their branch is
         # kept here so the XSD choice is right once they are implemented.
         remove_tags = {
-            # 410 (immunity and non-incidence): the IBSCBS group carries only CST
-            # and cClassTrib, no value group (SEFAZ rejection 1021: "Grupo
-            # gIBSCBS informado indevidamente")
-            "410": [
-                "nfe40_gIBSCBS",
-                "nfe40_gIBSCBSMono",
-                "nfe40_gTransfCred",
-                "nfe40_gAjusteCompet",
-            ],
             "620": ["nfe40_gIBSCBS", "nfe40_gTransfCred", "nfe40_gAjusteCompet"],
             "800": ["nfe40_gIBSCBS", "nfe40_gIBSCBSMono", "nfe40_gAjusteCompet"],
             "811": ["nfe40_gIBSCBS", "nfe40_gIBSCBSMono", "nfe40_gTransfCred"],
