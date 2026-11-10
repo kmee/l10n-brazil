@@ -178,6 +178,35 @@ class TestWorkflow(TransactionCase):
             self.fiscal_document.correction_reason, "Correction of additional data"
         )
 
+    def _authorized_document(self, **vals):
+        document = self.fiscal_document.copy(vals)
+        document.write({"state_edoc": DOCUMENT_STATE_AUTHORIZED})
+        return document
+
+    def test_correction_for_imported_own_document(self):
+        """An own note imported from its XML (issuer still the partner, key
+        issued by the company CNPJ) can receive a correction letter."""
+        company = self.fiscal_document.company_id
+        company.vat = "81583054000129"
+        key = "35200181583054000129550010000000052062777166"
+        document = self._authorized_document(
+            issuer="partner", imported_document=True, document_key=key
+        )
+        action = document.action_document_correction()
+        self.assertEqual(
+            action["res_model"], "l10n_br_fiscal.document.correction.wizard"
+        )
+
+    def test_correction_for_third_party_document_is_refused(self):
+        company = self.fiscal_document.company_id
+        company.vat = "81583054000129"
+        key = "35200199999999000199550010000000052062777166"
+        document = self._authorized_document(
+            issuer="partner", imported_document=True, document_key=key
+        )
+        with self.assertRaises(UserError):
+            document.action_document_correction()
+
     def test_transmission_hooks_exist(self):
         """Hooks called with super() by transmission modules (l10n_br_nfe,
         l10n_br_cte, l10n_br_mdfe, l10n_br_nfse_focus) and by the document

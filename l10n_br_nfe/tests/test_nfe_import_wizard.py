@@ -114,6 +114,61 @@ class NFeImportWizardTest(TransactionCase):
         self.assertEqual(first_imported_product.price_unit_trib, 14)
         self.assertEqual(first_imported_product.total, 14)
 
+    def _own_nfe_proc(self, with_protocol=True):
+        """The sample NFe wrapped in an nfeProc, as the company's own note."""
+        xml = self.xml_1.decode("utf-8")
+        xml = re.sub(r"<protNFe.*?</protNFe>", "", xml, flags=re.S)
+        if with_protocol:
+            prot = (
+                '<protNFe versao="4.00"><infProt><tpAmb>2</tpAmb>'
+                "<verAplic>SVRS</verAplic>"
+                "<chNFe>35200181583054000129550010000000052062777166</chNFe>"
+                "<dhRecbto>2020-01-01T12:05:00-03:00</dhRecbto>"
+                "<nProt>135200000000001</nProt><digVal>abc=</digVal>"
+                "<cStat>100</cStat><xMotivo>Autorizado o uso da NF-e</xMotivo>"
+                "</infProt></protNFe>"
+            )
+            xml = xml.replace("</nfeProc>", prot + "</nfeProc>")
+        return xml.encode("utf-8")
+
+    def _prepare_own_wizard(self, xml):
+        company = self.env.ref("l10n_br_base.empresa_lucro_presumido")
+        self.env.user.company_ids |= company
+        # the imported document takes env.company as its company
+        self.env = self.env(
+            context=dict(self.env.context, allowed_company_ids=[company.id])
+        )
+        self.wizard = self.env["l10n_br_fiscal.document.import.wizard"].create(
+            {"company_id": company.id, "file": base64.b64encode(xml)}
+        )
+        self.wizard._onchange_file()
+        return company
+
+    def test_import_own_nfe_proc_is_authorized_without_transmission(self):
+        company = self._prepare_own_wizard(self._own_nfe_proc())
+        self.assertEqual(self.wizard.fiscal_operation_type, "out")
+        with patch(
+            "odoo.addons.l10n_br_nfe.models.document.edoc_nfe",
+            side_effect=AssertionError("must not reach SEFAZ"),
+        ):
+            self.wizard._import_edoc()
+        edoc = self.wizard.document_id
+        self.assertEqual(edoc.issuer, "company")
+        self.assertEqual(edoc.fiscal_operation_type, "out")
+        self.assertEqual(edoc.company_id, company)
+        self.assertEqual(edoc.state_edoc, "autorizada")
+        self.assertEqual(edoc.state_fiscal, "00")
+        self.assertEqual(edoc.nfe_environment, "2")
+        self.assertEqual(edoc.authorization_protocol, "135200000000001")
+        self.assertTrue(edoc.authorization_date)
+        self.assertTrue(edoc.authorization_file_id)
+        self.assertTrue(edoc.action_document_correction())
+
+    def test_import_own_nfe_without_protocol_is_refused(self):
+        self._prepare_own_wizard(self._own_nfe_proc(with_protocol=False))
+        with self.assertRaises(UserError):
+            self.wizard._import_edoc()
+
     def test_fiscal_operation_from_issuer_cfop(self):
         self._prepare_wizard(self.xml_1)
 

@@ -47,6 +47,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     SERVICO_PARALIZADO,
     SITUACAO_FISCAL_CANCELADO,
     SITUACAO_FISCAL_CANCELADO_EXTEMPORANEO,
+    SITUACAO_FISCAL_REGULAR,
 )
 from odoo.addons.l10n_br_fiscal.tools import (
     remove_non_ascii_characters,
@@ -1802,7 +1803,16 @@ class NFe(spec_models.StackedModel):
             return super()._get_imported_installments()
         return sorted(installments)
 
-    def import_binding_nfe(self, binding, edoc_type="in", dry_run=False):
+    def import_binding_nfe(
+        self, binding, edoc_type="in", dry_run=False, prot_nfe=None, xml_file=None
+    ):
+        """Create a document from the NF-e binding.
+
+        :param prot_nfe: the protNFe of the nfeProc, when the file carries one.
+        :param xml_file: the original file content, kept as the authorization
+            file of a note issued by the company.
+        """
+        prot_nfe = prot_nfe or getattr(binding, "protNFe", None)
         if hasattr(binding, "NFe"):
             binding = binding.NFe
         document = (
@@ -1811,11 +1821,85 @@ class NFe(spec_models.StackedModel):
             .build_from_binding("nfe", "40", binding.infNFe, dry_run=dry_run)
         )
 
-        if edoc_type == "in" and document.company_id.vat != binding.infNFe.emit.CNPJ:
+        emit_cnpj = binding.infNFe.emit.CNPJ
+        if edoc_type == "in" and document.company_id.vat != emit_cnpj:
             document.fiscal_operation_type = "in"
             document.issuer = "partner"
+        elif (
+            edoc_type == "out"
+            and not dry_run
+            and re.sub(r"\D", "", document.company_id.vat or "") == emit_cnpj
+        ):
+            document._import_own_authorization(binding, prot_nfe, xml_file)
 
         return document
+
+    def _import_own_authorization(self, binding, prot_nfe, xml_file):
+        """Mark a note issued by the company, imported from its XML, as authorized.
+
+        The note was already transmitted elsewhere (typically typed by hand in
+        another system), so the protocol of the file is recorded as is and the
+        transmission workflow is never triggered: nothing is sent to SEFAZ.
+        A note without protocol can not receive a correction letter, so it is
+        refused.
+        """
+        self.ensure_one()
+        inf_prot = getattr(prot_nfe, "infProt", None)
+        if inf_prot is None or not xml_file:
+            raise UserError(
+                _(
+                    "The XML of a note issued by your company must be the "
+                    "authorized one (nfeProc with the SEFAZ protocol). A file "
+                    "without protocol can not be imported."
+                )
+            )
+
+        def _value(item):
+            return str(getattr(item, "value", item))
+
+        status_code = _value(inf_prot.cStat)
+        if status_code not in AUTORIZADO:
+            raise UserError(
+                _(
+                    "The protocol of the file is not an authorization "
+                    "(status %(status)s: %(reason)s).",
+                    status=status_code,
+                    reason=inf_prot.xMotivo,
+                )
+            )
+        environment = _value(binding.infNFe.ide.tpAmb)
+        if isinstance(xml_file, bytes):
+            xml_file = xml_file.decode("utf-8")
+        self.write(
+            {
+                "issuer": DOCUMENT_ISSUER_COMPANY,
+                "fiscal_operation_type": FISCAL_OUT,
+                "nfe_environment": environment,
+            }
+        )
+        event = self.event_ids.create_event_save_xml(
+            company_id=self.company_id,
+            environment=EVENT_ENV_PROD if environment == "1" else EVENT_ENV_HML,
+            event_type="0",
+            xml_file=xml_file,
+            document_id=self,
+        )
+        event.set_done(
+            status_code=status_code,
+            response=inf_prot.xMotivo,
+            protocol_date=to_utc_naive_datetime_string(inf_prot.dhRecbto),
+            protocol_number=inf_prot.nProt,
+            file_response_xml=xml_file,
+        )
+        self.write(
+            {
+                "authorization_event_id": event.id,
+                "status_code": status_code,
+                "status_name": inf_prot.xMotivo,
+                "state_fiscal": SITUACAO_FISCAL_REGULAR,
+                "state_edoc": SITUACAO_EDOC_AUTORIZADA,
+            }
+        )
 
     def _document_cancel(self, justificative):
         if self.document_type_id.code in [MODELO_FISCAL_NFE]:

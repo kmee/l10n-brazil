@@ -96,8 +96,9 @@
                     type="object"
                     string="Carta de Correção"
                     groups="l10n_br_fiscal.group_user"
-                    invisible="state_edoc != 'autorizada'"
+                    invisible="state_edoc != 'autorizada' or (issuer != 'company' and not imported_document)"
                 />
+                <field name="imported_document" invisible="1" />
             </button>
             <button name="action_document_back2draft" position="before">
                 <button

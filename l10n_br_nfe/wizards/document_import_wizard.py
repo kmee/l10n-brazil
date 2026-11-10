@@ -5,6 +5,7 @@
 # Copyright (C) 2026  Raphaël Valyi - Akretion
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
+import base64
 from collections import Counter
 
 from erpbrasil.base.fiscal.cnpj_cpf import formata
@@ -271,9 +272,13 @@ class DocumentImportWizard(models.TransientModel):
     def _create_edoc_from_file(self):
         if self.document_type == MODELO_FISCAL_NFE:
             binding = self._parse_file()
+            # _parse_file keeps only the NFe, the protocol lives in the nfeProc
+            prot_nfe = getattr(self._parse_file_data(self.file), "protNFe", None)
             edoc = self.env["l10n_br_fiscal.document"].import_binding_nfe(
                 binding,
                 edoc_type=self.fiscal_operation_type,
+                prot_nfe=prot_nfe,
+                xml_file=base64.b64decode(self.file),
             )
             edoc.document_type_id = self.env.ref("l10n_br_fiscal.document_55").id
             edoc.fiscal_operation_id = self.fiscal_operation_id
