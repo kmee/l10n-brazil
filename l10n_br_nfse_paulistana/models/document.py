@@ -219,13 +219,17 @@ class Document(models.Model):
         valores = tpValores(trib=trib)
         IBSCBS = tpIBSCBS(
             finNFSe=self._convert_type_nfselib_paulistana(tpIBSCBS, "finNFSe", 0),
-            indFinal=self._convert_type_nfselib_paulistana(tpIBSCBS, "indFinal", 0),
+            indFinal=self._convert_type_nfselib_paulistana(
+                tpIBSCBS, "indFinal", self.ind_final or 0
+            ),
             cIndOp=self._convert_type_nfselib_paulistana(
                 tpIBSCBS,
                 "cIndOp",
                 self.fiscal_line_ids[:1].operation_indicator_id.code,
             ),
-            indDest=self._convert_type_nfselib_paulistana(tpIBSCBS, "indDest", 1),
+            # 0 = the recipient is the service taker itself (no <dest> group);
+            # 1 would require the <dest> group, which is not serialized.
+            indDest=self._convert_type_nfselib_paulistana(tpIBSCBS, "indDest", 0),
             valores=valores,
         )
         return tpRPS(

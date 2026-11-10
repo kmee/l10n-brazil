@@ -156,8 +156,10 @@ class TestFiscalDocumentNFSePaulistana(TestFiscalDocumentNFSeCommon):
 
         self.assertIsNotNone(rps.IBSCBS)
         self.assertEqual(rps.IBSCBS.finNFSe, 0)
-        self.assertEqual(rps.IBSCBS.indFinal, 0)
-        self.assertEqual(rps.IBSCBS.indDest, 1)
+        self.assertEqual(
+            rps.IBSCBS.indFinal, int(self.nfse_same_state.ind_final or 0)
+        )
+        self.assertEqual(rps.IBSCBS.indDest, 0)
         self.assertIsNotNone(rps.IBSCBS.valores.trib.gIBSCBS)
 
         line = self.nfse_same_state.fiscal_line_ids[0]
