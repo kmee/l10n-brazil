@@ -99,15 +99,29 @@ class Document(models.Model):
             return None
 
         value_type = ""
+        restriction_type = ""
         for field in class_object().member_data_items_:
             if field.name == object_filed:
                 value_type = field.child_attrs.get("type", "").replace("xs:", "")
+                # data_type is the restriction chain, e.g.
+                # ['tpAliquota', 'xs:decimal']; the first item is the schema type
+                data_type = getattr(field, "data_type", None)
+                if isinstance(data_type, list | tuple) and data_type:
+                    restriction_type = data_type[0]
                 break
 
         if value_type in ("int", "long", "byte", "nonNegativeInteger"):
             return int(value)
         elif value_type == "decimal":
-            return round(float(value), 2)
+            # tpValor has fractionDigits=2, but tpAliquota and
+            # tpPercentualCargaTributaria have fractionDigits=4:
+            # rounding them to 2 would turn a 2.9% ISS rate (0.029) into 0.03.
+            decimals = (
+                4
+                if restriction_type in ("tpAliquota", "tpPercentualCargaTributaria")
+                else 2
+            )
+            return round(float(value), decimals)
         elif value_type == "string":
             return str(value)
         else:
