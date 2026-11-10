@@ -5,6 +5,8 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 
 from erpbrasil.base import misc
+from erpbrasil.edoc.provedores.cidades import cidades as nfse_cidades
+from erpbrasil.edoc.provedores.paulistana import Paulistana
 from nfselib.paulistana.v03.PedidoEnvioLoteRPS_v02 import (
     CabecalhoType,
     PedidoEnvioLoteRPS,
@@ -110,6 +112,24 @@ class Document(models.Model):
             return str(value)
         else:
             return value
+
+    def _get_nfse_factory_kwargs(self):
+        kwargs = super()._get_nfse_factory_kwargs()
+        # NFSeFactory picks the provider from the company city IBGE code,
+        # so only the Paulistana provider accepts versao_schema.
+        ibge_code = self.company_id.partner_id.city_id.ibge_code
+        if (
+            self.filtered(filter_paulistana)
+            and ibge_code
+            and nfse_cidades.get(int(ibge_code)) is Paulistana
+        ):
+            # The RPS is serialized with the Reforma Tributaria bindings
+            # (PedidoEnvioLoteRPS_v02, Cabecalho Versao=2). erpbrasil.edoc
+            # defaults to the legacy layout ("v02": nfe.prefeitura.sp.gov.br,
+            # Versao=1), so ask for the matching provider schema ("v03":
+            # nfews.prefeitura.sp.gov.br, Versao=2) for send, query and cancel.
+            kwargs.setdefault("versao_schema", "v03")
+        return kwargs
 
     def _serialize(self, edocs):
         edocs = super()._serialize(edocs)
