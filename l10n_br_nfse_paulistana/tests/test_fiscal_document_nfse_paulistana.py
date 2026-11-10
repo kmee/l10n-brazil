@@ -178,9 +178,13 @@ class TestFiscalDocumentNFSePaulistana(TestFiscalDocumentNFSeCommon):
         self.assertIsNotNone(rps.ValorFinalCobrado)
 
         # cLocPrestacao XOR cPaisPrestacao (xs:choice): serviço no Brasil.
+        line = self.nfse_same_state.fiscal_line_ids[0]
         self.assertEqual(
             rps.cLocPrestacao,
-            int(self.nfse_same_state.partner_id.city_id.ibge_code),
+            int(
+                line.issqn_fg_city_id.ibge_code
+                or self.nfse_same_state.company_id.partner_id.city_id.ibge_code
+            ),
         )
         self.assertIsNone(rps.cPaisPrestacao)
         self.assertEqual(rps.NBS, self.nbs_id.code_unmasked)

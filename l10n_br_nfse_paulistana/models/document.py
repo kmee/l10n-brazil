@@ -303,8 +303,13 @@ class Document(models.Model):
             ),
             # Schema v02 (reforma) define cLocPrestacao XOR cPaisPrestacao (xs:choice):
             # servico prestado no Brasil usa cLocPrestacao (codigo IBGE do municipio).
+            # It is the place where the service is provided (ISSQN place), not
+            # the taker city: fall back to the provider city.
             cLocPrestacao=self._convert_type_nfselib_paulistana(
-                tpRPS, "cLocPrestacao", self.partner_id.city_id.ibge_code
+                tpRPS,
+                "cLocPrestacao",
+                dados_servico.get("municipio_prestacao_servico")
+                or self.company_id.partner_id.city_id.ibge_code,
             ),
             ValorIPI=self._convert_type_nfselib_paulistana(tpRPS, "ValorIPI", 0),
             AliquotaServicos=self._convert_type_nfselib_paulistana(
