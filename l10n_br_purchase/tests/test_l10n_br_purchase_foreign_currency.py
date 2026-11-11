@@ -1,8 +1,12 @@
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
+import logging
+
 from odoo.tests import tagged
 
 from .test_l10n_br_purchase import L10nBrPurchaseBaseTest
+
+_logger = logging.getLogger(__name__)
 
 
 @tagged("post_install", "-at_install")
@@ -117,5 +121,11 @@ class TestL10nBrPurchaseForeignCurrency(L10nBrPurchaseBaseTest):
         invoice = po.invoice_ids[:1]
         self.assertTrue(invoice)
         self.assertEqual(invoice.currency_id, self.eur)
-        _logger_total = invoice.amount_total
-        self.assertGreaterEqual(_logger_total, 1000.0)
+        _logger.info(
+            "HD1772 vendor bill total=%s untaxed=%s tax=%s (PO total=%s)",
+            invoice.amount_total,
+            invoice.amount_untaxed,
+            invoice.amount_tax,
+            po.amount_total,
+        )
+        self.assertGreaterEqual(invoice.amount_total, po.amount_total)
