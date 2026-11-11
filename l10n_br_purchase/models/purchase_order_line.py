@@ -4,6 +4,11 @@
 
 from odoo import api, fields, models
 
+from odoo.addons.l10n_br_fiscal.constants.fiscal import (
+    CFOP_DESTINATION_EXPORT,
+    FISCAL_IN,
+)
+
 
 class PurchaseOrderLine(models.Model):
     _name = "purchase.order.line"
@@ -97,14 +102,51 @@ class PurchaseOrderLine(models.Model):
         result = super()._compute_amount()
         for line in self:
             if line.fiscal_operation_id:
+                subtotal, tax, total = line._get_po_amounts()
                 line.update(
                     {
-                        "price_subtotal": line.fiscal_amount_untaxed,
-                        "price_tax": line.fiscal_amount_tax,
-                        "price_total": line.fiscal_amount_total,
+                        "price_subtotal": subtotal,
+                        "price_tax": tax,
+                        "price_total": total,
                     }
                 )
         return result
+
+    def _is_foreign_import(self):
+        """Import operation on a PO in a currency other than the company's.
+
+        The PO total is what is owed to the foreign supplier. ICMS, II, PIS,
+        COFINS and IPI of the import are paid to the government (DI, in BRL)
+        and must not be added to the PO amounts.
+        """
+        self.ensure_one()
+        return bool(
+            self.fiscal_operation_id
+            and self.order_id.currency_id != self.company_id.currency_id
+            and self.cfop_id.destination == CFOP_DESTINATION_EXPORT
+            and self.fiscal_operation_id.fiscal_operation_type == FISCAL_IN
+        )
+
+    def _add_fields_to_amount(self):
+        fields_to_amount = super()._add_fields_to_amount()
+        if self._is_foreign_import() and "icms_value" in fields_to_amount:
+            fields_to_amount.remove("icms_value")
+        return fields_to_amount
+
+    def _get_po_amounts(self):
+        """Return (untaxed, tax, total) of the line for the PO totals."""
+        self.ensure_one()
+        if self._is_foreign_import():
+            return (
+                self.fiscal_amount_untaxed,
+                0.0,
+                self.fiscal_amount_untaxed,
+            )
+        return (
+            self.fiscal_amount_untaxed,
+            self.fiscal_amount_tax,
+            self.fiscal_amount_total,
+        )
 
     def _compute_tax_id(self):
         for line in self:

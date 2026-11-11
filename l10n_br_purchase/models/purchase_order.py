@@ -122,10 +122,10 @@ class PurchaseOrder(models.Model):
         """
         result = super()._amount_all()
         for order in self.filtered("fiscal_operation_id"):
-            lines = order.order_line
-            order.amount_untaxed = sum(lines.mapped("fiscal_amount_untaxed"))
-            order.amount_tax = sum(lines.mapped("fiscal_amount_tax"))
-            order.amount_total = sum(lines.mapped("fiscal_amount_total"))
+            amounts = [line._get_po_amounts() for line in order.order_line]
+            order.amount_untaxed = sum(a[0] for a in amounts)
+            order.amount_tax = sum(a[1] for a in amounts)
+            order.amount_total = sum(a[2] for a in amounts)
         return result
 
     def _amount_by_group(self):
