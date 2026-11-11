@@ -1,12 +1,8 @@
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
-import logging
-
 from odoo.tests import tagged
 
 from .test_l10n_br_purchase import L10nBrPurchaseBaseTest
-
-_logger = logging.getLogger(__name__)
 
 
 @tagged("post_install", "-at_install")
@@ -108,12 +104,7 @@ class TestL10nBrPurchaseForeignCurrency(L10nBrPurchaseBaseTest):
         self.assertEqual(po.amount_total, line.fiscal_amount_total)
 
     def test_c_invoice_from_foreign_import_po(self):
-        """Invoice created from the PO: record what the vendor bill totals.
-
-        Spec 2.2 open risk: the bill may still add ICMS (account.move.line
-        mixin). The assertion documents the current behavior without
-        failing the suite; see the implementation report.
-        """
+        """Vendor bill from a foreign import PO owes exactly the PO total."""
         po = self._prepare_po(self.eur, self.cfop_3102)
         po.order_line.product_id.purchase_method = "purchase"
         po.with_context(tracking_disable=True).button_confirm()
@@ -121,11 +112,58 @@ class TestL10nBrPurchaseForeignCurrency(L10nBrPurchaseBaseTest):
         invoice = po.invoice_ids[:1]
         self.assertTrue(invoice)
         self.assertEqual(invoice.currency_id, self.eur)
-        _logger.info(
-            "HD1772 vendor bill total=%s untaxed=%s tax=%s (PO total=%s)",
-            invoice.amount_total,
-            invoice.amount_untaxed,
-            invoice.amount_tax,
+        self.assertEqual(invoice.amount_total, po.amount_total)
+        self.assertEqual(invoice.amount_tax, 0.0)
+        self.assertEqual(invoice.amount_residual, po.amount_total)
+
+    def test_c2_domestic_invoice_keeps_fiscal_data(self):
+        po = self._prepare_po(self.company.currency_id, self.cfop_3102)
+        po.order_line.product_id.purchase_method = "purchase"
+        po.with_context(tracking_disable=True).button_confirm()
+        po.action_create_invoice()
+        invoice = po.invoice_ids[:1]
+        self.assertEqual(invoice.fiscal_operation_id, po.fiscal_operation_id)
+
+    def test_d_currency_switch_recomputes(self):
+        po = self._prepare_po(self.company.currency_id, self.cfop_3102)
+        brl_total = po.amount_total
+        self.assertGreater(po.amount_tax, 0.0)
+        po.currency_id = self.eur
+        self.assertEqual(po.amount_total, 1000.0)
+        self.assertEqual(po.amount_tax, 0.0)
+        po.currency_id = self.company.currency_id
+        self.assertEqual(po.amount_total, brl_total)
+
+    def test_e_informative_icms_and_price_unit(self):
+        po = self._prepare_po(self.eur, self.cfop_3102)
+        line = po.order_line[0]
+        self.assertEqual(line.price_unit, 100.0)
+        self.assertGreater(line.icms_value, 0.0)
+        self.assertEqual(po.amount_total, 1000.0)
+
+    def test_f_mixed_po(self):
+        po = self._prepare_po(self.eur, self.cfop_3102, lines=2)
+        domestic = po.order_line[1]
+        domestic.cfop_id = self.cfop_1102
+        self.assertFalse(domestic._is_foreign_import())
+        self.assertTrue(po.order_line[0]._is_foreign_import())
+        self.assertEqual(
             po.amount_total,
+            1000.0 + domestic.fiscal_amount_total,
         )
-        self.assertGreaterEqual(invoice.amount_total, po.amount_total)
+
+    def test_g_tax_totals(self):
+        po = self._prepare_po(self.eur, self.cfop_3102)
+        self.assertEqual(po.tax_totals["total_amount_currency"], 1000.0)
+
+    def test_h_add_fields_without_record(self):
+        line_model = self.env["purchase.order.line"]
+        self.assertIn("freight_value", line_model._add_fields_to_amount())
+        self.assertNotIn("icms_value", line_model._add_fields_to_amount())
+
+    def test_i_rounding_four_decimals(self):
+        po = self._prepare_po(
+            self.eur, self.cfop_3102, extra={"product_qty": 10.0, "price_unit": 99.9999}
+        )
+        self.assertEqual(po.amount_total, self.eur.round(999.999))
+        self.assertEqual(po.amount_tax, 0.0)
