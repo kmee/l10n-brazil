@@ -1163,6 +1163,25 @@ class AccountMove(models.Model):
             self.import_fiscal_document(move.fiscal_document_id, move_id=move.id)
 
     @api.model
+    def _fill_move_form_serie(self, move_form, fiscal_document):
+        """Fill the serie of the imported document in the invoice form."""
+        if move_form.issuer != DOCUMENT_ISSUER_COMPANY:
+            move_form.document_serie = fiscal_document.document_serie
+            return
+        # the free text serie is invisible on company documents, which use the
+        # serie registry: pick the one of the imported document.
+        serie = self.env["l10n_br_fiscal.document.serie"].search(
+            [
+                ("code", "=", fiscal_document.document_serie),
+                ("document_type_id", "=", fiscal_document.document_type_id.id),
+                ("company_id", "=", fiscal_document.company_id.id),
+            ],
+            limit=1,
+        )
+        if serie:
+            move_form.document_serie_id = serie
+
+    @api.model
     def import_fiscal_document(
         self,
         fiscal_document,
@@ -1205,7 +1224,7 @@ class AccountMove(models.Model):
             move_form.document_type_id = fiscal_document.document_type_id
             move_form.fiscal_document_id = fiscal_document
             move_form.fiscal_operation_id = fiscal_document.fiscal_operation_id
-            move_form.document_serie = fiscal_document.document_serie
+            self._fill_move_form_serie(move_form, fiscal_document)
             if (
                 "l10n_latam.document.type" in self.env
                 and move_form.l10n_latam_use_documents

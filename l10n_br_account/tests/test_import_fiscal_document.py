@@ -285,3 +285,52 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
         )
         self.assertEqual(len(move.invoice_line_ids), 2)
         self.assertEqual(move.l10n_latam_document_number, "4955")
+
+    def test_import_an_own_document_into_a_customer_invoice(self):
+        """The serie field is invisible on company documents: the serie of the
+        imported document is picked from the serie registry instead."""
+        company = self.company_data["company"]
+        serie = self.env["l10n_br_fiscal.document.serie"].create(
+            {
+                "name": "7",
+                "code": "7",
+                "document_type_id": self.document_type_55.id,
+                "company_id": company.id,
+            }
+        )
+        document = self.env["l10n_br_fiscal.document"].create(
+            {
+                "fiscal_operation_id": self.env.ref("l10n_br_fiscal.fo_venda").id,
+                "document_type_id": self.document_type_55.id,
+                "document_serie_id": serie.id,
+                "document_number": "596",
+                "document_date": fields.Date.from_string("2026-05-05"),
+                "issuer": "company",
+                "partner_id": self.partner_a.id,
+                "fiscal_operation_type": "out",
+                "company_id": company.id,
+            }
+        )
+        self.env["l10n_br_fiscal.document.line"].create(
+            {
+                "document_id": document.id,
+                "name": "Sale Test",
+                "product_id": self.product_a.id,
+                "quantity": 1,
+                "price_unit": 100.0,
+                "fiscal_operation_type": "out",
+                "fiscal_operation_id": self.env.ref("l10n_br_fiscal.fo_venda").id,
+                "fiscal_operation_line_id": self.env.ref(
+                    "l10n_br_fiscal.fo_venda_venda"
+                ).id,
+            }
+        )
+        move_form = (
+            self.env["account.move"]
+            .sudo()
+            .import_fiscal_document(document, move_type="out_invoice")
+        )
+        move = self.env["account.move"].sudo().browse(move_form.id)
+        self.assertEqual(move.move_type, "out_invoice")
+        self.assertEqual(move.document_serie_id, serie)
+        self.assertEqual(move.fiscal_document_id, document)
