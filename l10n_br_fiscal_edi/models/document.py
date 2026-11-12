@@ -813,6 +813,20 @@ class Document(models.Model):
         for document in self:
             document.can_issue_correction = document._is_issued_by_company()
 
+    def _get_next_correction_sequence(self):
+        """Next nSeqEvento of the correction letter, from the events known here.
+
+        Letters issued outside Odoo (e.g. in the previous ERP) are unknown, so
+        the wizard lets the user override this number.
+        """
+        self.ensure_one()
+        numbers = [
+            int(event.sequence)
+            for event in self.event_ids
+            if event.type == "14" and event.state == "done" and event.sequence
+        ]
+        return max(numbers) + 1 if numbers else 1
+
     def action_document_correction(self):
         """Open the correction wizard for authorized company-issued documents."""
         self.ensure_one()

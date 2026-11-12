@@ -230,6 +230,13 @@ class TestWorkflow(TransactionCase):
         self.assertFalse(third.can_issue_correction)
         self.assertTrue(own.can_issue_correction)
 
+    def test_correction_wizard_proposes_next_sequence(self):
+        document = self._document_with_key(self.OWN_CNPJ)
+        wizard = self.env["l10n_br_fiscal.document.correction.wizard"].create(
+            {"document_id": document.id, "justification": "x" * 15}
+        )
+        self.assertEqual(wizard.correction_sequence, 1)
+
     def test_transmission_hooks_exist(self):
         """Hooks called with super() by transmission modules (l10n_br_nfe,
         l10n_br_cte, l10n_br_mdfe, l10n_br_nfse_focus) and by the document

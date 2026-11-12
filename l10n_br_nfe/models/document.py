@@ -2039,15 +2039,42 @@ class NFe(spec_models.StackedModel):
             online_event._nfe_correction(justificative)
         return result
 
+    def _get_correction_sequence(self):
+        """nSeqEvento of the next CC-e, as a string.
+
+        The number chosen by the user (correction_sequence context) wins over
+        the computed one, to continue letters issued outside Odoo. SEFAZ only
+        accepts 1 to 20, and a number already used by a letter registered here
+        would be rejected as duplicated.
+        """
+        self.ensure_one()
+        sequence = self.env.context.get("correction_sequence")
+        if not sequence:
+            sequence = self._get_next_correction_sequence()
+        sequence = int(sequence)
+        used = {
+            int(event.sequence)
+            for event in self.event_ids
+            if event.type == "14" and event.state == "done" and event.sequence
+        }
+        if not 1 <= sequence <= 20:
+            raise UserError(
+                _("The CC-e sequence must be between 1 and 20 (SEFAZ limit).")
+            )
+        if sequence in used:
+            raise UserError(
+                _(
+                    "The CC-e sequence %(sequence)s was already used for this note.",
+                    sequence=sequence,
+                )
+            )
+        return str(sequence)
+
     def _nfe_correction(self, justificative):
         self.ensure_one()
         processador = self._edoc_processor()
 
-        numeros = self.event_ids.filtered(
-            lambda e: e.type == "14" and e.state == "done"
-        ).mapped("sequence")
-
-        sequence = str(int(max(numeros)) + 1) if numeros else "1"
+        sequence = self._get_correction_sequence()
 
         evento = processador.carta_correcao(
             chave=self.document_key,

@@ -9,6 +9,7 @@
             <form string="Carta de Correção">
                 <group>
                     <field name="justification" />
+                    <field name="correction_sequence" />
                 </group>
                 <footer>
                     <button name="doit" string="OK" class="btn-primary" type="object" />
