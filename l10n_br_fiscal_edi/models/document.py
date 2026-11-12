@@ -105,6 +105,12 @@ class Document(models.Model):
         readonly=True,
     )
 
+    can_issue_correction = fields.Boolean(
+        compute="_compute_can_issue_correction",
+        help="The note was issued by the company (also when imported from its "
+        "XML), so the company can send a correction letter (CC-e) for it.",
+    )
+
     issuer = fields.Selection(
         selection=DOCUMENT_ISSUER,
         default=DOCUMENT_ISSUER_COMPANY,
@@ -801,6 +807,11 @@ class Document(models.Model):
             and company_vat
             and key[6:20] == company_vat
         )
+
+    @api.depends("issuer", "imported_document", "document_key", "company_id.vat")
+    def _compute_can_issue_correction(self):
+        for document in self:
+            document.can_issue_correction = document._is_issued_by_company()
 
     def action_document_correction(self):
         """Open the correction wizard for authorized company-issued documents."""
