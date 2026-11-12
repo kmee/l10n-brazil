@@ -6522,3 +6522,70 @@ msgid ""
 " it, keeps this empty; every field of the DI group is still written the way "
 "it always was."
 msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_account_move_line__ref_document_item
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document_line__ref_document_item
+msgid "Referenced Item"
+msgstr ""
+
+#. module: l10n_br_nfe
+#: model_terms:ir.ui.view,arch_db:l10n_br_nfe.nfe_document_fiscal_line_mixin_form
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_account_move_line__ref_document_related_id
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document_line__ref_document_related_id
+msgid "Referenced Document"
+msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,help:l10n_br_nfe.field_account_move_line__ref_document_item
+#: model:ir.model.fields,help:l10n_br_nfe.field_l10n_br_fiscal_document_line__ref_document_item
+msgid "Number of the item (nItem) in the referenced document."
+msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,help:l10n_br_nfe.field_account_move_line__ref_document_related_id
+#: model:ir.model.fields,help:l10n_br_nfe.field_l10n_br_fiscal_document_line__ref_document_related_id
+msgid ""
+"Related document of this line item. Leave empty when the document has "
+"a single related document."
+msgstr ""
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document.py:0
+msgid "%(line)s: set the referenced document."
+msgstr ""
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document.py:0
+msgid "%(line)s: the referenced document has no access key."
+msgstr ""
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document.py:0
+msgid "%(line)s: set the referenced item number (1 to 990)."
+msgstr ""
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document.py:0
+msgid ""
+"%(line)s: item %(item)s of document %(key)s is already referenced by "
+"another line."
+msgstr ""
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document.py:0
+msgid "All the referenced documents must have the same issuer."
+msgstr ""
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document.py:0
+msgid ""
+"Return NF-e item references:\n"
+"%(errors)s"
+msgstr ""
