@@ -3,6 +3,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 import base64
+import hashlib
 import logging
 import re
 import string
@@ -1834,6 +1835,60 @@ class NFe(spec_models.StackedModel):
 
         return document
 
+    @api.model
+    def _check_own_protocol(self, binding, inf_prot, xml_file):
+        """Check that the protocol of the file belongs to the note of the file.
+
+        Only a sanity check of the file: the situation is not queried at SEFAZ
+        and the RSA signature value is not verified.
+        """
+
+        def _value(item):
+            return str(getattr(item, "value", item))
+
+        key = (binding.infNFe.Id or "")[3:]
+        if _value(inf_prot.chNFe) != key:
+            raise UserError(
+                _("The access key of the protocol does not match the note.")
+            )
+        if _value(inf_prot.tpAmb) != _value(binding.infNFe.ide.tpAmb):
+            raise UserError(
+                _("The environment of the protocol does not match the note.")
+            )
+        if not re.fullmatch(r"\d{15}", _value(inf_prot.nProt or "")):
+            raise UserError(_("The authorization protocol number must have 15 digits."))
+        if not inf_prot.dhRecbto:
+            raise UserError(_("The protocol has no receipt date."))
+
+        # The digest of the signed note must be the one SEFAZ authorized
+        # (digVal) and must match the note content, so an edited file is refused.
+        tree = etree.fromstring(xml_file.encode("utf-8"))
+        ns = {"n": "http://www.portalfiscal.inf.br/nfe"}
+        dsig = {"d": "http://www.w3.org/2000/09/xmldsig#"}
+        digests = tree.xpath("//d:Signature//d:DigestValue/text()", namespaces=dsig)
+        inf_nfe = tree.xpath("//n:infNFe", namespaces=ns)
+        if not digests or not inf_nfe:
+            raise UserError(
+                _("The XML has no digital signature, it is not an authorized NF-e.")
+            )
+        computed = base64.b64encode(
+            hashlib.sha1(  # noqa: S324 - digest defined by the NF-e standard
+                etree.tostring(inf_nfe[0], method="c14n", exclusive=True)
+            ).digest()
+        ).decode()
+        if computed != digests[0].strip():
+            raise UserError(
+                _("The content of the note does not match its digital signature.")
+            )
+        prot_digest = getattr(inf_prot, "digVal", None) or ""
+        if isinstance(prot_digest, bytes):
+            # the binding decodes the base64 content of the tag
+            prot_digest = base64.b64encode(prot_digest).decode()
+        if prot_digest and prot_digest != computed:
+            raise UserError(
+                _("The protocol was issued for a different version of the note.")
+            )
+
     def _import_own_authorization(self, binding, prot_nfe, xml_file):
         """Mark a note issued by the company, imported from its XML, as authorized.
 
@@ -1870,6 +1925,7 @@ class NFe(spec_models.StackedModel):
         environment = _value(binding.infNFe.ide.tpAmb)
         if isinstance(xml_file, bytes):
             xml_file = xml_file.decode("utf-8")
+        self._check_own_protocol(binding, inf_prot, xml_file)
         self.write(
             {
                 "issuer": DOCUMENT_ISSUER_COMPANY,

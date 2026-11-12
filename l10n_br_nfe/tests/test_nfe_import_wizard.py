@@ -1,7 +1,10 @@
 import base64
+import hashlib
 import os
 import re
 from unittest.mock import MagicMock, patch
+
+from lxml import etree
 
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase
@@ -114,22 +117,59 @@ class NFeImportWizardTest(TransactionCase):
         self.assertEqual(first_imported_product.price_unit_trib, 14)
         self.assertEqual(first_imported_product.total, 14)
 
-    def _own_nfe_proc(self, with_protocol=True):
-        """The sample NFe wrapped in an nfeProc, as the company's own note."""
-        xml = self.xml_1.decode("utf-8")
-        xml = re.sub(r"<protNFe.*?</protNFe>", "", xml, flags=re.S)
+    OWN_KEY = "35200181583054000129550010000000052062777166"
+
+    def _own_nfe_proc(self, with_protocol=True, signed=True, tamper=False, **prot):
+        """The sample NFe wrapped in an nfeProc, as the company's own note.
+
+        The signature is a stub carrying the real digest of the note (the RSA
+        value is not checked by the import). ``prot`` overrides protocol fields.
+        """
+        nfe_ns = "http://www.portalfiscal.inf.br/nfe"
+        dsig_ns = "http://www.w3.org/2000/09/xmldsig#"
+        tree = etree.fromstring(self.xml_1)
+        for node in tree.xpath("//n:protNFe", namespaces={"n": nfe_ns}):
+            node.getparent().remove(node)
+        for node in tree.xpath("//d:Signature", namespaces={"d": dsig_ns}):
+            node.getparent().remove(node)
+        nfe = tree.xpath("//n:NFe", namespaces={"n": nfe_ns})[0]
+        inf_nfe = nfe[0]
+        digest = base64.b64encode(
+            hashlib.sha1(
+                etree.tostring(inf_nfe, method="c14n", exclusive=True)
+            ).digest()
+        ).decode()
+        if signed:
+            signature = etree.SubElement(nfe, f"{{{dsig_ns}}}Signature")
+            info = etree.SubElement(signature, f"{{{dsig_ns}}}SignedInfo")
+            reference = etree.SubElement(info, f"{{{dsig_ns}}}Reference")
+            etree.SubElement(reference, f"{{{dsig_ns}}}DigestValue").text = digest
+        if tamper:
+            inf_nfe.xpath("//n:vNF", namespaces={"n": nfe_ns})[0].text = "1.00"
         if with_protocol:
-            prot = (
-                '<protNFe versao="4.00"><infProt><tpAmb>2</tpAmb>'
-                "<verAplic>SVRS</verAplic>"
-                "<chNFe>35200181583054000129550010000000052062777166</chNFe>"
-                "<dhRecbto>2020-01-01T12:05:00-03:00</dhRecbto>"
-                "<nProt>135200000000001</nProt><digVal>abc=</digVal>"
+            values = {
+                "tpAmb": "2",
+                "chNFe": self.OWN_KEY,
+                "dhRecbto": "2020-01-01T12:05:00-03:00",
+                "nProt": "135200000000001",
+                "digVal": digest,
+            }
+            values.update(prot)
+            receipt = (
+                f"<dhRecbto>{values['dhRecbto']}</dhRecbto>"
+                if values["dhRecbto"]
+                else ""
+            )
+            prot_nfe = (
+                f'<protNFe xmlns="{nfe_ns}" versao="4.00"><infProt>'
+                f"<tpAmb>{values['tpAmb']}</tpAmb><verAplic>SVRS</verAplic>"
+                f"<chNFe>{values['chNFe']}</chNFe>{receipt}"
+                f"<nProt>{values['nProt']}</nProt><digVal>{values['digVal']}</digVal>"
                 "<cStat>100</cStat><xMotivo>Autorizado o uso da NF-e</xMotivo>"
                 "</infProt></protNFe>"
             )
-            xml = xml.replace("</nfeProc>", prot + "</nfeProc>")
-        return xml.encode("utf-8")
+            tree.append(etree.fromstring(prot_nfe))
+        return etree.tostring(tree)
 
     def _prepare_own_wizard(self, xml):
         company = self.env.ref("l10n_br_base.empresa_lucro_presumido")
@@ -168,6 +208,33 @@ class NFeImportWizardTest(TransactionCase):
         self._prepare_own_wizard(self._own_nfe_proc(with_protocol=False))
         with self.assertRaises(UserError):
             self.wizard._import_edoc()
+
+    def _assert_own_import_refused(self, xml):
+        self._prepare_own_wizard(xml)
+        with self.assertRaises(UserError):
+            self.wizard._import_edoc()
+
+    def test_import_own_nfe_with_other_key_in_protocol_is_refused(self):
+        other = "35200181583054000129550010000000062062777166"
+        self._assert_own_import_refused(self._own_nfe_proc(chNFe=other))
+
+    def test_import_own_nfe_with_other_environment_in_protocol_is_refused(self):
+        self._assert_own_import_refused(self._own_nfe_proc(tpAmb="1"))
+
+    def test_import_own_nfe_with_invalid_protocol_number_is_refused(self):
+        self._assert_own_import_refused(self._own_nfe_proc(nProt="1111"))
+
+    def test_import_own_nfe_without_receipt_date_is_refused(self):
+        self._assert_own_import_refused(self._own_nfe_proc(dhRecbto=""))
+
+    def test_import_own_nfe_with_protocol_of_another_digest_is_refused(self):
+        self._assert_own_import_refused(self._own_nfe_proc(digVal="AAAA"))
+
+    def test_import_own_nfe_with_edited_content_is_refused(self):
+        self._assert_own_import_refused(self._own_nfe_proc(tamper=True))
+
+    def test_import_own_nfe_without_signature_is_refused(self):
+        self._assert_own_import_refused(self._own_nfe_proc(signed=False))
 
     def test_fiscal_operation_from_issuer_cfop(self):
         self._prepare_wizard(self.xml_1)
