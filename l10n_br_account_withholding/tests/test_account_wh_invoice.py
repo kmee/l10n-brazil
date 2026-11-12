@@ -139,6 +139,8 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
                 | self.env.ref("l10n_br_fiscal.tax_group_cofins_wh")
             ),
         )
+        # The tax accounts of the withheld taxes allow reconciliation
+        wh_tax_lines.account_id.reconcile = True
         move.action_post()
         move._compute_wh_invoice_ids()
         self.assertEqual(
@@ -169,6 +171,10 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
             )
             self.assertEqual(payable_line.balance, -amount)
             self.assertEqual(payable_line.amount_currency, -amount)
+            # The withheld tax line is reconciled with the withholding invoice
+            self.assertTrue(wh_tax_line.reconciled)
+            self.assertTrue(wh_line.reconciled)
+            self.assertEqual(wh_tax_line.matched_debit_ids.debit_move_id, wh_line)
 
         # Back to draft cancels the withholding invoices and clears the link
         wh_invoices = move.wh_invoice_ids
@@ -176,6 +182,7 @@ class AccountMoveWithWhInvoice(AccountMoveBRCommon):
         self.assertEqual(set(wh_invoices.mapped("state")), {"cancel"})
         move._compute_wh_invoice_ids()
         self.assertEqual(move.wh_invoice_count, 0)
+        self.assertFalse(wh_tax_lines.filtered("reconciled"))
 
     def test_with_partner_issqn_without_city_partner(self):
         "Test move with Partner defined and no ISSQN City Partner"
