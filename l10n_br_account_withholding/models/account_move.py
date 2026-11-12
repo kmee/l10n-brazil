@@ -159,6 +159,27 @@ class AccountMove(models.Model):
                             subtype_xmlid="mail.mt_note",
                         )
                         wh_invoice.action_post()
+                        self._reconcile_wh_line(line, wh_invoice)
+
+    def _reconcile_wh_line(self, tax_line, wh_invoice):
+        """
+        Reconcile the withheld tax line of the source invoice with the line that
+        the withholding invoice debits on the same account.
+
+        It only applies when the tax account allows reconciliation, otherwise
+        both lines remain open on the account as before.
+
+        :param tax_line: The withheld tax line of the source invoice.
+        :param wh_invoice: The generated and posted withholding invoice.
+
+        :return: None.
+        """
+        if not tax_line.account_id.reconcile:
+            return
+        wh_line = wh_invoice.line_ids.filtered(
+            lambda line: line.wh_move_line_id == tax_line
+        )
+        (tax_line | wh_line).reconcile()
 
     def _withholding_validate(self):
         """

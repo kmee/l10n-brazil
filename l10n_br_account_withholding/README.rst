@@ -107,6 +107,12 @@ estes passos:
 3. **Definir uma Prefeitura para o ISSQN:** Crie ou edite um parceiro,
    vá até a aba "Fiscal" e marque a opção "É Prefeitura".
 
+4. **Conciliação automática:** Se a conta do imposto retido permitir
+   conciliação (``Permitir reconciliação``), a linha do imposto retido
+   na fatura de origem é conciliada automaticamente com a linha da
+   fatura de retenção. Ao voltar a fatura de origem para rascunho a
+   conciliação é desfeita.
+
 Usage
 =====
 
