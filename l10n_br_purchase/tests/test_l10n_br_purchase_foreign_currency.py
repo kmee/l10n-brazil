@@ -167,3 +167,46 @@ class TestL10nBrPurchaseForeignCurrency(L10nBrPurchaseBaseTest):
         )
         self.assertEqual(po.amount_total, self.eur.round(999.999))
         self.assertEqual(po.amount_tax, 0.0)
+
+    def test_j_invoice_with_freight_insurance(self):
+        """Freight and insurance charged by the supplier are in the PO total
+        and the vendor bill owes exactly the PO total."""
+        po = self._prepare_po(
+            self.eur,
+            self.cfop_3102,
+            extra={"freight_value": 50.0, "insurance_value": 10.0},
+        )
+        self.assertEqual(po.amount_total, 1060.0)
+        po.order_line.product_id.purchase_method = "purchase"
+        po.with_context(tracking_disable=True).button_confirm()
+        po.action_create_invoice()
+        invoice = po.invoice_ids[:1]
+        self.assertEqual(invoice.amount_tax, 0.0)
+        self.assertEqual(invoice.amount_total, po.amount_total)
+
+    def test_k_brl_domestic_with_freight_regression(self):
+        """BRL PO with domestic ICMS and freight keeps the fiscal totals."""
+        po = self._prepare_po(
+            self.company.currency_id,
+            self.cfop_1102,
+            extra={"freight_value": 50.0, "insurance_value": 10.0},
+        )
+        line = po.order_line[0]
+        self.assertFalse(line._is_foreign_import())
+        self.assertEqual(po.amount_untaxed, line.fiscal_amount_untaxed)
+        self.assertEqual(po.amount_tax, line.fiscal_amount_tax)
+        self.assertEqual(po.amount_total, line.fiscal_amount_total)
+        self.assertGreaterEqual(po.amount_total, 1060.0)
+
+    def test_l_invoice_with_discount_and_freight(self):
+        po = self._prepare_po(
+            self.eur,
+            self.cfop_3102,
+            extra={"discount_value": 100.0, "freight_value": 50.0},
+        )
+        po.order_line.product_id.purchase_method = "purchase"
+        po.with_context(tracking_disable=True).button_confirm()
+        self.assertEqual(po.amount_total, 950.0)
+        po.action_create_invoice()
+        invoice = po.invoice_ids[:1]
+        self.assertEqual(invoice.amount_total, po.amount_total)

@@ -433,11 +433,11 @@ NFS-e XML, its 50-digit access key and protocol, and renders the DANFSe.</p>
 <ul class="simple">
 <li>DPS document and field mapping (<tt class="docutils literal">SpecModel</tt> over
 <tt class="docutils literal">nfse.10.tcdps</tt>/<tt class="docutils literal">tcinfdps</tt>), with
-<tt class="docutils literal">prest</tt>/<tt class="docutils literal">toma</tt>/<tt class="docutils literal">serv</tt>/<tt class="docutils literal">valores</tt> mapped by comodel (res.company
-/ res.partner / document.line) and regime-aware <tt class="docutils literal">regTrib</tt> (MEI /
-Simples Nacional / normal). Applies to service documents (<tt class="docutils literal">SE</tt>)
-whose company picked the provider Sefin Nacional (ADN), so municipal
-and gateway modules keep their own documents.</li>
+<tt class="docutils literal">prest</tt>/<tt class="docutils literal">toma</tt>/<tt class="docutils literal">serv</tt>/<tt class="docutils literal">valores</tt> mapped by comodel
+(res.company / res.partner / document.line) and regime-aware
+<tt class="docutils literal">regTrib</tt> (MEI / Simples Nacional / normal). Applies to service
+documents (<tt class="docutils literal">SE</tt>) whose company picked the provider Sefin Nacional
+(ADN), so municipal and gateway modules keep their own documents.</li>
 <li>REST/mTLS transport client (<tt class="docutils literal">transport/adn_rest.py</tt>):
 <tt class="docutils literal">verify=True</tt>, GET-only retry, gzip+base64 packing, no payload/key
 logging.</li>
@@ -449,11 +449,12 @@ in memory to a 0600 temp PEM, explicit UTF-8 declaration) and
 <tt class="docutils literal">_adn_process_response</tt> (authorized → store key/number/protocol +
 NFS-e XML + <tt class="docutils literal">set_done</tt> + <tt class="docutils literal">SITUACAO_EDOC_AUTORIZADA</tt>; rejected →
 readable reason on the chatter/event + <tt class="docutils literal">SITUACAO_EDOC_REJEITADA</tt>).</li>
-<li>Cancellation event <tt class="docutils literal">e101101</tt>: <tt class="docutils literal">_document_cancel</tt> → <tt class="docutils literal">_adn_cancel</tt>
-(build <tt class="docutils literal">PedRegEvento</tt> → sign → <tt class="docutils literal">POST <span class="pre">/nfse/{chave}/eventos</span></tt>), with
-the cancel reason code (cMotivo) collected by the extended cancel
-wizard. Number invalidation is hidden for NFS-e (SE) documents (no
-national service for it).</li>
+<li>Cancellation event <tt class="docutils literal">e101101</tt>: <tt class="docutils literal">_document_cancel</tt> →
+<tt class="docutils literal">_adn_cancel</tt> (build <tt class="docutils literal">PedRegEvento</tt> → sign →
+<tt class="docutils literal">POST <span class="pre">/nfse/{chave}/eventos</span></tt>), with the cancel reason code
+(cMotivo) collected by the extended cancel wizard. Number
+invalidation is hidden for NFS-e (SE) documents (no national service
+for it).</li>
 <li>Cancellation registered outside Odoo is picked up by the check-status
 button (<tt class="docutils literal">GET <span class="pre">/nfse/{chave}/eventos/{tipoEvento}/1</span></tt> for <tt class="docutils literal">101101</tt>
 and <tt class="docutils literal">305101</tt>).</li>
@@ -462,8 +463,8 @@ and <tt class="docutils literal">305101</tt>).</li>
 call to any portal.</li>
 <li><tt class="docutils literal">tribISSQN</tt> mapped from <tt class="docutils literal">issqn_eligibility</tt> by the national
 <tt class="docutils literal">TSTribISSQN</tt> enum, distinct from the ABRASF table. Export of
-service, ISSQN exemption and suspended liability carry their own group
-(<tt class="docutils literal">comExt</tt>, <tt class="docutils literal">BM</tt>, <tt class="docutils literal">exigSusp</tt>); the send is blocked with a
+service, ISSQN exemption and suspended liability carry their own
+group (<tt class="docutils literal">comExt</tt>, <tt class="docutils literal">BM</tt>, <tt class="docutils literal">exigSusp</tt>); the send is blocked with a
 readable message when the group is incomplete.</li>
 </ul>
 <p>Not yet implemented (next iteration):</p>

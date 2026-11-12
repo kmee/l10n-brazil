@@ -231,8 +231,28 @@ class PurchaseOrderLine(models.Model):
                 fiscal_values.pop("fiscal_quantity", None)
                 fiscal_values.update(values)
                 values.update(fiscal_values)
+            elif line.fiscal_operation_id and line._is_foreign_import():
+                values.update(line._get_foreign_import_bill_price())
 
         return values
+
+    def _get_foreign_import_bill_price(self):
+        """Fold freight, insurance and other expenses of the PO line into the
+        unit price of the financial vendor bill, so the bill owes the PO total.
+
+        Without it these amounts, which the PO total owes to the supplier,
+        would be lost: the bill has no fiscal data. The discount is folded in
+        too, as the extra amounts must not be discounted again.
+        """
+        self.ensure_one()
+        extras = self.freight_value + self.insurance_value + self.other_value
+        if not extras or not self.product_qty:
+            return {}
+        amount = self.price_gross - self.discount_value + extras
+        return {
+            "price_unit": amount / self.product_qty,
+            "discount": 0.0,
+        }
 
     def _get_fiscal_partner(self):
         self.ensure_one()

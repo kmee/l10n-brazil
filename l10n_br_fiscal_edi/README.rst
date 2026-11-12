@@ -39,25 +39,25 @@ integridade, consistência e rastreabilidade das transições de estado.
 Principais Características
 --------------------------
 
-- **Máquina de Estados (FSM):** controle rigoroso das transições de
-  estado (por exemplo, de ``draft`` para ``open``, depois para
-  ``sending`` e finalmente para ``authorized``, ``rejected`` ou
-  ``denied``), com bloqueio de movimentos inválidos.
-- **Configuração extensível por documento:** a FSM base é definida no
-  método ``get_state_machine_config()`` e pode ser sobrescrita por
-  módulos específicos de documento fiscal para ajustar estados,
-  transições e callbacks.
-- **Gerenciamento de Eventos:** arquitetura para suportar eventos
-  fiscais vinculados ao documento, como Cancelamento, Carta de Correção
-  Eletrônica (CC-e) e Inutilização de Numeração.
-- **Abstração de Protocolo:** separa a lógica de negócios da lógica de
-  comunicação. Módulos específicos (como ``l10n_br_nfe`` ou
-  ``l10n_br_nfse``) herdam deste módulo para implementar a integração
-  com webservices (SEFAZ/Prefeituras), enquanto o ``l10n_br_fiscal_edi``
-  orquestra o fluxo.
-- **Interface Padronizada:** oferece uma experiência consistente com
-  botões e ações uniformes, independentemente do modelo de documento
-  fiscal.
+-  **Máquina de Estados (FSM):** controle rigoroso das transições de
+   estado (por exemplo, de ``draft`` para ``open``, depois para
+   ``sending`` e finalmente para ``authorized``, ``rejected`` ou
+   ``denied``), com bloqueio de movimentos inválidos.
+-  **Configuração extensível por documento:** a FSM base é definida no
+   método ``get_state_machine_config()`` e pode ser sobrescrita por
+   módulos específicos de documento fiscal para ajustar estados,
+   transições e callbacks.
+-  **Gerenciamento de Eventos:** arquitetura para suportar eventos
+   fiscais vinculados ao documento, como Cancelamento, Carta de Correção
+   Eletrônica (CC-e) e Inutilização de Numeração.
+-  **Abstração de Protocolo:** separa a lógica de negócios da lógica de
+   comunicação. Módulos específicos (como ``l10n_br_nfe`` ou
+   ``l10n_br_nfse``) herdam deste módulo para implementar a integração
+   com webservices (SEFAZ/Prefeituras), enquanto o
+   ``l10n_br_fiscal_edi`` orquestra o fluxo.
+-  **Interface Padronizada:** oferece uma experiência consistente com
+   botões e ações uniformes, independentemente do modelo de documento
+   fiscal.
 
 Workflow de Estados
 -------------------
@@ -85,67 +85,67 @@ O fluxo operacional para emissão e gerenciamento de documentos fiscais
 
 --------------
 
-- O documento inicia no estado **Rascunho** (``draft``).
-- Ao clicar no botão **Confirmar**, o sistema executa validações de
-  integridade, define data, comentário, numeração/sequência (quando
-  aplicável) e demais preparações do documento.
-- O estado muda para **Em Aberto** (``open``), indicando que o documento
-  está apto para o próximo passo.
+-  O documento inicia no estado **Rascunho** (``draft``).
+-  Ao clicar no botão **Confirmar**, o sistema executa validações de
+   integridade, define data, comentário, numeração/sequência (quando
+   aplicável) e demais preparações do documento.
+-  O estado muda para **Em Aberto** (``open``), indicando que o
+   documento está apto para o próximo passo.
 
 2. Transmissão (``open`` -> ``sending`` -> resultado)
 
 --------------
 
-- No estado **Em Aberto**, o botão **Enviar** fica disponível.
+-  No estado **Em Aberto**, o botão **Enviar** fica disponível.
 
-- Ao enviar, o documento vai para o estado transitório **Enviando**
-  (``sending``), e a camada de integração executa a comunicação com o
-  fisco.
+-  Ao enviar, o documento vai para o estado transitório **Enviando**
+   (``sending``), e a camada de integração executa a comunicação com o
+   fisco.
 
-- Possíveis resultados padrão:
+-  Possíveis resultados padrão:
 
-  - **Autorizado** (``authorized``): autorização concluída com protocolo
-    e XML de retorno.
-  - **Rejeitado** (``rejected``): erros de validação retornados pelo
-    fisco. O usuário corrige o documento e pode enviar novamente.
-  - **Denegado** (``denied``): irregularidade fiscal. Em geral,
-    representa um estado final para aquela numeração.
+   -  **Autorizado** (``authorized``): autorização concluída com
+      protocolo e XML de retorno.
+   -  **Rejeitado** (``rejected``): erros de validação retornados pelo
+      fisco. O usuário corrige o documento e pode enviar novamente.
+   -  **Denegado** (``denied``): irregularidade fiscal. Em geral,
+      representa um estado final para aquela numeração.
 
-- Observação: para documentos não eletrônicos (ou sem processador), o
-  fluxo de envio pode finalizar diretamente em **Autorizado** conforme a
-  implementação.
+-  Observação: para documentos não eletrônicos (ou sem processador), o
+   fluxo de envio pode finalizar diretamente em **Autorizado** conforme
+   a implementação.
 
 3. Cancelamento (``*`` -> ``cancel``)
 
 --------------
 
-- O estado **Cancelado** (``cancel``) pode ser atingido a partir de
-  múltiplos estados no fluxo base (``authorized``, ``open``,
-  ``rejected``, ``draft``, ``sending``).
-- Para documentos autorizados eletrônicos emitidos pela empresa, a ação
-  de cancelar abre assistente próprio para coleta/processamento da
-  justificativa.
-- Para documentos ainda não autorizados, o cancelamento pode ocorrer
-  diretamente no fluxo local.
+-  O estado **Cancelado** (``cancel``) pode ser atingido a partir de
+   múltiplos estados no fluxo base (``authorized``, ``open``,
+   ``rejected``, ``draft``, ``sending``).
+-  Para documentos autorizados eletrônicos emitidos pela empresa, a ação
+   de cancelar abre assistente próprio para coleta/processamento da
+   justificativa.
+-  Para documentos ainda não autorizados, o cancelamento pode ocorrer
+   diretamente no fluxo local.
 
 4. Retorno para Rascunho (``*`` -> ``draft``)
 
 --------------
 
-- O fluxo base permite retornar para **Rascunho** (``draft``) a partir
-  de ``open``, ``sending``, ``rejected``, ``cancel``, ``denied`` e
-  também de ``draft`` (idempotente).
-- Essa ação limpa informações transitórias de erro/relatório para
-  permitir nova preparação do documento.
+-  O fluxo base permite retornar para **Rascunho** (``draft``) a partir
+   de ``open``, ``sending``, ``rejected``, ``cancel``, ``denied`` e
+   também de ``draft`` (idempotente).
+-  Essa ação limpa informações transitórias de erro/relatório para
+   permitir nova preparação do documento.
 
 5. Eventos e correções
 
 --------------
 
-- **Carta de Correção (CC-e):** para documentos autorizados que suportam
-  o evento.
-- **Inutilização de Numeração:** para faixas de numeração não
-  utilizadas, conforme regras fiscais aplicáveis.
+-  **Carta de Correção (CC-e):** para documentos autorizados que
+   suportam o evento.
+-  **Inutilização de Numeração:** para faixas de numeração não
+   utilizadas, conforme regras fiscais aplicáveis.
 
 6. Extensão do workflow por módulo fiscal
 
@@ -155,10 +155,10 @@ A FSM deste módulo é projetada para extensão. Módulos de tipos fiscais
 específicos podem sobrescrever ``get_state_machine_config()`` e
 callbacks relacionados para:
 
-- incluir estados adicionais;
-- alterar transições válidas;
-- personalizar regras de pré/pós-transição;
-- adaptar o fluxo ao comportamento dos webservices de cada documento.
+-  incluir estados adicionais;
+-  alterar transições válidas;
+-  personalizar regras de pré/pós-transição;
+-  adaptar o fluxo ao comportamento dos webservices de cada documento.
 
 Bug Tracker
 ===========
@@ -182,14 +182,14 @@ Authors
 Contributors
 ------------
 
-- `Akretion <https://www.akretion.com/pt-BR>`__:
+-  `Akretion <https://www.akretion.com/pt-BR>`__:
 
-  - Renato Lima <renato.lima@akretion.com.br>
-  - Raphaël Valyi <raphael.valyi@akretion.com.br>
+   -  Renato Lima <renato.lima@akretion.com.br>
+   -  Raphaël Valyi <raphael.valyi@akretion.com.br>
 
-- `KMEE <https://www.kmee.com.br>`__:
+-  `KMEE <https://www.kmee.com.br>`__:
 
-  - Luis Felipe Mileo <mileo@kmee.com.br>
+   -  Luis Felipe Mileo <mileo@kmee.com.br>
 
 Maintainers
 -----------
