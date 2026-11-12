@@ -5,7 +5,7 @@
     "name": "L10n Br Account Withholding",
     "summary": """
         Brazilian Withholding Invoice Generator""",
-    "version": "17.0.1.0.0",
+    "version": "18.0.1.0.0",
     "license": "AGPL-3",
     "author": "Escodoo, Akretion, Odoo Community Association (OCA)",
     "maintainers": ["marcelsavegnago", "renatonlima"],
@@ -17,8 +17,5 @@
         "views/res_partner.xml",
         "views/l10n_br_fiscal_tax_group.xml",
         "views/account_move.xml",
-    ],
-    "demo": [
-        "demo/ir.property.xml",
     ],
 }
