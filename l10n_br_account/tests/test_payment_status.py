@@ -54,6 +54,44 @@ class TestPaymentStatusBR(AccountMoveBRCommon, MailCommon):
         self.assertEqual(invoice.amount_residual, 432.5)
         self.assertEqual(invoice.payment_state, "partial")
 
+    def test_early_payment_discount_term(self):
+        """Fatura com condicao de pagamento com desconto antecipado de 2%."""
+        term = self.env["account.payment.term"].create(
+            {
+                "name": "2% ate 10 dias",
+                "early_discount": True,
+                "discount_percentage": 2.0,
+                "discount_days": 10,
+                "line_ids": [
+                    (0, 0, {"value": "percent", "value_amount": 100.0, "nb_days": 30})
+                ],
+            }
+        )
+        invoice = self.init_invoice(
+            "out_invoice",
+            products=[self.product_a],
+            document_type=self.env.ref("l10n_br_fiscal.document_55"),
+            document_serie_id=self.empresa_lc_document_55_serie_1,
+            fiscal_operation=self.env.ref("l10n_br_fiscal.fo_venda"),
+            fiscal_operation_lines=[self.env.ref("l10n_br_fiscal.fo_venda_venda")],
+        )
+        invoice.invoice_payment_term_id = term
+        invoice.action_post()
+        expected = invoice.currency_id.round(invoice.amount_total * 0.98)
+        term_line = invoice.line_ids.filtered(
+            lambda line: line.display_type == "payment_term"
+        )
+        self.assertEqual(len(term_line), 1)
+        self.assertEqual(term_line.discount_amount_currency, expected)
+        self.assertEqual(term_line.discount_balance, expected)
+        # O assistente de pagamento, dentro do prazo, propoe o valor com desconto.
+        wiz = (
+            self.env["account.payment.register"]
+            .with_context(active_model="account.move", active_ids=invoice.ids)
+            .create({"payment_date": invoice.invoice_date})
+        )
+        self.assertEqual(wiz.amount, expected)
+
     def _register_payment(self, invoice, amount):
         bank_journal = self.company_data["default_journal_bank"]
         with Form(
