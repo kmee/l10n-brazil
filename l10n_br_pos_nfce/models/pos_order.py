@@ -66,6 +66,21 @@ class PosOrder(models.Model):
         }
 
     @api.model
+    def _order_fields(self, ui_order):
+        order_fields = super()._order_fields(ui_order)
+        config = self.env["pos.session"].browse(ui_order["pos_session_id"]).config_id
+        if (
+            config.simplified_document_type == MODELO_FISCAL_NFCE
+            and order_fields["amount_total"] > 0
+        ):
+            # every sale of a NFC-e PoS issues the NFC-e
+            order_fields["to_invoice"] = True
+            order_fields["partner_id"] = (
+                order_fields["partner_id"] or config.partner_id.id
+            )
+        return order_fields
+
+    @api.model
     def _process_order(self, pos_order_vals, draft, existing_order):
         res = super()._process_order(pos_order_vals, draft, existing_order)
 
@@ -146,9 +161,17 @@ class PosOrder(models.Model):
         response = super().create_from_ui(orders, draft)
         for option in response:
             order = self.env["pos.order"].search([("id", "=", option["id"])])
-            if order.document_type == MODELO_FISCAL_NFCE:
+            if order.config_id.simplified_document_type == MODELO_FISCAL_NFCE:
                 fiscal_document_id = order.account_move.fiscal_document_id
-                order.write({"state_edoc": fiscal_document_id.state_edoc})
+                order.write(
+                    {
+                        "state_edoc": fiscal_document_id.state_edoc,
+                        "authorization_protocol": (
+                            fiscal_document_id.authorization_protocol
+                        ),
+                        "authorization_date": fiscal_document_id.authorization_date,
+                    }
+                )
                 option.update(order._prepare_fiscal_document_dict())
         return response
 
