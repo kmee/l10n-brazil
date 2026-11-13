@@ -8,6 +8,29 @@ import {BRAZILIAN_STATES_IBGE_CODE_MAP, NFeXML} from "@l10n_br_pos_nfce/js/nfe-x
 
 const L10nBrNfceOrder = (Order) =>
     class L10nBrNfceOrder extends Order {
+        constructor(obj, options) {
+            super(...arguments);
+            if (
+                this.pos.config.simplified_document_type === "65" &&
+                (!options || !options.json)
+            ) {
+                // A NFC-e PoS always issues the NFC-e: the order is born to be
+                // invoiced, so the payment screen waits for the authorization
+                // and the receipt screen prints the DANFE NFC-e. The consumer
+                // of the PoS config is the default customer; the cashier can
+                // still pick an identified one.
+                this.to_invoice = true;
+                const partnerId = this.pos.config.partner_id
+                    ? this.pos.config.partner_id[0]
+                    : false;
+                const anonymousPartner =
+                    partnerId && this.pos.db.get_partner_by_id(partnerId);
+                if (anonymousPartner && !this.get_partner()) {
+                    this.set_partner(anonymousPartner);
+                }
+            }
+        }
+
         async document_send(component) {
             if (this.document_type !== "65") {
                 return super.document_send(...arguments);
