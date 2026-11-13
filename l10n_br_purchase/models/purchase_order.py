@@ -73,6 +73,12 @@ class PurchaseOrder(models.Model):
     def _get_fiscal_lines_field_name(self):
         return "order_line"
 
+    def _is_foreign_import_order(self):
+        """All product lines are foreign imports (financial-only vendor bill)."""
+        self.ensure_one()
+        lines = self.order_line.filtered(lambda line: not line.display_type)
+        return bool(lines) and all(line._is_foreign_import() for line in lines)
+
     def _prepare_invoice(self):
         self.ensure_one()
         invoice_vals = super()._prepare_invoice()
@@ -84,8 +90,10 @@ class PurchaseOrder(models.Model):
         # below which already applies the same safeguard.
         partner_invoice = self.partner_id.address_get(["invoice"])["invoice"]
         invoice_vals["partner_id"] = partner_invoice
-        if self.fiscal_operation_id:
-            # O caso Brasil se caracteriza por ter a Operação Fiscal
+        if self.fiscal_operation_id and not self._is_foreign_import_order():
+            # O caso Brasil se caracteriza por ter a Operação Fiscal.
+            # Foreign import: the bill is financial only (what is owed to the
+            # supplier); import taxes are paid via DI, not on the bill.
             document_type_id = (
                 self.order_line[0].fiscal_operation_line_id.document_type_id.id
                 if self.order_line
@@ -110,6 +118,8 @@ class PurchaseOrder(models.Model):
         "order_line.fiscal_amount_untaxed",
         "order_line.fiscal_amount_tax",
         "order_line.fiscal_amount_total",
+        "order_line.price_subtotal",
+        "currency_id",
     )
     def _amount_all(self):
         """Override to use fiscal amounts directly for Brazilian POs.
@@ -122,10 +132,10 @@ class PurchaseOrder(models.Model):
         """
         result = super()._amount_all()
         for order in self.filtered("fiscal_operation_id"):
-            lines = order.order_line
-            order.amount_untaxed = sum(lines.mapped("fiscal_amount_untaxed"))
-            order.amount_tax = sum(lines.mapped("fiscal_amount_tax"))
-            order.amount_total = sum(lines.mapped("fiscal_amount_total"))
+            amounts = [line._get_po_amounts() for line in order.order_line]
+            order.amount_untaxed = sum(a[0] for a in amounts)
+            order.amount_tax = sum(a[1] for a in amounts)
+            order.amount_total = sum(a[2] for a in amounts)
         return result
 
     def _amount_by_group(self):

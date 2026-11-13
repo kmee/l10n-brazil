@@ -76,7 +76,7 @@ Changelog
 10.0.1.0.0 (2016-10-02)
 -----------------------
 
-- [MIG] Migration to version 10.0
+-  [MIG] Migration to version 10.0
 
 Bug Tracker
 ===========
@@ -99,18 +99,18 @@ Authors
 Contributors
 ------------
 
-- Luis Felipe Mileo <mileo@kmee.com.br>
-- Luiz Divino <luiz.divino@kmee.com.br>
-- Hendrix Costa <hendrix.costa@kmee.com.br>
-- Bruna Braga <bruna.braga@kmee.com.br>
-- Cristiano Mafra Junior <cristiano.mafra@escodoo.com.br>
+-  Luis Felipe Mileo <mileo@kmee.com.br>
+-  Luiz Divino <luiz.divino@kmee.com.br>
+-  Hendrix Costa <hendrix.costa@kmee.com.br>
+-  Bruna Braga <bruna.braga@kmee.com.br>
+-  Cristiano Mafra Junior <cristiano.mafra@escodoo.com.br>
 
 Other credits
 -------------
 
 The development of this module has been financially supported by:
 
-- KMEE INFORMATICA LTDA
+-  KMEE INFORMATICA LTDA
 
 Maintainers
 -----------

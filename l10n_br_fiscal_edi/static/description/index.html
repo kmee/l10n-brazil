@@ -393,8 +393,8 @@ Eletrônica (CC-e) e Inutilização de Numeração.</li>
 <li><strong>Abstração de Protocolo:</strong> separa a lógica de negócios da lógica de
 comunicação. Módulos específicos (como <tt class="docutils literal">l10n_br_nfe</tt> ou
 <tt class="docutils literal">l10n_br_nfse</tt>) herdam deste módulo para implementar a integração
-com webservices (SEFAZ/Prefeituras), enquanto o <tt class="docutils literal">l10n_br_fiscal_edi</tt>
-orquestra o fluxo.</li>
+com webservices (SEFAZ/Prefeituras), enquanto o
+<tt class="docutils literal">l10n_br_fiscal_edi</tt> orquestra o fluxo.</li>
 <li><strong>Interface Padronizada:</strong> oferece uma experiência consistente com
 botões e ações uniformes, independentemente do modelo de documento
 fiscal.</li>
@@ -427,8 +427,8 @@ filhos):</p>
 <li>Ao clicar no botão <strong>Confirmar</strong>, o sistema executa validações de
 integridade, define data, comentário, numeração/sequência (quando
 aplicável) e demais preparações do documento.</li>
-<li>O estado muda para <strong>Em Aberto</strong> (<tt class="docutils literal">open</tt>), indicando que o documento
-está apto para o próximo passo.</li>
+<li>O estado muda para <strong>Em Aberto</strong> (<tt class="docutils literal">open</tt>), indicando que o
+documento está apto para o próximo passo.</li>
 </ul>
 <ol class="arabic simple" start="2">
 <li>Transmissão (<tt class="docutils literal">open</tt> -&gt; <tt class="docutils literal">sending</tt> -&gt; resultado)</li>
@@ -440,8 +440,8 @@ está apto para o próximo passo.</li>
 (<tt class="docutils literal">sending</tt>), e a camada de integração executa a comunicação com o
 fisco.</li>
 <li>Possíveis resultados padrão:<ul>
-<li><strong>Autorizado</strong> (<tt class="docutils literal">authorized</tt>): autorização concluída com protocolo
-e XML de retorno.</li>
+<li><strong>Autorizado</strong> (<tt class="docutils literal">authorized</tt>): autorização concluída com
+protocolo e XML de retorno.</li>
 <li><strong>Rejeitado</strong> (<tt class="docutils literal">rejected</tt>): erros de validação retornados pelo
 fisco. O usuário corrige o documento e pode enviar novamente.</li>
 <li><strong>Denegado</strong> (<tt class="docutils literal">denied</tt>): irregularidade fiscal. Em geral,
@@ -449,8 +449,8 @@ representa um estado final para aquela numeração.</li>
 </ul>
 </li>
 <li>Observação: para documentos não eletrônicos (ou sem processador), o
-fluxo de envio pode finalizar diretamente em <strong>Autorizado</strong> conforme a
-implementação.</li>
+fluxo de envio pode finalizar diretamente em <strong>Autorizado</strong> conforme
+a implementação.</li>
 </ul>
 <ol class="arabic simple" start="3">
 <li>Cancelamento (<tt class="docutils literal">*</tt> -&gt; <tt class="docutils literal">cancel</tt>)</li>
@@ -482,8 +482,8 @@ permitir nova preparação do documento.</li>
 </ol>
 <hr class="docutils" />
 <ul class="simple">
-<li><strong>Carta de Correção (CC-e):</strong> para documentos autorizados que suportam
-o evento.</li>
+<li><strong>Carta de Correção (CC-e):</strong> para documentos autorizados que
+suportam o evento.</li>
 <li><strong>Inutilização de Numeração:</strong> para faixas de numeração não
 utilizadas, conforme regras fiscais aplicáveis.</li>
 </ul>

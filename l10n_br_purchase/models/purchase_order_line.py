@@ -4,6 +4,11 @@
 
 from odoo import api, fields, models
 
+from odoo.addons.l10n_br_fiscal.constants.fiscal import (
+    CFOP_DESTINATION_EXPORT,
+    FISCAL_IN,
+)
+
 
 class PurchaseOrderLine(models.Model):
     _name = "purchase.order.line"
@@ -91,20 +96,101 @@ class PurchaseOrderLine(models.Model):
         "insurance_value",
         "other_value",
         "taxes_id",
+        "order_id.currency_id",
+        "cfop_id",
+        "fiscal_operation_id",
     )
     def _compute_amount(self):
         """Compute the amounts of the PO line."""
         result = super()._compute_amount()
         for line in self:
             if line.fiscal_operation_id:
+                subtotal, tax, total = line._get_po_amounts()
                 line.update(
                     {
-                        "price_subtotal": line.fiscal_amount_untaxed,
-                        "price_tax": line.fiscal_amount_tax,
-                        "price_total": line.fiscal_amount_total,
+                        "price_subtotal": subtotal,
+                        "price_tax": tax,
+                        "price_total": total,
                     }
                 )
         return result
+
+    def _is_foreign_import(self):
+        """Import operation on a PO in a currency other than the company's.
+
+        The PO total is what is owed to the foreign supplier. ICMS, II, PIS,
+        COFINS and IPI of the import are paid to the government (DI, in BRL)
+        and must not be added to the PO amounts.
+        """
+        self.ensure_one()
+        return bool(
+            self.fiscal_operation_id
+            and self.order_id.currency_id != self.company_id.currency_id
+            and self.cfop_id.destination == CFOP_DESTINATION_EXPORT
+            and self.fiscal_operation_id.fiscal_operation_type == FISCAL_IN
+        )
+
+    @api.depends(
+        "discount_value",
+        "amount_tax_not_included",
+        "amount_tax_withholding",
+        "price_unit",
+        "quantity",
+        "fiscal_operation_line_id",
+        "cfop_id",
+        "icms_relief_value",
+        "insurance_value",
+        "other_value",
+        "freight_value",
+        "pis_value",
+        "cofins_value",
+        "icms_value",
+        "ii_value",
+        "ii_customhouse_charges",
+        "ii_declared_value",
+        "order_id.currency_id",
+    )
+    def _compute_fiscal_amounts(self):
+        # The predicate of _is_foreign_import depends on the PO currency,
+        # which the mixin does not know about: redeclare the dependencies.
+        return super()._compute_fiscal_amounts()
+
+    def _add_fields_to_amount(self):
+        fields_to_amount = super()._add_fields_to_amount()
+        # Called as @api.model by the mixin: tolerate empty/multi recordsets.
+        if (
+            len(self) == 1
+            and self._is_foreign_import()
+            and "icms_value" in fields_to_amount
+        ):
+            fields_to_amount.remove("icms_value")
+        return fields_to_amount
+
+    def _rm_fields_to_amount(self):
+        fields_to_rm = super()._rm_fields_to_amount()
+        if len(self) == 1 and self._is_foreign_import():
+            # ICMS relief does not change what is owed to the supplier.
+            return [f for f in fields_to_rm if f != "icms_relief_value"]
+        return fields_to_rm
+
+    def _get_po_amounts(self):
+        """Return (untaxed, tax, total) of the line for the PO totals.
+
+        Withholdings (amount_tax_withholding) are not considered in the
+        foreign import case: there are none on the import of goods.
+        """
+        self.ensure_one()
+        if self._is_foreign_import():
+            return (
+                self.fiscal_amount_untaxed,
+                0.0,
+                self.fiscal_amount_untaxed,
+            )
+        return (
+            self.fiscal_amount_untaxed,
+            self.fiscal_amount_tax,
+            self.fiscal_amount_total,
+        )
 
     def _compute_tax_id(self):
         for line in self:
@@ -132,7 +218,10 @@ class PurchaseOrderLine(models.Model):
             line = self.env["purchase.order.line"].browse(
                 values.get("purchase_line_id")
             )
-            if line.fiscal_operation_id:
+            if (
+                line.fiscal_operation_id
+                and not line.order_id._is_foreign_import_order()
+            ):
                 # O caso Brasil se caracteriza por ter a Operação Fiscal
                 fiscal_values = line._prepare_br_fiscal_dict()
                 # fiscal_quantity must not be copied from PO line because
@@ -142,8 +231,28 @@ class PurchaseOrderLine(models.Model):
                 fiscal_values.pop("fiscal_quantity", None)
                 fiscal_values.update(values)
                 values.update(fiscal_values)
+            elif line.fiscal_operation_id and line._is_foreign_import():
+                values.update(line._get_foreign_import_bill_price())
 
         return values
+
+    def _get_foreign_import_bill_price(self):
+        """Fold freight, insurance and other expenses of the PO line into the
+        unit price of the financial vendor bill, so the bill owes the PO total.
+
+        Without it these amounts, which the PO total owes to the supplier,
+        would be lost: the bill has no fiscal data. The discount is folded in
+        too, as the extra amounts must not be discounted again.
+        """
+        self.ensure_one()
+        extras = self.freight_value + self.insurance_value + self.other_value
+        if not extras or not self.product_qty:
+            return {}
+        amount = self.price_gross - self.discount_value + extras
+        return {
+            "price_unit": amount / self.product_qty,
+            "discount": 0.0,
+        }
 
     def _get_fiscal_partner(self):
         self.ensure_one()

@@ -86,22 +86,22 @@ Authors
 Contributors
 ------------
 
-- `Engenere <https://engenere.one>`__:
+-  `Engenere <https://engenere.one>`__:
 
-  - Antônio S. Pereira Neto <neto@engenere.one>
-  - Felipe Motter Pereira <felipe@engenere.one>
+   -  Antônio S. Pereira Neto <neto@engenere.one>
+   -  Felipe Motter Pereira <felipe@engenere.one>
 
-- `KMEE <https://kmee.com.br>`__:
+-  `KMEE <https://kmee.com.br>`__:
 
-  - Ygor Carvalho <ygcarvalh@gmail.com>
+   -  Ygor Carvalho <ygcarvalh@gmail.com>
 
 Other credits
 -------------
 
 The development of this module has been financially supported by:
 
-- Escodoo - https://www.escodoo.com.br
-- Engenere - https://engenere.one/
+-  Escodoo - https://www.escodoo.com.br
+-  Engenere - https://engenere.one/
 
 Maintainers
 -----------

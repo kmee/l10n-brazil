@@ -5,3 +5,4 @@ from . import test_l10n_br_purchase_sn
 from . import test_import_fiscal_document_po_link
 from . import test_purchase_edition
 from . import test_purchase_report
+from . import test_l10n_br_purchase_foreign_currency
