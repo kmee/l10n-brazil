@@ -1,29 +1,41 @@
-Implemented:
+**Já implementado**
 
-- DPS document and field mapping (`SpecModel` over `nfse.10.tcdps`/`tcinfdps`),
-  with `prest`/`toma`/`serv`/`valores` mapped by comodel (res.company /
-  res.partner / document.line) and regime-aware `regTrib` (MEI / Simples
-  Nacional / normal). Filtered by `document_type_id.code == "SE"`.
-- REST/mTLS transport client (`transport/adn_rest.py`): `verify=True`, GET-only
-  retry, gzip+base64 packing, no payload/key logging.
-- Issuance following the NF-e pattern: `_serialize` (`_build_binding` → `Dps`),
-  `_document_export` (build → save event → sign → XSD validate),
-  `_eletronic_document_send` → `_adn_send_for_authorization` (`POST /nfse` over
-  mTLS, A1 derived in memory to a 0600 temp PEM, explicit UTF-8 declaration) and
-  `_adn_process_response` (authorized → store key/number/protocol + NFS-e XML +
-  `set_done` + `SITUACAO_EDOC_AUTORIZADA`; rejected → readable reason on the
-  chatter/event + `SITUACAO_EDOC_REJEITADA`).
-- Cancellation event `e101101`: `_document_cancel` → `_adn_cancel` (build
-  `PedRegEvento` → sign → `POST /nfse/{chave}/eventos`), with the cancel reason
-  code (cMotivo) collected by the extended cancel wizard. Number invalidation is
-  hidden for NFS-e (SE) documents (no national service for it).
+- Mapeamento da DPS sobre o documento fiscal, com prestador, tomador, serviço e
+  valores, e o regime tributário (MEI, Simples Nacional ou normal) deduzido da
+  empresa.
+- Cliente REST/mTLS com verificação de certificado do servidor, nova tentativa
+  apenas em GET e sem registrar payload nem chaves em log.
+- Emissão, rejeição legível, cancelamento pelo evento `101101` e consulta de
+  cancelamento feito fora do Odoo.
+- DANFSe gerado do XML autorizado.
+- Grupo `IBSCBS` da DPS (leiaute 1.04.01, reforma tributária) montado a partir do
+  `cClassTrib`, do `CST` e do indicador de operação (`cIndOp`) da linha.
 
-Not yet implemented (next iteration):
+**Limitações conhecidas**
 
-- Lost-response reconciliation (`GET /nfse/{chave}` / `GET /dps/{id}` before any
-  re-`POST`) and the DANFSe rendering (`make_pdf` via `nfelib.to_pdf`).
-- Substitution events (e105xxx) and the remaining event types.
+- A alíquota (`pAliq`) nunca é informada na DPS para município conveniado: o ADN
+  toma a alíquota dos parâmetros municipais e recusa a alíquota informada em
+  casos como o erro E0625.
+- Empresa fora do Simples Nacional informa o tributo aproximado em `pTotTrib`;
+  empresa do Simples sem faixa de receita cai no indicador `indTotTrib`, pois o
+  ADN exige uma das opções.
+- O grupo `IBSCBS` exporta apenas o `CST` e o `cClassTrib` da linha, com o
+  `cIndOp` do indicador de operação da própria linha (herdado do produto e
+  editável na linha): quem tem a classificação mas não informou o indicador nem
+  o CST recebe a DPS sem o grupo, com o motivo registrado no log.
+- No grupo `IBSCBS`, `CST` e `cClassTrib` saem direto em `valores/trib` e o
+  `indDest` sai como `"0"`: o leiaute 1.04.01 (NT 009) tirou o `finNFSe` do
+  grupo (ele agora vai em `infDPS`, obrigatório e sempre `"0"`) e o
+  `indDest = "1"` depende do grupo `dest`, ainda não exportado.
+- CNAB e cobrança bancária não se aplicam a este módulo.
+- Não existe inutilização de numeração para a NFS-e Nacional (a numeração da DPS
+  é livre).
 
-Out of scope here: IBS/CBS (RTC), inbound distribution, contingency,
-async / queue_job — see the project specs. Number inutilização against a service
-does not exist for the national NFS-e (free DPS numbering).
+**Ainda não implementado**
+
+- Reconciliação de resposta perdida (`GET /nfse/{chave}` e `GET /dps/{id}` antes
+  de reenviar a DPS).
+- Eventos de substituição (`e105xxx`) e os demais tipos de evento.
+- Grupos `dest`, `gRefNFSe`, `cCredPres`, `gTribRegular` e `gDif` do `IBSCBS`.
+- Distribuição de documentos recebidos, contingência e envio assíncrono com fila
+  (`queue_job`).

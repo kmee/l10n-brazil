@@ -38,6 +38,7 @@ class DocumentImportWizard(models.TransientModel):
             self._extract_key_information(binding.infNFe.Id[3:])
             infNFe = binding.infNFe
             self.nat_op = infNFe.ide.natOp
+            self.amount_total = infNFe.total.ICMSTot.vNF
             self.fiscal_operation_id = self._find_fiscal_operation(
                 self._most_common_cfop(infNFe),
                 self.nat_op,
@@ -134,7 +135,9 @@ class DocumentImportWizard(models.TransientModel):
     def _search_product_supplier_by_product_code(self, code):
         return self.env["product.supplierinfo"].search(
             [
-                ("partner_id", "=", self.partner_id.id),
+                # the preview runs before the document, and so before the
+                # partner, exist: only the issuer is known then
+                ("partner_id", "=", (self.partner_id or self.issuer_partner_id).id),
                 ("product_code", "=", code),
             ],
             limit=1,
@@ -269,9 +272,13 @@ class DocumentImportWizard(models.TransientModel):
             # wizard grid is then applied on the persisted lines, which is
             # the single write path (_apply_import_depara).
             binding = self._parse_file()
-            edoc = self.env["l10n_br_fiscal.document"].import_binding_nfe(
-                binding,
-                edoc_type=self.fiscal_operation_type,
+            edoc = (
+                self.env["l10n_br_fiscal.document"]
+                .with_context(allow_product_creation=self.allow_product_creation)
+                .import_binding_nfe(
+                    binding,
+                    edoc_type=self.fiscal_operation_type,
+                )
             )
             edoc.document_type_id = self.env.ref("l10n_br_fiscal.document_55").id
             edoc.fiscal_operation_id = self.fiscal_operation_id
@@ -279,9 +286,7 @@ class DocumentImportWizard(models.TransientModel):
             if not self.partner_id:
                 self.partner_id = edoc.partner_id
 
-            edoc._attach_imported_xml(
-                self.file, f"NFe-Importada-{edoc.document_key}.xml"
-            )
+            self._attach_original_nfe_xml_to_document(edoc)
             edoc._init_import_states()
             self._apply_wizard_depara(edoc)
 
@@ -290,6 +295,15 @@ class DocumentImportWizard(models.TransientModel):
 
             return binding, edoc
         return super()._create_edoc_from_file()
+
+    def _attach_original_nfe_xml_to_document(self, edoc):
+        """Attach the untouched supplier XML and link it as the document
+        original XML (used by View XML / View PDF on imported documents)."""
+        attachment = edoc._attach_imported_xml(
+            self.file, f"NFe-Importada-{edoc.document_key}.xml"
+        )
+        edoc.original_xml_file_id = attachment
+        return attachment
 
     def _update_new_products_standard_price(self, edoc):
         """Produtos CRIADOS neste import: o custo padrão deve ser o custo de
@@ -325,10 +339,20 @@ class DocumentImportWizard(models.TransientModel):
                     factor=wizard_line.uom_conversion_factor,
                     fiscal_operation=self.fiscal_operation_id,
                 )
-            elif self.fiscal_operation_id:
-                # operation de-para only: the line keeps waiting for the
-                # product review.
-                line.fiscal_operation_id = self.fiscal_operation_id
+            else:
+                if self.fiscal_operation_id:
+                    # operation de-para only: the line keeps waiting for the
+                    # product review.
+                    line.fiscal_operation_id = self.fiscal_operation_id
+                if line.product_id and not line.uom_id and wizard_line.uom_internal:
+                    # Product created during this import (allow_product_creation):
+                    # its uom was not resolved from the XML at line-creation time
+                    # (the line compute ran before the product's units were set),
+                    # so fall back to the unit the wizard matched from uCom/uTrib
+                    # and align the created product's units with it.
+                    line.uom_id = wizard_line.uom_internal
+                    line.product_id.uom_id = wizard_line.uom_internal
+                    line.product_id.uom_po_id = wizard_line.uom_internal
             if wizard_line.new_cfop_id:
                 # explicit CFOP override reviewed by the user, applied after
                 # the operation remap.

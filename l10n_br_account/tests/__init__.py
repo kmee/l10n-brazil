@@ -7,6 +7,9 @@ from . import test_invoice_refund
 from . import test_multi_localizations_invoice
 from . import test_payment_status
 from . import test_move_workflow
+from . import test_cancel_move_ids
 from . import test_document_import_check
 from . import test_stock_cost_deductible
 from . import test_import_fiscal_document
+from . import test_fiscal_tax_deductible
+from . import test_deductible_balance

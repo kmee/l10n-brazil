@@ -378,17 +378,22 @@ class DocumentLine(models.Model):
         for line in self:
             if not line.product_id or not line.document_id.partner_id:
                 continue
+            # The de-para memory is a by-product of the import: the fiscal
+            # profile that runs it has no purchase (product.supplierinfo)
+            # access rights.
             if not line.import_supplierinfo_id:
                 vals = line._prepare_supplierinfo_vals()
                 vals["partner_id"] = line.document_id.partner_id.id
-                line.import_supplierinfo_id = line.env["product.supplierinfo"].create(
-                    vals
+                line.import_supplierinfo_id = (
+                    line.env["product.supplierinfo"].sudo().create(vals)
                 )
-                line.product_id.product_tmpl_id.seller_ids = [
+                line.product_id.product_tmpl_id.sudo().seller_ids = [
                     fields.Command.link(line.import_supplierinfo_id.id)
                 ]
             else:
-                line.import_supplierinfo_id.write(line._prepare_supplierinfo_vals())
+                line.import_supplierinfo_id.sudo().write(
+                    line._prepare_supplierinfo_vals()
+                )
 
     def __document_comment_vals(self):
         self.ensure_one()
@@ -442,6 +447,13 @@ class DocumentLine(models.Model):
         )
         if cst_cbs:
             vals["cbs_cst_id"] = cst_cbs.id
+
+        if ibscbs.cClassTrib:
+            tax_classification = self.env["l10n_br_fiscal.tax.classification"].search(
+                [("code", "=", ibscbs.cClassTrib)], limit=1
+            )
+            if tax_classification:
+                vals["tax_classification_id"] = tax_classification.id
 
         vals.update(
             ibs_base=base,

@@ -47,13 +47,13 @@ class AccountTax(models.Model):
             refund_repartition_line = tax.refund_repartition_line_ids.filtered(
                 lambda line: line.repartition_type == "tax"
             )
-            # Para dedutíveis/retidos o factor -100 precisa ser aplicado mesmo
-            # quando a conta é vazia (crédito neteando a conta da linha do
-            # produto — dedutíveis de compra).
-            if refund_repartition_line and (
-                refund_account_id or tax.deductible or tax.withholdable
-            ):
-                refund_repartition_line.account_id = refund_account_id
+            if refund_repartition_line:
+                # The factor follows the invoice line whether or not there is a
+                # refund account: core requires both distributions to match.
+                # Deductible/withholding taxes also take an empty account, so
+                # the purchase credit nets the product line account (net cost).
+                if refund_account_id or tax.deductible or tax.withholdable:
+                    refund_repartition_line.account_id = refund_account_id
                 refund_repartition_line.factor_percent = (
                     -100 if tax.deductible or tax.withholdable else 100
                 )

@@ -27,6 +27,14 @@ class FiscalTax(models.Model):
             when the operation has ``deductible_taxes``.
         """
         account_taxes = self.env["account.tax"]
+        # `deductible_taxes` is company dependent, so reading it off the record
+        # as it comes answers for whatever company sits in the environment, not
+        # for the one the caller asked about. Every caller passes the company of
+        # its own document, and the answer has to follow that company: otherwise
+        # the same purchase line takes the deductible taxes or not depending on
+        # which company the user happens to have selected.
+        if fiscal_operation and company:
+            fiscal_operation = fiscal_operation.with_company(company)
         deductible_op = bool(fiscal_operation and fiscal_operation.deductible_taxes)
         for fiscal_tax in self:
             taxes = fiscal_tax._account_taxes(company)

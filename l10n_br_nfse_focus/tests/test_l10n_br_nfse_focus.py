@@ -3,6 +3,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 import os
+from collections import namedtuple
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
@@ -17,7 +18,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     MODELO_FISCAL_NFSE,
     PROCESSADOR_OCA,
     SITUACAO_EDOC_A_ENVIAR,
-    SITUACAO_EDOC_EM_DIGITACAO,
+    SITUACAO_EDOC_CANCELADA,
     SITUACAO_EDOC_ENVIADA,
     SITUACAO_EDOC_REJEITADA,
 )
@@ -28,6 +29,7 @@ from ... import l10n_br_nfse_focus
 from ..models.constants import API_ENDPOINT, NFSE_URL
 from ..models.document import Document
 from ..models.helpers import (
+    concat_lines_discriminacao,
     filter_focusnfe,
     filter_focusnfe_municipal,
     filter_focusnfe_nacional,
@@ -526,13 +528,15 @@ class TestL10nBrNfseFocus(common.TransactionCase):
             "2024-01-01T05:10:12", "%Y-%m-%dT%H:%M:%S"
         )  # Setting date in/out
 
+        document.action_document_confirm()
+
         # Testing logic for response 202
-        document._eletronic_document_send()  # Sending electronic document
+        document.action_document_send()  # Sending electronic document
         # Here you would verify if the document state was correctly updated
         # This depends on how you implemented the state update logic in your method
 
         self.assertEqual(
-            document.state,
+            document.state_edoc,
             SITUACAO_EDOC_ENVIADA,
             "The document state should be updated to sent due to error 422",
         )
@@ -540,15 +544,15 @@ class TestL10nBrNfseFocus(common.TransactionCase):
         # Testing logic for response 422
         document._eletronic_document_send()  # Sending electronic document again
         self.assertEqual(
-            document.state,
+            document.state_edoc,
             SITUACAO_EDOC_REJEITADA,
             "The document state should be 'rejected' after processing with status 422",
         )
 
         # Testing sending of the document with response 500
-        document._eletronic_document_send()  # Sending electronic document once more
+        document.action_document_send()  # Sending electronic document once more
         self.assertEqual(
-            document.state,
+            document.state_edoc,
             SITUACAO_EDOC_REJEITADA,
             "The document state should remain 'rejected' "
             "after processing with status 500",
@@ -565,7 +569,7 @@ class TestL10nBrNfseFocus(common.TransactionCase):
     def test_cron_document_status_focus(self):
         """Tests scheduled job for updating document status."""
         record = self.nfse_demo
-        record.state = "enviada"  # Setting document state to 'sent'
+        record.state_edoc = SITUACAO_EDOC_ENVIADA  # Setting document state to 'sent'
 
         with patch(
             "odoo.addons.l10n_br_nfse_focus.models.document.Document.search"
@@ -595,17 +599,28 @@ class TestL10nBrNfseFocus(common.TransactionCase):
     def test_exec_before_SITUACAO_EDOC_CANCELADA(self, mock_cancel_document_focus):
         """Tests execution before setting document status to cancelled."""
         record = self.nfse_demo
+        record.processador_edoc = PROCESSADOR_OCA
         mock_cancel_document_focus.return_value = (
             True  # Simulating successful cancellation
         )
-        result = record._exec_before_SITUACAO_EDOC_CANCELADA(
-            SITUACAO_EDOC_EM_DIGITACAO, SITUACAO_EDOC_A_ENVIAR
-        )  # Executing before status change
+        result = record._before_document_cancel()  # Executing before status change
         # Asserting cancellation was attempted
         mock_cancel_document_focus.assert_called_once()
         self.assertEqual(
             result, mock_cancel_document_focus.return_value
         )  # Asserting expected result
+
+    @patch(
+        "odoo.addons.l10n_br_nfse_focus.models.document.Document.cancel_document_focus"
+    )
+    def test_exec_before_cancelada_other_provider(self, mock_cancel_document_focus):
+        record = self.nfse_demo
+        record.company_id.provedor_nfse = False
+
+        result = record._before_document_cancel()
+
+        mock_cancel_document_focus.assert_not_called()
+        self.assertTrue(result)
 
     def test_filter_focusnfe_nacional(self):
         """Tests filtering of NFSe Nacional documents."""
@@ -714,6 +729,27 @@ class TestL10nBrNfseFocus(common.TransactionCase):
         self.assertIn("codigo_tributacao_nacional_iss", payload)
         self.assertIn("valor_servico", payload)
 
+    def test_prepare_payload_nacional_sends_desconto_incondicionado(self):
+        """Tests the unconditional discount (vDescIncond) reaches the payload.
+
+        valor_desconto_incondicionado (the line's "Discount Value") must be
+        forwarded as desconto_incondicionado, the NFS-e Nacional JSON field
+        name, or the DANFSe prints "Desconto Incondicionado: -" even when a
+        discount was entered on the invoice line.
+        """
+        nfse_nacional = self.env["focusnfe.nfse.nacional"]
+        edoc = {
+            "rps": PAYLOAD[0]["rps"],
+            "service": dict(PAYLOAD[1]["service"], valor_desconto_incondicionado=20.0),
+            "recipient": PAYLOAD[2]["recipient"],
+        }
+
+        self.company.city_id = self.env.ref("l10n_br_base.city_3550308")
+
+        payload = nfse_nacional._prepare_payload_nacional(edoc, self.company)
+
+        self.assertEqual(payload.get("desconto_incondicionado"), 20.0)
+
     def test_prepare_payload_nacional_send_im_prestador(self):
         """Tests that the provider IM is sent when the company option is enabled."""
         nfse_nacional = self.env["focusnfe.nfse.nacional"]
@@ -751,6 +787,333 @@ class TestL10nBrNfseFocus(common.TransactionCase):
 
         self.assertNotIn("inscricao_municipal_prestador", payload)
 
+    def test_prepare_payload_nacional_sends_aliquota_simples_optante(self):
+        """Tests aliquota is sent for a Simples Nacional optante provider.
+
+        percentual_aliquota_relativa_municipio must be informed when the
+        provider is optante do Simples Nacional (codigo_opcao_simples_nacional
+        == 2), matching the Sistema Nacional NFS-e requirement.
+        """
+        nfse_nacional = self.env["focusnfe.nfse.nacional"]
+        edoc = {
+            "rps": dict(PAYLOAD[0]["rps"], optante_simples_nacional="1"),
+            "service": PAYLOAD[1]["service"],
+            "recipient": PAYLOAD[2]["recipient"],
+        }
+
+        self.company.city_id = self.env.ref("l10n_br_base.city_3550308")
+
+        payload = nfse_nacional._prepare_payload_nacional(edoc, self.company)
+
+        self.assertEqual(payload.get("codigo_opcao_simples_nacional"), 2)
+        self.assertIn("percentual_aliquota_relativa_municipio", payload)
+
+    def test_prepare_payload_nacional_suppresses_aliquota_non_simples_no_special_regime(
+        self,
+    ):
+        """Tests aliquota is omitted for a non-Simples provider without special regime.
+
+        The Sistema Nacional NFS-e rejects percentual_aliquota_relativa_municipio
+        (error E0617) whenever the provider is not optante do Simples Nacional
+        (codigo_opcao_simples_nacional == 1), regardless of
+        regime_especial_tributacao, for municipalities active in the national
+        system.
+        """
+        nfse_nacional = self.env["focusnfe.nfse.nacional"]
+        edoc = {
+            "rps": dict(
+                PAYLOAD[0]["rps"],
+                optante_simples_nacional="2",
+                regime_especial_tributacao="0",
+            ),
+            "service": PAYLOAD[1]["service"],
+            "recipient": PAYLOAD[2]["recipient"],
+        }
+
+        self.company.city_id = self.env.ref("l10n_br_base.city_3550308")
+
+        payload = nfse_nacional._prepare_payload_nacional(edoc, self.company)
+
+        self.assertEqual(payload.get("codigo_opcao_simples_nacional"), 1)
+        self.assertNotIn("percentual_aliquota_relativa_municipio", payload)
+
+    def test_prepare_payload_nacional_suppresses_aliquota_special_regime(self):
+        """Tests aliquota is omitted for a non-Simples provider with special regime.
+
+        A provider that is neither optante do Simples Nacional nor free of a
+        special municipal taxation regime must not have the aliquota field
+        sent, matching the pre-existing behavior for that combination.
+        """
+        nfse_nacional = self.env["focusnfe.nfse.nacional"]
+        edoc = {
+            "rps": dict(
+                PAYLOAD[0]["rps"],
+                optante_simples_nacional="2",
+                regime_especial_tributacao="1",
+            ),
+            "service": PAYLOAD[1]["service"],
+            "recipient": PAYLOAD[2]["recipient"],
+        }
+
+        self.company.city_id = self.env.ref("l10n_br_base.city_3550308")
+
+        payload = nfse_nacional._prepare_payload_nacional(edoc, self.company)
+
+        self.assertEqual(payload.get("codigo_opcao_simples_nacional"), 1)
+        self.assertNotIn("percentual_aliquota_relativa_municipio", payload)
+
+    def test_prepare_payload_nacional_sends_finalidade_emissao(self):
+        """Tests finalidade_emissao (finNFSe) is always sent to the payload.
+
+        finNFSe is a mandatory Reforma Tributaria element; the Sistema
+        Nacional NFS-e rejects the DPS (error at the infDPS sequence level)
+        when it is missing. It must default to "0" (regular NFS-e) when the
+        RPS does not carry it, and forward the RPS value otherwise.
+        """
+        nfse_nacional = self.env["focusnfe.nfse.nacional"]
+        edoc = {
+            "rps": PAYLOAD[0]["rps"],
+            "service": PAYLOAD[1]["service"],
+            "recipient": PAYLOAD[2]["recipient"],
+        }
+
+        self.company.city_id = self.env.ref("l10n_br_base.city_3550308")
+
+        payload = nfse_nacional._prepare_payload_nacional(edoc, self.company)
+
+        self.assertEqual(payload.get("finalidade_emissao"), "0")
+
+        edoc["rps"] = dict(PAYLOAD[0]["rps"], finalidade_emissao="2")
+        payload = nfse_nacional._prepare_payload_nacional(edoc, self.company)
+
+        self.assertEqual(payload.get("finalidade_emissao"), "2")
+
+    def test_prepare_service_basic_nacional_consumidor_final_default(self):
+        """Tests consumidor_final (indFinal) defaults to "0" when absent.
+
+        indFinal is a mandatory Reforma Tributaria element; it must still
+        be sent even when the upstream service dict does not carry
+        "consumidor_final" (e.g. older callers/fixtures).
+        """
+        nfse_nacional = self.env["focusnfe.nfse.nacional"]
+
+        result = nfse_nacional._prepare_service_basic_nacional(PAYLOAD[1]["service"])
+
+        self.assertEqual(result["consumidor_final"], "0")
+
+    def test_prepare_payload_nacional_sends_consumidor_final(self):
+        """Tests consumidor_final is forwarded from the service dict."""
+        nfse_nacional = self.env["focusnfe.nfse.nacional"]
+        edoc = {
+            "rps": PAYLOAD[0]["rps"],
+            "service": dict(PAYLOAD[1]["service"], consumidor_final="1"),
+            "recipient": PAYLOAD[2]["recipient"],
+        }
+
+        self.company.city_id = self.env.ref("l10n_br_base.city_3550308")
+
+        payload = nfse_nacional._prepare_payload_nacional(edoc, self.company)
+
+        self.assertEqual(payload.get("consumidor_final"), "1")
+
+    def test_prepare_service_basic_nacional_ibs_cbs_fields(self):
+        """Tests IBS/CBS (Reforma Tributaria) fields are read from service_info.
+
+        codigo_indicador_operacao (cIndOp) and the ibs_cbs_* fields must be
+        forwarded so the NFS-e Nacional "IBSCBS/valores" XML block can be
+        built; without them the Sistema Nacional rejects the DPS for
+        missing IBSCBS children.
+        """
+        nfse_nacional = self.env["focusnfe.nfse.nacional"]
+        service_info = dict(
+            PAYLOAD[1]["service"],
+            codigo_indicador_operacao="030102",
+            ibs_cbs_classificacao_tributaria="000001",
+            ibs_cbs_situacao_tributaria="000",
+            ibs_cbs_base_calculo=91.35,
+            ibs_uf_aliquota=0.10,
+            cbs_aliquota=0.90,
+            ibs_uf_valor=0.09,
+            cbs_valor=0.82,
+        )
+
+        result = nfse_nacional._prepare_service_basic_nacional(service_info)
+
+        self.assertEqual(result["codigo_indicador_operacao"], "030102")
+        self.assertEqual(result["ibs_cbs_classificacao_tributaria"], "000001")
+        self.assertEqual(result["ibs_cbs_situacao_tributaria"], "000")
+        self.assertEqual(result["ibs_cbs_base_calculo"], 91.35)
+        self.assertEqual(result["ibs_uf_aliquota"], 0.10)
+        self.assertEqual(result["ibs_mun_aliquota"], 0.0)
+        self.assertEqual(result["cbs_aliquota"], 0.90)
+        self.assertEqual(result["ibs_uf_valor"], 0.09)
+        self.assertEqual(result["ibs_mun_valor"], 0.0)
+        self.assertEqual(result["cbs_valor"], 0.82)
+
+    def test_prepare_service_basic_nacional_ibs_cbs_aliquota_none_when_absent(self):
+        """Tests ibs_uf/cbs aliquota and valor fall back to None, not 0.0.
+
+        When the fiscal line has no IBS/CBS tax configured (ibs_percent/
+        cbs_percent falsy), Focus NFe expects the field omitted/null rather
+        than a literal zero.
+        """
+        nfse_nacional = self.env["focusnfe.nfse.nacional"]
+
+        result = nfse_nacional._prepare_service_basic_nacional(PAYLOAD[1]["service"])
+
+        self.assertIsNone(result["ibs_uf_aliquota"])
+        self.assertIsNone(result["cbs_aliquota"])
+        self.assertIsNone(result["ibs_uf_valor"])
+        self.assertIsNone(result["cbs_valor"])
+        self.assertEqual(result["ibs_mun_aliquota"], 0.0)
+        self.assertEqual(result["ibs_mun_valor"], 0.0)
+
+    def test_prepare_payload_nacional_sends_ibs_cbs_fields(self):
+        """Tests the IBS/CBS fields reach the final Nacional payload."""
+        nfse_nacional = self.env["focusnfe.nfse.nacional"]
+        edoc = {
+            "rps": PAYLOAD[0]["rps"],
+            "service": dict(
+                PAYLOAD[1]["service"],
+                codigo_indicador_operacao="030102",
+                ibs_cbs_classificacao_tributaria="000001",
+                ibs_cbs_situacao_tributaria="000",
+                ibs_cbs_base_calculo=91.35,
+                ibs_uf_aliquota=0.10,
+                cbs_aliquota=0.90,
+                ibs_uf_valor=0.09,
+                cbs_valor=0.82,
+            ),
+            "recipient": PAYLOAD[2]["recipient"],
+        }
+
+        self.company.city_id = self.env.ref("l10n_br_base.city_3550308")
+
+        payload = nfse_nacional._prepare_payload_nacional(edoc, self.company)
+
+        self.assertEqual(payload.get("codigo_indicador_operacao"), "030102")
+        self.assertEqual(payload.get("ibs_cbs_classificacao_tributaria"), "000001")
+        self.assertEqual(payload.get("ibs_cbs_situacao_tributaria"), "000")
+        self.assertEqual(payload.get("ibs_cbs_base_calculo"), 91.35)
+        self.assertEqual(payload.get("ibs_uf_aliquota"), 0.10)
+        self.assertEqual(payload.get("ibs_mun_aliquota"), 0.0)
+        self.assertEqual(payload.get("cbs_aliquota"), 0.90)
+        self.assertEqual(payload.get("ibs_uf_valor"), 0.09)
+        self.assertEqual(payload.get("ibs_mun_valor"), 0.0)
+        self.assertEqual(payload.get("cbs_valor"), 0.82)
+
+    def test_prepare_service_basic_nacional_tipo_retencao_iss_override(self):
+        """Tests that tipo_retencao_iss is forced to '1' for tributacao_iss 2/3/4.
+
+        Even when iss_retido indicates retention, exigibilidade codes 2, 3 and 4
+        (isento/imune/exportacao) must never report ISS as retido.
+        """
+        nfse_nacional = self.env["focusnfe.nfse.nacional"]
+        service_info = dict(
+            PAYLOAD[1]["service"], iss_retido="1", codigo_tributacao_iss=2
+        )
+
+        result = nfse_nacional._prepare_service_basic_nacional(service_info)
+
+        self.assertEqual(result["tipo_retencao_iss"], 1)
+
+    def test_prepare_tax_data_nacional_situacao_isenta_zeroes_base(self):
+        """Tests that base_calculo_pis_cofins is zeroed for isenta/imune situations."""
+        nfse_nacional = self.env["focusnfe.nfse.nacional"]
+        service_info = {
+            "situacao_tributaria_pis": "00",
+            "base_calculo_pis": 100.0,
+        }
+
+        result = nfse_nacional._prepare_tax_data_nacional(service_info, 100.0)
+
+        self.assertEqual(result["base_calculo_pis_cofins"], 0.0)
+
+    def test_prepare_tax_data_nacional_situacao_tributada_uses_valor_servico(self):
+        """Tests that a taxable situation with no base falls back to valor_servico."""
+        nfse_nacional = self.env["focusnfe.nfse.nacional"]
+        service_info = {"situacao_tributaria_pis": "01"}
+
+        result = nfse_nacional._prepare_tax_data_nacional(service_info, 150.0)
+
+        self.assertEqual(result["base_calculo_pis_cofins"], 150.0)
+
+    def test_prepare_tax_data_nacional_aliquota_calculation(self):
+        """Tests aliquota_pis/cofins are computed from valor and base when present."""
+        nfse_nacional = self.env["focusnfe.nfse.nacional"]
+        service_info = {
+            "base_calculo_pis": 100.0,
+            "valor_pis": 1.5,
+            "valor_cofins": 3.0,
+        }
+
+        result = nfse_nacional._prepare_tax_data_nacional(service_info, 100.0)
+
+        self.assertEqual(result["aliquota_pis"], "1.50")
+        self.assertEqual(result["aliquota_cofins"], "3.00")
+
+    def test_compute_tipo_retencao_pis_cofins_nt007_codes(self):
+        """Tests the NT 007 tpRetPisCofins code for every retention combination.
+
+        Legacy codes "1" and "2" must never be returned; only "0" and
+        "3"-"9" are valid for NFSe Nacional after NT 007.
+        """
+        nfse_nacional = self.env["focusnfe.nfse.nacional"]
+        compute = nfse_nacional._compute_tipo_retencao_pis_cofins
+
+        self.assertEqual(compute(False, False, False), "0")
+        self.assertEqual(compute(True, False, False), "5")
+        self.assertEqual(compute(False, True, False), "6")
+        self.assertEqual(compute(False, False, True), "8")
+        self.assertEqual(compute(True, True, False), "4")
+        self.assertEqual(compute(True, False, True), "9")
+        self.assertEqual(compute(False, True, True), "7")
+        self.assertEqual(compute(True, True, True), "3")
+
+    def test_prepare_tax_data_nacional_no_retention_uses_code_zero(self):
+        """Tests that no retention maps to code "0", not the legacy code "2"."""
+        nfse_nacional = self.env["focusnfe.nfse.nacional"]
+        service_info = {
+            "valor_pis": 2.48,
+            "valor_cofins": 11.4,
+            "valor_pis_retido": 0,
+            "valor_cofins_retido": 0,
+            "valor_csll_retido": 0,
+        }
+
+        result = nfse_nacional._prepare_tax_data_nacional(service_info, 150.0)
+
+        self.assertEqual(result["tipo_retencao_pis_cofins"], "0")
+        self.assertEqual(result["valor_csll"], 0.0)
+
+    def test_prepare_tax_data_nacional_full_retention_uses_code_three(self):
+        """Tests that PIS+COFINS+CSLL retention maps to code "3".
+
+        valor_csll must carry the sum of the three retained amounts,
+        as required by NT 007.
+        """
+        nfse_nacional = self.env["focusnfe.nfse.nacional"]
+        service_info = {
+            "valor_pis_retido": 2.60,
+            "valor_cofins_retido": 12.0,
+            "valor_csll_retido": 4.0,
+        }
+
+        result = nfse_nacional._prepare_tax_data_nacional(service_info, 150.0)
+
+        self.assertEqual(result["tipo_retencao_pis_cofins"], "3")
+        self.assertEqual(result["valor_csll"], 18.6)
+
+    def test_prepare_tax_data_nacional_pis_only_retention_uses_code_five(self):
+        """Tests that PIS-only retention maps to code "5"."""
+        nfse_nacional = self.env["focusnfe.nfse.nacional"]
+        service_info = {"valor_pis_retido": 1.0}
+
+        result = nfse_nacional._prepare_tax_data_nacional(service_info, 150.0)
+
+        self.assertEqual(result["tipo_retencao_pis_cofins"], "5")
+        self.assertEqual(result["valor_csll"], 1.0)
+
     @patch(
         "odoo.addons.l10n_br_nfse_focus.models.nfse_nacional.FocusnfeNfseNacional.process_focus_nfse_nacional_document"  # noqa: B950
     )
@@ -773,9 +1136,11 @@ class TestL10nBrNfseFocus(common.TransactionCase):
             "2024-01-01T05:10:12", "%Y-%m-%dT%H:%M:%S"
         )
 
-        document._eletronic_document_send()
+        document.action_document_confirm()
 
-        self.assertEqual(document.state, SITUACAO_EDOC_ENVIADA)
+        document.action_document_send()
+
+        self.assertEqual(document.state_edoc, SITUACAO_EDOC_ENVIADA)
         mock_process.assert_called_once()
 
     @patch(
@@ -798,7 +1163,9 @@ class TestL10nBrNfseFocus(common.TransactionCase):
         document.document_type_id.code = MODELO_FISCAL_NFSE
         document.company_id.provedor_nfse = "focusnfe"
         document.company_id.focusnfe_nfse_type = "nfse_nacional"
-        document.state = "enviada"
+        document.state_edoc = SITUACAO_EDOC_ENVIADA
+        document.document_date = datetime.now()
+        document.date_in_out = datetime.now()
 
         with patch(
             "odoo.addons.l10n_br_nfse_focus.models.document.requests.get"
@@ -988,7 +1355,7 @@ class TestL10nBrNfseFocus(common.TransactionCase):
         document.company_id.provedor_nfse = "focusnfe"
         document.company_id.focusnfe_nfse_type = "nfse_nacional"
         document.company_id.focusnfe_nfse_force_odoo_danfse = False
-        document.state = "enviada"
+        document.state_edoc = SITUACAO_EDOC_ENVIADA
         document.nfse_environment = "1"
         json_data = {
             "status": "autorizado",
@@ -1013,8 +1380,8 @@ class TestL10nBrNfseFocus(common.TransactionCase):
         document.authorization_event_id = auth_event
 
         with patch(
-            "odoo.addons.l10n_br_fiscal_edi.models.document_workflow.DocumentWorkflow._change_state"
-        ) as mock_change_state:
+            "odoo.addons.l10n_br_fiscal_edi.models.document.Document._trigger_fsm"
+        ) as mock_trigger_fsm:
             with patch(
                 "odoo.addons.l10n_br_nfse_focus.models.document.Document.make_focus_nfse_pdf"
             ) as mock_make_pdf:
@@ -1031,7 +1398,7 @@ class TestL10nBrNfseFocus(common.TransactionCase):
                             json_data,
                         )
 
-                    mock_change_state.assert_called_once()
+                    mock_trigger_fsm.assert_called_once_with("action_authorize")
                     mock_make_pdf.assert_called_once()
                     mock_set_done.assert_called_once()
 
@@ -1058,7 +1425,7 @@ class TestL10nBrNfseFocus(common.TransactionCase):
         document.company_id.provedor_nfse = "focusnfe"
         document.company_id.focusnfe_nfse_type = "nfse"
         document.company_id.focusnfe_nfse_force_odoo_danfse = False
-        document.state = "enviada"
+        document.state_edoc = SITUACAO_EDOC_ENVIADA
         document.nfse_environment = "1"
         json_data = {
             "status": "autorizado",
@@ -1083,8 +1450,8 @@ class TestL10nBrNfseFocus(common.TransactionCase):
         document.authorization_event_id = auth_event
 
         with patch(
-            "odoo.addons.l10n_br_fiscal_edi.models.document_workflow.DocumentWorkflow._change_state"
-        ) as mock_change_state:
+            "odoo.addons.l10n_br_fiscal_edi.models.document.Document._trigger_fsm"
+        ) as mock_trigger_fsm:
             with patch(
                 "odoo.addons.l10n_br_nfse_focus.models.document.Document.make_focus_nfse_pdf"
             ) as mock_make_pdf:
@@ -1094,7 +1461,7 @@ class TestL10nBrNfseFocus(common.TransactionCase):
                     mock_get.return_value.content = b"%PDF-test%%EOF"
                     document._process_authorized_status_municipal(document, json_data)
 
-                    mock_change_state.assert_called_once()
+                    mock_trigger_fsm.assert_called_once_with("action_authorize")
                     mock_make_pdf.assert_called_once()
                     mock_set_done.assert_called_once()
 
@@ -1104,12 +1471,12 @@ class TestL10nBrNfseFocus(common.TransactionCase):
         json_data = {"erros": [{"mensagem": "Error message"}]}
 
         with patch(
-            "odoo.addons.l10n_br_fiscal_edi.models.document_workflow.DocumentWorkflow._change_state"
-        ) as mock_change_state:
+            "odoo.addons.l10n_br_fiscal_edi.models.document.Document._trigger_fsm"
+        ) as mock_trigger_fsm:
             document._process_error_status(document, json_data)
 
             self.assertEqual(document.edoc_error_message, "Error message")
-            mock_change_state.assert_called_once()
+            mock_trigger_fsm.assert_called_once_with("action_reject")
 
     def test_process_error_status_no_errors(self):
         """Tests processing error status without errors list."""
@@ -1117,11 +1484,11 @@ class TestL10nBrNfseFocus(common.TransactionCase):
         json_data = {}
 
         with patch(
-            "odoo.addons.l10n_br_fiscal_edi.models.document_workflow.DocumentWorkflow._change_state"
-        ) as mock_change_state:
+            "odoo.addons.l10n_br_fiscal_edi.models.document.Document._trigger_fsm"
+        ) as mock_trigger_fsm:
             document._process_error_status(document, json_data)
 
-            mock_change_state.assert_called_once()
+            mock_trigger_fsm.assert_called_once_with("action_reject")
 
     @patch("odoo.addons.l10n_br_nfse_focus.models.document.requests.get")
     def test_create_cancel_event(self, mock_get):
@@ -1313,6 +1680,73 @@ class TestL10nBrNfseFocus(common.TransactionCase):
                     mock_service.assert_called_once()
                     mock_recipient.assert_called_once()
 
+    def test_concat_lines_discriminacao_helper(self):
+        """Tests the pure helper that concatenates fiscal line descriptions."""
+        SimpleLine = namedtuple("SimpleLine", ["name", "product_id"])
+        lines = [
+            SimpleLine(name="Linha 1", product_id=True),
+            SimpleLine(name="Linha 2", product_id=True),
+            SimpleLine(name="Sem produto", product_id=False),
+            SimpleLine(name="", product_id=True),
+        ]
+
+        result = concat_lines_discriminacao(lines)
+
+        self.assertEqual(result, "Linha 1\nLinha 2")
+
+    def test_concat_lines_discriminacao_helper_truncates(self):
+        """Tests that the helper truncates the result to max_length."""
+        SimpleLine = namedtuple("SimpleLine", ["name", "product_id"])
+        lines = [SimpleLine(name="A" * 3000, product_id=True)]
+
+        result = concat_lines_discriminacao(lines, max_length=2000)
+
+        self.assertEqual(len(result), 2000)
+
+    def test_serialize_nacional_concat_lines_discriminacao_enabled(self):
+        """Tests discriminacao concatenation when the company flag is enabled."""
+        document = self.nfse_demo
+        document.processador_edoc = PROCESSADOR_OCA
+        document.document_type_id.code = MODELO_FISCAL_NFSE
+        document.company_id.provedor_nfse = "focusnfe"
+        document.company_id.focusnfe_nfse_type = "nfse_nacional"
+        document.company_id.focusnfe_nfse_nacional_concat_lines_discriminacao = True
+        document.document_date = datetime.now()
+        document.date_in_out = datetime.now()
+
+        first_line = document.fiscal_line_ids[0]
+        first_line.name = "Linha 1 descricao"
+        first_line.copy({"name": "Linha 2 descricao"})
+
+        edocs = document._serialize([])
+
+        self.assertEqual(
+            edocs[-1]["service"]["discriminacao"],
+            "Linha 1 descricao\nLinha 2 descricao",
+        )
+
+    def test_serialize_nacional_concat_lines_discriminacao_disabled(self):
+        """Tests discriminacao keeps only the first line when the flag is disabled."""
+        document = self.nfse_demo
+        document.processador_edoc = PROCESSADOR_OCA
+        document.document_type_id.code = MODELO_FISCAL_NFSE
+        document.company_id.provedor_nfse = "focusnfe"
+        document.company_id.focusnfe_nfse_type = "nfse_nacional"
+        document.company_id.focusnfe_nfse_nacional_concat_lines_discriminacao = False
+        document.document_date = datetime.now()
+        document.date_in_out = datetime.now()
+
+        first_line = document.fiscal_line_ids[0]
+        first_line.name = "Linha 1 descricao"
+        first_line.copy({"name": "Linha 2 descricao"})
+
+        edocs = document._serialize([])
+
+        self.assertEqual(
+            edocs[-1]["service"]["discriminacao"],
+            "Linha 1 descricao",
+        )
+
     def test_serialize_municipal(self):
         """Tests serialization for NFSe Municipal."""
         document = self.nfse_demo
@@ -1361,14 +1795,14 @@ class TestL10nBrNfseFocus(common.TransactionCase):
         document.document_type_id.code = MODELO_FISCAL_NFSE
         document.company_id.provedor_nfse = "focusnfe"
         document.company_id.focusnfe_nfse_type = "nfse_nacional"
-        document.state = "enviada"
+        document.state_edoc = SITUACAO_EDOC_ENVIADA
 
         with patch(
             "odoo.addons.l10n_br_nfse_focus.models.document.Document._process_authorized_status_nacional"  # noqa: B950
         ) as mock_process:
             with patch("odoo.addons.l10n_br_nfse_focus.models.document.requests.get"):
                 with patch(
-                    "odoo.addons.l10n_br_fiscal_edi.models.document_workflow.DocumentWorkflow._change_state"
+                    "odoo.addons.l10n_br_fiscal_edi.models.document.Document._change_state"
                 ):
                     result = document._process_status_nacional(document)
 
@@ -1393,21 +1827,20 @@ class TestL10nBrNfseFocus(common.TransactionCase):
         document.document_type_id.code = MODELO_FISCAL_NFSE
         document.company_id.provedor_nfse = "focusnfe"
         document.company_id.focusnfe_nfse_type = "nfse_nacional"
-        document.state = "enviada"
+        document.state_edoc = SITUACAO_EDOC_ENVIADA
 
         with patch(
-            "odoo.addons.l10n_br_nfse_focus.models.document.Document._process_error_status"
+            "odoo.addons.l10n_br_nfse_focus.models.document"
+            ".Document._process_error_status"
         ) as mock_process:
-            with patch(
-                "odoo.addons.l10n_br_fiscal_edi.models.document_workflow.DocumentWorkflow._change_state"
-            ):
-                result = document._process_status_nacional(document)
+            result = document._process_status_nacional(document)
 
-                self.assertIn("erro_autorizacao", result)
-                mock_process.assert_called_once()
+            self.assertIn("erro_autorizacao", result)
+            mock_process.assert_called_once()
 
     @patch(
-        "odoo.addons.l10n_br_nfse_focus.models.nfse_nacional.FocusnfeNfseNacional.query_focus_nfse_nacional_by_ref"  # noqa: B950
+        "odoo.addons.l10n_br_nfse_focus.models.nfse_nacional"
+        ".FocusnfeNfseNacional.query_focus_nfse_nacional_by_ref"
     )
     def test_process_status_nacional_cancelado(self, mock_query):
         """Tests process status nacional with cancelado status."""
@@ -1421,19 +1854,26 @@ class TestL10nBrNfseFocus(common.TransactionCase):
         document.document_type_id.code = MODELO_FISCAL_NFSE
         document.company_id.provedor_nfse = "focusnfe"
         document.company_id.focusnfe_nfse_type = "nfse_nacional"
-        document.state = "enviada"
+        document.state_edoc = SITUACAO_EDOC_ENVIADA
         document.cancel_reason = "Teste"
 
+        # Only the provider call is mocked: the document must actually be
+        # cancelled locally (regression: calling action_document_cancel()
+        # here just returned the wizard action and left the state untouched).
         with patch(
-            "odoo.addons.l10n_br_fiscal_edi.models.document_workflow.DocumentWorkflow._document_cancel"
+            "odoo.addons.l10n_br_nfse_focus.models.document.Document"
+            ".cancel_document_focus",
+            return_value=True,
         ) as mock_cancel:
             result = document._process_status_nacional(document)
 
             self.assertIn("cancelado", result)
             mock_cancel.assert_called_once()
+        self.assertEqual(document.state_edoc, SITUACAO_EDOC_CANCELADA)
 
     @patch(
-        "odoo.addons.l10n_br_nfse_focus.models.nfse_municipal.FocusnfeNfse.query_focus_nfse_by_rps"  # noqa: B950
+        "odoo.addons.l10n_br_nfse_focus.models.nfse_municipal"
+        ".FocusnfeNfse.query_focus_nfse_by_rps"
     )
     def test_process_status_municipal_autorizado(self, mock_query):
         """Tests process status municipal with autorizado status."""
@@ -1452,14 +1892,15 @@ class TestL10nBrNfseFocus(common.TransactionCase):
         document.document_type_id.code = MODELO_FISCAL_NFSE
         document.company_id.provedor_nfse = "focusnfe"
         document.company_id.focusnfe_nfse_type = "nfse"
-        document.state = "enviada"
+        document.state_edoc = SITUACAO_EDOC_ENVIADA
 
         with patch(
-            "odoo.addons.l10n_br_nfse_focus.models.document.Document._process_authorized_status_municipal"  # noqa: B950
+            "odoo.addons.l10n_br_nfse_focus.models.document"
+            ".Document._process_authorized_status_municipal"
         ) as mock_process:
             with patch("odoo.addons.l10n_br_nfse_focus.models.document.requests.get"):
                 with patch(
-                    "odoo.addons.l10n_br_fiscal_edi.models.document_workflow.DocumentWorkflow._change_state"
+                    "odoo.addons.l10n_br_fiscal_edi.models.document.Document._change_state"
                 ):
                     result = document._process_status_municipal(document)
 
@@ -1467,7 +1908,8 @@ class TestL10nBrNfseFocus(common.TransactionCase):
                     mock_process.assert_called_once()
 
     @patch(
-        "odoo.addons.l10n_br_nfse_focus.models.nfse_municipal.FocusnfeNfse.query_focus_nfse_by_rps"  # noqa: B950
+        "odoo.addons.l10n_br_nfse_focus.models.nfse_municipal"
+        ".FocusnfeNfse.query_focus_nfse_by_rps"
     )
     def test_process_status_municipal_erro(self, mock_query):
         """Tests process status municipal with erro status."""
@@ -1484,18 +1926,19 @@ class TestL10nBrNfseFocus(common.TransactionCase):
         document.document_type_id.code = MODELO_FISCAL_NFSE
         document.company_id.provedor_nfse = "focusnfe"
         document.company_id.focusnfe_nfse_type = "nfse"
-        document.state = "enviada"
+        document.state_edoc = SITUACAO_EDOC_ENVIADA
 
         with patch(
-            "odoo.addons.l10n_br_fiscal_edi.models.document_workflow.DocumentWorkflow._change_state"
-        ) as mock_change_state:
+            "odoo.addons.l10n_br_fiscal_edi.models.document.Document._trigger_fsm"
+        ) as mock_trigger_fsm:
             result = document._process_status_municipal(document)
 
             self.assertIn("erro_autorizacao", result)
-            mock_change_state.assert_called_once()
+            mock_trigger_fsm.assert_called_once_with("action_reject")
 
     @patch(
-        "odoo.addons.l10n_br_nfse_focus.models.nfse_nacional.FocusnfeNfseNacional.process_focus_nfse_nacional_document"  # noqa: B950
+        "odoo.addons.l10n_br_nfse_focus.models.nfse_nacional"
+        ".FocusnfeNfseNacional.process_focus_nfse_nacional_document"
     )
     def test_process_send_nacional_422_autorizada(self, mock_process):
         """Tests process send nacional with 422 and autorizada code."""
@@ -1509,7 +1952,7 @@ class TestL10nBrNfseFocus(common.TransactionCase):
         document.document_type_id.code = MODELO_FISCAL_NFSE
         document.company_id.provedor_nfse = "focusnfe"
         document.company_id.focusnfe_nfse_type = "nfse_nacional"
-        document.state = "enviada"
+        document.state_edoc = SITUACAO_EDOC_ENVIADA
         document.document_date = datetime.now()
         document.date_in_out = datetime.now()
 
@@ -1517,14 +1960,15 @@ class TestL10nBrNfseFocus(common.TransactionCase):
             "odoo.addons.l10n_br_nfse_focus.models.document.Document._document_status"
         ) as mock_status:
             with patch(
-                "odoo.addons.l10n_br_fiscal_edi.models.document_workflow.DocumentWorkflow._change_state"
+                "odoo.addons.l10n_br_fiscal_edi.models.document.Document._trigger_fsm"
             ):
                 document._process_send_nacional(document)
 
                 mock_status.assert_called_once()
 
     @patch(
-        "odoo.addons.l10n_br_nfse_focus.models.nfse_municipal.FocusnfeNfse.process_focus_nfse_document"  # noqa: B950
+        "odoo.addons.l10n_br_nfse_focus.models.nfse_municipal"
+        ".FocusnfeNfse.process_focus_nfse_document"
     )
     def test_process_send_municipal_422_autorizada(self, mock_process):
         """Tests process send municipal with 422 and autorizada code."""
@@ -1538,7 +1982,7 @@ class TestL10nBrNfseFocus(common.TransactionCase):
         document.document_type_id.code = MODELO_FISCAL_NFSE
         document.company_id.provedor_nfse = "focusnfe"
         document.company_id.focusnfe_nfse_type = "nfse"
-        document.state = "enviada"
+        document.state_edoc = SITUACAO_EDOC_ENVIADA
         document.document_date = datetime.now()
         document.date_in_out = datetime.now()
 
@@ -1546,17 +1990,19 @@ class TestL10nBrNfseFocus(common.TransactionCase):
             "odoo.addons.l10n_br_nfse_focus.models.document.Document._document_status"
         ) as mock_status:
             with patch(
-                "odoo.addons.l10n_br_fiscal_edi.models.document_workflow.DocumentWorkflow._change_state"
+                "odoo.addons.l10n_br_fiscal_edi.models.document.Document._trigger_fsm"
             ):
                 document._process_send_municipal(document)
 
                 mock_status.assert_called_once()
 
     @patch(
-        "odoo.addons.l10n_br_nfse_focus.models.nfse_nacional.FocusnfeNfseNacional.query_focus_nfse_nacional_by_ref"  # noqa: B950
+        "odoo.addons.l10n_br_nfse_focus.models.nfse_nacional"
+        ".FocusnfeNfseNacional.query_focus_nfse_nacional_by_ref"
     )
     @patch(
-        "odoo.addons.l10n_br_nfse_focus.models.nfse_nacional.FocusnfeNfseNacional.cancel_focus_nfse_nacional_document"  # noqa: B950
+        "odoo.addons.l10n_br_nfse_focus.models.nfse_nacional"
+        ".FocusnfeNfseNacional.cancel_focus_nfse_nacional_document"
     )
     def test_process_cancel_base_already_cancelled(self, mock_cancel, mock_query):
         """Tests process cancel base when already cancelled."""

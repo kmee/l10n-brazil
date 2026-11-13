@@ -6,6 +6,11 @@ from odoo import api, fields
 
 from odoo.addons.spec_driven_model.models import spec_models
 
+from ..constants.nfse_nacional import (
+    PRESTADOR_SELF_EMITTED_EXCLUDED,
+    PROVEDOR_NFSE_NACIONAL,
+)
+
 
 class ResCompany(spec_models.SpecModel):
     _name = "res.company"
@@ -16,6 +21,10 @@ class ResCompany(spec_models.SpecModel):
     ]
 
     _nfse10_binding_type = "TcinfoPrestador"
+
+    provedor_nfse = fields.Selection(
+        selection_add=[(PROVEDOR_NFSE_NACIONAL, "Sefin Nacional (ADN)")],
+    )
 
     nfse10_CNPJ = fields.Char(related="partner_id.nfse10_CNPJ")
     nfse10_CPF = fields.Char(related="partner_id.nfse10_CPF")
@@ -46,6 +55,11 @@ class ResCompany(spec_models.SpecModel):
                 rec.nfse10_opSimpNac = "1"  # Não optante
                 rec.nfse10_regApTribSN = False
                 rec.nfse10_regEspTrib = "0"
+
+    def _export_fields_res_company(self, xsd_fields, class_obj, export_dict):
+        for field_name in PRESTADOR_SELF_EMITTED_EXCLUDED:
+            if field_name in xsd_fields:
+                xsd_fields.remove(field_name)
 
     def _export_many2one(self, field_name, xsd_required, class_obj=None):
         if field_name == "nfse10_regTrib":

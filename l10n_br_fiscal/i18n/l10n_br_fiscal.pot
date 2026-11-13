@@ -40,10 +40,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_origin__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__icms_origin__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__icms_origin__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__icms_origin__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__icms_origin__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__icms_origin__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__icms_origin__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_origin__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__icms_origin__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__icms_origin__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__icms_origin__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_origin__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__icms_origin__0
@@ -131,10 +134,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_origin__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__icms_origin__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__icms_origin__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__icms_origin__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__icms_origin__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__icms_origin__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__icms_origin__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_origin__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__icms_origin__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__icms_origin__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__icms_origin__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_origin__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__icms_origin__1
@@ -219,10 +225,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_origin__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__icms_origin__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__icms_origin__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__icms_origin__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__icms_origin__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__icms_origin__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__icms_origin__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_origin__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__icms_origin__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__icms_origin__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__icms_origin__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_origin__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__icms_origin__2
@@ -256,10 +265,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_origin__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__icms_origin__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__icms_origin__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__icms_origin__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__icms_origin__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__icms_origin__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__icms_origin__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_origin__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__icms_origin__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__icms_origin__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__icms_origin__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_origin__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__icms_origin__3
@@ -293,10 +305,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_origin__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__icms_origin__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__icms_origin__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__icms_origin__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__icms_origin__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__icms_origin__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__icms_origin__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_origin__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__icms_origin__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__icms_origin__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__icms_origin__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_origin__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__icms_origin__4
@@ -322,10 +337,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_origin__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__icms_origin__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__icms_origin__5
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__icms_origin__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__icms_origin__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__icms_origin__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__icms_origin__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_origin__5
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__icms_origin__5
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__icms_origin__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__icms_origin__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_origin__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__icms_origin__5
@@ -340,10 +358,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_origin__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__icms_origin__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__icms_origin__6
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__icms_origin__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__icms_origin__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__icms_origin__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__icms_origin__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_origin__6
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__icms_origin__6
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__icms_origin__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__icms_origin__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_origin__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__icms_origin__6
@@ -358,10 +379,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_origin__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__icms_origin__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__icms_origin__7
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__icms_origin__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__icms_origin__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__icms_origin__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__icms_origin__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_origin__7
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__icms_origin__7
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__icms_origin__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__icms_origin__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_origin__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__icms_origin__7
@@ -376,10 +400,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_origin__8
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__icms_origin__8
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__icms_origin__8
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__icms_origin__8
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__icms_origin__8
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__icms_origin__8
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__icms_origin__8
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_origin__8
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__icms_origin__8
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__icms_origin__8
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__icms_origin__8
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_origin__8
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__icms_origin__8
@@ -415,6 +442,16 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.operation_dashboard_kanban
 msgid "<span>Novo Documento</span>"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_form
+msgid "<strong>Authorized</strong>"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_form
+msgid "<strong>Cancelled</strong>"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -826,16 +863,6 @@ msgid "Advanced Taxes"
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__state_edoc__a_enviar
-msgid "Aguardando envio"
-msgstr ""
-
-#. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__state_edoc__enviada
-msgid "Aguardando processamento"
-msgstr ""
-
-#. module: l10n_br_fiscal
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__edoc_purpose__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation__edoc_purpose__3
 msgid "Ajuste"
@@ -967,6 +994,20 @@ msgid "Andresses"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.fiscal_res_company_form
+msgid "Annex"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_res_company__simplified_tax_id
+msgid ""
+"Annex of the Simples Nacional of the main activity of the company, found "
+"from its main CNAE and, for the services the R factor moves between the "
+"Annex III and the Annex V, from its R factor. It applies to the operations "
+"whose CFOP does not tell their annex, such as services."
+msgstr ""
+
+#. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_company__annual_revenue
 msgid "Annual Revenue"
 msgstr ""
@@ -1022,10 +1063,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__08
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__08
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__fiscal_type__08
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__fiscal_type__08
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__fiscal_type__08
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__08
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__fiscal_type__08
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__08
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__fiscal_type__08
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__fiscal_type__08
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__fiscal_type__08
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__08
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__fiscal_type__08
@@ -1047,11 +1091,6 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_cest__segment__01
 msgid "Autopeças"
-msgstr ""
-
-#. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__state_edoc__autorizada
-msgid "Autorizada"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -1350,6 +1389,7 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__cofins_percent
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__cofins_percent
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_simplified_tax__tax_cofins_percent
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.simplified_tax_range_tree
 msgid "COFINS %"
 msgstr ""
@@ -1500,6 +1540,7 @@ msgid "CPF"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_simplified_tax__tax_cpp_percent
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.simplified_tax_range_tree
 msgid "CPP %"
 msgstr ""
@@ -1515,6 +1556,7 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__csll_percent
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__csll_percent
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_simplified_tax__tax_csll_percent
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.simplified_tax_range_tree
 msgid "CSLL %"
 msgstr ""
@@ -1739,13 +1781,9 @@ msgid ""
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_form
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_import_wizard_form
 msgid "Cancel"
-msgstr ""
-
-#. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__state_edoc__cancelada
-msgid "Cancelada"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -1764,18 +1802,9 @@ msgid "Cancelados"
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_form
-msgid "Cancelar"
-msgstr ""
-
-#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__state_edoc__cancelada
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_search
 msgid "Cancelled"
-msgstr ""
-
-#. module: l10n_br_fiscal
-#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_form
-msgid "Carta de correção"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -1988,6 +2017,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order__issuer__company
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order__issuer__company
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__issuer__company
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_order__issuer__company
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order__issuer__company
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order__issuer__company
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_picking__issuer__company
@@ -2047,6 +2077,10 @@ msgstr ""
 
 #. module: l10n_br_fiscal
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_form
+msgid "Confirm"
+msgstr ""
+
+#. module: l10n_br_fiscal
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.invalidate_number_form
 msgid "Confirmar"
 msgstr ""
@@ -2167,6 +2201,11 @@ msgid "Create new products."
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard__allow_product_creation
+msgid "Create unmapped products"
+msgstr ""
+
+#. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_cest__create_uid
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_cfop__create_uid
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_city_taxation_code__create_uid
@@ -2274,6 +2313,7 @@ msgstr ""
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__currency_id
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard__currency_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__currency_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__currency_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_mixin__currency_id
@@ -2281,6 +2321,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_simplified_tax_range__currency_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_tax__currency_id
 msgid "Currency"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.fiscal_res_company_form
+msgid "Current Effective Taxes for Simples Nacional"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -2482,11 +2527,6 @@ msgid "Delivery Costs"
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__state_edoc__denegada
-msgid "Denegada"
-msgstr ""
-
-#. module: l10n_br_fiscal
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__state_fiscal__04
 msgid "Denegado"
 msgstr ""
@@ -2549,6 +2589,11 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_form
 msgid "Devolver"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_operation_indicator__document_type_ids
+msgid "Digital Fiscal Documents that accept this indicator"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -2702,6 +2747,11 @@ msgid "Document Supplement Data"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard__amount_total
+msgid "Document Total"
+msgstr ""
+
+#. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_base_wizard_mixin__document_type_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__document_type_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard__document_type_id
@@ -2741,6 +2791,7 @@ msgstr ""
 #. module: l10n_br_fiscal
 #. odoo-python
 #: code:addons/l10n_br_fiscal/models/invalidate_number.py:0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__state_edoc__em_digitacao
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_invalidate_number__state__draft
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation__state__draft
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__state__draft
@@ -2771,11 +2822,21 @@ msgid "EMBALAGEM"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_company__simplified_tax_ids
+msgid "Effective Taxes"
+msgstr ""
+
+#. module: l10n_br_fiscal
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard__date_in_out
 msgid ""
 "Effective incoming/outgoing date of the goods (DT_E_S in the SPED "
 "bookkeeping). Defaults to today; adjust it when the physical receipt "
 "happened on another date."
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_simplified_tax__current_effective_tax
+msgid "Effective tax rate of the annex for the company, in its range."
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -2786,20 +2847,18 @@ msgid "Electronic?"
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__state_edoc__em_digitacao
-msgid "Em digitação"
-msgstr ""
-
-#. module: l10n_br_fiscal
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__fiscal_type__02
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__fiscal_type__02
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__02
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__02
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__fiscal_type__02
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__fiscal_type__02
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__fiscal_type__02
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__02
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__fiscal_type__02
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__02
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__fiscal_type__02
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__fiscal_type__02
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__fiscal_type__02
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__02
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__fiscal_type__02
@@ -2909,9 +2968,12 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__issqn_eligibility__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__issqn_eligibility__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__issqn_eligibility__6
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__issqn_eligibility__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__issqn_eligibility__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__issqn_eligibility__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__issqn_eligibility__6
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__issqn_eligibility__6
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__issqn_eligibility__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__issqn_eligibility__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__issqn_eligibility__6
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__issqn_eligibility__6
@@ -2923,9 +2985,12 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__issqn_eligibility__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__issqn_eligibility__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__issqn_eligibility__7
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__issqn_eligibility__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__issqn_eligibility__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__issqn_eligibility__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__issqn_eligibility__7
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__issqn_eligibility__7
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__issqn_eligibility__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__issqn_eligibility__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__issqn_eligibility__7
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__issqn_eligibility__7
@@ -2937,9 +3002,12 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__issqn_eligibility__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__issqn_eligibility__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__issqn_eligibility__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__issqn_eligibility__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__issqn_eligibility__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__issqn_eligibility__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__issqn_eligibility__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__issqn_eligibility__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__issqn_eligibility__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__issqn_eligibility__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__issqn_eligibility__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__issqn_eligibility__1
@@ -2976,9 +3044,12 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__issqn_eligibility__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__issqn_eligibility__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__issqn_eligibility__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__issqn_eligibility__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__issqn_eligibility__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__issqn_eligibility__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__issqn_eligibility__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__issqn_eligibility__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__issqn_eligibility__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__issqn_eligibility__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__issqn_eligibility__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__issqn_eligibility__4
@@ -3059,6 +3130,11 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__transport_modal__04
 msgid "Ferroviário"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard__file_name
+msgid "File Name"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -3453,6 +3529,15 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__pis_base_type__fixed
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__pis_wh_base_type__fixed
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__pisst_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__cbs_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__cofins_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__cofins_wh_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__cofinsst_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__ibs_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__ipi_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__pis_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__pis_wh_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__pisst_base_type__fixed
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__cbs_base_type__fixed
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__cofins_base_type__fixed
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__cofins_wh_base_type__fixed
@@ -3480,6 +3565,24 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__pis_base_type__fixed
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__pis_wh_base_type__fixed
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__pisst_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__cbs_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__cofins_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__cofins_wh_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__cofinsst_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__ibs_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__ipi_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__pis_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__pis_wh_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__pisst_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__cbs_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__cofins_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__cofins_wh_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__cofinsst_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__ibs_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__ipi_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__pis_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__pis_wh_base_type__fixed
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__pisst_base_type__fixed
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__cbs_base_type__fixed
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__cofins_base_type__fixed
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__cofins_wh_base_type__fixed
@@ -3597,6 +3700,16 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__price_gross
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__price_gross
 msgid "Gross Product/Service Amount"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_res_company__annual_revenue
+msgid ""
+"Gross revenue accumulated over the 12 months before the current assessment "
+"period (RBT12). Under the Simples Nacional it sets the range of each annex, "
+"hence the effective tax rates and the ICMS credit rate stated on the "
+"invoices, which is the one of the range the company was in the month before "
+"the operation (LC 123/2006, art. 18 and art. 23)."
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -3763,10 +3876,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_type__type__icms
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__tax_icms_or_issqn__icms
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__tax_icms_or_issqn__icms
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__tax_icms_or_issqn__icms
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__tax_icms_or_issqn__icms
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__tax_icms_or_issqn__icms
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__tax_icms_or_issqn__icms
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__tax_icms_or_issqn__icms
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__tax_icms_or_issqn__icms
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__tax_icms_or_issqn__icms
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__tax_icms_or_issqn__icms
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__tax_icms_or_issqn__icms
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__tax_icms_or_issqn__icms
@@ -3780,6 +3896,7 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__icms_percent
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__icms_percent
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_simplified_tax__tax_icms_percent
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.simplified_tax_range_tree
 msgid "ICMS %"
 msgstr ""
@@ -4981,6 +5098,7 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__ipi_percent
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__ipi_percent
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_simplified_tax__tax_ipi_percent
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.simplified_tax_range_tree
 msgid "IPI %"
 msgstr ""
@@ -5074,6 +5192,7 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__irpj_percent
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__irpj_percent
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_simplified_tax__tax_irpj_percent
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.simplified_tax_range_tree
 msgid "IRPJ %"
 msgstr ""
@@ -5147,6 +5266,7 @@ msgid "IS"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_simplified_tax__tax_iss_percent
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.simplified_tax_range_tree
 msgid "ISS %"
 msgstr ""
@@ -5164,10 +5284,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__tax_icms_or_issqn__issqn
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax_group__tax_domain__issqn
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__tax_icms_or_issqn__issqn
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__tax_icms_or_issqn__issqn
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__tax_icms_or_issqn__issqn
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__tax_icms_or_issqn__issqn
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__tax_icms_or_issqn__issqn
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__tax_icms_or_issqn__issqn
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__tax_icms_or_issqn__issqn
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__tax_icms_or_issqn__issqn
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__tax_icms_or_issqn__issqn
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__tax_icms_or_issqn__issqn
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__tax_icms_or_issqn__issqn
@@ -5355,6 +5478,15 @@ msgid "If checked, some messages have a delivery error."
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard__allow_product_creation
+msgid ""
+"If enabled, products that don't match an existing record will be "
+"automatically created during import. If disabled (default), the import will "
+"raise an error when an unmapped product is found so you can map it in the "
+"product lines above before importing."
+msgstr ""
+
+#. module: l10n_br_fiscal
 #: model:ir.model.fields,help:l10n_br_fiscal.field_res_company__is_industry
 msgid "If your company is industry or ......"
 msgstr ""
@@ -5427,9 +5559,12 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__issqn_eligibility__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax_ipi_guideline__cst_group__imunidade
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__issqn_eligibility__5
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__issqn_eligibility__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__issqn_eligibility__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__issqn_eligibility__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__issqn_eligibility__5
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__issqn_eligibility__5
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__issqn_eligibility__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__issqn_eligibility__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__issqn_eligibility__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__issqn_eligibility__5
@@ -5641,9 +5776,12 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__issqn_eligibility__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax_ipi_guideline__cst_group__isencao
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__issqn_eligibility__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__issqn_eligibility__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__issqn_eligibility__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__issqn_eligibility__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__issqn_eligibility__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__issqn_eligibility__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__issqn_eligibility__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__issqn_eligibility__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__issqn_eligibility__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__issqn_eligibility__3
@@ -5863,6 +6001,11 @@ msgid "Last Updated on"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_operation_indicator__legal_basis
+msgid "Legal Basis"
+msgstr ""
+
+#. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__partner_legal_name
 msgid "Legal Name"
 msgstr ""
@@ -5888,9 +6031,12 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icmsst_base_type__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax__icmsst_base_type__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__icmsst_base_type__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__icmsst_base_type__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__icmsst_base_type__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__icmsst_base_type__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icmsst_base_type__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__icmsst_base_type__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__icmsst_base_type__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__icmsst_base_type__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icmsst_base_type__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__icmsst_base_type__1
@@ -5903,9 +6049,12 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icmsst_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax__icmsst_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__icmsst_base_type__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__icmsst_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__icmsst_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__icmsst_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icmsst_base_type__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__icmsst_base_type__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__icmsst_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__icmsst_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icmsst_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__icmsst_base_type__3
@@ -5918,9 +6067,12 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icmsst_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax__icmsst_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__icmsst_base_type__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__icmsst_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__icmsst_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__icmsst_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icmsst_base_type__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__icmsst_base_type__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__icmsst_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__icmsst_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icmsst_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__icmsst_base_type__2
@@ -5960,6 +6112,16 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model:uom.uom,name:l10n_br_fiscal.UOM_MWH
 msgid "MWH"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_company__simplified_tax_id
+msgid "Main Activity Annex"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_company__simplified_tax_range_id
+msgid "Main Activity Range"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -6019,12 +6181,18 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax__icmsst_base_type__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__icms_base_type__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__icmsst_base_type__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__icms_base_type__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__icmsst_base_type__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__icms_base_type__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__icmsst_base_type__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__icms_base_type__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__icmsst_base_type__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_base_type__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icmsst_base_type__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__icms_base_type__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__icmsst_base_type__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__icms_base_type__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__icmsst_base_type__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__icms_base_type__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__icmsst_base_type__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_base_type__0
@@ -6055,10 +6223,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__07
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__07
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__fiscal_type__07
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__fiscal_type__07
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__fiscal_type__07
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__07
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__fiscal_type__07
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__07
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__fiscal_type__07
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__fiscal_type__07
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__fiscal_type__07
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__07
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__fiscal_type__07
@@ -6071,10 +6242,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__01
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__01
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__fiscal_type__01
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__fiscal_type__01
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__fiscal_type__01
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__01
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__fiscal_type__01
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__01
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__fiscal_type__01
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__fiscal_type__01
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__fiscal_type__01
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__01
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__fiscal_type__01
@@ -6104,10 +6278,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__00
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__00
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__fiscal_type__00
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__fiscal_type__00
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__fiscal_type__00
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__00
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__fiscal_type__00
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__00
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__fiscal_type__00
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__fiscal_type__00
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__fiscal_type__00
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__00
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__fiscal_type__00
@@ -6310,6 +6487,7 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model:ir.actions.act_window,name:l10n_br_fiscal.nfe_document_action
 #: model:ir.ui.menu,name:l10n_br_fiscal.document_nfe_menu
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.operation_indicator_search
 msgid "NF-e"
 msgstr ""
 
@@ -6330,6 +6508,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order__ind_pres__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order__ind_pres__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__ind_pres__4
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_order__ind_pres__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order__ind_pres__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order__ind_pres__4
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_picking__ind_pres__4
@@ -6340,7 +6519,13 @@ msgstr ""
 #: model:ir.actions.act_window,name:l10n_br_fiscal.nfse_document_action
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_config_settings__module_l10n_br_nfse
 #: model:ir.ui.menu,name:l10n_br_fiscal.document_nfse_menu
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.operation_indicator_search
 msgid "NFS-e"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_operation_indicator__nfse_incidence_location
+msgid "NFS-e IBS Incidence Location"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -6396,18 +6581,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_tax_pis_cofins_base__name
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_tax_pis_cofins_credit__name
 msgid "Name"
-msgstr ""
-
-#. module: l10n_br_fiscal
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__simple_value
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__simple_value
-msgid "National Simple Taxes"
-msgstr ""
-
-#. module: l10n_br_fiscal
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__simple_without_icms_value
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__simple_without_icms_value
-msgid "National Simple Taxes without ICMS"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -6553,6 +6726,12 @@ msgid "Nota de Débito"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_operation_indicator__note
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.operation_indicator_form
+msgid "Note"
+msgstr ""
+
+#. module: l10n_br_fiscal
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.operation_form
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.partner_profile_form
 msgid "Notes"
@@ -6635,6 +6814,8 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_mixin__ind_final__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax_definition__ind_final__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__issqn_incentive__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__ind_final__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__issqn_incentive__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order__ind_final__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__ind_final__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__issqn_incentive__2
@@ -6644,6 +6825,11 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__ind_final__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__ind_final__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__issqn_incentive__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__ind_final__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__issqn_incentive__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__ind_final__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__issqn_incentive__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_order__ind_final__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__res_partner__ind_final__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order__ind_final__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__ind_final__0
@@ -6667,9 +6853,12 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__issqn_eligibility__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__issqn_eligibility__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__issqn_eligibility__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__issqn_eligibility__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__issqn_eligibility__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__issqn_eligibility__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__issqn_eligibility__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__issqn_eligibility__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__issqn_eligibility__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__issqn_eligibility__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__issqn_eligibility__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__issqn_eligibility__2
@@ -6683,6 +6872,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order__ind_pres__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order__ind_pres__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__ind_pres__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_order__ind_pres__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order__ind_pres__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order__ind_pres__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_picking__ind_pres__2
@@ -6696,6 +6886,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order__ind_pres__9
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order__ind_pres__9
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__ind_pres__9
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_order__ind_pres__9
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order__ind_pres__9
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order__ind_pres__9
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_picking__ind_pres__9
@@ -6709,6 +6900,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order__ind_pres__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order__ind_pres__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__ind_pres__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_order__ind_pres__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order__ind_pres__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order__ind_pres__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_picking__ind_pres__3
@@ -6722,6 +6914,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order__ind_pres__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order__ind_pres__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__ind_pres__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_order__ind_pres__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order__ind_pres__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order__ind_pres__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_picking__ind_pres__0
@@ -6752,6 +6945,11 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model_terms:ir.actions.act_window,help:l10n_br_fiscal.partner_action
 msgid "Odoo helps you easily track all activities related to a partner."
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__state_edoc__a_enviar
+msgid "Open"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -6850,8 +7048,8 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_operation_indicator__code
 msgid ""
-"Operation indicator code according to Annex VII of NT 004/2025 (e.g., "
-"020101, 030101)"
+"Operation indicator code according to Annex VII of the NFS-e (e.g., 020101, "
+"030101)"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -6881,6 +7079,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order__ind_pres__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order__ind_pres__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__ind_pres__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_order__ind_pres__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order__ind_pres__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order__ind_pres__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_picking__ind_pres__1
@@ -6894,6 +7093,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order__ind_pres__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order__ind_pres__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__ind_pres__5
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_order__ind_pres__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order__ind_pres__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order__ind_pres__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_picking__ind_pres__5
@@ -6964,10 +7164,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__99
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__99
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__fiscal_type__99
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__fiscal_type__99
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__fiscal_type__99
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__99
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__fiscal_type__99
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__99
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__fiscal_type__99
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__fiscal_type__99
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__fiscal_type__99
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__99
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__fiscal_type__99
@@ -6987,10 +7190,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__10
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__10
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__fiscal_type__10
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__fiscal_type__10
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__fiscal_type__10
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__10
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__fiscal_type__10
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__10
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__fiscal_type__10
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__fiscal_type__10
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__fiscal_type__10
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__10
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__fiscal_type__10
@@ -7027,6 +7233,7 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__pis_percent
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__pis_percent
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_simplified_tax__tax_pis_percent
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.simplified_tax_range_tree
 msgid "PIS %"
 msgstr ""
@@ -7233,6 +7440,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order__issuer__partner
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order__issuer__partner
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__issuer__partner
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_order__issuer__partner
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order__issuer__partner
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order__issuer__partner
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_picking__issuer__partner
@@ -7294,12 +7502,18 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax__icmsst_base_type__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__icms_base_type__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__icmsst_base_type__5
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__icms_base_type__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__icmsst_base_type__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__icms_base_type__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__icmsst_base_type__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__icms_base_type__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__icmsst_base_type__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_base_type__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icmsst_base_type__5
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__icms_base_type__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__icmsst_base_type__5
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__icms_base_type__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__icmsst_base_type__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__icms_base_type__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__icmsst_base_type__5
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_base_type__1
@@ -7350,6 +7564,15 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__pis_base_type__percent
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__pis_wh_base_type__percent
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__pisst_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__cbs_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__cofins_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__cofins_wh_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__cofinsst_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__ibs_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__ipi_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__pis_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__pis_wh_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__pisst_base_type__percent
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__cbs_base_type__percent
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__cofins_base_type__percent
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__cofins_wh_base_type__percent
@@ -7377,6 +7600,24 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__pis_base_type__percent
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__pis_wh_base_type__percent
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__pisst_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__cbs_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__cofins_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__cofins_wh_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__cofinsst_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__ibs_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__ipi_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__pis_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__pis_wh_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__pisst_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__cbs_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__cofins_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__cofins_wh_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__cofinsst_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__ibs_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__ipi_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__pis_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__pis_wh_base_type__percent
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__pisst_base_type__percent
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__cbs_base_type__percent
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__cofins_base_type__percent
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__cofins_wh_base_type__percent
@@ -7475,9 +7716,12 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax__icms_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__icms_base_type__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__icms_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__icms_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__icms_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_base_type__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__icms_base_type__2
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__icms_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__icms_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_base_type__2
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__icms_base_type__2
@@ -7490,9 +7734,12 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icmsst_base_type__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax__icmsst_base_type__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__icmsst_base_type__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__icmsst_base_type__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__icmsst_base_type__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__icmsst_base_type__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icmsst_base_type__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__icmsst_base_type__0
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__icmsst_base_type__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__icmsst_base_type__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icmsst_base_type__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__icmsst_base_type__0
@@ -7621,10 +7868,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__04
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__04
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__fiscal_type__04
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__fiscal_type__04
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__fiscal_type__04
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__04
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__fiscal_type__04
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__04
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__fiscal_type__04
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__fiscal_type__04
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__fiscal_type__04
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__04
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__fiscal_type__04
@@ -7637,10 +7887,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__06
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__06
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__fiscal_type__06
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__fiscal_type__06
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__fiscal_type__06
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__06
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__fiscal_type__06
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__06
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__fiscal_type__06
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__fiscal_type__06
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__fiscal_type__06
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__06
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__fiscal_type__06
@@ -7653,10 +7906,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__03
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__03
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__fiscal_type__03
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__fiscal_type__03
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__fiscal_type__03
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__03
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__fiscal_type__03
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__03
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__fiscal_type__03
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__fiscal_type__03
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__fiscal_type__03
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__03
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__fiscal_type__03
@@ -7686,6 +7942,13 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_company__profit_calculation
 msgid "Profit Calculation"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_operation_indicator__legal_basis
+msgid ""
+"Provision of Complementary Law No. 214/2025 that defines the place of the "
+"operation"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -7799,6 +8062,15 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__pis_base_type__quantity
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__pis_wh_base_type__quantity
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__pisst_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__cbs_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__cofins_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__cofins_wh_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__cofinsst_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__ibs_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__ipi_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__pis_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__pis_wh_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__pisst_base_type__quantity
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__cbs_base_type__quantity
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__cofins_base_type__quantity
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__cofins_wh_base_type__quantity
@@ -7826,6 +8098,24 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__pis_base_type__quantity
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__pis_wh_base_type__quantity
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__pisst_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__cbs_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__cofins_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__cofins_wh_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__cofinsst_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__ibs_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__ipi_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__pis_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__pis_wh_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__pisst_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__cbs_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__cofins_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__cofins_wh_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__cofinsst_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__ibs_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__ipi_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__pis_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__pis_wh_base_type__quantity
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__pisst_base_type__quantity
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__cbs_base_type__quantity
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__cofins_base_type__quantity
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__cofins_wh_base_type__quantity
@@ -7881,6 +8171,33 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__rps_number
 msgid "RPS Number"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_simplified_tax__current_range_id
+msgid "Range"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__icmssn_range_id
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__icmssn_range_id
+msgid ""
+"Range of the Simples Nacional annex that taxes the operation, the one the "
+"company was in when the taxes of the line were computed."
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_res_company__simplified_tax_range_id
+msgid ""
+"Range of the annex of the main activity the company currently falls into, "
+"given its gross revenue of the last 12 months."
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_simplified_tax__current_range_id
+msgid ""
+"Range of the annex the company falls into, given its gross revenue of the "
+"last 12 months."
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -7948,21 +8265,12 @@ msgid "Regular extemporâneo"
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_search
-msgid "Rejected"
-msgstr ""
-
-#. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__state_edoc__rejeitada
-msgid "Rejeitada"
-msgstr ""
-
-#. module: l10n_br_fiscal
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.ncm_form
 msgid "Related CEST"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_operation_indicator__document_type_ids
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_tax_classification__document_type_ids
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.tax_classification_tree
 msgid "Related DFes"
@@ -8267,14 +8575,22 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__09
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__09
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__fiscal_type__09
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__fiscal_type__09
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__fiscal_type__09
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__09
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__fiscal_type__09
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__09
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__fiscal_type__09
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__fiscal_type__09
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__fiscal_type__09
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__09
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__fiscal_type__09
 msgid "Serviços"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_form
+msgid "Set to Draft"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -8305,6 +8621,8 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_mixin__ind_final__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax_definition__ind_final__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__issqn_incentive__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__ind_final__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__issqn_incentive__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order__ind_final__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__ind_final__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__issqn_incentive__1
@@ -8314,6 +8632,11 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order__ind_final__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__ind_final__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__issqn_incentive__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__ind_final__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__issqn_incentive__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__ind_final__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__issqn_incentive__1
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_order__ind_final__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__res_partner__ind_final__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order__ind_final__1
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__ind_final__1
@@ -8334,6 +8657,13 @@ msgid "Simples Nacional"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_res_company__simplified_tax_ids
+msgid ""
+"Simples Nacional effective tax rate for each annex, based on the range the "
+"company currently falls into."
+msgstr ""
+
+#. module: l10n_br_fiscal
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.simplified_tax_form
 msgid "Simplified Range"
 msgstr ""
@@ -8347,20 +8677,13 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model:ir.actions.act_window,name:l10n_br_fiscal.simplified_tax_action
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_simplified_tax_range__simplified_tax_id
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_company__simplified_tax_id
 #: model:ir.ui.menu,name:l10n_br_fiscal.simplified_tax_menu
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.simplified_tax_form
 msgid "Simplified Tax"
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_company__simplified_tax_percent
-msgid "Simplified Tax Percent"
-msgstr ""
-
-#. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_simplified_tax__simplified_tax_range_ids
-#: model:ir.model.fields,field_description:l10n_br_fiscal.field_res_company__simplified_tax_range_id
 msgid "Simplified Tax Range"
 msgstr ""
 
@@ -8514,10 +8837,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__fiscal_type__05
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_operation_line__product_type__05
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__fiscal_type__05
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__fiscal_type__05
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__fiscal_type__05
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__product_template__fiscal_type__05
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__fiscal_type__05
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__fiscal_type__05
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__fiscal_type__05
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__fiscal_type__05
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__fiscal_type__05
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__fiscal_type__05
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__fiscal_type__05
@@ -9097,6 +9423,11 @@ msgid "Tax Percent"
 msgstr ""
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_simplified_tax__current_effective_tax
+msgid "Tax Rate %"
+msgstr ""
+
+#. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_service_type__withholding_at_place
 msgid "Tax Retention at place of provision"
 msgstr ""
@@ -9329,11 +9660,6 @@ msgstr ""
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__edoc_refund_debit_type
 msgid "Tipo de Nota de Débito"
-msgstr ""
-
-#. module: l10n_br_fiscal
-#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_search
-msgid "To Send"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -9597,9 +9923,12 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_tax__icms_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_pos_product_fiscal_map__icms_base_type__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_repair_fiscal_line_mixin__icms_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__pos_order_line__icms_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_blanket_order_line__icms_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__purchase_order_line__icms_base_type__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_fee__icms_base_type__3
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__repair_line__icms_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_blanket_order_line__icms_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__sale_order_line__icms_base_type__3
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__icms_base_type__3
@@ -9650,21 +9979,6 @@ msgid "View"
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_form
-msgid "Visualizar PDF"
-msgstr ""
-
-#. module: l10n_br_fiscal
-#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_form
-msgid "Visualizar XML"
-msgstr ""
-
-#. module: l10n_br_fiscal
-#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_form
-msgid "Voltar p/ Em Digitação"
-msgstr ""
-
-#. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_tax_group__partner_id
 msgid "WH Partner"
 msgstr ""
@@ -9706,6 +10020,11 @@ msgstr ""
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_service_type__website_message_ids
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_tax_definition__website_message_ids
 msgid "Website communication history"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_operation_indicator__nfse_incidence_location
+msgid "Where the IBS is due in the NFS-e for this indicator"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -9881,25 +10200,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_status_wizard__state__init
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_invalidate_number_wizard__state__init
 msgid "init"
-msgstr ""
-
-#. module: l10n_br_fiscal
-#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_form
-msgid "is"
-msgstr ""
-
-#. module: l10n_br_fiscal
-#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_form
-msgid ""
-"is\n"
-"                <strong>Authorized</strong>"
-msgstr ""
-
-#. module: l10n_br_fiscal
-#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_form
-msgid ""
-"is\n"
-"                <strong>Cancelled</strong>"
 msgstr ""
 
 #. module: l10n_br_fiscal

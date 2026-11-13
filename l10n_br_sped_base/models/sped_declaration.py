@@ -161,12 +161,9 @@ class SpedDeclaration(models.AbstractModel):
         log_msg.write(f"<h3>{_('Pulled from Odoo')}</h3>")
         kind = self._get_kind()
 
-        # The declaration record IS the 0000: apply its own mapping first,
-        # otherwise only the children get pulled and the header goes out
-        # blank (COD_VER, TIPO_ESCRIT, the company identification), which the
-        # validator refuses at the door. The import path fills these from the
-        # file; this is its pull-side mirror. Only empty fields are written,
-        # so whatever the user typed on the form wins.
+        # The declaration record IS the 0000: without its own mapping the header
+        # goes out blank and the validator refuses the file. Only empty fields are
+        # written, so what the user typed wins.
         if hasattr(self, "_map_from_odoo"):
             header_record = self.company_id
             if self._odoo_model and self._odoo_model != "res.company":
@@ -175,11 +172,7 @@ class SpedDeclaration(models.AbstractModel):
                 )
             vals = self._map_from_odoo(header_record, None, self)
             self.write(
-                {
-                    field: value
-                    for field, value in vals.items()
-                    if not self[field]
-                }
+                {field: value for field, value in vals.items() if not self[field]}
             )
         mixin_env = self.env["l10n_br_sped.mixin"].with_context(
             company_id=self.company_id.id,
@@ -233,7 +226,11 @@ class SpedDeclaration(models.AbstractModel):
         blocos = defaultdict(list)
         current_bloco = None
         for line in sped_txt.splitlines():
-            if line.startswith(("|0", "|9")):
+            # A register line is "|REG|...". Anything else is skipped: block
+            # 0/9 summary lines, and fragments left by a field value that
+            # contained a line break. This also guarantees the split can never
+            # crash on a corrupted line.
+            if not line.startswith("|") or len(line) < 2 or line[1] in "09":
                 continue
             current_bloco = line[1]
             if current_bloco:
@@ -288,8 +285,8 @@ class SpedDeclaration(models.AbstractModel):
             E.button(
                 name="button_populate_sped_from_odoo",
                 type="object",
-                attrs="{'invisible': [('state', '!=', 'draft')]}",
-                string="Pull Registers from Odoo",
+                states="draft",
+                string=_("Pull Registers from Odoo"),
                 #            class="oe_highlight",
                 groups="l10n_br_fiscal.group_manager",
             )
@@ -298,8 +295,8 @@ class SpedDeclaration(models.AbstractModel):
             E.button(
                 name="button_flush_registers",
                 type="object",
-                attrs="{'invisible': [('state', '!=', 'draft')]}",
-                string="Flush Registers",
+                states="draft",
+                string=_("Flush Registers"),
                 #            class="oe_highlight",
                 groups="l10n_br_fiscal.group_manager",
             )
@@ -308,8 +305,8 @@ class SpedDeclaration(models.AbstractModel):
             E.button(
                 name="button_done",
                 type="object",
-                attrs="{'invisible': [('state', '!=', 'draft')]}",
-                string="Set to Done",
+                states="draft",
+                string=_("Set to Done"),
                 #            class="oe_highlight",
                 groups="l10n_br_fiscal.group_manager",
             )
@@ -318,8 +315,8 @@ class SpedDeclaration(models.AbstractModel):
             E.button(
                 name="button_draft",
                 type="object",
-                attrs="{'invisible': [('state', '!=', 'done')]}",
-                string="Reset to Draft",
+                states="done",
+                string=_("Reset to Draft"),
                 #            class="oe_highlight",
                 groups="l10n_br_fiscal.group_manager",
             )
@@ -328,8 +325,8 @@ class SpedDeclaration(models.AbstractModel):
             E.button(
                 name="button_create_sped_files",
                 type="object",
-                attrs="{'invisible': [('state', '!=', 'done')]}",
-                string="Generate SPED File",
+                states="done",
+                string=_("Generate SPED File"),
                 #            class="oe_highlight",
                 groups="l10n_br_fiscal.group_manager",
             )

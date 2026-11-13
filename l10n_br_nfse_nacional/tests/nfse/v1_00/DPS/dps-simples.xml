@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<DPS xmlns="http://www.sped.fazenda.gov.br/nfse">
+<DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
   <infDPS Id="DPS140015920176113500013200900000000000000006">
     <tpAmb>2</tpAmb>
     <dhEmi>2022-09-28T13:50:29-03:00</dhEmi>
@@ -8,10 +8,10 @@
     <nDPS>6</nDPS>
     <dCompet>2022-09-28</dCompet>
     <tpEmit>1</tpEmit>
-    <cLocEmi>1400159</cLocEmi>
+    <finNFSe>0</finNFSe>
+    <cLocEmi>3501152</cLocEmi>
     <prest>
-      <CNPJ>01761135000132</CNPJ>
-      <IM>01761135000132</IM>
+      <CNPJ>59594315000157</CNPJ>
       <regTrib>
         <opSimpNac>3</opSimpNac>
         <regApTribSN>1</regApTribSN>
@@ -24,8 +24,7 @@
       </locPrest>
       <cServ>
         <cTribNac>010101</cTribNac>
-        <xDescServ
-                >teste teste teste teste teste teste teste teste teste teste teste</xDescServ>
+        <xDescServ>Consultoria em tecnologia da informação</xDescServ>
       </cServ>
     </serv>
     <valores>
@@ -41,8 +40,14 @@
           <tribISSQN>1</tribISSQN>
           <tpRetISSQN>1</tpRetISSQN>
         </tribMun>
+        <tribFed>
+          <piscofins>
+            <CST>00</CST>
+            <tpRetPisCofins>2</tpRetPisCofins>
+          </piscofins>
+        </tribFed>
         <totTrib>
-          <pTotTribSN>0.01</pTotTribSN>
+          <pTotTribSN>11.20</pTotTribSN>
         </totTrib>
       </trib>
     </valores>

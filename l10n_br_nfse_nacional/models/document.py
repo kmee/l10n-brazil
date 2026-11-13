@@ -1,13 +1,23 @@
+# Copyright 2026 Akretion - Raphaël Valyi <raphael.valyi@akretion.com>
+# Copyright 2026 KMEE INFORMATICA LTDA
+# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
 import base64
 import gzip
+import logging
 import os
 import re
 import tempfile
 
+import pytz
 from nfelib import CommonMixin
-from nfelib.nfse.bindings.v1_0.dps_v1_00 import Dps
-from nfelib.nfse.bindings.v1_0.ped_reg_evento_v1_00 import PedRegEvento
-from nfelib.nfse.bindings.v1_0.tipos_eventos_v1_00 import (
+from nfelib.nfse.bindings.v1_0.dps_v1_01 import Dps
+from nfelib.nfse.bindings.v1_0.ped_reg_evento_v1_01 import PedRegEvento
+from nfelib.nfse.bindings.v1_0.tipos_complexos_v1_01 import (
+    TcrtcinfoTribIbscbs,
+    TcrtcinfoValoresIbscbs,
+)
+from nfelib.nfse.bindings.v1_0.tipos_eventos_v1_01 import (
     TcinfPedReg,
     Te101101,
     Te101101XDesc,
@@ -18,21 +28,36 @@ from odoo import _, api, fields
 from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
+    DOCUMENT_ISSUER_COMPANY,
     EVENT_ENV_HML,
     EVENT_ENV_PROD,
     MODELO_FISCAL_NFSE,
+    PROCESSADOR_OCA,
     SITUACAO_EDOC_AUTORIZADA,
+    SITUACAO_EDOC_CANCELADA,
     SITUACAO_EDOC_REJEITADA,
 )
 from odoo.addons.spec_driven_model.models import spec_models
 
-from ..constants.nfse_nacional import ADN_BASE_URL, NFSE_NACIONAL_CANCEL_EVENT
+from ..constants.nfse_nacional import (
+    ADN_BASE_URL,
+    DANFSE_NACIONAL_TEMPLATE,
+    NFSE_NACIONAL_CANCEL_EVENT,
+    NFSE_NACIONAL_CANCEL_OFICIO_EVENT,
+    PROVEDOR_NFSE_NACIONAL,
+)
 from ..transport.adn_rest import AdnRestClient
+
+BRAZIL_TZ = pytz.timezone("America/Sao_Paulo")
+
+_logger = logging.getLogger(__name__)
 
 
 def filter_nfse_nacional(record):
     return (
-        record.document_type_id and record.document_type_id.code == MODELO_FISCAL_NFSE
+        record.processador_edoc == PROCESSADOR_OCA
+        and record.document_type_id.code == MODELO_FISCAL_NFSE
+        and record.company_id.provedor_nfse == PROVEDOR_NFSE_NACIONAL
     )
 
 
@@ -46,11 +71,11 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
     ]
 
     _nfse10_odoo_module = (
-        "odoo.addons.l10n_br_nfse_spec.models.v1_0.tipos_complexos_v1_00"
+        "odoo.addons.l10n_br_nfse_spec.models.v1_0.tipos_complexos_v1_01"
     )
-    _nfse10_binding_module = "nfelib.nfse.bindings.v1_0.tipos_complexos_v1_00"
+    _nfse10_binding_module = "nfelib.nfse.bindings.v1_0.tipos_complexos_v1_01"
     _nfse10_binding_type = "TcinfDps"  # Tcdps"
-    #    _nfse10_binding_module = "nfelib.nfse.bindings.v1_0.dps_v1_00"
+    #    _nfse10_binding_module = "nfelib.nfse.bindings.v1_0.dps_v1_01"
     #    _nfse10_binding_type = "Dps" #Tcdps"
 
     nfse10_infDPS = fields.Many2one(
@@ -58,17 +83,21 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
     )
 
     nfse10_Id = fields.Char(compute="_compute_nfse10_id")
-    nfse10_tpAmb = fields.Selection(related="company_id.nfse_environment")
+    nfse10_tpAmb = fields.Selection(related="nfse_environment")
     nfse10_dhEmi = fields.Char(compute="_compute_nfse10_dates")
     nfse10_verAplic = fields.Char(default="Odoo OCA")
     nfse10_serie = fields.Char(related="document_serie")
     nfse10_nDPS = fields.Char(related="document_number")
     nfse10_dCompet = fields.Char(compute="_compute_nfse10_dates")
     nfse10_tpEmit = fields.Selection(default="1")
+    # Leiaute 1.04.01 (NT 009) moved finNFSe from the IBSCBS group to infDPS,
+    # where it is mandatory. The schema only allows "0" (regular NFS-e): a
+    # substitution is declared by its own subst group.
+    nfse10_finNFSe = fields.Selection(default="0")
     nfse10_cLocEmi = fields.Char(related="company_id.partner_id.city_id.ibge_code")
 
     nfse10_prest = fields.Many2one("res.company", related="company_id")
-    nfse10_toma = fields.Many2one("res.partner", related="partner_id")
+    nfse10_toma = fields.Many2one("res.partner", compute="_compute_nfse10_toma")
     nfse10_interm = fields.Many2one("res.partner")
 
     nfse10_serv = fields.Many2one(
@@ -89,6 +118,13 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
         for rec in self:
             rec.nfse10_infDPS = rec.id
 
+    @api.depends("partner_id.cnpj_cpf_stripped", "partner_id.nfse10_cNaoNIF")
+    def _compute_nfse10_toma(self):
+        for rec in self:
+            partner = rec.partner_id
+            identified = partner.cnpj_cpf_stripped or partner.nfse10_cNaoNIF
+            rec.nfse10_toma = partner.id if identified else False
+
     @api.depends("document_key")
     def _compute_nfse10_id(self):
         for rec in self:
@@ -98,9 +134,9 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
     def _compute_nfse10_dates(self):
         for rec in self:
             if rec.document_date:
-                # Timezone offset applied for standard spec mapping
-                rec.nfse10_dhEmi = rec.document_date.strftime("%Y-%m-%dT%H:%M:%S-03:00")
-                rec.nfse10_dCompet = rec.document_date.strftime("%Y-%m-%d")
+                local_dt = pytz.utc.localize(rec.document_date).astimezone(BRAZIL_TZ)
+                rec.nfse10_dhEmi = local_dt.isoformat(timespec="seconds")
+                rec.nfse10_dCompet = local_dt.strftime("%Y-%m-%d")
             else:
                 rec.nfse10_dhEmi = False
                 rec.nfse10_dCompet = False
@@ -122,6 +158,99 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
             )
         return super()._export_many2one(field_name, xsd_required, class_obj)
 
+    ##########################
+    # NFS-e tag: IBSCBS
+    # Inverse Methods
+    ##########################
+
+    def _nfse_ibscbs_line(self):
+        """Return the line the DPS IBSCBS group is built from.
+
+        A DPS declares a single servico, so the RTC data of the group comes
+        from the first line, the same one already exported for the serv and
+        valores groups.
+        """
+        self.ensure_one()
+        return self.fiscal_line_ids[:1]
+
+    def _nfse_export_ibscbs(self):
+        """Return True when the DPS must carry the RTC IBSCBS group.
+
+        Like the NF-e IBSCBS group, the DPS one (leiaute 1.01) is exported as
+        soon as the line carries the RTC data: the cClassTrib classification
+        plus the CST and the cIndOp operation indicator, both mandatory in the
+        group. The cIndOp is read from the line, which is where the user
+        informs it (from the product or from the line view), like the other
+        NFS-e layouts do.
+
+        A line carrying the cClassTrib but missing one of the two other data
+        would produce an invalid group. A DPS without the IBSCBS group is a
+        valid 1.01 document, so the group is skipped rather than blocking the
+        emission, but the reason is logged: nothing else tells the user why
+        the group left the DPS.
+        """
+        self.ensure_one()
+        line = self._nfse_ibscbs_line()
+        if not line.tax_classification_id:
+            # No RTC data: the document keeps the legacy 1.00 shape.
+            return False
+        missing = [
+            label
+            for value, label in (
+                (line.operation_indicator_id, "cIndOp"),
+                (line.ibs_cst_id or line.cbs_cst_id, "CST"),
+            )
+            if not value
+        ]
+        if not missing:
+            return True
+        _logger.warning(
+            "NFS-e %s: line %s carries the RTC classification %s but no %s, "
+            "so the DPS is exported without the IBSCBS group.",
+            self.display_name,
+            line.display_name,
+            line.tax_classification_id.code,
+            " and no ".join(missing),
+        )
+        return False
+
+    def _export_tag_nfse_10_ibscbs(self, xsd_fields, class_obj, export_dict):
+        """Export the IBSCBS group declared in the DPS (leiaute 1.04.01, RTC).
+
+        Dispatched by spec_driven_model through the per tag hooks while
+        exporting the nfse10_IBSCBS field of the nfse.10.tcinfdps class: its
+        comodel is the reusable nfse.10.tcrtcinfoibscbs type, so the class
+        name dispatch would not match the IBSCBS tag name. The nested group is
+        built here instead of relying on self stacking fields because the
+        valores and trib tags of the DPS (nfse.10.tcinfovalores and
+        nfse.10.tcinfotributacao) already hold those field names on the
+        document.
+
+        The classification (CST and cClassTrib) and the operation indicator
+        (cIndOp) come from the line, exactly like the NF-e IBSCBS group; the
+        amounts of the group are declared by the Sefin in the NFS-e, not in
+        the DPS. Leiaute 1.04.01 (NT 009) keeps CST and cClassTrib directly
+        under valores/trib: the gIBSCBS group below them only carries the
+        credit presumption, regular taxation and deferred amounts.
+        """
+        if not self._nfse_export_ibscbs():
+            return
+        line = self._nfse_ibscbs_line()
+        # indDest = "0" (the recipient is the tomador identified in the
+        # NFS-e) comes with the dest group, which is not exported yet: it
+        # stays a constant instead of a new document field holding a single
+        # possible value for the documents this module emits.
+        export_dict.update(
+            cIndOp=line.operation_indicator_id.code,
+            indDest="0",
+            valores=TcrtcinfoValoresIbscbs(
+                trib=TcrtcinfoTribIbscbs(
+                    CST=line.ibs_cst_id.code or line.cbs_cst_id.code,
+                    cClassTrib=line.tax_classification_id.code,
+                )
+            ),
+        )
+
     def import_binding_nfse(self, binding, edoc_type="in", dry_run=False):
         if hasattr(binding, "DPS"):
             binding = binding.DPS
@@ -140,13 +269,20 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
         standard validation.
         """
         nfse_nacional_docs = self.filtered(
-            lambda r: r.document_type_id and r.document_type_id.code == "SE"
+            lambda r: r.document_type_id
+            and r.document_type_id.code == MODELO_FISCAL_NFSE
         )
         other_docs = self - nfse_nacional_docs
 
         # Only call the strict l10n_br_fiscal validation on NFe/CTe/MDFe
         if other_docs:
             return super(L10nBrFiscalDocument, other_docs)._check_key()
+
+    def _processador_erpbrasil_nfse(self):
+        # The ADN is not a municipal provider of erpbrasil.edoc.
+        if self.filtered(filter_nfse_nacional):
+            return None
+        return super()._processador_erpbrasil_nfse()
 
     def _serialize(self, edocs):
         edocs = super()._serialize(edocs)
@@ -190,16 +326,68 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
 
     def _nfse_nacional_event_env(self):
         self.ensure_one()
-        if self.company_id.nfse_environment == "1":
+        if self.nfse_environment == "1":
             return EVENT_ENV_PROD
         return EVENT_ENV_HML
+
+    def _document_number(self):
+        """Assign the DPS number and its access key.
+
+        The shared implementation routes NFS-e numbering to ``rps_number``
+        because municipal NFS-e is issued out of an RPS. NFS-e Nacional has
+        no RPS: the number the issuer assigns is ``nDPS`` itself, and the
+        DPS access key has 42 digits instead of the 44 of an NF-e.
+        """
+        result = super()._document_number()
+        if not filter_nfse_nacional(self):
+            return result
+        if self.issuer != DOCUMENT_ISSUER_COMPANY:
+            return result
+        if not self.document_number and self.rps_number:
+            self.document_number = self.rps_number
+        if self.document_number and not self.document_key:
+            self._nfse_nacional_generate_key()
+        return result
+
+    def _nfse_nacional_generate_key(self):
+        """Build the 42 digit DPS key: city, issuer type, CNPJ/CPF,
+        series and number."""
+        self.ensure_one()
+        partner = self.company_id.partner_id
+        city_code = (partner.city_id.ibge_code or "").zfill(7)
+        cnpj_cpf = re.sub(r"\D", "", partner.cnpj_cpf or "")
+        issuer_type = "2" if len(cnpj_cpf) == 14 else "1"
+        series = (self.document_serie or "").zfill(5)
+        number = str(self.document_number or "").zfill(15)
+        self.document_key = "".join(
+            [city_code, issuer_type, cnpj_cpf.zfill(14), series, number]
+        )
 
     def _eletronic_document_send(self):
         result = super()._eletronic_document_send()
         for record in self.filtered(filter_nfse_nacional):
             if record.xml_error_message:
-                continue
-            if record.state_edoc != "a_enviar":
+                # Skipping in silence leaves the user pressing Send with nothing
+                # happening: no state change, no message, no error.
+                raise UserError(
+                    _(
+                        "The XML of %(document)s did not pass schema validation, "
+                        "so nothing was sent:\n\n%(errors)s\n\nSet the document "
+                        "back to draft and confirm it again to rebuild the XML."
+                    )
+                    % {
+                        "document": record.display_name,
+                        "errors": record.xml_error_message,
+                    }
+                )
+            # l10n_br_fiscal_edi calls this hook from _after_document_send,
+            # when the state machine already left "a_enviar" for "enviada",
+            # so guarding on "a_enviar" would skip every transmission. Only
+            # a document that already reached a final state is skipped.
+            if record.state_edoc in (
+                SITUACAO_EDOC_AUTORIZADA,
+                SITUACAO_EDOC_CANCELADA,
+            ):
                 continue
             record._adn_send_for_authorization()
         return result
@@ -220,7 +408,7 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
     def _adn_post(self, call):
         """Run ``call(client)`` against the ADN over mTLS with a temp 0600 PEM."""
         self.ensure_one()
-        base_url = ADN_BASE_URL[self.company_id.nfse_environment]
+        base_url = ADN_BASE_URL[self.nfse_environment]
         pem = self._adn_mtls_pem()
         tmp = tempfile.NamedTemporaryFile("wb", suffix=".pem", delete=False)
         try:
@@ -266,11 +454,16 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
             body.get("chaveAcesso")
         )
         if authorized:
+            nfse_xml = self._adn_decode_nfse(body)
             self.write(
                 {
                     "nfse_key": body.get("chaveAcesso"),
-                    "nfse_number": body.get("nNFSe") or body.get("numeroNfse"),
-                    "nfse_protocol": body.get("protocolo") or body.get("nProt"),
+                    "nfse_number": body.get("nNFSe")
+                    or body.get("numeroNfse")
+                    or self._adn_xml_tag(nfse_xml, "nNFSe"),
+                    "nfse_protocol": body.get("protocolo")
+                    or body.get("nProt")
+                    or self._adn_xml_tag(nfse_xml, "nDFSe"),
                     "status_code": str(body.get("status") or "100"),
                     "status_name": body.get("motivo") or _("Authorized"),
                     "edoc_error_message": False,
@@ -281,7 +474,7 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
                 response=self.status_name,
                 protocol_date=fields.Datetime.now(),
                 protocol_number=self.nfse_protocol,
-                file_response_xml=self._adn_decode_nfse(body),
+                file_response_xml=nfse_xml,
             )
             self._change_state(SITUACAO_EDOC_AUTORIZADA)
         else:
@@ -320,6 +513,13 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
         )
 
     @staticmethod
+    def _adn_xml_tag(xml, tag):
+        if not xml:
+            return False
+        match = re.search(rf"<{tag}>([^<]+)</{tag}>", xml)
+        return match.group(1) if match else False
+
+    @staticmethod
     def _adn_decode_nfse(body):
         raw = body.get("nfseXmlGZipB64")
         if raw:
@@ -352,22 +552,23 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
 
     def _cancel_event_id(self):
         self.ensure_one()
-        return f"PRE{self.nfse_key}{NFSE_NACIONAL_CANCEL_EVENT}001"
+        return f"PRE{self.nfse_key}{NFSE_NACIONAL_CANCEL_EVENT}"
 
     def _build_cancel_pedreg(self, justificative, motive):
         self.ensure_one()
         company = self.company_id
         cnpj = re.sub(r"\D", "", company.partner_id.cnpj_cpf or "")
-        dt = fields.Datetime.context_timestamp(self, fields.Datetime.now()).strftime(
-            "%Y-%m-%dT%H:%M:%S-03:00"
+        dt = (
+            pytz.utc.localize(fields.Datetime.now())
+            .astimezone(BRAZIL_TZ)
+            .isoformat(timespec="seconds")
         )
         inf = TcinfPedReg(
-            tpAmb=company.nfse_environment,
+            tpAmb=self.nfse_environment,
             verAplic="Odoo OCA",
             dhEvento=dt,
             CNPJAutor=cnpj,
             chNFSe=self.nfse_key,
-            nPedRegEvento="1",
             e101101=Te101101(
                 xDesc=Te101101XDesc.CANCELAMENTO_DE_NFS_E,
                 cMotivo=motive,
@@ -411,3 +612,74 @@ class L10nBrFiscalDocument(spec_models.SpecModel):
             file_response_xml=self._adn_decode_nfse(body) or signed_xml,
         )
         return True
+
+    def action_adn_check_status(self):
+        for record in self.filtered(filter_nfse_nacional):
+            record._adn_check_cancellation_status()
+
+    def _adn_check_cancellation_status(self):
+        self.ensure_one()
+        if self.state_edoc != SITUACAO_EDOC_AUTORIZADA:
+            return
+        for event_type in (
+            NFSE_NACIONAL_CANCEL_EVENT,
+            NFSE_NACIONAL_CANCEL_OFICIO_EVENT,
+        ):
+            response = self._adn_post(
+                lambda client, et=event_type: client.get_event(self.nfse_key, et, "1")
+            )
+            if response.status_code in (200, 201):
+                self._adn_register_external_cancellation(event_type, response)
+                return
+
+    def _adn_register_external_cancellation(self, event_type, response):
+        self.ensure_one()
+        body = response.body or {}
+        raw = body.get("eventoXmlGZipB64")
+        xml = gzip.decompress(base64.b64decode(raw)).decode("utf-8") if raw else ""
+        event = self.event_ids.create_event_save_xml(
+            company_id=self.company_id,
+            environment=self._nfse_nacional_event_env(),
+            event_type="2",
+            xml_file=xml,
+            document_id=self,
+        )
+        self.cancel_event_id = event
+        event.set_done(
+            status_code=event_type,
+            response=_("Cancelled at the ADN by another means (event %s)") % event_type,
+            protocol_date=fields.Datetime.now(),
+            protocol_number=False,
+            file_response_xml=xml,
+        )
+        self.message_post(
+            body=_(
+                "NFS-e was cancelled directly at the ADN (event %s), "
+                "detected via status check."
+            )
+            % event_type
+        )
+        self._change_state(SITUACAO_EDOC_CANCELADA)
+
+    def make_pdf(self):
+        nacional_docs = self.filtered(filter_nfse_nacional)
+        if not nacional_docs:
+            return super().make_pdf()
+        report = self.env["ir.actions.report"]
+        for record in nacional_docs:
+            pdf = report._render_qweb_pdf(DANFSE_NACIONAL_TEMPLATE, record.ids)[0]
+            vals = {
+                "name": f"DANFSe-{record.document_number or record.id}.pdf",
+                "res_model": record._name,
+                "res_id": record.id,
+                "datas": base64.b64encode(pdf),
+                "mimetype": "application/pdf",
+                "type": "binary",
+            }
+            if record.file_report_id:
+                record.file_report_id.write(vals)
+            else:
+                record.file_report_id = self.env["ir.attachment"].create(vals)
+        remaining = self - nacional_docs
+        if remaining:
+            return super(L10nBrFiscalDocument, remaining).make_pdf()

@@ -11,7 +11,7 @@
     "maintainers": ["rvalyi", "renatonlima"],
     "website": "https://github.com/OCA/l10n-brazil",
     "development_status": "Beta",
-    "version": "16.0.13.0.3",
+    "version": "16.0.20.3.8",
     "depends": [
         "l10n_br_fiscal_edi",
         "l10n_br_fiscal_certificate",
@@ -24,7 +24,9 @@
         # Security
         "security/nfe_security.xml",
         "security/ir.model.access.csv",
+        "data/danfe_profile_data.xml",
         # Views
+        "views/danfe_profile_view.xml",
         "views/res_company_view.xml",
         "views/nfe_document_view.xml",
         "views/nfe_document_line_view.xml",
@@ -54,12 +56,12 @@
     "auto_install": False,
     "external_dependencies": {
         "python": [
-            "nfelib",
+            "nfelib>=2.6.0",
             "erpbrasil.assinatura",
             "erpbrasil.transmissao",
             "erpbrasil.edoc",
-            "erpbrasil.base",
-            "brazilfiscalreport",
+            "erpbrasil-base>=2.4.2",
+            "brazilfiscalreport>=1.3.0",
         ],
     },
 }

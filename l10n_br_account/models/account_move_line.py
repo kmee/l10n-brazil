@@ -96,7 +96,7 @@ class AccountMoveLine(models.Model):
                 line.quantity * line.price_unit or 1
             )
 
-    @api.depends("product_id", "payment_term_number")
+    @api.depends("product_id", "payment_term_number", "move_id.document_number")
     def _compute_name(self):
         """
         Override to set 'name' with 'document_number/payment_term_number' for
@@ -235,14 +235,22 @@ class AccountMoveLine(models.Model):
                 and not self.env.is_protected(self._fields["amount_currency"], line)
                 and (not changed("amount_currency") or line not in before)
             ):
-                if not line.move_id.fiscal_operation_id:
+                # `deductible_taxes` is company dependent, so reading it off the
+                # operation as it comes answers for whatever company sits in the
+                # environment. The answer has to follow the company of the move:
+                # otherwise the same line takes the deductible taxes out of its
+                # base or not depending on which company the user has selected.
+                fiscal_operation = line.move_id.fiscal_operation_id.with_company(
+                    line.company_id
+                )
+                if not fiscal_operation:
                     unsigned_amount_currency = line.currency_id.round(
                         line.price_subtotal
                     )
                 else:  # BRAZIL CASE:
                     if line.cfop_id and not line.cfop_id.finance_move:
                         unsigned_amount_currency = 0
-                        if not line.move_id.fiscal_operation_id.deductible_taxes:
+                        if not fiscal_operation.deductible_taxes:
                             # When there is no financial amount but there are non
                             # dectutible taxes, then we should take the total tax
                             # amount into account here to keep the move balanced.
@@ -253,7 +261,7 @@ class AccountMoveLine(models.Model):
                                 - line.amount_tax_withholding
                             )
                     else:
-                        if line.move_id.fiscal_operation_id.deductible_taxes:
+                        if fiscal_operation.deductible_taxes:
                             unsigned_amount_currency = (
                                 line.fiscal_amount_total + line.amount_tax_withholding
                             )
@@ -324,7 +332,6 @@ class AccountMoveLine(models.Model):
         "fiscal_price",
         "fiscal_quantity",
         "uot_id",
-        "icmssn_range_id",
         "icms_origin",
         "ind_final",
         "icms_relief_value",
@@ -374,7 +381,6 @@ class AccountMoveLine(models.Model):
                     fiscal_price=line.fiscal_price,
                     fiscal_quantity=line.fiscal_quantity,
                     uot_id=line.uot_id,
-                    icmssn_range=line.icmssn_range_id,
                     icms_origin=line.icms_origin,
                     ind_final=line.ind_final,
                 )
@@ -463,7 +469,6 @@ class AccountMoveLine(models.Model):
         "fiscal_price",
         "fiscal_quantity",
         "uot_id",
-        "icmssn_range_id",
         "icms_origin",
         "ind_final",
         "fiscal_document_line_id",
@@ -520,7 +525,6 @@ class AccountMoveLine(models.Model):
                 fiscal_price=line.fiscal_price,
                 fiscal_quantity=line.fiscal_quantity,
                 uot_id=line.uot_id,
-                icmssn_range=line.icmssn_range_id,
                 icms_origin=line.icms_origin,
                 ind_final=line.ind_final,
             )

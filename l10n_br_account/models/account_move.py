@@ -14,11 +14,11 @@ from odoo.tools import frozendict
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_ISSUER_COMPANY,
     DOCUMENT_ISSUER_PARTNER,
+    DOCUMENT_STATE_CANCEL,
+    DOCUMENT_STATE_DRAFT,
     FISCAL_IN_OUT_ALL,
     FISCAL_OUT,
     MODELO_FISCAL_NFE,
-    SITUACAO_EDOC_CANCELADA,
-    SITUACAO_EDOC_EM_DIGITACAO,
 )
 
 from .constants import (
@@ -126,16 +126,20 @@ class AccountMove(models.Model):
         return res
 
     def _inverse_tax_totals(self):
-        # Never let the tax_totals widget override the exact tax values
-        # of an imported fiscal document.
+        # Never let the tax_totals widget override the tax values of a fiscal
+        # document: the widget's total is the base plus every tax, so applying
+        # it rebuilds the payment term line from a total that no longer matches
+        # the fiscal one and the entry stops balancing.
         if self.env.context.get("force_fiscal_amount_recompute"):
             # Import flow: the move is still being assembled and
             # imported_document may not be written yet, so skip the
             # inverse for the whole batch.
             return
         # Regular (UI) flow: run the standard inverse only for the moves
-        # that are not the mirror of an imported fiscal document.
-        moves = self.filtered(lambda move: not move.imported_document)
+        # that carry no fiscal document.
+        moves = self.filtered(
+            lambda move: not move.fiscal_operation_id and not move.imported_document
+        )
         return super(AccountMove, moves)._inverse_tax_totals()
 
     @api.constrains("fiscal_document_id", "document_type_id")
@@ -492,22 +496,27 @@ class AccountMove(models.Model):
 
     def button_draft(self):
         for move in self.filtered(lambda d: d.document_type_id):
-            if move.state_edoc == SITUACAO_EDOC_CANCELADA:
-                if move.issuer == DOCUMENT_ISSUER_COMPANY:
-                    raise UserError(
-                        _(
-                            "You can't set this document number: {} to draft "
-                            "because this document is cancelled in SEFAZ"
-                        ).format(move.document_number)
-                    )
+            if (
+                move.state_edoc == DOCUMENT_STATE_CANCEL
+                and move.document_number
+                and move.issuer == DOCUMENT_ISSUER_COMPANY
+                and move.fiscal_document_id.cancel_event_id
+            ):
+                raise UserError(
+                    _(
+                        "You can't set this document number: {} to draft "
+                        "because this document is cancelled in SEFAZ"
+                    ).format(move.document_number)
+                )
             move.fiscal_document_ids.filtered(
-                lambda d: d.state_edoc != SITUACAO_EDOC_EM_DIGITACAO
+                lambda d: d.state_edoc != DOCUMENT_STATE_DRAFT
             ).action_document_back2draft()
         return super().button_draft()
 
     def action_document_send(self):
         for invoice in self.filtered(lambda d: d.document_type_id):
-            invoice.fiscal_document_ids.action_document_send()
+            if hasattr(invoice.fiscal_document_ids, "action_document_send"):
+                invoice.fiscal_document_ids.action_document_send()
             # FIXME: na migração para a v14 foi permitido o post antes do envio
             #  para destravar a migração, mas poderia ser cogitado de obrigar a
             #  transmissão antes do post novamente como na v12.
@@ -707,20 +716,22 @@ class AccountMove(models.Model):
                 line_form.fiscal_document_line_id = line
 
                 # SEFAZ Standard: What is included in vProd?
+                # IBS/CBS are "por dentro" (tax_group tax_include=True) like
+                # ICMS/PIS/COFINS, so they belong to amt_inc, not amt_not_inc.
                 amt_inc = (
                     (line.icms_value or 0.0)
                     + (line.pis_value or 0.0)
                     + (line.cofins_value or 0.0)
                     + (line.issqn_value or 0.0)
                     + (line.icmsfcp_value or 0.0)
+                    + (line.ibs_value or 0.0)
+                    + (line.cbs_value or 0.0)
                 )
                 amt_not_inc = (
                     (line.icmsst_value or 0.0)
                     + (line.ipi_value or 0.0)
                     + (line.ii_value or 0.0)
                     + (line.icmsfcpst_value or 0.0)
-                    + (line.ibs_value or 0.0)
-                    + (line.cbs_value or 0.0)
                 )
 
                 unit_and_prices.append(

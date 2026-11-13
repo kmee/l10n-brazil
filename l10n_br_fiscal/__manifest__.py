@@ -10,7 +10,7 @@
     "maintainers": ["renatonlima", "rvalyi"],
     "website": "https://github.com/OCA/l10n-brazil",
     "development_status": "Production/Stable",
-    "version": "16.0.22.3.1",
+    "version": "16.0.26.2.1",
     "depends": [
         "product",
         "uom_alias",
@@ -36,6 +36,7 @@
         "data/l10n_br_fiscal.tax.pis.cofins.csv",
         "data/l10n_br_fiscal_server_action.xml",
         "data/ir_cron.xml",
+        "data/ir_config_parameter.xml",
         "data/l10n_br_fiscal_comment_data.xml",
         "data/l10n_br_fiscal.legal.nature.csv",
         "data/l10n_br_fiscal.cnae.csv",
@@ -49,6 +50,7 @@
         "data/l10n_br_fiscal.tax.classification.csv",
         "data/l10n_br_fiscal.service.type.csv",
         "data/l10n_br_fiscal.operation.indicator.csv",
+        "data/l10n_br_fiscal_operation_indicator_data.xml",
         "data/simplified_tax_data.xml",
         "data/operation_data.xml",
         "data/fiscal_operation_consignacao.xml",
@@ -154,7 +156,7 @@
     "auto_install": False,
     "external_dependencies": {
         "python": [
-            "erpbrasil.base",
+            "erpbrasil-base>=2.4.2",
         ]
     },
 }

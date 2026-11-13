@@ -1,6 +1,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
 from . import (
+    test_cfop,
     test_cnae,
     test_fiscal_document_serie,
     test_fiscal_document_generic,
@@ -29,4 +30,7 @@ from . import (
     test_catalog_importacao_especiais,
     test_stock_cost,
     test_document_import_line,
+    test_tax_pis_cofins,
+    test_icmssn,
+    test_simplified_tax,
 )

@@ -9,6 +9,11 @@ from odoo.exceptions import UserError
 from odoo.tests import TransactionCase
 from odoo.tests.common import Form, tagged
 
+from odoo.addons.l10n_br_fiscal.constants.fiscal import (
+    DOCUMENT_STATE_CANCEL,
+    DOCUMENT_STATE_DRAFT,
+)
+
 _logger = logging.getLogger(__name__)
 
 
@@ -142,7 +147,6 @@ class TestMoveEdition(TransactionCase):
         # now user needs to be a Fiscal User:
         self.user.groups_id += self.env.ref("l10n_br_fiscal.group_user")
         self.user.groups_id += self.env.ref("uom.group_uom")
-
         nfe_user_group = self.env.ref(
             "l10n_br_nfe.group_user", raise_if_not_found=False
         )
@@ -257,7 +261,7 @@ class TestMoveEdition(TransactionCase):
         move = move_form.save()
 
         self.assertEqual(move.state, "draft")
-        self.assertEqual(move.state_edoc, "em_digitacao")
+        self.assertEqual(move.state_edoc, DOCUMENT_STATE_DRAFT)
         self.assertEqual(move.fiscal_document_id.document_serie, "1")
         self.assertTrue(move.fiscal_document_id)
         self.assertEqual(len(move.fiscal_document_ids), 1)
@@ -314,6 +318,44 @@ class TestMoveEdition(TransactionCase):
         self.assertEqual(move.state, "cancel")
         move.button_draft()
         self.assertEqual(move.state, "draft")
+
+    def test_out_fiscal_invoice_cancel_without_sefaz_event_can_back_to_draft(self):
+        """Ensure local cancel (without SEFAZ cancel event) can return to draft."""
+
+        self.user.groups_id += self.env.ref("l10n_br_fiscal.group_user")
+        self.user.groups_id += self.env.ref("uom.group_uom")
+        nfe_user_group = self.env.ref(
+            "l10n_br_nfe.group_user", raise_if_not_found=False
+        )
+        if nfe_user_group:
+            self.user.groups_id += nfe_user_group
+
+        move_form = Form(
+            self.env["account.move"].with_context(
+                default_move_type="out_invoice",
+            )
+        )
+        move_form.partner_id = self.env.ref("l10n_br_base.res_partner_cliente5_pe")
+        move_form.document_type_id = self.env.ref("l10n_br_fiscal.document_55")
+        move_form.document_serie_id = self.env.ref(
+            "l10n_br_fiscal.empresa_lc_document_55_serie_1"
+        )
+        move_form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_venda")
+        move_form.ind_final = "1"
+        with move_form.invoice_line_ids.new() as line_form:
+            line_form.product_id = self.product_id
+            line_form.price_unit = 42
+        move = move_form.save()
+
+        move.action_post()
+        move.button_cancel()
+
+        self.assertEqual(move.state_edoc, DOCUMENT_STATE_CANCEL)
+        self.assertFalse(move.fiscal_document_id.cancel_event_id)
+
+        move.button_draft()
+        self.assertEqual(move.state, "draft")
+        self.assertEqual(move.state_edoc, DOCUMENT_STATE_DRAFT)
 
     def test_in_non_fiscal_invoice(self):
         """
@@ -386,7 +428,7 @@ class TestMoveEdition(TransactionCase):
         move = move_form.save()
 
         self.assertEqual(move.state, "draft")
-        self.assertEqual(move.state_edoc, "em_digitacao")
+        self.assertEqual(move.state_edoc, DOCUMENT_STATE_DRAFT)
         self.assertEqual(move.fiscal_document_id.document_serie, "1")
         self.assertTrue(move.fiscal_document_id)
         self.assertEqual(len(move.fiscal_document_ids), 1)
@@ -596,6 +638,107 @@ class TestMoveEdition(TransactionCase):
         )
         move_form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_venda")
         return move_form
+
+    def test_lines_added_after_first_save_book_fiscal_amounts(self):
+        """Lines added on a second save must book the fiscal
+        amounts on the product line and keep payment terms at the fiscal
+        total."""
+        self._setup_fiscal_user()
+        partner = self.env.ref("l10n_br_base.res_partner_cliente1_sp")
+        move = self._create_fiscal_invoice_form(partner).save()
+
+        move.write(
+            {
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product_id.id,
+                            "quantity": 2.0,
+                            "price_unit": 1000.0,
+                            "fiscal_operation_id": move.fiscal_operation_id.id,
+                            "fiscal_operation_line_id": self.env.ref(
+                                "l10n_br_fiscal.fo_venda_venda"
+                            ).id,
+                        }
+                    )
+                ],
+            }
+        )
+
+        product_line = move.line_ids.filtered(
+            lambda line: line.display_type == "product"
+        )
+        term_lines = move.line_ids.filtered(
+            lambda line: line.display_type == "payment_term"
+        )
+        self.assertTrue(product_line.tax_ids)
+        expected_product = move.direction_sign * (
+            product_line.fiscal_amount_total
+            - product_line.amount_tax_included
+            - product_line.amount_tax_not_included
+        )
+        self.assertAlmostEqual(product_line.balance, expected_product, places=2)
+        self.assertAlmostEqual(
+            sum(term_lines.mapped("balance")),
+            -move.direction_sign * move.amount_total,
+            places=2,
+        )
+        self.assertAlmostEqual(move.amount_residual, move.amount_total, places=2)
+
+    def test_line_added_after_first_save_keeps_balance(self):
+        """A fiscal invoice saved header first and lines later must balance,
+        even though the web client sends its own tax_totals along."""
+        self._setup_fiscal_user()
+        partner = self.env.ref("l10n_br_base.res_partner_cliente1_sp")
+        move = self._create_fiscal_invoice_form(partner).save()
+        self.assertFalse(move.invoice_line_ids)
+
+        move.write(
+            {
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product_id.id,
+                            "quantity": 1.0,
+                            "price_unit": 100.0,
+                            "fiscal_operation_id": move.fiscal_operation_id.id,
+                            "fiscal_operation_line_id": self.env.ref(
+                                "l10n_br_fiscal.fo_venda_venda"
+                            ).id,
+                        }
+                    )
+                ],
+            }
+        )
+        tax_lines = move.line_ids.filtered(lambda line: line.display_type == "tax")
+        self.assertTrue(tax_lines)
+        tax_amounts = {line.id: line.amount_currency for line in tax_lines}
+
+        move.write(
+            {
+                "tax_totals": {
+                    "groups_by_subtotal": {
+                        "Untaxed Amount": [
+                            {
+                                "tax_group_id": line.tax_group_id.id,
+                                "tax_group_amount": abs(line.amount_currency) + 100.0,
+                            }
+                            for line in tax_lines
+                        ]
+                    },
+                    "amount_untaxed": move.amount_untaxed,
+                    "amount_total": move.amount_total + 100.0,
+                },
+            }
+        )
+
+        self.assertAlmostEqual(
+            sum(move.line_ids.mapped("debit")),
+            sum(move.line_ids.mapped("credit")),
+            places=2,
+        )
+        for line in tax_lines:
+            self.assertEqual(line.amount_currency, tax_amounts[line.id])
 
     def test_ind_final_propagation_on_manual_change(self):
         """Changing ind_final directly on a saved invoice must propagate
