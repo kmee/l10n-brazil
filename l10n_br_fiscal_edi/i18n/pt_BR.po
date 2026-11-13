@@ -904,3 +904,21 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_event__can_print
 msgid "Can Print"
 msgstr "Pode imprimir"
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_correction_wizard__correction_sequence
+msgid "CC-e Sequence"
+msgstr "Sequência da CC-e"
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_correction_wizard__correction_sequence
+msgid ""
+"Sequence number (nSeqEvento) of the correction letter. It is the next one "
+"after the letters known by Odoo. Change it when letters of this note were "
+"already issued outside Odoo (e.g. in the previous ERP): use the number after "
+"the last one issued."
+msgstr ""
+"Número de sequência (nSeqEvento) da carta de correção. É o seguinte ao das "
+"cartas conhecidas pelo Odoo. Altere quando já houver cartas desta nota "
+"emitidas fora do Odoo (por exemplo, no ERP anterior): use o número seguinte "
+"ao da última emitida."

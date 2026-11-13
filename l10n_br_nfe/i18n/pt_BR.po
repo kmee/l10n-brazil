@@ -6887,3 +6887,15 @@ msgstr ""
 
 #~ msgid "ICMS/II/IPI/ISSQN"
 #~ msgstr "ICMS/II/IPI/ISSQN"
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document.py:0
+msgid "The CC-e sequence must be between 1 and 20 (SEFAZ limit)."
+msgstr "A sequência da CC-e deve estar entre 1 e 20 (limite da SEFAZ)."
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document.py:0
+msgid "The CC-e sequence %(sequence)s was already used for this note."
+msgstr "A sequência %(sequence)s da CC-e já foi usada nesta nota."
