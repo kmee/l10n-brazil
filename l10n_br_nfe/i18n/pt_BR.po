@@ -6624,6 +6624,79 @@ msgid ""
 "it always was."
 msgstr "A declaração persistida a partir da qual este grupo DI foi construído, quando existir. Uma nota importada direto de um DF-e recebido, sem arquivo de declaração por trás, mantém isso vazio; todo campo do grupo DI continua sendo gravado como sempre foi."
 
+#. module: l10n_br_nfe
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_account_move_line__ref_document_item
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document_line__ref_document_item
+msgid "Referenced Item"
+msgstr "Item Referenciado"
+
+#. module: l10n_br_nfe
+#: model_terms:ir.ui.view,arch_db:l10n_br_nfe.nfe_document_fiscal_line_mixin_form
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_account_move_line__ref_document_related_id
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document_line__ref_document_related_id
+msgid "Referenced Document"
+msgstr "Documento Referenciado"
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,help:l10n_br_nfe.field_account_move_line__ref_document_item
+#: model:ir.model.fields,help:l10n_br_nfe.field_l10n_br_fiscal_document_line__ref_document_item
+msgid "Number of the item (nItem) in the referenced document."
+msgstr "Número do item (nItem) no documento referenciado."
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,help:l10n_br_nfe.field_account_move_line__ref_document_related_id
+#: model:ir.model.fields,help:l10n_br_nfe.field_l10n_br_fiscal_document_line__ref_document_related_id
+msgid ""
+"Related document of this line item. Leave empty when the document has "
+"a single related document."
+msgstr ""
+"Documento relacionado deste item da linha. Deixe vazio quando o "
+"documento tiver um único documento relacionado."
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document.py:0
+msgid "%(line)s: set the referenced document."
+msgstr "%(line)s: informe o documento referenciado."
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document.py:0
+msgid "%(line)s: the referenced document has no access key."
+msgstr "%(line)s: o documento referenciado não possui chave de acesso."
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document.py:0
+msgid "%(line)s: set the referenced item number (1 to 990)."
+msgstr "%(line)s: informe o número do item referenciado (de 1 a 990)."
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document.py:0
+msgid ""
+"%(line)s: item %(item)s of document %(key)s is already referenced by "
+"another line."
+msgstr ""
+"%(line)s: o item %(item)s do documento %(key)s já está referenciado "
+"por outra linha."
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document.py:0
+msgid "All the referenced documents must have the same issuer."
+msgstr "Todos os documentos referenciados devem ter o mesmo emitente."
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document.py:0
+msgid ""
+"Return NF-e item references:\n"
+"%(errors)s"
+msgstr ""
+"Referências de item da NF-e de devolução:\n"
+"%(errors)s"
+
 #~ msgid "1.00"
 #~ msgstr "1.00"
 
