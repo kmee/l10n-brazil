@@ -48,6 +48,8 @@ class TestNFeCorrectionSequence(TransactionCase):
         processor.enviar_lote_evento.return_value = SimpleNamespace(
             envio_xml=b"<envEvento/>",
             resposta=SimpleNamespace(
+                cStat="128",
+                xMotivo="Lote de evento processado",
                 retEvento=[
                     SimpleNamespace(
                         infEvento=SimpleNamespace(
