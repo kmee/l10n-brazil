@@ -55,6 +55,10 @@
                             <field name="danfe_margin_right" string="Margin Right" />
                             <field name="danfe_margin_bottom" string="Margin Bottom" />
                             <field name="danfe_margin_left" string="Margin Left" />
+                            <field
+                                name="danfe_additional_data_height"
+                                string="Additional Data Height (mm)"
+                            />
                         </group>
                     </group>
                 </page>

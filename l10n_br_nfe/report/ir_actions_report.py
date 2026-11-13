@@ -1,12 +1,17 @@
 # Copyright 2024 Engenere.one
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 import base64
+import logging
 from io import BytesIO
 
 from brazilfiscalreport.danfe import Danfe, DanfeConfig, InvoiceDisplay, Margins
 
 from odoo import _, api, models
 from odoo.exceptions import UserError
+
+from .danfe_additional_data import get_danfe_class
+
+_logger = logging.getLogger(__name__)
 
 
 class IrActionsReport(models.Model):
@@ -57,7 +62,17 @@ class IrActionsReport(models.Model):
         if nfe.company_id.danfe_display_pis_cofins:
             config.display_pis_cofins = True
 
-        danfe = Danfe(xml=nfe_xml, config=config)
+        danfe_class, extra = get_danfe_class(
+            nfe_xml, config, nfe.company_id.danfe_additional_data_height
+        )
+        try:
+            danfe = danfe_class(xml=nfe_xml, config=config, **extra)
+        except Exception:  # noqa: BLE001
+            if not extra:
+                raise
+            # Never block printing because of the additional data height.
+            _logger.warning("Custom DANFE failed; using the stock Danfe", exc_info=True)
+            danfe = Danfe(xml=nfe_xml, config=config)
 
         tmpDanfe = BytesIO()
         danfe.output(tmpDanfe)

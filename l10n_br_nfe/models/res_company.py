@@ -2,7 +2,8 @@
 # Copyright 2019 KMEE INFORMATICA LTDA
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
-from odoo import api, fields
+from odoo import _, api, fields
+from odoo.exceptions import ValidationError
 
 from odoo.addons.spec_driven_model.models import spec_models
 
@@ -204,6 +205,21 @@ class ResCompany(spec_models.SpecModel):
     danfe_margin_left = fields.Integer(
         default=5, help="Left margin in mm for the DANFE layout."
     )
+
+    danfe_additional_data_height = fields.Float(
+        default=20,
+        help="Height in mm of the additional data block on the first page of the "
+        "DANFE. Text that does not fit continues below the products. The MOC "
+        "suggests 30.7 mm in portrait.",
+    )
+
+    @api.constrains("danfe_additional_data_height")
+    def _check_danfe_additional_data_height(self):
+        for company in self:
+            if not 20 <= company.danfe_additional_data_height <= 60:
+                raise ValidationError(
+                    _("The additional data height must be between 20 and 60 mm.")
+                )
 
     def _compute_nfe_data(self):
         # compute because a simple related field makes the match_record fail
