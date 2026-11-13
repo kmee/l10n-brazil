@@ -6789,6 +6789,26 @@ msgstr "A declaração persistida a partir da qual este grupo DI foi construído
 #~ msgstr "Nome completo do país."
 
 #, python-format
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document.py:0
+msgid ""
+"The XML of a note issued by your company must be the authorized one (nfeProc "
+"with the SEFAZ protocol). A file without protocol can not be imported."
+msgstr ""
+"O XML de uma nota emitida pela sua empresa deve ser o autorizado (nfeProc com "
+"o protocolo da SEFAZ). Um arquivo sem protocolo não pode ser importado."
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document.py:0
+msgid ""
+"The protocol of the file is not an authorization (status %(status)s: "
+"%(reason)s)."
+msgstr ""
+"O protocolo do arquivo não é uma autorização (status %(status)s: "
+"%(reason)s)."
+
 #~ msgid "Authorization Protocol Not Found!"
 #~ msgstr "Protocolo de Autorização Não Encontrado!"
 

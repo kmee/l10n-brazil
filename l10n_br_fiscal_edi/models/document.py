@@ -3,6 +3,7 @@
 # Copyright (C) 2026  Raphaël Valyi - Akretion
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
+import re
 from datetime import timedelta
 
 from erpbrasil.base.fiscal.edoc import ChaveEdoc
@@ -112,6 +113,12 @@ class Document(models.Model):
         string="Correction Events",
         copy=False,
         readonly=True,
+    )
+
+    can_issue_correction = fields.Boolean(
+        compute="_compute_can_issue_correction",
+        help="The note was issued by the company (also when imported from its "
+        "XML), so the company can send a correction letter (CC-e) for it.",
     )
 
     issuer = fields.Selection(
@@ -865,20 +872,58 @@ class Document(models.Model):
         else:
             return super().action_document_cancel()
 
+    def _is_issued_by_company(self):
+        """The note belongs to the company, even if it was imported from its XML.
+
+        A document imported before this check existed may carry the partner as
+        issuer, so the issuer CNPJ inside the access key is also compared.
+        """
+        self.ensure_one()
+        if self.issuer == DOCUMENT_ISSUER_COMPANY:
+            return True
+        key = re.sub(r"\D", "", self.document_key or "")
+        company_vat = re.sub(r"\D", "", self.company_id.vat or "")
+        return bool(
+            self.imported_document
+            and len(key) == 44
+            and company_vat
+            and key[6:20] == company_vat
+        )
+
+    @api.depends("issuer", "imported_document", "document_key", "company_id.vat")
+    def _compute_can_issue_correction(self):
+        for document in self:
+            document.can_issue_correction = document._is_issued_by_company()
+
+    def _get_next_correction_sequence(self):
+        """Next nSeqEvento of the correction letter, from the events known here.
+
+        Letters issued outside Odoo (e.g. in the previous ERP) are unknown, so
+        the wizard lets the user override this number.
+        """
+        self.ensure_one()
+        numbers = [
+            int(event.sequence)
+            for event in self.event_ids
+            if event.type == "14" and event.state == "done" and event.sequence
+        ]
+        return max(numbers) + 1 if numbers else 1
+
     def action_document_correction(self):
         """Open the correction wizard for authorized company-issued documents."""
         self.ensure_one()
         if (
             self.state_edoc == DOCUMENT_STATE_AUTHORIZED
-            and self.issuer == DOCUMENT_ISSUER_COMPANY
+            and self._is_issued_by_company()
         ):
             return self.env["ir.actions.act_window"]._for_xml_id(
                 "l10n_br_fiscal_edi.document_correction_wizard_action"
             )
         raise UserError(
             _(
-                "You can only create a fiscal correction for authorized "
-                "documents issued by your company."
+                "The correction letter (CC-e) is only valid for authorized "
+                "documents issued by your company. Documents issued by third "
+                "parties can not be corrected by you."
             )
         )
 

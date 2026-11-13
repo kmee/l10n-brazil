@@ -51,7 +51,10 @@
     <record id="action_download_xml" model="ir.actions.server">
         <field name="name">Download XML</field>
         <field name="model_id" ref="l10n_br_fiscal.model_l10n_br_fiscal_document" />
-        <field name="binding_model_id" ref="l10n_br_fiscal.model_l10n_br_fiscal_document" />
+        <field
+            name="binding_model_id"
+            ref="l10n_br_fiscal.model_l10n_br_fiscal_document"
+        />
         <field name="binding_view_types">list,form</field>
         <field name="state">code</field>
         <field name="code">action = records.action_download_xml()</field>
@@ -60,7 +63,10 @@
     <record id="action_download_report" model="ir.actions.server">
         <field name="name">Download DANFE</field>
         <field name="model_id" ref="l10n_br_fiscal.model_l10n_br_fiscal_document" />
-        <field name="binding_model_id" ref="l10n_br_fiscal.model_l10n_br_fiscal_document" />
+        <field
+            name="binding_model_id"
+            ref="l10n_br_fiscal.model_l10n_br_fiscal_document"
+        />
         <field name="binding_view_types">list,form</field>
         <field name="state">code</field>
         <field name="code">action = records.action_download_report()</field>
@@ -69,7 +75,10 @@
     <record id="action_download_xml_and_report" model="ir.actions.server">
         <field name="name">Download XML and DANFE</field>
         <field name="model_id" ref="l10n_br_fiscal.model_l10n_br_fiscal_document" />
-        <field name="binding_model_id" ref="l10n_br_fiscal.model_l10n_br_fiscal_document" />
+        <field
+            name="binding_model_id"
+            ref="l10n_br_fiscal.model_l10n_br_fiscal_document"
+        />
         <field name="binding_view_types">list,form</field>
         <field name="state">code</field>
         <field name="code">action = records.action_download_xml_and_report()</field>
@@ -78,7 +87,10 @@
     <record id="action_check_status" model="ir.actions.server">
         <field name="name">Check status at the SEFAZ</field>
         <field name="model_id" ref="l10n_br_fiscal.model_l10n_br_fiscal_document" />
-        <field name="binding_model_id" ref="l10n_br_fiscal.model_l10n_br_fiscal_document" />
+        <field
+            name="binding_model_id"
+            ref="l10n_br_fiscal.model_l10n_br_fiscal_document"
+        />
         <field name="binding_view_types">list,form</field>
         <field name="state">code</field>
         <field name="code">action = records.action_check_status()</field>
@@ -96,8 +108,9 @@
                     type="object"
                     string="Carta de Correção"
                     groups="l10n_br_fiscal.group_user"
-                    invisible="state_edoc != 'autorizada'"
+                    invisible="state_edoc != 'autorizada' or not can_issue_correction"
                 />
+                <field name="can_issue_correction" invisible="1" />
             </button>
             <button name="action_document_back2draft" position="before">
                 <button

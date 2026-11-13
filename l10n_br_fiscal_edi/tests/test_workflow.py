@@ -4,6 +4,8 @@
 from datetime import timedelta
 from unittest.mock import patch
 
+from lxml import etree
+
 from odoo import fields
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase
@@ -177,6 +179,63 @@ class TestWorkflow(TransactionCase):
         self.assertEqual(
             self.fiscal_document.correction_reason, "Correction of additional data"
         )
+
+    def _authorized_document(self, **vals):
+        document = self.fiscal_document.copy(vals)
+        document.write({"state_edoc": DOCUMENT_STATE_AUTHORIZED})
+        return document
+
+    # A valid CNPJ that no demo company uses (the vat is unique per company).
+    OWN_CNPJ = "11222333000181"
+
+    def _document_with_key(self, cnpj, **vals):
+        company = self.fiscal_document.company_id
+        company.vat = self.OWN_CNPJ
+        key = "352001" + cnpj + "55001000000005206277716"
+        weight, total = 2, 0
+        for digit in reversed(key):
+            total += int(digit) * weight
+            weight = 2 if weight == 9 else weight + 1
+        key += str(0 if total % 11 < 2 else 11 - total % 11)
+        return self._authorized_document(
+            issuer="partner", imported_document=True, document_key=key, **vals
+        )
+
+    def test_correction_for_imported_own_document(self):
+        """An own note imported from its XML (issuer still the partner, key
+        issued by the company CNPJ) can receive a correction letter."""
+        document = self._document_with_key(self.OWN_CNPJ)
+        self.assertTrue(document.can_issue_correction)
+        action = document.action_document_correction()
+        self.assertEqual(
+            action["res_model"], "l10n_br_fiscal.document.correction.wizard"
+        )
+
+    def test_correction_for_third_party_document_is_refused(self):
+        document = self._document_with_key("00000000000191")
+        self.assertFalse(document.can_issue_correction)
+        with self.assertRaises(UserError):
+            document.action_document_correction()
+
+    def test_correction_button_is_hidden_for_third_party_document(self):
+        """The button is driven by can_issue_correction, not only by the
+        imported flag, so an incoming third-party note does not show it."""
+        view = self.env.ref("l10n_br_fiscal_edi.document_form")
+        node = etree.fromstring(view.arch_db).xpath(
+            "//button[@name='action_document_correction']"
+        )[0]
+        self.assertIn("can_issue_correction", node.get("invisible"))
+        third = self._document_with_key("00000000000191")
+        own = self._document_with_key(self.OWN_CNPJ)
+        self.assertFalse(third.can_issue_correction)
+        self.assertTrue(own.can_issue_correction)
+
+    def test_correction_wizard_proposes_next_sequence(self):
+        document = self._document_with_key(self.OWN_CNPJ)
+        wizard = self.env["l10n_br_fiscal.document.correction.wizard"].create(
+            {"document_id": document.id, "justification": "x" * 15}
+        )
+        self.assertEqual(wizard.correction_sequence, 1)
 
     def test_transmission_hooks_exist(self):
         """Hooks called with super() by transmission modules (l10n_br_nfe,

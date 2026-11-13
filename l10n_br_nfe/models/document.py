@@ -3,6 +3,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 import base64
+import hashlib
 import logging
 import re
 import string
@@ -47,6 +48,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     SERVICO_PARALIZADO,
     SITUACAO_FISCAL_CANCELADO,
     SITUACAO_FISCAL_CANCELADO_EXTEMPORANEO,
+    SITUACAO_FISCAL_REGULAR,
 )
 from odoo.addons.l10n_br_fiscal.tools import (
     remove_non_ascii_characters,
@@ -1943,7 +1945,16 @@ class NFe(spec_models.StackedModel):
             return super()._get_imported_installments()
         return sorted(installments)
 
-    def import_binding_nfe(self, binding, edoc_type="in", dry_run=False):
+    def import_binding_nfe(
+        self, binding, edoc_type="in", dry_run=False, prot_nfe=None, xml_file=None
+    ):
+        """Create a document from the NF-e binding.
+
+        :param prot_nfe: the protNFe of the nfeProc, when the file carries one.
+        :param xml_file: the original file content, kept as the authorization
+            file of a note issued by the company.
+        """
+        prot_nfe = prot_nfe or getattr(binding, "protNFe", None)
         if hasattr(binding, "NFe"):
             binding = binding.NFe
         document = (
@@ -1952,11 +1963,140 @@ class NFe(spec_models.StackedModel):
             .build_from_binding("nfe", "40", binding.infNFe, dry_run=dry_run)
         )
 
-        if edoc_type == "in" and document.company_id.vat != binding.infNFe.emit.CNPJ:
+        emit_cnpj = binding.infNFe.emit.CNPJ
+        if edoc_type == "in" and document.company_id.vat != emit_cnpj:
             document.fiscal_operation_type = "in"
             document.issuer = "partner"
+        elif (
+            edoc_type == "out"
+            and not dry_run
+            and re.sub(r"\D", "", document.company_id.vat or "") == emit_cnpj
+        ):
+            document._import_own_authorization(binding, prot_nfe, xml_file)
 
         return document
+
+    @api.model
+    def _check_own_protocol(self, binding, inf_prot, xml_file):
+        """Check that the protocol of the file belongs to the note of the file.
+
+        Only a sanity check of the file: the situation is not queried at SEFAZ
+        and the RSA signature value is not verified.
+        """
+
+        def _value(item):
+            return str(getattr(item, "value", item))
+
+        key = (binding.infNFe.Id or "")[3:]
+        if _value(inf_prot.chNFe) != key:
+            raise UserError(
+                _("The access key of the protocol does not match the note.")
+            )
+        if _value(inf_prot.tpAmb) != _value(binding.infNFe.ide.tpAmb):
+            raise UserError(
+                _("The environment of the protocol does not match the note.")
+            )
+        if not re.fullmatch(r"\d{15}", _value(inf_prot.nProt or "")):
+            raise UserError(_("The authorization protocol number must have 15 digits."))
+        if not inf_prot.dhRecbto:
+            raise UserError(_("The protocol has no receipt date."))
+
+        # The digest of the signed note must be the one SEFAZ authorized
+        # (digVal) and must match the note content, so an edited file is refused.
+        tree = etree.fromstring(xml_file.encode("utf-8"))
+        ns = {"n": "http://www.portalfiscal.inf.br/nfe"}
+        dsig = {"d": "http://www.w3.org/2000/09/xmldsig#"}
+        digests = tree.xpath("//d:Signature//d:DigestValue/text()", namespaces=dsig)
+        inf_nfe = tree.xpath("//n:infNFe", namespaces=ns)
+        if not digests or not inf_nfe:
+            raise UserError(
+                _("The XML has no digital signature, it is not an authorized NF-e.")
+            )
+        computed = base64.b64encode(
+            hashlib.sha1(  # noqa: S324 - digest defined by the NF-e standard
+                etree.tostring(inf_nfe[0], method="c14n", exclusive=True)
+            ).digest()
+        ).decode()
+        if computed != digests[0].strip():
+            raise UserError(
+                _("The content of the note does not match its digital signature.")
+            )
+        prot_digest = getattr(inf_prot, "digVal", None) or ""
+        if isinstance(prot_digest, bytes):
+            # the binding decodes the base64 content of the tag
+            prot_digest = base64.b64encode(prot_digest).decode()
+        if prot_digest and prot_digest != computed:
+            raise UserError(
+                _("The protocol was issued for a different version of the note.")
+            )
+
+    def _import_own_authorization(self, binding, prot_nfe, xml_file):
+        """Mark a note issued by the company, imported from its XML, as authorized.
+
+        The note was already transmitted elsewhere (typically typed by hand in
+        another system), so the protocol of the file is recorded as is and the
+        transmission workflow is never triggered: nothing is sent to SEFAZ.
+        A note without protocol can not receive a correction letter, so it is
+        refused.
+        """
+        self.ensure_one()
+        inf_prot = getattr(prot_nfe, "infProt", None)
+        if inf_prot is None or not xml_file:
+            raise UserError(
+                _(
+                    "The XML of a note issued by your company must be the "
+                    "authorized one (nfeProc with the SEFAZ protocol). A file "
+                    "without protocol can not be imported."
+                )
+            )
+
+        def _value(item):
+            return str(getattr(item, "value", item))
+
+        status_code = _value(inf_prot.cStat)
+        if status_code not in AUTORIZADO:
+            raise UserError(
+                _(
+                    "The protocol of the file is not an authorization "
+                    "(status %(status)s: %(reason)s).",
+                    status=status_code,
+                    reason=inf_prot.xMotivo,
+                )
+            )
+        environment = _value(binding.infNFe.ide.tpAmb)
+        if isinstance(xml_file, bytes):
+            xml_file = xml_file.decode("utf-8")
+        self._check_own_protocol(binding, inf_prot, xml_file)
+        self.write(
+            {
+                "issuer": DOCUMENT_ISSUER_COMPANY,
+                "fiscal_operation_type": FISCAL_OUT,
+                "nfe_environment": environment,
+            }
+        )
+        event = self.event_ids.create_event_save_xml(
+            company_id=self.company_id,
+            environment=EVENT_ENV_PROD if environment == "1" else EVENT_ENV_HML,
+            event_type="0",
+            xml_file=xml_file,
+            document_id=self,
+        )
+        event.set_done(
+            status_code=status_code,
+            response=inf_prot.xMotivo,
+            protocol_date=to_utc_naive_datetime_string(inf_prot.dhRecbto),
+            protocol_number=inf_prot.nProt,
+            file_response_xml=xml_file,
+        )
+        self.write(
+            {
+                "authorization_event_id": event.id,
+                "status_code": status_code,
+                "status_name": inf_prot.xMotivo,
+                "state_fiscal": SITUACAO_FISCAL_REGULAR,
+                "state_edoc": SITUACAO_EDOC_AUTORIZADA,
+            }
+        )
 
     def _document_cancel(self, justificative):
         if self.document_type_id.code in [MODELO_FISCAL_NFE]:
@@ -2040,6 +2180,37 @@ class NFe(spec_models.StackedModel):
             return online_event._nfe_correction(justificative) or result
         return result
 
+    def _get_correction_sequence(self):
+        """nSeqEvento of the next CC-e, as a string.
+
+        The number chosen by the user (correction_sequence context) wins over
+        the computed one, to continue letters issued outside Odoo. SEFAZ only
+        accepts 1 to 20, and a number already used by a letter registered here
+        would be rejected as duplicated.
+        """
+        self.ensure_one()
+        sequence = self.env.context.get("correction_sequence")
+        if not sequence:
+            sequence = self._next_correction_sequence()
+        sequence = int(sequence)
+        used = {
+            int(event.sequence)
+            for event in self.event_ids
+            if event.type == "14" and event.state == "done" and event.sequence
+        }
+        if not 1 <= sequence <= 20:
+            raise UserError(
+                _("The CC-e sequence must be between 1 and 20 (SEFAZ limit).")
+            )
+        if sequence in used:
+            raise UserError(
+                _(
+                    "The CC-e sequence %(sequence)s was already used for this note.",
+                    sequence=sequence,
+                )
+            )
+        return str(sequence)
+
     def action_document_correction(self):
         self.ensure_one()
         if self.document_type_id.code == MODELO_FISCAL_NFCE:
@@ -2052,7 +2223,7 @@ class NFe(spec_models.StackedModel):
         # A refusal is recorded, not raised: a rollback would lose the sent XML.
         self.ensure_one()
         justificative = self._normalize_correction_text(justificative)
-        sequence = self._next_correction_sequence()
+        sequence = self._get_correction_sequence()
         processador = self._edoc_processor()
 
         evento = processador.carta_correcao(

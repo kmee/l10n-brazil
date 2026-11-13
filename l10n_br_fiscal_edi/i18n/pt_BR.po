@@ -803,9 +803,13 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document.py:0
 msgid ""
-"You can only create a fiscal correction for authorized documents issued by "
-"your company."
+"The correction letter (CC-e) is only valid for authorized documents issued "
+"by your company. Documents issued by third parties can not be corrected by "
+"you."
 msgstr ""
+"A carta de correção (CC-e) só vale para documentos autorizados emitidos pela "
+"sua empresa. Documentos emitidos por terceiros não podem ser corrigidos por "
+"você."
 
 #. module: l10n_br_fiscal_edi
 #. odoo-python

@@ -285,3 +285,82 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
         )
         self.assertEqual(len(move.invoice_line_ids), 2)
         self.assertEqual(move.l10n_latam_document_number, "4955")
+
+    def _create_own_document(self, operation="fo_venda"):
+        company = self.company_data["company"]
+        serie = self.env["l10n_br_fiscal.document.serie"].create(
+            {
+                "name": "7",
+                "code": "7",
+                "document_type_id": self.document_type_55.id,
+                "company_id": company.id,
+            }
+        )
+        document = self.env["l10n_br_fiscal.document"].create(
+            {
+                "fiscal_operation_id": self.env.ref(f"l10n_br_fiscal.{operation}").id,
+                "document_type_id": self.document_type_55.id,
+                "document_serie_id": serie.id,
+                "document_number": "596",
+                "document_date": fields.Date.from_string("2026-05-05"),
+                "issuer": "company",
+                "partner_id": self.partner_a.id,
+                "fiscal_operation_type": "out",
+                "company_id": company.id,
+            }
+        )
+        line_vals = {
+            "document_id": document.id,
+            "name": "Sale Test",
+            "product_id": self.product_a.id,
+            "quantity": 1,
+            "price_unit": 100.0,
+            "fiscal_operation_type": "out",
+            "fiscal_operation_id": self.env.ref(f"l10n_br_fiscal.{operation}").id,
+            "fiscal_operation_line_id": self.env.ref(
+                f"l10n_br_fiscal.{operation}_{operation[3:]}"
+            ).id,
+        }
+        self.env["l10n_br_fiscal.document.line"].create(line_vals)
+        return document, serie
+
+    def _import_own_document(self, document):
+        move_form = (
+            self.env["account.move"]
+            .sudo()
+            .import_fiscal_document(document, move_type="out_invoice")
+        )
+        return self.env["account.move"].sudo().browse(move_form.id)
+
+    def test_import_an_own_document_into_a_customer_invoice(self):
+        """The serie field is invisible on company documents: the serie of the
+        imported document is picked from the serie registry instead."""
+        document, serie = self._create_own_document()
+        move = self._import_own_document(document)
+        self.assertEqual(move.move_type, "out_invoice")
+        self.assertEqual(move.document_serie_id, serie)
+        self.assertEqual(move.fiscal_document_id, document)
+        self.assertTrue(document.fiscal_line_ids.cfop_id.finance_move)
+        self.assertEqual(
+            move.amount_total, document.fiscal_line_ids.fiscal_amount_total
+        )
+        self.assertGreater(move.amount_total, 0)
+
+    def test_imported_own_document_without_finance_move_has_no_amount(self):
+        """A CFOP without financial move (e.g. 5116, delivery of a future
+        delivery sale, billed by a 5922 note) keeps the invoice amount at zero
+        by design of l10n_br_fiscal.cfop.finance_move. Posting it must not
+        touch the already authorized fiscal document."""
+        document, _serie = self._create_own_document(operation="fo_entrega_futura")
+        # as an own note imported with its authorization protocol
+        document.state_edoc = "autorizada"
+        move = self._import_own_document(document)
+        self.assertFalse(move.invoice_line_ids.cfop_id.finance_move)
+        self.assertEqual(move.invoice_line_ids.price_unit, 100.0)
+        self.assertEqual(move.amount_total, 0.0)
+        state_edoc = document.state_edoc
+        events = document.event_ids
+        move.action_post()
+        self.assertEqual(move.state, "posted")
+        self.assertEqual(document.state_edoc, state_edoc)
+        self.assertEqual(document.event_ids, events)
