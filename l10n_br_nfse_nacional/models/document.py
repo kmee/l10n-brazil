@@ -414,8 +414,7 @@ class L10nBrFiscalDocument(spec_models.StackedModel):
         self._prepare_nfse10_tot_trib(amounts)
 
     def _prepare_nfse10_trib_mun(self, codes, amounts):
-        # issqn_eligibility defaults to "2" (Não incidência) and is rarely set,
-        # so only its explicit export and immunity values are taken from it.
+        # Only the export and immunity values of issqn_eligibility are taken.
         # Non-incidence (such as the rental of movable goods, STF SV 31) comes
         # from the ISSQN NT tax of the fiscal operation.
         self.nfse10_tribISSQN = codes["tribISSQN"]
