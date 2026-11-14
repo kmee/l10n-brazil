@@ -18,3 +18,4 @@ from . import test_deductible_balance
 from . import test_dfe_utilization
 from . import test_ibs_cbs_deductible
 from . import test_icms_st_deductible
+from . import test_icmsfcp_deductible
