@@ -78,6 +78,19 @@ class L10nBrCoaGeneric(TransactionCase):
         self.assertFalse(self._tax_line(st).account_id)
         self.assertFalse(self._tax_line(st, refund=True).account_id)
 
+    def test_icmsfcp_sale_tax_has_account_and_deductible_pair(self):
+        """The FCP follows the ICMS: same payable and deduction accounts."""
+        self.l10n_br_coa_generic.try_loading(company=self.l10n_br_company)
+        fcp = self._taxes_by_name("ICMS Saida FCP")
+        fcp_ded = self._taxes_by_name("ICMS Saida FCP Dedutível")
+        self.assertTrue(fcp_ded.deductible)
+        self.assertEqual(fcp_ded.tax_group_id, fcp.tax_group_id)
+        self.assertEqual(self._tax_line(fcp).account_id.code, "2.1.7.1.03")
+        self.assertEqual(self._tax_line(fcp_ded).account_id.code, "6.1.1.2.03")
+        self.assertEqual(self._tax_line(fcp_ded).factor_percent, -100)
+        fcp_in = self._taxes_by_name("ICMS Entrada FCP")
+        self.assertFalse(self._tax_line(fcp_in).account_id)
+
     def _simulate_company_loaded_before(self):
         """Leave the company as a chart loaded before the ST pair left it.
 
@@ -89,14 +102,17 @@ class L10nBrCoaGeneric(TransactionCase):
         xmlid = (
             f"l10n_br_coa.{self.l10n_br_company.id}_tax_template_icms_st_out_deductible"
         )
-        st_ded.unlink()
+        (st_ded | self._taxes_by_name("ICMS Saida FCP Dedutível")).unlink()
         self.env["ir.model.data"].search(
             [
                 ("module", "=", "l10n_br_coa"),
                 (
                     "name",
-                    "=",
-                    f"{self.l10n_br_company.id}_tax_template_icms_st_out_deductible",
+                    "in",
+                    [
+                        f"{self.l10n_br_company.id}_tax_template_icms_st_out_deductible",
+                        f"{self.l10n_br_company.id}_tax_template_icmsfcp_out_deductible",
+                    ],
                 ),
             ]
         ).unlink()
@@ -108,9 +124,10 @@ class L10nBrCoaGeneric(TransactionCase):
     def test_migration_creates_deductible_st_and_accounts(self):
         """The migration method completes a company that loaded the chart before."""
         st = self._simulate_company_loaded_before()
-        self.env["account.chart.template"]._complete_icms_st()
+        self.env["account.chart.template"]._complete_sale_deductible_taxes()
         st_ded = self._taxes_by_name("ICMS Saida Subist Dedutível")
         self.assertEqual(len(st_ded), 1)
+        self.assertEqual(len(self._taxes_by_name("ICMS Saida FCP Dedutível")), 1)
         self.assertTrue(st_ded.deductible)
         self.assertEqual(st_ded.type_tax_use, "sale")
         self.assertEqual(st_ded.tax_group_id, st.tax_group_id)
@@ -147,8 +164,8 @@ class L10nBrCoaGeneric(TransactionCase):
         self.assertTrue(custom)
         self._tax_line(st).account_id = custom
         Chart = self.env["account.chart.template"]
-        Chart._complete_icms_st()
-        Chart._complete_icms_st()
+        Chart._complete_sale_deductible_taxes()
+        Chart._complete_sale_deductible_taxes()
         self.assertEqual(len(self._taxes_by_name("ICMS Saida Subist Dedutível")), 1)
         self.assertEqual(len(self._taxes_by_name("ICMS Saida Subist")), 1)
         self.assertEqual(self._tax_line(st).account_id, custom)
@@ -156,7 +173,7 @@ class L10nBrCoaGeneric(TransactionCase):
     def test_migration_does_nothing_for_company_without_chart(self):
         """A company that never loaded the chart gets no tax from the migration."""
         company = self.env["res.company"].create({"name": "Empresa sem plano"})
-        self.env["account.chart.template"]._complete_icms_st()
+        self.env["account.chart.template"]._complete_sale_deductible_taxes()
         self.assertFalse(
             self.env["account.tax"].search(
                 [("company_id", "=", company.id), ("name", "ilike", "Subist")]

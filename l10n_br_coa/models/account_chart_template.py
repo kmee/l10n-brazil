@@ -3,6 +3,19 @@
 
 from odoo import _, api, models
 
+SALE_DEDUCTIBLE_TAXES = [
+    (
+        "tax_group_icmsst",
+        "tax_template_out_icms_subist",
+        "tax_template_icms_st_out_deductible",
+    ),
+    (
+        "tax_group_icmsfcp",
+        "tax_template_out_icmsfcp",
+        "tax_template_icmsfcp_out_deductible",
+    ),
+]
+
 ACC_NAMES = {
     "sale": {
         "account_id": "account_id",
@@ -113,26 +126,31 @@ class AccountChartTemplate(models.Model):
         return account_ref, taxes_ref
 
     @api.model
-    def _complete_icms_st(self):
-        """Create the deductible ICMS ST tax and write the group accounts on it.
+    def _complete_sale_deductible_taxes(self):
+        """Create the deductible ICMS ST and FCP taxes and write the group accounts.
 
         Idempotent: never overwrites an account already set.
         """
+        for group_name, base_name, deductible_name in SALE_DEDUCTIBLE_TAXES:
+            self._complete_sale_deductible_tax(group_name, base_name, deductible_name)
+
+    @api.model
+    def _complete_sale_deductible_tax(self, group_name, base_name, deductible_name):
         template = self.env.ref(
-            "l10n_br_coa.tax_template_icms_st_out_deductible", raise_if_not_found=False
+            f"l10n_br_coa.{deductible_name}", raise_if_not_found=False
         )
-        group = self.env.ref("l10n_br_coa.tax_group_icmsst", raise_if_not_found=False)
+        group = self.env.ref(f"l10n_br_coa.{group_name}", raise_if_not_found=False)
         if not template or not group:
             return
         for company in self.env["res.company"].search([]):
             base_tax = self.env.ref(
-                f"l10n_br_coa.{company.id}_tax_template_out_icms_subist",
+                f"l10n_br_coa.{company.id}_{base_name}",
                 raise_if_not_found=False,
             )
             if not base_tax or not base_tax.exists():
                 continue
             tax = self.env.ref(
-                f"l10n_br_coa.{company.id}_tax_template_icms_st_out_deductible",
+                f"l10n_br_coa.{company.id}_{deductible_name}",
                 raise_if_not_found=False,
             )
             if not tax or not tax.exists():
@@ -189,12 +207,13 @@ class AccountChartTemplate(models.Model):
             else:
                 account = False
                 refund_account = False
-        elif tax.type_tax_use == "purchase" and tax.tax_group_id == self.env.ref(
-            "l10n_br_coa.tax_group_icmsst"
+        elif tax.type_tax_use == "purchase" and tax.tax_group_id in (
+            self.env.ref("l10n_br_coa.tax_group_icmsst")
+            | self.env.ref("l10n_br_coa.tax_group_icmsfcp")
         ):
             # The ICMS ST of a purchase is charged by the supplier
-            # and is part of the cost: it has no account. The ST
-            # group carries the accounts of the sale side only.
+            # and is part of the cost: it has no account. The ST and
+            # FCP groups carry the accounts of the sale side only.
             account = False
             refund_account = False
         else:
