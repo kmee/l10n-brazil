@@ -6899,3 +6899,24 @@ msgstr "A sequência da CC-e deve estar entre 1 e 20 (limite da SEFAZ)."
 #: code:addons/l10n_br_nfe/models/document.py:0
 msgid "The CC-e sequence %(sequence)s was already used for this note."
 msgstr "A sequência %(sequence)s da CC-e já foi usada nesta nota."
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_res_company__danfe_additional_data_height
+msgid "Danfe Additional Data Height"
+msgstr "Altura dos dados adicionais do DANFE"
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,help:l10n_br_nfe.field_res_company__danfe_additional_data_height
+msgid ""
+"Height in mm of the additional data block on the first page of the DANFE. "
+"Text that does not fit continues below the products. The MOC suggests 30.7 "
+"mm in portrait."
+msgstr ""
+"Altura em mm do bloco de dados adicionais na primeira página do DANFE. O "
+"texto que não couber continua abaixo dos produtos. O MOC sugere 30,7 mm em "
+"retrato."
+
+#. module: l10n_br_nfe
+#: model_terms:ir.ui.view,arch_db:l10n_br_nfe.nfe_res_company_form
+msgid "Additional Data Height (mm)"
+msgstr "Altura dos dados adicionais (mm)"

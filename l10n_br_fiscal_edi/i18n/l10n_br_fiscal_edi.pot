@@ -827,3 +827,86 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_event__display_name
 msgid "name"
 msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document.py:0
+msgid ""
+"The correction letter (CC-e) is only valid for authorized documents issued "
+"by your company. Documents issued by third parties can not be corrected by "
+"you."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document.py:0
+msgid ""
+"The correction text has characters that the tax authority does not accept: "
+"%(chars)s. Replace them and try again."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document.py:0
+msgid ""
+"The correction text must have at least %(min)s characters (it has %(size)s)."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document.py:0
+msgid ""
+"The correction text must have at most %(max)s characters (it has %(size)s)."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document.py:0
+msgid ""
+"The maximum of %(max)s correction letters for this document was reached."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document.py:0
+msgid "Correction letter registered"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document.py:0
+msgid "Correction letter refused"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_event.py:0
+msgid ""
+"Only a correction letter registered by the tax authority can be printed."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_correction_wizard__justification
+msgid ""
+"NF-e: 15 to 1000 characters; line breaks, tabs, repeated spaces and "
+"typographic punctuation are normalized before sending."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_event__can_print
+msgid "Can Print"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_correction_wizard__correction_sequence
+msgid "CC-e Sequence"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_correction_wizard__correction_sequence
+msgid ""
+"Sequence number (nSeqEvento) of the correction letter. It is the next one "
+"after the letters known by Odoo. Change it when letters of this note were "
+"already issued outside Odoo (e.g. in the previous ERP): use the number after"
+" the last one issued."
+msgstr ""

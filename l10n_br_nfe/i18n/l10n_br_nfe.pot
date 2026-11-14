@@ -6589,3 +6589,49 @@ msgid ""
 "Return NF-e item references:\n"
 "%(errors)s"
 msgstr ""
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document.py:0
+msgid ""
+"The XML of a note issued by your company must be the authorized one (nfeProc"
+" with the SEFAZ protocol). A file without protocol can not be imported."
+msgstr ""
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document.py:0
+msgid ""
+"The protocol of the file is not an authorization (status %(status)s: "
+"%(reason)s)."
+msgstr ""
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document.py:0
+msgid "The CC-e sequence must be between 1 and 20 (SEFAZ limit)."
+msgstr ""
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document.py:0
+msgid "The CC-e sequence %(sequence)s was already used for this note."
+msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_res_company__danfe_additional_data_height
+msgid "Danfe Additional Data Height"
+msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,help:l10n_br_nfe.field_res_company__danfe_additional_data_height
+msgid ""
+"Height in mm of the additional data block on the first page of the DANFE. "
+"Text that does not fit continues below the products. The MOC suggests 30.7 "
+"mm in portrait."
+msgstr ""
+
+#. module: l10n_br_nfe
+#: model_terms:ir.ui.view,arch_db:l10n_br_nfe.nfe_res_company_form
+msgid "Additional Data Height (mm)"
+msgstr ""

@@ -292,6 +292,18 @@ class TestNFeCorrection(TestNFeExport):
     # -- NFC-e -------------------------------------------------------------
 
     @nfe_mock(SEND_MOCKS)
+    def test_correction_button_condition_in_the_final_form_view(self):
+        """The NF-e view must not override the can_issue_correction rule of
+        l10n_br_fiscal_edi: own imported notes show the button, notes of third
+        parties do not (OCA#5305 hid it for every imported note)."""
+        arch = self.env.ref("l10n_br_fiscal.document_form")._get_combined_arch()
+        node = arch.xpath("//header/button[@name='action_document_correction']")
+        self.assertEqual(len(node), 1)
+        invisible = node[0].get("invisible")
+        self.assertIn("not can_issue_correction", invisible)
+        self.assertNotIn("imported_document", invisible)
+        self.assertIn("state_edoc != 'autorizada'", invisible)
+
     def test_nfce_does_not_accept_correction_letter(self):
         nfe = self._authorized_nfe()
         nfce = self.env.ref("l10n_br_fiscal.document_65")
