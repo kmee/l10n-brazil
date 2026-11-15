@@ -158,8 +158,9 @@ class StockMove(models.Model):
         ]
         if not mixin_classes:
             return res
-        mixin_class = mixin_classes[0]
-        mixin_names = {field.name for field in mixin_class._field_definitions}
+        mixin_names = {
+            field.name for klass in mixin_classes for field in klass._field_definitions
+        }
         for name in mixin_names:
             field = self._fields.get(name)
             if field is None or not field.precompute:
@@ -174,11 +175,16 @@ class StockMove(models.Model):
             # Look at the mixin method, not the stock.move override: the
             # override may not repeat @api.depends, but the original field
             # definition still declares dependencies that drive precompute.
-            compute = getattr(mixin_class, field.compute, None)
-            if compute is None:
+            computes = [
+                vars(klass)[field.compute]
+                for klass in mixin_classes
+                if field.compute in vars(klass)
+            ]
+            if not computes:
                 continue
-            func = getattr(compute, "__func__", compute)
-            if not getattr(func, "_depends", None):
+            if not any(
+                getattr(getattr(c, "__func__", c), "_depends", None) for c in computes
+            ):
                 # Compute methods without explicit @api.depends rely on
                 # precompute to get their initial value (e.g. ind_final).
                 # Keep precompute enabled for them.
