@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 KMEE
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+<!--
+  Return das operações de industrialização do core: 1901/2901 é a entrada do
+  industrializador, não o retorno do encomendante (1902). Os records só atualizam o
+  campo return. O dado do core é noupdate, então bases já instaladas recebem a
+  correção pela migração.
+-->
+<odoo noupdate="1">
+    <record id="fo_remessa_industrializacao" model="l10n_br_fiscal.operation">
+        <field
+            name="return_fiscal_operation_id"
+            ref="fo_entrada_retorno_industrializacao"
+        />
+    </record>
+    <record id="fo_entrada_industrializacao" model="l10n_br_fiscal.operation">
+        <field name="return_fiscal_operation_id" ref="fo_retorno_industrializacao" />
+    </record>
+</odoo>

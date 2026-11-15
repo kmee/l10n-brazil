@@ -24,4 +24,5 @@ from . import (
     test_icmssn,
     test_simplified_tax,
     test_catalog_triangular_industrializacao,
+    test_industrializacao_return_migration,
 )
