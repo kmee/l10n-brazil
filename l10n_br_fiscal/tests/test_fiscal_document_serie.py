@@ -63,3 +63,17 @@ class TestFiscalDocumentSerie(TransactionCase):
         """Test document serie code in use constraint."""
         with self.assertRaises(ValidationError):
             self.document_serie_nfe_5.write({"code": "7"})
+
+    def test_document_serie_code_size(self):
+        """Five digit series (NFS-e nacional) are kept; NF-e stays at 3."""
+        document_serie = self.env["l10n_br_fiscal.document.serie"]
+        values = {
+            "code": "70002",
+            "name": "Serie DPS",
+            "document_type_id": self.env.ref("l10n_br_fiscal.document_SE").id,
+            "company_id": self.company_sn.id,
+        }
+        self.assertEqual(document_serie.create(values).code, "70002")
+        values.update(document_type_id=self.document_type_nfe.id, name="Serie NFe")
+        with self.assertRaises(ValidationError):
+            document_serie.create(values)

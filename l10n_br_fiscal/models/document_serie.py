@@ -12,13 +12,17 @@ from ..constants.fiscal import (
     FISCAL_IN_OUT_DEFAULT,
 )
 
+# NF-e, CT-e, MDF-e, NFC-e and CT-e OS schemas accept series up to 3 digits
+SERIE_MAX_3_DOCUMENT_TYPES = ("55", "57", "58", "65", "67")
+
 
 class DocumentSerie(models.Model):
     _name = "l10n_br_fiscal.document.serie"
     _description = "Fiscal Document Serie"
     _inherit = "l10n_br_fiscal.data.abstract"
 
-    code = fields.Char(size=3)
+    # NFS-e nacional (TSSerieDPS) admits up to 5 digits
+    code = fields.Char(size=5)
 
     name = fields.Char(required=True)
 
@@ -64,6 +68,22 @@ class DocumentSerie(models.Model):
             "A Fiscal Document Serie already exists for this document type.",
         )
     ]
+
+    @api.constrains("code", "document_type_id")
+    def _check_code_size(self):
+        """NF-e, CT-e and other electronic models limit the serie to 3 digits."""
+        for record in self:
+            if (
+                record.document_type_id.code in SERIE_MAX_3_DOCUMENT_TYPES
+                and len(record.code or "") > 3
+            ):
+                raise ValidationError(
+                    self.env._(
+                        "The serie code of document type %(type)s must have at "
+                        "most 3 characters.",
+                        type=record.document_type_id.code,
+                    )
+                )
 
     @api.model
     def _create_sequence(self, values):
