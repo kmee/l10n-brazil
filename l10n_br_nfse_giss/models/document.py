@@ -287,13 +287,13 @@ class Document(models.Model):
                     PIS_COFINS_CSLL_WITHHOLDING[withheld]
                 ),
             )
-        burden = line._nfse_approximate_tax_burden()
+        burden = line._nfse_approximate_tax_burden_from_taxes()
         if not burden["simples"]:
             total = tipos.TctribTotal(
                 p_tot_trib=tipos.TctribTotalPercent(
                     p_tot_trib_fed=_decimal(burden["federal_percent"]),
                     p_tot_trib_est=_decimal(burden["state_percent"]),
-                    p_tot_trib_mun=_decimal(burden["city_percent"]),
+                    p_tot_trib_mun=_decimal(burden["municipal_percent"]),
                 )
             )
         elif burden["simples_percent"]:
