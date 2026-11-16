@@ -1,7 +1,3 @@
-.. image:: https://odoo-community.org/readme-banner-image
-   :target: https://odoo-community.org/get-involved?utm_source=readme
-   :alt: Odoo Community Association
-
 ===========================================
 Brazilian Account Installment Renegotiation
 ===========================================
@@ -17,7 +13,7 @@ Brazilian Account Installment Renegotiation
 .. |badge1| image:: https://img.shields.io/badge/maturity-Beta-yellow.png
     :target: https://odoo-community.org/page/development-status
     :alt: Beta
-.. |badge2| image:: https://img.shields.io/badge/license-AGPL--3-blue.png
+.. |badge2| image:: https://img.shields.io/badge/licence-AGPL--3-blue.png
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-OCA%2Fl10n--brazil-lightgray.png?logo=github
@@ -49,6 +45,12 @@ Features:
   modes)
 - Automatically logs changes in the invoice's chatter
 - Does not affect the fiscal document (NFe)
+- Installments replaced are zeroed instead of deleted, keeping their
+  original amount: a boleto transaction or a CNAB remittance that points
+  to them keeps its history. Installments left unchanged are not touched
+- Hooks ``_installment_renegotiation_before`` and
+  ``_installment_renegotiation_after`` on the invoice let payment
+  modules cancel the old charges and issue the new ones
 
 **Table of contents**
 

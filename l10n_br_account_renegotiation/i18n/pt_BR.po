@@ -31,8 +31,8 @@ msgid ""
 "installments:</strong><br/>%(new)s</p>"
 msgstr ""
 "<p><strong>Parcelas renegociadas</strong></p><p><strong>Parcelas "
-"anteriores:</strong><br/>%(old)s</p><p><strong>Novas parcelas:</strong><br/>%"
-"(new)s</p>"
+"anteriores:</strong><br/>%(old)s</p><p><strong>Novas "
+"parcelas:</strong><br/>%(new)s</p>"
 
 #. module: l10n_br_account_renegotiation
 #: model_terms:ir.ui.view,arch_db:l10n_br_account_renegotiation.view_installment_renegotiation_wizard_form
@@ -42,10 +42,8 @@ msgid ""
 "                    not be affected. A record of this change will be logged in the\n"
 "                    invoice's chatter."
 msgstr ""
-"<strong>Observação:</strong> esta ação altera os vencimentos e os valores "
-"das parcelas\n"
-"                    da fatura lançada. O documento fiscal (NF-e) não é "
-"alterado. O registro\n"
+"<strong>Observação:</strong> esta ação altera os vencimentos e os valores das parcelas\n"
+"                    da fatura lançada. O documento fiscal (NF-e) não é alterado. O registro\n"
 "                    da alteração fica no histórico da fatura."
 
 #. module: l10n_br_account_renegotiation
@@ -55,8 +53,7 @@ msgid ""
 "                    Please adjust the installment amounts so the difference is zero."
 msgstr ""
 "<strong>Atenção:</strong> o valor total não pode mudar.\n"
-"                    Ajuste os valores das parcelas até a diferença ficar "
-"zerada."
+"                    Ajuste os valores das parcelas até a diferença ficar zerada."
 
 #. module: l10n_br_account_renegotiation
 #. odoo-python
@@ -74,6 +71,17 @@ msgstr "Todas as parcelas devem ter data de vencimento."
 #: model:ir.model.fields,field_description:l10n_br_account_renegotiation.field_account_installment_renegotiation_wizard_line__amount
 msgid "Amount"
 msgstr "Valor"
+
+#. module: l10n_br_account_renegotiation
+#: model:ir.model.fields,help:l10n_br_account_renegotiation.field_account_move_line__installment_original_amount
+msgid ""
+"Amount of this installment before a renegotiation replaced it. The "
+"installment is zeroed instead of deleted, so its boleto, CNAB remittance and"
+" payment history keep pointing to it."
+msgstr ""
+"Valor desta parcela antes de uma renegociação substituí-la. A parcela é "
+"zerada em vez de apagada, então o boleto, a remessa CNAB e o histórico de "
+"pagamento continuam ligados a ela."
 
 #. module: l10n_br_account_renegotiation
 #: model_terms:ir.ui.view,arch_db:l10n_br_account_renegotiation.view_installment_renegotiation_wizard_form
@@ -152,6 +160,11 @@ msgid "ID"
 msgstr "ID"
 
 #. module: l10n_br_account_renegotiation
+#: model:ir.model.fields,field_description:l10n_br_account_renegotiation.field_account_move_line__installment_original_amount
+msgid "Installment Original Amount"
+msgstr "Valor original da parcela"
+
+#. module: l10n_br_account_renegotiation
 #: model:ir.model,name:l10n_br_account_renegotiation.model_account_installment_renegotiation_wizard
 msgid "Installment Renegotiation Wizard"
 msgstr "Assistente de renegociação de parcelas"
@@ -186,6 +199,11 @@ msgid "Journal Entry"
 msgstr "Lançamento contábil"
 
 #. module: l10n_br_account_renegotiation
+#: model:ir.model,name:l10n_br_account_renegotiation.model_account_move_line
+msgid "Journal Item"
+msgstr "Item de diário"
+
+#. module: l10n_br_account_renegotiation
 #: model:ir.model.fields,field_description:l10n_br_account_renegotiation.field_account_installment_renegotiation_wizard__write_uid
 #: model:ir.model.fields,field_description:l10n_br_account_renegotiation.field_account_installment_renegotiation_wizard_line__write_uid
 msgid "Last Updated by"
@@ -206,6 +224,12 @@ msgstr "Nova condição de pagamento"
 #: model:ir.model.fields,field_description:l10n_br_account_renegotiation.field_account_installment_renegotiation_wizard__new_total
 msgid "New Total"
 msgstr "Novo total"
+
+#. module: l10n_br_account_renegotiation
+#. odoo-python
+#: code:addons/l10n_br_account_renegotiation/wizards/installment_renegotiation_wizard.py:0
+msgid "Nothing to renegotiate: no installment was changed."
+msgstr "Nada a renegociar: nenhuma parcela foi alterada."
 
 #. module: l10n_br_account_renegotiation
 #. odoo-python
@@ -254,7 +278,8 @@ msgstr "Data inicial"
 #: model:ir.model.fields,help:l10n_br_account_renegotiation.field_account_bank_statement_line__can_renegotiate_installments
 #: model:ir.model.fields,help:l10n_br_account_renegotiation.field_account_move__can_renegotiate_installments
 msgid "Technical field to determine if installment renegotiation is available"
-msgstr "Campo técnico que indica se a renegociação de parcelas está disponível"
+msgstr ""
+"Campo técnico que indica se a renegociação de parcelas está disponível"
 
 #. module: l10n_br_account_renegotiation
 #. odoo-python
