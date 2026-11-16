@@ -22,6 +22,52 @@ def clean_digits(value):
     return _NON_DIGIT_SEPARATORS.sub("", value or "")
 
 
+def is_pix_qr_payload(value):
+    """True for a PIX copia-e-cola (EMV BR Code), e.g. the QR of a FGTS Digital guide.
+
+    The payload starts with "000201" (payload format indicator) and carries
+    letters, dots and spaces that must reach the CNAB file untouched. A boleto
+    barcode never starts like this (position 4, the currency, is always 9).
+    """
+    return (value or "").lstrip().startswith("000201")
+
+
+def clean_pix_qr_payload(value):
+    """PIX copia-e-cola without the blanks around it and without line breaks.
+
+    Copying it from a PDF often brings a trailing newline (or one inside the
+    text), which must never reach a fixed width CNAB record. Inner spaces are
+    kept: they belong to the receiver name and city.
+    """
+    return re.sub(r"[\r\n]", "", value or "").strip()
+
+
+def pix_crc16(data):
+    """CRC-16/CCITT-FALSE (poly 0x1021, init 0xFFFF) of the EMV BR Code."""
+    crc = 0xFFFF
+    for byte in data.encode("utf-8"):
+        crc ^= byte << 8
+        for _bit in range(8):
+            crc = ((crc << 1) ^ 0x1021) if crc & 0x8000 else crc << 1
+            crc &= 0xFFFF
+    return crc
+
+
+def is_valid_pix_qr_payload(value):
+    """True when the CRC (tag 63) of a PIX copia-e-cola matches its content.
+
+    The CRC covers the payload up to and including the "6304" tag header.
+    """
+    payload = clean_pix_qr_payload(value)
+    if len(payload) <= 8 or payload[-8:-4] != "6304":
+        return False
+    try:
+        expected = int(payload[-4:], 16)
+    except ValueError:
+        return False
+    return pix_crc16(payload[:-4]) == expected
+
+
 def mod10(number):
     """Mod 10 DV (weights 2,1 from the right, digits of products summed)."""
     total = 0

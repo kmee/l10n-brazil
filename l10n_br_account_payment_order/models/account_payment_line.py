@@ -231,6 +231,12 @@ class AccountPaymentLine(models.Model):
             source = vals["digitable_line"]
         if not source:
             return vals
+        if barcode_utils.is_pix_qr_payload(source):
+            # PIX QR Code (copia-e-cola): keep it as typed (only blanks around
+            # it and line breaks are removed), it is not a boleto
+            if vals.get("barcode"):
+                vals["barcode"] = barcode_utils.clean_pix_qr_payload(vals["barcode"])
+            return vals
         barcode, digitable_line, valid = barcode_utils.normalize_barcode(source)
         vals["barcode"] = barcode
         if valid and digitable_line:
@@ -249,6 +255,29 @@ class AccountPaymentLine(models.Model):
             vals = self._normalize_barcode_vals(vals)
         return super().write(vals)
 
+    def _check_pix_qr_payload(self):
+        """Block a PIX copia-e-cola whose CRC (tag 63) does not match.
+
+        Catches truncated payloads and lines saved before the PIX payload was
+        kept verbatim (the old normalization removed dots, spaces and hyphens).
+        """
+        self.ensure_one()
+        if barcode_utils.is_valid_pix_qr_payload(self.barcode):
+            return
+        raise UserError(
+            self.env._(
+                "The PIX QR Code (copia-e-cola) on payment line %(line)s "
+                "(partner: %(partner)s, amount: %(amount)s) is invalid: its "
+                "check code (CRC) does not match. Paste the complete PIX "
+                "copia-e-cola again, exactly as shown in the guide.",
+                line=self.name or self.display_name,
+                partner=self.partner_id.display_name or "-",
+                amount=formatLang(
+                    self.env, self.amount_currency, currency_obj=self.currency_id
+                ),
+            )
+        )
+
     def _check_boleto_barcode(self):
         """Block boleto lines without a valid 44 digits barcode.
 
@@ -258,6 +287,9 @@ class AccountPaymentLine(models.Model):
         """
         for line in self:
             if line.payment_mode_domain != "boleto":
+                continue
+            if barcode_utils.is_pix_qr_payload(line.barcode):
+                line._check_pix_qr_payload()
                 continue
             barcode, digitable_line, valid = barcode_utils.normalize_barcode(
                 line.barcode or line.digitable_line

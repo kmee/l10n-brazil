@@ -52,6 +52,28 @@ class TestBoletoBarcodeUtils(TransactionCase):
             res = barcode_utils.normalize_barcode(value)
             self.assertEqual(res, (barcode, line, True), value)
 
+    def test_is_pix_qr_payload(self):
+        self.assertTrue(barcode_utils.is_pix_qr_payload(PIX_PAYLOAD))
+        self.assertTrue(barcode_utils.is_pix_qr_payload(" " + PIX_PAYLOAD))
+        self.assertFalse(barcode_utils.is_pix_qr_payload(PAIRS[0][0]))
+        self.assertFalse(barcode_utils.is_pix_qr_payload(PAIRS[0][1]))
+        self.assertFalse(barcode_utils.is_pix_qr_payload(False))
+
+    def test_pix_crc16(self):
+        # standard CRC-16/CCITT-FALSE check value
+        self.assertEqual(barcode_utils.pix_crc16("123456789"), 0x29B1)
+        self.assertTrue(barcode_utils.is_valid_pix_qr_payload(PIX_PAYLOAD))
+        self.assertFalse(barcode_utils.is_valid_pix_qr_payload(PIX_PAYLOAD[:-1]))
+        self.assertFalse(
+            barcode_utils.is_valid_pix_qr_payload(PIX_PAYLOAD.replace(".", "", 1))
+        )
+        self.assertFalse(barcode_utils.is_valid_pix_qr_payload("000201"))
+        self.assertFalse(barcode_utils.is_valid_pix_qr_payload(False))
+
+    def test_clean_pix_qr_payload(self):
+        dirty = "  " + PIX_PAYLOAD[:50] + "\r\n" + PIX_PAYLOAD[50:] + "\n "
+        self.assertEqual(barcode_utils.clean_pix_qr_payload(dirty), PIX_PAYLOAD)
+
     def test_normalize_invalid(self):
         barcode, line = PAIRS[0]
         bad_line = line[:-1] + str((int(line[-1]) + 1) % 10)
@@ -76,6 +98,14 @@ class TestBoletoBarcodeUtils(TransactionCase):
         )
         self.assertEqual(len(line), 48)
         self.assertEqual(barcode_utils.normalize_barcode(line), (barcode, line, True))
+
+
+_PIX_BODY = (
+    "00020126580014br.gov.bcb.pix0136pix.example.com/qr/v2/AbC123dEf4567"
+    "5204000053039865406412.805802BR5913EMPRESA TESTE6009SAO PAULO"
+    "62070503***6304"
+)
+PIX_PAYLOAD = _PIX_BODY + f"{barcode_utils.pix_crc16(_PIX_BODY):04X}"
 
 
 @tagged("post_install", "-at_install")
@@ -181,3 +211,49 @@ class TestBoletoBarcodeLine(AccountTestInvoicingCommon):
         pline.draft2open_payment_line_check()
         self.assertEqual(pline.barcode, barcode)
         self.assertEqual(pline.digitable_line, line)
+
+    def test_pix_payload_is_kept_verbatim(self):
+        self.assertIn(".", PIX_PAYLOAD)
+        self.assertIn(" ", PIX_PAYLOAD)
+        pline = self._line(barcode=PIX_PAYLOAD)
+        self.assertEqual(pline.barcode, PIX_PAYLOAD)
+        pline.write({"barcode": PIX_PAYLOAD})
+        self.assertEqual(pline.barcode, PIX_PAYLOAD)
+
+    def test_pix_payload_blanks_and_line_breaks_are_removed(self):
+        dirty = " " + PIX_PAYLOAD[:60] + "\r\n" + PIX_PAYLOAD[60:] + "\n"
+        pline = self._line(barcode=dirty)
+        self.assertEqual(pline.barcode, PIX_PAYLOAD)
+        pline.write({"barcode": "\n" + PIX_PAYLOAD + " \r\n"})
+        self.assertEqual(pline.barcode, PIX_PAYLOAD)
+        pline._check_boleto_barcode()  # no raise
+
+    def test_pix_payload_with_wrong_crc_blocks(self):
+        # e.g. a payload saved by the old normalization (no dots/spaces)
+        damaged = PIX_PAYLOAD.replace(".", "").replace(" ", "")
+        pline = self._line(barcode=damaged)
+        self.assertEqual(pline.barcode, damaged)
+        with self.assertRaises(UserError) as ctx:
+            pline._check_boleto_barcode()
+        self.assertIn("CRC", str(ctx.exception))
+        self.assertIn(pline.name, str(ctx.exception))
+
+    def test_pix_payload_is_not_checked_as_boleto(self):
+        pline = self._line(barcode=PIX_PAYLOAD)
+        pline._check_boleto_barcode()  # no raise
+        self.assertEqual(pline.barcode, PIX_PAYLOAD)
+
+    def test_non_pix_invalid_barcode_still_blocks(self):
+        # same length/shape as the payload but not starting with 000201
+        pline = self._line(barcode="X" + PIX_PAYLOAD)
+        with self.assertRaises(UserError):
+            pline._check_boleto_barcode()
+        with self.assertRaises(UserError):
+            self.order.draft2open()
+
+    def test_boleto_still_normalized_and_validated(self):
+        barcode, line = PAIRS[0]
+        pline = self._line(barcode=f"{line[:5]}.{line[5:10]} {line[10:]}")
+        self.assertEqual(pline.barcode, barcode)
+        self.assertEqual(pline.digitable_line, line)
+        pline._check_boleto_barcode()  # no raise
