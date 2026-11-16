@@ -14,8 +14,9 @@ from pydantic import ValidationError as PydanticValidationError
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
-from odoo.tools import float_round
+from odoo.tools import float_round, format_date
 
+from .boleto_instruction import COMMANDS
 from .payment_provider import BRBANK, NOSSO_NUMERO_CONTEXT
 
 _logger = logging.getLogger(__name__)
@@ -103,10 +104,20 @@ class PaymentTransaction(models.Model):
     brbank_review_message = fields.Char(
         string="Review Needed", readonly=True, copy=False
     )
+    brbank_waive_fees = fields.Boolean(
+        string="Fees Waived",
+        readonly=True,
+        copy=False,
+        help="Issued without fine and interest: the bank charges only the amount, "
+        "even after the due date.",
+    )
     brbank_instruction_ids = fields.One2many(
         comodel_name="l10n_br.boleto.instruction",
         inverse_name="transaction_id",
         string="Bank Instructions",
+    )
+    brbank_boleto_action_available = fields.Boolean(
+        compute="_compute_brbank_boleto_action_available"
     )
     brbank_supports_pdf = fields.Boolean(related="provider_id.brbank_supports_pdf")
     brbank_supports_instruction = fields.Boolean(
@@ -123,6 +134,15 @@ class PaymentTransaction(models.Model):
             "The idempotency key of a bank title must be unique.",
         )
     ]
+
+    def _compute_brbank_boleto_action_available(self):
+        Action = self.env["l10n_br.boleto.action"]
+        for tx in self:
+            tx.brbank_boleto_action_available = bool(
+                tx.provider_code == BRBANK
+                and tx._origin
+                and Action._available_actions(tx._origin.sudo(), tx.move_line_id)
+            )
 
     # === BUSINESS METHODS: TITLE === #
 
@@ -203,6 +223,17 @@ class PaymentTransaction(models.Model):
             for line in (self.boleto_instructions or "").splitlines()
             if line.strip()
         )
+        if self.brbank_waive_fees:
+            fees = Encargos()
+        else:
+            fees = Encargos(
+                multa_percentual=_percent(
+                    self.boleto_penalty or mode.payment_boleto_penalty
+                ),
+                juros_mensal_percentual=_percent(
+                    self.boleto_interest or mode.payment_boleto_interest
+                ),
+            )
         try:
             return Titulo(
                 chave_idempotencia=self.brbank_idempotency_key,
@@ -210,14 +241,7 @@ class PaymentTransaction(models.Model):
                 valor=Decimal(f"{self.currency_id.round(self.amount):.2f}"),
                 vencimento=due_date,
                 pagador=self._brbank_prepare_payer(),
-                encargos=Encargos(
-                    multa_percentual=_percent(
-                        self.boleto_penalty or mode.payment_boleto_penalty
-                    ),
-                    juros_mensal_percentual=_percent(
-                        self.boleto_interest or mode.payment_boleto_interest
-                    ),
-                ),
+                encargos=fees,
                 mensagens=messages,
             )
         except PydanticValidationError as error:
@@ -244,6 +268,7 @@ class PaymentTransaction(models.Model):
                 f"tx{self.id}"
             )
         try:
+            self._brbank_check_due_date()
             self._brbank_reserve_nosso_numero()
             titulo = self._brbank_prepare_titulo()
         except UserError as error:
@@ -293,6 +318,22 @@ class PaymentTransaction(models.Model):
             return False
         self._brbank_apply_registered(registered)
         return True
+
+    def _brbank_check_due_date(self):
+        """Banks refuse a title already past due (the BB answers HTTP 500), and
+        a retry would never pass: refuse it here, with the way out."""
+        self.ensure_one()
+        if self._boleto_is_overdue():
+            raise UserError(
+                _(
+                    "The due date of the boleto %(ref)s (%(date)s) has passed and "
+                    "the bank does not register an overdue boleto. Change the due "
+                    "date of the installment, or issue a new boleto from the "
+                    "Boleto actions of the installment.",
+                    ref=self.reference,
+                    date=format_date(self.env, self.due_date),
+                )
+            )
 
     def _brbank_reserve_nosso_numero(self):
         """Keep the nosso numero on the transaction, so a retry sends the same one."""
@@ -504,14 +545,68 @@ class PaymentTransaction(models.Model):
             )
 
     def _brbank_available_commands(self):
-        """Write-off needs `BAIXA`, the other commands `ALTERACAO`."""
+        """Write-off needs `BAIXA`, the other commands `ALTERACAO`, narrowed to the
+        instructions the adapter declares (`instrucoes`, from brbank 0.0.19 on):
+        the BB and the Sicredi do not protest, the C6 only extends."""
         self.ensure_one()
         commands = []
         if self.brbank_supports_instruction:
-            commands += ["prorrogacao", "abatimento", "protesto"]
+            adapter_class = self.provider_id.sudo()._brbank_adapter_class()
+            declared = getattr(adapter_class, "instrucoes", None)
+            commands += [
+                command
+                for command in ("prorrogacao", "abatimento", "protesto")
+                if declared is None or COMMANDS[command] in declared
+            ]
         if self.brbank_supports_write_off:
             commands.append("baixa")
         return commands
+
+    def _brbank_is_live(self):
+        """Registered and open at the bank: the boleto can still be paid."""
+        self.ensure_one()
+        return bool(
+            self.provider_code == BRBANK
+            and self.provider_reference
+            and self.state == "authorized"
+        )
+
+    def _brbank_pending_write_off(self):
+        """The write-off queued for this boleto, not sent yet."""
+        self.ensure_one()
+        return self.brbank_instruction_ids.filtered(
+            lambda i: i.command == "baixa" and i.state == "draft" and i.idempotency_key
+        )
+
+    def _brbank_queue_write_off(self, reason):
+        """Take the boleto off the bank once the invoice no longer charges it.
+
+        Sent after the commit, never inside the transaction that decided it: a
+        rollback would leave the bank without its boleto and Odoo unaware of it.
+        A title never registered is just canceled here.
+        """
+        instructions = self.env["l10n_br.boleto.instruction"]
+        for tx in self.filtered(lambda t: t.provider_code == BRBANK):
+            if tx.state == "draft" and not tx.provider_reference:
+                tx.sudo().with_context(payment_backend_action=True)._set_canceled(
+                    reason
+                )
+                continue
+            if (
+                not tx._brbank_is_live()
+                or not tx.brbank_supports_write_off
+                or tx._brbank_pending_write_off()
+            ):
+                continue
+            instruction = instructions.sudo().create(
+                {"transaction_id": tx.id, "command": "baixa", "result_message": reason}
+            )
+            instruction.idempotency_key = tx._brbank_new_idempotency_key(
+                f"instr{instruction.id}"
+            )
+            instructions |= instruction
+        instructions._send_after_commit()
+        return instructions
 
     # === CRON === #
 
@@ -547,6 +642,11 @@ class PaymentTransaction(models.Model):
             error = tx._brbank_cron_step(lambda t: t._brbank_sync_from_bank())
             tx._brbank_count_sync(results, error)
         self._brbank_report_sync(results)
+        # Instructions queued (automatic write-offs) or left by an unavailable bank.
+        self.env["l10n_br.boleto.instruction"].search(
+            [("state", "=", "draft"), ("idempotency_key", "!=", False)],
+            limit=limit,
+        )._send_queued()
 
     def _brbank_cron_step(self, step):
         """Run one step of the cron; return the error, if any."""
@@ -683,19 +783,9 @@ class PaymentTransaction(models.Model):
             "target": "new",
         }
 
-    def action_brbank_new_instruction(self):
+    def action_brbank_boleto_actions(self):
         self.ensure_one()
-        return {
-            "type": "ir.actions.act_window",
-            "name": _("Bank Instruction"),
-            "res_model": "l10n_br.boleto.instruction",
-            "view_mode": "form",
-            "target": "new",
-            "context": {
-                "default_transaction_id": self.id,
-                "brbank_commands": self._brbank_available_commands(),
-            },
-        }
+        return self.env["l10n_br.boleto.action"]._open_for(self, self.move_line_id)
 
     def action_brbank_write_off(self):
         self.ensure_one()
