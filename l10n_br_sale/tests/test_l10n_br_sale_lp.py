@@ -111,3 +111,40 @@ class TestL10nBrSale(L10nBrSaleBaseTest, TransactionCase):
         self.assertEqual(2, sale_order.invoice_count)
         for invoice in sale_order.invoice_ids:
             self.assertEqual(1, len(invoice.invoice_line_ids.mapped("product_id")))
+
+    def test_invoice_document_takes_the_operation_of_its_lines(self):
+        """Order with one operation on the header and another on the service
+        lines: each invoice (fiscal document) carries the operation of the
+        lines it invoices, not the one of the header."""
+        self._change_user_company(self.company)
+        order = self.so_product_service
+        self._run_sale_order_onchanges(order)
+        for line in order.order_line:
+            self._run_sale_line_onchanges(line)
+        header_operation = order.fiscal_operation_id
+        service_lines = order.order_line.filtered(
+            lambda ln: ln.product_id.type == "service"
+        )
+        self.assertTrue(service_lines, "SO must have service lines")
+        other_operation = self.env["l10n_br_fiscal.operation"].search(
+            [
+                ("id", "!=", header_operation.id),
+                ("state", "=", "approved"),
+                ("fiscal_operation_type", "=", "out"),
+                ("fiscal_type", "not ilike", "%refund%"),
+                ("line_ids.document_type_id.code", "=", "SE"),
+            ],
+            limit=1,
+        )
+        if not other_operation:
+            self.skipTest("no second outgoing operation with a service line")
+        service_lines.write({"fiscal_operation_id": other_operation.id})
+        order.action_confirm()
+        order._create_invoices(final=True)
+        service_invoices = order.invoice_ids.filtered(
+            lambda inv: inv.document_type_id.code == "SE"
+        )
+        self.assertEqual(len(service_invoices), 1)
+        self.assertEqual(service_invoices.fiscal_operation_id, other_operation)
+        product_invoices = order.invoice_ids - service_invoices
+        self.assertEqual(product_invoices.fiscal_operation_id, header_operation)

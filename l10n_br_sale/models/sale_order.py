@@ -167,6 +167,20 @@ class SaleOrder(models.Model):
 
         return moves
 
+    def _get_invoice_fiscal_operation(self, document_type_id):
+        """Fiscal operation shared by the lines invoiced in the document type,
+        when it differs from the one of the order header, else empty."""
+        self.ensure_one()
+        lines = self.order_line.filtered(
+            lambda ln: ln.fiscal_operation_line_id
+            and ln.fiscal_operation_line_id.get_document_type(ln.company_id).id
+            == document_type_id
+        )
+        operations = lines.fiscal_operation_id
+        if len(operations) == 1 and operations != self.fiscal_operation_id:
+            return operations
+        return self.env["l10n_br_fiscal.operation"]
+
     def _prepare_invoice(self):
         self.ensure_one()
         result = super()._prepare_invoice()
@@ -187,16 +201,24 @@ class SaleOrder(models.Model):
                 document_type_id
             )
 
+            operation = self._get_invoice_fiscal_operation(document_type_id)
+            if operation:
+                # Pedido com operacoes diferentes por linha (ex.: pecas e servico): o
+                # documento leva a operacao das suas linhas, e nao a do cabecalho, para
+                # nao herdar texto legal e serie de outra operacao.
+                result["fiscal_operation_id"] = operation.id
+
             if document_type:
                 result["document_type_id"] = document_type_id
                 document_serie = document_type.get_document_serie(
-                    self.company_id, self.fiscal_operation_id
+                    self.company_id, operation or self.fiscal_operation_id
                 )
                 if document_serie:
                     result["document_serie_id"] = document_serie.id
 
-            if self.fiscal_operation_id.journal_id:
-                result["journal_id"] = self.fiscal_operation_id.journal_id.id
+            journal = (operation or self.fiscal_operation_id).journal_id
+            if journal:
+                result["journal_id"] = journal.id
 
         return result
 
