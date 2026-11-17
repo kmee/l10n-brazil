@@ -220,6 +220,47 @@ class TestDeliveryMelhorEnvio(TransactionCase):
         self.assertFalse(cart["options"]["non_commercial"])
         self.assertEqual(cart["options"]["invoice"], {"key": key})
 
+    def test_cart_payload_kit_components(self):
+        """The components of a phantom kit declare their share of the kit
+        price, not the full kit price each."""
+        components = self.env["product.product"].create(
+            [
+                {"name": f"Component {price}", "type": "consu", "list_price": price}
+                for price in (239.0, 189.0, 319.0, 269.0)
+            ]
+        )
+        picking = self._picking()
+        kit_line = self.order.order_line
+        # Simulate the phantom BOM explosion of mrp: one move per component,
+        # all of them linked to the sale line of the kit.
+        kit_move = picking.move_ids
+        for component in components:
+            kit_move.copy(
+                {
+                    "product_id": component.id,
+                    "product_uom": component.uom_id.id,
+                    "product_uom_qty": 1.0,
+                    "picking_id": picking.id,
+                    "sale_line_id": kit_line.id,
+                }
+            )
+        kit_move._action_cancel()
+        cart = self.package._melhorenvio_cart_payload(picking)
+        values = {
+            item["name"]: float(item["unitary_value"]) for item in cart["products"]
+        }
+        # 914.40 over 239 + 189 + 319 + 269 = 1016 (factor 0.9)
+        self.assertEqual(
+            values,
+            {
+                "Component 239.0": 215.10,
+                "Component 189.0": 170.10,
+                "Component 319.0": 287.10,
+                "Component 269.0": 242.10,
+            },
+        )
+        self.assertAlmostEqual(cart["options"]["insurance_value"], 914.40, places=2)
+
     def test_buy_label_resumes_without_paying_twice(self):
         picking = self._picking()
         answers = self._label_answers()
