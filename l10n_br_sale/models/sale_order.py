@@ -207,6 +207,10 @@ class SaleOrder(models.Model):
                 # documento leva a operacao das suas linhas, e nao a do cabecalho, para
                 # nao herdar texto legal e serie de outra operacao.
                 result["fiscal_operation_id"] = operation.id
+                result["comment_ids"] = [(6, 0, operation.comment_ids.ids)]
+                # os textos calculados no pedido eram os da operacao do cabecalho
+                result.pop("fiscal_additional_data", None)
+                result.pop("customer_additional_data", None)
 
             if document_type:
                 result["document_type_id"] = document_type_id
