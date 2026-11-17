@@ -2,6 +2,8 @@
 #   Magno Costa <magno.costa@akretion.com.br>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
+from lxml import etree
+
 from odoo import Command
 from odoo.tests import Form, TransactionCase
 
@@ -576,6 +578,47 @@ class L10nBrPurchaseBaseTest(TransactionCase):
         for line in order.order_line:
             line._onchange_fiscal_tax_ids()
             self.assertTrue(line.fiscal_operation_id)
+
+    def test_get_view_cache_separates_fiscal_detail_group(self):
+        """The cached form view must not leak the fiscal line popup (the
+        editable attribute) from a user of the group to a user without it."""
+        values = {
+            "company_id": self.company.id,
+            "company_ids": [Command.set(self.company.ids)],
+        }
+        purchase_user = self.env.ref("purchase.group_purchase_user")
+        popup_group = self.env.ref("l10n_br_purchase.group_line_fiscal_detail")
+        user_without_popup = self.env["res.users"].create(
+            dict(
+                values,
+                name="Purchase user without popup",
+                login="purchase_user_without_popup",
+                groups_id=[Command.set(purchase_user.ids)],
+            )
+        )
+        user_with_popup = self.env["res.users"].create(
+            dict(
+                values,
+                name="Purchase user with popup",
+                login="purchase_user_with_popup",
+                groups_id=[Command.set((purchase_user | popup_group).ids)],
+            )
+        )
+        view = self.env.ref("purchase.purchase_order_form")
+        self.env.registry.clear_caches()
+
+        def order_line_tree(user):
+            data = (
+                self.env["purchase.order"]
+                .with_user(user)
+                .with_company(self.company)
+                .get_view(view.id, "form")
+            )
+            arch = etree.fromstring(data["arch"])
+            return arch.xpath("//field[@name='order_line']/tree")[0]
+
+        self.assertNotEqual(order_line_tree(user_without_popup).get("editable"), "")
+        self.assertEqual(order_line_tree(user_with_popup).get("editable"), "")
 
     def test_fields_freight_insurance_other_costs(self):
         """Test fields Freight, Insurance and Other Costs when
