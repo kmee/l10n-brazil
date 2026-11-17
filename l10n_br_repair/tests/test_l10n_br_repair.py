@@ -82,6 +82,37 @@ class TestL10nBrRepair(TransactionCase):
         repair = self._create_repair()
         self.assertEqual(repair.fiscal_operation_id, self.fo_sale)
 
+    def test_part_line_taxes_when_moves_skip_fiscal_tax_compute(self):
+        """l10n_br_stock_account creates the stock moves with the context
+        skip_compute_fiscal_tax_ids. The sale order line of a repair part is
+        created inside the move create and must still get CFOP and taxes."""
+        repair = self.env["repair.order"].create(
+            {
+                "partner_id": self.partner.id,
+                "product_id": self.product_to_repair.id,
+                "company_id": self.company.id,
+            }
+        )
+        repair.action_create_sale_order()
+        self.env["stock.move"].with_context(skip_compute_fiscal_tax_ids=True).create(
+            {
+                "repair_id": repair.id,
+                "repair_line_type": "add",
+                "product_id": self.part.id,
+                "product_uom_qty": 2.0,
+                "name": self.part.display_name,
+                "company_id": self.company.id,
+                "location_id": repair.location_id.id,
+                "location_dest_id": repair.location_dest_id.id,
+            }
+        )
+        part_line = repair.sale_order_id.order_line.filtered(
+            lambda ln: ln.product_id == self.part
+        )
+        self.assertEqual(len(part_line), 1)
+        self._assert_fiscal_line(part_line, self.fo_line_sale)
+        self.assertTrue(part_line.cfop_id)
+
     def test_quotation_from_repair(self):
         """The quotation created from the repair carries the fiscal
         operation, and the lines of the parts get CFOP and taxes."""
