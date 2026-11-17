@@ -2,6 +2,7 @@
 #   Magno Costa <magno.costa@akretion.com.br>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
+from odoo import Command
 from odoo.tests import Form, TransactionCase
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
@@ -549,6 +550,32 @@ class L10nBrPurchaseBaseTest(TransactionCase):
                 injected,
                 "Pruned dead fiscal field %s must not be injected." % dead,
             )
+
+    def test_purchase_user_reads_fiscal_data(self):
+        """A buyer without any fiscal group computes the fiscal taxes of the
+        order line, which reads the fiscal models."""
+        buyer = self.env["res.users"].create(
+            {
+                "name": "Buyer without fiscal group",
+                "login": "buyer_without_fiscal_group",
+                "company_id": self.company.id,
+                "company_ids": [Command.set(self.company.ids)],
+                "groups_id": [
+                    Command.set(
+                        (
+                            self.env.ref("purchase.group_purchase_user")
+                            | self.env.ref("uom.group_uom")
+                        ).ids
+                    )
+                ],
+            }
+        )
+        order = self.po_products.with_user(buyer).with_company(self.company)
+        order.onchange_partner_id()
+        order._onchange_fiscal_operation_id()
+        for line in order.order_line:
+            line._onchange_fiscal_tax_ids()
+            self.assertTrue(line.fiscal_operation_id)
 
     def test_fields_freight_insurance_other_costs(self):
         """Test fields Freight, Insurance and Other Costs when
