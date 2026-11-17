@@ -126,18 +126,10 @@ class TestL10nBrSale(L10nBrSaleBaseTest, TransactionCase):
             lambda ln: ln.product_id.type == "service"
         )
         self.assertTrue(service_lines, "SO must have service lines")
-        other_operation = self.env["l10n_br_fiscal.operation"].search(
-            [
-                ("id", "!=", header_operation.id),
-                ("state", "=", "approved"),
-                ("fiscal_operation_type", "=", "out"),
-                ("fiscal_type", "not ilike", "%refund%"),
-                ("line_ids.document_type_id.code", "=", "SE"),
-            ],
-            limit=1,
+        other_operation = header_operation.copy(
+            {"code": "SALE-SERVICE-TEST", "name": "Sale of service (test)"}
         )
-        if not other_operation:
-            self.skipTest("no second outgoing operation with a service line")
+        other_operation.action_approve()
         service_lines.write({"fiscal_operation_id": other_operation.id})
         order.action_confirm()
         order._create_invoices(final=True)
