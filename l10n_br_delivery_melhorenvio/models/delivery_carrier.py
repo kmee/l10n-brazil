@@ -233,6 +233,32 @@ class DeliveryCarrier(models.Model):
                 return key
         return False
 
+    def _melhorenvio_unit_value(self, move):
+        """Declared unit value of the product of a move.
+
+        The component moves of a phantom kit all point to the sale line of the
+        kit: each component declares its share of the kit price, in proportion
+        to the sale prices of the components, instead of the full kit price,
+        so the declared and insured value is the price the kit was sold for.
+        """
+        line = move.sale_line_id
+        if not line:
+            return move.product_id.lst_price
+        if move.product_id == line.product_id:
+            return line.price_reduce_taxinc
+        components = line.move_ids.filtered(
+            lambda m: m.state != "cancel" and m.product_id != line.product_id
+        )
+        kit_value = line.price_reduce_taxinc * line.product_uom_qty
+        weights = {
+            component: component.product_id.lst_price * component.product_uom_qty
+            for component in components
+        }
+        total_weight = sum(weights.values())
+        if not total_weight:
+            return kit_value / (sum(components.mapped("product_uom_qty")) or 1.0)
+        return kit_value * weights[move] / total_weight / move.product_uom_qty
+
     def _melhorenvio_cart_payload(self, picking):
         self.ensure_one()
         sender = picking.picking_type_id.warehouse_id.partner_id
@@ -242,11 +268,7 @@ class DeliveryCarrier(models.Model):
             quantity = move.quantity or move.product_uom_qty
             if not quantity:
                 continue
-            price = (
-                move.sale_line_id.price_reduce_taxinc
-                if move.sale_line_id
-                else move.product_id.lst_price
-            )
+            price = self._melhorenvio_unit_value(move)
             value += price * quantity
             products.append(
                 {
