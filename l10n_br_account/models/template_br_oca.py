@@ -53,6 +53,44 @@ class AccountChartTemplate(models.AbstractModel):
                         move["l10n_latam_document_type_id"] = latam_doc_type.id
         return move_data
 
+    def _post_load_demo_data(self, company=False):
+        """Give a document number to the demo invoices of a Brazilian company
+        that ask for a manual one before they are posted.
+
+        The demo invoices are posted while the chart is loaded, which can be
+        before l10n_br_account_latam_invoice_document is installed (it is auto
+        installed last): the Latin American check then asks for the manual
+        document number. The number is the latam field, written after the
+        invoice exists because it is computed from the invoice name.
+        """
+        demo_company = company or self.env.company
+        if (
+            "l10n_latam.document.type" in self.env
+            and demo_company.account_fiscal_country_id.code == "BR"
+        ):
+            moves = (
+                self.env["account.move"]
+                .search(
+                    [
+                        ("company_id", "=", demo_company.id),
+                        ("state", "=", "draft"),
+                        (
+                            "move_type",
+                            "in",
+                            ("out_invoice", "out_refund", "in_invoice", "in_refund"),
+                        ),
+                    ]
+                )
+                .filtered(
+                    lambda move: move.l10n_latam_use_documents
+                    and move.l10n_latam_manual_document_number
+                    and not move.l10n_latam_document_number
+                )
+            )
+            for number, move in enumerate(moves, start=1):
+                move.l10n_latam_document_number = f"{number:09d}"
+        return super()._post_load_demo_data(company)
+
     def load_fiscal_taxes(self, companies=None):
         """
         Create missing account.tax for Brazil.
