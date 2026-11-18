@@ -380,11 +380,7 @@ class SpedDeclaration(models.AbstractModel):
                         "0100 comes from it."
                     )
                 )
-            missing = [
-                label
-                for field, label in required
-                if not accountant[field]
-            ]
+            missing = [label for field, label in required if not accountant[field]]
             if missing:
                 raise UserError(
                     _(

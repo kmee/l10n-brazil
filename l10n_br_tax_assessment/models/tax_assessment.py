@@ -68,9 +68,9 @@ class TaxAssessment(models.Model):
         "procura pis e cofins.",
     )
     regime = fields.Selection(
-        selection=lambda self: self.env["account.tax.group"]._fields[
-            "regime"
-        ].selection,
+        selection=lambda self: self.env["account.tax.group"]
+        ._fields["regime"]
+        .selection,
         compute="_compute_regime",
         store=True,
         readonly=True,
