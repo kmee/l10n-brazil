@@ -362,20 +362,7 @@ class FiscalDocumentLineMixin(models.AbstractModel):
     def _compute_fiscal_tax_ids(self):
         for line in self:
             if line.fiscal_operation_line_id:
-                mapping_result = line.fiscal_operation_line_id.map_fiscal_taxes(
-                    company=line.company_id,
-                    partner=line._get_fiscal_partner(),
-                    product=line.product_id,
-                    ncm=line.ncm_id,
-                    nbm=line.nbm_id,
-                    nbs=line.nbs_id,
-                    cest=line.cest_id,
-                    city_taxation_code=line.city_taxation_code_id,
-                    national_taxation_code=line.national_taxation_code_id,
-                    service_type=line.service_type_id,
-                    ind_final=line.ind_final,
-                    tax_classification=line.tax_classification_id,
-                )
+                mapping_result = line._map_fiscal_taxes_of_line()
                 if line._is_imported():
                     # Remapping the CFOP to the company operation is the very
                     # goal of the de-para, but the classification imported
@@ -407,6 +394,25 @@ class FiscalDocumentLineMixin(models.AbstractModel):
                 for tax in mapping_result["taxes"].values():
                     taxes |= tax
                 line.fiscal_tax_ids = taxes
+
+    def _map_fiscal_taxes_of_line(self):
+        """What the fiscal operation line maps for this line (CFOP, taxes with
+        their CSTs, IPI guideline...): see ``operation.line.map_fiscal_taxes``."""
+        self.ensure_one()
+        return self.fiscal_operation_line_id.map_fiscal_taxes(
+            company=self.company_id,
+            partner=self._get_fiscal_partner(),
+            product=self.product_id,
+            ncm=self.ncm_id,
+            nbm=self.nbm_id,
+            nbs=self.nbs_id,
+            cest=self.cest_id,
+            city_taxation_code=self.city_taxation_code_id,
+            national_taxation_code=self.national_taxation_code_id,
+            service_type=self.service_type_id,
+            ind_final=self.ind_final,
+            tax_classification=self.tax_classification_id,
+        )
 
     @api.depends("fiscal_operation_line_id")
     def _compute_comment_ids(self):

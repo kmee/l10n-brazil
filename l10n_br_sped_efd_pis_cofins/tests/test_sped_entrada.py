@@ -101,3 +101,30 @@ class TestSpedPisCofinsEntrada(SpedPisCofinsEntradaMixin, SpedEntradaCommon):
     @staticmethod
     def _number(text):
         return float(text.replace(",", ".") or 0)
+
+    def test_the_cumulative_entry_cst_reaches_the_c170(self):
+        """Lucro presumido: the C170 carries CST 70, not the CST of the supplier."""
+        self._entry_document()
+        c170 = self._c170(self._declaration_july())
+        self.assertEqual(c170["CST_PIS"], "70")
+        self.assertEqual(c170["CST_COFINS"], "70")
+
+
+@tagged("post_install", "-at_install")
+class TestSpedPisCofinsEntradaNonCumulative(
+    SpedPisCofinsEntradaMixin, SpedEntradaCommon
+):
+    """The entry in a company of the non-cumulative regime."""
+
+    profit_calculation = "real"
+
+    def _c170(self, declaration):
+        records = self._sped_records(declaration, "C170")
+        self.assertEqual(len(records), 1)
+        return records[0]
+
+    def test_the_credit_entry_cst_reaches_the_c170(self):
+        self._entry_document()
+        c170 = self._c170(self._declaration_july())
+        self.assertEqual(c170["CST_PIS"], "50")
+        self.assertEqual(c170["CST_COFINS"], "50")

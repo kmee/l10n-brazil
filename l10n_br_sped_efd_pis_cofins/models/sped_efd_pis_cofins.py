@@ -879,18 +879,20 @@ class RegistroC170(models.Model):
             "ALIQ_ST": record.icmsst_percent or 0,
             "VL_ICMS_ST": record.icmsst_value or 0,
             "IND_APUR": "0",  # 0=Mensal
-            "CST_IPI": record.ipi_cst_code or "",
+            "CST_IPI": record.entry_ipi_cst_id.code or record.ipi_cst_code or "",
             "COD_ENQ": "",
             "VL_BC_IPI": record.ipi_base or 0,
             "ALIQ_IPI": record.ipi_percent or 0,
             "VL_IPI": record.ipi_value or 0,
-            "CST_PIS": record.pis_cst_code or "",
+            "CST_PIS": record.entry_pis_cst_id.code or record.pis_cst_code or "",
             "VL_BC_PIS": record.pis_base or 0,
             "ALIQ_PIS": record.pis_percent or 0,
             "QUANT_BC_PIS": 0,
             "ALIQ_PIS_QUANT": 0,
             "VL_PIS": record.pis_value or 0,
-            "CST_COFINS": record.cofins_cst_code or "",
+            "CST_COFINS": record.entry_cofins_cst_id.code
+            or record.cofins_cst_code
+            or "",
             "VL_BC_COFINS": record.cofins_base or 0,
             "ALIQ_COFINS": record.cofins_percent or 0,
             "QUANT_BC_COFINS": 0,
