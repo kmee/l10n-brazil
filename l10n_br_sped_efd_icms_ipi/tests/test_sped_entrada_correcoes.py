@@ -170,3 +170,11 @@ class TestSpedEfdIcmsIpiCorrecoes(EntradaHelpers, SpedEntradaCommon):
         rec = self._c100(self._declaration_july())[doc.document_number]
         self.assertEqual(rec["DT_DOC"], "20072026")
         self.assertEqual(rec["DT_E_S"], "20072026")
+
+    def test_c170_cod_enq_is_blank_for_the_generic_guideline(self):
+        """The generic 999 is not in the table of legal classification of the
+        IPI: blank; a real classification goes out as it is."""
+        _doc, line = self._entry_document()
+        self.assertEqual(self._c170(self._declaration_july())["COD_ENQ"], "")
+        line.ipi_guideline_id = self.env.ref("l10n_br_fiscal.tax_guideline_001")
+        self.assertEqual(self._c170(self._declaration_july())["COD_ENQ"], "001")

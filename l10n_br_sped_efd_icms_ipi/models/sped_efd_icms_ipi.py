@@ -1431,7 +1431,11 @@ class RegistroC170(models.Model):
             # the CST the company books for the entry when there is one; else
             # the one of the document
             "CST_IPI": record.entry_ipi_cst_id.code or record.ipi_cst_code,
-            "COD_ENQ": record.ipi_guideline_id.code,
+            # "999" (generic, "Tributacao normal IPI; Outros") is not in the
+            # table of legal classification of the IPI: it goes out blank
+            "COD_ENQ": ""
+            if record.ipi_guideline_id.code in (False, "", "999")
+            else record.ipi_guideline_id.code,
             "VL_BC_IPI": record.ipi_base,
             "ALIQ_IPI": record.ipi_percent,
             "VL_IPI": record.ipi_value,
