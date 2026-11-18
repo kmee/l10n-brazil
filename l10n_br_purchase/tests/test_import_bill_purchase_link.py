@@ -36,7 +36,9 @@ class TestImportBillPurchaseLink(TransactionCase):
                     "fiscal_operation_id": self.fsc_op_purchase.id,
                     "fiscal_operation_type": "in",
                     "document_type_id": self.env.ref("l10n_br_fiscal.document_55").id,
-                    "document_number": "1001",
+                    "document_number": str(
+                        len(self.env["l10n_br_fiscal.document"].search([]))
+                    ),
                     "document_serie": "1",
                     "issuer": "partner",
                     "partner_id": order.partner_id.id,

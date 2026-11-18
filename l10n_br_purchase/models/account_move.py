@@ -156,9 +156,11 @@ class AccountMove(models.Model):
 
     def _get_purchase_line_from_reference(self, order_name, item, product):
         self.ensure_one()
+        # xPed is stored in a Char(15): a longer order name arrives truncated
+        truncated = len(order_name) >= 15
         orders = self.env["purchase.order"].search(
             [
-                ("name", "=", order_name),
+                ("name", "=like" if truncated else "=", order_name + truncated * "%"),
                 ("company_id", "=", self.company_id.id),
                 ("state", "in", ("purchase", "done")),
                 (
@@ -168,6 +170,7 @@ class AccountMove(models.Model):
                 ),
             ]
         )
+        orders = orders.filtered(lambda order: order.name[:15] == order_name[:15])
         if len(orders) != 1:
             return self.env["purchase.order.line"]
         # nItemPed is the 1-based position of the line in the order

@@ -63,7 +63,7 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
         document = self._create_fiscal_document(
             document_date=emission, imported_document=True
         )
-        move_form = self.env["account.move"].import_fiscal_document(document)
+        move_form = self.env["account.move"].sudo().import_fiscal_document(document)
         move = self.env["account.move"].browse(move_form.id)
         self.assertEqual(move.invoice_date, date(2026, 11, 17))
         self.assertEqual(document.document_date, emission)
