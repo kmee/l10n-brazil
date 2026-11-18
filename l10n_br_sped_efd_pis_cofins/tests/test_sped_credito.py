@@ -198,6 +198,8 @@ class TestSpedPisCofinsCredit(CreditMixin, SpedEntradaCommon):
         self.assertEqual(m210[0]["VL_CONT_PER"], "16,50")
         self.assertEqual(m100["VL_CRED_DESC"], "16,50")
         self.assertEqual(m100["SLD_CRED"], "16,50")
+        # a partial discount, which the PVA tells apart by the indicator
+        self.assertEqual(m100["IND_DESC_CRED"], "1")
         self.assertEqual(m200["VL_TOT_CONT_NC_PER"], "16,50")
         self.assertEqual(m200["VL_TOT_CRED_DESC"], m100["VL_CRED_DESC"])
         self.assertEqual(self._number(m200["VL_TOT_CONT_NC_DEV"]), 0.0)
@@ -206,6 +208,27 @@ class TestSpedPisCofinsCredit(CreditMixin, SpedEntradaCommon):
         m500 = self._sped_records(declaration, "M500")[0]
         self.assertEqual(m600["VL_TOT_CRED_DESC"], m500["VL_CRED_DESC"])
         self.assertEqual(m600["VL_TOT_CRED_DESC"], "76,00")
+
+    def test_the_whole_credit_is_discounted_when_the_contribution_covers_it(self):
+        """Contribution above the credit: the indicator says the discount is the
+        whole available credit, there is no balance and the rest is due."""
+        self._entry("fo_compras_compras_comercializacao", "401")
+        self._entry("fo_compras_compras", "402")
+        for _index in range(3):
+            self._sale()
+        self._assess("pis")
+        self._assess("cofins")
+        declaration = self._declaration_july()
+        m100 = self._sped_records(declaration, "M100")[0]
+        m200 = self._sped_records(declaration, "M200")[0]
+        self.assertEqual(m100["VL_CRED"], "33,00")
+        self.assertEqual(m100["IND_DESC_CRED"], "0")
+        self.assertEqual(m100["VL_CRED_DESC"], "33,00")
+        self.assertEqual(self._number(m100["SLD_CRED"]), 0.0)
+        self.assertEqual(m200["VL_TOT_CONT_NC_PER"], "49,50")
+        self.assertEqual(m200["VL_TOT_CRED_DESC"], "33,00")
+        self.assertEqual(m200["VL_TOT_CONT_NC_DEV"], "16,50")
+        self.assertEqual(m200["VL_CONT_NC_REC"], "16,50")
 
     def test_the_file_stops_when_the_credit_has_no_assessment(self):
         """The M200 comes from the assessment: credit in the documents and no

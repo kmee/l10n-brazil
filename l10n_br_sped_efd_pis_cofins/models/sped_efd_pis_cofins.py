@@ -215,9 +215,10 @@ def _credit_vals(group, rate_field):
         "VL_AJUS_REDUC": 0.0,
         "VL_CRED_DIF": 0.0,
         "VL_CRED_DISP": group["value"],
-        # 0: the credit is discounted of the contribution of the period up to
-        # what is due; the balance goes to the next periods
-        "IND_DESC_CRED": "0",
+        # 0: the whole available credit is discounted in the period; 1: only a
+        # part (up to the contribution due) and the rest is the balance, which
+        # the PVA tells apart by this indicator
+        "IND_DESC_CRED": "0" if group["desc"] == group["value"] else "1",
         "VL_CRED_DESC": group["desc"],
         "SLD_CRED": round(group["value"] - group["desc"], 2),
     }
