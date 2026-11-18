@@ -378,3 +378,110 @@ msgstr "Movimento de Recebimento (origem)"
 #: model:ir.model.fields,help:l10n_br_purchase_stock.field_l10n_br_fiscal_document_line__import_stock_move_id
 msgid "Pending receipt move of the purchase order line this imported document line corresponds to. Suggested when the order line has a single pending receipt move."
 msgstr "Movimento de recebimento pendente da linha do pedido de compra a que esta linha do documento importado corresponde. Sugerido quando a linha do pedido tem um único movimento de recebimento pendente."
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock.field_account_move_line__purchase_ordered_qty
+msgid "Ordered Quantity"
+msgstr "Quantidade pedida"
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,help:l10n_br_purchase_stock.field_account_move_line__purchase_ordered_qty
+msgid "Quantity of the purchase order line this vendor bill line is linked to, in the unit of the bill line."
+msgstr "Quantidade da linha do pedido de compra a que esta linha da fatura de fornecedor está ligada, na unidade da linha da fatura."
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock.field_account_move_line__purchase_received_qty
+msgid "Received Quantity"
+msgstr "Quantidade recebida"
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,help:l10n_br_purchase_stock.field_account_move_line__purchase_received_qty
+msgid "Quantity received for the purchase order line (done receipts, less the returns), in the unit of the bill line."
+msgstr "Quantidade recebida da linha do pedido de compra (recebimentos concluídos, menos as devoluções), na unidade da linha da fatura."
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock.field_account_move_line__purchase_price_unit
+msgid "Order Unit Price"
+msgstr "Preço unitário do pedido"
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,help:l10n_br_purchase_stock.field_account_move_line__purchase_price_unit
+msgid "Unit price of the purchase order line, in the unit and in the currency of the bill line."
+msgstr "Preço unitário da linha do pedido de compra, na unidade e na moeda da linha da fatura."
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock.field_account_move_line__purchase_qty_difference
+msgid "Quantity Difference"
+msgstr "Diferença de quantidade"
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,help:l10n_br_purchase_stock.field_account_move_line__purchase_qty_difference
+msgid "Billed quantity minus the received quantity."
+msgstr "Quantidade faturada menos a quantidade recebida."
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock.field_account_move_line__purchase_price_difference
+msgid "Price Difference"
+msgstr "Diferença de preço"
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,help:l10n_br_purchase_stock.field_account_move_line__purchase_price_difference
+msgid "Unit price of the bill minus the unit price of the order."
+msgstr "Preço unitário da fatura menos o preço unitário do pedido."
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock.field_account_move__purchase_divergent
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock.field_account_move_line__purchase_divergent
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock.invoice_form_purchase_divergence
+msgid "Divergent"
+msgstr "Divergente"
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,help:l10n_br_purchase_stock.field_account_move_line__purchase_divergent
+msgid "The bill line differs from the order and the receipt by more than the tolerances of the company (price and quantity). It only warns: nothing is blocked."
+msgstr "A linha da fatura difere do pedido e do recebimento em mais do que as tolerâncias da empresa (preço e quantidade). Apenas avisa: nada é bloqueado."
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,help:l10n_br_purchase_stock.field_account_move__purchase_divergent
+msgid "Some line of the bill differs from its purchase order line or receipt by more than the tolerances of the company. It only warns: nothing is blocked."
+msgstr "Alguma linha da fatura difere da linha do pedido de compra ou do recebimento em mais do que as tolerâncias da empresa. Apenas avisa: nada é bloqueado."
+
+#. module: l10n_br_purchase_stock
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock.invoice_form_purchase_divergence
+msgid "Some line differs from the order or the receipt by more than the tolerance"
+msgstr "Alguma linha difere do pedido ou do recebimento em mais do que a tolerância"
+
+#. module: l10n_br_purchase_stock
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock.invoice_search_purchase_divergence
+msgid "Divergent from the Order"
+msgstr "Divergente do pedido"
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock.field_res_company__purchase_price_tolerance
+msgid "Bill Price Tolerance (%)"
+msgstr "Tolerância de preço da fatura (%)"
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,help:l10n_br_purchase_stock.field_res_company__purchase_price_tolerance
+msgid "A vendor bill line whose unit price differs from the one of the purchase order line by more than this percentage (of the order price) is marked as divergent. It only warns: nothing is blocked."
+msgstr "Uma linha de fatura de fornecedor cujo preço unitário difere do da linha do pedido de compra em mais do que este percentual (do preço do pedido) é marcada como divergente. Apenas avisa: nada é bloqueado."
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock.field_res_company__purchase_quantity_tolerance
+msgid "Bill Quantity Tolerance (%)"
+msgstr "Tolerância de quantidade da fatura (%)"
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,help:l10n_br_purchase_stock.field_res_company__purchase_quantity_tolerance
+msgid "A vendor bill line whose quantity differs from the received quantity by more than this percentage (of the received quantity) is marked as divergent. It only warns: nothing is blocked."
+msgstr "Uma linha de fatura de fornecedor cuja quantidade difere da quantidade recebida em mais do que este percentual (da quantidade recebida) é marcada como divergente. Apenas avisa: nada é bloqueado."
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.constraint,message:l10n_br_purchase_stock.constraint_res_company_purchase_price_tolerance_positive
+msgid "The price tolerance of the vendor bill cannot be negative."
+msgstr "A tolerância de preço da fatura de fornecedor não pode ser negativa."
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.constraint,message:l10n_br_purchase_stock.constraint_res_company_purchase_quantity_tolerance_positive
+msgid "The quantity tolerance of the vendor bill cannot be negative."
+msgstr "A tolerância de quantidade da fatura de fornecedor não pode ser negativa."
