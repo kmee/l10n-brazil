@@ -253,6 +253,11 @@ class NFeImportTest(TransactionCase):
         self.assertAlmostEqual(move.due_line_ids[0].credit, 4035.63, places=2)
         self.assertAlmostEqual(move.due_line_ids[1].credit, 4035.63, places=2)
         self.assertAlmostEqual(move.due_line_ids[2].credit, 4036.84, places=2)
+        # the due dates are the ones declared in <cobr><dup>
+        declared = move.fiscal_document_id.nfe40_dup.mapped("nfe40_dVenc")
+        self.assertEqual(
+            sorted(line.date_maturity for line in move.due_line_ids), sorted(declared)
+        )
 
     def test_generate_move_from_resolved_document(self):
         """The vendor bill is generated from the resolved imported document

@@ -511,6 +511,14 @@ class NFeImportWizardTest(TransactionCase):
             1,
         )
 
+    def test_the_operation_follows_the_cfop_declared_by_the_issuer(self):
+        wizard = self.env["l10n_br_fiscal.document.import.wizard"].create({})
+        purchase = self.env.ref("l10n_br_fiscal.fo_compras")
+        for cfop in ("5101", "5102", "6101", "6102"):
+            self.assertEqual(
+                wizard._find_fiscal_operation(cfop, "VENDA", "in"), purchase
+            )
+
     def test__parse_xml(self):
         self._prepare_wizard(self.xml_1)
 
