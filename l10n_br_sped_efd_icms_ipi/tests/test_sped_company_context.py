@@ -81,5 +81,5 @@ class TestSpedEfdIcmsIpiCompanyContext(SpedEntradaCommon):
         )
         user = self._user(self.env.ref("base.main_company"))
         declaration = self._declaration_of_the_company(user)
-        with self.assertRaisesRegex(UserError, "Voce nao tem acesso|Você não tem acesso"):
+        with self.assertRaisesRegex(UserError, "Você não tem acesso"):
             declaration.with_context(lang="pt_BR").button_populate_sped_from_odoo()
