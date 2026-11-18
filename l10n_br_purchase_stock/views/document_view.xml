@@ -16,6 +16,7 @@
             >
                 <field
                     name="import_stock_move_id"
+                    options="{'no_create': True}"
                     optional="show"
                     attrs="{'column_invisible': [('parent.imported_document', '=', False)]}"
                 />
@@ -31,6 +32,7 @@
             <xpath expr="//field[@name='import_purchase_line_id']" position="after">
                 <field
                     name="import_stock_move_id"
+                    options="{'no_create': True}"
                     attrs="{'invisible': [('fiscal_operation_type', '!=', 'in')]}"
                 />
             </xpath>

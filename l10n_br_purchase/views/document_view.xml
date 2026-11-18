@@ -25,6 +25,7 @@
             >
                 <field
                     name="import_purchase_line_id"
+                    options="{'no_create': True}"
                     optional="show"
                     attrs="{'column_invisible': [('parent.imported_document', '=', False)]}"
                 />
@@ -50,6 +51,7 @@
                 <field name="import_origin_candidate_ids" invisible="1" />
                 <field
                     name="import_purchase_line_id"
+                    options="{'no_create': True}"
                     attrs="{'invisible': [('fiscal_operation_type', '!=', 'in')]}"
                 />
                 <field
