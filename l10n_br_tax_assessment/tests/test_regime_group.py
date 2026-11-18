@@ -32,13 +32,20 @@ class TestRegimeOfTheGroup(SpedEntradaCommon):
             }
         )
 
-    def test_the_tax_group_has_a_screen_with_the_regime(self):
-        action = self.env.ref("l10n_br_tax_assessment.action_account_tax_group")
-        self.assertEqual(action.res_model, "account.tax.group")
-        view = self.env.ref("l10n_br_tax_assessment.view_account_tax_group_form")
-        self.assertIn('name="regime"', view.arch)
-        field = self.env["account.tax.group"]._fields["regime"]
-        self.assertEqual(field.string, "Regime de apuração")
+    def test_the_tax_group_screens_of_the_core_have_the_regime(self):
+        """The default form of the tax group and the list of the action of the
+        core (Accounting > Configuration > Tax Groups) carry the regime, and
+        there is no second action or menu for the same model."""
+        model = self.env["account.tax.group"]
+        self.assertIn('name="regime"', model.get_view(view_type="form")["arch"])
+        action = self.env.ref("account.action_tax_group")
+        tree = model.get_view(view_id=action.view_id.id, view_type="tree")
+        self.assertIn('name="regime"', tree["arch"])
+        actions = self.env["ir.actions.act_window"].search(
+            [("res_model", "=", "account.tax.group")]
+        )
+        self.assertEqual(actions, action)
+        self.assertEqual(model._fields["regime"].string, "Regime de apuração")
 
     def test_a_company_of_the_presumed_profit_is_cumulative(self):
         for domain in ("pis", "cofins"):
