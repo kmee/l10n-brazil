@@ -1084,6 +1084,9 @@ class RegistroC101(models.Model):
     _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.efd_icms_ipi.c101"
     _inherit = "l10n_br_sped.efd_icms_ipi.20.c101"
+    # without it the pull makes one register per parent with no record behind
+    # it, and the domain below never runs: an empty C101 under every document
+    _odoo_model = "l10n_br_fiscal.document"
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):

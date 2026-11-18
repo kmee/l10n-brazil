@@ -24,3 +24,19 @@ class TestSpedEfdIcmsIpiCorrecoes(EntradaHelpers, SpedEntradaCommon):
             cod_part,
             [rec["COD_PART"] for rec in self._sped_records(declaration, "0150")],
         )
+
+    def test_no_c101_without_difal_or_fcp(self):
+        """C101 (EC 87/15) only goes out with values, never empty."""
+        self._entry_document()
+        text = self._declaration_july()._generate_sped_text()
+        self.assertIn("|C100|", text)
+        self.assertNotIn("|C101|", text)
+
+    def test_c101_goes_out_with_the_difal_values(self):
+        self._entry_document(
+            line_vals={"icmsfcp_value": 3.0, "icms_destination_value": 5.0}
+        )
+        c101 = self._sped_records(self._declaration_july(), "C101")
+        self.assertEqual(len(c101), 1)
+        self.assertEqual(self._number(c101[0]["VL_FCP_UF_DEST"]), 3.0)
+        self.assertEqual(self._number(c101[0]["VL_ICMS_UF_DEST"]), 5.0)
