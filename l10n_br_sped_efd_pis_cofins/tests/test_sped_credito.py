@@ -243,3 +243,25 @@ class TestSpedPisCofinsCredit(CreditMixin, SpedEntradaCommon):
         codes = [rec["COD_CTA"] for rec in self._sped_records(declaration, "0500")]
         self.assertIn(sale_line["COD_CTA"], codes)
         self.assertEqual(len(codes), len(set(codes)))
+
+
+@tagged("post_install", "-at_install")
+class TestSpedPisCofinsCumulativeUnchanged(CreditMixin, SpedEntradaCommon):
+    """The Lucro Presumido keeps its file: no credit block, no account of the
+    sale (the PVA validates it without)."""
+
+    def test_the_cumulative_company_has_no_credit_block(self):
+        self._entry("fo_compras_compras_comercializacao", "401")
+        self._sale()
+        self._assess("pis", regime="cumulative")
+        self._assess("cofins", regime="cumulative")
+        declaration = self._declaration_july()
+        for register in ("M100", "M105", "M500", "M505"):
+            self.assertEqual(self._sped_records(declaration, register), [], register)
+        sale_line = [
+            rec
+            for rec in self._sped_records(declaration, "C170")
+            if rec["CST_PIS"] == "01"
+        ][0]
+        self.assertEqual(sale_line["COD_CTA"], "")
+        self.assertEqual(self._sped_records(declaration, "0500"), [])
