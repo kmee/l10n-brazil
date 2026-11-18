@@ -100,3 +100,26 @@ class TestImportedLineTaxes(AccountMoveBRCommon):
 
         self.assertEqual(sum(payment_term_lines.mapped("credit")), 4280.25)
         self.assertEqual(document.amount_financial_total, 4280.25)
+
+    def test_the_ipi_without_credit_books_no_pair_of_lines(self):
+        """A purchase for use and consumption does not credit the IPI: the value
+        stays in the product line and the ledger has no IPI line at all, not a
+        debit and a credit of the same value on the same account."""
+        self.partner_a.tax_framework = TAX_FRAMEWORK_NORMAL
+        self.operation_line = self.env.ref(
+            "l10n_br_fiscal.fo_compras_compras_uso_consumo"
+        )
+        _document, move = self._import_document_with_taxes_from_a_file()
+        ipi_lines = move.line_ids.filtered(
+            lambda line: line.tax_line_id.tax_group_id.fiscal_tax_group_id.tax_domain
+            == "ipi"
+        )
+        self.assertFalse(ipi_lines)
+        self.assertAlmostEqual(sum(move.line_ids.mapped("balance")), 0.0)
+        payable = move.line_ids.filtered(
+            lambda line: line.account_id.account_type == "liability_payable"
+        )
+        self.assertAlmostEqual(-sum(payable.mapped("balance")), move.amount_total)
+        self.assertAlmostEqual(
+            move.invoice_line_ids.balance, move.amount_total, msg="IPI in the cost"
+        )
