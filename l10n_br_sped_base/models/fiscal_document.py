@@ -5,14 +5,11 @@ from odoo import models
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     EDOC_PURPOSE_COMPLEMENTAR,
-    FISCAL_IN,
     SITUACAO_FISCAL_CANCELADO,
     SITUACAO_FISCAL_COMPLEMENTAR,
-    SITUACAO_FISCAL_COMPLEMENTAR_EXTEMPORANEO,
     SITUACAO_FISCAL_DENEGADO,
     SITUACAO_FISCAL_INUTILIZADO,
     SITUACAO_FISCAL_REGULAR,
-    SITUACAO_FISCAL_REGULAR_EXTEMPORANEO,
     SITUACAO_FISCAL_SPED_CONSIDERA_CANCELADO,
 )
 
@@ -31,26 +28,24 @@ SPED_IND_PGTO_CASH = "0"
 SPED_IND_PGTO_TERM = "1"
 SPED_IND_PGTO_NONE = "9"
 
-# the active situations that have an "escriturado depois" twin
-SPED_COD_SIT_EXTEMPORANEO = {
-    SITUACAO_FISCAL_REGULAR: SITUACAO_FISCAL_REGULAR_EXTEMPORANEO,
-    SITUACAO_FISCAL_COMPLEMENTAR: SITUACAO_FISCAL_COMPLEMENTAR_EXTEMPORANEO,
-}
-
 
 class FiscalDocument(models.Model):
     _inherit = "l10n_br_fiscal.document"
 
-    def _get_sped_cod_sit(self, period_start=None):
-        """COD_SIT of the C100 of this document, shared by every SPED.
+    def _get_sped_cod_sit(self):
+        """COD_SIT of the C100, shared by every SPED.
 
         ``state_fiscal`` is only written when a document is cancelled, so it
         cannot be the only source: when it is empty the situation comes from
         the state of the document (``state_edoc``) and from its purpose
-        (complementary). An entry booked in a period after the one of its
-        emission is "extemporaneo" (01 regular, 07 complementary).
+        (complementary).
 
-        :param period_start: first day of the declaration period.
+        The extemporaneous situations (01, 07) are for a document booked
+        OUTSIDE the period it belonged to: the entry date of the document is of
+        an earlier period than the one of the declaration. A document that is
+        in a declaration because its entry date is in the period is regular
+        (an invoice emitted last month and received this month is 00 here), and
+        the PVA refuses 01 when DT_E_S is inside the period.
         """
         self.ensure_one()
         if self.state_fiscal:
@@ -58,16 +53,11 @@ class FiscalDocument(models.Model):
         cod_sit = SPED_COD_SIT_BY_STATE_EDOC.get(
             self.state_edoc, SITUACAO_FISCAL_REGULAR
         )
-        if cod_sit == SITUACAO_FISCAL_REGULAR:
-            if self.edoc_purpose == EDOC_PURPOSE_COMPLEMENTAR:
-                cod_sit = SITUACAO_FISCAL_COMPLEMENTAR
-            if (
-                period_start
-                and self.fiscal_operation_type == FISCAL_IN
-                and self.document_date
-                and self.document_date.date() < period_start
-            ):
-                cod_sit = SPED_COD_SIT_EXTEMPORANEO[cod_sit]
+        if (
+            cod_sit == SITUACAO_FISCAL_REGULAR
+            and self.edoc_purpose == EDOC_PURPOSE_COMPLEMENTAR
+        ):
+            cod_sit = SITUACAO_FISCAL_COMPLEMENTAR
         return cod_sit
 
     def _is_sped_cancelled(self):

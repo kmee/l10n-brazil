@@ -52,7 +52,7 @@ class TestSpedPisCofinsEntrada(SpedPisCofinsEntradaMixin, SpedEntradaCommon):
             self.assertEqual(rec[name], "", f"{name} must be blank")
         self.assertNotIn("|C170|", declaration._generate_sped_text())
 
-    def test_the_entry_booked_after_its_emission_is_extemporaneous(self):
+    def test_the_entry_received_after_its_emission_is_regular(self):
         late, _line = self._entry_document(
             document_date=datetime(2026, 6, 20, 12, 0),
             date_in_out=datetime(2026, 7, 5, 12, 0),
@@ -63,8 +63,8 @@ class TestSpedPisCofinsEntrada(SpedPisCofinsEntradaMixin, SpedEntradaCommon):
             edoc_purpose="2",
         )
         c100 = self._c100(self._declaration_july())
-        self.assertEqual(c100[late.document_number]["COD_SIT"], "01")
-        self.assertEqual(c100[late_complementary.document_number]["COD_SIT"], "07")
+        self.assertEqual(c100[late.document_number]["COD_SIT"], "00")
+        self.assertEqual(c100[late_complementary.document_number]["COD_SIT"], "06")
 
     def test_the_period_and_the_entry_date_of_an_entry(self):
         """The entry is booked in the month it came in, with DT_DOC the emission

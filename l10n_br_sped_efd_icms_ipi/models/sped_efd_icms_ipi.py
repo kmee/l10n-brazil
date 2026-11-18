@@ -1015,7 +1015,7 @@ class RegistroC100(models.Model):
 
         ind_pgto = record._get_sped_ind_pgto()
 
-        cod_sit = record._get_sped_cod_sit(period_start=declaration.DT_INI)
+        cod_sit = record._get_sped_cod_sit()
         if record._is_sped_cancelled():
             # cancelled, denied and unused numbers only carry what the Guia
             # Pratico allows: no partner, no dates, no values
@@ -2377,7 +2377,7 @@ class RegistroC500(models.Model):
             "IND_EMIT": ind_emit,
             "COD_PART": record.partner_id._get_sped_cod_part(),
             "COD_MOD": record.document_type_id.code,
-            "COD_SIT": record._get_sped_cod_sit(period_start=declaration.DT_INI),
+            "COD_SIT": record._get_sped_cod_sit(),
             "SER": record.document_serie or "",
             "SUB": "",  # Rarely used nowadays
             "COD_CONS": getattr(record, "consumption_class_code", ""),  # MISSING FIELD
@@ -2976,7 +2976,7 @@ class RegistroD100(models.Model):
             "IND_EMIT": "0" if record.issuer == DOCUMENT_ISSUER_COMPANY else "1",
             "COD_PART": record.partner_id._get_sped_cod_part(),
             "COD_MOD": record.document_type_id.code or "",
-            "COD_SIT": record._get_sped_cod_sit(period_start=declaration.DT_INI),
+            "COD_SIT": record._get_sped_cod_sit(),
             "SER": record.document_serie or "",
             "SUB": "",
             "NUM_DOC": record.document_number or "",

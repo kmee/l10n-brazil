@@ -600,7 +600,7 @@ class RegistroA100(models.Model):
             "IND_OPER": "0" if record.fiscal_operation_type == "in" else "1",
             "IND_EMIT": "0" if record.issuer == "company" else "1",
             "COD_PART": record.partner_id._get_sped_cod_part(),
-            "COD_SIT": record._get_sped_cod_sit(period_start=declaration.DT_INI),
+            "COD_SIT": record._get_sped_cod_sit(),
             "SER": record.document_serie or "",
             "SUB": "",
             "NUM_DOC": record.document_number or "",
@@ -740,7 +740,7 @@ class RegistroC100(models.Model):
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
-        cod_sit = record._get_sped_cod_sit(period_start=declaration.DT_INI)
+        cod_sit = record._get_sped_cod_sit()
         if record._is_sped_cancelled():
             # cancelled, denied and unused numbers only carry what the Guia
             # Pratico allows: no partner, no dates, no values
@@ -1693,7 +1693,7 @@ class RegistroD100(models.Model):
             "IND_EMIT": "0" if record.issuer == "company" else "1",
             "COD_PART": record.partner_id._get_sped_cod_part(),
             "COD_MOD": record.document_type_id.code or "",
-            "COD_SIT": record._get_sped_cod_sit(period_start=declaration.DT_INI),
+            "COD_SIT": record._get_sped_cod_sit(),
             "SER": record.document_serie or "",
             "SUB": "",
             "NUM_DOC": record.document_number or "",
