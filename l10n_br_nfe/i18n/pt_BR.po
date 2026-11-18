@@ -5821,3 +5821,15 @@ msgstr "Operação padrão de importação de NF-e"
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe.l10n_br_nfe_import_xml_products_tree
 msgid "Match Source"
 msgstr "Origem"
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/wizards/document_import_wizard.py:0
+msgid "This NF-e was cancelled at the source and cannot be imported."
+msgstr "Esta NF-e foi cancelada na origem e não pode ser importada."
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/wizards/document_import_wizard.py:0
+msgid "This NF-e was denied at the source and cannot be imported."
+msgstr "Esta NF-e foi denegada na origem e não pode ser importada."

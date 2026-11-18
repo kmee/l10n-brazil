@@ -392,6 +392,10 @@ class FiscalDocumentLineMixin(models.AbstractModel):
                         ]
                     if mapping_result["icms_tax_benefit_id"]:
                         line.icms_tax_benefit_id = mapping_result["icms_tax_benefit_id"]
+                    imported_taxes = line.env["l10n_br_fiscal.tax"]
+                    for fiscal_tax_field in FISCAL_TAX_ID_FIELDS:
+                        imported_taxes |= line[fiscal_tax_field]
+                    line.fiscal_tax_ids = imported_taxes
                     continue
 
                 line.cfop_id = mapping_result["cfop"]

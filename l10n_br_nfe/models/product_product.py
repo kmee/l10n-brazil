@@ -48,16 +48,19 @@ class ProductProduct(models.Model):
             if match:
                 return match.id
 
-        if self._context.get("dont_create_products"):
+        spec_mixin = self.env["spec.mixin_import"]
+        if not spec_mixin._spec_import_can_create(self):
             # Creating master data must be a supervised action: the line is
-            # left without a product and waits in the review queue.
-            return False
+            # left without a product and waits in the review queue (or the
+            # import raises, per the create policy of the caller).
+            return spec_mixin._spec_import_forbidden(self, rec_dict)
 
         # the created product takes the unit of the file; with no reliable
-        # mapping of it, the line stays pending instead of getting a wrong unit
+        # mapping of it the product is not created either, which is the same
+        # policy decision: the line stays pending instead of getting a wrong unit
         uom = self.env["uom.uom"]._match_by_fiscal_code(parent_dict.get("nfe40_uCom"))
         if not uom:
-            return False
+            return spec_mixin._spec_import_forbidden(self, rec_dict)
         rec_dict.update(
             {
                 "uom_id": uom.id,

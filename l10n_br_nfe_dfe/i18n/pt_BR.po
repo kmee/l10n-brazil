@@ -111,7 +111,7 @@ msgstr "Importar"
 #: code:addons/l10n_br_nfe_dfe/models/dfe_document.py:0
 #, python-format
 msgid "Import NF-e XML"
-msgstr ""
+msgstr "Importar XML da NF-e"
 
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_document_tree

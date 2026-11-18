@@ -19,6 +19,7 @@
         # View
         "views/purchase_view.xml",
         "views/account_move_view.xml",
+        "views/document_view.xml",
         "views/purchase_update_from_nfe_wizard_view.xml",
         "views/res_company_view.xml",
         # Reports

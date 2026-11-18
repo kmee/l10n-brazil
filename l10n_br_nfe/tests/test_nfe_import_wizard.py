@@ -1,4 +1,5 @@
 import base64
+import importlib.resources
 import io
 import os
 import re
@@ -10,7 +11,7 @@ import pkg_resources
 from xsdata.formats.dataclass.parsers import XmlParser
 
 from odoo import Command, fields
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 from odoo.tests import TransactionCase
 
 from odoo.addons import l10n_br_nfe
@@ -495,6 +496,82 @@ class NFeImportWizardTest(TransactionCase):
                 own |= line[field]
             self.assertTrue(line.icms_tax_id)
             self.assertEqual(line.fiscal_tax_ids, own)
+
+    def test_importing_the_same_file_twice_gives_the_same_document(self):
+        self._prepare_wizard(self.xml_1)
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        _binding, first = self.wizard._import_edoc()
+        self._prepare_wizard(self.xml_1)
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        _binding, second = self.wizard._import_edoc()
+        self.assertEqual(first, second)
+        self.assertEqual(
+            self.env["l10n_br_fiscal.document"].search_count(
+                [("document_key", "=", first.document_key)]
+            ),
+            1,
+        )
+
+    def test_the_operation_follows_the_cfop_declared_by_the_issuer(self):
+        wizard = self.env["l10n_br_fiscal.document.import.wizard"].create({})
+        purchase = self.env.ref("l10n_br_fiscal.fo_compras")
+        for cfop in ("5101", "5102", "6101", "6102"):
+            self.assertEqual(
+                wizard._find_fiscal_operation(cfop, "VENDA", "in"), purchase
+            )
+
+    def test_the_create_policy_decides_what_an_unmapped_product_does(self):
+        product = self.env["product.product"]
+        rec_dict = {}
+        parent_dict = {
+            "nfe40_xProd": "Policy product",
+            "nfe40_cProd": "POLICY-1",
+            "nfe40_uCom": "ZZZ",
+        }
+        # an unmapped unit leaves the product unset...
+        self.assertFalse(product.match_or_create_m2o(rec_dict, parent_dict))
+        # ...or stops the import when the caller asks for a strict policy
+        strict = product.with_context(spec_create_forbidden_action="raise")
+        with self.assertRaises(UserError):
+            strict.match_or_create_m2o(rec_dict, parent_dict)
+        # a product forbidden by the caller is not created even with a unit
+        parent_dict["nfe40_uCom"] = "UNID"
+        forbidden = product.with_context(
+            spec_create_forbidden_models=["product.product"]
+        )
+        self.assertFalse(forbidden.match_or_create_m2o({}, parent_dict))
+
+    def _authorized_nfe_xml(self):
+        return (
+            importlib.resources.files(nfelib.__name__)
+            .joinpath(
+                "nfe",
+                "samples",
+                "v4_0",
+                "leiauteNFe",
+                "35180834128745000152550010000474281920007498-nfe.xml",
+            )
+            .read_bytes()
+        )
+
+    def test_a_cancelled_or_denied_nfe_is_not_imported(self):
+        xml = self._authorized_nfe_xml()
+        self.assertIn(b"<cStat>100</cStat>", xml)
+        self._prepare_wizard(xml)
+        self.assertFalse(self.wizard._import_block_reason())
+        for status in (b"101", b"110"):
+            blocked = xml.replace(
+                b"<cStat>100</cStat>", b"<cStat>" + status + b"</cStat>"
+            )
+            self._prepare_wizard(blocked)
+            self.assertTrue(self.wizard._import_block_reason())
+            with self.assertRaises(UserError):
+                self.wizard._import_edoc()
+        self.assertFalse(
+            self.env["l10n_br_fiscal.document"].search(
+                [("document_key", "=", "35180834128745000152550010000474281920007498")]
+            )
+        )
 
     def test__parse_xml(self):
         self._prepare_wizard(self.xml_1)

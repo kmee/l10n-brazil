@@ -184,6 +184,15 @@ class DocumentImportWizard(models.TransientModel):
             self.company_id = company
         return company
 
+    def _import_block_reason(self):
+        """Why the file cannot be imported (nothing is created), or False.
+
+        Single point for the upload, the zip and the DF-e: a cancelled or
+        denied note is refused here, and the importers add what they know.
+        """
+        self.ensure_one()
+        return self.document_id._import_block_reason() if self.document_id else False
+
     def _import_edoc(self):
         self._select_company_from_destination()
         # the whole import runs in the company of the document: the fiscal
@@ -191,6 +200,9 @@ class DocumentImportWizard(models.TransientModel):
         # l10n_br_account builds from it
         self = self.with_company(self.company_id)
         self._find_existing_document()
+        reason = self._import_block_reason()
+        if reason:
+            raise UserError(reason)
         if not self.document_id:
             binding, self.document_id = self._create_edoc_from_file()
         else:

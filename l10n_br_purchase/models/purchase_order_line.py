@@ -8,6 +8,19 @@ from odoo import api, fields, models
 class PurchaseOrderLine(models.Model):
     _name = "purchase.order.line"
     _inherit = [_name, "l10n_br_fiscal.document.line.mixin"]
+    _rec_names_search = ["name", "order_id.name"]
+
+    def name_get(self):
+        """The order of the line comes first: two lines of different orders
+        have the same description, and a list of order lines is read by
+        order."""
+        result = []
+        for line in self.sudo():
+            name = line.name or line.product_id.display_name or ""
+            if line.order_id:
+                name = f"{line.order_id.name}: {name}"
+            result.append((line.id, name))
+        return result
 
     @api.model
     def _default_fiscal_operation(self):
@@ -218,3 +231,35 @@ class PurchaseOrderLine(models.Model):
     @api.model
     def _get_total_for_tax_totals(self):
         return self.order_id.amount_total
+
+    @api.model
+    def _find_by_import_reference(self, company, partner, order_name, item, product):
+        """The open purchase order line a supplier referred to (xPed and
+        nItemPed of an imported document line); empty when there is no
+        reference or when it does not identify exactly one line."""
+        none = self.browse()
+        if not order_name:
+            return none
+        # xPed is stored in a Char(15): a longer order name arrives truncated
+        truncated = len(order_name) >= 15
+        orders = self.env["purchase.order"].search(
+            [
+                ("name", "=like" if truncated else "=", order_name + truncated * "%"),
+                ("company_id", "=", company.id),
+                ("state", "in", ("purchase", "done")),
+                ("partner_id.commercial_partner_id", "=", partner.id),
+            ]
+        )
+        orders = orders.filtered(lambda order: order.name[:15] == order_name[:15])
+        if len(orders) != 1:
+            return none
+        # nItemPed is the 1-based position of the line in the order
+        order_lines = orders.order_line.sorted(lambda pol: (pol.sequence, pol.id))
+        digits = "".join(char for char in (item or "") if char.isdigit())
+        if digits:
+            position = int(digits)
+            candidates = order_lines[position - 1 : position] if position else none
+        else:
+            candidates = order_lines
+        candidates = candidates.filtered(lambda pol: pol.product_id == product)
+        return candidates if len(candidates) == 1 else none

@@ -690,10 +690,26 @@ class AccountMove(models.Model):
         Then it creates each account.move.line and fill them using
         their fiscal_document_id onchange.
         """
+        reason = fiscal_document._import_block_reason()
+        if reason:
+            raise UserError(reason)
         if move_id:
             move = self.env["account.move"].browse(move_id)
         else:
             move = self.env["account.move"]
+            existing = fiscal_document.move_ids.filtered(
+                lambda bill: bill.state != "cancel"
+            )
+            if existing:
+                raise UserError(
+                    _(
+                        "The fiscal document %(document)s already has the "
+                        "invoice %(invoice)s. Open it instead of generating "
+                        "another one, or cancel it first.",
+                        document=fiscal_document.display_name,
+                        invoice=", ".join(existing.mapped("display_name")),
+                    )
+                )
 
         move_form = Form(
             move.with_context(

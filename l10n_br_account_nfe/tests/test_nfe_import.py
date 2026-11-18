@@ -253,6 +253,11 @@ class NFeImportTest(TransactionCase):
         self.assertAlmostEqual(move.due_line_ids[0].credit, 4035.63, places=2)
         self.assertAlmostEqual(move.due_line_ids[1].credit, 4035.63, places=2)
         self.assertAlmostEqual(move.due_line_ids[2].credit, 4036.84, places=2)
+        # the due dates are the ones declared in <cobr><dup>
+        declared = move.fiscal_document_id.nfe40_dup.mapped("nfe40_dVenc")
+        self.assertEqual(
+            sorted(line.date_maturity for line in move.due_line_ids), sorted(declared)
+        )
 
     def test_generate_move_from_resolved_document(self):
         """The vendor bill is generated from the resolved imported document
@@ -439,6 +444,13 @@ class NFeImportTest(TransactionCase):
         self.assertEqual(len(matched), 1)
         self.assertEqual(matched.partner_order, order.name)
         self.assertEqual(matched.partner_order_line, "1")
+        fiscal_line = matched.fiscal_document_line_id
+        if "import_purchase_line_id" in fiscal_line._fields:
+            # the origin lives on the persisted line of the document and the
+            # bill follows it
+            self.assertEqual(fiscal_line.import_purchase_line_id, order.order_line)
+            self.assertEqual(fiscal_line.import_origin_state, "suggested")
+            self.assertEqual(matched.purchase_line_id, order.order_line)
         # the canonical reference, i.e. the value the matching screen displays
         expr = self.env["account.move.line"]._get_bill_matching_reference_sql("aml")
         self.env.cr.execute(

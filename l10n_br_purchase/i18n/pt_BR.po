@@ -1510,6 +1510,7 @@ msgstr "Entidade Pública"
 
 #. module: l10n_br_purchase
 #: model:ir.model,name:l10n_br_purchase.model_purchase_order
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard__purchase_id
 msgid "Purchase Order"
 msgstr "Pedido de Compra"
 
@@ -1805,6 +1806,8 @@ msgstr "Tipo"
 
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__price_unit
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__new_price_unit
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase.purchase_update_from_nfe_wizard_form
 msgid "Unit Price"
 msgstr "Preço Unitário"
 
@@ -1879,20 +1882,8 @@ msgstr ""
 #~ msgid "Amount Tax Withholding"
 #~ msgstr "Total de Imposto Retido na Fonte"
 
-#~ msgid "Display Name"
-#~ msgstr "Nome Exibido"
-
-#~ msgid "ID"
-#~ msgstr "ID"
-
-#~ msgid "Last Modified on"
-#~ msgstr "Última Modificação em"
-
 #~ msgid "Amount Tax not Included"
 #~ msgstr "Total de Impostos Não Incluídos no Preço"
-
-#~ msgid "Total with Taxes"
-#~ msgstr "Total com Impostos"
 
 #, fuzzy
 #~ msgid "Documents"
@@ -2206,9 +2197,6 @@ msgstr ""
 #~ "um fornecedor ou se quiser uma licitação para comparar ofertas de vários "
 #~ "fornecedores."
 
-#~ msgid "Cancel"
-#~ msgstr "Cancelar"
-
 #~ msgid "Cancelled"
 #~ msgstr "Cancelado"
 
@@ -2266,12 +2254,6 @@ msgstr ""
 
 #~ msgid "Create a vendor bill"
 #~ msgstr "Criar uma conta de fornecedor"
-
-#~ msgid "Created by"
-#~ msgstr "Criado por"
-
-#~ msgid "Created on"
-#~ msgstr "Criado em"
 
 #~ msgid "Customer Portal URL"
 #~ msgstr "Endereço do Portal do Consumidor"
@@ -2399,12 +2381,6 @@ msgstr ""
 
 #~ msgid "It will be converted into a purchase order."
 #~ msgstr "Será convertido em uma ordem de compra."
-
-#~ msgid "Last Updated by"
-#~ msgstr "Última atualização por"
-
-#~ msgid "Last Updated on"
-#~ msgstr "Última atualização em"
 
 #~ msgid "Late Activities"
 #~ msgstr "Últimas Atividades"
@@ -2569,9 +2545,6 @@ msgstr ""
 
 #~ msgid "Order Date"
 #~ msgstr "Data da Ordem"
-
-#~ msgid "Order Lines"
-#~ msgstr "Itens do Pedido"
 
 #~ msgid "Order Reference"
 #~ msgstr "Referência do Pedido"
@@ -3356,3 +3329,53 @@ msgstr "UF do Parceiro"
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_report__service_type_id
 msgid "Service Type"
 msgstr "Tipo de Serviço"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_l10n_br_fiscal_document_line__import_purchase_line_id
+msgid "Purchase Order Line (origin)"
+msgstr "Linha do Pedido de Compra (origem)"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,help:l10n_br_purchase.field_l10n_br_fiscal_document_line__import_purchase_line_id
+msgid "Purchase order line this imported document line corresponds to. It is suggested from the order reference of the file (xPed and nItemPed) or from the only open order line of the supplier for the product, and it is the person who confirms or changes it. The vendor bill takes it from here."
+msgstr "Linha do pedido de compra a que esta linha do documento importado corresponde. É sugerida pela referência do pedido no arquivo (xPed e nItemPed) ou pela única linha de pedido em aberto do fornecedor para o produto, e é a pessoa quem confirma ou troca. A fatura de fornecedor toma a origem daqui."
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_l10n_br_fiscal_document_line__import_origin_state
+msgid "Origin State"
+msgstr "Estado da Origem"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,help:l10n_br_purchase.field_l10n_br_fiscal_document_line__import_origin_state
+msgid "Review of the origin of an imported line. Pending: the supplier has open order lines and none was chosen. Suggested: an automatic suggestion waits for confirmation. Resolved: a person chose it. Empty when there is nothing to choose from."
+msgstr "Revisão da origem de uma linha importada. Pendente: o fornecedor tem linhas de pedido em aberto e nenhuma foi escolhida. Sugerida: uma sugestão automática aguarda confirmação. Resolvida: uma pessoa escolheu. Vazio quando não há o que escolher."
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields.selection,name:l10n_br_purchase.selection__l10n_br_fiscal_document_line__import_origin_state__pending
+msgid "Pending"
+msgstr "Pendente"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields.selection,name:l10n_br_purchase.selection__l10n_br_fiscal_document_line__import_origin_state__suggested
+msgid "Suggested"
+msgstr "Sugerida"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields.selection,name:l10n_br_purchase.selection__l10n_br_fiscal_document_line__import_origin_state__resolved
+msgid "Resolved"
+msgstr "Resolvida"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_l10n_br_fiscal_document__has_suggested_import_origin
+msgid "Has Suggested Import Origin"
+msgstr "Tem origem sugerida"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,help:l10n_br_purchase.field_l10n_br_fiscal_document__has_suggested_import_origin
+msgid "Technical: some line of the imported document has an origin suggestion waiting for confirmation."
+msgstr "Técnico: alguma linha do documento importado tem uma sugestão de origem aguardando confirmação."
+
+#. module: l10n_br_purchase
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase.document_form
+msgid "Confirm Origins"
+msgstr "Confirmar origens"

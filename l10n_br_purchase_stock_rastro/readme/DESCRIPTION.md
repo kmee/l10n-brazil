@@ -1,0 +1,1 @@
+Proposes, on the receipt linked to the imported NF-e line, the lots and expiry dates of the lot group (rastro) of the NF-e: lot number, quantity, manufacturing and expiry dates. It only fills the receipt for review; the operator validates it.

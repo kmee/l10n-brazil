@@ -3,6 +3,7 @@
 
 from datetime import date, datetime
 
+from odoo.exceptions import UserError
 from odoo.tests.common import tagged
 
 from .common import AccountMoveBRCommon
@@ -67,6 +68,23 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
         move = self.env["account.move"].browse(move_form.id)
         self.assertEqual(move.invoice_date, date(2026, 11, 17))
         self.assertEqual(document.document_date, emission)
+
+    def test_a_cancelled_or_denied_document_is_not_imported_into_a_bill(self):
+        for number, state in (("901", "cancelada"), ("902", "denegada")):
+            document = self._create_fiscal_document(
+                state_edoc=state, document_number=number
+            )
+            with self.assertRaises(UserError):
+                self.env["account.move"].import_fiscal_document(document)
+            self.assertFalse(document.move_ids)
+
+    def test_the_same_document_is_not_imported_into_two_bills(self):
+        document = self._create_fiscal_document()
+        move_form = self.env["account.move"].import_fiscal_document(document)
+        move = self.env["account.move"].browse(move_form.id)
+        with self.assertRaisesRegex(UserError, move.display_name):
+            self.env["account.move"].import_fiscal_document(document)
+        self.assertEqual(document.move_ids, move)
 
     def test_import_into_a_new_vendor_bill(self):
         """A vendor fiscal document is imported into a new vendor bill."""

@@ -368,3 +368,13 @@ msgstr "Transferir"
 
 #~ msgid "ordered instead of"
 #~ msgstr "ordenado em vez de"
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock.field_l10n_br_fiscal_document_line__import_stock_move_id
+msgid "Receipt Move (origin)"
+msgstr "Movimento de Recebimento (origem)"
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,help:l10n_br_purchase_stock.field_l10n_br_fiscal_document_line__import_stock_move_id
+msgid "Pending receipt move of the purchase order line this imported document line corresponds to. Suggested when the order line has a single pending receipt move."
+msgstr "Movimento de recebimento pendente da linha do pedido de compra a que esta linha do documento importado corresponde. Sugerido quando a linha do pedido tem um único movimento de recebimento pendente."
