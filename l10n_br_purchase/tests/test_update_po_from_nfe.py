@@ -123,6 +123,24 @@ class TestUpdatePOFromNfe(AccountMoveBRCommon):
         self.assertEqual(po_line.partner_order_line, "1")
         self.assertTrue(po_line.taxes_id)
         self.assertTrue(po_line.price_tax)
+        # the bill lines are linked to the order that was just created
+        self.assertEqual(self.bill.invoice_line_ids.purchase_line_id, po.order_line)
+
+    def test_create_po_from_nfe_does_not_duplicate(self):
+        self.bill.action_create_po_from_nfe()
+        count = self.env["purchase.order"].search_count([])
+        with self.assertRaises(UserError):
+            self.bill.action_create_po_from_nfe()
+        self.assertEqual(self.env["purchase.order"].search_count([]), count)
+
+    def test_po_from_nfe_buttons_only_for_an_imported_unlinked_bill(self):
+        # not born from an imported document
+        bill = self.bill.sudo()
+        self.assertFalse(bill.show_po_from_nfe_buttons)
+        bill.fiscal_document_id.imported_document = True
+        self.assertTrue(bill.show_po_from_nfe_buttons)
+        bill.action_create_po_from_nfe()
+        self.assertFalse(bill.show_po_from_nfe_buttons)
 
     def test_find_purchase_no_ref_returns_false(self):
         bill = self.init_invoice(

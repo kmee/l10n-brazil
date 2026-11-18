@@ -3,12 +3,40 @@
 # Copyright (C) 2026 - Madooit
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
-from odoo import _, api, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 
 class AccountMove(models.Model):
     _inherit = "account.move"
+
+    show_po_from_nfe_buttons = fields.Boolean(
+        compute="_compute_show_po_from_nfe_buttons",
+        help="Technical: a vendor bill of an imported document that still has "
+        "product lines not linked to a purchase order.",
+    )
+
+    @api.depends(
+        "move_type",
+        "fiscal_document_id.imported_document",
+        "invoice_line_ids.product_id",
+        "invoice_line_ids.purchase_line_id",
+    )
+    def _compute_show_po_from_nfe_buttons(self):
+        for move in self:
+            move.show_po_from_nfe_buttons = bool(
+                move.move_type == "in_invoice"
+                and move.fiscal_document_id.imported_document
+                and move._get_nfe_lines_without_purchase_line()
+            )
+
+    def _get_nfe_lines_without_purchase_line(self):
+        self.ensure_one()
+        return self.invoice_line_ids.filtered(
+            lambda line: line.display_type == "product"
+            and line.product_id
+            and not line.purchase_line_id
+        )
 
     def action_update_po_from_nfe(self):
         self.ensure_one()
@@ -36,7 +64,18 @@ class AccountMove(models.Model):
             )
         if not self.fiscal_document_id:
             raise UserError(_("The vendor bill has no imported fiscal document."))
-        po = self.env["purchase.order"].create(self._prepare_po_from_nfe_vals())
+        bill_lines = self._get_nfe_lines_without_purchase_line()
+        if not bill_lines:
+            raise UserError(
+                _(
+                    "All the lines of the vendor bill are already linked to a purchase order."
+                )
+            )
+        po = self.env["purchase.order"].create(
+            self._prepare_po_from_nfe_vals(bill_lines)
+        )
+        for bill_line, po_line in zip(bill_lines, po.order_line, strict=True):
+            bill_line.purchase_line_id = po_line
         for po_line in po.order_line:
             po_line._onchange_fiscal_tax_ids()
             po_line._compute_tax_fields()
@@ -49,11 +88,13 @@ class AccountMove(models.Model):
             "res_id": po.id,
         }
 
-    def _prepare_po_from_nfe_vals(self):
+    def _prepare_po_from_nfe_vals(self, bill_lines=None):
         self.ensure_one()
         fiscal_doc = self.fiscal_document_id
         order_lines = []
-        for bill_line in self.invoice_line_ids.filtered("product_id"):
+        if bill_lines is None:
+            bill_lines = self.invoice_line_ids.filtered("product_id")
+        for bill_line in bill_lines:
             line_vals = self._prepare_po_line_from_nfe_vals(bill_line)
             if line_vals:
                 order_lines.append((0, 0, line_vals))
