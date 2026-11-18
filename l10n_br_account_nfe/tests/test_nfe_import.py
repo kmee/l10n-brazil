@@ -4,6 +4,8 @@
 import base64
 import os
 
+from erpbrasil.base.misc import punctuation_rm
+
 from odoo import Command
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase

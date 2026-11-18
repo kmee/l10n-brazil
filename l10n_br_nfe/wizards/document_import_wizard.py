@@ -146,7 +146,7 @@ class DocumentImportWizard(models.TransientModel):
             "quantity_trib": product.prod.qTrib,
             "price_unit_trib": product.prod.vUnTrib,
             "total": product.prod.vProd,
-            "import_xml_id": self.id,
+            "import_xml_id": self._origin.id or self.id,
             "product_supplier_id": supplier_id.id,
             "uom_conversion_factor": supplier_id.partner_uom_factor or 1,
         }
