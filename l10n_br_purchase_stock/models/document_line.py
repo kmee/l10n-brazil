@@ -37,7 +37,7 @@ class FiscalDocumentLine(models.Model):
         )
 
     def _suggest_import_origin(self):
-        super()._suggest_import_origin()
+        result = super()._suggest_import_origin()
         for line in self:
             if not line.import_purchase_line_id or line.import_stock_move_id:
                 continue
@@ -46,9 +46,10 @@ class FiscalDocumentLine(models.Model):
                 line.with_context(import_origin_suggestion=True).write(
                     {"import_stock_move_id": moves.id}
                 )
+        return result
 
     def _apply_import_match_source(self, source):
-        super()._apply_import_match_source(source)
+        result = super()._apply_import_match_source(source)
         if source.source_type == "stock_move":
             move = self.env["stock.move"].browse(-source.id).exists()
             if move:
@@ -59,3 +60,4 @@ class FiscalDocumentLine(models.Model):
                         "import_origin_state": "suggested",
                     }
                 )
+        return result

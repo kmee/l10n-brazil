@@ -140,7 +140,7 @@ class FiscalDocumentLine(models.Model):
     def _apply_import_match_source(self, source):
         """The match source of the import wizard grid becomes a suggestion on
         the line: the person confirms it in the review of the document."""
-        super()._apply_import_match_source(source)
+        result = super()._apply_import_match_source(source)
         if source.source_type == "po_line":
             order_line = self.env["purchase.order.line"].browse(source.id).exists()
             if order_line:
@@ -150,6 +150,7 @@ class FiscalDocumentLine(models.Model):
                         "import_origin_state": "suggested",
                     }
                 )
+        return result
 
     def _apply_import_depara(self, *args, **kwargs):
         result = super()._apply_import_depara(*args, **kwargs)

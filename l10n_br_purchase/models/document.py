@@ -23,9 +23,10 @@ class FiscalDocument(models.Model):
             )
 
     def _init_import_states(self):
-        super()._init_import_states()
+        result = super()._init_import_states()
         for document in self.filtered("imported_document"):
             document.fiscal_line_ids._suggest_import_origin()
+        return result
 
     def action_confirm_import_origins(self):
         """Confirm, in one step, the origins suggested on the lines."""

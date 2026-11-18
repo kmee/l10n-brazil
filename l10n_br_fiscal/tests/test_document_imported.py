@@ -141,13 +141,6 @@ class TestImportedDocumentTaxAmounts(TransactionCase):
             self.assertIn(tax_domain, TAX_VALUE_FIELDS)
             self.assertIn(TAX_VALUE_FIELDS[tax_domain], line_fields)
 
-    def test_every_line_tax_field_has_a_value_field(self):
-        line_fields = self.env["l10n_br_fiscal.document.line"]._fields
-        for tax_field in FISCAL_TAX_ID_FIELDS:
-            tax_domain = tax_field[: -len("_tax_id")]
-            self.assertIn(tax_domain, TAX_VALUE_FIELDS)
-            self.assertIn(TAX_VALUE_FIELDS[tax_domain], line_fields)
-
     def test_recomputing_keeps_the_taxes_of_the_file(self):
         document = self._create_imported_document(
             {
