@@ -37,7 +37,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_br_sped_efd_pis_cofins/models/fiscal_document_line.py:0
 #, python-format
-msgid "The line %(line)s of the document %(document)s books the %(tax)s credit with the CST %(cst)s and the destination %(destination)s, which the file does not derive (only the CST 50 of a resale or of an input)."
+msgid "The item %(item)s (%(product)s) of the document %(document)s books %(tax)s credit with the CST %(cst)s and the destination %(destination)s. This version of the file only derives the credit of a resale and of an input (CST 50), so it was not generated. Fix the destination or the operation of the line, or handle this credit outside the system."
 msgstr ""
 
 #. module: l10n_br_sped_efd_pis_cofins
@@ -51,7 +51,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_br_sped_efd_pis_cofins/models/sped_efd_pis_cofins.py:0
 #, python-format
-msgid "The %(tax)s credit of the documents (%(documents).2f) is not the credit of the posted assessment (%(assessment).2f): assess the period again before generating the file."
+msgid "The %(tax)s credit of the documents (%(documents)s) is not the credit of the posted assessment (%(assessment)s): assess the period again before generating the file."
 msgstr ""
 
 #. module: l10n_br_sped_efd_pis_cofins
@@ -80,6 +80,13 @@ msgstr ""
 #: code:addons/l10n_br_sped_efd_pis_cofins/models/sped_efd_pis_cofins.py:0
 #, python-format
 msgid "The contribution code (table 4.3.5) of the assessment %(assessment)s cannot be determined: its tax group does not say the PIS/COFINS regime and the company does not tell it (Lucro Real or Presumido). Set the regime in the tax group (Accounting > Configuration > Tax groups)."
+msgstr ""
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/fiscal_document_line.py:0
+#, python-format
+msgid "not informed"
 msgstr ""
 
 #. module: l10n_br_sped_efd_pis_cofins

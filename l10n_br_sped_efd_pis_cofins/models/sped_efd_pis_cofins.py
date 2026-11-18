@@ -9,6 +9,7 @@ from erpbrasil.base import misc
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+from odoo.tools.misc import formatLang
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import SITUACAO_FISCAL_INUTILIZADO
 from odoo.addons.l10n_br_sped_base.models.sped_mixin import LAYOUT_VERSIONS
@@ -141,12 +142,12 @@ def _credit_groups(env, declaration, tax_domain):
     if abs(total - assessment.credit_total) > 0.01:
         raise UserError(
             _(
-                "The %(tax)s credit of the documents (%(documents).2f) is not the "
-                "credit of the posted assessment (%(assessment).2f): assess the "
+                "The %(tax)s credit of the documents (%(documents)s) is not the "
+                "credit of the posted assessment (%(assessment)s): assess the "
                 "period again before generating the file.",
                 tax=label,
-                documents=total,
-                assessment=assessment.credit_total,
+                documents=formatLang(env, total, digits=2),
+                assessment=formatLang(env, assessment.credit_total, digits=2),
             )
         )
     if assessment.previous_balance:

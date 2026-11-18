@@ -9,3 +9,4 @@ from . import test_sped_credito
 from . import test_sped_geracao
 from . import test_sped_regime
 from . import test_sped_mesma_nota
+from . import test_sped_mensagens
