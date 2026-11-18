@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Copyright 2026 KMEE
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+    <record id="document_form" model="ir.ui.view">
+        <field name="name">l10n_br_purchase.document.form</field>
+        <field name="model">l10n_br_fiscal.document</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.document_form" />
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <field name="has_suggested_import_origin" invisible="1" />
+                <button
+                    name="action_confirm_import_origins"
+                    type="object"
+                    string="Confirm Origins"
+                    attrs="{'invisible': [('has_suggested_import_origin', '=', False)]}"
+                />
+            </xpath>
+            <xpath
+                expr="//field[@name='fiscal_line_ids']/tree/field[@name='import_state']"
+                position="after"
+            >
+                <field
+                    name="import_purchase_line_id"
+                    optional="show"
+                    attrs="{'column_invisible': [('parent.imported_document', '=', False)]}"
+                />
+                <field
+                    name="import_origin_state"
+                    widget="badge"
+                    decoration-warning="import_origin_state == 'pending'"
+                    decoration-info="import_origin_state == 'suggested'"
+                    decoration-success="import_origin_state == 'resolved'"
+                    optional="show"
+                    attrs="{'column_invisible': [('parent.imported_document', '=', False)]}"
+                />
+            </xpath>
+        </field>
+    </record>
+    <record id="document_line_form" model="ir.ui.view">
+        <field name="name">l10n_br_purchase.document.line.form</field>
+        <field name="model">l10n_br_fiscal.document.line</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.document_line_form" />
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field
+                    name="import_purchase_line_id"
+                    attrs="{'invisible': [('fiscal_operation_type', '!=', 'in')]}"
+                />
+                <field
+                    name="import_origin_state"
+                    readonly="1"
+                    attrs="{'invisible': [('import_origin_state', '=', False)]}"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>
