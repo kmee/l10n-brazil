@@ -53,6 +53,18 @@ class ProductProduct(models.Model):
             # left without a product and waits in the review queue.
             return False
 
+        # the created product takes the unit of the file; with no reliable
+        # mapping of it, the line stays pending instead of getting a wrong unit
+        uom = self.env["uom.uom"]._match_by_fiscal_code(parent_dict.get("nfe40_uCom"))
+        if not uom:
+            return False
+        rec_dict.update(
+            {
+                "uom_id": uom.id,
+                "uom_po_id": uom.id,
+                "type": "product" if "stock.move" in self.env else "consu",
+            }
+        )
         if self._context.get("dry_run"):
             rec_id = self.new(rec_dict).id
         else:

@@ -456,6 +456,34 @@ class NFeImportWizardTest(TransactionCase):
                 "product created during import must get the XML unit",
             )
 
+    def test_created_product_takes_the_xml_unit_and_is_stockable(self):
+        kg = self.env.ref("uom.product_uom_kgm")
+        kg.code = "KG"
+        xml = self.xml_1.replace(b"<uCom>UNID</uCom>", b"<uCom>KG</uCom>")
+        xml = re.sub(rb"<(cProd|xProd)>", rb"<\1>NEWKG-", xml)
+        xml = re.sub(rb"<cEAN(Trib)?>[^<]*</", rb"<cEAN\1>SEM GTIN</", xml)
+        self._prepare_wizard(xml)
+        self.wizard.allow_product_creation = True
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        _binding, edoc = self.wizard._import_edoc()
+        for line in edoc.fiscal_line_ids:
+            product = line.product_id
+            self.assertEqual(product.uom_id, kg)
+            self.assertEqual(product.uom_po_id, product.uom_id)
+            if "stock.move" in self.env:
+                self.assertEqual(product.type, "product")
+
+    def test_unmapped_unit_leaves_the_line_pending(self):
+        xml = self.xml_1.replace(b"<uCom>UNID</uCom>", b"<uCom>ZZZ</uCom>")
+        # a product no one has ever registered, so it would have to be created
+        xml = re.sub(rb"<(cProd|xProd)>", rb"<\1>NEW-", xml)
+        xml = re.sub(rb"<cEAN(Trib)?>[^<]*</", rb"<cEAN\1>SEM GTIN</", xml)
+        self._prepare_wizard(xml)
+        self.wizard.allow_product_creation = True
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        _binding, edoc = self.wizard._import_edoc()
+        self.assertFalse(edoc.fiscal_line_ids.mapped("product_id"))
+
     def test__parse_xml(self):
         self._prepare_wizard(self.xml_1)
 
