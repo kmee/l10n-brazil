@@ -1829,6 +1829,8 @@ class RegistroC195(models.Model):
         # parent_record is the C100 fiscal document. Emit one C195 observation
         # per document carrying a fiscal observation text (from the XML
         # <infAdic> captured at import into manual_fiscal_additional_data).
+        if parent_record._is_sped_cancelled():
+            return "SELECT NULL WHERE FALSE", []
         query = """
             SELECT id AS document_id, manual_fiscal_additional_data AS txt
             FROM l10n_br_fiscal_document

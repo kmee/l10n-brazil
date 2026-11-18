@@ -57,6 +57,7 @@ class TestSpedEfdIcmsIpiEntrada(EntradaHelpers, SpedEntradaCommon):
 
     def test_c100_of_a_cancelled_document_only_has_what_the_guide_allows(self):
         cancelled, _line = self._entry_document(state_edoc="cancelada")
+        cancelled.manual_fiscal_additional_data = "Observacao do documento cancelado"
         declaration = self._declaration_july()
         rec = self._c100(declaration)[cancelled.document_number]
         self.assertEqual(rec["COD_SIT"], "02")
@@ -69,6 +70,7 @@ class TestSpedEfdIcmsIpiEntrada(EntradaHelpers, SpedEntradaCommon):
         text = declaration._generate_sped_text()
         self.assertNotIn("|C170|", text)
         self.assertNotIn("|C190|", text)
+        self.assertNotIn("|C195|", text)
 
     def test_the_entry_booked_after_its_emission_is_extemporaneous(self):
         """Emitted in June and booked in July: COD_SIT 01 (07 if complementary)."""

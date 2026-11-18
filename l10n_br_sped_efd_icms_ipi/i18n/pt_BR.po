@@ -1,0 +1,21 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* l10n_br_sped_efd_icms_ipi
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 16.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_fiscal_icms_relief__sped_cod_aj
+#: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_fiscal_tax_definition__sped_cod_aj
+msgid "SPED Adjustment Code"
+msgstr "Código de Ajuste SPED"
