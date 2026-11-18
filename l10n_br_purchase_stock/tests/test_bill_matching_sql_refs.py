@@ -14,7 +14,8 @@ class TestBillMatchingSQLRefs(TransactionCase):
 
     def test_stock_move_reference_sql(self):
         sql = self.env["stock.move"]._get_bill_matching_reference_sql(alias="sm")
-        self.assertTrue(sql.startswith("NULLIF("))
+        # explicit reference first, then the key derived from the order line
+        self.assertTrue(sql.startswith("COALESCE("))
         self.assertIn("sm.partner_order", sql)
         self.assertIn("sm.partner_order_line", sql)
 
