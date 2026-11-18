@@ -3007,6 +3007,7 @@ class RegistroM100(models.Model):
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         return _credit_vals(record, "ALIQ_PIS")
 
+
 class RegistroM105(models.Model):
     "Detalhamento da Base de Cálculo do Crédito Apurado no Período – PIS/PASEP"
 
@@ -3021,6 +3022,7 @@ class RegistroM105(models.Model):
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         return _credit_detail_vals(record, "PIS")
+
 
 class RegistroM110(models.Model):
     "Ajustes do Crédito de PIS/PASEP Apurado"
@@ -3362,6 +3364,7 @@ class RegistroM500(models.Model):
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         return _credit_vals(record, "ALIQ_COFINS")
 
+
 class RegistroM505(models.Model):
     "Detalhamento da Base de Cálculo do Crédito Apurado no Período – COFINS"
 
@@ -3376,6 +3379,7 @@ class RegistroM505(models.Model):
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         return _credit_detail_vals(record, "COFINS")
+
 
 class RegistroM510(models.Model):
     "Ajustes do Crédito de COFINS Apurado"

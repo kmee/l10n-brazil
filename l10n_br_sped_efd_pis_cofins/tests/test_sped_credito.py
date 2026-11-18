@@ -235,9 +235,7 @@ class TestSpedPisCofinsCredit(CreditMixin, SpedEntradaCommon):
         company, and the 0500 declares it."""
         self._month_with_credit()
         declaration = self._declaration_july()
-        c170 = {
-            rec["CST_PIS"]: rec for rec in self._sped_records(declaration, "C170")
-        }
+        c170 = {rec["CST_PIS"]: rec for rec in self._sped_records(declaration, "C170")}
         sale_line = c170["01"]
         self.assertTrue(sale_line["COD_CTA"])
         codes = [rec["COD_CTA"] for rec in self._sped_records(declaration, "0500")]
