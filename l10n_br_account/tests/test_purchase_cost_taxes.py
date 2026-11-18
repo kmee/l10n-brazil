@@ -89,6 +89,8 @@ class TestPurchaseCostTaxes(AccountMoveBRCommon):
             line.balance, control.invoice_line_ids.balance + line.icms_value
         )
         self.assertAlmostEqual(line.balance, line.fiscal_amount_total)
+        # the IPI of the variant without credit joins the total of the line once
+        self.assertAlmostEqual(line.price_total, line.fiscal_amount_total)
         return bill
 
     def test_use_and_consumption_without_the_flag(self):
