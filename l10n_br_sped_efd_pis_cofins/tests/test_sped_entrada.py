@@ -109,6 +109,17 @@ class TestSpedPisCofinsEntrada(SpedPisCofinsEntradaMixin, SpedEntradaCommon):
         self.assertEqual(c170["CST_PIS"], "70")
         self.assertEqual(c170["CST_COFINS"], "70")
 
+    def test_the_cumulative_company_books_the_entry_without_credit(self):
+        """Lucro presumido: CST 70, no base, rate or value, no credit nature."""
+        _doc, line = self._entry_document()
+        c170 = self._c170(self._declaration_july())
+        self.assertEqual(c170["CST_PIS"], "70")
+        self.assertEqual(c170["CST_COFINS"], "70")
+        self.assertEqual(c170["NAT_BC_CRED"], "")
+        for name in ("VL_BC_PIS", "ALIQ_PIS", "VL_PIS", "VL_BC_COFINS", "VL_COFINS"):
+            self.assertEqual(self._number(c170[name]), 0.0, name)
+        self.assertEqual(line.pis_cst_id.code, "01", "the file's CST is not touched")
+
 
 @tagged("post_install", "-at_install")
 class TestSpedPisCofinsEntradaNonCumulative(
@@ -128,3 +139,27 @@ class TestSpedPisCofinsEntradaNonCumulative(
         c170 = self._c170(self._declaration_july())
         self.assertEqual(c170["CST_PIS"], "50")
         self.assertEqual(c170["CST_COFINS"], "50")
+
+    def test_the_credit_cst_and_values_are_booked(self):
+        self._entry_document()
+        c170 = self._c170(self._declaration_july())
+        self.assertEqual(c170["CST_PIS"], "50")
+        self.assertEqual(c170["CST_COFINS"], "50")
+        self.assertEqual(c170["VL_BC_PIS"], "1000,00")
+        self.assertEqual(c170["VL_PIS"], "16,50")
+        self.assertEqual(c170["VL_COFINS"], "76,00")
+
+    def test_the_credit_nature_comes_from_the_destination_of_the_purchase(self):
+        """Resale 01, input of the industrialization 02, any other destination
+        is left blank."""
+        expected = {
+            "fo_compras_compras_comercializacao": "01",
+            "fo_compras_compras": "02",
+            "fo_compras_compras_uso_consumo": "",
+        }
+        for operation_line, nat_bc_cred in expected.items():
+            doc, _line = self._entry_document(operation_line=operation_line)
+            c170 = self._c170(self._declaration_july())
+            self.assertEqual(c170["NAT_BC_CRED"], nat_bc_cred, operation_line)
+            # leaves the period book for the next destination
+            doc.state_edoc = "em_digitacao"

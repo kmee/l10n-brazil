@@ -12,6 +12,12 @@ from odoo import api, fields, models
 from odoo.addons.l10n_br_fiscal.constants.fiscal import SITUACAO_FISCAL_INUTILIZADO
 from odoo.addons.l10n_br_sped_base.models.sped_mixin import LAYOUT_VERSIONS
 
+# Table 4.3.7 (NAT_BC_CRED) by the destination of the purchase
+NAT_BC_CRED_BY_DESTINATION = {
+    "resale": "01",  # aquisicao de bens para revenda
+    "industrialization": "02",  # aquisicao de bens utilizados como insumo
+}
+
 
 def _spec(record, spec_field, default=None):
     """Get a value from a spec field (nfe40_*, cte40_*) if available.
@@ -857,6 +863,8 @@ class RegistroC170(models.Model):
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        pis_no_credit = record._entry_piscofins_without_credit("pis")
+        cofins_no_credit = record._entry_piscofins_without_credit("cofins")
         return {
             "NUM_ITEM": str(index + 1),
             "COD_ITEM": record.product_id.default_code or str(record.product_id.id),
@@ -865,41 +873,38 @@ class RegistroC170(models.Model):
             "UNID": record.uom_id.name or "",
             "VL_ITEM": record.price_gross or 0,
             "VL_DESC": record.discount_value or 0,
-            "IND_MOV": "0",
-            # 3 positions: the origin digit prefixes the 2-digit CST, as the
-            # ICMS book writes it
-            "CST_ICMS": (record.icms_origin or "0") + (record.icms_cst_code or ""),
-            "CFOP": record.cfop_id.code or "",
-            "COD_NAT": record.fiscal_operation_id.code
-            or str(record.fiscal_operation_id.id or ""),
-            "VL_BC_ICMS": record.icms_base or 0,
-            "ALIQ_ICMS": record.icms_percent or 0,
-            "VL_ICMS": record.icms_value or 0,
-            "VL_BC_ICMS_ST": record.icmsst_base or 0,
-            "ALIQ_ST": record.icmsst_percent or 0,
-            "VL_ICMS_ST": record.icmsst_value or 0,
-            "IND_APUR": "0",  # 0=Mensal
-            "CST_IPI": record.entry_ipi_cst_id.code or record.ipi_cst_code or "",
-            "COD_ENQ": "",
-            "VL_BC_IPI": record.ipi_base or 0,
-            "ALIQ_IPI": record.ipi_percent or 0,
-            "VL_IPI": record.ipi_value or 0,
+            "NAT_BC_CRED": self._get_nat_bc_cred(record),
             "CST_PIS": record.entry_pis_cst_id.code or record.pis_cst_code or "",
-            "VL_BC_PIS": record.pis_base or 0,
-            "ALIQ_PIS": record.pis_percent or 0,
+            "VL_BC_PIS": 0 if pis_no_credit else record.pis_base or 0,
+            "ALIQ_PIS": 0 if pis_no_credit else record.pis_percent or 0,
             "QUANT_BC_PIS": 0,
             "ALIQ_PIS_QUANT": 0,
-            "VL_PIS": record.pis_value or 0,
+            "VL_PIS": 0 if pis_no_credit else record.pis_value or 0,
             "CST_COFINS": record.entry_cofins_cst_id.code
             or record.cofins_cst_code
             or "",
-            "VL_BC_COFINS": record.cofins_base or 0,
-            "ALIQ_COFINS": record.cofins_percent or 0,
+            "VL_BC_COFINS": 0 if cofins_no_credit else record.cofins_base or 0,
+            "ALIQ_COFINS": 0 if cofins_no_credit else record.cofins_percent or 0,
             "QUANT_BC_COFINS": 0,
             "ALIQ_COFINS_QUANT": 0,
-            "VL_COFINS": record.cofins_value or 0,
+            "VL_COFINS": 0 if cofins_no_credit else record.cofins_value or 0,
             "COD_CTA": "",
         }
+
+    @api.model
+    def _get_nat_bc_cred(self, record):
+        """Table 4.3.7, only for an entry that books a credit CST (50 to 66).
+        The destination of the purchase gives the nature: resale 01, input of
+        the industrialization 02. Any other destination stays blank: it is not
+        guessed."""
+        credit = any(
+            "50" <= (cst.code or "") <= "66"
+            for cst in (record.entry_pis_cst_id, record.entry_cofins_cst_id)
+        )
+        if not credit:
+            return ""
+        destination = record.fiscal_operation_line_id.product_destination
+        return NAT_BC_CRED_BY_DESTINATION.get(destination, "")
 
 
 class RegistroC175(models.Model):
