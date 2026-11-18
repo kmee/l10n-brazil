@@ -60,19 +60,18 @@ class SpedEntradaCommon(AccountMoveBRCommon):
         super().setUpClass()
         cls.configure_normal_company_taxes()
         cls.company = cls.company_data["company"]
+        # the supplier of the tests is a taxpayer of the normal regime: a supplier
+        # of the Simples Nacional passes no ICMS credit on (LC 123/2006, art. 23)
+        cls.partner_a.fiscal_profile_id = cls.env.ref(
+            "l10n_br_fiscal.partner_fiscal_profile_cnt"
+        )
         cls._doc_number = 100
 
     @staticmethod
-    def _access_key(number):
-        """A valid 44 digits access key (check digit included) for the number."""
-        base = (
-            f"35"
-            "2611"
-            "49190159000105"
-            "55"
-            "001"
-            f"{number.zfill(9)}1{number.zfill(8)}"
-        )
+    def _access_key(number, cnpj="49190159000105"):
+        """A valid 44 digits access key (check digit included) for the number,
+        issued by the CNPJ (the supplier of the tests by default)."""
+        base = f"35" "2611" f"{cnpj}" "55" "001" f"{number.zfill(9)}1{number.zfill(8)}"
         weights = [2, 3, 4, 5, 6, 7, 8, 9]
         total = sum(
             int(digit) * weights[index % 8]

@@ -198,6 +198,36 @@ class Registro0000(models.Model):
         )
         return res
 
+    def _get_posted_icms_assessments(self):
+        """The ICMS assessments of the period the E110 is made from. Only a
+        posted one enters the file: a computed draft is a number nobody
+        reviewed."""
+        self.ensure_one()
+        return self.env["l10n_br_tax.assessment"].search(
+            [
+                ("company_id", "=", self.company_id.id),
+                ("tax_domain", "=", "icms"),
+                ("date_from", ">=", self.DT_INI),
+                ("date_to", "<=", self.DT_FIN),
+                ("state", "=", "posted"),
+            ]
+        )
+
+    def button_create_sped_files(self):
+        """Without the ICMS assessment of the period posted the E110 does not
+        exist and the PVA refuses the file, so the generation stops here."""
+        for declaration in self:
+            if not declaration.debug and not declaration._get_posted_icms_assessments():
+                raise UserError(
+                    _(
+                        "Assess and post the ICMS of the period before generating "
+                        "the file (ICMS assessment of %(start)s to %(end)s).",
+                        start=format_date(self.env, declaration.DT_INI),
+                        end=format_date(self.env, declaration.DT_FIN),
+                    )
+                )
+        return super().button_create_sped_files()
+
     @api.model
     def _odoo_domain(self, parent_record, declaration):
         return [("id", "=", declaration.company_id.id)]
@@ -1018,6 +1048,7 @@ class RegistroC100(models.Model):
 
         ind_pgto = record._get_sped_ind_pgto()
 
+        icms_base, icms_value = record._get_sped_icms_amounts()
         cod_sit = record._get_sped_cod_sit()
         if record._is_sped_cancelled():
             # cancelled, denied and unused numbers only carry what the Guia
@@ -1060,8 +1091,8 @@ class RegistroC100(models.Model):
             "VL_FRT": record.amount_freight_value,
             "VL_SEG": record.amount_insurance_value,
             "VL_OUT_DA": record.amount_other_value,
-            "VL_BC_ICMS": record.amount_icms_base,
-            "VL_ICMS": record.amount_icms_value,
+            "VL_BC_ICMS": icms_base,
+            "VL_ICMS": icms_value,
             "VL_BC_ICMS_ST": record.amount_icmsst_base,
             "VL_ICMS_ST": record.amount_icmsst_value,
             "VL_IPI": record.amount_ipi_value,
@@ -1403,7 +1434,12 @@ class RegistroC170(models.Model):
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         # Format the 3-digit CST (Origin + CST code)
+        icms_without_credit = record._sped_icms_without_credit()
         cst_icms = f"{record.icms_origin or '0'}{record.icms_cst_code or '00'}"
+        if icms_without_credit:
+            # entry without credit right: origin + 90 (others), no base, rate or
+            # value of ICMS: the value stays in the cost of the item
+            cst_icms = f"{record.icms_origin or '0'}90"
         # an entry booked without PIS/COFINS credit right carries no base, rate
         # or value for the tax
         pis_no_credit = record._entry_piscofins_without_credit("pis")
@@ -1424,9 +1460,9 @@ class RegistroC170(models.Model):
             "CFOP": str(record.cfop_id.code),
             "COD_NAT": record.fiscal_operation_id.code
             or str(record.fiscal_operation_id.id),
-            "VL_BC_ICMS": record.icms_base,
-            "ALIQ_ICMS": record.icms_percent,
-            "VL_ICMS": record.icms_value,
+            "VL_BC_ICMS": 0.0 if icms_without_credit else record.icms_base,
+            "ALIQ_ICMS": 0.0 if icms_without_credit else record.icms_percent,
+            "VL_ICMS": 0.0 if icms_without_credit else record.icms_value,
             "VL_BC_ICMS_ST": record.icmsst_base,
             "ALIQ_ST": record.icmsst_percent,
             "VL_ICMS_ST": record.icmsst_value,
@@ -1767,14 +1803,25 @@ class RegistroC190(models.Model):
         # SPED requires grouping by CST, CFOP, and ICMS Aliquot
         if parent_record._is_sped_cancelled():
             return "SELECT NULL WHERE FALSE", []
+        # the entry lines without ICMS credit are grouped apart: CST of the
+        # origin plus 90 and no base, rate or value (see C170)
+        no_credit = parent_record.fiscal_line_ids.filtered(
+            lambda line: line._sped_icms_without_credit()
+        ).ids
         query = """
             SELECT
-                CONCAT(COALESCE(fdl.icms_origin, '0'), cst.code) AS cst_icms,
+                CONCAT(
+                    COALESCE(fdl.icms_origin, '0'),
+                    CASE WHEN fdl.id = ANY(%s) THEN '90' ELSE cst.code END
+                ) AS cst_icms,
                 cfop.code AS cfop,
-                fdl.icms_percent AS aliq_icms,
+                CASE WHEN fdl.id = ANY(%s) THEN 0 ELSE fdl.icms_percent END
+                    AS aliq_icms,
                 SUM(fdl.amount_tax_not_included) AS vl_opr,
-                SUM(fdl.icms_base) AS vl_bc_icms,
-                SUM(fdl.icms_value) AS vl_icms,
+                SUM(CASE WHEN fdl.id = ANY(%s) THEN 0 ELSE fdl.icms_base END)
+                    AS vl_bc_icms,
+                SUM(CASE WHEN fdl.id = ANY(%s) THEN 0 ELSE fdl.icms_value END)
+                    AS vl_icms,
                 SUM(fdl.icmsst_base) AS vl_bc_icms_st,
                 SUM(fdl.icmsst_value) AS vl_icms_st,
                 SUM(fdl.ipi_value) AS vl_ipi
@@ -1782,9 +1829,34 @@ class RegistroC190(models.Model):
             LEFT JOIN l10n_br_fiscal_cst cst ON cst.id = fdl.icms_cst_id
             LEFT JOIN l10n_br_fiscal_cfop cfop ON cfop.id = fdl.cfop_id
             WHERE fdl.document_id = %s
-            GROUP BY cst.code, cfop.code, fdl.icms_percent, fdl.icms_origin
+            GROUP BY
+                CONCAT(
+                    COALESCE(fdl.icms_origin, '0'),
+                    CASE WHEN fdl.id = ANY(%s) THEN '90' ELSE cst.code END
+                ),
+                cfop.code,
+                CASE WHEN fdl.id = ANY(%s) THEN 0 ELSE fdl.icms_percent END
         """
-        return query, [parent_record.id]
+        return query, [no_credit] * 4 + [parent_record.id] + [no_credit] * 2
+
+    @api.model
+    def _get_operation_total(self, record, parent_record):
+        """VL_OPR: the total of the operation of the lines of the group (CST,
+        CFOP and rate). It is not a stored column, so the lines are summed here
+        by the same key the query groups by."""
+        total = 0.0
+        for line in parent_record.fiscal_line_ids:
+            without_credit = line._sped_icms_without_credit()
+            origin = line.icms_origin or "0"
+            cst = "90" if without_credit else (line.icms_cst_code or "")
+            rate = 0.0 if without_credit else line.icms_percent
+            if (
+                f"{origin}{cst}" == record.get("cst_icms")
+                and (line.cfop_id.code or None) == record.get("cfop")
+                and (rate or 0.0) == (record.get("aliq_icms") or 0.0)
+            ):
+                total += line.fiscal_amount_total
+        return total
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
@@ -1792,7 +1864,7 @@ class RegistroC190(models.Model):
             "CST_ICMS": record.get("cst_icms") or "",
             "CFOP": record.get("cfop") or "",
             "ALIQ_ICMS": record.get("aliq_icms") or 0.0,
-            "VL_OPR": record.get("vl_opr") or 0.0,
+            "VL_OPR": self._get_operation_total(record, parent_record),
             "VL_BC_ICMS": record.get("vl_bc_icms") or 0.0,
             "VL_ICMS": record.get("vl_icms") or 0.0,
             "VL_BC_ICMS_ST": record.get("vl_bc_icms_st") or 0.0,
@@ -4066,15 +4138,9 @@ class RegistroE110(models.Model):
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):
-        return [
-            ("company_id", "=", declaration.company_id.id),
-            ("tax_domain", "=", "icms"),
-            ("date_from", ">=", declaration.DT_INI),
-            ("date_to", "<=", declaration.DT_FIN),
-            # only a CLOSED assessment enters a delivered file: a computed
-            # draft is a number nobody reviewed (council F9)
-            ("state", "=", "posted"),
-        ]
+        # only a CLOSED assessment enters a delivered file: a computed draft is
+        # a number nobody reviewed (council F9)
+        return [("id", "in", declaration._get_posted_icms_assessments().ids)]
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):

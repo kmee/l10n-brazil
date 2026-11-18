@@ -123,3 +123,17 @@ class FiscalDocument(models.Model):
         ):
             return self.document_date
         return entry
+
+    def _get_sped_icms_amounts(self):
+        """(base, value) of ICMS of the document that the books carry: the ones
+        of the lines with credit right in an entry (the lines without it carry
+        none, see ``_sped_icms_without_credit``), all of them in any other
+        document."""
+        self.ensure_one()
+        lines = self.fiscal_line_ids.filtered(
+            lambda line: not line._sped_icms_without_credit()
+        )
+        return (
+            sum(lines.mapped("icms_base")),
+            sum(lines.mapped("icms_value")),
+        )
