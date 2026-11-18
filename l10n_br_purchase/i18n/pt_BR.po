@@ -3379,3 +3379,18 @@ msgstr "Técnico: alguma linha do documento importado tem uma sugestão de orige
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase.document_form
 msgid "Confirm Origins"
 msgstr "Confirmar origens"
+
+#. module: l10n_br_purchase
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase.l10n_br_purchase_move_form
+msgid "Some lines of the imported document have a purchase order origin that is only suggested or still pending. Confirm the origins on the fiscal document: the destination of the order (credit of the taxes) is applied only to a confirmed origin."
+msgstr "Algumas linhas do documento importado têm uma origem de pedido de compra apenas sugerida ou ainda pendente. Confirme as origens no documento fiscal: a destinação do pedido (crédito dos impostos) só é aplicada a uma origem confirmada."
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_account_move__has_unconfirmed_import_origin
+msgid "Has Unconfirmed Import Origin"
+msgstr "Tem origem de importação não confirmada"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,help:l10n_br_purchase.field_account_move__has_unconfirmed_import_origin
+msgid "Technical: a draft vendor bill of an imported document that has a line whose purchase order origin was only suggested or is still pending, so the destination of the order was not applied."
+msgstr "Técnico: fatura de fornecedor em rascunho de um documento importado que tem linha cuja origem de pedido de compra foi apenas sugerida ou ainda está pendente, de modo que a destinação do pedido não foi aplicada."

@@ -16,6 +16,30 @@ class AccountMove(models.Model):
         "product lines not linked to a purchase order.",
     )
 
+    has_unconfirmed_import_origin = fields.Boolean(
+        compute="_compute_has_unconfirmed_import_origin",
+        help="Technical: a draft vendor bill of an imported document that has a "
+        "line whose purchase order origin was only suggested or is still "
+        "pending, so the destination of the order was not applied.",
+    )
+
+    @api.depends(
+        "state",
+        "move_type",
+        "fiscal_document_id.imported_document",
+        "fiscal_document_id.fiscal_line_ids.import_origin_state",
+    )
+    def _compute_has_unconfirmed_import_origin(self):
+        for move in self:
+            document = move.fiscal_document_id
+            move.has_unconfirmed_import_origin = bool(
+                move.state == "draft"
+                and move.move_type == "in_invoice"
+                and document.imported_document
+                and {"suggested", "pending"}
+                & set(document.fiscal_line_ids.mapped("import_origin_state"))
+            )
+
     @api.depends(
         "move_type",
         "fiscal_document_id.imported_document",

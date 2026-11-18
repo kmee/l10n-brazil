@@ -132,3 +132,25 @@ class TestImportDestination(TransactionCase):
         document.action_confirm_import_origins()
         for line in document.fiscal_line_ids:
             self.assertEqual(line.fiscal_operation_line_id, self.asset)
+
+    def test_the_bill_of_a_suggested_origin_shows_the_warning(self):
+        """The destination is applied only to a confirmed origin, so the bill
+        generated while the origin is only suggested warns about it."""
+        document = self._document()
+        self.assertEqual(
+            set(document.fiscal_line_ids.mapped("import_origin_state")), {"suggested"}
+        )
+        bill = self._bill(document)
+        self.assertTrue(bill.has_unconfirmed_import_origin)
+        view = bill.get_view(self.env.ref("account.view_move_form").id, "form")
+        self.assertIn("has_unconfirmed_import_origin", view["arch"])
+        document.action_confirm_import_origins()
+        bill.invalidate_recordset(["has_unconfirmed_import_origin"])
+        self.assertFalse(bill.has_unconfirmed_import_origin)
+
+    def test_a_bill_without_pending_origin_has_no_warning(self):
+        document = self._document(
+            suggest=False, partner_order=False, partner_order_line=False
+        )
+        bill = self._bill(document)
+        self.assertFalse(bill.has_unconfirmed_import_origin)
