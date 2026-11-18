@@ -505,3 +505,71 @@ class TestNfseNotaControl(TransactionCase):
 
         with self.assertRaises(UserError):
             self._status_check(mensagens=[MensagemRetorno("E212", "Nao encontrada")])
+
+    # ------------------------------------------------------------ substitution
+
+    def _replaced_nfse(self):
+        old = self.doc.copy(
+            {"document_number": "1", "rps_number": "0041", "document_key": "3" * 41}
+        )
+        old.write(
+            {"state_edoc": "autorizada", "nfse_number": "1", "nfse_key": "4" * 50}
+        )
+        self.doc.nfse_replaced_document_id = old
+        return old
+
+    def _authorize(self, simulated=False):
+        self.doc._notacontrol_process_response(
+            retorno(
+                sucesso=True,
+                protocolo="PROT-7",
+                chaves_acesso=["5" * 50],
+                numeros_nfse=["7"],
+                nfse_xml=["<Nfse/>"],
+                xml_enviado="<Lote/>",
+                xml_resposta="<Resposta/>",
+            ),
+            simulated=simulated,
+        )
+
+    def test_replace_is_supported(self):
+        self.assertTrue(self.doc.nfse_replace_supported)
+
+    def test_dps_declares_the_replaced_nfse(self):
+        self._replaced_nfse()
+        self.doc.document_date = "2026-10-20 13:00:00"
+        self.doc.nfse_replace_motive = "03"
+        self.doc.nfse_replace_reason = "Retroactive immunity for the service"
+        xml = self.doc._notacontrol_adjust_dps(self.doc.serialize()[0].to_xml())
+        inf = etree.fromstring(xml.encode()).find(f"{{{NS}}}infDPS")
+        subst = inf.find(f"{{{NS}}}subst")
+        self.assertEqual(
+            [(etree.QName(el).localname, el.text) for el in subst],
+            [
+                ("chSubstda", "4" * 50),
+                ("cMotivo", "03"),
+                ("xMotivo", "Retroactive immunity for the service"),
+            ],
+        )
+        children = [etree.QName(el).localname for el in inf]
+        self.assertEqual(children.index("subst"), children.index("cLocEmi") + 1)
+
+    def test_authorized_replacement_cancels_the_old_nfse_without_the_city(self):
+        old = self._replaced_nfse()
+        with mock.patch(f"{PROVIDER}.cancelar_nfse") as cancel:
+            self._authorize()
+        cancel.assert_not_called()
+        self.assertEqual(self.doc.state_edoc, "autorizada")
+        self.assertEqual(old.state_edoc, "cancelada")
+        self.assertEqual(old.cancel_event_id.state, "done")
+
+    def test_refused_replacement_keeps_the_old_nfse(self):
+        old = self._replaced_nfse()
+        self.doc._notacontrol_process_response(retorno(http_status=500))
+        self.assertEqual(self.doc.state_edoc, "rejeitada")
+        self.assertEqual(old.state_edoc, "autorizada")
+
+    def test_simulated_replacement_does_not_touch_the_old_nfse(self):
+        old = self._replaced_nfse()
+        self._authorize(simulated=True)
+        self.assertEqual(old.state_edoc, "autorizada")

@@ -321,6 +321,9 @@ class L10nBrFiscalDocument(models.Model):
                 file_response_xml=retorno.nfse_xml[0],
             )
             self._change_state(SITUACAO_EDOC_AUTORIZADA)
+            if not simulated:
+                # the city hall records the replacement event on the old NFS-e
+                self._nfse_mark_replaced(retorno.xml_enviado, retorno.nfse_xml[0])
             if simulated:
                 self.message_post(
                     body=_(
