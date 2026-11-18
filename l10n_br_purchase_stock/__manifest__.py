@@ -16,6 +16,7 @@
     "data": [
         # Views
         "views/purchase_order.xml",
+        "views/document_view.xml",
         "views/res_config_settings.xml",
         "views/res_company_view.xml",
     ],
