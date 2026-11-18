@@ -369,7 +369,7 @@ class Registro0150(models.Model):
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         vals = {
-            "COD_PART": misc.punctuation_rm(record.cnpj_cpf),
+            "COD_PART": record._get_sped_cod_part(),
             "NOME": record.legal_name or record.name,
             "COD_PAIS": record.country_id.bc_code,
             "IE": misc.punctuation_rm(record.inscr_est),
@@ -1046,7 +1046,7 @@ class RegistroC100(models.Model):
         return {
             "IND_OPER": ind_oper,
             "IND_EMIT": ind_emit,
-            "COD_PART": str(record.partner_id.id),
+            "COD_PART": record.partner_id._get_sped_cod_part(),
             "COD_MOD": record.document_type_id.code,
             "COD_SIT": cod_sit,
             "SER": record.document_serie,
@@ -2382,7 +2382,7 @@ class RegistroC500(models.Model):
         return {
             "IND_OPER": ind_oper,
             "IND_EMIT": ind_emit,
-            "COD_PART": str(record.partner_id.id),
+            "COD_PART": record.partner_id._get_sped_cod_part(),
             "COD_MOD": record.document_type_id.code,
             "COD_SIT": record._get_sped_cod_sit(period_start=declaration.DT_INI),
             "SER": record.document_serie or "",
@@ -2981,7 +2981,7 @@ class RegistroD100(models.Model):
         return {
             "IND_OPER": "0" if record.fiscal_operation_type == FISCAL_IN else "1",
             "IND_EMIT": "0" if record.issuer == DOCUMENT_ISSUER_COMPANY else "1",
-            "COD_PART": misc.punctuation_rm(record.partner_id.cnpj_cpf),
+            "COD_PART": record.partner_id._get_sped_cod_part(),
             "COD_MOD": record.document_type_id.code or "",
             "COD_SIT": record._get_sped_cod_sit(period_start=declaration.DT_INI),
             "SER": record.document_serie or "",
