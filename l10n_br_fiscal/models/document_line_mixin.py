@@ -1202,16 +1202,23 @@ class FiscalDocumentLineMixin(models.AbstractModel):
             and supplier
             and supplier.tax_framework in TAX_FRAMEWORK_SIMPLES_ALL
         )
-        for tax in self.fiscal_tax_ids:
-            domain = tax.tax_domain
+        taxed_domains = [
+            (tax.tax_domain, tax.tax_group_id) for tax in self.fiscal_tax_ids
+        ]
+        if self.icmssn_credit_value and TAX_DOMAIN_ICMS_SN not in [
+            domain for domain, _group in taxed_domains
+        ]:
+            # the credit highlighted by the supplier counts even when the line
+            # does not carry the ICMS SN tax record
+            taxed_domains.append((TAX_DOMAIN_ICMS_SN, None))
+        for domain, group in taxed_domains:
             if domain not in recoverable:
                 continue
-            group = tax.tax_group_id
             # Não recuperável por natureza, ou empresa no Simples, ou destinação
             # sem direito a crédito, ou fornecedor Simples (ICMS/IPI) →
             # integra o custo.
             if (
-                (not group.credit_stock_cost and domain != TAX_DOMAIN_ICMS_SN)
+                (domain != TAX_DOMAIN_ICMS_SN and not group.credit_stock_cost)
                 or company.tax_framework in TAX_FRAMEWORK_SIMPLES_ALL
                 or destination not in PRODUCT_DESTINATION_CREDIT
                 or (supplier_is_simples and domain in (TAX_DOMAIN_ICMS, TAX_DOMAIN_IPI))
