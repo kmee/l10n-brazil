@@ -157,6 +157,10 @@ class PartyMixin(models.AbstractModel):
     def _compute_vat_formatted_cnpj(self):
         for record in self:
             vat_formatted_cnpj = False
+            if not record.vat and not record.id:
+                # New record in the form: keep the CNPJ typed so far, a change
+                # of country or state must not erase it.
+                vat_formatted_cnpj = record.vat_formatted_cnpj
             if record.vat and record.country_id and record.country_id.code == "BR":
                 vat_formatted_cnpj = cnpj_cpf.formata(record.vat)
             record.vat_formatted_cnpj = vat_formatted_cnpj
@@ -211,6 +215,9 @@ class PartyMixin(models.AbstractModel):
         if not isinstance(vals, dict):
             return
         vat = vals.get("vat")
+        if not vat and vals.get("vat_formatted_cnpj"):
+            # The company form sends `vat: False` with the formatted CNPJ.
+            vat = vals["vat"] = vals["vat_formatted_cnpj"]
         if not vat:
             return
         country_id = vals.get("country_id")
