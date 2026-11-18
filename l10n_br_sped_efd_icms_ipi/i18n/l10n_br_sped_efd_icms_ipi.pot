@@ -518,11 +518,6 @@ msgid "A - Valor total referente às prestações de serviço do período"
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__137-5
-msgid "Abate de gado"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_20_c100__VL_ABAT_NT
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_c100__VL_ABAT_NT
 msgid "Abatimento não tributado e não comercial Ex"
@@ -860,21 +855,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_1975__ALIQ_IMP_BASE
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_20_1975__ALIQ_IMP_BASE
 msgid "Alíquota incidente sobre as importações-base"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_obrigacao__004
-msgid "Antecipação do ICMS da importação"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_obrigacao__003
-msgid "Antecipação do diferencial de alíquotas do ICMS"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_obrigacao__005
-msgid "Antecipação tributária"
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
@@ -2966,16 +2946,6 @@ msgid ""
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__117-0
-msgid "Combustível (no Estado de São Paulo)"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__118-1
-msgid "Combustível (outra UF)"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_0000__company_id
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_0002__company_id
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_0005__company_id
@@ -3846,16 +3816,6 @@ msgid "Complemento dos documentos informados."
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__112-0
-msgid "Comunicação (no Estado de São Paulo)"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__113-2
-msgid "Comunicação (outra UF)"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_20_c790__reg_C790_ids_RegistroC700_id
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_c790__reg_C790_ids_RegistroC700_id
 msgid "Consolidação"
@@ -3968,16 +3928,6 @@ msgstr ""
 #. module: l10n_br_sped_efd_icms_ipi
 #: model:ir.model,name:l10n_br_sped_efd_icms_ipi.model_l10n_br_sped_efd_icms_ipi_e510
 msgid "Consolidação dos Valores de IPI."
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__102-8
-msgid "Consumidor final não contribuinte por apuração (outra UF)"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__101-6
-msgid "Consumidor final não contribuinte por operação (outra UF)"
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
@@ -8391,11 +8341,6 @@ msgid "Debug"
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__ind_apur__1
-msgid "Decendial"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_0002__declaration_id
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_0005__declaration_id
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_0015__declaration_id
@@ -9257,11 +9202,6 @@ msgid ""
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__154-5
-msgid "Diferença de estimativa"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_0000__display_name
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_0002__display_name
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_0005__display_name
@@ -9754,21 +9694,6 @@ msgid "Documentos fiscais utilizados."
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__078-4
-msgid "Dívida ativa ajuizada"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__077-2
-msgid "Dívida ativa ajuizada - parcelamento"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__075-9
-msgid "Dívida ativa – cobrança amigável"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
 #: model:ir.model.fields,help:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_20_b470__VL_ISNT
 #: model:ir.model.fields,help:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_b470__VL_ISNT
 msgid "E - Valor total das operações isentas ou não-tributadas pelo ISS"
@@ -10020,16 +9945,6 @@ msgid "Endereço do correio eletrônico"
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__115-6
-msgid "Energia elétrica (no Estado de São Paulo)"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__116-8
-msgid "Energia elétrica (outra UF)"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_20_c500__ENER_INJET
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_c500__ENER_INJET
 msgid "Energia injetada"
@@ -10096,26 +10011,6 @@ msgstr ""
 #. module: l10n_br_sped_efd_icms_ipi
 #: model:ir.model,name:l10n_br_sped_efd_icms_ipi.model_l10n_br_sped_efd_icms_ipi_d350
 msgid "Equipamento ECF."
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__CLAS_ESTAB_IND__06
-msgid "Equiparado a industrial - Importação Direta"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__CLAS_ESTAB_IND__08
-msgid "Equiparado a industrial - Não enquadrado nos códigos 05, 06 ou 07"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__CLAS_ESTAB_IND__07
-msgid "Equiparado a industrial - Por lei específica"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__CLAS_ESTAB_IND__05
-msgid "Equiparado a industrial - Por opção"
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
@@ -10208,21 +10103,6 @@ msgstr ""
 #: model:ir.model.fields,help:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_1391__PERDA
 #: model:ir.model.fields,help:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_20_1391__PERDA
 msgid "Evaporação (litros) ou Quebra de peso (kg)"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__106-5
-msgid "Exigido em Auto de Infração e Imposição de Multa - AIIM"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__107-7
-msgid "Exigido em Auto de Infração e Imposição de Multa - AIIM (outra UF)"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__123-5
-msgid "Exportação de café cru"
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
@@ -10354,18 +10234,6 @@ msgstr ""
 #: model:ir.model.fields,help:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_20_d750__IND_PREPAGO
 #: model:ir.model.fields,help:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_d750__IND_PREPAGO
 msgid "Forma de pagamento: 0 – pré pago 1 – pós pago"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__104-1
-msgid ""
-"Fundo estadual de combate e erradicação da pobreza (FECOEP) - por apuração"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__103-0
-msgid ""
-"Fundo estadual de combate e erradicação da pobreza (FECOEP) - por operação"
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
@@ -10504,28 +10372,8 @@ msgid "I - Valor total do ISS destacado"
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__089-9
-msgid "ICM/ICMS - Programa Especial de Parcelamento - PEP"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__091-7
-msgid "ICM/ICMS - Programa Especial de Parcelamento PEP 2017"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__087-5
-msgid "ICM/ICMS - Programa de Parcelamento Incentivado - PPI"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
 #: model:ir.model,name:l10n_br_sped_efd_icms_ipi.model_l10n_br_sped_efd_icms_ipi_20_g110
 msgid "ICMS - Ativo Permanente - CIAP"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_obrigacao__000
-msgid "ICMS a recolher"
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
@@ -10544,18 +10392,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_1970__G3_02
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_20_1970__G3_02
 msgid "ICMS diferido nas importações"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__100-4
-msgid "ICMS recolhimento antecipado (outra UF)"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_obrigacao__006
-msgid ""
-"ICMS resultante da alíquota adicional dos itens incluídos no Fundo de "
-"Combate à Pobreza"
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
@@ -12250,36 +12086,6 @@ msgstr ""
 #. module: l10n_br_sped_efd_icms_ipi
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_0000__IND_ATIV
 msgid "Indicador tipo atividade"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__CLAS_ESTAB_IND__03
-msgid "Industrial - Acondicionamento ou Reacondicionamento"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__CLAS_ESTAB_IND__01
-msgid "Industrial - Beneficiamento"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__CLAS_ESTAB_IND__02
-msgid "Industrial - Montagem"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__CLAS_ESTAB_IND__04
-msgid "Industrial - Renovação ou Recondicionamento"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__CLAS_ESTAB_IND__00
-msgid "Industrial - Transformação"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__IND_ATIV__0
-msgid "Industrial ou equiparado a industrial"
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
@@ -15030,21 +14836,6 @@ msgid "Last Updated on"
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__ind_tp_leiaute__1
-msgid "Leiaute Completo (K200, K230, etc.)"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__ind_tp_leiaute__2
-msgid "Leiaute Restrito aos Saldos de Estoque (K200)"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__ind_tp_leiaute__0
-msgid "Leiaute Simplificado"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
 #: model:ir.model,name:l10n_br_sped_efd_icms_ipi.model_l10n_br_sped_efd_icms_ipi_20_d161
 msgid "Local de Coleta e Entrega (códigos 08, 8B, 09, 10, 11 e 26)"
 msgstr ""
@@ -15098,26 +14889,6 @@ msgstr ""
 #: model:ir.model.fields,help:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_1391__UTIL_MEL
 #: model:ir.model.fields,help:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_20_1391__UTIL_MEL
 msgid "Mel residual utilizado (kg) e saídas de mel (kg)"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__ind_apur__0
-msgid "Mensal"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__214-8
-msgid "Mercadoria importada (desembaraçada em outra UF)"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__120-0
-msgid "Mercadoria importada (desembaraçada no Estado de São Paulo)"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__114-4
-msgid "Mercadorias destina a consumo ou a ativo imobilizado"
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
@@ -17500,11 +17271,6 @@ msgid ""
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__141-7
-msgid "Operações com feijão"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
 #: model:ir.model,name:l10n_br_sped_efd_icms_ipi.model_l10n_br_sped_efd_icms_ipi_20_1601
 msgid ""
 "Operações com instrumentos de pagamentos eletrônicos (válido a partir de\n"
@@ -17524,11 +17290,6 @@ msgstr ""
 #. module: l10n_br_sped_efd_icms_ipi
 #: model:ir.model,name:l10n_br_sped_efd_icms_ipi.model_l10n_br_sped_efd_icms_ipi_1110
 msgid "Operações de Exportação Indireta."
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__128-4
-msgid "Operações internas e interestaduais com café cru"
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
@@ -17563,11 +17324,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_1391__OUTR_ENTR
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_20_1391__OUTR_ENTR
 msgid "Outras entradas (litros / kg)"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_obrigacao__090
-msgid "Outras obrigações do ICMS"
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
@@ -17607,12 +17363,6 @@ msgid "Outras obrigações tributárias."
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__CLAS_ESTAB_IND__09
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__IND_ATIV__1
-msgid "Outros"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
 #: model:ir.model,name:l10n_br_sped_efd_icms_ipi.model_l10n_br_sped_efd_icms_ipi_20_g126
 msgid "Outros créditos CIAP"
 msgstr ""
@@ -17620,11 +17370,6 @@ msgstr ""
 #. module: l10n_br_sped_efd_icms_ipi
 #: model:ir.model,name:l10n_br_sped_efd_icms_ipi.model_l10n_br_sped_efd_icms_ipi_g126
 msgid "Outros créditos CIAP."
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__063-2
-msgid "Outros recolhimentos especiais"
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
@@ -18039,11 +17784,6 @@ msgstr ""
 msgid ""
 "Parcela correspondente ao “Valor do ICMS” referente à combinação de "
 "CST_ICMS, CFOP e alíquota do ICMS."
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__081-4
-msgid "Parcelamento de débito fiscal não inscrito"
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
@@ -18802,11 +18542,6 @@ msgid ""
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__119-3
-msgid "Recolhimentos especiais (outra UF)"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_0000__res_id
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_0002__res_id
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_0005__res_id
@@ -19520,16 +19255,6 @@ msgid "Reg. 1980 - Possui informações GIAF4? S – Sim; N – Não."
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__046-2
-msgid "Regime Periódico de Apuração"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__060-7
-msgid "Regime de Estimativa"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_20_d731__reg_D731_ids_RegistroD730_id
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_d731__reg_D731_ids_RegistroD730_id
 msgid "Registro Analítico Nota Fiscal Fatura Eletrônica"
@@ -19930,16 +19655,6 @@ msgstr ""
 #: model:ir.model,name:l10n_br_sped_efd_icms_ipi.model_l10n_br_sped_efd_icms_ipi_c420
 #: model:ir.model,name:l10n_br_sped_efd_icms_ipi.model_l10n_br_sped_efd_icms_ipi_d365
 msgid "Registro dos Totalizadores Parciais da Redução Z."
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__COD_FIN__0
-msgid "Remessa do arquivo original"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__COD_FIN__1
-msgid "Remessa do arquivo substituto"
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
@@ -21433,21 +21148,6 @@ msgid "Sub-apuração do ICMS."
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__146-6
-msgid "Substituição tributária (contribuinte do Estado de São Paulo)"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__246-0
-msgid "Substituição tributária por apuração (contribuinte de outra UF )"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__247-1
-msgid "Substituição tributária por operação (outra UF)"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_1700__SUB
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_20_1700__SUB
 msgid "Subsérie do dispositivo autorizado"
@@ -21985,16 +21685,6 @@ msgstr ""
 #: model:ir.model.fields,help:l10n_br_sped_efd_icms_ipi.field_l10n_br_sped_efd_icms_ipi_b420__VL_ISS
 msgid ""
 "Totalização, por combinação da alíquota e item da lista, do valor do ISS"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__110-7
-msgid "Transporte (Transportador autônomo do Estado de São Paulo)"
-msgstr ""
-
-#. module: l10n_br_sped_efd_icms_ipi
-#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__111-9
-msgid "Transporte (outra UF)"
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
@@ -25681,6 +25371,351 @@ msgid "SPED Adjustment Code"
 msgstr ""
 
 #. module: l10n_br_sped_efd_icms_ipi
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_icms_ipi/models/fiscal_data.py:0
+#, python-format
+msgid "The SPED adjustment code must have exactly 10 positions (table 5.3 of the EFD ICMS/IPI): %s"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_icms_ipi/models/sped_efd_icms_ipi.py:0
+#, python-format
+msgid "Assess and post the ICMS of the period before generating the file (ICMS assessment of %(start)s to %(end)s)."
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_icms_ipi/models/sped_efd_icms_ipi.py:0
+#, python-format
+msgid "Set the classification of the establishment: the industrial activity needs it (record 0002)."
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_icms_ipi/models/sped_efd_icms_ipi.py:0
+#, python-format
+msgid "Assess and post the IPI of the period before generating the file, or set the activity to Outros if the company is not an IPI taxpayer."
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_icms_ipi/models/sped_efd_icms_ipi.py:0
+#, python-format
+msgid "Set the accountant of the company (Accountant field, with CPF and CRC) before generating the file: the record 0100 comes from it."
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__137-5
+msgid "Abate de gado"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_obrigacao__004
+msgid "Antecipação do ICMS da importação"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_obrigacao__003
+msgid "Antecipação do diferencial de alíquotas do ICMS"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_obrigacao__005
+msgid "Antecipação tributária"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__117-0
+msgid "Combustível (no Estado de São Paulo)"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__118-1
+msgid "Combustível (outra UF)"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__112-0
+msgid "Comunicação (no Estado de São Paulo)"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__113-2
+msgid "Comunicação (outra UF)"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__102-8
+msgid "Consumidor final não contribuinte por apuração (outra UF)"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__101-6
+msgid "Consumidor final não contribuinte por operação (outra UF)"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__ind_apur__1
+msgid "Decendial"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__154-5
+msgid "Diferença de estimativa"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__078-4
+msgid "Dívida ativa ajuizada"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__077-2
+msgid "Dívida ativa ajuizada - parcelamento"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__075-9
+msgid "Dívida ativa – cobrança amigável"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__115-6
+msgid "Energia elétrica (no Estado de São Paulo)"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__116-8
+msgid "Energia elétrica (outra UF)"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__CLAS_ESTAB_IND__06
+msgid "Equiparado a industrial - Importação Direta"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__CLAS_ESTAB_IND__08
+msgid "Equiparado a industrial - Não enquadrado nos códigos 05, 06 ou 07"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__CLAS_ESTAB_IND__07
+msgid "Equiparado a industrial - Por lei específica"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__CLAS_ESTAB_IND__05
+msgid "Equiparado a industrial - Por opção"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__106-5
+msgid "Exigido em Auto de Infração e Imposição de Multa - AIIM"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__107-7
+msgid "Exigido em Auto de Infração e Imposição de Multa - AIIM (outra UF)"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__123-5
+msgid "Exportação de café cru"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__104-1
+msgid ""
+"Fundo estadual de combate e erradicação da pobreza (FECOEP) - por apuração"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__103-0
+msgid ""
+"Fundo estadual de combate e erradicação da pobreza (FECOEP) - por operação"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__089-9
+msgid "ICM/ICMS - Programa Especial de Parcelamento - PEP"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__091-7
+msgid "ICM/ICMS - Programa Especial de Parcelamento PEP 2017"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__087-5
+msgid "ICM/ICMS - Programa de Parcelamento Incentivado - PPI"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_obrigacao__000
+msgid "ICMS a recolher"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__100-4
+msgid "ICMS recolhimento antecipado (outra UF)"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_obrigacao__006
+msgid ""
+"ICMS resultante da alíquota adicional dos itens incluídos no Fundo de "
+"Combate à Pobreza"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__CLAS_ESTAB_IND__03
+msgid "Industrial - Acondicionamento ou Reacondicionamento"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__CLAS_ESTAB_IND__01
+msgid "Industrial - Beneficiamento"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__CLAS_ESTAB_IND__02
+msgid "Industrial - Montagem"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__CLAS_ESTAB_IND__04
+msgid "Industrial - Renovação ou Recondicionamento"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__CLAS_ESTAB_IND__00
+msgid "Industrial - Transformação"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__IND_ATIV__0
+msgid "Industrial ou equiparado a industrial"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__ind_tp_leiaute__1
+msgid "Leiaute Completo (K200, K230, etc.)"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__ind_tp_leiaute__2
+msgid "Leiaute Restrito aos Saldos de Estoque (K200)"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__ind_tp_leiaute__0
+msgid "Leiaute Simplificado"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__ind_apur__0
+msgid "Mensal"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__214-8
+msgid "Mercadoria importada (desembaraçada em outra UF)"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__120-0
+msgid "Mercadoria importada (desembaraçada no Estado de São Paulo)"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__114-4
+msgid "Mercadorias destina a consumo ou a ativo imobilizado"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__141-7
+msgid "Operações com feijão"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__128-4
+msgid "Operações internas e interestaduais com café cru"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_obrigacao__090
+msgid "Outras obrigações do ICMS"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__CLAS_ESTAB_IND__09
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__IND_ATIV__1
+msgid "Outros"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__063-2
+msgid "Outros recolhimentos especiais"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__081-4
+msgid "Parcelamento de débito fiscal não inscrito"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__119-3
+msgid "Recolhimentos especiais (outra UF)"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__046-2
+msgid "Regime Periódico de Apuração"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__060-7
+msgid "Regime de Estimativa"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__COD_FIN__0
+msgid "Remessa do arquivo original"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__COD_FIN__1
+msgid "Remessa do arquivo substituto"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__146-6
+msgid "Substituição tributária (contribuinte do Estado de São Paulo)"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__246-0
+msgid "Substituição tributária por apuração (contribuinte de outra UF )"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__247-1
+msgid "Substituição tributária por operação (outra UF)"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__110-7
+msgid "Transporte (Transportador autônomo do Estado de São Paulo)"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__111-9
+msgid "Transporte (outra UF)"
+msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_icms_ipi_0000__state__done
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_icms_ipi_20_0000__state__done
 msgid "Done"
@@ -25690,9 +25725,9 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_icms_ipi_0000__state__draft
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_icms_ipi_20_0000__state__draft
 msgid "Draft"
-
-#. odoo-python
-#: code:addons/l10n_br_sped_efd_icms_ipi/models/fiscal_data.py:0
-#, python-format
-msgid "The SPED adjustment code must have exactly 10 positions (table 5.3 of the EFD ICMS/IPI): %s"
 msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_icms_ipi_0000__state__draft
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_icms_ipi_20_0000__state__draft
+msgid "Draft"

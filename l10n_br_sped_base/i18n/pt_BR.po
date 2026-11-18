@@ -15,66 +15,6 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: l10n_br_sped_base
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__203
-msgid "203 - Administrador"
-msgstr ""
-
-#. module: l10n_br_sped_base
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__204
-msgid "204 - Advogado"
-msgstr ""
-
-#. module: l10n_br_sped_base
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__205
-msgid "205 - Diretor"
-msgstr ""
-
-#. module: l10n_br_sped_base
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__206
-msgid "206 - Empresario"
-msgstr ""
-
-#. module: l10n_br_sped_base
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__207
-msgid "207 - Inventariante"
-msgstr ""
-
-#. module: l10n_br_sped_base
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__208
-msgid "208 - Liquidante"
-msgstr ""
-
-#. module: l10n_br_sped_base
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__209
-msgid "209 - Presidente"
-msgstr ""
-
-#. module: l10n_br_sped_base
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__222
-msgid "222 - Procurador"
-msgstr ""
-
-#. module: l10n_br_sped_base
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__223
-msgid "223 - Gestor judicial"
-msgstr ""
-
-#. module: l10n_br_sped_base
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__226
-msgid "226 - Socio"
-msgstr ""
-
-#. module: l10n_br_sped_base
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__309
-msgid "309 - Contador"
-msgstr ""
-
-#. module: l10n_br_sped_base
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__312
-msgid "312 - Tecnico contabil"
-msgstr ""
-
-#. module: l10n_br_sped_base
 #: model:ir.model.fields,help:l10n_br_sped_base.field_res_company__l10n_br_sped_signer_ids
 msgid ""
 "A escrituracao e assinada, no minimo, pelo responsavel legal da pessoa "
@@ -180,24 +120,6 @@ msgstr "Depuração"
 #: model:ir.model.fields,field_description:l10n_br_sped_base.field_l10n_br_sped_signer__display_name
 msgid "Display Name"
 msgstr ""
-
-#. module: l10n_br_sped_base
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_declaration__state__done
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_ecd_0000__state__done
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_ecd_9_0000__state__done
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_icms_ipi_0000__state__done
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_icms_ipi_20_0000__state__done
-msgid "Done"
-msgstr "Concluída"
-
-#. module: l10n_br_sped_base
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_declaration__state__draft
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_ecd_0000__state__draft
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_ecd_9_0000__state__draft
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_icms_ipi_0000__state__draft
-#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_icms_ipi_20_0000__state__draft
-msgid "Draft"
-msgstr "Rascunho"
 
 #. module: l10n_br_sped_base
 #: model:ir.model.fields,field_description:l10n_br_sped_base.field_l10n_br_sped_signer__email
@@ -591,5 +513,87 @@ msgstr ""
 msgid "Pulled from Odoo"
 msgstr "Registros puxados do Odoo"
 
+#. module: l10n_br_sped_base
+#. odoo-python
+#: code:addons/l10n_br_sped_base/models/sped_declaration.py:0
+#, python-format
 msgid "Documents left out for lack of an access key"
 msgstr "Documentos fora da declaração por falta de chave de acesso"
+
+#. module: l10n_br_sped_base
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__203
+msgid "203 - Administrador"
+msgstr ""
+
+#. module: l10n_br_sped_base
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__204
+msgid "204 - Advogado"
+msgstr ""
+
+#. module: l10n_br_sped_base
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__205
+msgid "205 - Diretor"
+msgstr ""
+
+#. module: l10n_br_sped_base
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__206
+msgid "206 - Empresario"
+msgstr ""
+
+#. module: l10n_br_sped_base
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__207
+msgid "207 - Inventariante"
+msgstr ""
+
+#. module: l10n_br_sped_base
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__208
+msgid "208 - Liquidante"
+msgstr ""
+
+#. module: l10n_br_sped_base
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__209
+msgid "209 - Presidente"
+msgstr ""
+
+#. module: l10n_br_sped_base
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__222
+msgid "222 - Procurador"
+msgstr ""
+
+#. module: l10n_br_sped_base
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__223
+msgid "223 - Gestor judicial"
+msgstr ""
+
+#. module: l10n_br_sped_base
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__226
+msgid "226 - Socio"
+msgstr ""
+
+#. module: l10n_br_sped_base
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__309
+msgid "309 - Contador"
+msgstr ""
+
+#. module: l10n_br_sped_base
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__312
+msgid "312 - Tecnico contabil"
+msgstr ""
+
+#. module: l10n_br_sped_base
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_declaration__state__done
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_ecd_0000__state__done
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_ecd_9_0000__state__done
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_icms_ipi_0000__state__done
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_icms_ipi_20_0000__state__done
+msgid "Done"
+msgstr "Concluída"
+
+#. module: l10n_br_sped_base
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_declaration__state__draft
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_ecd_0000__state__draft
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_ecd_9_0000__state__draft
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_icms_ipi_0000__state__draft
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_icms_ipi_20_0000__state__draft
+msgid "Draft"
+msgstr "Rascunho"
