@@ -156,6 +156,36 @@ class SpedDeclaration(models.AbstractModel):
             ]
         )
 
+    def _search_period_documents(self):
+        """The fiscal documents of the company in the declaration period, before
+        any document is left out for lack of a key (see
+        ``_get_documents_without_access_key``)."""
+        self.ensure_one()
+        return self.env["l10n_br_fiscal.document"].search(
+            [
+                ("company_id", "=", self.company_id.id),
+                (
+                    "state_edoc",
+                    "in",
+                    ("autorizada", "cancelada", "denegada", "inutilizada"),
+                ),
+            ]
+            + self._get_fiscal_document_period_domain()
+        )
+
+    def _get_documents_without_access_key(self):
+        """NF-e and NFC-e (55, 65) without an access key are not a fiscal
+        document the books can carry: the C100 would go out with an empty
+        CHV_NFE and the PVA refuses the file. Typically a bill of a purchase
+        order that has no invoice from the supplier yet. They stay out of the
+        declaration and the pull lists them in the history."""
+        self.ensure_one()
+        if self.debug:
+            return self.env["l10n_br_fiscal.document"]
+        return self._search_period_documents().filtered(
+            lambda doc: doc._is_sped_without_access_key()
+        )
+
     @api.depends("company_id", "DT_INI", "DT_FIN")
     def _compute_fiscal_documents(self):
         for record in self:
@@ -164,16 +194,9 @@ class SpedDeclaration(models.AbstractModel):
                     [], order="id DESC", limit=100
                 )
             else:
-                fiscal_document_ids = self.env["l10n_br_fiscal.document"].search(
-                    [
-                        ("company_id", "=", record.company_id.id),
-                        (
-                            "state_edoc",
-                            "in",
-                            ("autorizada", "cancelada", "denegada", "inutilizada"),
-                        ),
-                    ]
-                    + record._get_fiscal_document_period_domain()
+                fiscal_document_ids = (
+                    record._search_period_documents()
+                    - record._get_documents_without_access_key()
                 )
 
             record.fiscal_document_partner_ids = fiscal_document_ids.mapped(
@@ -228,6 +251,19 @@ class SpedDeclaration(models.AbstractModel):
 
         # pulling twice must not duplicate: drop what an earlier pull created
         mixin_env._flush_generated_registers(kind, self.id)
+
+        ignored = self._get_documents_without_access_key()
+        if ignored:
+            title = _("Documents left out for lack of an access key")
+            log_msg.write(
+                f"<p style='color:orange;'>{title}: "
+                + ", ".join(
+                    f"{doc.document_type_id.code} {doc.document_serie or ''}/"
+                    f"{doc.document_number or doc.id}"
+                    for doc in ignored
+                )
+                + "</p>"
+            )
 
         for register_model in top_registers:  # Iterate over models, not instances
             try:

@@ -1,6 +1,9 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl-3.0.html).
 
+from datetime import datetime
+
+from odoo.exceptions import ValidationError
 from odoo.tests.common import tagged
 
 from odoo.addons.l10n_br_tax_assessment.tests.common_entrada import SpedEntradaCommon
@@ -145,3 +148,15 @@ class TestSpedEfdIcmsIpiCorrecoes(EntradaHelpers, SpedEntradaCommon):
             .fields_get(["sped_cod_aj"])["sped_cod_aj"]["string"]
         )
         self.assertEqual(label, "Código de Ajuste SPED")
+
+    def test_a_document_without_access_key_is_left_out_and_listed(self):
+        """NF-e without an access key would go out with an empty CHV_NFE and the
+        PVA refuses the file: it stays out and the history lists it."""
+        keyed, _line = self._entry_document()
+        keyless, _line = self._entry_document(document_key=False)
+        declaration = self._declaration_july()
+        c100 = self._c100(declaration)
+        self.assertIn(keyed.document_number, c100)
+        self.assertNotIn(keyless.document_number, c100)
+        history = " ".join(declaration.message_ids.mapped("body"))
+        self.assertIn(keyless.document_number, history)

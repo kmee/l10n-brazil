@@ -1,6 +1,8 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl-3.0.html).
 
+from datetime import datetime
+
 from odoo.tests.common import tagged
 
 from odoo.addons.l10n_br_tax_assessment.tests.common_entrada import SpedEntradaCommon
@@ -57,6 +59,16 @@ class TestSpedPisCofinsCorrecoes(SpedPisCofinsEntradaMixin, SpedEntradaCommon):
             for model in models
         }
         self.assertEqual(before, after)
+
+    def test_a_document_without_access_key_is_left_out_and_listed(self):
+        keyed, _line = self._entry_document()
+        keyless, _line = self._entry_document(document_key=False)
+        declaration = self._declaration_july()
+        c100 = self._c100(declaration)
+        self.assertIn(keyed.document_number, c100)
+        self.assertNotIn(keyless.document_number, c100)
+        history = " ".join(declaration.message_ids.mapped("body"))
+        self.assertIn(keyless.document_number, history)
 
     def test_the_declaration_title_is_translated_to_portuguese(self):
         self.env["res.lang"]._activate_lang("pt_BR")

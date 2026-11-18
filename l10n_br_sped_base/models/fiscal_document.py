@@ -101,3 +101,8 @@ class FiscalDocument(models.Model):
         ):
             return SPED_IND_PGTO_CASH
         return SPED_IND_PGTO_TERM
+
+    def _is_sped_without_access_key(self):
+        """NF-e or NFC-e (55, 65) with no access key."""
+        self.ensure_one()
+        return self.document_type_id.code in ("55", "65") and not self.document_key
