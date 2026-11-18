@@ -1,7 +1,7 @@
 # Copyright 2026 KMEE - Luis Felipe Mileo <mileo@kmee.com.br>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class FiscalDocumentLine(models.Model):
@@ -28,13 +28,27 @@ class FiscalDocumentLine(models.Model):
         ):
             move = self.env["stock.move"].browse(vals["import_stock_move_id"])
             vals = dict(vals, import_purchase_line_id=move.purchase_line_id.id)
+        elif "import_purchase_line_id" in vals and "import_stock_move_id" not in vals:
+            # the receipt follows the order line: its only pending move, if
+            # there is exactly one candidate (same rule as the suggestion)
+            order_line = self.env["purchase.order.line"].browse(
+                vals["import_purchase_line_id"]
+            )
+            moves = self._pending_moves_of(order_line)
+            vals = dict(
+                vals, import_stock_move_id=moves.id if len(moves) == 1 else False
+            )
         return super().write(vals)
+
+    @api.model
+    def _pending_moves_of(self, order_line):
+        return order_line.move_ids.filtered(
+            lambda move: move.state not in ("done", "cancel")
+        )
 
     def _pending_receipt_moves(self):
         self.ensure_one()
-        return self.import_purchase_line_id.move_ids.filtered(
-            lambda move: move.state not in ("done", "cancel")
-        )
+        return self._pending_moves_of(self.import_purchase_line_id)
 
     def _suggest_import_origin(self):
         result = super()._suggest_import_origin()

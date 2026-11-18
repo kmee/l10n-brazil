@@ -69,3 +69,14 @@ class TestImportOriginMove(TransactionCase):
         line.import_stock_move_id = move
         self.assertEqual(line.import_purchase_line_id, order_line)
         self.assertEqual(line.import_origin_state, "resolved")
+
+    def test_choosing_the_order_line_by_hand_fills_the_receipt_move(self):
+        order_line = self.order.order_line[0]
+        move = order_line.move_ids.filtered(lambda mv: mv.state != "cancel")
+        line = self._document(order_line).fiscal_line_ids
+        self.assertFalse(line.import_stock_move_id)
+        line.import_purchase_line_id = order_line
+        self.assertEqual(line.import_stock_move_id, move)
+        self.assertEqual(line.import_origin_state, "resolved")
+        line.import_purchase_line_id = False
+        self.assertFalse(line.import_stock_move_id)
