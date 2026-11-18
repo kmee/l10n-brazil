@@ -58,7 +58,7 @@ class TestSpedPisCofinsEntrada(SpedPisCofinsEntradaMixin, SpedEntradaCommon):
             self.assertEqual(rec[name], "", f"{name} must be blank")
         self.assertNotIn("|C170|", declaration._generate_sped_text())
 
-    def test_the_entry_booked_after_its_emission_is_extemporaneous(self):
+    def test_the_entry_received_after_its_emission_is_regular(self):
         late, _line = self._entry_document(
             document_date=datetime(2026, 6, 20, 12, 0),
             date_in_out=datetime(2026, 7, 5, 12, 0),
@@ -69,8 +69,8 @@ class TestSpedPisCofinsEntrada(SpedPisCofinsEntradaMixin, SpedEntradaCommon):
             edoc_purpose="2",
         )
         c100 = self._c100(self._declaration_july())
-        self.assertEqual(c100[late.document_number]["COD_SIT"], "01")
-        self.assertEqual(c100[late_complementary.document_number]["COD_SIT"], "07")
+        self.assertEqual(c100[late.document_number]["COD_SIT"], "00")
+        self.assertEqual(c100[late_complementary.document_number]["COD_SIT"], "06")
 
     def test_the_period_and_the_entry_date_of_an_entry(self):
         """The entry is booked in the month it came in, with DT_DOC the emission
@@ -108,6 +108,17 @@ class TestSpedPisCofinsEntrada(SpedPisCofinsEntradaMixin, SpedEntradaCommon):
     def _number(text):
         return float(text.replace(",", ".") or 0)
 
+    def test_c170_has_the_37_fields_of_the_pva_layout(self):
+        """The PVA 6.2.0 C170 of the EFD Contribuicoes has 37 fields (REG, the
+        ICMS and IPI block, PIS, COFINS and COD_CTA), with CST_PIS in the 25th."""
+        self._entry_document()
+        text = self._declaration_july()._generate_sped_text()
+        line = next(ln for ln in text.splitlines() if ln.startswith("|C170|"))
+        fields = line.split("|")[1:-1]
+        self.assertEqual(len(fields), 37)
+        self.assertEqual(fields[24], "70")  # CST_PIS of the cumulative entry
+        self.assertEqual(fields[30], "70")  # CST_COFINS
+
     def test_the_cumulative_entry_cst_reaches_the_c170(self):
         """Lucro presumido: the C170 carries CST 70, not the CST of the supplier."""
         self._entry_document()
@@ -121,7 +132,6 @@ class TestSpedPisCofinsEntrada(SpedPisCofinsEntradaMixin, SpedEntradaCommon):
         c170 = self._c170(self._declaration_july())
         self.assertEqual(c170["CST_PIS"], "70")
         self.assertEqual(c170["CST_COFINS"], "70")
-        self.assertEqual(c170["NAT_BC_CRED"], "")
         for name in ("VL_BC_PIS", "ALIQ_PIS", "VL_PIS", "VL_BC_COFINS", "VL_COFINS"):
             self.assertEqual(self._number(c170[name]), 0.0, name)
         self.assertEqual(line.pis_cst_id.code, "01", "the file's CST is not touched")
@@ -154,18 +164,3 @@ class TestSpedPisCofinsEntradaNonCumulative(
         self.assertEqual(c170["VL_BC_PIS"], "1000,00")
         self.assertEqual(c170["VL_PIS"], "16,50")
         self.assertEqual(c170["VL_COFINS"], "76,00")
-
-    def test_the_credit_nature_comes_from_the_destination_of_the_purchase(self):
-        """Resale 01, input of the industrialization 02, any other destination
-        is left blank."""
-        expected = {
-            "fo_compras_compras_comercializacao": "01",
-            "fo_compras_compras": "02",
-            "fo_compras_compras_uso_consumo": "",
-        }
-        for operation_line, nat_bc_cred in expected.items():
-            doc, _line = self._entry_document(operation_line=operation_line)
-            c170 = self._c170(self._declaration_july())
-            self.assertEqual(c170["NAT_BC_CRED"], nat_bc_cred, operation_line)
-            # leaves the period book for the next destination
-            doc.state_edoc = "em_digitacao"

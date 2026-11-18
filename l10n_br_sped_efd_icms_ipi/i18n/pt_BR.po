@@ -25692,3 +25692,9 @@ msgstr "Concluída"
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_icms_ipi_20_0000__state__draft
 msgid "Draft"
 msgstr "Rascunho"
+
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_icms_ipi/models/fiscal_data.py:0
+#, python-format
+msgid "The SPED adjustment code must have exactly 10 positions (table 5.3 of the EFD ICMS/IPI): %s"
+msgstr "O código de ajuste do SPED deve ter exatamente 10 posições (tabela 5.3 da EFD ICMS/IPI): %s"

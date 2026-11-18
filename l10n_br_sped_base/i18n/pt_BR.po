@@ -590,3 +590,6 @@ msgstr ""
 #, python-format
 msgid "Pulled from Odoo"
 msgstr "Registros puxados do Odoo"
+
+msgid "Documents left out for lack of an access key"
+msgstr "Documentos fora da declaração por falta de chave de acesso"

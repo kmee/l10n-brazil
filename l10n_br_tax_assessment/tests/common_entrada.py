@@ -68,7 +68,7 @@ class SpedEntradaCommon(AccountMoveBRCommon):
         base = (
             f"35"
             "2611"
-            "49647316000169"
+            "49190159000105"
             "55"
             "001"
             f"{number.zfill(9)}1{number.zfill(8)}"
