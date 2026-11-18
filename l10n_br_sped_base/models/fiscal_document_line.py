@@ -23,3 +23,14 @@ class FiscalDocumentLine(models.Model):
         if self.fiscal_operation_type != FISCAL_IN or not self.product_destination:
             return False
         return self._get_stock_cost_tax_map().get("icms") == "cost"
+
+    def _sped_ipi_without_credit(self):
+        """An entry line whose IPI the company does not credit (only the
+        industrialization of an industrial company does): the IPI stays in the
+        cost, and the books carry CST 49 (other entries) and no base, rate or
+        value of IPI, so the C190, the C100 and the E510 sum what the E520
+        credits. Same verdict as the ledger."""
+        self.ensure_one()
+        if self.fiscal_operation_type != FISCAL_IN or not self.product_destination:
+            return False
+        return self._get_stock_cost_tax_map().get("ipi") == "cost"

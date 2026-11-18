@@ -728,9 +728,15 @@ class Registro0400(models.Model):
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):
-        return [
-            ("id", "in", declaration.fiscal_operation_ids.ids),
-        ]
+        # only the natures a C170 points to (COD_NAT): the PVA refuses one that
+        # no register refers to, as the sale of an own issue, which has no items
+        documents = declaration.fiscal_document_ids.filtered(
+            lambda doc: doc._has_sped_c100()
+            and not doc._is_sped_cancelled()
+            and not doc._is_sped_own_issue()
+        )
+        operations = documents.fiscal_line_ids.mapped("fiscal_operation_id")
+        return [("id", "in", operations.ids)]
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
@@ -751,9 +757,10 @@ class Registro0450(models.Model):
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):
-        return [
-            ("id", "in", declaration.fiscal_comment_ids.ids),
-        ]
+        # The PVA refuses a 0450 that no register points to (C110 is not
+        # generated yet), and the comments carry unrendered templates: none
+        # goes out until the C110 refers to them.
+        return [("id", "=", False)]
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
@@ -1161,7 +1168,7 @@ class RegistroC100(models.Model):
             "VL_ICMS": icms_value,
             "VL_BC_ICMS_ST": record.amount_icmsst_base,
             "VL_ICMS_ST": record.amount_icmsst_value,
-            "VL_IPI": record.amount_ipi_value,
+            "VL_IPI": record._get_sped_ipi_value(),
             "VL_PIS": record.amount_pis_value,
             "VL_COFINS": record.amount_cofins_value,
             # "VL_PIS_ST": record.amount_pisst_value,  # don't we have a field?
@@ -1490,8 +1497,9 @@ class RegistroC170(models.Model):
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):
-        if parent_record._is_sped_cancelled():
-            # a cancelled document goes out without items
+        if parent_record._is_sped_cancelled() or parent_record._is_sped_own_issue():
+            # a cancelled document and an NF-e issued by the company go out
+            # without items: C100 and C190 only
             return [("id", "=", False)]
         return [
             ("document_id", "=", parent_record.id),
@@ -1501,6 +1509,7 @@ class RegistroC170(models.Model):
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         # Format the 3-digit CST (Origin + CST code)
         icms_without_credit = record._sped_icms_without_credit()
+        ipi_without_credit = record._sped_ipi_without_credit()
         cst_icms = f"{record.icms_origin or '0'}{record.icms_cst_code or '00'}"
         if icms_without_credit:
             # entry without credit right: origin + 90 (others), no base, rate or
@@ -1535,15 +1544,17 @@ class RegistroC170(models.Model):
             "IND_APUR": declaration.ind_apur,
             # the CST the company books for the entry when there is one; else
             # the one of the document
-            "CST_IPI": record.entry_ipi_cst_id.code or record.ipi_cst_code,
+            "CST_IPI": "49"
+            if ipi_without_credit
+            else record.entry_ipi_cst_id.code or record.ipi_cst_code,
             # "999" (generic, "Tributacao normal IPI; Outros") is not in the
             # table of legal classification of the IPI: it goes out blank
             "COD_ENQ": ""
             if record.ipi_guideline_id.code in (False, "", "999")
             else record.ipi_guideline_id.code,
-            "VL_BC_IPI": record.ipi_base,
-            "ALIQ_IPI": record.ipi_percent,
-            "VL_IPI": record.ipi_value,
+            "VL_BC_IPI": 0.0 if ipi_without_credit else record.ipi_base,
+            "ALIQ_IPI": 0.0 if ipi_without_credit else record.ipi_percent,
+            "VL_IPI": 0.0 if ipi_without_credit else record.ipi_value,
             "CST_PIS": record.entry_pis_cst_id.code or record.pis_cst_code,
             "VL_BC_PIS": 0.0 if pis_no_credit else record.pis_base,
             "ALIQ_PIS": 0.0 if pis_no_credit else record.pis_percent,
@@ -1874,6 +1885,9 @@ class RegistroC190(models.Model):
         no_credit = parent_record.fiscal_line_ids.filtered(
             lambda line: line._sped_icms_without_credit()
         ).ids
+        no_ipi = parent_record.fiscal_line_ids.filtered(
+            lambda line: line._sped_ipi_without_credit()
+        ).ids
         query = """
             SELECT
                 CONCAT(
@@ -1890,7 +1904,8 @@ class RegistroC190(models.Model):
                     AS vl_icms,
                 SUM(fdl.icmsst_base) AS vl_bc_icms_st,
                 SUM(fdl.icmsst_value) AS vl_icms_st,
-                SUM(fdl.ipi_value) AS vl_ipi
+                SUM(CASE WHEN fdl.id = ANY(%s) THEN 0 ELSE fdl.ipi_value END)
+                    AS vl_ipi
             FROM l10n_br_fiscal_document_line fdl
             LEFT JOIN l10n_br_fiscal_cst cst ON cst.id = fdl.icms_cst_id
             LEFT JOIN l10n_br_fiscal_cfop cfop ON cfop.id = fdl.cfop_id
@@ -1903,7 +1918,7 @@ class RegistroC190(models.Model):
                 cfop.code,
                 CASE WHEN fdl.id = ANY(%s) THEN 0 ELSE fdl.icms_percent END
         """
-        return query, [no_credit] * 4 + [parent_record.id] + [no_credit] * 2
+        return query, [no_credit] * 4 + [no_ipi] + [parent_record.id] + [no_credit] * 2
 
     @api.model
     def _get_operation_total(self, record, parent_record):
@@ -4621,34 +4636,65 @@ class RegistroE510(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.e510"
     _inherit = "l10n_br_sped.efd_icms_ipi.20.e510"
 
+    # The descriptor marks the three values obrigatorio=1: a zero is written "0",
+    # never blank (the entry without IPI credit sums zero).
+    VL_CONT_IPI = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_BC_IPI = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_IPI = fields.Monetary(required=True, currency_field="brl_currency_id")
+
     @api.model
     def _odoo_query(self, parent_record, declaration):
         # Consolidation of the period documents by CFOP and CST_IPI. It reads
         # the same lines and amounts as the C190 family, because the PVA cross
         # checks this record against the documents: any line with an IPI tax
         # situation belongs here, taxed or not.
+        documents = declaration.fiscal_document_ids.filtered(
+            lambda doc: not doc._is_sped_cancelled()
+        )
+        no_credit = documents.fiscal_line_ids.filtered(
+            lambda line: line._sped_ipi_without_credit()
+        ).ids
         query = """
             SELECT
                 cfop.code AS cfop,
-                cst.code AS cst_ipi,
-                SUM(fdl.amount_tax_not_included) AS vl_cont_ipi,
-                SUM(fdl.ipi_base) AS vl_bc_ipi,
-                SUM(fdl.ipi_value) AS vl_ipi
+                CASE WHEN fdl.id = ANY(%s) THEN '49' ELSE cst.code END AS cst_ipi,
+                SUM(CASE WHEN fdl.id = ANY(%s) THEN 0 ELSE fdl.ipi_base END)
+                    AS vl_bc_ipi,
+                SUM(CASE WHEN fdl.id = ANY(%s) THEN 0 ELSE fdl.ipi_value END)
+                    AS vl_ipi
             FROM l10n_br_fiscal_document_line fdl
             JOIN l10n_br_fiscal_cst cst ON cst.id = fdl.ipi_cst_id
             LEFT JOIN l10n_br_fiscal_cfop cfop ON cfop.id = fdl.cfop_id
             WHERE fdl.document_id IN %s
-            GROUP BY cfop.code, cst.code
-            ORDER BY cfop.code, cst.code
+            GROUP BY cfop.code, CASE WHEN fdl.id = ANY(%s) THEN '49' ELSE cst.code END
+            ORDER BY cfop.code, 2
         """
-        return query, [tuple(declaration.fiscal_document_ids.ids) or (0,)]
+        return query, [no_credit] * 3 + [tuple(documents.ids) or (0,)] + [no_credit]
+
+    @api.model
+    def _get_operation_total(self, record, declaration):
+        """VL_CONT_IPI: the total of the operation of the lines of the group
+        (CFOP and CST), not a stored column, so summed here."""
+        total = 0.0
+        for document in declaration.fiscal_document_ids:
+            if document._is_sped_cancelled():
+                continue
+            for line in document.fiscal_line_ids:
+                cst = "49" if line._sped_ipi_without_credit() else line.ipi_cst_code
+                if (
+                    line.ipi_cst_id
+                    and (line.cfop_id.code or None) == record.get("cfop")
+                    and cst == record.get("cst_ipi")
+                ):
+                    total += line.fiscal_amount_total
+        return total
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         return {
             "CFOP": record.get("cfop") or "",
             "CST_IPI": record.get("cst_ipi") or "",
-            "VL_CONT_IPI": record.get("vl_cont_ipi") or 0.0,
+            "VL_CONT_IPI": self._get_operation_total(record, declaration),
             "VL_BC_IPI": record.get("vl_bc_ipi") or 0.0,
             "VL_IPI": record.get("vl_ipi") or 0.0,
         }
