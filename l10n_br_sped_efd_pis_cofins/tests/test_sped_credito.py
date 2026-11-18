@@ -137,3 +137,95 @@ class TestSpedPisCofinsCredit(CreditMixin, SpedEntradaCommon):
             self.assertEqual(record["CST_COFINS"], "70")
             self.assertEqual(self._number(record["VL_PIS"]), 0.0)
             self.assertEqual(self._number(record["VL_COFINS"]), 0.0)
+
+    def test_the_credit_blocks_follow_the_c170_of_the_entries(self):
+        """M100 by type and rate, M105 by nature of the base: only the resale
+        (01) and the input (02) give credit, as the C170 books."""
+        self._month_with_credit()
+        declaration = self._declaration_july()
+        m100 = self._sped_records(declaration, "M100")
+        m105 = self._sped_records(declaration, "M105")
+        self.assertEqual(len(m100), 1)
+        self.assertEqual(m100[0]["COD_CRED"], "101")
+        self.assertEqual(m100[0]["IND_CRED_ORI"], "0")
+        self.assertEqual(m100[0]["VL_BC_CRED"], "2000,00")
+        self.assertEqual(m100[0]["ALIQ_PIS"], "1,65")
+        self.assertEqual(m100[0]["VL_CRED"], "33,00")
+        self.assertEqual(m100[0]["VL_CRED_DISP"], "33,00")
+        self.assertEqual(
+            sorted((rec["NAT_BC_CRED"], rec["CST_PIS"]) for rec in m105),
+            [("01", "50"), ("02", "50")],
+        )
+        self.assertEqual(
+            sum(self._number(rec["VL_BC_PIS"]) for rec in m105),
+            self._number(m100[0]["VL_BC_CRED"]),
+        )
+        m500 = self._sped_records(declaration, "M500")
+        m505 = self._sped_records(declaration, "M505")
+        self.assertEqual(m500[0]["ALIQ_COFINS"], "7,6")
+        self.assertEqual(m500[0]["VL_CRED"], "152,00")
+        self.assertEqual(
+            sorted((rec["NAT_BC_CRED"], rec["CST_COFINS"]) for rec in m505),
+            [("01", "50"), ("02", "50")],
+        )
+
+    def test_the_credit_of_the_documents_is_the_credit_of_the_assessment(self):
+        """Two sources that have to agree: the C170 of the entries and the ledger
+        read by the assessment."""
+        pis, cofins = self._month_with_credit()
+        declaration = self._declaration_july()
+        for assessment, register in ((pis, "M100"), (cofins, "M500")):
+            credit = sum(
+                self._number(rec["VL_CRED"])
+                for rec in self._sped_records(declaration, register)
+            )
+            self.assertAlmostEqual(credit, assessment.credit_total, places=2)
+        self.assertAlmostEqual(pis.credit_total, 33.0, places=2)
+        self.assertAlmostEqual(cofins.credit_total, 152.0, places=2)
+
+    def test_the_credit_is_discounted_of_the_contribution_of_the_period(self):
+        """M100.VL_CRED_DESC up to the contribution due; the rest is the balance;
+        M200 sums it and the PVA formula holds: due = contribution - credit."""
+        self._month_with_credit()
+        declaration = self._declaration_july()
+        m100 = self._sped_records(declaration, "M100")[0]
+        m200 = self._sped_records(declaration, "M200")[0]
+        m210 = self._sped_records(declaration, "M210")
+        self.assertEqual(len(m210), 1)
+        self.assertEqual(m210[0]["COD_CONT"], "01")
+        self.assertEqual(m210[0]["VL_BC_CONT"], "1000,00")
+        self.assertEqual(m210[0]["ALIQ_PIS"], "1,65")
+        self.assertEqual(m210[0]["VL_CONT_PER"], "16,50")
+        self.assertEqual(m100["VL_CRED_DESC"], "16,50")
+        self.assertEqual(m100["SLD_CRED"], "16,50")
+        self.assertEqual(m200["VL_TOT_CONT_NC_PER"], "16,50")
+        self.assertEqual(m200["VL_TOT_CRED_DESC"], m100["VL_CRED_DESC"])
+        self.assertEqual(self._number(m200["VL_TOT_CONT_NC_DEV"]), 0.0)
+        self.assertEqual(self._number(m200["VL_CONT_NC_REC"]), 0.0)
+        m600 = self._sped_records(declaration, "M600")[0]
+        m500 = self._sped_records(declaration, "M500")[0]
+        self.assertEqual(m600["VL_TOT_CRED_DESC"], m500["VL_CRED_DESC"])
+        self.assertEqual(m600["VL_TOT_CRED_DESC"], "76,00")
+
+    def test_the_file_stops_when_the_credit_has_no_assessment(self):
+        """The M200 comes from the assessment: credit in the documents and no
+        posted assessment is a file the PVA would refuse."""
+        self._entry("fo_compras_compras_comercializacao", "401")
+        declaration = self._declaration_july()
+        with self.assertRaises(UserError) as error:
+            declaration.button_create_sped_files()
+        self.assertIn("assessment", error.exception.args[0])
+
+    def test_the_file_stops_when_the_assessment_does_not_match_the_documents(self):
+        """Posted before a late entry: the credit of the documents is not the
+        credit of the assessment, and the message says so."""
+        self._entry("fo_compras_compras_comercializacao", "401")
+        self._assess("pis")
+        self._assess("cofins")
+        self._entry("fo_compras_compras", "402")
+        declaration = self._declaration_july()
+        with self.assertRaises(UserError) as error:
+            declaration.button_create_sped_files()
+        self.assertIn(
+            "not the credit of the posted assessment", error.exception.args[0]
+        )
