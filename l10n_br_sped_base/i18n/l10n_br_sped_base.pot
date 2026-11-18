@@ -587,7 +587,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_br_sped_base/models/sped_declaration.py:0
 #, python-format
-msgid "Pulled from Odoo"
-
 msgid "Documents left out for lack of an access key"
+msgstr ""
+
+#. module: l10n_br_sped_base
+#. odoo-python
+#: code:addons/l10n_br_sped_base/models/sped_declaration.py:0
+#, python-format
+msgid "Pulled from Odoo"
 msgstr ""
