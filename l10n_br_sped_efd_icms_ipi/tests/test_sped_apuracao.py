@@ -145,6 +145,14 @@ class TestSpedEfdIcmsIpiApuracao(EntradaHelpers, SpedEntradaCommon):
         declaration.button_create_sped_files()
         self.assertTrue(declaration.message_ids)
 
+    def test_generation_stops_without_an_accountant(self):
+        self._purchase_move("fo_compras_compras_comercializacao", "606")
+        declaration = self._declaration_july()
+        self.company.accountant_id = False
+        with self.assertRaises(UserError) as error:
+            declaration.button_create_sped_files()
+        self.assertIn("accountant", error.exception.args[0])
+
     def test_the_activity_and_the_classification_follow_the_company(self):
         """An IPI taxpayer is industrial with its classification; any other
         company is Outros, and the industrial one needs the IPI assessment."""

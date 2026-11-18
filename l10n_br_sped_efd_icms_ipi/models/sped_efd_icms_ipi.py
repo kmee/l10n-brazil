@@ -256,6 +256,14 @@ class Registro0000(models.Model):
         """Without the ICMS assessment of the period posted the E110 does not
         exist and the PVA refuses the file, so the generation stops here."""
         for declaration in self:
+            if not declaration.debug and not declaration.company_id.accountant_id:
+                raise UserError(
+                    _(
+                        "Set the accountant of the company (Accountant field, "
+                        "with CPF and CRC) before generating the file: the record "
+                        "0100 comes from it."
+                    )
+                )
             if not declaration.debug and not declaration._get_posted_icms_assessments():
                 raise UserError(
                     _(
@@ -504,9 +512,11 @@ class Registro0190(models.Model):
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):
-        return [
-            ("id", "in", declaration.fiscal_uom_ids.ids),
-        ]
+        k200 = self.env["l10n_br_sped.efd_icms_ipi.k200"]
+        units = declaration.fiscal_uom_ids | k200._get_k200_products(
+            declaration
+        ).mapped("uom_id")
+        return [("id", "in", units.ids)]
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
@@ -529,9 +539,9 @@ class Registro0200(models.Model):
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):
-        return [
-            ("id", "in", declaration.fiscal_product_ids.ids),
-        ]
+        k200 = self.env["l10n_br_sped.efd_icms_ipi.k200"]
+        products = declaration.fiscal_product_ids | k200._get_k200_products(declaration)
+        return [("id", "in", products.ids)]
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
@@ -5049,12 +5059,29 @@ class RegistroK200(models.Model):
         )
 
     @api.model
-    def _odoo_domain(self, parent_record, declaration):
+    def _k200_domain(self):
         return [
             ("type", "=", "product"),
             ("ncm_id", "!=", False),
             ("qty_available", ">", 0.0),
         ]
+
+    @api.model
+    def _get_k200_products(self, declaration):
+        """The items of the inventory block, the ones the 0200 must also
+        declare: a K200 item missing in the 0200 is refused by the PVA."""
+        if declaration.IND_ATIV != "0":
+            return self.env["product.product"]
+        dt_fin_end = datetime.combine(declaration.DT_FIN, time(23, 59, 59))
+        return (
+            self.env["product.product"]
+            .with_context(to_date=fields.Datetime.to_string(dt_fin_end))
+            .search(self._k200_domain())
+        )
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return self._k200_domain()
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
