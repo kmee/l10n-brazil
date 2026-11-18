@@ -123,3 +123,33 @@ class FiscalDocument(models.Model):
         ):
             return self.document_date
         return entry
+
+    def _get_sped_icms_amounts(self):
+        """(base, value) of ICMS of the document that the books carry: the ones
+        of the lines with credit right in an entry (the lines without it carry
+        none, see ``_sped_icms_without_credit``), all of them in any other
+        document."""
+        self.ensure_one()
+        lines = self.fiscal_line_ids.filtered(
+            lambda line: not line._sped_icms_without_credit()
+        )
+        return (
+            sum(lines.mapped("icms_base")),
+            sum(lines.mapped("icms_value")),
+        )
+
+    def _get_sped_ipi_value(self):
+        """VL_IPI of the document as the books carry it: the IPI of the lines
+        with credit right in an entry, all of it in any other document."""
+        self.ensure_one()
+        return sum(
+            line.ipi_value
+            for line in self.fiscal_line_ids
+            if not line._sped_ipi_without_credit()
+        )
+
+    def _is_sped_own_issue(self):
+        """NF-e or NFC-e issued by the company: the books carry the C100 and
+        the C190 only, never the items (C170), as the Guia Pratico says."""
+        self.ensure_one()
+        return self.issuer == "company" and self.document_type_id.code in ("55", "65")

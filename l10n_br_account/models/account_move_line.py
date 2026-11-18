@@ -560,6 +560,14 @@ class AccountMoveLine(models.Model):
                 tax["amount"] = 0.0
                 tax["base"] = 0.0
                 continue
+            if acc_tax.no_credit:
+                # The variant without credit has two repartition lines that
+                # cancel each other (+100/-100, no account): the value stays in
+                # the product line and the ledger books nothing. Without this
+                # each entry took the whole imported value and the bill went out
+                # with a debit and a credit of the tax on the same account.
+                tax["amount"] = 0.0
+                continue
             field_names = self._IMPORTED_TAX_FIELD_MAP.get(fiscal_group.tax_domain)
             if field_names:
                 # compute_all returns one entry per tax repartition line:

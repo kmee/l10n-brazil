@@ -356,6 +356,13 @@ class SpedDeclaration(models.AbstractModel):
 
         return attachments_vals
 
+    @staticmethod
+    def _to_crlf(text):
+        """Every line of a SPED file ends in CR LF, the last one included (the
+        layout and the PVA demand it). The text is built with LF only."""
+        text = text.replace("\r\n", "\n").replace("\n", "\r\n")
+        return text if text.endswith("\r\n") else text + "\r\n"
+
     def _create_sped_attachment(self, text, bloco=None):
         kind = self._get_kind()
         if bloco:
@@ -371,7 +378,9 @@ class SpedDeclaration(models.AbstractModel):
             # encode(); errors="replace" keeps a character outside Latin-1
             # pasted in some journal item label from aborting the whole
             # file generation
-            "datas": base64.b64encode(text.encode(SPED_ENCODING, errors="replace")),
+            "datas": base64.b64encode(
+                self._to_crlf(text).encode(SPED_ENCODING, errors="replace")
+            ),
             "mimetype": "application/txt",
             "type": "binary",
         }

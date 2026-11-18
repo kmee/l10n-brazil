@@ -547,7 +547,7 @@ class TestSpedBase(TransactionCase, FakeModelLoader):
                 "|I015|DATA_BLOCO_I_LINE_3|...|",
                 "|I990|CLOSE_BLOCO_I|...|",
             ]
-            self.assertEqual(content_i, "\n".join(expected_content_i_lines))
+            self.assertEqual(content_i, "\r\n".join(expected_content_i_lines))
 
             # Check Bloco J
             att_j = attachments.filtered(
@@ -561,7 +561,7 @@ class TestSpedBase(TransactionCase, FakeModelLoader):
                 "|J930|DATA_BLOCO_J_LINE_2|...|",
                 "|J990|CLOSE_BLOCO_J|...|",
             ]
-            self.assertEqual(content_j, "\n".join(expected_content_j_lines))
+            self.assertEqual(content_j, "\r\n".join(expected_content_j_lines))
 
             # Check Bloco C
             att_c = attachments.filtered(
@@ -576,7 +576,7 @@ class TestSpedBase(TransactionCase, FakeModelLoader):
                 "|C100|DATA_BLOCO_C_LINE_3|...|",
                 "|C990|CLOSE_BLOCO_C|...|",
             ]
-            self.assertEqual(content_c, "\n".join(expected_content_c_lines))
+            self.assertEqual(content_c, "\r\n".join(expected_content_c_lines))
 
             # Test _create_sped_attachment directly
             single_attachment_val = declaration._create_sped_attachment(
@@ -938,17 +938,25 @@ class TestSpedBase(TransactionCase, FakeModelLoader):
         text = "|P200|1|DISCRIMINA\u00c7\u00c3O DA RECEITA BRUTA||\n"
         vals = self.declaration._create_sped_attachment(text)
         stored = base64.b64decode(vals["datas"])
-        self.assertEqual(stored, text.encode("iso-8859-1"))
+        self.assertEqual(stored, text.replace("\n", "\r\n").encode("iso-8859-1"))
         # one byte per accented character, no utf-8 marker in the Latin range
-        self.assertEqual(len(stored), len(text))
+        self.assertEqual(len(stored), len(text) + 1)
         self.assertNotIn(b"\xc3\x87", stored)
+
+    def test_attachment_lines_end_in_crlf(self):
+        """Every line, the last included, ends in CR LF: the layout says so and
+        the PVA refuses a file with bare line feeds."""
+        vals = self.declaration._create_sped_attachment("|0000|A|\n|0001|0|\n|9999|3|")
+        stored = base64.b64decode(vals["datas"])
+        self.assertEqual(stored, b"|0000|A|\r\n|0001|0|\r\n|9999|3|\r\n")
+        self.assertNotIn(b"\n", stored.replace(b"\r\n", b""))
 
     def test_character_outside_latin1_does_not_abort(self):
         """A symbol pasted in some label cannot block the whole file."""
         text = "|I250|Taxa \u20ac de servico|\n"
         vals = self.declaration._create_sped_attachment(text)
         stored = base64.b64decode(vals["datas"])
-        self.assertEqual(len(stored), len(text))
+        self.assertEqual(len(stored), len(text) + 1)
         self.assertIn(b"?", stored)
 
     def test_import_reads_latin1(self):

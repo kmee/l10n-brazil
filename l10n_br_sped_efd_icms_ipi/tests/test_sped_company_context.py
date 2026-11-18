@@ -73,3 +73,13 @@ class TestSpedEfdIcmsIpiCompanyContext(SpedEntradaCommon):
             declaration.button_populate_sped_from_odoo()
         with self.assertRaisesRegex(UserError, "no access to the company"):
             declaration._generate_sped_text()
+
+    def test_the_error_without_access_to_the_company_is_in_portuguese(self):
+        self.env["res.lang"]._activate_lang("pt_BR")
+        self.env["ir.module.module"]._load_module_terms(
+            ["l10n_br_sped_base"], ["pt_BR"], overwrite=True
+        )
+        user = self._user(self.env.ref("base.main_company"))
+        declaration = self._declaration_of_the_company(user)
+        with self.assertRaisesRegex(UserError, "Você não tem acesso"):
+            declaration.with_context(lang="pt_BR").button_populate_sped_from_odoo()
