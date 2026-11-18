@@ -296,3 +296,4 @@ class DocumentImportWizard(models.TransientModel):
                 # move linked to a PO line: use the canonical PO key
                 line.partner_order = source.po_ref[:15]
                 line.partner_order_line = str(source.po_line_no)[:6]
+            line._apply_import_match_source(source)
