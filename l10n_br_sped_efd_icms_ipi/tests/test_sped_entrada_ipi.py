@@ -12,12 +12,57 @@ from .test_sped_entrada import EntradaHelpers
 class TestSpedEfdIcmsIpiIpiEntrada(EntradaHelpers, SpedEntradaCommon):
     """IPI of the entry, own issue and complementary information in the books."""
 
+    def _assess_ipi_of_july(self):
+        """The IPI assessment by the normal path: compute from the ledger, post.
+        Without it the E500 tree (and the E510) stays out of the file."""
+        group = self.env["account.tax.group"].search(
+            [
+                (
+                    "fiscal_tax_group_id",
+                    "=",
+                    self.env.ref("l10n_br_fiscal.tax_group_ipi").id,
+                )
+            ],
+            limit=1,
+        )
+        accounts = {
+            "property_tax_payable_account_id": ("IPIPAY", "liability_current"),
+            "property_tax_receivable_account_id": ("IPIREC", "asset_current"),
+        }
+        group.with_company(self.company).write(
+            {
+                field: self.env["account.account"]
+                .create(
+                    {
+                        "name": code,
+                        "code": code,
+                        "account_type": account_type,
+                        "company_id": self.company.id,
+                    }
+                )
+                .id
+                for field, (code, account_type) in accounts.items()
+            }
+        )
+        assessment = self.env["l10n_br_tax.assessment"].create(
+            {
+                "company_id": self.company.id,
+                "tax_group_id": group.id,
+                "date_from": "2026-07-01",
+                "date_to": "2026-07-31",
+            }
+        )
+        assessment.action_compute()
+        assessment.action_post()
+        return assessment
+
     def test_the_ipi_of_an_entry_without_credit_stays_out_of_the_books(self):
         """Resale does not credit the IPI (only the industrialization does): the
         C170, the C190 and the E510 carry CST 49 and no IPI, so they sum what
         the E520 credits."""
         resale = self._purchase_move("fo_compras_compras_comercializacao", "611")
         industrialization = self._purchase_move("fo_compras_compras", "612")
+        self._assess_ipi_of_july()
         declaration = self._declaration_july()
         c170 = {rec["CFOP"]: rec for rec in self._sped_records(declaration, "C170")}
         by_cfop = {
