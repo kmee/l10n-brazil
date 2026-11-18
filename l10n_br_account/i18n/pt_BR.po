@@ -9736,3 +9736,8 @@ msgstr ""
 
 #~ msgid "Fiscal Doc UOM"
 #~ msgstr "UOM do documento fiscal"
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_account_invoice_report__state_edoc
+msgid "Situation"
+msgstr "Situação"

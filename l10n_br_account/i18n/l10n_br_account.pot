@@ -9308,3 +9308,8 @@ msgid ""
 "versão do aplicativo utilizado no processo de\n"
 "emissão"
 msgstr ""
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_account_invoice_report__state_edoc
+msgid "Situation"
+msgstr ""

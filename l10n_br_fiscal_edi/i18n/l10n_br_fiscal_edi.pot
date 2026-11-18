@@ -879,3 +879,61 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_event__display_name
 msgid "name"
 msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model,name:l10n_br_fiscal_edi.model_l10n_br_fiscal_document_import_match_candidate
+msgid "Fiscal Document Import Match Source Candidate"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document_import_match_candidate__source_type__stock_move
+msgid "Incoming Picking Line"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_match_candidate__line_no
+msgid "Line Position"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/wizards/document_import_match_candidate.py:0
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_wizard_line__match_source_id
+#, python-format
+msgid "Match Source"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_match_candidate__qty
+msgid "Open Quantity"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_match_candidate__order_id
+msgid "Order"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_match_candidate__po_line_no
+msgid "PO Line Position"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_match_candidate__picking_id
+msgid "Picking"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_match_candidate__po_ref
+msgid "Purchase Order"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document_import_match_candidate__source_type__po_line
+msgid "Purchase Order Line"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_match_candidate__ref_name
+msgid "Source Reference"
+msgstr ""

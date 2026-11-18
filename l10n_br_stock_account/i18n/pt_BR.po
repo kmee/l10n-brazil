@@ -1983,3 +1983,32 @@ msgstr ""
 
 #~ msgid "To be refunded/invoiced"
 #~ msgstr "Para ser reembolsado/faturado"
+
+#. module: l10n_br_stock_account
+#: model_terms:ir.ui.view,arch_db:l10n_br_stock_account.stock_move_fiscal_report_search
+msgid "Date"
+msgstr "Data"
+
+#. module: l10n_br_stock_account
+#: model_terms:ir.ui.view,arch_db:l10n_br_stock_account.stock_move_fiscal_report_search
+msgid "Done"
+msgstr "Concluído"
+
+#. module: l10n_br_stock_account
+#: model:ir.actions.act_window,name:l10n_br_stock_account.stock_move_fiscal_report_action
+#: model:ir.ui.menu,name:l10n_br_stock_account.stock_move_fiscal_report_menu
+#: model_terms:ir.ui.view,arch_db:l10n_br_stock_account.stock_move_fiscal_report_graph
+#: model_terms:ir.ui.view,arch_db:l10n_br_stock_account.stock_move_fiscal_report_pivot
+#: model_terms:ir.ui.view,arch_db:l10n_br_stock_account.stock_move_fiscal_report_search
+msgid "Fiscal Stock Moves"
+msgstr "Movimentos de estoque fiscais"
+
+#. module: l10n_br_stock_account
+#: model_terms:ir.ui.view,arch_db:l10n_br_stock_account.stock_move_fiscal_report_search
+msgid "Group By"
+msgstr "Agrupar por"
+
+#. module: l10n_br_stock_account
+#: model_terms:ir.ui.view,arch_db:l10n_br_stock_account.stock_move_fiscal_report_tree
+msgid "Total"
+msgstr "Total"

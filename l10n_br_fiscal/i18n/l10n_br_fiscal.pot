@@ -10439,3 +10439,271 @@ msgstr ""
 #, python-format
 msgid "{} Tax Estimate Updated"
 msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.actions.act_window,name:l10n_br_fiscal.document_line_report_cfop_action
+#: model:ir.ui.menu,name:l10n_br_fiscal.document_line_report_cfop_menu
+msgid "By CFOP and ICMS Rate"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.actions.act_window,name:l10n_br_fiscal.document_line_report_cst_action
+#: model:ir.ui.menu,name:l10n_br_fiscal.document_line_report_cst_menu
+msgid "By CST"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.actions.act_window,name:l10n_br_fiscal.document_line_report_ncm_action
+#: model:ir.ui.menu,name:l10n_br_fiscal.document_line_report_ncm_menu
+msgid "By Product and NCM"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.actions.act_window,name:l10n_br_fiscal.document_line_report_state_action
+#: model:ir.ui.menu,name:l10n_br_fiscal.document_line_report_state_menu
+msgid "By State (ICMS ST and DIFAL)"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.actions.act_window,name:l10n_br_fiscal.document_line_report_cbs_ibs_action
+#: model:ir.ui.menu,name:l10n_br_fiscal.document_line_report_cbs_ibs_menu
+msgid "CBS and IBS by Tax Classification"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_report__cofins_wh_value
+msgid "COFINS Withholding"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_report__csll_wh_value
+msgid "CSLL Withholding"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/report_mixin.py:0
+#, python-format
+msgid "Cancelled, Denied or Voided"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_report__estimate_tax
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_report_mixin__estimate_tax
+msgid "Estimated Taxes (IBPT)"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/report_mixin.py:0
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_report__ind_final
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_report_mixin__ind_final
+#, python-format
+msgid "Final Customer"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.actions.act_window,name:l10n_br_fiscal.document_line_report_action
+#: model:ir.model,name:l10n_br_fiscal.model_l10n_br_fiscal_document_line_report
+#: model:ir.ui.menu,name:l10n_br_fiscal.document_line_report_menu
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_line_report_graph
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_line_report_pivot
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_line_report_search
+msgid "Fiscal Document Lines Analysis"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model,name:l10n_br_fiscal.model_l10n_br_fiscal_report_filter_mixin
+msgid "Fiscal Report Filter Mixin"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model,name:l10n_br_fiscal.model_l10n_br_fiscal_report_mixin
+msgid "Fiscal Report Mixin"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/report_mixin.py:0
+#, python-format
+msgid "Foreign Operation"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_report__amount_gross
+msgid "Gross Amount"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_report__icms_destination_value
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_report_mixin__icms_destination_value
+msgid "ICMS DIFAL Destination Value"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_report__icms_origin_value
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_report_mixin__icms_origin_value
+msgid "ICMS DIFAL Origin Value"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_report__icms_rate
+msgid "ICMS Rate"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_report__icmssn_credit_value
+msgid "ICMS SN Credit Value"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_report__inss_wh_value
+msgid "INSS Withholding"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_report__irpj_wh_value
+msgid "IRPJ Withholding"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_report__issqn_wh_value
+msgid "ISSQN Withholding"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/report_mixin.py:0
+#, python-format
+msgid "Incoming"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/report_mixin.py:0
+#, python-format
+msgid "Internal Operation"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/report_mixin.py:0
+#, python-format
+msgid "Interstate Operation"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/report_mixin.py:0
+#, python-format
+msgid "Not Cancelled"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/report_mixin.py:0
+#, python-format
+msgid "Outgoing"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/report_mixin.py:0
+#, python-format
+msgid "Own Issue"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_report__pis_wh_value
+msgid "PIS Withholding"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/report_mixin.py:0
+#, python-format
+msgid "Products (ICMS)"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.ui.menu,name:l10n_br_fiscal.report_menu
+msgid "Reports"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/report_mixin.py:0
+#, python-format
+msgid "Services (ISSQN)"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_report__amount_tax_withholding
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_report_mixin__amount_tax_withholding
+msgid "Tax Withholdings"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_report__amount_tax_included
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_report_mixin__amount_tax_included
+msgid "Taxes Included in Price"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_report__amount_tax_not_included
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_report_mixin__amount_tax_not_included
+msgid "Taxes Not Included in Price"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/report_mixin.py:0
+#, python-format
+msgid "Third-party Issue"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_report__amount_untaxed
+msgid "Untaxed Amount"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/report_mixin.py:0
+#, python-format
+msgid "With CBS/IBS"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/report_mixin.py:0
+#, python-format
+msgid "With ICMS DIFAL"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/report_mixin.py:0
+#, python-format
+msgid "With ICMS ST"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/report_mixin.py:0
+#, python-format
+msgid "With IPI"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/report_mixin.py:0
+#, python-format
+msgid "With Withholdings"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.actions.act_window,name:l10n_br_fiscal.document_line_report_withholding_action
+#: model:ir.ui.menu,name:l10n_br_fiscal.document_line_report_withholding_menu
+msgid "Withholdings by Partner"
+msgstr ""

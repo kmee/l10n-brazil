@@ -3113,3 +3113,128 @@ msgstr ""
 #~ msgstr ""
 #~ "Você deve definir um produto para tudo o que compra,\n"
 #~ "                 Seja um produto físico, material de consumo ou serviços."
+
+#. module: l10n_br_purchase
+#. odoo-python
+#: code:addons/l10n_br_purchase/models/account_move.py:0
+#, python-format
+msgid "A purchase order can only be created from a vendor bill."
+msgstr "Um pedido de compra só pode ser criado a partir de uma fatura de fornecedor."
+
+#. module: l10n_br_purchase
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase.purchase_update_from_nfe_wizard_form
+msgid "Apply"
+msgstr "Aplicar"
+
+#. module: l10n_br_purchase
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase.l10n_br_purchase_move_form
+msgid "Create PO from NFe"
+msgstr "Criar pedido pela NF-e"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__po_quantity
+msgid "Current Quantity"
+msgstr "Quantidade atual"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__po_price_unit
+msgid "Current Unit Price"
+msgstr "Preço unitário atual"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard__move_id
+msgid "Financial Move"
+msgstr "Lançamento financeiro"
+
+#. module: l10n_br_purchase
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase.purchase_update_from_nfe_wizard_form
+msgid "Lines"
+msgstr "Linhas"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__nfe_line_id
+msgid "NFe Line"
+msgstr "Linha da NF-e"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__nfe_quantity
+msgid "NFe Quantity"
+msgstr "Quantidade da NF-e"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__nfe_price_unit
+msgid "NFe Unit Price"
+msgstr "Preço unitário da NF-e"
+
+#. module: l10n_br_purchase
+#. odoo-python
+#: code:addons/l10n_br_purchase/models/account_move.py:0
+#, python-format
+msgid "No matching purchase order line found for the imported document."
+msgstr "Nenhuma linha de pedido de compra encontrada para o documento importado."
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__partner_order
+msgid "PO Reference (xPed)"
+msgstr "Referência do pedido (xPed)"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__partner_order_line
+msgid "PO Reference Line"
+msgstr "Item do pedido (nItemPed)"
+
+#. module: l10n_br_purchase
+#: model:ir.model,name:l10n_br_purchase.model_purchase_update_from_nfe_wizard_line
+msgid "Purchase Order line updated from an imported NFe"
+msgstr "Linha do pedido de compra atualizada por uma NF-e importada"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__new_quantity
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase.purchase_update_from_nfe_wizard_form
+msgid "Quantity"
+msgstr "Quantidade"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard__partner_id
+msgid "Supplier"
+msgstr "Fornecedor"
+
+#. module: l10n_br_purchase
+#. odoo-python
+#: code:addons/l10n_br_purchase/models/account_move.py:0
+#, python-format
+msgid "The vendor bill has no imported fiscal document."
+msgstr "A fatura de fornecedor não tem documento fiscal importado."
+
+#. module: l10n_br_purchase
+#. odoo-python
+#: code:addons/l10n_br_purchase/models/account_move.py:0
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase.l10n_br_purchase_move_form
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase.purchase_update_from_nfe_wizard_form
+#, python-format
+msgid "Update PO from NFe"
+msgstr "Atualizar pedido pela NF-e"
+
+#. module: l10n_br_purchase
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase.purchase_update_from_nfe_wizard_form
+msgid "Update PO line"
+msgstr "Atualizar linha do pedido"
+
+#. module: l10n_br_purchase
+#: model:ir.model,name:l10n_br_purchase.model_purchase_update_from_nfe_wizard
+msgid "Update Purchase Order lines from an imported NFe"
+msgstr "Atualizar linhas do pedido de compra por uma NF-e importada"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__wizard_id
+msgid "Wizard"
+msgstr "Assistente"
+
+#. module: l10n_br_purchase
+#: code:addons/l10n_br_purchase/models/account_move.py:0
+#, python-format
+msgid ""
+"All the lines of the vendor bill are already linked to a purchase order."
+msgstr ""
+"Todas as linhas da fatura de fornecedor já estão ligadas a um pedido de "
+"compra."

@@ -1860,3 +1860,32 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_stock_account.field_stock_move__ipi_devol_value
 msgid "Valor do IPI devolvido"
 msgstr ""
+
+#. module: l10n_br_stock_account
+#: model_terms:ir.ui.view,arch_db:l10n_br_stock_account.stock_move_fiscal_report_search
+msgid "Date"
+msgstr ""
+
+#. module: l10n_br_stock_account
+#: model_terms:ir.ui.view,arch_db:l10n_br_stock_account.stock_move_fiscal_report_search
+msgid "Done"
+msgstr ""
+
+#. module: l10n_br_stock_account
+#: model:ir.actions.act_window,name:l10n_br_stock_account.stock_move_fiscal_report_action
+#: model:ir.ui.menu,name:l10n_br_stock_account.stock_move_fiscal_report_menu
+#: model_terms:ir.ui.view,arch_db:l10n_br_stock_account.stock_move_fiscal_report_graph
+#: model_terms:ir.ui.view,arch_db:l10n_br_stock_account.stock_move_fiscal_report_pivot
+#: model_terms:ir.ui.view,arch_db:l10n_br_stock_account.stock_move_fiscal_report_search
+msgid "Fiscal Stock Moves"
+msgstr ""
+
+#. module: l10n_br_stock_account
+#: model_terms:ir.ui.view,arch_db:l10n_br_stock_account.stock_move_fiscal_report_search
+msgid "Group By"
+msgstr ""
+
+#. module: l10n_br_stock_account
+#: model_terms:ir.ui.view,arch_db:l10n_br_stock_account.stock_move_fiscal_report_tree
+msgid "Total"
+msgstr ""
