@@ -186,7 +186,7 @@ class DocumentLine(models.Model):
     # kept apart, both stored. The books read the entry CST when it exists.
     entry_ipi_cst_id = fields.Many2one(
         comodel_name="l10n_br_fiscal.cst",
-        string="Entry IPI CST",
+        string="IPI CST of the Entry (company)",
         domain="[('tax_domain', '=', 'ipi'), ('cst_type', 'in', ('in', 'all'))]",
         compute="_compute_entry_cst_ids",
         store=True,
@@ -199,7 +199,7 @@ class DocumentLine(models.Model):
 
     entry_pis_cst_id = fields.Many2one(
         comodel_name="l10n_br_fiscal.cst",
-        string="Entry PIS CST",
+        string="PIS CST of the Entry (company)",
         domain="[('tax_domain', '=', 'pis'), ('cst_type', 'in', ('in', 'all'))]",
         compute="_compute_entry_cst_ids",
         store=True,
@@ -212,7 +212,7 @@ class DocumentLine(models.Model):
 
     entry_cofins_cst_id = fields.Many2one(
         comodel_name="l10n_br_fiscal.cst",
-        string="Entry COFINS CST",
+        string="COFINS CST of the Entry (company)",
         domain="[('tax_domain', '=', 'cofins'), ('cst_type', 'in', ('in', 'all'))]",
         compute="_compute_entry_cst_ids",
         store=True,

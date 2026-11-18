@@ -40,3 +40,22 @@ class TestSpedEfdIcmsIpiCorrecoes(EntradaHelpers, SpedEntradaCommon):
         self.assertEqual(len(c101), 1)
         self.assertEqual(self._number(c101[0]["VL_FCP_UF_DEST"]), 3.0)
         self.assertEqual(self._number(c101[0]["VL_ICMS_UF_DEST"]), 5.0)
+
+    def test_the_sped_adjustment_code_is_on_the_benefit_and_relief_screens(self):
+        for model, view in (
+            ("l10n_br_fiscal.tax.definition", "l10n_br_fiscal.tax_definition_form"),
+            ("l10n_br_fiscal.icms.relief", "l10n_br_fiscal.tax_icms_relief_form"),
+        ):
+            view_id = self.env.ref(view).id
+            arch = self.env[model].get_view(view_id)["arch"]
+            self.assertIn('name="sped_cod_aj"', arch, model)
+        self.env["res.lang"]._activate_lang("pt_BR")
+        self.env["ir.module.module"].search(
+            [("name", "=", "l10n_br_sped_efd_icms_ipi")]
+        )._update_translations(["pt_BR"])
+        label = (
+            self.env["l10n_br_fiscal.icms.relief"]
+            .with_context(lang="pt_BR")
+            .fields_get(["sped_cod_aj"])["sped_cod_aj"]["string"]
+        )
+        self.assertEqual(label, "Código de Ajuste SPED")

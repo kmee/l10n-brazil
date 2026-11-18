@@ -10799,7 +10799,7 @@ msgstr ""
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__entry_cofins_cst_id
-msgid "Entry COFINS CST"
+msgid "COFINS CST of the Entry (company)"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -10809,7 +10809,7 @@ msgstr ""
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__entry_ipi_cst_id
-msgid "Entry IPI CST"
+msgid "IPI CST of the Entry (company)"
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -10819,10 +10819,22 @@ msgstr ""
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__entry_pis_cst_id
-msgid "Entry PIS CST"
+msgid "PIS CST of the Entry (company)"
 msgstr ""
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__entry_pis_cst_id
 msgid "PIS CST the company books for this entry: the credit CST of the operation in the non-cumulative regime, 70 (acquisition without credit right) in the cumulative one."
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__partner_icms_tax_benefit_code
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__partner_icms_tax_benefit_code
+msgid "Supplier Fiscal Benefit Code (cBenef)"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__partner_icms_tax_benefit_code
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__partner_icms_tax_benefit_code
+msgid "Fiscal benefit code (<cBenef>) declared by the counterparty in the imported document. Preserved verbatim for SPED C197 (COD_AJ), while icms_tax_benefit_id/code reflects the company's own de-para mapping."
 msgstr ""

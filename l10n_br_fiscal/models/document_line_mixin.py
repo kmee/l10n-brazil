@@ -1497,7 +1497,7 @@ class FiscalDocumentLineMixin(models.AbstractModel):
     )
 
     partner_icms_tax_benefit_code = fields.Char(
-        string="Partner Fiscal Benefit Code",
+        string="Supplier Fiscal Benefit Code (cBenef)",
         help="Fiscal benefit code (<cBenef>) declared by the counterparty in "
         "the imported document. Preserved verbatim for SPED C197 (COD_AJ), "
         "while icms_tax_benefit_id/code reflects the company's own de-para "
