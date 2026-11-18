@@ -57,3 +57,15 @@ class TestSpedPisCofinsCorrecoes(SpedPisCofinsEntradaMixin, SpedEntradaCommon):
             for model in models
         }
         self.assertEqual(before, after)
+
+    def test_the_declaration_title_is_translated_to_portuguese(self):
+        self.env["res.lang"]._activate_lang("pt_BR")
+        self.env["ir.module.module"].search(
+            [("name", "=", "l10n_br_sped_efd_pis_cofins")]
+        )._update_translations(["pt_BR"])
+        action = self.env.ref(
+            "l10n_br_sped_efd_pis_cofins.declaration_efd_pis_cofins_action"
+        )
+        self.assertEqual(
+            action.with_context(lang="pt_BR").name, "Declaração EFD PIS/COFINS"
+        )

@@ -84,6 +84,49 @@ class TestSpedEfdIcmsIpiCorrecoes(EntradaHelpers, SpedEntradaCommon):
         self.assertEqual(before, after)
         self.assertTrue(manual.exists(), "the register typed by hand is kept")
 
+    def test_the_sped_screens_are_translated_to_portuguese(self):
+        self.env["res.lang"]._activate_lang("pt_BR")
+        self.env["ir.module.module"].search(
+            [("name", "in", ("l10n_br_sped_base", "l10n_br_sped_efd_icms_ipi"))]
+        )._update_translations(["pt_BR"])
+        model = self.env["l10n_br_sped.efd_icms_ipi.0000"].with_context(lang="pt_BR")
+        arch, _view = model._get_view(view_type="form")
+        buttons = {
+            name: arch.xpath(f"//header/button[@name='{name}']")[0].get("string")
+            for name in (
+                "button_populate_sped_from_odoo",
+                "button_flush_registers",
+                "button_done",
+                "button_draft",
+                "button_create_sped_files",
+            )
+        }
+        self.assertEqual(
+            buttons,
+            {
+                "button_populate_sped_from_odoo": "Puxar Registros do Odoo",
+                "button_flush_registers": "Limpar Registros",
+                "button_done": "Marcar como Concluída",
+                "button_draft": "Voltar para Rascunho",
+                "button_create_sped_files": "Gerar Arquivo SPED",
+            },
+        )
+        fields = model.fields_get(["company_id", "debug", "split_sped_by_bloco"])
+        self.assertEqual(
+            {name: field["string"] for name, field in fields.items()},
+            {
+                "company_id": "Empresa",
+                "debug": "Depuração",
+                "split_sped_by_bloco": "Separar SPED por Bloco",
+            },
+        )
+        action = self.env.ref(
+            "l10n_br_sped_efd_icms_ipi.declaration_efd_icms_ipi_action"
+        )
+        self.assertEqual(
+            action.with_context(lang="pt_BR").name, "Declaração EFD ICMS/IPI"
+        )
+
     def test_the_sped_adjustment_code_is_on_the_benefit_and_relief_screens(self):
         for model, view in (
             ("l10n_br_fiscal.tax.definition", "l10n_br_fiscal.tax_definition_form"),
