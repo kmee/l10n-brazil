@@ -34,6 +34,34 @@ msgid "Split Sped By Bloco"
 msgstr ""
 
 #. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/fiscal_document_line.py:0
+#, python-format
+msgid "The line %(line)s of the document %(document)s books the %(tax)s credit with the CST %(cst)s and the destination %(destination)s, which the file does not derive (only the CST 50 of a resale or of an input)."
+msgstr ""
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/sped_efd_pis_cofins.py:0
+#, python-format
+msgid "The documents of the period book %(tax)s credit (CST 50 to 66), so the file needs the %(tax)s assessment of the non-cumulative regime of the period, posted. Assess it and generate the file again."
+msgstr ""
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/sped_efd_pis_cofins.py:0
+#, python-format
+msgid "The %(tax)s credit of the documents (%(documents).2f) is not the credit of the posted assessment (%(assessment).2f): assess the period again before generating the file."
+msgstr ""
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/sped_efd_pis_cofins.py:0
+#, python-format
+msgid "The %(tax)s assessment of the period uses the credit balance of a previous period, which the file informs in the register 1100 (credit control), not written yet."
+msgstr ""
+
+#. module: l10n_br_sped_efd_pis_cofins
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_pis_cofins_0000__state__done
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_pis_cofins_6_0000__state__done
 msgid "Done"
