@@ -25,6 +25,16 @@
                     attrs="{'invisible': [('show_po_from_nfe_buttons', '=', False)]}"
                 />
             </xpath>
+            <xpath expr="//div[hasclass('oe_title')]" position="before">
+                <field name="has_unconfirmed_import_origin" invisible="1" />
+                <div
+                    class="alert alert-warning"
+                    role="alert"
+                    attrs="{'invisible': [('has_unconfirmed_import_origin', '=', False)]}"
+                >
+                    Some lines of the imported document have a purchase order origin that is only suggested or still pending. Confirm the origins on the fiscal document: the destination of the order (credit of the taxes) is applied only to a confirmed origin.
+                </div>
+            </xpath>
         </field>
     </record>
 </odoo>

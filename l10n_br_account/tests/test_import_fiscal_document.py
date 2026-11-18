@@ -1,7 +1,11 @@
 # Copyright 2026 - TODAY KMEE - Luis Felipe Mileo <mileo@kmee.com.br>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
+import json
 from datetime import date, datetime
+from unittest import mock
+
+from lxml import etree
 
 from odoo.exceptions import UserError
 from odoo.tests.common import tagged
@@ -86,6 +90,36 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
             self.env["account.move"].import_fiscal_document(document)
         self.assertEqual(document.move_ids, move)
 
+    def test_a_cancelled_bill_frees_the_document_of_the_supplier(self):
+        """Cancelling the bill does not cancel the note of the supplier: the
+        note keeps its state and can be invoiced again."""
+        document = self._create_fiscal_document()
+        state = document.state_edoc
+        move_form = self.env["account.move"].import_fiscal_document(document)
+        move = self.env["account.move"].browse(move_form.id)
+        move.button_cancel()
+        self.assertEqual(move.state, "cancel")
+        self.assertEqual(document.state_edoc, state)
+        self.assertFalse(document._import_block_reason())
+        again_form = self.env["account.move"].import_fiscal_document(document)
+        again = self.env["account.move"].browse(again_form.id)
+        self.assertNotEqual(again, move)
+        self.assertEqual(again.fiscal_document_id, document)
+        again.button_cancel()
+        again.button_draft()
+        self.assertEqual(document.state_edoc, state)
+
+    def test_a_cancelled_bill_cancels_the_document_of_the_company(self):
+        """The control: the note the company issued follows its invoice."""
+        document = self._create_fiscal_document()
+        move_form = self.env["account.move"].import_fiscal_document(document)
+        move = self.env["account.move"].browse(move_form.id)
+        document.issuer = "company"
+        model = type(self.env["l10n_br_fiscal.document"])
+        with mock.patch.object(model, "action_document_cancel") as cancel_document:
+            move.button_cancel()
+        cancel_document.assert_called_once()
+
     def test_import_into_a_new_vendor_bill(self):
         """A vendor fiscal document is imported into a new vendor bill."""
         document = self._create_fiscal_document()
@@ -100,3 +134,22 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
             move.invoice_line_ids.fiscal_document_line_id,
             document.fiscal_line_ids,
         )
+
+    def test_the_generate_button_follows_the_active_invoice(self):
+        """A cancelled invoice frees the document: the button to generate the
+        invoice shows again, while the counter keeps counting the cancelled."""
+        document = self._create_fiscal_document(imported_document=True)
+        self.assertFalse(document.has_active_move)
+        move_form = self.env["account.move"].sudo().import_fiscal_document(document)
+        move = self.env["account.move"].sudo().browse(move_form.id)
+        self.assertTrue(document.has_active_move)
+        move.button_cancel()
+        self.assertFalse(document.has_active_move)
+        self.assertEqual(document.move_count, 1)
+        view = document.get_view(self.env.ref("l10n_br_fiscal.document_form").id)
+        button = etree.fromstring(view["arch"]).xpath(
+            "//button[@name='action_generate_account_move']"
+        )[0]
+        invisible = json.loads(button.get("modifiers"))["invisible"]
+        self.assertIn("has_active_move", json.dumps(invisible))
+        self.assertNotIn("move_count", json.dumps(invisible))

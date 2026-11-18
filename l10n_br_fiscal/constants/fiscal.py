@@ -202,6 +202,10 @@ PRODUCT_DESTINATION_CREDIT = (
 # estoque), independentemente do regime do comprador:
 # ICMS — isenta, não tributada, suspensão, diferimento, ST retido anteriormente.
 ICMS_CST_NO_CREDIT = ("40", "41", "50", "51", "60")
+# ICMS Simples Nacional: CSOSN 101 and 201 pass the credit highlighted by the
+# supplier (vCredICMSSN, LC 123/2006, art. 23, paragraphs 1 and 2), the others
+# do not (102, 103, 300, 400, 500).
+ICMSSN_CST_NO_CREDIT = ("102", "103", "300", "400", "500")
 # IPI — entradas isentas/não tributadas/imunes/com suspensão (01–05);
 # o CST 00 (entrada com recuperação de crédito) mantém a regra por regime.
 IPI_CST_NO_CREDIT = ("01", "02", "03", "04", "05")

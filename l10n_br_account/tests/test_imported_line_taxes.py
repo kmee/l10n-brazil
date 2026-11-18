@@ -4,6 +4,11 @@
 from odoo import fields
 from odoo.tests.common import tagged
 
+from odoo.addons.l10n_br_fiscal.constants.fiscal import (
+    TAX_FRAMEWORK_NORMAL,
+    TAX_FRAMEWORK_SIMPLES,
+)
+
 from .common import AccountMoveBRCommon
 
 
@@ -16,7 +21,7 @@ class TestImportedLineTaxes(AccountMoveBRCommon):
         cls.operation = cls.env.ref("l10n_br_fiscal.fo_compras")
         cls.operation_line = cls.env.ref("l10n_br_fiscal.fo_compras_compras")
 
-    def _import_document_with_taxes_from_a_file(self):
+    def _import_document_with_taxes_from_a_file(self, line_vals=None):
         document = self.env["l10n_br_fiscal.document"].create(
             {
                 "fiscal_operation_id": self.operation.id,
@@ -48,6 +53,7 @@ class TestImportedLineTaxes(AccountMoveBRCommon):
                 "ipi_base": 3900.0,
                 "ipi_percent": 9.75,
                 "ipi_value": 380.25,
+                **(line_vals or {}),
             }
         )
         move_form = (
@@ -57,15 +63,34 @@ class TestImportedLineTaxes(AccountMoveBRCommon):
         )
         return document, self.env["account.move"].sudo().browse(move_form.id)
 
-    def test_the_tax_lines_carry_the_values_of_the_file(self):
-        _document, move = self._import_document_with_taxes_from_a_file()
+    def _tax_amounts(self, move):
         tax_lines = move.line_ids.filtered(lambda line: line.display_type == "tax")
-        tax_amounts = {
+        return {
             line.tax_line_id.tax_group_id.fiscal_tax_group_id.tax_domain: line.debit
             for line in tax_lines
         }
 
-        self.assertEqual(tax_amounts, {"icms": 468.0, "ipi": 380.25})
+    def test_the_tax_lines_carry_the_values_of_the_file(self):
+        """A regular supplier passes the credit: the tax lines carry the
+        values of the file."""
+        self.partner_a.tax_framework = TAX_FRAMEWORK_NORMAL
+        _document, move = self._import_document_with_taxes_from_a_file()
+        self.assertEqual(self._tax_amounts(move), {"icms": 468.0, "ipi": 380.25})
+        self.assertAlmostEqual(sum(move.line_ids.mapped("balance")), 0.0)
+
+    def test_a_supplier_of_the_simples_without_credit_passes_no_credit(self):
+        """CSOSN 102 (and 103, 300, 400, 500) passes no credit (LC 123/2006,
+        art. 23): the taxes of the file stay in the cost of the product line.
+        The CSOSN 101 and 201, that pass the credit, are in
+        test_simples_supplier_credit."""
+        self.partner_a.tax_framework = TAX_FRAMEWORK_SIMPLES
+        _document, move = self._import_document_with_taxes_from_a_file(
+            {"icms_cst_id": self.env.ref("l10n_br_fiscal.cst_icmssn_102").id}
+        )
+        self.assertEqual(self._tax_amounts(move).get("icms", 0.0), 0.0)
+        self.assertEqual(self._tax_amounts(move).get("ipi", 0.0), 0.0)
+        self.assertAlmostEqual(sum(move.line_ids.mapped("balance")), 0.0)
+        self.assertAlmostEqual(move.invoice_line_ids.balance, 4280.25)
 
     def test_the_payment_term_of_an_imported_document_matches_the_file(self):
         document, move = self._import_document_with_taxes_from_a_file()

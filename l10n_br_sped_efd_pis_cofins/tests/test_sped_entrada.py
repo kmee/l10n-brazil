@@ -27,20 +27,26 @@ class TestSpedPisCofinsEntrada(SpedPisCofinsEntradaMixin, SpedEntradaCommon):
         denied, _line = self._entry_document(state_edoc="denegada")
         unused, _line = self._entry_document(state_edoc="inutilizada")
         complementary, _line = self._entry_document(edoc_purpose="2")
-        c100 = self._c100(self._declaration_july())
+        declaration = self._declaration_july()
+        c100 = self._c100(declaration)
         self.assertEqual(
             {
                 doc.document_number: c100[doc.document_number]["COD_SIT"]
-                for doc in (regular, cancelled, denied, unused, complementary)
+                for doc in (regular, cancelled, complementary)
             },
             {
                 regular.document_number: "00",
                 cancelled.document_number: "02",
-                denied.document_number: "04",
-                unused.document_number: "05",
                 complementary.document_number: "06",
             },
         )
+        # the codes 04 and 05 were discontinued in the Guia Pratico from
+        # 01/2023: a denied note and an unused number have no C100
+        self.assertNotIn(denied.document_number, c100)
+        self.assertNotIn(unused.document_number, c100)
+        text = declaration._generate_sped_text()
+        self.assertNotIn(denied.document_key, text)
+        self.assertNotIn(unused.document_key, text)
 
     def test_c100_of_a_cancelled_document_only_has_what_the_guide_allows(self):
         cancelled, _line = self._entry_document(state_edoc="cancelada")

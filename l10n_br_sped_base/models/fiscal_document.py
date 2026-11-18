@@ -60,6 +60,21 @@ class FiscalDocument(models.Model):
             cod_sit = SITUACAO_FISCAL_COMPLEMENTAR
         return cod_sit
 
+    def _has_sped_c100(self):
+        """Does this document go into the C100 (and its children)?
+
+        A denied note and an unused number do not: the situation codes 04
+        (denied) and 05 (unused number) of the table 4.1.2 were discontinued in
+        the Guia Pratico from 01/2023 and the information is no longer
+        required. A cancelled note still goes in, with COD_SIT 02. The one place
+        to bring the old codes back is this method (return True).
+        """
+        self.ensure_one()
+        return self._get_sped_cod_sit() not in (
+            SITUACAO_FISCAL_DENEGADO,
+            SITUACAO_FISCAL_INUTILIZADO,
+        )
+
     def _is_sped_cancelled(self):
         """Cancelled, denied and unused numbers carry no values, no items and no
         analytic registers (Guia Pratico, C100)."""

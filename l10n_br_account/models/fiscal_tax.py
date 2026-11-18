@@ -18,13 +18,15 @@ class FiscalTax(models.Model):
 
         :param credit_map: optional dict {tax_domain: 'credit' | 'cost'}
             produced by ``document.line.mixin._get_stock_cost_tax_map()``.
-            When provided, the DEDUCTIBLE variant of a tax is only used for
-            domains resolved as 'credit' — e.g. a Lucro Presumido company
-            must not book PIS/COFINS credits (cumulative regime), and a
-            Simples Nacional company books none at all. When None (e.g. the
-            fiscal operation has no product_destination configured), the
-            historical behavior is kept: deductible variants for every tax
-            when the operation has ``deductible_taxes``.
+            The map decides each tax with or without ``deductible_taxes`` on
+            the operation: a tax resolved as 'cost' (e.g. ICMS of a purchase
+            for use and consumption, PIS/COFINS of a Lucro Presumido company)
+            is never booked as a credit; one resolved as 'credit' takes the
+            deductible variant only when the operation has the flag, else the
+            historical variant. When None (the fiscal operation has no
+            product_destination configured), the historical behavior is kept:
+            deductible variants for every tax when the operation has
+            ``deductible_taxes``.
         """
         account_taxes = self.env["account.tax"]
         # `deductible_taxes` is company dependent, so reading it off the record
@@ -38,35 +40,44 @@ class FiscalTax(models.Model):
         deductible_op = bool(fiscal_operation and fiscal_operation.deductible_taxes)
         for fiscal_tax in self:
             taxes = fiscal_tax._account_taxes(company)
-            if (
-                deductible_op
-                and credit_map is not None
-                and fiscal_tax.tax_domain in credit_map
-            ):
-                # Granularidade por imposto (resolvedor regime x destinação x
-                # fornecedor — Fase F):
-                # * CREDITÁVEL: variante normal (debita "a Compensar") + a
-                #   dedutível (credita a conta da linha do produto) → custo
-                #   líquido formado na conta certa;
-                # * NÃO creditável POR DENTRO (ICMS/PIS/COFINS embutidos):
-                #   nenhuma variante — o valor já está no preço e permanece
-                #   no custo; o total da fatura não depende dele;
-                # * NÃO creditável POR FORA (IPI): variante "s/ Crédito"
-                #   (par +100/-100 sem contas → amount 0, total correto);
-                #   fallback para o par histórico se a variante não existir
-                #   no plano de contas (bases antigas), mantendo o balanço.
-                # NF-e/SPED não dependem do account.tax (campos fiscais).
+            if credit_map is not None and fiscal_tax.tax_domain in credit_map:
                 usable = taxes.filtered(
                     lambda t: t.type_tax_use == user_type and t.active
                 )
-                if credit_map.get(fiscal_tax.tax_domain) == "credit":
-                    account_taxes |= usable.filtered(lambda t: not t.no_credit)
-                elif not fiscal_tax.tax_group_id.tax_include:
+                if credit_map[fiscal_tax.tax_domain] == "credit":
+                    if deductible_op:
+                        # CREDITÁVEL: variante normal (debita "a Compensar") +
+                        # a dedutível (credita a conta da linha do produto) →
+                        # custo líquido formado na conta certa.
+                        account_taxes |= usable.filtered(lambda t: not t.no_credit)
+                        continue
+                    # Sem a operação dedutível, o comportamento histórico:
+                    # só a variante normal ("a Compensar").
+                elif fiscal_tax.tax_group_id.tax_include or fiscal_tax.tax_domain in (
+                    "icmsst",
+                    "icmsfcpst",
+                ):
+                    # ICMS-ST e FCP-ST: custo sempre, sem variante contábil (o
+                    # valor que o fornecedor cobra fica na linha do produto).
+                    # NÃO creditável POR DENTRO (ICMS/PIS/COFINS embutidos):
+                    # nenhuma variante, o valor já está no preço e permanece
+                    # no custo (a linha do produto da fatura o absorve).
+                    continue
+                else:
+                    # NÃO creditável POR FORA (IPI): variante "s/ Crédito"
+                    # (par +100/-100 sem contas → amount 0, total correto);
+                    # fallback para a variante da operação se não existir no
+                    # plano de contas (bases antigas), mantendo o balanço.
                     no_credit_taxes = usable.filtered("no_credit")
-                    account_taxes |= no_credit_taxes or usable.filtered(
-                        lambda t: not t.no_credit
-                    )
-                continue
+                    if no_credit_taxes:
+                        account_taxes |= no_credit_taxes
+                    elif deductible_op:
+                        account_taxes |= usable.filtered(lambda t: not t.no_credit)
+                    else:
+                        account_taxes |= usable.filtered(
+                            lambda t: not t.deductible and not t.no_credit
+                        )
+                    continue
             # Comportamento histórico (sem mapa de creditabilidade):
             # Atualiza os impostos contábeis relacionados aos impostos fiscais
             account_taxes |= taxes.filtered(

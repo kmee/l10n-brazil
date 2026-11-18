@@ -106,3 +106,110 @@ msgstr ""
 #: model:ir.model.fields,help:l10n_br_purchase_stock.field_l10n_br_fiscal_document_line__import_stock_move_id
 msgid "Pending receipt move of the purchase order line this imported document line corresponds to. Suggested when the order line has a single pending receipt move."
 msgstr ""
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock.field_account_move_line__purchase_ordered_qty
+msgid "Ordered Quantity"
+msgstr ""
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,help:l10n_br_purchase_stock.field_account_move_line__purchase_ordered_qty
+msgid "Quantity of the purchase order line this vendor bill line is linked to, in the unit of the bill line."
+msgstr ""
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock.field_account_move_line__purchase_received_qty
+msgid "Received Quantity"
+msgstr ""
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,help:l10n_br_purchase_stock.field_account_move_line__purchase_received_qty
+msgid "Quantity received for the purchase order line (done receipts, less the returns), in the unit of the bill line."
+msgstr ""
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock.field_account_move_line__purchase_price_unit
+msgid "Order Unit Price"
+msgstr ""
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,help:l10n_br_purchase_stock.field_account_move_line__purchase_price_unit
+msgid "Unit price of the purchase order line, in the unit and in the currency of the bill line."
+msgstr ""
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock.field_account_move_line__purchase_qty_difference
+msgid "Quantity Difference"
+msgstr ""
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,help:l10n_br_purchase_stock.field_account_move_line__purchase_qty_difference
+msgid "Billed quantity minus the received quantity."
+msgstr ""
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock.field_account_move_line__purchase_price_difference
+msgid "Price Difference"
+msgstr ""
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,help:l10n_br_purchase_stock.field_account_move_line__purchase_price_difference
+msgid "Unit price of the bill minus the unit price of the order."
+msgstr ""
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock.field_account_move__purchase_divergent
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock.field_account_move_line__purchase_divergent
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock.invoice_form_purchase_divergence
+msgid "Divergent"
+msgstr ""
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,help:l10n_br_purchase_stock.field_account_move_line__purchase_divergent
+msgid "The bill line differs from the order and the receipt by more than the tolerances of the company (price and quantity). It only warns: nothing is blocked."
+msgstr ""
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,help:l10n_br_purchase_stock.field_account_move__purchase_divergent
+msgid "Some line of the bill differs from its purchase order line or receipt by more than the tolerances of the company. It only warns: nothing is blocked."
+msgstr ""
+
+#. module: l10n_br_purchase_stock
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock.invoice_form_purchase_divergence
+msgid "Some line differs from the order or the receipt by more than the tolerance"
+msgstr ""
+
+#. module: l10n_br_purchase_stock
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock.invoice_search_purchase_divergence
+msgid "Divergent from the Order"
+msgstr ""
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock.field_res_company__purchase_price_tolerance
+msgid "Bill Price Tolerance (%)"
+msgstr ""
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,help:l10n_br_purchase_stock.field_res_company__purchase_price_tolerance
+msgid "A vendor bill line whose unit price differs from the one of the purchase order line by more than this percentage (of the order price) is marked as divergent. It only warns: nothing is blocked."
+msgstr ""
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock.field_res_company__purchase_quantity_tolerance
+msgid "Bill Quantity Tolerance (%)"
+msgstr ""
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.fields,help:l10n_br_purchase_stock.field_res_company__purchase_quantity_tolerance
+msgid "A vendor bill line whose quantity differs from the received quantity by more than this percentage (of the received quantity) is marked as divergent. It only warns: nothing is blocked."
+msgstr ""
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.constraint,message:l10n_br_purchase_stock.constraint_res_company_purchase_price_tolerance_positive
+msgid "The price tolerance of the vendor bill cannot be negative."
+msgstr ""
+
+#. module: l10n_br_purchase_stock
+#: model:ir.model.constraint,message:l10n_br_purchase_stock.constraint_res_company_purchase_quantity_tolerance_positive
+msgid "The quantity tolerance of the vendor bill cannot be negative."
+msgstr ""

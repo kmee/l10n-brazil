@@ -290,6 +290,7 @@
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_compras" />
         <field name="name">Compras de Ativo com ST</field>
         <field name="tax_icms_or_issqn">icms</field>
+        <field name="product_destination">fixed_asset</field>
         <field name="product_type">08</field>
         <field name="cfop_internal_id" ref="l10n_br_fiscal.cfop_1406" />
         <field name="cfop_external_id" ref="l10n_br_fiscal.cfop_2406" />
@@ -312,6 +313,7 @@
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_compras" />
         <field name="name">Compras para Uso e Consumo com ST</field>
         <field name="tax_icms_or_issqn">icms</field>
+        <field name="product_destination">use_consumption</field>
         <field name="product_type">07</field>
         <field name="cfop_internal_id" ref="l10n_br_fiscal.cfop_1407" />
         <field name="cfop_external_id" ref="l10n_br_fiscal.cfop_2407" />

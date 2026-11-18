@@ -749,8 +749,11 @@ class RegistroC100(models.Model):
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):
+        documents = declaration.fiscal_document_ids.filtered(
+            lambda document: document._has_sped_c100()
+        )
         return [
-            ("id", "in", declaration.fiscal_document_ids.ids),
+            ("id", "in", documents.ids),
             ("document_type_id.code", "in", ("01", "1B", "04", "55", "65")),
         ]
 

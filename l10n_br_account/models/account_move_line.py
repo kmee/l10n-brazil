@@ -282,6 +282,43 @@ class AccountMoveLine(models.Model):
         unlink_fiscal_lines.unlink()
         return result
 
+    def _fiscal_taxes_in_cost(self):
+        """Value of the taxes that stay in the cost of the product line.
+
+        A purchase line without the deductible taxes (the operation does not
+        have ``deductible_taxes``) books only the taxes the creditability map
+        (``_get_stock_cost_tax_map``) lets through: a tax classified as cost
+        has no account tax to carry its value (``account_taxes``), or only the
+        variant without credit, which books nothing. The product line takes
+        that value, otherwise the vendor bill would not balance: its total
+        comes from the fiscal fields.
+        """
+        self.ensure_one()
+        fiscal_line = self.fiscal_document_line_id
+        if (
+            not self.tax_ids
+            or not fiscal_line.product_destination
+            or not self.move_id.is_purchase_document(include_receipts=True)
+        ):
+            return 0.0
+        operation = self.move_id.fiscal_operation_id.with_company(self.company_id)
+        if operation.deductible_taxes:
+            return 0.0
+        value_fields = {
+            **fiscal_line._stock_cost_recoverable_domains(),
+            **fiscal_line._stock_cost_always_cost_domains(),
+        }
+        carried = {
+            tax.tax_group_id.fiscal_tax_group_id.tax_domain
+            for tax in self.tax_ids
+            if not tax.no_credit
+        }
+        absorbed = 0.0
+        for domain, verdict in fiscal_line._get_stock_cost_tax_map().items():
+            if verdict == "cost" and domain not in carried:
+                absorbed += fiscal_line[value_fields[domain]]
+        return absorbed
+
     @contextmanager
     def _sync_invoice(self, container):
         """
@@ -345,6 +382,7 @@ class AccountMoveLine(models.Model):
                                 line.amount_tax_included
                                 + line.amount_tax_not_included
                                 - line.amount_tax_withholding
+                                - line._fiscal_taxes_in_cost()
                             )
                     else:
                         if fiscal_operation.deductible_taxes:
@@ -359,6 +397,7 @@ class AccountMoveLine(models.Model):
                                 amount_total
                                 - line.amount_tax_included
                                 - line.amount_tax_not_included
+                                + line._fiscal_taxes_in_cost()
                                 if line.tax_ids
                                 else amount_total
                             )
@@ -494,6 +533,7 @@ class AccountMoveLine(models.Model):
         "cofins": ("cofins_value", "cofins_base"),
         "issqn": ("issqn_value", "issqn_base"),
         "ii": ("ii_value", "ii_base"),
+        "icmssn": ("icmssn_credit_value", "icmssn_base"),
         "ibs": ("ibs_value", "ibs_base"),
         "cbs": ("cbs_value", "cbs_base"),
     }

@@ -984,8 +984,11 @@ class RegistroC100(models.Model):
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):
+        documents = declaration.fiscal_document_ids.filtered(
+            lambda document: document._has_sped_c100()
+        )
         return [
-            ("id", "in", declaration.fiscal_document_ids.ids),
+            ("id", "in", documents.ids),
             ("document_type_id.code", "in", ("01", "1B", "04", "55", "65")),
         ]
 
@@ -1412,7 +1415,7 @@ class RegistroC170(models.Model):
             # of the 0190, never the ones of the supplier (nfe40_cProd, nfe40_uCom)
             "COD_ITEM": record.product_id.default_code or record.product_id.id,
             "DESCR_COMPL": record.name,
-            "QTD": record.fiscal_quantity,
+            "QTD": record.quantity,
             "UNID": record.uom_id.code,
             "VL_ITEM": record.price_gross or 0.0,
             "VL_DESC": record.discount_value,

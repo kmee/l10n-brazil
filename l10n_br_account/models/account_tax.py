@@ -140,6 +140,7 @@ class AccountTax(models.Model):
             tax_domain = tax.tax_group_id.fiscal_tax_group_id.tax_domain
             account_taxes_by_domain.update({tax.id: tax_domain})
 
+        counted_in_total = set()
         for account_tax in taxes_results["taxes"]:
             tax = self.filtered(lambda t: t.id == account_tax.get("id"))  # noqa: B023
             fiscal_tax = fiscal_taxes_results["taxes"].get(
@@ -166,8 +167,16 @@ class AccountTax(models.Model):
                     sign = -1
                     fiscal_tax["base"] = -fiscal_tax.get("base")
 
-                if not fiscal_tax.get("tax_include") and not tax.deductible:
+                # one entry per repartition line: a tax with two of them (the
+                # variant without credit, +100/-100) is still one tax, and its
+                # value joins the total once
+                if (
+                    not fiscal_tax.get("tax_include")
+                    and not tax.deductible
+                    and tax.id not in counted_in_total
+                ):
                     taxes_results["total_included"] += fiscal_tax.get("tax_value")
+                    counted_in_total.add(tax.id)
 
                 fiscal_group = tax.tax_group_id.fiscal_tax_group_id
                 tax_amount = fiscal_tax.get("tax_value", 0.0) * sum_repartition_factor

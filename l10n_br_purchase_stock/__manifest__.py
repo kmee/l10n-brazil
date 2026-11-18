@@ -19,6 +19,7 @@
         "views/document_view.xml",
         "views/res_config_settings.xml",
         "views/res_company_view.xml",
+        "views/account_move_view.xml",
     ],
     "demo": [
         "demo/purchase_order.xml",

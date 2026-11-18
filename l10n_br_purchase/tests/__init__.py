@@ -8,3 +8,4 @@ from . import test_purchase_report
 from . import test_search_filters
 from . import test_stock_cost_po
 from . import test_update_po_from_nfe
+from . import test_import_destination

@@ -13,15 +13,15 @@ _logger = logging.getLogger(__name__)
 
 @tagged("post_install", "-at_install")
 class TestSpedEntradaCreditoIcms(SpedEntradaCommon):
-    """Evidence: what the books say about the ICMS credit of a purchase for
-    use and consumption and of one for the fixed assets.
+    """The ICMS credit of a purchase for use and consumption and of one for
+    the fixed assets in the assessment (E110).
 
-    Neither purchase gives the full ICMS credit in the month of the entry: use
-    and consumption has no credit (LC 87/96, art. 33, I) and the fixed asset
-    only the 1/48 of the CIAP. These tests do not fix anything: they record, in
-    the log, the credit obtained in the C190 and in the assessment (E110) next
-    to the expected one, and only fail when the registers or the assessment are
-    not produced at all.
+    Neither purchase gives the ICMS credit in the month of the entry: use and
+    consumption has none (LC 87/1996, art. 33, I) and the fixed asset only the
+    1/48 of the CIAP, which the localization does not run yet, so the ICMS of
+    the asset stays in its cost. The vendor bill books no ICMS to recover and
+    the E110 carries no credit for them. The C190 is not part of this: it
+    still shows the ICMS of the document (120.00), and the test only records it.
     """
 
     def _purchase(self, operation_line, number):
@@ -71,16 +71,6 @@ class TestSpedEntradaCreditoIcms(SpedEntradaCommon):
         )
         return credit, assessment
 
-    def _evidence(self, label, obtained, expected):
-        verdict = "OK" if abs(obtained - expected) < 0.005 else "DIVERGENT"
-        _logger.info(
-            "EVIDENCE-H %s: obtained %.2f, expected %.2f (%s)",
-            label,
-            obtained,
-            expected,
-            verdict,
-        )
-
     def _books(self, move):
         declaration = self._declaration(
             "efd_icms_ipi", date(2026, 7, 1), date(2026, 7, 31)
@@ -89,19 +79,24 @@ class TestSpedEntradaCreditoIcms(SpedEntradaCommon):
         self.assertTrue(c190, "the C190 of the purchase is generated")
         return sum(float(rec["VL_ICMS"].replace(",", ".") or 0) for rec in c190)
 
-    def _check(self, operation_line, number, expected_c190, expected_e110):
+    def _check(self, operation_line, number):
         move = self._purchase(operation_line, number)
+        icms_lines = move.line_ids.filtered(
+            lambda line: line.tax_line_id.tax_group_id.fiscal_tax_group_id.tax_domain
+            == "icms"
+        )
+        self.assertFalse(icms_lines, "the vendor bill books no ICMS to recover")
         icms_in_c190 = self._books(move)
+        _logger.info("%s C190 VL_ICMS: %.2f", operation_line, icms_in_c190)
         credit, assessment = self._assessment_credit()
         self.assertTrue(assessment, "the assessment is computed")
-        self._evidence(f"{operation_line} C190 VL_ICMS", icms_in_c190, expected_c190)
-        self._evidence(f"{operation_line} E110 credits", credit, expected_e110)
+        self.assertAlmostEqual(credit, 0.0, msg=f"{operation_line} E110 credits")
 
     def test_use_and_consumption_purchase_credit(self):
-        """Expected: no ICMS credit in the C190 nor in the E110."""
-        self._check("fo_compras_compras_uso_consumo", "201", 0.0, 0.0)
+        """No ICMS credit in the E110."""
+        self._check("fo_compras_compras_uso_consumo", "201")
 
     def test_fixed_asset_purchase_credit(self):
-        """Expected: 1/48 of the ICMS in the month (CIAP), never the whole
-        amount; the C190 still shows the ICMS of the document (120.00)."""
-        self._check("fo_compras_compras_ativo", "202", 120.0, 2.5)
+        """No ICMS credit in the E110 until the CIAP exists: the ICMS of the
+        asset stays in its cost, never the whole amount as a credit."""
+        self._check("fo_compras_compras_ativo", "202")

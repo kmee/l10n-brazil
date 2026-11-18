@@ -3,3 +3,5 @@ from . import test_bloco_e
 from . import test_sped_entrada
 from . import test_sped_entrada_credito_icms
 from . import test_sped_entrada_correcoes
+from . import test_sped_company_context
+from . import test_sped_translations

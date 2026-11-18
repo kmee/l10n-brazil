@@ -40,20 +40,26 @@ class TestSpedEfdIcmsIpiEntrada(EntradaHelpers, SpedEntradaCommon):
         denied, _line = self._entry_document(state_edoc="denegada")
         unused, _line = self._entry_document(state_edoc="inutilizada")
         complementary, _line = self._entry_document(edoc_purpose="2")
-        c100 = self._c100(self._declaration_july())
+        declaration = self._declaration_july()
+        c100 = self._c100(declaration)
         self.assertEqual(
             {
                 doc.document_number: c100[doc.document_number]["COD_SIT"]
-                for doc in (regular, cancelled, denied, unused, complementary)
+                for doc in (regular, cancelled, complementary)
             },
             {
                 regular.document_number: "00",
                 cancelled.document_number: "02",
-                denied.document_number: "04",
-                unused.document_number: "05",
                 complementary.document_number: "06",
             },
         )
+        # the codes 04 and 05 were discontinued in the Guia Pratico from
+        # 01/2023: a denied note and an unused number have no C100
+        self.assertNotIn(denied.document_number, c100)
+        self.assertNotIn(unused.document_number, c100)
+        text = declaration._generate_sped_text()
+        self.assertNotIn(denied.document_key, text)
+        self.assertNotIn(unused.document_key, text)
 
     def test_c100_of_a_cancelled_document_only_has_what_the_guide_allows(self):
         cancelled, _line = self._entry_document(state_edoc="cancelada")
@@ -139,6 +145,27 @@ class TestSpedEfdIcmsIpiEntrada(EntradaHelpers, SpedEntradaCommon):
         self.assertIn(
             line.uom_id.code,
             [rec["UNID"] for rec in self._sped_records(declaration, "0190")],
+        )
+
+    def test_c170_quantity_is_the_commercial_one_of_the_unit(self):
+        """QTD is in the UNID of the line (the 0190): 10 boxes, not the 120
+        units of the tax unit the supplier declared next to them."""
+        dozen = self.env.ref("uom.product_uom_dozen")
+        dozen.code = "DZ"
+        self._entry_document(
+            line_vals={
+                "quantity": 10,
+                "uom_id": dozen.id,
+                "uot_id": self.env.ref("uom.product_uom_unit").id,
+                "fiscal_quantity": 120.0,
+            }
+        )
+        declaration = self._declaration_july()
+        c170 = self._c170(declaration)
+        self.assertEqual(self._number(c170["QTD"]), 10.0)
+        self.assertEqual(c170["UNID"], "DZ")
+        self.assertIn(
+            "DZ", [rec["UNID"] for rec in self._sped_records(declaration, "0190")]
         )
 
     def test_c170_and_c190_carry_the_entry_cfop(self):
