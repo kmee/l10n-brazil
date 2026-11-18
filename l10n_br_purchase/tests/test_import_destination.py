@@ -154,3 +154,29 @@ class TestImportDestination(TransactionCase):
         )
         bill = self._bill(document)
         self.assertFalse(bill.has_unconfirmed_import_origin)
+
+    def test_the_draft_bill_follows_the_confirmed_origin(self):
+        """Confirming the origins after the bill was generated brings the new
+        destination into the bill that is still a draft."""
+        document = self._document()
+        bill = self._bill(document)
+        self.assertTrue(self._icms_lines(bill), "the default destination credits")
+        document.action_confirm_import_origins()
+        self.assertEqual(
+            bill.invoice_line_ids.fiscal_operation_line_id, self.consumption
+        )
+        self.assertFalse(self._icms_lines(bill), "no ICMS credit for consumption")
+        self.assertAlmostEqual(sum(bill.line_ids.mapped("balance")), 0.0)
+        for line in bill.invoice_line_ids:
+            self.assertAlmostEqual(line.balance, line.fiscal_amount_total)
+
+    def test_a_posted_bill_is_not_changed(self):
+        document = self._document()
+        bill = self._bill(document)
+        credit = sum(self._icms_lines(bill).mapped("debit"))
+        self.assertTrue(credit)
+        bill.invoice_date = bill.date
+        bill.action_post()
+        self.assertEqual(bill.state, "posted")
+        document.action_confirm_import_origins()
+        self.assertEqual(sum(self._icms_lines(bill).mapped("debit")), credit)

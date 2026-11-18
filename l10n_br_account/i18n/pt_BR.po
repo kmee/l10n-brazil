@@ -9759,3 +9759,13 @@ msgstr "UF do Parceiro"
 #, python-format
 msgid "The fiscal document %(document)s already has the invoice %(invoice)s. Open it instead of generating another one, or cancel it first."
 msgstr "O documento fiscal %(document)s já tem a fatura %(invoice)s. Abra-a em vez de gerar outra, ou cancele-a primeiro."
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_fiscal_document__has_active_move
+msgid "Has Active Invoice"
+msgstr "Tem fatura ativa"
+
+#. module: l10n_br_account
+#: model:ir.model.fields,help:l10n_br_account.field_l10n_br_fiscal_document__has_active_move
+msgid "Technical: the document has an invoice that is not cancelled. A cancelled invoice frees the document to be invoiced again, so it does not count here (the invoice count still shows it)."
+msgstr "Técnico: o documento tem uma fatura que não está cancelada. Uma fatura cancelada libera o documento para ser faturado de novo, por isso não conta aqui (o contador de faturas ainda a mostra)."

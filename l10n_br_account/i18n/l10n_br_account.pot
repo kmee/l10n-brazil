@@ -9334,3 +9334,13 @@ msgstr ""
 #, python-format
 msgid "The fiscal document %(document)s already has the invoice %(invoice)s. Open it instead of generating another one, or cancel it first."
 msgstr ""
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_fiscal_document__has_active_move
+msgid "Has Active Invoice"
+msgstr ""
+
+#. module: l10n_br_account
+#: model:ir.model.fields,help:l10n_br_account.field_l10n_br_fiscal_document__has_active_move
+msgid "Technical: the document has an invoice that is not cancelled. A cancelled invoice frees the document to be invoiced again, so it does not count here (the invoice count still shows it)."
+msgstr ""

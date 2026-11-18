@@ -509,13 +509,6 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_br_sped_base/models/sped_declaration.py:0
 #, python-format
-msgid "Pulled from Odoo"
-msgstr ""
-
-#. module: l10n_br_sped_base
-#. odoo-python
-#: code:addons/l10n_br_sped_base/models/sped_declaration.py:0
-#, python-format
 msgid "Documents left out for lack of an access key"
 msgstr ""
 
@@ -524,6 +517,7 @@ msgstr ""
 #: code:addons/l10n_br_sped_base/models/sped_declaration.py:0
 #, python-format
 msgid "Pulled from Odoo"
+msgstr ""
 
 #. module: l10n_br_sped_base
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__203

@@ -15,6 +15,7 @@ from ..constants.fiscal import (
     FISCAL_IN,
     FISCAL_TAX_ID_FIELDS,
     ICMS_CST_NO_CREDIT,
+    ICMSSN_CST_NO_CREDIT,
     IPI_CST_NO_CREDIT,
     PIS_COFINS_CST_NO_CREDIT,
     PRODUCT_DESTINATION,
@@ -1129,6 +1130,21 @@ class FiscalDocumentLineMixin(models.AbstractModel):
             TAX_DOMAIN_PIS: "pis_value",
             TAX_DOMAIN_COFINS: "cofins_value",
             TAX_DOMAIN_IPI: "ipi_value",
+            # the credit of the supplier of the Simples Nacional (CSOSN 101, 201)
+            TAX_DOMAIN_ICMS_SN: "icmssn_credit_value",
+        }
+
+    def _stock_cost_always_cost_domains(self):
+        """Impostos que NUNCA geram crédito na compra: ICMS-ST e FCP-ST.
+
+        São o que o fornecedor cobra "por fora" e integram sempre o custo de
+        estoque (``_stock_cost_add_value_fields``): o razão os trata como custo
+        em qualquer destinação, alinhado ao custo de estoque.
+        """
+        self.ensure_one()
+        return {
+            TAX_DOMAIN_ICMS_ST: "icmsst_value",
+            TAX_DOMAIN_ICMS_FCP_ST: "icmsfcpst_value",
         }
 
     def _stock_cost_cst_blocks_credit(self, domain):
@@ -1143,6 +1159,8 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         self.ensure_one()
         if domain == TAX_DOMAIN_ICMS:
             return self.icms_cst_id.code in ICMS_CST_NO_CREDIT
+        if domain == TAX_DOMAIN_ICMS_SN:
+            return self.icms_cst_id.code in ICMSSN_CST_NO_CREDIT
         if domain == TAX_DOMAIN_IPI:
             return self.ipi_cst_id.code in IPI_CST_NO_CREDIT
         if domain == TAX_DOMAIN_PIS:
@@ -1184,16 +1202,23 @@ class FiscalDocumentLineMixin(models.AbstractModel):
             and supplier
             and supplier.tax_framework in TAX_FRAMEWORK_SIMPLES_ALL
         )
-        for tax in self.fiscal_tax_ids:
-            domain = tax.tax_domain
+        taxed_domains = [
+            (tax.tax_domain, tax.tax_group_id) for tax in self.fiscal_tax_ids
+        ]
+        if self.icmssn_credit_value and TAX_DOMAIN_ICMS_SN not in [
+            domain for domain, _group in taxed_domains
+        ]:
+            # the credit highlighted by the supplier counts even when the line
+            # does not carry the ICMS SN tax record
+            taxed_domains.append((TAX_DOMAIN_ICMS_SN, None))
+        for domain, group in taxed_domains:
             if domain not in recoverable:
                 continue
-            group = tax.tax_group_id
             # Não recuperável por natureza, ou empresa no Simples, ou destinação
             # sem direito a crédito, ou fornecedor Simples (ICMS/IPI) →
             # integra o custo.
             if (
-                not group.credit_stock_cost
+                (domain != TAX_DOMAIN_ICMS_SN and not group.credit_stock_cost)
                 or company.tax_framework in TAX_FRAMEWORK_SIMPLES_ALL
                 or destination not in PRODUCT_DESTINATION_CREDIT
                 or (supplier_is_simples and domain in (TAX_DOMAIN_ICMS, TAX_DOMAIN_IPI))
@@ -1215,8 +1240,11 @@ class FiscalDocumentLineMixin(models.AbstractModel):
                     result[domain] = "credit"
                 else:
                     result[domain] = "cost"
-            else:  # ICMS
+            else:  # ICMS and the credit of the Simples Nacional supplier
                 result[domain] = "credit"
+        for tax in self.fiscal_tax_ids:
+            if tax.tax_domain in self._stock_cost_always_cost_domains():
+                result[tax.tax_domain] = "cost"
         return result
 
     @api.depends(
@@ -1266,12 +1294,12 @@ class FiscalDocumentLineMixin(models.AbstractModel):
                 if tax_map.get(domain) == "credit":
                     cost_total -= line[recoverable[domain]]
 
-            # CSOSN 101: fornecedor do Simples que transfere crédito parcial
-            # de ICMS (art. 23, §1º, LC 123/2006) — o crédito permitido na NF
-            # reduz o custo de aquisição. Só vale para COMPRADOR em regime
-            # normal: empresa do Simples não aproveita crédito (e nela o
-            # campo reflete o crédito que ELA transferiria numa venda).
-            if line.company_id.tax_framework not in TAX_FRAMEWORK_SIMPLES_ALL:
+            # CSOSN 101 e 201: fornecedor do Simples que transfere crédito
+            # (art. 23, §§ 1º e 2º, LC 123/2006) — o crédito permitido na NF
+            # reduz o custo de aquisição quando o mapa o libera (comprador em
+            # regime normal e destinação com direito a crédito); caso contrário
+            # o crédito integra o custo.
+            if tax_map.get(TAX_DOMAIN_ICMS_SN) == "credit":
                 cost_total -= line.icmssn_credit_value
 
             # Desoneração de ICMS: o valor desonerado não é pago pelo

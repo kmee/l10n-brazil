@@ -304,7 +304,10 @@ class AccountMoveLine(models.Model):
         operation = self.move_id.fiscal_operation_id.with_company(self.company_id)
         if operation.deductible_taxes:
             return 0.0
-        value_fields = fiscal_line._stock_cost_recoverable_domains()
+        value_fields = {
+            **fiscal_line._stock_cost_recoverable_domains(),
+            **fiscal_line._stock_cost_always_cost_domains(),
+        }
         carried = {
             tax.tax_group_id.fiscal_tax_group_id.tax_domain
             for tax in self.tax_ids
@@ -530,6 +533,7 @@ class AccountMoveLine(models.Model):
         "cofins": ("cofins_value", "cofins_base"),
         "issqn": ("issqn_value", "issqn_base"),
         "ii": ("ii_value", "ii_base"),
+        "icmssn": ("icmssn_credit_value", "icmssn_base"),
         "ibs": ("ibs_value", "ibs_base"),
         "cbs": ("cbs_value", "cbs_base"),
     }

@@ -1,6 +1,8 @@
 # Copyright (C) 2013  Renato Lima - Akretion
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
+from lxml import etree
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
@@ -180,6 +182,40 @@ class DocumentLine(models.Model):
         "inconsistent with the actual issuer/company geography. Useful to "
         "spot supplier mistakes before they pollute the SPED books.",
     )
+
+    @api.model
+    def _get_view(self, view_id=None, view_type="form", **options):
+        arch, view = super()._get_view(view_id, view_type, **options)
+        if view_type == "form":
+            arch = self._add_entry_cst_fields(arch)
+        return arch, view
+
+    @api.model
+    def _add_entry_cst_fields(self, arch):
+        """The CST of the entry of the company, read only, right after the CST
+        of the file on the tabs of the taxes.
+
+        They are fields of this model only (an imported entry), while the form
+        of the fiscal taxes is a template shared by every model that carries the
+        fiscal mixin (purchase, sale, stock, invoice lines), where they do not
+        exist: they are added here, not in the shared template.
+        """
+        for tax in ("ipi", "pis", "cofins"):
+            anchors = arch.xpath(
+                f".//page[@name='{tax}']//field[@name='{tax}_cst_code']"
+            )
+            name = f"entry_{tax}_cst_id"
+            if not anchors or arch.xpath(f".//field[@name='{name}']"):
+                continue
+            field = etree.Element(
+                "field",
+                name=name,
+                readonly="1",
+                attrs=f"{{'invisible': [('{name}', '=', False)]}}",
+                options="{'no_create': True, 'no_open': True}",
+            )
+            anchors[0].addnext(field)
+        return arch
 
     # What the supplier declared (ipi_cst_id, pis_cst_id, cofins_cst_id: the CSTs
     # of the file, never touched) and what the company books for the entry are

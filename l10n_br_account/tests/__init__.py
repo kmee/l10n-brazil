@@ -17,3 +17,6 @@ from . import test_search_filters
 from . import test_bill_matching_reference
 from . import test_imported_line_taxes
 from . import test_purchase_cost_taxes
+from . import test_view_fields
+from . import test_simples_supplier_credit
+from . import test_icmsst_cost

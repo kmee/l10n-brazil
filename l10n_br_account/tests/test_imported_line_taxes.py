@@ -21,7 +21,7 @@ class TestImportedLineTaxes(AccountMoveBRCommon):
         cls.operation = cls.env.ref("l10n_br_fiscal.fo_compras")
         cls.operation_line = cls.env.ref("l10n_br_fiscal.fo_compras_compras")
 
-    def _import_document_with_taxes_from_a_file(self):
+    def _import_document_with_taxes_from_a_file(self, line_vals=None):
         document = self.env["l10n_br_fiscal.document"].create(
             {
                 "fiscal_operation_id": self.operation.id,
@@ -53,6 +53,7 @@ class TestImportedLineTaxes(AccountMoveBRCommon):
                 "ipi_base": 3900.0,
                 "ipi_percent": 9.75,
                 "ipi_value": 380.25,
+                **(line_vals or {}),
             }
         )
         move_form = (
@@ -77,11 +78,15 @@ class TestImportedLineTaxes(AccountMoveBRCommon):
         self.assertEqual(self._tax_amounts(move), {"icms": 468.0, "ipi": 380.25})
         self.assertAlmostEqual(sum(move.line_ids.mapped("balance")), 0.0)
 
-    def test_a_supplier_of_the_simples_passes_no_credit(self):
-        """The Simples supplier does not transfer the credit (LC 123/2006,
-        art. 23): the taxes of the file stay in the cost of the product line."""
+    def test_a_supplier_of_the_simples_without_credit_passes_no_credit(self):
+        """CSOSN 102 (and 103, 300, 400, 500) passes no credit (LC 123/2006,
+        art. 23): the taxes of the file stay in the cost of the product line.
+        The CSOSN 101 and 201, that pass the credit, are in
+        test_simples_supplier_credit."""
         self.partner_a.tax_framework = TAX_FRAMEWORK_SIMPLES
-        _document, move = self._import_document_with_taxes_from_a_file()
+        _document, move = self._import_document_with_taxes_from_a_file(
+            {"icms_cst_id": self.env.ref("l10n_br_fiscal.cst_icmssn_102").id}
+        )
         self.assertEqual(self._tax_amounts(move).get("icms", 0.0), 0.0)
         self.assertEqual(self._tax_amounts(move).get("ipi", 0.0), 0.0)
         self.assertAlmostEqual(sum(move.line_ids.mapped("balance")), 0.0)

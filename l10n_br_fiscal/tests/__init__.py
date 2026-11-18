@@ -38,3 +38,4 @@ from . import (
     test_document_line_report,
 )
 from . import test_entry_cst_screen
+from . import test_migration_st_destination
