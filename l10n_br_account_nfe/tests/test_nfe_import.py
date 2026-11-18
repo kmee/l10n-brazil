@@ -77,6 +77,8 @@ class NFeImportTest(TransactionCase):
             # depend on the installed purchase/stock modules and demo data
             del line["match_source_id"]
             del line["match_source_available"]
+            # the confirmation of the suggested product is a column of the grid
+            del line["product_confirmed"]
             del line["match_source_product_matched"]
             del line["company_id"]
             del line["issuer_partner_id"]
@@ -518,7 +520,8 @@ class NFeImportTest(TransactionCase):
             # the origin lives on the persisted line of the document and the
             # bill follows it
             self.assertEqual(fiscal_line.import_purchase_line_id, order.order_line)
-            self.assertEqual(fiscal_line.import_origin_state, "suggested")
+            # chosen by the operator in the grid: a decision, not a suggestion
+            self.assertEqual(fiscal_line.import_origin_state, "resolved")
             self.assertEqual(matched.purchase_line_id, order.order_line)
         # the canonical reference, i.e. the value the matching screen displays
         expr = self.env["account.move.line"]._get_bill_matching_reference_sql("aml")

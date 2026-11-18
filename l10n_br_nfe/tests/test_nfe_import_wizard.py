@@ -269,6 +269,133 @@ class NFeImportWizardTest(TransactionCase):
         self.assertEqual(document.fiscal_line_ids[0].import_state, "pending")
         self.assertEqual(document.import_state, "pending")
 
+    # ------------------------------------------------------------------
+    # What the import resolves by itself, and what waits for a person
+    # ------------------------------------------------------------------
+
+    def _supplierinfo(self, partner, code="E-COM11"):
+        return self.env["product.supplierinfo"].search(
+            [("partner_id", "=", partner.id), ("product_code", "=", code)]
+        )
+
+    def _import_xml_1(self):
+        self._prepare_wizard(self.xml_1)
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.wizard._import_edoc()
+        return self.wizard.document_id
+
+    def test_a_product_guessed_by_the_import_is_only_suggested(self):
+        """A product found by the internal reference, the barcode or the name
+        is a guess: the line stays matched and the import teaches nothing to
+        the supplier de-para until a person confirms it."""
+        product = self._get_xml_product()
+        issuer = self._create_xml_issuer_supplier()
+        self._supplierinfo(issuer).unlink()
+        document = self._import_xml_1()
+        line = document.fiscal_line_ids[0]
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.import_state, "matched")
+        self.assertFalse(self._supplierinfo(document.partner_id))
+        self.assertTrue(document.import_pending_count)
+        # the confirmation is what resolves the line and teaches the de-para
+        line.action_resolve_line()
+        self.assertEqual(line.import_state, "resolved")
+        self.assertTrue(self._supplierinfo(document.partner_id))
+
+    def test_a_product_of_the_supplier_depara_is_resolved(self):
+        """The de-para already learned for this same supplier needs no review."""
+        product = self._get_xml_product()
+        self._prepare_wizard(self.xml_1)
+        issuer = self.wizard.issuer_partner_id
+        self.env["product.supplierinfo"].create(
+            {
+                "partner_id": issuer.id,
+                "product_tmpl_id": product.product_tmpl_id.id,
+                "product_code": "E-COM11",
+                "product_name": "Cabinet with Doors",
+            }
+        )
+        self._prepare_wizard(self.xml_1)
+        self.assertEqual(self.wizard.imported_products_ids.product_source, "supplier")
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.wizard._import_edoc()
+        line = self.wizard.document_id.fiscal_line_ids[0]
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.import_state, "resolved")
+
+    def test_the_de_para_of_another_supplier_is_not_trusted(self):
+        """The same supplier code in the de-para of ANOTHER supplier is a
+        coincidence: it is a guess here."""
+        product = self._get_xml_product()
+        self._prepare_wizard(self.xml_1)
+        issuer = self.wizard.issuer_partner_id
+        self._supplierinfo(issuer).unlink()
+        other = self.env["res.partner"].create({"name": "Another supplier"})
+        self.env["product.supplierinfo"].create(
+            {
+                "partner_id": other.id,
+                "product_tmpl_id": product.product_tmpl_id.id,
+                "product_code": "E-COM11",
+                "product_name": "Cabinet with Doors",
+            }
+        )
+        document = self._import_xml_1()
+        line = document.fiscal_line_ids[0]
+        self.assertEqual(line.import_state, "matched")
+        self.assertFalse(self._supplierinfo(document.partner_id))
+
+    def test_the_product_chosen_in_the_grid_is_resolved_and_learned(self):
+        """What the person chose in the grid is a human decision."""
+        self._get_xml_product()
+        chosen = self.env["product.product"].create(
+            {"name": "Chosen in the grid", "purchase_ok": True}
+        )
+        self._prepare_wizard(self.xml_1)
+        self._supplierinfo(self.wizard.issuer_partner_id).unlink()
+        self.wizard.imported_products_ids.product_id = chosen
+        self.assertEqual(self.wizard.imported_products_ids.product_source, "user")
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.wizard._import_edoc()
+        document = self.wizard.document_id
+        line = document.fiscal_line_ids[0]
+        self.assertEqual(line.product_id, chosen)
+        self.assertEqual(line.import_state, "resolved")
+        self.assertTrue(self._supplierinfo(document.partner_id))
+
+    def test_confirming_the_suggestion_in_the_grid_counts_as_a_decision(self):
+        product = self._get_xml_product()
+        self._prepare_wizard(self.xml_1)
+        self._supplierinfo(self.wizard.issuer_partner_id).unlink()
+        self.wizard.imported_products_ids.product_confirmed = True
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.wizard._import_edoc()
+        document = self.wizard.document_id
+        line = document.fiscal_line_ids[0]
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.import_state, "resolved")
+        self.assertTrue(self._supplierinfo(document.partner_id))
+
+    def test_the_zip_never_resolves_a_guess(self):
+        """Nobody sees the grid of a zip: what is guessed waits for review."""
+        product = self._get_xml_product()
+        issuer = self._create_xml_issuer_supplier()
+        self._supplierinfo(issuer).unlink()
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as archive:
+            archive.writestr("nota1.xml", self.xml_1)
+        wizard = self.env["l10n_br_fiscal.document.import.wizard"].create(
+            {
+                "company_id": self.env.ref("base.main_company").id,
+                "file": base64.b64encode(buffer.getvalue()),
+                "fiscal_operation_id": self.env.ref("l10n_br_fiscal.fo_compras").id,
+            }
+        )
+        documents = wizard._import_edoc_batch()
+        line = documents.fiscal_line_ids[0]
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.import_state, "matched")
+        self.assertFalse(self._supplierinfo(documents.partner_id))
+
     def test_zip_batch_import(self):
         """A zip archive with several XMLs lands as several persisted
         documents waiting for review."""

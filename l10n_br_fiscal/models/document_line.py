@@ -135,7 +135,7 @@ class DocumentLine(models.Model):
         comodel_name="uom.uom",
         string="Import UoM",
         copy=False,
-        help="Internal UoM equivalent to the supplier unit of the imported " "line.",
+        help="Internal UoM equivalent to the supplier unit of the imported line.",
     )
 
     import_uom_factor = fields.Float(
@@ -385,7 +385,7 @@ class DocumentLine(models.Model):
             line._apply_import_depara()
 
     def _apply_import_depara(
-        self, product=None, uom=None, factor=None, fiscal_operation=None
+        self, product=None, uom=None, factor=None, fiscal_operation=None, confirm=True
     ):
         """Apply the reviewed de-para on a line imported from a fiscal file.
 
@@ -395,6 +395,11 @@ class DocumentLine(models.Model):
         multiplied by the factor, the unit price divided by it), applies the
         fiscal operation of the line and persists the supplier info
         learning. The original file stays untouched as an attachment.
+
+        With ``confirm=False`` the product is only a suggestion (it was found
+        by the import through the code, the barcode or the name): it is set on
+        the line, which stays ``matched``, and nothing is learned until a
+        person confirms it (``action_resolve_line``).
         """
         self.ensure_one()
         if not self._is_imported():
@@ -416,7 +421,7 @@ class DocumentLine(models.Model):
             )
 
         vals = {
-            "import_state": "resolved",
+            "import_state": "resolved" if confirm else "matched",
             "import_uom_factor": factor,
         }
         if product:
@@ -430,7 +435,7 @@ class DocumentLine(models.Model):
         if fiscal_operation:
             vals["fiscal_operation_id"] = fiscal_operation.id
         self.write(vals)
-        if product:
+        if product and confirm:
             self._find_or_create_supplierinfo()
         return True
 

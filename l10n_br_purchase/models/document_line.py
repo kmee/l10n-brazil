@@ -223,17 +223,19 @@ class FiscalDocumentLine(models.Model):
             )
         )
 
-    def _apply_import_match_source(self, source):
-        """The match source of the import wizard grid becomes a suggestion on
-        the line: the person confirms it in the review of the document."""
-        result = super()._apply_import_match_source(source)
+    def _apply_import_match_source(self, source, trusted=False):
+        """The match source of the import wizard grid becomes the origin of the
+        line: resolved when the operator chose it (or the supplier declared it),
+        otherwise a suggestion the person confirms in the review of the
+        document."""
+        result = super()._apply_import_match_source(source, trusted=trusted)
         if source.source_type == "po_line":
             order_line = self.env["purchase.order.line"].browse(source.id).exists()
             if order_line:
                 self.write(
                     {
                         "import_purchase_line_id": order_line.id,
-                        "import_origin_state": "suggested",
+                        "import_origin_state": "resolved" if trusted else "suggested",
                     }
                 )
         return result
