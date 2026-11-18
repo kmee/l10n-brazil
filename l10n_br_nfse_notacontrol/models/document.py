@@ -13,11 +13,22 @@ from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     SITUACAO_EDOC_AUTORIZADA,
+    SITUACAO_EDOC_CANCELADA,
     SITUACAO_EDOC_REJEITADA,
 )
 from odoo.addons.l10n_br_nfse_nacional.models.document import BRAZIL_TZ
 
 SIMULATED = "SIMULADO"
+
+# NFS-e events that take the note out of circulation: the queries return a
+# cancelled note with cStat 100, only the event list shows the cancellation
+# (e101101 cancellation, e105102 cancellation by substitution, e105104
+# cancellation granted by tax analysis)
+CANCEL_EVENTS = {
+    "e101101": "Cancelamento de NFS-e",
+    "e105102": "Cancelamento de NFS-e por Substituição",
+    "e105104": "Cancelamento de NFS-e Deferido por Análise Fiscal",
+}
 
 # DPS 1.01 (NotaControl layout of Goiania, schema_v101.xsd)
 DPS_VERSION = "1.01"
@@ -320,9 +331,7 @@ class L10nBrFiscalDocument(models.Model):
                     % {"label": SIMULATED}
                 )
             return
-        mensagens = retorno.mensagens or self._notacontrol_response_messages(
-            retorno.xml_resposta
-        )
+        mensagens = retorno.mensagens
         message = "\n".join(
             " - ".join(p for p in (m.codigo, m.mensagem, m.correcao) if p)
             for m in mensagens
@@ -344,29 +353,6 @@ class L10nBrFiscalDocument(models.Model):
         )
         self.message_post(body=_("NFS-e rejected by NotaControl:\n%s") % message)
         self._change_state(SITUACAO_EDOC_REJEITADA)
-
-    @staticmethod
-    def _notacontrol_response_messages(xml_resposta):
-        """The provider misses ListaMensagemRetorno when the answer comes as
-        RecepcionarLoteDpsSincronoResponse/EnviarLoteDpsSincronoResposta
-        (no *Result wrapper): read it here so the rejection shows its code."""
-        if not xml_resposta:
-            return []
-        if isinstance(xml_resposta, bytes):
-            xml_resposta = xml_resposta.decode("utf-8", "replace")
-        xml_resposta = xml_resposta.lstrip("\ufeff").strip()
-        try:
-            doc = etree.fromstring(xml_resposta.encode("utf-8"))
-        except etree.XMLSyntaxError:
-            return []
-        return [
-            SimpleNamespace(
-                codigo=m.findtext(f"{{{NS}}}Codigo") or "",
-                mensagem=m.findtext(f"{{{NS}}}Mensagem") or "",
-                correcao=m.findtext(f"{{{NS}}}Correcao") or "",
-            )
-            for m in doc.iter(f"{{{NS}}}MensagemRetorno")
-        ]
 
     def _adn_cancel(self, justificative, motive):
         self.ensure_one()
@@ -403,3 +389,55 @@ class L10nBrFiscalDocument(models.Model):
             file_response_xml=retorno.xml_resposta,
         )
         return True
+
+    def _adn_check_cancellation_status(self):
+        """The NFS-e of a NotaControl city is not at the ADN: ask the city
+        webservice and follow a cancellation made outside Odoo (portal,
+        substitution, tax analysis)."""
+        self.ensure_one()
+        if not self.company_id.nfse_notacontrol:
+            return super()._adn_check_cancellation_status()
+        if (
+            self.state_edoc != SITUACAO_EDOC_AUTORIZADA
+            or not self.nfse_number
+            or self.company_id.nfse_notacontrol_simulated
+        ):
+            return
+        retorno = self._notacontrol_provider().consultar_nfse_servico_prestado(
+            numero=self.nfse_number
+        )
+        if not retorno.sucesso:
+            raise UserError(
+                _("NFS-e query rejected by NotaControl:\n%s") % retorno.mensagem
+            )
+        for evento in retorno.eventos:
+            if evento["chave"] == self.nfse_key and evento["tipo"] in CANCEL_EVENTS:
+                self._notacontrol_register_cancellation(evento, retorno)
+                return
+
+    def _notacontrol_register_cancellation(self, evento, retorno):
+        self.ensure_one()
+        description = CANCEL_EVENTS[evento["tipo"]]
+        event = self.event_ids.create_event_save_xml(
+            company_id=self.company_id,
+            environment=self._nfse_nacional_event_env(),
+            event_type="2",
+            xml_file=retorno.xml_resposta,
+            document_id=self,
+        )
+        self.cancel_event_id = event
+        event.set_done(
+            status_code=evento["tipo"],
+            response=description,
+            protocol_date=fields.Datetime.now(),
+            protocol_number=False,
+            file_response_xml=retorno.xml_resposta,
+        )
+        self.message_post(
+            body=_(
+                "NFS-e cancelled at NotaControl (%(event)s: %(description)s), "
+                "detected by the status query."
+            )
+            % {"event": evento["tipo"], "description": description}
+        )
+        self._change_state(SITUACAO_EDOC_CANCELADA)

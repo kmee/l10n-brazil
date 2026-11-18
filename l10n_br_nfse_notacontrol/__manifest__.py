@@ -12,7 +12,7 @@
     "development_status": "Alpha",
     "maintainers": ["mileo"],
     "external_dependencies": {
-        "python": ["erpbrasil-edoc>=3.3.0", "erpbrasil-assinatura>=1.9.0"]
+        "python": ["erpbrasil-edoc>=3.3.2", "erpbrasil-assinatura>=1.9.0"]
     },
     "depends": ["l10n_br_nfse_nacional"],
     "data": ["views/res_company_view.xml"],

@@ -205,6 +205,9 @@ class TestNfseNotaControl(TransactionCase):
         self.assertEqual(self.doc.nfse10_dCompet, "2026-09-24")
 
     def test_rejection_read_from_soap_answer(self):
+        # real ISSNet shape: <XResponse><XResposta>, no <XResult> wrapper
+        from erpbrasil.edoc.provedores.notacontrol import NotaControl
+
         answer = (
             '\ufeff<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">'
             f'<s:Body><RecepcionarLoteDpsSincronoResponse xmlns="{NS}">'
@@ -214,7 +217,9 @@ class TestNfseNotaControl(TransactionCase):
             "</EnviarLoteDpsSincronoResposta></RecepcionarLoteDpsSincronoResponse>"
             "</s:Body></s:Envelope>"
         )
-        self.doc._notacontrol_process_response(retorno(xml_resposta=answer))
+        self.doc._notacontrol_process_response(
+            NotaControl.analisar_resposta("RecepcionarLoteDpsSincrono", answer)
+        )
         self.assertEqual(self.doc.status_code, "E160")
         self.assertIn("XML Schema", self.doc.edoc_error_message)
 
@@ -443,3 +448,60 @@ class TestNfseNotaControl(TransactionCase):
         self.doc._notacontrol_process_response(retorno(http_status=500))
         self.assertEqual(self.doc.state_edoc, "rejeitada")
         self.assertEqual(self.doc.status_code, "500")
+
+    def _status_check(self, **kwargs):
+        self.doc.write(
+            {"state_edoc": "autorizada", "nfse_number": "2", "nfse_key": "5" * 50}
+        )
+        with (
+            mock.patch(
+                f"{PROVIDER}.consultar_nfse_servico_prestado",
+                return_value=retorno(operacao="ConsultarNfseServicoPrestado", **kwargs),
+            ) as query,
+            mock.patch(
+                "odoo.addons.l10n_br_nfse_nacional.models.document"
+                ".L10nBrFiscalDocument._adn_post"
+            ) as adn,
+            self._mock_certificate(),
+        ):
+            self.doc.action_adn_check_status()
+        query.assert_called_once_with(numero="2")
+        adn.assert_not_called()
+
+    def test_status_check_asks_the_city_not_the_adn(self):
+        self._status_check(sucesso=True, numeros_nfse=["2"])
+        self.assertEqual(self.doc.state_edoc, "autorizada")
+
+    def test_status_check_follows_external_cancellation(self):
+        evento = {
+            "tipo": "e101101",
+            "chave": "5" * 50,
+            "motivo": "1",
+            "justificativa": "Erro na emissao",
+            "substituta": "",
+        }
+        self._status_check(sucesso=True, numeros_nfse=["2"], eventos=[evento])
+        self.assertEqual(self.doc.state_edoc, "cancelada")
+        self.assertEqual(self.doc.cancel_event_id.status_code, "e101101")
+
+    def test_status_check_follows_substitution(self):
+        evento = {
+            "tipo": "e105102",
+            "chave": "5" * 50,
+            "motivo": "99",
+            "justificativa": "Outros",
+            "substituta": "6" * 50,
+        }
+        self._status_check(sucesso=True, numeros_nfse=["2"], eventos=[evento])
+        self.assertEqual(self.doc.state_edoc, "cancelada")
+
+    def test_status_check_ignores_event_of_another_note(self):
+        evento = {"tipo": "e101101", "chave": "9" * 50, "motivo": "1"}
+        self._status_check(sucesso=True, numeros_nfse=["2"], eventos=[evento])
+        self.assertEqual(self.doc.state_edoc, "autorizada")
+
+    def test_status_check_rejected_query_raises(self):
+        from erpbrasil.edoc.provedores.notacontrol import MensagemRetorno
+
+        with self.assertRaises(UserError):
+            self._status_check(mensagens=[MensagemRetorno("E212", "Nao encontrada")])
