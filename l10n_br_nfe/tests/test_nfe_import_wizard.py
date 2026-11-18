@@ -396,6 +396,62 @@ class NFeImportWizardTest(TransactionCase):
         self.assertEqual(line.import_state, "matched")
         self.assertFalse(self._supplierinfo(documents.partner_id))
 
+    def _unknown_product_xml(self):
+        return (
+            self.xml_1.decode()
+            .replace("E-COM11", "NAOEXISTE2")
+            .replace("Cabinet with Doors", "Produto Desconhecido ZZZ")
+            .encode()
+        )
+
+    def test_the_box_unchecked_creates_no_product(self):
+        """The wizard creates no product unless the box asks for it: the line
+        of an unmapped product waits, pending, for a person."""
+        self.assertFalse(
+            self.env["l10n_br_fiscal.document.import.wizard"]
+            .create({})
+            .allow_product_creation
+        )
+        products_before = self.env["product.product"].search_count([])
+        self._prepare_wizard(self._unknown_product_xml())
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.wizard._import_edoc()
+        self.assertEqual(self.env["product.product"].search_count([]), products_before)
+        line = self.wizard.document_id.fiscal_line_ids
+        self.assertFalse(line.product_id)
+        self.assertEqual(line.import_state, "pending")
+
+    def test_the_box_checked_creates_the_product(self):
+        products_before = self.env["product.product"].search_count([])
+        self._prepare_wizard(self._unknown_product_xml())
+        self.wizard.allow_product_creation = True
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.wizard._import_edoc()
+        self.assertEqual(
+            self.env["product.product"].search_count([]), products_before + 1
+        )
+        line = self.wizard.document_id.fiscal_line_ids
+        self.assertEqual(line.product_id.default_code, "NAOEXISTE2")
+
+    def test_the_zip_follows_the_box_too(self):
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as archive:
+            archive.writestr("nota1.xml", self._unknown_product_xml())
+        products_before = self.env["product.product"].search_count([])
+        wizard = self.env["l10n_br_fiscal.document.import.wizard"].create(
+            {
+                "company_id": self.env.ref("base.main_company").id,
+                "file": base64.b64encode(buffer.getvalue()),
+            }
+        )
+        documents = wizard._import_edoc_batch()
+        self.assertEqual(self.env["product.product"].search_count([]), products_before)
+        self.assertFalse(documents.fiscal_line_ids.product_id)
+        wizard.allow_product_creation = True
+        # the box of the wizard goes to each entry of the archive
+        entry = wizard.copy({"file": wizard.file})
+        self.assertTrue(entry.allow_product_creation)
+
     def test_zip_batch_import(self):
         """A zip archive with several XMLs lands as several persisted
         documents waiting for review."""

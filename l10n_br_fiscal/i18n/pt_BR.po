@@ -5672,10 +5672,10 @@ msgstr "Se marcado, algumas mensagens tem erro de entrega."
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard__allow_product_creation
 msgid ""
 "If enabled, products that don't match an existing record will be "
-"automatically created during import. If disabled (default), the import will "
-"raise an error when an unmapped product is found so you can map it in the "
-"product lines above before importing."
-msgstr "Se ativado, os produtos sem correspondência em um cadastro existente serão criados automaticamente na importação. Se desativado (padrão), a importação acusa erro ao achar um produto sem correspondência, para que ele seja mapeado nas linhas de produto acima antes de importar."
+"automatically created during import. If disabled (default), no product is "
+"created: the line of an unmapped product stays pending until you choose its "
+"product in the product lines above or in the document."
+msgstr "Se ativado, os produtos sem correspondência em um cadastro existente serão criados automaticamente na importação. Se desativado (padrão), nenhum produto é criado: a linha de um produto sem correspondência fica pendente até você escolher o produto nas linhas de produto acima ou no documento."
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,help:l10n_br_fiscal.field_res_company__is_industry

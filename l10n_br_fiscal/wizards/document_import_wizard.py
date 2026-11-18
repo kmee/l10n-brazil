@@ -46,9 +46,9 @@ class DocumentImportWizard(models.TransientModel):
         string="Create unmapped products",
         default=False,
         help="If enabled, products that don't match an existing record will be"
-        " automatically created during import. If disabled (default), the"
-        " import will raise an error when an unmapped product is found so you"
-        " can map it in the product lines above before importing.",
+        " automatically created during import. If disabled (default), no product"
+        " is created: the line of an unmapped product stays pending until you"
+        " choose its product in the product lines above or in the document.",
     )
 
     date_in_out = fields.Datetime(
