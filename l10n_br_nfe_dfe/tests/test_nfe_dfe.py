@@ -1539,7 +1539,7 @@ class TestDFeImportBlock(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.company = cls.env.ref("l10n_br_base.empresa_lucro_presumido")
-        cls.key = "35200199999999999999550010000000012062777165"
+        cls.key = "35200181583054000129550010000000052062777166"
 
     def _dfe(self, state):
         return self.env["l10n_br_fiscal_dfe.document"].create(

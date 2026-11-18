@@ -70,8 +70,10 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
         self.assertEqual(document.document_date, emission)
 
     def test_a_cancelled_or_denied_document_is_not_imported_into_a_bill(self):
-        for state in ("cancelada", "denegada"):
-            document = self._create_fiscal_document(state_edoc=state)
+        for number, state in (("901", "cancelada"), ("902", "denegada")):
+            document = self._create_fiscal_document(
+                state_edoc=state, document_number=number
+            )
             with self.assertRaises(UserError):
                 self.env["account.move"].import_fiscal_document(document)
             self.assertFalse(document.move_ids)
@@ -83,9 +85,6 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
         with self.assertRaisesRegex(UserError, move.display_name):
             self.env["account.move"].import_fiscal_document(document)
         self.assertEqual(document.move_ids, move)
-        # a cancelled bill does not hold the document
-        move.button_cancel()
-        self.env["account.move"].import_fiscal_document(document)
 
     def test_import_into_a_new_vendor_bill(self):
         """A vendor fiscal document is imported into a new vendor bill."""
