@@ -10,7 +10,7 @@ import pkg_resources
 from xsdata.formats.dataclass.parsers import XmlParser
 
 from odoo import Command, fields
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 from odoo.tests import TransactionCase
 
 from odoo.addons import l10n_br_nfe
@@ -518,6 +518,27 @@ class NFeImportWizardTest(TransactionCase):
             self.assertEqual(
                 wizard._find_fiscal_operation(cfop, "VENDA", "in"), purchase
             )
+
+    def test_the_create_policy_decides_what_an_unmapped_product_does(self):
+        product = self.env["product.product"]
+        rec_dict = {}
+        parent_dict = {
+            "nfe40_xProd": "Policy product",
+            "nfe40_cProd": "POLICY-1",
+            "nfe40_uCom": "ZZZ",
+        }
+        # an unmapped unit leaves the product unset...
+        self.assertFalse(product.match_or_create_m2o(rec_dict, parent_dict))
+        # ...or stops the import when the caller asks for a strict policy
+        strict = product.with_context(spec_create_forbidden_action="raise")
+        with self.assertRaises(UserError):
+            strict.match_or_create_m2o(rec_dict, parent_dict)
+        # a product forbidden by the caller is not created even with a unit
+        parent_dict["nfe40_uCom"] = "UNID"
+        forbidden = product.with_context(
+            spec_create_forbidden_models=["product.product"]
+        )
+        self.assertFalse(forbidden.match_or_create_m2o({}, parent_dict))
 
     def test__parse_xml(self):
         self._prepare_wizard(self.xml_1)

@@ -1873,7 +1873,9 @@ class NFe(spec_models.StackedModel):
         seen, unique = set(), []
         for aut in binding.infNFe.autXML or []:
             key = aut.CNPJ or aut.CPF
-            if key in seen or (key and partner.search_count([("vat", "=", cnpj_cpf.formata(key))])):
+            if key in seen or (
+                key and partner.search_count([("vat", "=", cnpj_cpf.formata(key))])
+            ):
                 continue
             seen.add(key)
             unique.append(aut)
@@ -1896,7 +1898,11 @@ class NFe(spec_models.StackedModel):
             .with_context(
                 tracking_disable=True,
                 edoc_type=edoc_type,
-                dont_create_products=not create_missing_products,
+                **(
+                    {}
+                    if create_missing_products
+                    else {"spec_create_forbidden_models": ["product.product"]}
+                ),
             )
             .build_from_binding("nfe", "40", binding.infNFe, dry_run=dry_run)
         )
