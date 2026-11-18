@@ -46,7 +46,9 @@ class TestImportBillPurchaseLink(TransactionCase):
                 }
             )
         )
-        for purchase_line, (xped, nitemped) in zip(order.order_line, references):
+        for purchase_line, (xped, nitemped) in zip(
+            order.order_line, references, strict=True
+        ):
             self.env["l10n_br_fiscal.document.line"].create(
                 {
                     "document_id": document.id,
