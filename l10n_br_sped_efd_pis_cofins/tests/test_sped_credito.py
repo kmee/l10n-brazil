@@ -125,3 +125,15 @@ class TestSpedPisCofinsCredit(CreditMixin, SpedEntradaCommon):
         line = bill.fiscal_document_id.fiscal_line_ids
         self.assertAlmostEqual(line.pis_percent, 1.65)
         self.assertAlmostEqual(line.cofins_percent, 7.6)
+
+    def test_use_consumption_and_asset_book_no_credit_in_the_c170(self):
+        """The ledger credits PIS/COFINS only of a resale and of an input, so the
+        C170 of a use and consumption and of a fixed asset is CST 70 with no
+        value, not CST 50 with a credit the books do not have."""
+        self._entry("fo_compras_compras_uso_consumo", "403")
+        self._entry("fo_compras_compras_ativo", "404")
+        for record in self._sped_records(self._declaration_july(), "C170"):
+            self.assertEqual(record["CST_PIS"], "70")
+            self.assertEqual(record["CST_COFINS"], "70")
+            self.assertEqual(self._number(record["VL_PIS"]), 0.0)
+            self.assertEqual(self._number(record["VL_COFINS"]), 0.0)
