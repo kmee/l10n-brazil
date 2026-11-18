@@ -33,3 +33,15 @@ msgstr "Depuração"
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_pis_cofins.field_l10n_br_sped_efd_pis_cofins_0000__split_sped_by_bloco
 msgid "Split Sped By Bloco"
 msgstr "Separar SPED por Bloco"
+
+#. module: l10n_br_sped_efd_pis_cofins
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_pis_cofins_0000__state__done
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_pis_cofins_6_0000__state__done
+msgid "Done"
+msgstr "Concluída"
+
+#. module: l10n_br_sped_efd_pis_cofins
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_pis_cofins_0000__state__draft
+#: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_pis_cofins_6_0000__state__draft
+msgid "Draft"
+msgstr "Rascunho"
