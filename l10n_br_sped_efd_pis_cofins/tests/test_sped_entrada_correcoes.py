@@ -89,3 +89,27 @@ class TestSpedPisCofinsCorrecoes(SpedPisCofinsEntradaMixin, SpedEntradaCommon):
         self.assertEqual(
             action.with_context(lang="pt_BR").name, "Declaração EFD PIS/COFINS"
         )
+
+
+@tagged("post_install", "-at_install")
+class TestSpedPisCofinsCorrecoesCredit(SpedPisCofinsEntradaMixin, SpedEntradaCommon):
+    """The credit entry of the non-cumulative company."""
+
+    profit_calculation = "real"
+
+    def test_c170_with_credit_carries_the_account_and_the_0500(self):
+        """COD_CTA of a credit CST (50 to 66) is the account of the bill line
+        and the 0500 declares it."""
+        bill = self._purchase_move("fo_compras_compras_comercializacao", "401")
+        document = bill.fiscal_document_id
+        document.imported_document = True
+        line = document.fiscal_line_ids
+        self.assertIn(line.entry_pis_cst_id.code, ("50", "51", "52", "53"))
+        account = line.account_line_ids[:1].account_id
+        self.assertTrue(account)
+        declaration = self._declaration_july()
+        records = self._sped_records(declaration, "C170")
+        self.assertEqual(records[0]["COD_CTA"], account.code)
+        accounts = self._sped_records(declaration, "0500")
+        self.assertEqual([rec["COD_CTA"] for rec in accounts], [account.code])
+        self.assertEqual(accounts[0]["IND_CTA"], "A")

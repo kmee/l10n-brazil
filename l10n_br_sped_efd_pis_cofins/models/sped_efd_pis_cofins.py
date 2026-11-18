@@ -506,19 +506,35 @@ class Registro0500(models.Model):
     _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.efd_pis_cofins.0500"
     _inherit = "l10n_br_sped.efd_pis_cofins.6.0500"
+    _odoo_model = "account.account"
 
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "DT_ALT": 0,  # Data da inclusão/alteração
-    #         "COD_NAT_CC": 0,  # Código da natureza da conta/grupo de contas: 01 -...
-    #         "IND_CTA": 0,  # Indicador do tipo de conta: S - Sintética (grupo de ...
-    #         "NIVEL": 0,  # Nível da conta analítica/grupo de contas.
-    #         "COD_CTA": 0,  # Código da conta analítica/grupo de contas.
-    #         "NOME_CTA": 0,  # Nome da conta analítica/grupo de contas.
-    #         "COD_CTA_REF": 0,  # Código da conta correlacionada no Plano de Conta...
-    #         "CNPJ_EST": 0,  # CNPJ do estabelecimento, no caso da conta informada...
-    #     }
+    # natureza da conta (tabela do Guia): by the type of the Odoo account
+    _COD_NAT_CC_BY_TYPE = {
+        "asset": "01",
+        "liability": "02",
+        "equity": "03",
+        "income": "04",
+        "expense": "04",
+    }
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        accounts = declaration.fiscal_document_line_ids._get_sped_credit_accounts()
+        return [("id", "in", accounts.ids)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        account_type = (record.account_type or "").split("_")[0]
+        return {
+            "DT_ALT": declaration.DT_INI,
+            "COD_NAT_CC": self._COD_NAT_CC_BY_TYPE.get(account_type, "09"),
+            "IND_CTA": "A",
+            "NIVEL": "1",
+            "COD_CTA": record.code,
+            "NOME_CTA": record.name,
+            "COD_CTA_REF": "",
+            "CNPJ_EST": "",
+        }
 
 
 class Registro0600(models.Model):
@@ -900,7 +916,7 @@ class RegistroC170(models.Model):
             "QUANT_BC_COFINS": 0,
             "ALIQ_COFINS_QUANT": 0,
             "VL_COFINS": 0 if cofins_no_credit else record.cofins_value or 0,
-            "COD_CTA": "",
+            "COD_CTA": record._get_sped_credit_accounts().code or "",
         }
 
 
