@@ -25679,3 +25679,10 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_sped_efd_icms_ipi.field_l10n_br_fiscal_tax_definition__sped_cod_aj
 msgid "SPED Adjustment Code"
 msgstr ""
+
+#. module: l10n_br_sped_efd_icms_ipi
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_icms_ipi/models/fiscal_data.py:0
+#, python-format
+msgid "The SPED adjustment code must have exactly 10 positions (table 5.3 of the EFD ICMS/IPI): %s"
+msgstr ""

@@ -1895,6 +1895,9 @@ class RegistroC197(models.Model):
                    OR COALESCE(fdl.partner_icms_tax_benefit_code, '') != ''
                    OR fdl.icms_relief_id IS NOT NULL)
         """
+        # the PVA wants the 10 positions of the adjustment table code: no C197
+        # with any other code
+        query = f"SELECT * FROM ({query}) AS adjustment WHERE length(cod_aj) = 10"
         return query, [parent_record["document_id"]]
 
     @api.model
