@@ -1013,17 +1013,7 @@ class RegistroC100(models.Model):
         #     self.limpa_formatacao(nfe.partner_id.company_id.cnpj_cpf):
         #     cod_sit = '08'
 
-        ind_pgto = "1"  # TODO ATS-TI code is commented as follow:
-        # if nfe.nfe40_pag:
-        #     if len(nfe.duplicata_ids) == 1:
-        #         if nfe.duplicata_ids.data_vencimento == nfe.data_agendada:
-        #             ind_pgto = '0'
-        #         else:
-        #             ind_pgto = '1'
-        #     else:
-        #         ind_pgto = '1'
-        # else:
-        #     ind_pgto = '2'
+        ind_pgto = record._get_sped_ind_pgto()
 
         cod_sit = record._get_sped_cod_sit(period_start=declaration.DT_INI)
         if record._is_sped_cancelled():

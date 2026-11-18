@@ -614,7 +614,7 @@ class RegistroA100(models.Model):
             "DT_DOC": record.document_date,
             "DT_EXE_SERV": record.document_date,
             "VL_DOC": record.fiscal_amount_total or 0,
-            "IND_PGTO": "0",
+            "IND_PGTO": record._get_sped_ind_pgto(),
             "VL_DESC": record.amount_discount_value or 0,
             "VL_BC_PIS": record.amount_pis_base or 0,
             "VL_PIS": record.amount_pis_value or 0,
@@ -776,7 +776,7 @@ class RegistroC100(models.Model):
             if record.fiscal_operation_type == "in"
             else record.document_date,
             "VL_DOC": record.fiscal_amount_total or 0,
-            "IND_PGTO": "0",
+            "IND_PGTO": record._get_sped_ind_pgto(),
             "VL_DESC": record.amount_discount_value or 0,
             "VL_ABAT_NT": 0,
             "VL_MERC": record.amount_price_gross or 0,

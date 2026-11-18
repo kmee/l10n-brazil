@@ -41,6 +41,25 @@ class TestSpedEfdIcmsIpiCorrecoes(EntradaHelpers, SpedEntradaCommon):
         self.assertEqual(self._number(c101[0]["VL_FCP_UF_DEST"]), 3.0)
         self.assertEqual(self._number(c101[0]["VL_ICMS_UF_DEST"]), 5.0)
 
+    def test_ind_pgto_comes_from_the_installments_of_the_bill(self):
+        """On the spot, on terms, without payment: one rule from the
+        installments, the same in both SPED."""
+        cash = self._purchase_move(
+            "fo_compras_compras_comercializacao",
+            "301",
+            payment_term="account_payment_term_immediate",
+        )
+        term = self._purchase_move(
+            "fo_compras_compras_comercializacao",
+            "302",
+            payment_term="account_payment_term_30days",
+        )
+        free, _line = self._entry_document()
+        c100 = self._c100(self._declaration_july())
+        self.assertEqual(c100[cash.fiscal_document_id.document_number]["IND_PGTO"], "0")
+        self.assertEqual(c100[term.fiscal_document_id.document_number]["IND_PGTO"], "1")
+        self.assertEqual(c100[free.document_number]["IND_PGTO"], "9")
+
     def test_the_sped_adjustment_code_is_on_the_benefit_and_relief_screens(self):
         for model, view in (
             ("l10n_br_fiscal.tax.definition", "l10n_br_fiscal.tax_definition_form"),

@@ -21,3 +21,20 @@ class TestSpedPisCofinsCorrecoes(SpedPisCofinsEntradaMixin, SpedEntradaCommon):
             cod_part,
             [rec["COD_PART"] for rec in self._sped_records(declaration, "0150")],
         )
+
+    def test_ind_pgto_comes_from_the_installments_of_the_bill(self):
+        cash = self._purchase_move(
+            "fo_compras_compras_comercializacao",
+            "301",
+            payment_term="account_payment_term_immediate",
+        )
+        term = self._purchase_move(
+            "fo_compras_compras_comercializacao",
+            "302",
+            payment_term="account_payment_term_30days",
+        )
+        free, _line = self._entry_document()
+        c100 = self._c100(self._declaration_july())
+        self.assertEqual(c100[cash.fiscal_document_id.document_number]["IND_PGTO"], "0")
+        self.assertEqual(c100[term.fiscal_document_id.document_number]["IND_PGTO"], "1")
+        self.assertEqual(c100[free.document_number]["IND_PGTO"], "9")
