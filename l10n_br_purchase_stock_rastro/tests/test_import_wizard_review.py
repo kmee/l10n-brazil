@@ -4,7 +4,7 @@
 import base64
 import os
 
-from odoo import fields
+from odoo import Command, fields
 from odoo.tests import TransactionCase, tagged
 
 from odoo.addons import l10n_br_nfe
@@ -134,3 +134,29 @@ class TestImportWizardReview(TransactionCase):
         wizard._import_edoc()
         fiscal_line = wizard.document_id.fiscal_line_ids
         self.assertEqual(fiscal_line.import_origin_state, "resolved")
+
+    def test_an_importer_without_purchase_rights_still_imports(self):
+        """The fiscal profile imports the file without access to the purchase
+        orders: the suggestion of the origin reads them anyway."""
+        importer = self.env["res.users"].create(
+            {
+                "name": "Fiscal importer",
+                "login": "fiscal_importer_review",
+                "groups_id": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            self.env.ref("l10n_br_fiscal.group_manager").id,
+                            self.env.ref("l10n_br_nfe.group_manager").id,
+                        ]
+                    )
+                ],
+            }
+        )
+        wizard = self._wizard(self._declared_xml())
+        wizard._import_edoc()
+        line = wizard.document_id.fiscal_line_ids
+        line.import_purchase_line_id = False
+        line.import_origin_state = False
+        line.with_user(importer)._suggest_import_origin()
+        self.assertEqual(line.import_purchase_line_id, self.order.order_line)

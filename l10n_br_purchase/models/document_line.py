@@ -86,7 +86,7 @@ class FiscalDocumentLine(models.Model):
         unless the person already chose another one on the document line.
         """
         for line in self:
-            wanted = line.import_purchase_line_id.fiscal_operation_line_id
+            wanted = line.import_purchase_line_id.sudo().fiscal_operation_line_id
             operation = line.fiscal_operation_id
             if (
                 not wanted
@@ -154,19 +154,29 @@ class FiscalDocumentLine(models.Model):
         ]
         if self.product_id:
             domain.append(("product_id", "=", self.product_id.id))
-        return empty.search(domain).filtered(
-            lambda order_line: order_line.product_qty > order_line.qty_invoiced
+        # the fiscal profile that imports the file may have no access to the
+        # purchase orders: the candidates are only read here
+        return (
+            empty.sudo()
+            .search(domain)
+            .filtered(
+                lambda order_line: order_line.product_qty > order_line.qty_invoiced
+            )
         )
 
     def _find_purchase_line_by_reference(self):
         self.ensure_one()
         document = self.document_id
-        return self.env["purchase.order.line"]._find_by_import_reference(
-            document.company_id,
-            document.partner_id.commercial_partner_id,
-            (self.partner_order or "").strip(),
-            self.partner_order_line,
-            self.product_id,
+        return (
+            self.env["purchase.order.line"]
+            .sudo()
+            ._find_by_import_reference(
+                document.company_id,
+                document.partner_id.commercial_partner_id,
+                (self.partner_order or "").strip(),
+                self.partner_order_line,
+                self.product_id,
+            )
         )
 
     def _suggest_import_origin(self):
@@ -209,7 +219,9 @@ class FiscalDocumentLine(models.Model):
         self.ensure_one()
         document = self.document_id
         return bool(
-            self.env["purchase.order.line"].search_count(
+            self.env["purchase.order.line"]
+            .sudo()
+            .search_count(
                 [
                     ("order_id.state", "in", ("purchase", "done")),
                     ("order_id.company_id", "=", document.company_id.id),

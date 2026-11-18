@@ -42,7 +42,7 @@ class FiscalDocumentLine(models.Model):
 
     @api.model
     def _pending_moves_of(self, order_line):
-        return order_line.move_ids.filtered(
+        return order_line.sudo().move_ids.filtered(
             lambda move: move.state not in ("done", "cancel")
         )
 
