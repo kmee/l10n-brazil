@@ -107,3 +107,32 @@ class TestImportOrigin(TransactionCase):
         self.assertEqual(
             set(document.fiscal_line_ids.mapped("import_origin_state")), {"resolved"}
         )
+
+    def test_the_order_line_is_shown_with_its_order(self):
+        first, second = self.order.order_line[:2]
+        names = dict(self.order.order_line.name_get())
+        self.assertTrue(names[first.id].startswith(self.order.name + ": "))
+        self.assertTrue(names[second.id].startswith(self.order.name + ": "))
+        # and it is found by the number of the order
+        found = self.env["purchase.order.line"].name_search(self.order.name)
+        self.assertEqual(
+            {line_id for line_id, _name in found}, set(self.order.order_line.ids)
+        )
+
+    def test_the_domain_of_the_field_is_the_candidates_of_the_suggestion(self):
+        document = self._document([(False, False)] * len(self.order.order_line))
+        line = document.fiscal_line_ids[0]
+        expected = self.order.order_line.filtered(
+            lambda order_line: order_line.product_id == line.product_id
+        )
+        self.assertEqual(line.import_origin_candidate_ids, expected)
+        self.assertEqual(line._import_origin_candidates(), expected)
+        # a draft order and the order of another supplier are not candidates
+        self.order.copy()
+        other = self.env["res.partner"].create({"name": "Other supplier"})
+        self.order.copy({"partner_id": other.id}).button_confirm()
+        line.invalidate_recordset(["import_origin_candidate_ids"])
+        self.assertEqual(line.import_origin_candidate_ids, expected)
+        # the field offers the candidates and the line already chosen
+        domain = line._fields["import_purchase_line_id"].domain
+        self.assertIn("import_origin_candidate_ids", domain)

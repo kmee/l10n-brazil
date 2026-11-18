@@ -13,8 +13,8 @@ class FiscalDocumentLine(models.Model):
         copy=False,
         index=True,
         ondelete="set null",
-        domain="[('order_id.state', 'in', ('purchase', 'done')),"
-        " ('company_id', '=', company_id)]",
+        domain="['|', ('id', 'in', import_origin_candidate_ids),"
+        " ('id', '=', import_purchase_line_id)]",
         help="Purchase order line this imported document line corresponds to. "
         "It is suggested from the order reference of the file (xPed and "
         "nItemPed) or from the only open order line of the supplier for the "
@@ -36,6 +36,24 @@ class FiscalDocumentLine(models.Model):
         "suggestion waits for confirmation. Resolved: a person chose it. "
         "Empty when there is nothing to choose from.",
     )
+
+    import_origin_candidate_ids = fields.Many2many(
+        comodel_name="purchase.order.line",
+        compute="_compute_import_origin_candidate_ids",
+        help="Technical: the open purchase order lines the origin can be chosen "
+        "from (supplier of the document, product of the line, company, "
+        "confirmed order with a balance to invoice).",
+    )
+
+    @api.depends(
+        "document_id.partner_id",
+        "document_id.company_id",
+        "document_id.fiscal_operation_type",
+        "product_id",
+    )
+    def _compute_import_origin_candidate_ids(self):
+        for line in self:
+            line.import_origin_candidate_ids = line._import_origin_candidates()
 
     def write(self, vals):
         if (

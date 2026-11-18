@@ -47,6 +47,7 @@
         <field name="priority">100</field>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='name']" position="after">
+                <field name="import_origin_candidate_ids" invisible="1" />
                 <field
                     name="import_purchase_line_id"
                     attrs="{'invisible': [('fiscal_operation_type', '!=', 'in')]}"

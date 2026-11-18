@@ -8,6 +8,19 @@ from odoo import api, fields, models
 class PurchaseOrderLine(models.Model):
     _name = "purchase.order.line"
     _inherit = [_name, "l10n_br_fiscal.document.line.mixin"]
+    _rec_names_search = ["name", "order_id.name"]
+
+    def name_get(self):
+        """The order of the line comes first: two lines of different orders
+        have the same description, and a list of order lines is read by
+        order."""
+        result = []
+        for line in self.sudo():
+            name = line.name or line.product_id.display_name or ""
+            if line.order_id:
+                name = f"{line.order_id.name}: {name}"
+            result.append((line.id, name))
+        return result
 
     @api.model
     def _default_fiscal_operation(self):
