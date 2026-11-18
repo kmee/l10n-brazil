@@ -1043,7 +1043,9 @@ class RegistroC100(models.Model):
             "NUM_DOC": misc.punctuation_rm(str(record.document_number)),
             "CHV_NFE": record.document_key,
             "DT_DOC": record.document_date,
-            "DT_E_S": record.date_in_out,
+            "DT_E_S": record._get_sped_entry_date()
+            if record.fiscal_operation_type == FISCAL_IN
+            else record.date_in_out,
             "VL_DOC": record.fiscal_amount_total,
             "IND_PGTO": ind_pgto,
             "VL_DESC": record.amount_discount_value,
@@ -2383,7 +2385,9 @@ class RegistroC500(models.Model):
             "COD_CONS": getattr(record, "consumption_class_code", ""),  # MISSING FIELD
             "NUM_DOC": punctuation_rm(str(record.document_number)),
             "DT_DOC": record.document_date,
-            "DT_E_S": record.date_in_out,
+            "DT_E_S": record._get_sped_entry_date()
+            if record.fiscal_operation_type == FISCAL_IN
+            else record.date_in_out,
             "VL_DOC": record.fiscal_amount_total or 0.0,
             "VL_DESC": record.amount_discount_value or 0.0,
             "VL_FORN": record.amount_price_gross or 0.0,

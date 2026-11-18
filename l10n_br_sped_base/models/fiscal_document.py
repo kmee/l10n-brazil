@@ -96,3 +96,15 @@ class FiscalDocument(models.Model):
         """NF-e or NFC-e (55, 65) with no access key."""
         self.ensure_one()
         return self.document_type_id.code in ("55", "65") and not self.document_key
+
+    def _get_sped_entry_date(self):
+        """DT_E_S of an entry: the entry date, never before the emission (the
+        PVA warns when DT_E_S is earlier than DT_DOC). Without an entry date it
+        is the emission."""
+        self.ensure_one()
+        entry = self.date_in_out
+        if not entry or (
+            self.document_date and entry.date() < self.document_date.date()
+        ):
+            return self.document_date
+        return entry

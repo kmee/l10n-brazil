@@ -70,6 +70,14 @@ class TestSpedPisCofinsCorrecoes(SpedPisCofinsEntradaMixin, SpedEntradaCommon):
         history = " ".join(declaration.message_ids.mapped("body"))
         self.assertIn(keyless.document_number, history)
 
+    def test_dt_e_s_is_never_before_dt_doc(self):
+        doc, _line = self._entry_document(
+            document_date=datetime(2026, 7, 20, 12, 0),
+            date_in_out=datetime(2026, 7, 5, 12, 0),
+        )
+        rec = self._c100(self._declaration_july())[doc.document_number]
+        self.assertEqual(rec["DT_E_S"], "20072026")
+
     def test_the_declaration_title_is_translated_to_portuguese(self):
         self.env["res.lang"]._activate_lang("pt_BR")
         self.env["ir.module.module"].search(
