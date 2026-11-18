@@ -120,6 +120,23 @@ class TestSpedEfdIcmsIpiEntrada(EntradaHelpers, SpedEntradaCommon):
 
     # C. D. E. items of the entry
 
+    def test_c170_item_and_unit_are_the_ones_of_the_company(self):
+        """COD_ITEM and UNID are the code of the 0200 and the unit of the 0190,
+        not the ones the supplier wrote."""
+        _doc, line = self._entry_document()
+        declaration = self._declaration_july()
+        c170 = self._c170(declaration)
+        self.assertEqual(c170["COD_ITEM"], "prod_a")
+        self.assertEqual(c170["UNID"], line.uom_id.code)
+        self.assertEqual(
+            [rec["COD_ITEM"] for rec in self._sped_records(declaration, "0200")],
+            ["prod_a"],
+        )
+        self.assertIn(
+            line.uom_id.code,
+            [rec["UNID"] for rec in self._sped_records(declaration, "0190")],
+        )
+
     def test_c170_and_c190_carry_the_entry_cfop(self):
         """The supplier wrote 6102; the books carry the entry CFOP."""
         self._entry_document(partner_cfop="6102")

@@ -1382,10 +1382,12 @@ class RegistroC170(models.Model):
 
         return {
             "NUM_ITEM": index + 1,
-            "COD_ITEM": record.nfe40_cProd if hasattr(record, "nfe40_pag") else "",
+            # the code and the unit of the company: the ones of the 0200 and
+            # of the 0190, never the ones of the supplier (nfe40_cProd, nfe40_uCom)
+            "COD_ITEM": record.product_id.default_code or record.product_id.id,
             "DESCR_COMPL": record.name,
             "QTD": record.fiscal_quantity,
-            "UNID": record.nfe40_uCom if hasattr(record, "nfe40_uCom") else "",
+            "UNID": record.uom_id.code,
             "VL_ITEM": record.price_gross or 0.0,
             "VL_DESC": record.discount_value,
             "IND_MOV": "0" if record.cfop_id.stock_move else "1",
