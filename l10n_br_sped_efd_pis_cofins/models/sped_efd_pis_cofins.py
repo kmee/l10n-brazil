@@ -9,6 +9,7 @@ from erpbrasil.base import misc
 
 from odoo import api, fields, models
 
+from odoo.addons.l10n_br_fiscal.constants.fiscal import SITUACAO_FISCAL_INUTILIZADO
 from odoo.addons.l10n_br_sped_base.models.sped_mixin import LAYOUT_VERSIONS
 
 
@@ -51,7 +52,6 @@ COD_REC = {
 # M200/M600 field the M205/M605 detail points at: 08 is the non-cumulative
 # amount due (VL_CONT_NC_REC), 12 the cumulative one (VL_CONT_CUM_REC)
 NUM_CAMPO_BY_REGIME = {"non_cumulative": "08", "cumulative": "12"}
-
 
 
 def _find_assessment(env, declaration, tax_domain, regime):
@@ -144,6 +144,7 @@ def _detail_vals(record, rate_field):
     vals[rate_field] = record.tax_id.amount
     return vals
 
+
 class Registro0000(models.Model):
     "Abertura do Arquivo Digital e Identificação da Pessoa Jurídica"
 
@@ -181,7 +182,8 @@ class Registro0000(models.Model):
             "CNPJ": misc.punctuation_rm(record.cnpj_cpf),
             "UF": record.state_id.code,
             "COD_MUN": misc.punctuation_rm(record.city_id.ibge_code),
-            "SUFRAMA": record.l10n_br_isuf_code or "",  # Inscrição da entidade na SUFRAMA
+            "SUFRAMA": record.l10n_br_isuf_code
+            or "",  # Inscrição da entidade na SUFRAMA
             "IND_NAT_PJ": "00",  # Pessoa jurídica em geral (2 fixed positions)
             # "IND_ATIV": (will use the declaration field directly),
         }
@@ -338,7 +340,7 @@ class Registro0150(models.Model):
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         return {
-            "COD_PART": record.id,
+            "COD_PART": record._get_sped_cod_part(),
             "NOME": record.legal_name or record.name,
             "COD_PAIS": record.country_id.ibge_code or "01058",
             "CNPJ": record.is_company
@@ -504,19 +506,35 @@ class Registro0500(models.Model):
     _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.efd_pis_cofins.0500"
     _inherit = "l10n_br_sped.efd_pis_cofins.6.0500"
+    _odoo_model = "account.account"
 
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "DT_ALT": 0,  # Data da inclusão/alteração
-    #         "COD_NAT_CC": 0,  # Código da natureza da conta/grupo de contas: 01 -...
-    #         "IND_CTA": 0,  # Indicador do tipo de conta: S - Sintética (grupo de ...
-    #         "NIVEL": 0,  # Nível da conta analítica/grupo de contas.
-    #         "COD_CTA": 0,  # Código da conta analítica/grupo de contas.
-    #         "NOME_CTA": 0,  # Nome da conta analítica/grupo de contas.
-    #         "COD_CTA_REF": 0,  # Código da conta correlacionada no Plano de Conta...
-    #         "CNPJ_EST": 0,  # CNPJ do estabelecimento, no caso da conta informada...
-    #     }
+    # natureza da conta (tabela do Guia): by the type of the Odoo account
+    _COD_NAT_CC_BY_TYPE = {
+        "asset": "01",
+        "liability": "02",
+        "equity": "03",
+        "income": "04",
+        "expense": "04",
+    }
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        accounts = declaration.fiscal_document_line_ids._get_sped_credit_accounts()
+        return [("id", "in", accounts.ids)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        account_type = (record.account_type or "").split("_")[0]
+        return {
+            "DT_ALT": declaration.DT_INI,
+            "COD_NAT_CC": self._COD_NAT_CC_BY_TYPE.get(account_type, "09"),
+            "IND_CTA": "A",
+            "NIVEL": "1",
+            "COD_CTA": record.code,
+            "NOME_CTA": record.name,
+            "COD_CTA_REF": "",
+            "CNPJ_EST": "",
+        }
 
 
 class Registro0600(models.Model):
@@ -585,13 +603,6 @@ class RegistroA100(models.Model):
 
     _odoo_model = "l10n_br_fiscal.document"
 
-    _STATUS_MAP = {
-        "autorizada": "00",
-        "cancelada": "02",
-        "denegada": "04",
-        "inutilizada": "05",
-    }
-
     @api.model
     def _odoo_domain(self, parent_record, declaration):
         return [
@@ -604,8 +615,8 @@ class RegistroA100(models.Model):
         return {
             "IND_OPER": "0" if record.fiscal_operation_type == "in" else "1",
             "IND_EMIT": "0" if record.issuer == "company" else "1",
-            "COD_PART": record.partner_id.id,
-            "COD_SIT": self._STATUS_MAP.get(record.state_edoc, "00"),
+            "COD_PART": record.partner_id._get_sped_cod_part(),
+            "COD_SIT": record._get_sped_cod_sit(),
             "SER": record.document_serie or "",
             "SUB": "",
             "NUM_DOC": record.document_number or "",
@@ -613,7 +624,7 @@ class RegistroA100(models.Model):
             "DT_DOC": record.document_date,
             "DT_EXE_SERV": record.document_date,
             "VL_DOC": record.fiscal_amount_total or 0,
-            "IND_PGTO": "0",
+            "IND_PGTO": record._get_sped_ind_pgto(),
             "VL_DESC": record.amount_discount_value or 0,
             "VL_BC_PIS": record.amount_pis_base or 0,
             "VL_PIS": record.amount_pis_value or 0,
@@ -736,13 +747,6 @@ class RegistroC100(models.Model):
 
     _odoo_model = "l10n_br_fiscal.document"
 
-    _STATUS_MAP = {
-        "autorizada": "00",
-        "cancelada": "02",
-        "denegada": "04",
-        "inutilizada": "05",
-    }
-
     @api.model
     def _odoo_domain(self, parent_record, declaration):
         return [
@@ -752,19 +756,37 @@ class RegistroC100(models.Model):
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        cod_sit = record._get_sped_cod_sit()
+        if record._is_sped_cancelled():
+            # cancelled, denied and unused numbers only carry what the Guia
+            # Pratico allows: no partner, no dates, no values
+            unused = cod_sit == SITUACAO_FISCAL_INUTILIZADO
+            return {
+                "IND_OPER": "0" if record.fiscal_operation_type == "in" else "1",
+                "IND_EMIT": "0" if record.issuer == "company" else "1",
+                "COD_MOD": record.document_type_id.code or "",
+                "COD_SIT": cod_sit,
+                "SER": "" if unused else record.document_serie or "",
+                "NUM_DOC": record.document_number or "",
+                "CHV_NFE": "" if unused else record.document_key or "",
+            }
         return {
             "IND_OPER": "0" if record.fiscal_operation_type == "in" else "1",
             "IND_EMIT": "0" if record.issuer == "company" else "1",
-            "COD_PART": record.partner_id.id,
+            "COD_PART": record.partner_id._get_sped_cod_part(),
             "COD_MOD": record.document_type_id.code or "",
-            "COD_SIT": self._STATUS_MAP.get(record.state_edoc, "00"),
+            "COD_SIT": cod_sit,
             "SER": record.document_serie or "",
             "NUM_DOC": record.document_number or "",
             "CHV_NFE": record.document_key or "",
             "DT_DOC": record.document_date,
-            "DT_E_S": record.document_date,
+            # an entry comes in on its entry date, not on the emission one;
+            # the outgoing documents keep the emission date
+            "DT_E_S": record._get_sped_entry_date()
+            if record.fiscal_operation_type == "in"
+            else record.document_date,
             "VL_DOC": record.fiscal_amount_total or 0,
-            "IND_PGTO": "0",
+            "IND_PGTO": record._get_sped_ind_pgto(),
             "VL_DESC": record.amount_discount_value or 0,
             "VL_ABAT_NT": 0,
             "VL_MERC": record.amount_price_gross or 0,
@@ -844,10 +866,15 @@ class RegistroC170(models.Model):
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):
+        if parent_record._is_sped_cancelled():
+            # a cancelled document goes out without items
+            return [("id", "=", False)]
         return [("document_id", "=", parent_record.id)]
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        pis_no_credit = record._entry_piscofins_without_credit("pis")
+        cofins_no_credit = record._entry_piscofins_without_credit("cofins")
         return {
             "NUM_ITEM": str(index + 1),
             "COD_ITEM": record.product_id.default_code or str(record.product_id.id),
@@ -870,24 +897,26 @@ class RegistroC170(models.Model):
             "ALIQ_ST": record.icmsst_percent or 0,
             "VL_ICMS_ST": record.icmsst_value or 0,
             "IND_APUR": "0",  # 0=Mensal
-            "CST_IPI": record.ipi_cst_code or "",
+            "CST_IPI": record.entry_ipi_cst_id.code or record.ipi_cst_code or "",
             "COD_ENQ": "",
             "VL_BC_IPI": record.ipi_base or 0,
             "ALIQ_IPI": record.ipi_percent or 0,
             "VL_IPI": record.ipi_value or 0,
-            "CST_PIS": record.pis_cst_code or "",
-            "VL_BC_PIS": record.pis_base or 0,
-            "ALIQ_PIS": record.pis_percent or 0,
+            "CST_PIS": record.entry_pis_cst_id.code or record.pis_cst_code or "",
+            "VL_BC_PIS": 0 if pis_no_credit else record.pis_base or 0,
+            "ALIQ_PIS": 0 if pis_no_credit else record.pis_percent or 0,
             "QUANT_BC_PIS": 0,
             "ALIQ_PIS_QUANT": 0,
-            "VL_PIS": record.pis_value or 0,
-            "CST_COFINS": record.cofins_cst_code or "",
-            "VL_BC_COFINS": record.cofins_base or 0,
-            "ALIQ_COFINS": record.cofins_percent or 0,
+            "VL_PIS": 0 if pis_no_credit else record.pis_value or 0,
+            "CST_COFINS": record.entry_cofins_cst_id.code
+            or record.cofins_cst_code
+            or "",
+            "VL_BC_COFINS": 0 if cofins_no_credit else record.cofins_base or 0,
+            "ALIQ_COFINS": 0 if cofins_no_credit else record.cofins_percent or 0,
             "QUANT_BC_COFINS": 0,
             "ALIQ_COFINS_QUANT": 0,
-            "VL_COFINS": record.cofins_value or 0,
-            "COD_CTA": "",
+            "VL_COFINS": 0 if cofins_no_credit else record.cofins_value or 0,
+            "COD_CTA": record._get_sped_credit_accounts().code or "",
         }
 
 
@@ -1662,13 +1691,6 @@ class RegistroD100(models.Model):
 
     _odoo_model = "l10n_br_fiscal.document"
 
-    _STATUS_MAP = {
-        "autorizada": "00",
-        "cancelada": "02",
-        "denegada": "04",
-        "inutilizada": "05",
-    }
-
     @api.model
     def _odoo_domain(self, parent_record, declaration):
         return [
@@ -1685,9 +1707,9 @@ class RegistroD100(models.Model):
         return {
             "IND_OPER": "0" if record.fiscal_operation_type == "in" else "1",
             "IND_EMIT": "0" if record.issuer == "company" else "1",
-            "COD_PART": record.partner_id.id,
+            "COD_PART": record.partner_id._get_sped_cod_part(),
             "COD_MOD": record.document_type_id.code or "",
-            "COD_SIT": self._STATUS_MAP.get(record.state_edoc, "00"),
+            "COD_SIT": record._get_sped_cod_sit(),
             "SER": record.document_serie or "",
             "SUB": "",
             "NUM_DOC": record.document_number or "",
@@ -2890,19 +2912,26 @@ class RegistroM200(models.Model):
     # The descriptor marks every value field obrigatorio=1: a zero must be
     # written "0", never blank. Declared at the mapping layer, as everywhere
     # else (the generated spec cannot carry Odoo required).
-    VL_TOT_CONT_NC_PER = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_TOT_CONT_NC_PER = fields.Monetary(
+        required=True, currency_field="brl_currency_id"
+    )
     VL_TOT_CRED_DESC = fields.Monetary(required=True, currency_field="brl_currency_id")
-    VL_TOT_CRED_DESC_ANT = fields.Monetary(required=True, currency_field="brl_currency_id")
-    VL_TOT_CONT_NC_DEV = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_TOT_CRED_DESC_ANT = fields.Monetary(
+        required=True, currency_field="brl_currency_id"
+    )
+    VL_TOT_CONT_NC_DEV = fields.Monetary(
+        required=True, currency_field="brl_currency_id"
+    )
     VL_RET_NC = fields.Monetary(required=True, currency_field="brl_currency_id")
     VL_OUT_DED_NC = fields.Monetary(required=True, currency_field="brl_currency_id")
     VL_CONT_NC_REC = fields.Monetary(required=True, currency_field="brl_currency_id")
-    VL_TOT_CONT_CUM_PER = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_TOT_CONT_CUM_PER = fields.Monetary(
+        required=True, currency_field="brl_currency_id"
+    )
     VL_RET_CUM = fields.Monetary(required=True, currency_field="brl_currency_id")
     VL_OUT_DED_CUM = fields.Monetary(required=True, currency_field="brl_currency_id")
     VL_CONT_CUM_REC = fields.Monetary(required=True, currency_field="brl_currency_id")
     VL_TOT_CONT_REC = fields.Monetary(required=True, currency_field="brl_currency_id")
-
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
@@ -2966,15 +2995,9 @@ class RegistroM210(models.Model):
     # with "campo obrigatorio". The generated spec cannot carry Odoo required
     # (it would forbid creating the register before populating it), so the
     # mapping layer declares it, which is what _write_register_line reads.
-    VL_AJUS_ACRES_BC = fields.Monetary(
-        required=True, currency_field="brl_currency_id"
-    )
-    VL_AJUS_REDUC_BC = fields.Monetary(
-        required=True, currency_field="brl_currency_id"
-    )
-    VL_BC_CONT_AJUS = fields.Monetary(
-        required=True, currency_field="brl_currency_id"
-    )
+    VL_AJUS_ACRES_BC = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_AJUS_REDUC_BC = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_BC_CONT_AJUS = fields.Monetary(required=True, currency_field="brl_currency_id")
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):
@@ -3255,19 +3278,26 @@ class RegistroM600(models.Model):
     # The descriptor marks every value field obrigatorio=1: a zero must be
     # written "0", never blank. Declared at the mapping layer, as everywhere
     # else (the generated spec cannot carry Odoo required).
-    VL_TOT_CONT_NC_PER = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_TOT_CONT_NC_PER = fields.Monetary(
+        required=True, currency_field="brl_currency_id"
+    )
     VL_TOT_CRED_DESC = fields.Monetary(required=True, currency_field="brl_currency_id")
-    VL_TOT_CRED_DESC_ANT = fields.Monetary(required=True, currency_field="brl_currency_id")
-    VL_TOT_CONT_NC_DEV = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_TOT_CRED_DESC_ANT = fields.Monetary(
+        required=True, currency_field="brl_currency_id"
+    )
+    VL_TOT_CONT_NC_DEV = fields.Monetary(
+        required=True, currency_field="brl_currency_id"
+    )
     VL_RET_NC = fields.Monetary(required=True, currency_field="brl_currency_id")
     VL_OUT_DED_NC = fields.Monetary(required=True, currency_field="brl_currency_id")
     VL_CONT_NC_REC = fields.Monetary(required=True, currency_field="brl_currency_id")
-    VL_TOT_CONT_CUM_PER = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_TOT_CONT_CUM_PER = fields.Monetary(
+        required=True, currency_field="brl_currency_id"
+    )
     VL_RET_CUM = fields.Monetary(required=True, currency_field="brl_currency_id")
     VL_OUT_DED_CUM = fields.Monetary(required=True, currency_field="brl_currency_id")
     VL_CONT_CUM_REC = fields.Monetary(required=True, currency_field="brl_currency_id")
     VL_TOT_CONT_REC = fields.Monetary(required=True, currency_field="brl_currency_id")
-
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
@@ -3331,15 +3361,9 @@ class RegistroM610(models.Model):
     # with "campo obrigatorio". The generated spec cannot carry Odoo required
     # (it would forbid creating the register before populating it), so the
     # mapping layer declares it, which is what _write_register_line reads.
-    VL_AJUS_ACRES_BC = fields.Monetary(
-        required=True, currency_field="brl_currency_id"
-    )
-    VL_AJUS_REDUC_BC = fields.Monetary(
-        required=True, currency_field="brl_currency_id"
-    )
-    VL_BC_CONT_AJUS = fields.Monetary(
-        required=True, currency_field="brl_currency_id"
-    )
+    VL_AJUS_ACRES_BC = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_AJUS_REDUC_BC = fields.Monetary(required=True, currency_field="brl_currency_id")
+    VL_BC_CONT_AJUS = fields.Monetary(required=True, currency_field="brl_currency_id")
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):

@@ -1220,6 +1220,15 @@ class NFeLine(spec_models.StackedModel):
     def _build_attr(self, node, fields, vals, path, attr):
         key = f"nfe40_{attr[0]}"
         value = getattr(node, attr[0])
+        if key == "nfe40_cBenef":
+            # cBenef (Codigo de Beneficio Fiscal, Tabela 5.2 por UF) sits in
+            # det/prod, not in the ICMS tag. It is kept verbatim for the SPED
+            # C197 (COD_AJ) on a plain stored field: nfe40_cBenef is related to
+            # icms_tax_benefit_code, which the de-para recomputes, so a value
+            # written there is lost.
+            if value:
+                vals["partner_icms_tax_benefit_code"] = value
+            return
         if key in ["nfe40_CST", "nfe40_modBC", "nfe40_CSOSN"]:
             return  # (dealt with in _build_many2one)
 
@@ -1268,6 +1277,11 @@ class NFeLine(spec_models.StackedModel):
             vals["quantity"] = float(value)
         if key == "nfe40_qTrib":
             vals["fiscal_quantity"] = float(value)
+        if key == "nfe40_infAdProd" and value:
+            # <det><infAdProd> is a non-stored computed field (computed from
+            # additional_data): writing it is silently dropped. Redirect to the
+            # stored manual_additional_data so the line observation round-trips.
+            vals["manual_additional_data"] = value
         if key == "nfe40_cEnq":
             vals["ipi_guideline_id"] = (
                 self.env["l10n_br_fiscal.tax.ipi.guideline"]

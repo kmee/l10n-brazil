@@ -230,3 +230,61 @@ class TestDocumentImportLine(TransactionCase):
         self.partner.country_id = self.env.ref("base.us")
         self.partner.state_id = False
         self.assertFalse(self.line._get_cfop_warning())
+
+    def _entry_line(self, operation_has_cfop, **vals):
+        """An imported line of the entry document whose operation line resolves
+        a CFOP or not."""
+        operation_line = self.env.ref(
+            "l10n_br_fiscal.fo_compras_compras_comercializacao"
+        )
+        if not operation_has_cfop:
+            operation_line = operation_line.copy(
+                {
+                    "name": "Operation line without CFOP",
+                    "cfop_internal_id": False,
+                    "cfop_external_id": False,
+                    "cfop_export_id": False,
+                }
+            )
+        cfop_6102 = self.env.ref("l10n_br_fiscal.cfop_6102")
+        cfop_6102.cfop_inverse_id = self.env.ref("l10n_br_fiscal.cfop_2102")
+        return self.env["l10n_br_fiscal.document.line"].create(
+            {
+                "document_id": self.document.id,
+                "name": "Entry line",
+                "product_id": self.product.id,
+                "quantity": 1.0,
+                "price_unit": 10.0,
+                "uom_id": self.uom_kg.id,
+                "fiscal_operation_id": self.document.fiscal_operation_id.id,
+                "fiscal_operation_line_id": operation_line.id,
+                "partner_cfop_id": cfop_6102.id,
+                **vals,
+            }
+        )
+
+    def test_entry_cfop_is_the_inverse_of_the_supplier_one_without_operation_cfop(
+        self,
+    ):
+        """The operation resolved no CFOP: the entry takes the inverse of the
+        CFOP the supplier wrote (6102 -> 2102)."""
+        line = self._entry_line(operation_has_cfop=False)
+        self.assertEqual(line.cfop_id, self.env.ref("l10n_br_fiscal.cfop_2102"))
+
+    def test_entry_cfop_is_never_an_outgoing_one(self):
+        """The CFOP of the line is an outgoing one and the operation resolves
+        none: it must not stay as the CFOP of the entry."""
+        line = self._entry_line(operation_has_cfop=False)
+        line.cfop_id = self.env.ref("l10n_br_fiscal.cfop_6102")
+        another = line.fiscal_operation_line_id.copy({"name": "Another, no CFOP"})
+        line.fiscal_operation_line_id = another
+        self.assertEqual(line.cfop_id, self.env.ref("l10n_br_fiscal.cfop_2102"))
+
+    def test_entry_cfop_of_the_operation_is_kept(self):
+        """When the operation resolves the entry CFOP the safeguard does not
+        touch it."""
+        line = self._entry_line(operation_has_cfop=True)
+        operation_line = self.env.ref(
+            "l10n_br_fiscal.fo_compras_compras_comercializacao"
+        )
+        self.assertEqual(line.cfop_id, operation_line.cfop_external_id)

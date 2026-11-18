@@ -362,20 +362,7 @@ class FiscalDocumentLineMixin(models.AbstractModel):
     def _compute_fiscal_tax_ids(self):
         for line in self:
             if line.fiscal_operation_line_id:
-                mapping_result = line.fiscal_operation_line_id.map_fiscal_taxes(
-                    company=line.company_id,
-                    partner=line._get_fiscal_partner(),
-                    product=line.product_id,
-                    ncm=line.ncm_id,
-                    nbm=line.nbm_id,
-                    nbs=line.nbs_id,
-                    cest=line.cest_id,
-                    city_taxation_code=line.city_taxation_code_id,
-                    national_taxation_code=line.national_taxation_code_id,
-                    service_type=line.service_type_id,
-                    ind_final=line.ind_final,
-                    tax_classification=line.tax_classification_id,
-                )
+                mapping_result = line._map_fiscal_taxes_of_line()
                 if line._is_imported():
                     # Remapping the CFOP to the company operation is the very
                     # goal of the de-para, but the classification imported
@@ -384,6 +371,7 @@ class FiscalDocumentLineMixin(models.AbstractModel):
                     # exactly as imported.
                     if mapping_result["cfop"]:
                         line.cfop_id = mapping_result["cfop"]
+                    line._apply_entry_cfop_safeguard()
                     if mapping_result["ipi_guideline"]:
                         line.ipi_guideline_id = mapping_result["ipi_guideline"]
                     if mapping_result["tax_classification"]:
@@ -406,6 +394,25 @@ class FiscalDocumentLineMixin(models.AbstractModel):
                 for tax in mapping_result["taxes"].values():
                     taxes |= tax
                 line.fiscal_tax_ids = taxes
+
+    def _map_fiscal_taxes_of_line(self):
+        """What the fiscal operation line maps for this line (CFOP, taxes with
+        their CSTs, IPI guideline...): see ``operation.line.map_fiscal_taxes``."""
+        self.ensure_one()
+        return self.fiscal_operation_line_id.map_fiscal_taxes(
+            company=self.company_id,
+            partner=self._get_fiscal_partner(),
+            product=self.product_id,
+            ncm=self.ncm_id,
+            nbm=self.nbm_id,
+            nbs=self.nbs_id,
+            cest=self.cest_id,
+            city_taxation_code=self.city_taxation_code_id,
+            national_taxation_code=self.national_taxation_code_id,
+            service_type=self.service_type_id,
+            ind_final=self.ind_final,
+            tax_classification=self.tax_classification_id,
+        )
 
     @api.depends("fiscal_operation_line_id")
     def _compute_comment_ids(self):
@@ -1306,6 +1313,23 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         # and we consider the document is not imported
         return hasattr(self, "document_id") and self.document_id.imported_document
 
+    def _apply_entry_cfop_safeguard(self):
+        """An entry line imported from the supplier document must carry an entry
+        CFOP (1xxx, 2xxx, 3xxx), never the outgoing one the supplier wrote.
+
+        When the operation does not resolve a CFOP, ``cfop_id`` keeps what came
+        in the file (5xxx, 6xxx, 7xxx) or stays empty: the inverse CFOP of the
+        supplier one is the company side of the same operation.
+        """
+        self.ensure_one()
+        if self.fiscal_operation_type != FISCAL_IN:
+            return
+        if self.cfop_id and self.cfop_id.code[:1] not in ("5", "6", "7"):
+            return
+        inverse = self.partner_cfop_id.cfop_inverse_id
+        if inverse:
+            self.cfop_id = inverse
+
     currency_id = fields.Many2one(
         comodel_name="res.currency",
         string="Currency",
@@ -1470,6 +1494,14 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         help="CFOP as declared by the counterparty in the imported document. "
         "It is preserved as-is for fiscal bookkeeping / SPED (e.g. C197), "
         "while cfop_id reflects the company's own operation after the de-para.",
+    )
+
+    partner_icms_tax_benefit_code = fields.Char(
+        string="Supplier Fiscal Benefit Code (cBenef)",
+        help="Fiscal benefit code (<cBenef>) declared by the counterparty in "
+        "the imported document. Preserved verbatim for SPED C197 (COD_AJ), "
+        "while icms_tax_benefit_id/code reflects the company's own de-para "
+        "mapping.",
     )
 
     fiscal_price = fields.Float(

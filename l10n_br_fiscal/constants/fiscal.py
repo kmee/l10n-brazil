@@ -208,6 +208,8 @@ IPI_CST_NO_CREDIT = ("01", "02", "03", "04", "05")
 # PIS/COFINS — entradas sem direito a crédito (70–75) e outras operações
 # (98/99): aquisição monofásica/alíquota zero para revenda cai aqui.
 PIS_COFINS_CST_NO_CREDIT = ("70", "71", "72", "73", "74", "75", "98", "99")
+# the entries without credit right: the book carries no base, rate or value
+PIS_COFINS_CST_ENTRY_WITHOUT_CREDIT = ("70", "71", "72", "73", "74", "75")
 
 COEFFICIENT_R = 0.28
 

@@ -1,9 +1,20 @@
 # Copyright (C) 2013  Renato Lima - Akretion
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
+from lxml import etree
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
+from ..constants.fiscal import (
+    FISCAL_IN,
+    PIS_COFINS_CST_ENTRY_WITHOUT_CREDIT,
+    PROFIT_CALCULATION_REAL,
+    TAX_DOMAIN_COFINS,
+    TAX_DOMAIN_IPI,
+    TAX_DOMAIN_PIS,
+    TAX_FRAMEWORK_SIMPLES_ALL,
+)
 from ..tools import cfop_geography_warning
 
 
@@ -171,6 +182,144 @@ class DocumentLine(models.Model):
         "inconsistent with the actual issuer/company geography. Useful to "
         "spot supplier mistakes before they pollute the SPED books.",
     )
+
+    @api.model
+    def _get_view(self, view_id=None, view_type="form", **options):
+        arch, view = super()._get_view(view_id, view_type, **options)
+        if view_type == "form":
+            arch = self._add_entry_cst_fields(arch)
+        return arch, view
+
+    @api.model
+    def _add_entry_cst_fields(self, arch):
+        """The CST of the entry of the company, read only, right after the CST
+        of the file on the tabs of the taxes.
+
+        They are fields of this model only (an imported entry), while the form
+        of the fiscal taxes is a template shared by every model that carries the
+        fiscal mixin (purchase, sale, stock, invoice lines), where they do not
+        exist: they are added here, not in the shared template.
+        """
+        for tax in ("ipi", "pis", "cofins"):
+            anchors = arch.xpath(
+                f".//page[@name='{tax}']//field[@name='{tax}_cst_code']"
+            )
+            name = f"entry_{tax}_cst_id"
+            if not anchors or arch.xpath(f".//field[@name='{name}']"):
+                continue
+            field = etree.Element(
+                "field",
+                name=name,
+                readonly="1",
+                attrs=f"{{'invisible': [('{name}', '=', False)]}}",
+                options="{'no_create': True, 'no_open': True}",
+            )
+            anchors[0].addnext(field)
+        return arch
+
+    # What the supplier declared (ipi_cst_id, pis_cst_id, cofins_cst_id: the CSTs
+    # of the file, never touched) and what the company books for the entry are
+    # kept apart, both stored. The books read the entry CST when it exists.
+    entry_ipi_cst_id = fields.Many2one(
+        comodel_name="l10n_br_fiscal.cst",
+        string="IPI CST of the Entry (company)",
+        domain="[('tax_domain', '=', 'ipi'), ('cst_type', 'in', ('in', 'all'))]",
+        compute="_compute_entry_cst_ids",
+        store=True,
+        readonly=False,
+        copy=False,
+        help="IPI CST the company books for this entry, from the fiscal operation "
+        "of the entry. The CST in the imported file is the one of the supplier "
+        "(an outgoing operation) and stays as it came.",
+    )
+
+    entry_pis_cst_id = fields.Many2one(
+        comodel_name="l10n_br_fiscal.cst",
+        string="PIS CST of the Entry (company)",
+        domain="[('tax_domain', '=', 'pis'), ('cst_type', 'in', ('in', 'all'))]",
+        compute="_compute_entry_cst_ids",
+        store=True,
+        readonly=False,
+        copy=False,
+        help="PIS CST the company books for this entry: the credit CST of the "
+        "operation in the non-cumulative regime, 70 (acquisition without credit "
+        "right) in the cumulative one.",
+    )
+
+    entry_cofins_cst_id = fields.Many2one(
+        comodel_name="l10n_br_fiscal.cst",
+        string="COFINS CST of the Entry (company)",
+        domain="[('tax_domain', '=', 'cofins'), ('cst_type', 'in', ('in', 'all'))]",
+        compute="_compute_entry_cst_ids",
+        store=True,
+        readonly=False,
+        copy=False,
+        help="COFINS CST the company books for this entry: the credit CST of the "
+        "operation in the non-cumulative regime, 70 (acquisition without credit "
+        "right) in the cumulative one.",
+    )
+
+    @api.depends(
+        "fiscal_operation_line_id",
+        "product_id",
+        "partner_id",
+        "ncm_id",
+        "company_id.profit_calculation",
+        "document_id.imported_document",
+    )
+    def _compute_entry_cst_ids(self):
+        """The entry CSTs only exist for an entry imported from a fiscal file:
+        there the taxes stay the ones of the file and the mapping of the entry
+        operation was discarded. Any other line does not use them: its own
+        CSTs are the ones of the operation.
+
+        Cost of the first ``-u``: the compute runs once for every existing line
+        and returns at the first check unless the line is an imported entry,
+        which is the only one that maps the operation again.
+        """
+        for line in self:
+            ipi = pis = cofins = self.env["l10n_br_fiscal.cst"]
+            if (
+                line._is_imported()
+                and line.fiscal_operation_type == FISCAL_IN
+                and line.fiscal_operation_line_id
+            ):
+                taxes = line._map_fiscal_taxes_of_line()["taxes"]
+                ipi = taxes.get(TAX_DOMAIN_IPI, ipi).cst_in_id
+                pis = line._get_entry_piscofins_cst(
+                    TAX_DOMAIN_PIS, taxes.get(TAX_DOMAIN_PIS)
+                )
+                cofins = line._get_entry_piscofins_cst(
+                    TAX_DOMAIN_COFINS, taxes.get(TAX_DOMAIN_COFINS)
+                )
+            line.entry_ipi_cst_id = ipi
+            line.entry_pis_cst_id = pis
+            line.entry_cofins_cst_id = cofins
+
+    def _get_entry_piscofins_cst(self, tax_domain, tax):
+        """PIS/COFINS CST of an entry by the regime of the company.
+
+        Non-cumulative (real profit): the credit CST of the mapped tax.
+        Cumulative (presumed or arbitrated profit): 70, acquisition without
+        credit right, whatever the operation maps. Simples Nacional does not
+        take the credit either, but it has no PIS/COFINS book: it keeps the
+        mapped CST.
+        """
+        self.ensure_one()
+        company = self.company_id
+        if (
+            company.tax_framework not in TAX_FRAMEWORK_SIMPLES_ALL
+            and company.profit_calculation != PROFIT_CALCULATION_REAL
+        ):
+            return self.env.ref(f"l10n_br_fiscal.cst_{tax_domain}_70")
+        return tax.cst_in_id if tax else self.env["l10n_br_fiscal.cst"]
+
+    def _entry_piscofins_without_credit(self, tax_domain):
+        """True when the entry books PIS or COFINS without credit right (CST 70
+        to 75): the book then carries no base, rate or value for the tax."""
+        self.ensure_one()
+        cst = self[f"entry_{tax_domain}_cst_id"]
+        return cst.code in PIS_COFINS_CST_ENTRY_WITHOUT_CREDIT
 
     @api.depends("product_id")
     def _compute_name(self):
