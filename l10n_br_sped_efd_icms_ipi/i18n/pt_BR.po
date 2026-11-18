@@ -25407,6 +25407,34 @@ msgid "Set the accountant of the company (Accountant field, with CPF and CRC) be
 msgstr "Informe o contador da empresa (campo Contador, com CPF e CRC) antes de gerar o arquivo: o registro 0100 vem dele."
 
 #. module: l10n_br_sped_efd_icms_ipi
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_icms_ipi/models/sped_efd_icms_ipi.py:0
+#, python-format
+msgid "CPF"
+msgstr "CPF"
+
+#. module: l10n_br_sped_efd_icms_ipi
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_icms_ipi/models/sped_efd_icms_ipi.py:0
+#, python-format
+msgid "CRC"
+msgstr "CRC"
+
+#. module: l10n_br_sped_efd_icms_ipi
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_icms_ipi/models/sped_efd_icms_ipi.py:0
+#, python-format
+msgid "e-mail"
+msgstr "e-mail"
+
+#. module: l10n_br_sped_efd_icms_ipi
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_icms_ipi/models/sped_efd_icms_ipi.py:0
+#, python-format
+msgid "city"
+msgstr "município"
+
+#. module: l10n_br_sped_efd_icms_ipi
 #: model:ir.model.fields.selection,name:l10n_br_sped_efd_icms_ipi.selection__l10n_br_sped_efd_icms_ipi_0000__cod_receita__137-5
 msgid "Abate de gado"
 msgstr ""

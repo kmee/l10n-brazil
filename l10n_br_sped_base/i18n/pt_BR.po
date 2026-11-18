@@ -528,6 +528,31 @@ msgid "You have no access to the company %(company)s of this declaration, so its
 msgstr "Você não tem acesso à empresa %(company)s desta declaração, portanto não é possível puxar seus registros nem gerar o arquivo."
 
 #. module: l10n_br_sped_base
+#. odoo-python
+#: code:addons/l10n_br_sped_base/models/sped_declaration.py:0
+#, python-format
+msgid ""
+"Some registers could not be pulled from Odoo and a file without them is incomplete, so it was not generated. Fix the cause and generate it again:\n"
+"%(errors)s"
+msgstr ""
+"Alguns registros não puderam ser carregados do Odoo e um arquivo sem eles fica incompleto, por isso não foi gerado. Corrija a causa e gere de novo:\n"
+"%(errors)s"
+
+#. module: l10n_br_sped_base
+#. odoo-python
+#: code:addons/l10n_br_sped_base/models/sped_declaration.py:0
+#, python-format
+msgid "Set the accountant of the company (Accountant field, with CPF and CRC) before generating the file: the record 0100 comes from it."
+msgstr "Cadastre o contador da empresa (campo Contador, com CPF e CRC) antes de gerar o arquivo: o registro 0100 vem dele."
+
+#. module: l10n_br_sped_base
+#. odoo-python
+#: code:addons/l10n_br_sped_base/models/sped_declaration.py:0
+#, python-format
+msgid "The registration of the accountant %(name)s lacks %(missing)s, which the record 0100 of the file needs. Fill it in the contact of the accountant."
+msgstr "O cadastro do contador %(name)s não tem %(missing)s, que o registro 0100 do arquivo exige. Preencha no contato do contador."
+
+#. module: l10n_br_sped_base
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__203
 msgid "203 - Administrador"
 msgstr ""

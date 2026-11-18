@@ -62,6 +62,27 @@ msgid "The %(tax)s assessment of the period uses the credit balance of a previou
 msgstr ""
 
 #. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/sped_efd_pis_cofins.py:0
+#, python-format
+msgid "CPF"
+msgstr ""
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/sped_efd_pis_cofins.py:0
+#, python-format
+msgid "CRC"
+msgstr ""
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/sped_efd_pis_cofins.py:0
+#, python-format
+msgid "The contribution code (table 4.3.5) of the assessment %(assessment)s cannot be determined: its tax group does not say the PIS/COFINS regime and the company does not tell it (Lucro Real or Presumido). Set the regime in the tax group (Accounting > Configuration > Tax groups)."
+msgstr ""
+
+#. module: l10n_br_sped_efd_pis_cofins
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_pis_cofins_0000__state__done
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_pis_cofins_6_0000__state__done
 msgid "Done"
