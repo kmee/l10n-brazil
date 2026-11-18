@@ -375,6 +375,33 @@ class NFeImportTest(TransactionCase):
             doc.manual_customer_additional_data or "",
         )
 
+    def test_import_captures_the_cbenef_of_the_product(self):
+        """The cBenef lives in det/prod: the importer must read it from there
+        into the supplier benefit code of the line (SPED C197)."""
+        file_path = os.path.join(
+            l10n_br_account_nfe.__path__[0],
+            "tests",
+            "nfe",
+            "35231149647316000169550010000661061151600085-nfe.xml",
+        )
+        with open(file_path, encoding="utf-8") as file:
+            raw = file.read()
+        injected = raw.replace("<CFOP>", "<cBenef>SP12345678</cBenef><CFOP>", 1)
+        self.assertNotEqual(injected, raw)
+        data = base64.b64encode(injected.encode("utf-8"))
+
+        wizard = self.env["l10n_br_fiscal.document.import.wizard"].create({})
+        with Form(wizard) as import_form:
+            import_form.file = data
+            import_form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+            if "allow_product_creation" in wizard._fields:
+                import_form.allow_product_creation = True
+        action = wizard.action_import_and_open_move()
+        move = self.env["account.move"].browse(action["res_id"])
+        lines = move.fiscal_document_id.fiscal_line_ids.sorted("id")
+        self.assertEqual(lines[0].partner_icms_tax_benefit_code, "SP12345678")
+        self.assertFalse(lines[1].partner_icms_tax_benefit_code)
+
     def test_import_incomplete_document_is_blocked(self):
         """A document with a line missing its product/uom/qty/price must not
         be importable into an account move (SPED data integrity)."""

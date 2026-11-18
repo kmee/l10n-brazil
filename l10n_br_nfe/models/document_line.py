@@ -1220,6 +1220,15 @@ class NFeLine(spec_models.StackedModel):
     def _build_attr(self, node, fields, vals, path, attr):
         key = f"nfe40_{attr[0]}"
         value = getattr(node, attr[0])
+        if key == "nfe40_cBenef":
+            # cBenef (Codigo de Beneficio Fiscal, Tabela 5.2 por UF) sits in
+            # det/prod, not in the ICMS tag. It is kept verbatim for the SPED
+            # C197 (COD_AJ) on a plain stored field: nfe40_cBenef is related to
+            # icms_tax_benefit_code, which the de-para recomputes, so a value
+            # written there is lost.
+            if value:
+                vals["partner_icms_tax_benefit_code"] = value
+            return
         if key in ["nfe40_CST", "nfe40_modBC", "nfe40_CSOSN"]:
             return  # (dealt with in _build_many2one)
 
@@ -1502,15 +1511,6 @@ class NFeLine(spec_models.StackedModel):
                 ).id
             map_binding_attr("vICMSDeson", "icms_relief_value")
             map_binding_attr("vICMSSubstituto", "icms_substitute")
-
-            # cBenef (Código de Benefício Fiscal, Tabela 5.2 por UF) is the
-            # benefit the supplier declared; preserved verbatim for SPED C197
-            # (COD_AJ). It's a string, so it can't go through
-            # map_binding_attr's float cast, and it must land on a plain stored
-            # field (icms_tax_benefit_code is related to icms_tax_benefit_id,
-            # which the de-para recomputes).
-            if getattr(tax_binding, "cBenef", None):
-                odoo_attrs["partner_icms_tax_benefit_code"] = tax_binding.cBenef
 
             # ICMS ST fields
             map_binding_attr("modBCST", "icmsst_base_type")
