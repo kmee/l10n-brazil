@@ -14,21 +14,6 @@ class TestSpedPisCofinsContributionCode(CreditMixin, SpedEntradaCommon):
     """The code of the contribution (M210 and M610) of a company whose tax group
     does not say the regime: the regime of the company."""
 
-    def _set_accountant(self):
-        city = self.env["res.city"].search([("state_id.code", "=", "SP")], limit=1)
-        self.company.accountant_id = self.env["res.partner"].create(
-            {
-                "name": "Accountant",
-                "is_accountant": True,
-                "cnpj_cpf": "111.444.777-35",
-                "crc_code": "1SP123456/O-0",
-                "email": "accountant@example.com",
-                "country_id": self.env.ref("base.br").id,
-                "state_id": self.env.ref("base.state_br_sp").id,
-                "city_id": city.id,
-            }
-        )
-
     def test_the_cumulative_code_comes_from_the_company(self):
         self._entry("fo_compras_compras_comercializacao", "401")
         self._sale()
