@@ -1,6 +1,8 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl-3.0.html).
 
+import base64
+
 from odoo.exceptions import UserError
 from odoo.tests.common import tagged
 
@@ -180,3 +182,26 @@ class TestSpedEfdIcmsIpiApuracao(EntradaHelpers, SpedEntradaCommon):
         with self.assertRaises(UserError) as error:
             declaration.button_create_sped_files()
         self.assertIn("IPI", error.exception.args[0])
+
+    def _generated_text(self, declaration):
+        attachment = self.env["ir.attachment"].search(
+            [("res_model", "=", declaration._name), ("res_id", "=", declaration.id)],
+            order="id desc",
+            limit=1,
+        )
+        return base64.b64decode(attachment.datas).decode("latin-1")
+
+    def test_the_file_has_the_registers_of_the_moment_of_the_generation(self):
+        """The registers pulled before the assessment and the accountant are
+        pulled again when the file is generated: no E110 or 0100 missing from a
+        file made after the registration was fixed."""
+        self._purchase_move("fo_compras_compras_comercializacao", "607")
+        declaration = self._declaration_july()
+        self.assertEqual(self._sped_records(declaration, "E110"), [])
+        self._set_accountant()
+        self._assess_icms_of_july()
+        declaration.IND_ATIV = "1"
+        declaration.button_create_sped_files()
+        text = self._generated_text(declaration)
+        self.assertIn("|E110|", text)
+        self.assertIn("|0100|", text)

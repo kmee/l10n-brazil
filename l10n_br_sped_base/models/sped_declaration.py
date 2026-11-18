@@ -248,10 +248,15 @@ class SpedDeclaration(models.AbstractModel):
         """Populate SPED registers from Odoo."""
         # TODO add cron pulling from Odoo for open declarations
         self.ensure_one()
-        return self._in_company_context()._populate_sped_from_odoo()
+        self._in_company_context()._populate_sped_from_odoo()
 
     def _populate_sped_from_odoo(self):
+        """Pull the registers from Odoo. Returns the errors of the registers that
+        could not be pulled (a list of text): a register that fails is left out
+        of the declaration, with a note in the history, so whoever generates the
+        file has to know it is incomplete."""
         self.ensure_one()
+        errors = []
         log_msg = StringIO()
         log_msg.write(f"<h3>{_('Pulled from Odoo')}</h3>")
         kind = self._get_kind()
@@ -307,7 +312,9 @@ class SpedDeclaration(models.AbstractModel):
                     "<p style='color:red;'>Error "
                     f"processing {register_model._name}: {e}</p>"
                 )
+                errors.append(f"{register_model._name[-4:].upper()}: {e}")
         self.message_post(body=log_msg.getvalue())
+        return errors
 
     def button_flush_registers(self):
         self.ensure_one()
@@ -323,8 +330,24 @@ class SpedDeclaration(models.AbstractModel):
         self.state = "draft"
 
     def button_create_sped_files(self):
-        """Generate and attach the SPED file."""
+        """Generate and attach the SPED file.
+
+        The registers of Odoo are pulled again at every generation, so the file
+        never goes out with registers that are older than the registration or
+        the assessment it is made of (the pull is idempotent and keeps what was
+        typed by hand). A register that cannot be pulled stops the generation
+        with the reason, instead of going out missing from the file."""
         self.ensure_one()
+        errors = self._in_company_context()._populate_sped_from_odoo()
+        if errors:
+            raise UserError(
+                _(
+                    "Some registers could not be pulled from Odoo and a file "
+                    "without them is incomplete, so it was not generated. Fix "
+                    "the cause and generate it again:\n%(errors)s",
+                    errors="\n".join(errors),
+                )
+            )
         sped_txt = self._generate_sped_text()
 
         if self.split_sped_by_bloco:
