@@ -369,7 +369,7 @@ class Registro0150(models.Model):
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         vals = {
-            "COD_PART": misc.punctuation_rm(record.cnpj_cpf),
+            "COD_PART": record._get_sped_cod_part(),
             "NOME": record.legal_name or record.name,
             "COD_PAIS": record.country_id.bc_code,
             "IE": misc.punctuation_rm(record.inscr_est),
@@ -1016,17 +1016,7 @@ class RegistroC100(models.Model):
         #     self.limpa_formatacao(nfe.partner_id.company_id.cnpj_cpf):
         #     cod_sit = '08'
 
-        ind_pgto = "1"  # TODO ATS-TI code is commented as follow:
-        # if nfe.nfe40_pag:
-        #     if len(nfe.duplicata_ids) == 1:
-        #         if nfe.duplicata_ids.data_vencimento == nfe.data_agendada:
-        #             ind_pgto = '0'
-        #         else:
-        #             ind_pgto = '1'
-        #     else:
-        #         ind_pgto = '1'
-        # else:
-        #     ind_pgto = '2'
+        ind_pgto = record._get_sped_ind_pgto()
 
         cod_sit = record._get_sped_cod_sit(period_start=declaration.DT_INI)
         if record._is_sped_cancelled():
@@ -1049,7 +1039,7 @@ class RegistroC100(models.Model):
         return {
             "IND_OPER": ind_oper,
             "IND_EMIT": ind_emit,
-            "COD_PART": str(record.partner_id.id),
+            "COD_PART": record.partner_id._get_sped_cod_part(),
             "COD_MOD": record.document_type_id.code,
             "COD_SIT": cod_sit,
             "SER": record.document_serie,
@@ -1087,6 +1077,9 @@ class RegistroC101(models.Model):
     _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.efd_icms_ipi.c101"
     _inherit = "l10n_br_sped.efd_icms_ipi.20.c101"
+    # without it the pull makes one register per parent with no record behind
+    # it, and the domain below never runs: an empty C101 under every document
+    _odoo_model = "l10n_br_fiscal.document"
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):
@@ -2385,7 +2378,7 @@ class RegistroC500(models.Model):
         return {
             "IND_OPER": ind_oper,
             "IND_EMIT": ind_emit,
-            "COD_PART": str(record.partner_id.id),
+            "COD_PART": record.partner_id._get_sped_cod_part(),
             "COD_MOD": record.document_type_id.code,
             "COD_SIT": record._get_sped_cod_sit(period_start=declaration.DT_INI),
             "SER": record.document_serie or "",
@@ -2984,7 +2977,7 @@ class RegistroD100(models.Model):
         return {
             "IND_OPER": "0" if record.fiscal_operation_type == FISCAL_IN else "1",
             "IND_EMIT": "0" if record.issuer == DOCUMENT_ISSUER_COMPANY else "1",
-            "COD_PART": misc.punctuation_rm(record.partner_id.cnpj_cpf),
+            "COD_PART": record.partner_id._get_sped_cod_part(),
             "COD_MOD": record.document_type_id.code or "",
             "COD_SIT": record._get_sped_cod_sit(period_start=declaration.DT_INI),
             "SER": record.document_serie or "",

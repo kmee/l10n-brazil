@@ -26,6 +26,11 @@ SPED_COD_SIT_BY_STATE_EDOC = {
     "inutilizada": SITUACAO_FISCAL_INUTILIZADO,
 }
 
+# IND_PGTO of the C100: a vista, a prazo, sem pagamento
+SPED_IND_PGTO_CASH = "0"
+SPED_IND_PGTO_TERM = "1"
+SPED_IND_PGTO_NONE = "9"
+
 # the active situations that have an "escriturado depois" twin
 SPED_COD_SIT_EXTEMPORANEO = {
     SITUACAO_FISCAL_REGULAR: SITUACAO_FISCAL_REGULAR_EXTEMPORANEO,
@@ -85,3 +90,29 @@ class FiscalDocument(models.Model):
         analytic registers (Guia Pratico, C100)."""
         self.ensure_one()
         return self._get_sped_cod_sit() in SITUACAO_FISCAL_SPED_CONSIDERA_CANCELADO
+
+    def _get_sped_ind_pgto(self):
+        """IND_PGTO of the C100 (and of the A100), shared by every SPED: 0 paid
+        on the spot, 1 on terms, 9 without payment (Guia Pratico). It comes from
+        the installments of the bill of the document: all due on the emission
+        date is "a vista", any later one is "a prazo", no installment is "sem
+        pagamento"."""
+        self.ensure_one()
+        # move_ids comes from l10n_br_account, which both SPED modules depend on
+        moves = (
+            self.move_ids if "move_ids" in self._fields else self.env["account.move"]
+        )
+        terms = moves.filtered(lambda move: move.state != "cancel").line_ids.filtered(
+            lambda line: line.display_type == "payment_term"
+        )
+        if not terms:
+            return SPED_IND_PGTO_NONE
+        invoice_date = self.document_date and self.document_date.date()
+        if all(
+            not line.date_maturity
+            or not invoice_date
+            or line.date_maturity <= invoice_date
+            for line in terms
+        ):
+            return SPED_IND_PGTO_CASH
+        return SPED_IND_PGTO_TERM

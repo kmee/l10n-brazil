@@ -346,7 +346,7 @@ class Registro0150(models.Model):
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         return {
-            "COD_PART": record.id,
+            "COD_PART": record._get_sped_cod_part(),
             "NOME": record.legal_name or record.name,
             "COD_PAIS": record.country_id.ibge_code or "01058",
             "CNPJ": record.is_company
@@ -605,7 +605,7 @@ class RegistroA100(models.Model):
         return {
             "IND_OPER": "0" if record.fiscal_operation_type == "in" else "1",
             "IND_EMIT": "0" if record.issuer == "company" else "1",
-            "COD_PART": record.partner_id.id,
+            "COD_PART": record.partner_id._get_sped_cod_part(),
             "COD_SIT": record._get_sped_cod_sit(period_start=declaration.DT_INI),
             "SER": record.document_serie or "",
             "SUB": "",
@@ -614,7 +614,7 @@ class RegistroA100(models.Model):
             "DT_DOC": record.document_date,
             "DT_EXE_SERV": record.document_date,
             "VL_DOC": record.fiscal_amount_total or 0,
-            "IND_PGTO": "0",
+            "IND_PGTO": record._get_sped_ind_pgto(),
             "VL_DESC": record.amount_discount_value or 0,
             "VL_BC_PIS": record.amount_pis_base or 0,
             "VL_PIS": record.amount_pis_value or 0,
@@ -766,7 +766,7 @@ class RegistroC100(models.Model):
         return {
             "IND_OPER": "0" if record.fiscal_operation_type == "in" else "1",
             "IND_EMIT": "0" if record.issuer == "company" else "1",
-            "COD_PART": record.partner_id.id,
+            "COD_PART": record.partner_id._get_sped_cod_part(),
             "COD_MOD": record.document_type_id.code or "",
             "COD_SIT": cod_sit,
             "SER": record.document_serie or "",
@@ -779,7 +779,7 @@ class RegistroC100(models.Model):
             if record.fiscal_operation_type == "in"
             else record.document_date,
             "VL_DOC": record.fiscal_amount_total or 0,
-            "IND_PGTO": "0",
+            "IND_PGTO": record._get_sped_ind_pgto(),
             "VL_DESC": record.amount_discount_value or 0,
             "VL_ABAT_NT": 0,
             "VL_MERC": record.amount_price_gross or 0,
@@ -1697,7 +1697,7 @@ class RegistroD100(models.Model):
         return {
             "IND_OPER": "0" if record.fiscal_operation_type == "in" else "1",
             "IND_EMIT": "0" if record.issuer == "company" else "1",
-            "COD_PART": record.partner_id.id,
+            "COD_PART": record.partner_id._get_sped_cod_part(),
             "COD_MOD": record.document_type_id.code or "",
             "COD_SIT": record._get_sped_cod_sit(period_start=declaration.DT_INI),
             "SER": record.document_serie or "",

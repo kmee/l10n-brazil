@@ -37,3 +37,4 @@ from . import (
     test_simplified_tax,
     test_document_line_report,
 )
+from . import test_entry_cst_screen

@@ -121,6 +121,15 @@ class SpedDeclaration(models.AbstractModel):
         date falls back to the emission date. For an entry made from a bill,
         ``date_in_out`` is the accounting date of the bill: the real receipt
         date is not recorded in the document.
+
+        Known limit (time zone): ``date_in_out`` of an entry made from a bill is
+        the accounting date at midnight of the time zone of the user who
+        launched the bill, stored in UTC (``_compute_date_in_out`` of
+        l10n_br_account). A user east of UTC stores the previous day in UTC, and
+        the period filter and DT_E_S read that UTC value. It is the same
+        pattern as ``document_date`` (the dhEmi) and is pinned by tests of
+        l10n_br_account, so it is left to the time zone audit and not changed
+        here.
         """
         self.ensure_one()
         emission = [
@@ -216,6 +225,9 @@ class SpedDeclaration(models.AbstractModel):
             default_declaration_id=self.id,
         )
         top_registers = mixin_env._get_top_registers(kind)
+
+        # pulling twice must not duplicate: drop what an earlier pull created
+        mixin_env._flush_generated_registers(kind, self.id)
 
         for register_model in top_registers:  # Iterate over models, not instances
             try:

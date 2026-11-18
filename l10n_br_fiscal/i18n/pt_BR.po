@@ -12832,8 +12832,8 @@ msgstr "O documento %s foi denegado e não pode ser importado."
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__entry_cofins_cst_id
-msgid "Entry COFINS CST"
-msgstr "CST de Entrada COFINS"
+msgid "COFINS CST of the Entry (company)"
+msgstr "CST de Entrada da COFINS (empresa)"
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__entry_cofins_cst_id
@@ -12842,8 +12842,8 @@ msgstr "CST da COFINS que a empresa escritura na entrada: o CST de crédito da o
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__entry_ipi_cst_id
-msgid "Entry IPI CST"
-msgstr "CST de Entrada IPI"
+msgid "IPI CST of the Entry (company)"
+msgstr "CST de Entrada do IPI (empresa)"
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__entry_ipi_cst_id
@@ -12852,10 +12852,22 @@ msgstr "CST do IPI que a empresa escritura na entrada, vindo da operação fisca
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__entry_pis_cst_id
-msgid "Entry PIS CST"
-msgstr "CST de Entrada PIS"
+msgid "PIS CST of the Entry (company)"
+msgstr "CST de Entrada do PIS (empresa)"
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__entry_pis_cst_id
 msgid "PIS CST the company books for this entry: the credit CST of the operation in the non-cumulative regime, 70 (acquisition without credit right) in the cumulative one."
 msgstr "CST do PIS que a empresa escritura na entrada: o CST de crédito da operação no regime não cumulativo, 70 (aquisição sem direito a crédito) no cumulativo."
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__partner_icms_tax_benefit_code
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__partner_icms_tax_benefit_code
+msgid "Supplier Fiscal Benefit Code (cBenef)"
+msgstr "Código de Benefício Fiscal do Fornecedor (cBenef)"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__partner_icms_tax_benefit_code
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__partner_icms_tax_benefit_code
+msgid "Fiscal benefit code (<cBenef>) declared by the counterparty in the imported document. Preserved verbatim for SPED C197 (COD_AJ), while icms_tax_benefit_id/code reflects the company's own de-para mapping."
+msgstr "Código de benefício fiscal (<cBenef>) declarado pelo parceiro no documento importado. Preservado como veio para o C197 do SPED (COD_AJ); o código do benefício da empresa vem do próprio de-para."

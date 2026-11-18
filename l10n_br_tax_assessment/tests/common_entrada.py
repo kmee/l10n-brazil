@@ -3,7 +3,9 @@
 
 import logging
 import re
-from datetime import datetime
+from datetime import date, datetime
+
+from odoo.tests.common import Form
 
 from odoo.addons.l10n_br_account.tests.common import AccountMoveBRCommon
 
@@ -186,3 +188,27 @@ class SpedEntradaCommon(AccountMoveBRCommon):
         lines = [line for line in text.splitlines() if line.startswith(f"|{register}|")]
         _logger.info("EVIDENCE %s: %s", register, lines)
         return [dict(zip(names, line.split("|")[2:-1], strict=False)) for line in lines]
+
+    def _purchase_move(self, operation_line, number, payment_term=None):
+        """A posted supplier bill with its fiscal document authorized (the
+        document of an invoice, as the user launches it)."""
+        ref = self.env.ref
+        bill = self.init_invoice(
+            "in_invoice",
+            partner=self.partner_a,
+            invoice_date=date(2026, 7, 10),
+            products=[self.product_a],
+            document_type=ref("l10n_br_fiscal.document_55"),
+            fiscal_operation=ref("l10n_br_fiscal.fo_compras"),
+            fiscal_operation_lines=[ref(f"l10n_br_fiscal.{operation_line}")],
+            document_serie="1",
+            document_number=number,
+        )
+        if payment_term:
+            with Form(bill) as bill_form:
+                bill_form.invoice_payment_term_id = ref(f"account.{payment_term}")
+        bill.action_post()
+        bill.fiscal_document_id.write(
+            {"state_edoc": "autorizada", "document_key": self._access_key(number)}
+        )
+        return bill
