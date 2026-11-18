@@ -43,11 +43,13 @@ COD_CONT_BY_REGIME = {
 # 6912 (non-cumulative) / 8109 (cumulative), COFINS 5856 / 2172. M205/M605
 # break the amount due by these codes; a company under a special code books
 # it as a manual detail.
+# Table 4.4.1 (PIS/Pasep) and 4.4.2 (Cofins) of the Guia: the six positions of the
+# revenue code (the DARF code and the sequence), not the four of the DARF
 COD_REC = {
-    ("pis", "non_cumulative"): "6912",
-    ("pis", "cumulative"): "8109",
-    ("cofins", "non_cumulative"): "5856",
-    ("cofins", "cumulative"): "2172",
+    ("pis", "non_cumulative"): "691201",
+    ("pis", "cumulative"): "810902",
+    ("cofins", "non_cumulative"): "585601",
+    ("cofins", "cumulative"): "217201",
 }
 # M200/M600 field the M205/M605 detail points at: 08 is the non-cumulative
 # amount due (VL_CONT_NC_REC), 12 the cumulative one (VL_CONT_CUM_REC)
@@ -114,26 +116,43 @@ def _detail_domain(declaration, tax_domain):
     ]
 
 
-def _detail_vals(record, rate_field):
+def _detail_vals(record, rate_field, declaration):
     """Values of M210 (PIS/PASEP) and M610 (COFINS).
 
     The breakdown comes from the assessment for the same reason the
     consolidation does: recomputing it here would let the detail drift away
     from the total right above it.
     """
+    # The rate of the tax (the percent of the fiscal tax of the company's PIS/COFINS
+    # regime: the account tax carries none) and the base that gives the contribution of the
+    # assessment at that rate. The PVA demands VL_CONT_APUR = base x rate, and
+    # the ledger base of the line is not the base the contribution was
+    # computed on (the ICMS and the tax included are taken out of it).
+    pis_cofins = declaration.company_id.piscofins_id
+    fiscal_tax = (
+        pis_cofins.tax_pis_id if rate_field == "ALIQ_PIS" else pis_cofins.tax_cofins_id
+    )
+    rate = (
+        record.tax_id.fiscal_tax_ids[:1].percent_amount
+        or fiscal_tax.percent_amount
+        or record.tax_id.amount
+    )
+    base_amount = (
+        round(record.tax_amount / rate * 100, 2) if rate else record.base_amount
+    )
     vals = {
         "COD_CONT": COD_CONT_BY_REGIME.get(record.assessment_id.regime, ""),
         # Gross revenue and tax base are reported as the same amount while the
         # exclusions from the base are not written: inventing a split between
         # them would be worse than stating they were not computed.
-        "VL_REC_BRT": record.base_amount,
-        "VL_BC_CONT": record.base_amount,
+        "VL_REC_BRT": base_amount,
+        "VL_BC_CONT": base_amount,
         # Base adjustments (fields 5 to 7, layout in force) live in M215/M615,
         # which are not written yet, so the adjusted base equals the base.
         # The validator checks VL_BC_CONT_AJUS = VL_BC_CONT + acres - reduc.
         "VL_AJUS_ACRES_BC": 0.0,
         "VL_AJUS_REDUC_BC": 0.0,
-        "VL_BC_CONT_AJUS": record.base_amount,
+        "VL_BC_CONT_AJUS": base_amount,
         "VL_CONT_APUR": record.tax_amount,
         # Value adjustments live at the assessment level, not at the line:
         # they are reported in M220/M620, which are not written yet.
@@ -141,7 +160,7 @@ def _detail_vals(record, rate_field):
         "VL_AJUS_REDUC": 0.0,
         "VL_CONT_PER": record.tax_amount,
     }
-    vals[rate_field] = record.tax_id.amount
+    vals[rate_field] = rate
     return vals
 
 
@@ -3008,7 +3027,7 @@ class RegistroM210(models.Model):
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
-        return _detail_vals(record, "ALIQ_PIS")
+        return _detail_vals(record, "ALIQ_PIS", declaration)
 
 
 class RegistroM211(models.Model):
@@ -3374,7 +3393,7 @@ class RegistroM610(models.Model):
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
-        return _detail_vals(record, "ALIQ_COFINS")
+        return _detail_vals(record, "ALIQ_COFINS", declaration)
 
 
 class RegistroM611(models.Model):
