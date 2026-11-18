@@ -319,8 +319,8 @@ class DocumentImportWizard(models.TransientModel):
         """
         edoc = detectar_chave_edoc(edoc_key)
         self.document_key = " ".join(edoc.partes())
-        self.document_number = edoc.numero_documento.strip("0")
-        self.document_serie = edoc.numero_serie.strip("0")
+        self.document_number = edoc.numero_documento.lstrip("0") or "0"
+        self.document_serie = edoc.numero_serie.lstrip("0") or "0"
         self.issuer_cnpj = edoc.cnpj_cpf_emitente
         self.issuer_partner_id = self._search_partner(edoc.cnpj_cpf_emitente)
         if edoc.forma_emissao == "1":

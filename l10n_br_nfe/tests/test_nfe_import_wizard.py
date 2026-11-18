@@ -176,6 +176,12 @@ class NFeImportWizardTest(TransactionCase):
         self.assertEqual(wizard.fiscal_operation_type, "out")
         self.assertNotEqual(wizard.fiscal_operation_id, operation)
 
+    def test_document_number_and_serie_keep_trailing_zeros(self):
+        wizard = self.env["l10n_br_fiscal.document.import.wizard"].create({})
+        wizard._extract_key_information("35261145990181000189550100000540901130178813")
+        self.assertEqual(wizard.document_number, "54090")
+        self.assertEqual(wizard.document_serie, "10")
+
     def FIXME_test_set_fiscal_operation_type(self):
         self._prepare_wizard(self.xml_1)
 
