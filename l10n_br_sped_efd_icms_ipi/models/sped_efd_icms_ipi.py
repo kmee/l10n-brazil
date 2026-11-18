@@ -17,6 +17,7 @@ from odoo.tools.misc import format_date
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_ISSUER_COMPANY,
     FISCAL_IN,
+    SITUACAO_FISCAL_INUTILIZADO,
 )
 from odoo.addons.l10n_br_sped_base.models.sped_mixin import (
     EDITABLE_ON_DRAFT,
@@ -997,12 +998,30 @@ class RegistroC100(models.Model):
         # else:
         #     ind_pgto = '2'
 
+        cod_sit = record._get_sped_cod_sit(period_start=declaration.DT_INI)
+        if record._is_sped_cancelled():
+            # cancelled, denied and unused numbers only carry what the Guia
+            # Pratico allows: no partner, no dates, no values
+            return {
+                "IND_OPER": ind_oper,
+                "IND_EMIT": ind_emit,
+                "COD_MOD": record.document_type_id.code,
+                "COD_SIT": cod_sit,
+                "SER": ""
+                if cod_sit == SITUACAO_FISCAL_INUTILIZADO
+                else record.document_serie,
+                "NUM_DOC": misc.punctuation_rm(str(record.document_number)),
+                "CHV_NFE": ""
+                if cod_sit == SITUACAO_FISCAL_INUTILIZADO
+                else record.document_key,
+            }
+
         return {
             "IND_OPER": ind_oper,
             "IND_EMIT": ind_emit,
             "COD_PART": str(record.partner_id.id),
             "COD_MOD": record.document_type_id.code,
-            "COD_SIT": record.state_fiscal,
+            "COD_SIT": cod_sit,
             "SER": record.document_serie,
             "NUM_DOC": misc.punctuation_rm(str(record.document_number)),
             "CHV_NFE": record.document_key,
@@ -1042,6 +1061,8 @@ class RegistroC101(models.Model):
     @api.model
     def _odoo_domain(self, parent_record, declaration):
         # Only output C101 if there is actually DIFAL or FCP
+        if parent_record._is_sped_cancelled():
+            return [("id", "=", False)]
         return [
             ("id", "=", parent_record.id),
             "|",
@@ -1347,6 +1368,9 @@ class RegistroC170(models.Model):
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):
+        if parent_record._is_sped_cancelled():
+            # a cancelled document goes out without items
+            return [("id", "=", False)]
         return [
             ("document_id", "=", parent_record.id),
         ]
@@ -1704,6 +1728,8 @@ class RegistroC190(models.Model):
     @api.model
     def _odoo_query(self, parent_record, declaration):
         # SPED requires grouping by CST, CFOP, and ICMS Aliquot
+        if parent_record._is_sped_cancelled():
+            return "SELECT NULL WHERE FALSE", []
         query = """
             SELECT
                 CONCAT(COALESCE(fdl.icms_origin, '0'), cst.code) AS cst_icms,
@@ -2264,7 +2290,7 @@ class RegistroC500(models.Model):
             "IND_EMIT": ind_emit,
             "COD_PART": str(record.partner_id.id),
             "COD_MOD": record.document_type_id.code,
-            "COD_SIT": record.state_fiscal,
+            "COD_SIT": record._get_sped_cod_sit(period_start=declaration.DT_INI),
             "SER": record.document_serie or "",
             "SUB": "",  # Rarely used nowadays
             "COD_CONS": getattr(record, "consumption_class_code", ""),  # MISSING FIELD
@@ -2344,6 +2370,8 @@ class RegistroC590(models.Model):
     @api.model
     def _odoo_query(self, parent_record, declaration):
         # We group lines by CST, CFOP and ICMS % exactly as we do for C190
+        if parent_record._is_sped_cancelled():
+            return "SELECT NULL WHERE FALSE", []
         query = """
             SELECT
                 CONCAT(COALESCE(fdl.icms_origin, '0'), cst.code) AS cst_icms,
@@ -2861,7 +2889,7 @@ class RegistroD100(models.Model):
             "IND_EMIT": "0" if record.issuer == DOCUMENT_ISSUER_COMPANY else "1",
             "COD_PART": misc.punctuation_rm(record.partner_id.cnpj_cpf),
             "COD_MOD": record.document_type_id.code or "",
-            "COD_SIT": record.state_fiscal,
+            "COD_SIT": record._get_sped_cod_sit(period_start=declaration.DT_INI),
             "SER": record.document_serie or "",
             "SUB": "",
             "NUM_DOC": record.document_number or "",
@@ -4430,10 +4458,8 @@ class RegistroE520(models.Model):
             "VL_SD_ANT_IPI": record.previous_balance,
             "VL_DEB_IPI": record.debit_total,
             "VL_CRED_IPI": record.credit_total,
-            "VL_OD_IPI": record.adjustment_debit_total
-            + record.credit_reversal_total,
-            "VL_OC_IPI": record.adjustment_credit_total
-            + record.debit_reversal_total,
+            "VL_OD_IPI": record.adjustment_debit_total + record.credit_reversal_total,
+            "VL_OC_IPI": record.adjustment_credit_total + record.debit_reversal_total,
             "VL_SC_IPI": record.amount_carried_forward,
             "VL_SD_IPI": record.amount_payable,
         }
