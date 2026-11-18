@@ -252,18 +252,20 @@ class Registro0000(models.Model):
             ]
         )
 
+    def _get_accountant_required(self):
+        # what the layout marks as mandatory in the 0100 (the descriptor of the PVA)
+        return [
+            ("cnpj_cpf", _("CPF")),
+            ("crc_code", _("CRC")),
+            ("email", _("e-mail")),
+            ("city_id", _("city")),
+        ]
+
     def button_create_sped_files(self):
         """Without the ICMS assessment of the period posted the E110 does not
         exist and the PVA refuses the file, so the generation stops here."""
         for declaration in self:
-            if not declaration.debug and not declaration.company_id.accountant_id:
-                raise UserError(
-                    _(
-                        "Set the accountant of the company (Accountant field, "
-                        "with CPF and CRC) before generating the file: the record "
-                        "0100 comes from it."
-                    )
-                )
+            declaration._check_accountant()
             if not declaration.debug and not declaration._get_posted_icms_assessments():
                 raise UserError(
                     _(
@@ -424,25 +426,26 @@ class Registro0100(models.Model):
                 "Cadastre o contador responsável dentro das configurações da Empresa."
             )
             raise UserError(msg_err)
-        # TODO melhorar isso
-        phone = record.phone.split(",")[0].strip()
+        # the phone is optional in the layout: an accountant without one has to
+        # keep the record, not break the mapping (which left the 0100 out)
+        phone = (record.phone or "").split(",")[0].strip()
         phone = misc.punctuation_rm(phone).replace(" ", "")
         if len(phone) == 13:
             phone = phone[2:]
         return {
             "NOME": record.name,
-            "CPF": misc.punctuation_rm(record.cnpj_cpf),
-            "CRC": misc.punctuation_rm(record.crc_code),
-            "CNPJ": misc.punctuation_rm(record.parent_id.cnpj_cpf),
-            "CEP": misc.punctuation_rm(record.zip),
-            "END": record.street_name,
-            "NUM": misc.punctuation_rm(record.street_number),
-            "COMPL": record.street2,
-            "BAIRRO": record.district,
+            "CPF": misc.punctuation_rm(record.cnpj_cpf or ""),
+            "CRC": misc.punctuation_rm(record.crc_code or ""),
+            "CNPJ": misc.punctuation_rm(record.parent_id.cnpj_cpf or ""),
+            "CEP": misc.punctuation_rm(record.zip or ""),
+            "END": record.street_name or "",
+            "NUM": misc.punctuation_rm(record.street_number or ""),
+            "COMPL": record.street2 or "",
+            "BAIRRO": record.district or "",
             "FONE": phone,
             # "FAX": 0,  # Número do fax.
-            "EMAIL": record.email,
-            "COD_MUN": record.city_id.ibge_code,
+            "EMAIL": record.email or "",
+            "COD_MUN": record.city_id.ibge_code or "",
         }
 
 

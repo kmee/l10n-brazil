@@ -308,6 +308,10 @@ class Registro0000(models.Model):
     _inherit = ["l10n_br_sped.efd_pis_cofins.6.0000"]
     _odoo_model = "res.company"
 
+    def _get_accountant_required(self):
+        # what the layout marks as mandatory in the 0100 (the descriptor of the PVA)
+        return [("cnpj_cpf", _("CPF")), ("crc_code", _("CRC"))]
+
     def button_create_sped_files(self):
         """The credit block (M100 to M505) and the M200/M600 come from the
         documents and from the assessment of the period, and the pull of a
@@ -317,6 +321,7 @@ class Registro0000(models.Model):
         for declaration in self:
             if declaration.debug:
                 continue
+            declaration._check_accountant()
             declaration = declaration._in_company_context()
             for tax_domain in ("pis", "cofins"):
                 _credit_groups(declaration.env, declaration, tax_domain)

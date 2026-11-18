@@ -338,6 +338,7 @@ class SpedDeclaration(models.AbstractModel):
         typed by hand). A register that cannot be pulled stops the generation
         with the reason, instead of going out missing from the file."""
         self.ensure_one()
+        self._check_accountant()
         errors = self._in_company_context()._populate_sped_from_odoo()
         if errors:
             raise UserError(
@@ -355,6 +356,45 @@ class SpedDeclaration(models.AbstractModel):
         else:
             attachment_vals = [self._create_sped_attachment(sped_txt)]
         self.env["ir.attachment"].create(attachment_vals)
+
+    def _get_accountant_required(self):
+        """(field of the accountant, label) that the record 0100 of the layout
+        marks as mandatory; each kind of declaration that has the record lists
+        them."""
+        return []
+
+    def _check_accountant(self):
+        """The record 0100 comes from the accountant of the company, and the PVA
+        refuses it without the mandatory fields of the layout: say which ones
+        are missing in the registration instead of leaving the record out."""
+        for declaration in self:
+            required = declaration._get_accountant_required()
+            if declaration.debug or not required:
+                continue
+            accountant = declaration.company_id.accountant_id
+            if not accountant:
+                raise UserError(
+                    _(
+                        "Set the accountant of the company (Accountant field, "
+                        "with CPF and CRC) before generating the file: the record "
+                        "0100 comes from it."
+                    )
+                )
+            missing = [
+                label
+                for field, label in required
+                if not accountant[field]
+            ]
+            if missing:
+                raise UserError(
+                    _(
+                        "The registration of the accountant %(name)s lacks "
+                        "%(missing)s, which the record 0100 of the file needs. "
+                        "Fill it in the contact of the accountant.",
+                        name=accountant.display_name,
+                        missing=", ".join(missing),
+                    )
+                )
 
     def _split_sped_text_by_bloco(self, sped_txt):
         blocos = defaultdict(list)

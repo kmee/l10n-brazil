@@ -205,3 +205,25 @@ class TestSpedEfdIcmsIpiApuracao(EntradaHelpers, SpedEntradaCommon):
         text = self._generated_text(declaration)
         self.assertIn("|E110|", text)
         self.assertIn("|0100|", text)
+
+    def test_the_0100_stays_when_the_accountant_has_no_phone(self):
+        """The phone is optional in the layout. The mapping broke on a missing
+        one and the 0100 went out of the file with no word."""
+        self._set_accountant()
+        self.company.accountant_id.phone = False
+        declaration = self._declaration_july()
+        records = self._sped_records(declaration, "0100")
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]["FONE"], "")
+
+    def test_generation_stops_with_what_the_accountant_lacks(self):
+        """The mandatory fields of the 0100 (descriptor of the PVA) that the
+        registration of the accountant does not have, said by name."""
+        self._set_accountant()
+        self.company.accountant_id.write({"email": False, "city_id": False})
+        self._purchase_move("fo_compras_compras_comercializacao", "608")
+        declaration = self._declaration_july()
+        with self.assertRaises(UserError) as error:
+            declaration.button_create_sped_files()
+        self.assertIn("e-mail", error.exception.args[0])
+        self.assertIn("city", error.exception.args[0])

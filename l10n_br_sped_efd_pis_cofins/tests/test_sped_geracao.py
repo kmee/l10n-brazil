@@ -67,3 +67,12 @@ class TestSpedPisCofinsGeneration(SpedPisCofinsEntradaMixin, SpedEntradaCommon):
             with self.assertRaises(UserError) as error:
                 declaration.button_create_sped_files()
         self.assertIn("0100: boom", error.exception.args[0])
+
+    def test_generation_stops_with_what_the_accountant_lacks(self):
+        """The CRC is mandatory in the 0100 of the layout."""
+        self._set_accountant(crc_code=False)
+        self._entry_document()
+        declaration = self._declaration_july()
+        with self.assertRaises(UserError) as error:
+            declaration.button_create_sped_files()
+        self.assertIn("CRC", error.exception.args[0])
