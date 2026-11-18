@@ -67,7 +67,8 @@ class CreditMixin(SpedPisCofinsEntradaMixin):
             ],
             limit=1,
         )
-        group.regime = regime
+        if regime:
+            group.regime = regime
         accounts = {
             "property_tax_payable_account_id": ("PAY", "liability_current"),
             "property_tax_receivable_account_id": ("REC", "asset_current"),

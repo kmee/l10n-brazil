@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 KMEE
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl-3.0.html). -->
+<odoo>
+    <record id="view_account_tax_group_form" model="ir.ui.view">
+        <field name="name">account.tax.group.form.l10n_br_tax_assessment</field>
+        <field name="model">account.tax.group</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" />
+                            <field name="country_id" />
+                        </group>
+                        <group>
+                            <field name="regime" />
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_account_tax_group_tree" model="ir.ui.view">
+        <field name="name">account.tax.group.tree.l10n_br_tax_assessment</field>
+        <field name="model">account.tax.group</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name" />
+                <field name="country_id" />
+                <field name="regime" />
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_account_tax_group" model="ir.actions.act_window">
+        <field name="name">Grupos de imposto</field>
+        <field name="res_model">account.tax.group</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem
+        id="menu_account_tax_group"
+        name="Grupos de imposto"
+        parent="account.account_account_menu"
+        action="action_account_tax_group"
+        sequence="45"
+    />
+</odoo>
