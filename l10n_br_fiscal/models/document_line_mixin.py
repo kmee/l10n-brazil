@@ -1134,6 +1134,19 @@ class FiscalDocumentLineMixin(models.AbstractModel):
             TAX_DOMAIN_ICMS_SN: "icmssn_credit_value",
         }
 
+    def _stock_cost_always_cost_domains(self):
+        """Impostos que NUNCA geram crédito na compra: ICMS-ST e FCP-ST.
+
+        São o que o fornecedor cobra "por fora" e integram sempre o custo de
+        estoque (``_stock_cost_add_value_fields``): o razão os trata como custo
+        em qualquer destinação, alinhado ao custo de estoque.
+        """
+        self.ensure_one()
+        return {
+            TAX_DOMAIN_ICMS_ST: "icmsst_value",
+            TAX_DOMAIN_ICMS_FCP_ST: "icmsfcpst_value",
+        }
+
     def _stock_cost_cst_blocks_credit(self, domain):
         """O CST da linha impede o crédito deste imposto? (Fase D)
 
@@ -1222,6 +1235,9 @@ class FiscalDocumentLineMixin(models.AbstractModel):
                     result[domain] = "cost"
             else:  # ICMS and the credit of the Simples Nacional supplier
                 result[domain] = "credit"
+        for tax in self.fiscal_tax_ids:
+            if tax.tax_domain in self._stock_cost_always_cost_domains():
+                result[tax.tax_domain] = "cost"
         return result
 
     @api.depends(

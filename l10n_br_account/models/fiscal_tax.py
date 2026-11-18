@@ -53,7 +53,12 @@ class FiscalTax(models.Model):
                         continue
                     # Sem a operação dedutível, o comportamento histórico:
                     # só a variante normal ("a Compensar").
-                elif fiscal_tax.tax_group_id.tax_include:
+                elif fiscal_tax.tax_group_id.tax_include or fiscal_tax.tax_domain in (
+                    "icmsst",
+                    "icmsfcpst",
+                ):
+                    # ICMS-ST e FCP-ST: custo sempre, sem variante contábil (o
+                    # valor que o fornecedor cobra fica na linha do produto).
                     # NÃO creditável POR DENTRO (ICMS/PIS/COFINS embutidos):
                     # nenhuma variante, o valor já está no preço e permanece
                     # no custo (a linha do produto da fatura o absorve).
