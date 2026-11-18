@@ -140,3 +140,30 @@ class TestImportedDocumentTaxAmounts(TransactionCase):
             tax_domain = tax_field[: -len("_tax_id")]
             self.assertIn(tax_domain, TAX_VALUE_FIELDS)
             self.assertIn(TAX_VALUE_FIELDS[tax_domain], line_fields)
+
+    def test_every_line_tax_field_has_a_value_field(self):
+        line_fields = self.env["l10n_br_fiscal.document.line"]._fields
+        for tax_field in FISCAL_TAX_ID_FIELDS:
+            tax_domain = tax_field[: -len("_tax_id")]
+            self.assertIn(tax_domain, TAX_VALUE_FIELDS)
+            self.assertIn(TAX_VALUE_FIELDS[tax_domain], line_fields)
+
+    def test_recomputing_keeps_the_taxes_of_the_file(self):
+        document = self._create_imported_document(
+            {
+                "ipi_tax_id": self.ipi_tax.id,
+                "ipi_base": 210.0,
+                "ipi_percent": 6.5,
+                "ipi_value": 13.65,
+                "icms_tax_id": self.icms_tax.id,
+                "icms_base": 210.0,
+                "icms_percent": 18.0,
+                "icms_value": 37.8,
+            }
+        )
+        line = document.fiscal_line_ids
+        self.assertEqual(line.fiscal_tax_ids, self.ipi_tax | self.icms_tax)
+
+        line._compute_fiscal_tax_ids()
+
+        self.assertEqual(line.fiscal_tax_ids, self.ipi_tax | self.icms_tax)
