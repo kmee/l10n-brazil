@@ -1,4 +1,5 @@
 import base64
+import importlib.resources
 import io
 import os
 import re
@@ -539,6 +540,38 @@ class NFeImportWizardTest(TransactionCase):
             spec_create_forbidden_models=["product.product"]
         )
         self.assertFalse(forbidden.match_or_create_m2o({}, parent_dict))
+
+    def _authorized_nfe_xml(self):
+        return (
+            importlib.resources.files(nfelib.__name__)
+            .joinpath(
+                "nfe",
+                "samples",
+                "v4_0",
+                "leiauteNFe",
+                "35180834128745000152550010000474281920007498-nfe.xml",
+            )
+            .read_bytes()
+        )
+
+    def test_a_cancelled_or_denied_nfe_is_not_imported(self):
+        xml = self._authorized_nfe_xml()
+        self.assertIn(b"<cStat>100</cStat>", xml)
+        self._prepare_wizard(xml)
+        self.assertFalse(self.wizard._import_block_reason())
+        for status in (b"101", b"110"):
+            blocked = xml.replace(
+                b"<cStat>100</cStat>", b"<cStat>" + status + b"</cStat>"
+            )
+            self._prepare_wizard(blocked)
+            self.assertTrue(self.wizard._import_block_reason())
+            with self.assertRaises(UserError):
+                self.wizard._import_edoc()
+        self.assertFalse(
+            self.env["l10n_br_fiscal.document"].search(
+                [("document_key", "=", "35180834128745000152550010000474281920007498")]
+            )
+        )
 
     def test__parse_xml(self):
         self._prepare_wizard(self.xml_1)

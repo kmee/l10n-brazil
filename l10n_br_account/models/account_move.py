@@ -690,6 +690,9 @@ class AccountMove(models.Model):
         Then it creates each account.move.line and fill them using
         their fiscal_document_id onchange.
         """
+        reason = fiscal_document._import_block_reason()
+        if reason:
+            raise UserError(reason)
         if move_id:
             move = self.env["account.move"].browse(move_id)
         else:

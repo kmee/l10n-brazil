@@ -1530,3 +1530,53 @@ class TestDFe(TransactionCase):
         self.assertEqual(mde.protocol_date.hour, 13)
         self.assertEqual(mde.protocol_date.minute, 30)
         self.assertEqual(mde.protocol_date.second, 0)
+
+
+class TestDFeImportBlock(TransactionCase):
+    """A note cancelled or denied at the source is not imported."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.company = cls.env.ref("l10n_br_base.empresa_lucro_presumido")
+        cls.key = "35200199999999999999550010000000012062777165"
+
+    def _dfe(self, state):
+        return self.env["l10n_br_fiscal_dfe.document"].create(
+            {
+                "access_key": self.key,
+                "company_id": self.company.id,
+                "fiscal_type": "nfe",
+                "document_state": state,
+            }
+        )
+
+    def test_import_is_refused_for_cancelled_and_denied(self):
+        for state in ("2", "3"):
+            dfe = self._dfe(state)
+            self.assertTrue(dfe.import_block_reason)
+            with self.assertRaises(UserError):
+                dfe.import_document()
+            dfe.unlink()
+
+    def test_an_authorized_note_is_not_blocked(self):
+        self.assertFalse(self._dfe("1").import_block_reason)
+
+    def test_the_file_and_the_invoice_follow_the_inbox_state(self):
+        self._dfe("3")
+        wizard = self.env["l10n_br_fiscal.document.import.wizard"].create(
+            {"document_key": self.key}
+        )
+        self.assertTrue(wizard._import_block_reason())
+        document = self.env["l10n_br_fiscal.document"].create(
+            {
+                "company_id": self.company.id,
+                "document_key": self.key,
+                "document_type_id": self.env.ref("l10n_br_fiscal.document_55").id,
+                "document_number": "991",
+                "document_serie": "1",
+                "fiscal_operation_type": "in",
+                "issuer": "partner",
+            }
+        )
+        self.assertTrue(document._import_block_reason())

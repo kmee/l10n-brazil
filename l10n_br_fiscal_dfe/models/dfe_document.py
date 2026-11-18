@@ -110,6 +110,43 @@ class L10nBrFiscalDfeDocument(models.Model):
         help="Fiscal document already imported with this access key.",
     )
 
+    import_block_reason = fields.Char(
+        compute="_compute_import_block_reason",
+        help="Why this document cannot be imported. Empty when the import "
+        "can proceed.",
+    )
+
+    @api.depends("document_state")
+    def _compute_import_block_reason(self):
+        for record in self:
+            record.import_block_reason = record._get_import_block_reason()
+
+    def _get_import_block_reason(self):
+        self.ensure_one()
+        if self.document_state == "3":
+            return _("This document was cancelled at the source.")
+        if self.document_state == "2":
+            return _("This document was denied at the source.")
+        return False
+
+    @api.model
+    def _import_block_reason_for_key(self, access_key):
+        """The block reason of the inbox row with this access key, if any."""
+        key = (access_key or "").replace(" ", "")
+        if not key:
+            return False
+        for row in self.sudo().search([("access_key", "=", key)]):
+            reason = row._get_import_block_reason()
+            if reason:
+                return reason
+        return False
+
+    def _check_import_allowed(self):
+        self.ensure_one()
+        reason = self._get_import_block_reason()
+        if reason:
+            raise UserError(reason)
+
     @api.depends("access_key")
     def _compute_partner_id(self):
         Partner = self.env["res.partner"]

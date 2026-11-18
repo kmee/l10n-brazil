@@ -15,6 +15,11 @@ from odoo.osv import expression
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import MODELO_FISCAL_NFE
 
+# cStat of the authorization protocol: cancellation (101, 151, 155) and
+# denied use (110, 301, 302, 303)
+NFE_CANCELLED_STATUS = ("101", "151", "155")
+NFE_DENIED_STATUS = ("110", "301", "302", "303")
+
 
 class DocumentImportWizard(models.TransientModel):
     _inherit = "l10n_br_fiscal.document.import.wizard"
@@ -58,6 +63,20 @@ class DocumentImportWizard(models.TransientModel):
             self.nat_op,
             self.fiscal_operation_type,
         )
+
+    def _import_block_reason(self):
+        reason = super()._import_block_reason()
+        if reason or self.document_type != MODELO_FISCAL_NFE or not self.file:
+            return reason
+        # the authorization protocol travelling with the file tells whether
+        # the note was cancelled or denied at the source
+        protocol = getattr(self._parse_file_data(self.file), "protNFe", None)
+        status = str(getattr(getattr(protocol, "infProt", None), "cStat", "") or "")
+        if status in NFE_CANCELLED_STATUS:
+            return _("This NF-e was cancelled at the source and cannot be imported.")
+        if status in NFE_DENIED_STATUS:
+            return _("This NF-e was denied at the source and cannot be imported.")
+        return reason
 
     @api.model
     def _most_common_cfop(self, infNFe):

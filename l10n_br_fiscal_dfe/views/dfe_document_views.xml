@@ -30,8 +30,9 @@
                         type="object"
                         icon="fa-file-text-o"
                         class="oe_highlight"
-                        attrs="{'invisible': [('fiscal_document_id', '!=', False)]}"
+                        attrs="{'invisible': ['|', ('fiscal_document_id', '!=', False), ('import_block_reason', '!=', False)]}"
                     />
+                    <field name="import_block_reason" invisible="1" />
                     <button
                         string="Match Partner"
                         name="action_match_partner"
@@ -124,6 +125,7 @@
                 <field name="currency_id" invisible="1" />
                 <field name="fiscal_document_id" />
                 <field name="document_state_label" string="State" />
+                <field name="import_block_reason" invisible="1" />
                 <button
                     string="XML"
                     name="action_download_xml"
@@ -135,7 +137,7 @@
                     string="Import"
                     type="object"
                     icon="fa-file-text-o"
-                    attrs="{'invisible': [('fiscal_document_id', '!=', False)]}"
+                    attrs="{'invisible': ['|', ('fiscal_document_id', '!=', False), ('import_block_reason', '!=', False)]}"
                 />
             </tree>
         </field>

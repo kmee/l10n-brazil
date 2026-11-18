@@ -283,6 +283,23 @@ class Document(models.Model):
             }
         )
 
+    def _import_block_reason(self):
+        """Why the document cannot be imported into an invoice, or False.
+
+        A cancelled or denied note is refused; the modules that know the
+        source of the note (DF-e) add their own reasons.
+        """
+        self.ensure_one()
+        if self.state_edoc == DOCUMENT_STATE_CANCEL:
+            return _("The document %s was cancelled and cannot be imported.") % (
+                self.display_name
+            )
+        if self.state_edoc == SITUACAO_EDOC_DENEGADA:
+            return _("The document %s was denied and cannot be imported.") % (
+                self.display_name
+            )
+        return False
+
     def _init_import_states(self):
         """Initialize the per-line review states of an imported document.
 

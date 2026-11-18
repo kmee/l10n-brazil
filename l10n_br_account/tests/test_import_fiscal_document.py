@@ -69,6 +69,13 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
         self.assertEqual(move.invoice_date, date(2026, 11, 17))
         self.assertEqual(document.document_date, emission)
 
+    def test_a_cancelled_or_denied_document_is_not_imported_into_a_bill(self):
+        for state in ("cancelada", "denegada"):
+            document = self._create_fiscal_document(state_edoc=state)
+            with self.assertRaises(UserError):
+                self.env["account.move"].import_fiscal_document(document)
+            self.assertFalse(document.move_ids)
+
     def test_the_same_document_is_not_imported_into_two_bills(self):
         document = self._create_fiscal_document()
         move_form = self.env["account.move"].import_fiscal_document(document)
