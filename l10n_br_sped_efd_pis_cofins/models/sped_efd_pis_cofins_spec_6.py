@@ -355,9 +355,7 @@ class Registro0100(models.AbstractModel):
     _inherit = "l10n_br_sped.mixin.efd_pis_cofins"
     _sped_level = 2
 
-    NOME = fields.Char(
-        string="Nome do contabilista", out_required=True, sped_length="1"
-    )
+    NOME = fields.Char(string="Nome do contabilista", out_required=True, sped_length="1")
 
     CPF = fields.Char(
         string="Número de inscrição do contabilista no CPF",
@@ -1038,9 +1036,7 @@ class Registro0500(models.AbstractModel):
     )
 
     NOME_CTA = fields.Char(
-        string="Nome da conta analítica/grupo de contas",
-        out_required=True,
-        sped_length="6",
+        string="Nome da conta analítica/grupo de contas", out_required=True, sped_length="6"
     )
 
     COD_CTA_REF = fields.Char(
@@ -1335,9 +1331,7 @@ class RegistroA100(models.AbstractModel):
     )
 
     DT_DOC = fields.Date(
-        string="Data da emissão do documento fiscal",
-        out_required=True,
-        sped_length="8*",
+        string="Data da emissão do documento fiscal", out_required=True, sped_length="8*"
     )
 
     DT_EXE_SERV = fields.Date(
@@ -1885,9 +1879,7 @@ class RegistroC100(models.AbstractModel):
     )
 
     DT_DOC = fields.Date(
-        string="Data da emissão do documento fiscal",
-        out_required=True,
-        sped_length="8*",
+        string="Data da emissão do documento fiscal", out_required=True, sped_length="8*"
     )
 
     DT_E_S = fields.Date(string="Data da entrada ou da saída", sped_length="8*")
@@ -2211,14 +2203,122 @@ class RegistroC170(models.AbstractModel):
         currency_field="brl_currency_id",
     )
 
-    NAT_BC_CRED = fields.Char(
-        string="Código da Natureza da Base de Cálculo do Crédito",
-        sped_length="2",
+    IND_MOV = fields.Char(string="Movimentação física do ITEM/PRODUTO", sped_length="1")
+
+    CST_ICMS = fields.Char(
+        string="Código da Situação Tributária referente ao ICMS",
+        xsd_type="numeric_code",
+        sped_length="3*",
         help=(
-            "Código da Natureza da Base de Cálculo do Crédito, conforme a Tabela "
-            "indicada no item 4.3.7, caso seja informado código representativo de "
-            "crédito no Campo CST_PIS ou CST_COFINS"
+            "Código da Situação Tributária referente ao ICMS, conforme a Tabela "
+            "indicada no item 4.3.1"
         ),
+    )
+
+    CFOP = fields.Char(
+        string="Código Fiscal de Operação e Prestação",
+        out_required=True,
+        xsd_type="numeric_code",
+        sped_length="4*",
+    )
+
+    COD_NAT = fields.Char(
+        string="Código da natureza da operação",
+        sped_length="1",
+        help="Código da natureza da operação (campo 02 do Registro 0400)",
+    )
+
+    VL_BC_ICMS = fields.Monetary(
+        string="Valor da base de cálculo do ICMS",
+        xsd_type="TDec_1602",
+        currency_field="brl_currency_id",
+    )
+
+    ALIQ_ICMS = fields.Float(
+        string="Alíquota do ICMS",
+        sped_length="6",
+        xsd_type="TDec_1602",
+        digits=(
+            16,
+            2,
+        ),
+    )
+
+    VL_ICMS = fields.Monetary(
+        string="Valor do ICMS creditado/debitado",
+        xsd_type="TDec_1602",
+        currency_field="brl_currency_id",
+    )
+
+    VL_BC_ICMS_ST = fields.Monetary(
+        string="Valor da base de cálculo referente",
+        xsd_type="TDec_1602",
+        currency_field="brl_currency_id",
+        help="Valor da base de cálculo referente à substituição tributária",
+    )
+
+    ALIQ_ST = fields.Float(
+        string="Alíquota do ICMS da substituição tributária",
+        sped_length="6",
+        xsd_type="TDec_1602",
+        digits=(
+            16,
+            2,
+        ),
+        help=(
+            "Alíquota do ICMS da substituição tributária na unidade da federação de "
+            "destino"
+        ),
+    )
+
+    VL_ICMS_ST = fields.Monetary(
+        string="Valor do ICMS referente à substituição tributária",
+        xsd_type="TDec_1602",
+        currency_field="brl_currency_id",
+    )
+
+    IND_APUR = fields.Char(
+        string="Indicador de período de apuração do IPI", sped_length="1*"
+    )
+
+    CST_IPI = fields.Char(
+        string="Código da Situação Tributária referente ao IPI",
+        sped_length="2*",
+        help=(
+            "Código da Situação Tributária referente ao IPI, conforme a Tabela indicada"
+            " no item 4.3.2."
+        ),
+    )
+
+    COD_ENQ = fields.Char(
+        string="Código de enquadramento legal do IPI",
+        sped_length="3*",
+        help=(
+            "Código de enquadramento legal do IPI, conforme tabela indicada no item "
+            "4.5.3."
+        ),
+    )
+
+    VL_BC_IPI = fields.Monetary(
+        string="Valor da base de cálculo do IPI",
+        xsd_type="TDec_1602",
+        currency_field="brl_currency_id",
+    )
+
+    ALIQ_IPI = fields.Float(
+        string="Alíquota do IPI",
+        sped_length="6",
+        xsd_type="TDec_1602",
+        digits=(
+            16,
+            2,
+        ),
+    )
+
+    VL_IPI = fields.Monetary(
+        string="Valor do IPI creditado/debitado",
+        xsd_type="TDec_1602",
+        currency_field="brl_currency_id",
     )
 
     CST_PIS = fields.Char(
@@ -2501,15 +2601,11 @@ class RegistroC180(models.AbstractModel):
     )
 
     DT_DOC_INI = fields.Date(
-        string="Data de Emissão Inicial dos Documentos",
-        out_required=True,
-        sped_length="8*",
+        string="Data de Emissão Inicial dos Documentos", out_required=True, sped_length="8*"
     )
 
     DT_DOC_FIN = fields.Date(
-        string="Data de Emissão Final dos Documentos",
-        out_required=True,
-        sped_length="8*",
+        string="Data de Emissão Final dos Documentos", out_required=True, sped_length="8*"
     )
 
     COD_ITEM = fields.Char(
@@ -3177,15 +3273,11 @@ class RegistroC380(models.AbstractModel):
     )
 
     DT_DOC_INI = fields.Date(
-        string="Data de Emissão Inicial dos Documentos",
-        out_required=True,
-        sped_length="8*",
+        string="Data de Emissão Inicial dos Documentos", out_required=True, sped_length="8*"
     )
 
     DT_DOC_FIN = fields.Date(
-        string="Data de Emissão Final dos Documentos",
-        out_required=True,
-        sped_length="8*",
+        string="Data de Emissão Final dos Documentos", out_required=True, sped_length="8*"
     )
 
     NUM_DOC_INI = fields.Char(
@@ -3449,9 +3541,7 @@ class RegistroC395(models.AbstractModel):
     )
 
     DT_DOC = fields.Date(
-        string="Data da emissão do documento fiscal",
-        out_required=True,
-        sped_length="8*",
+        string="Data da emissão do documento fiscal", out_required=True, sped_length="8*"
     )
 
     VL_DOC = fields.Monetary(
@@ -3611,9 +3701,7 @@ class RegistroC400(models.AbstractModel):
     )
 
     ECF_FAB = fields.Char(
-        string="Número de série de fabricação do ECF",
-        out_required=True,
-        sped_length="21",
+        string="Número de série de fabricação do ECF", out_required=True, sped_length="21"
     )
 
     ECF_CX = fields.Char(
@@ -3924,15 +4012,11 @@ class RegistroC490(models.AbstractModel):
     _sped_level = 3
 
     DT_DOC_INI = fields.Date(
-        string="Data de Emissão Inicial dos Documentos",
-        out_required=True,
-        sped_length="8*",
+        string="Data de Emissão Inicial dos Documentos", out_required=True, sped_length="8*"
     )
 
     DT_DOC_FIN = fields.Date(
-        string="Data de Emissão Final dos Documentos",
-        out_required=True,
-        sped_length="8*",
+        string="Data de Emissão Final dos Documentos", out_required=True, sped_length="8*"
     )
 
     COD_MOD = fields.Char(
@@ -4231,9 +4315,7 @@ class RegistroC500(models.AbstractModel):
     )
 
     DT_DOC = fields.Date(
-        string="Data da emissão do documento fiscal",
-        out_required=True,
-        sped_length="8*",
+        string="Data da emissão do documento fiscal", out_required=True, sped_length="8*"
     )
 
     DT_E_S = fields.Date(string="Data da entrada", sped_length="8*")
@@ -5279,9 +5361,7 @@ class RegistroD100(models.AbstractModel):
     )
 
     DT_DOC = fields.Date(
-        string="Data da emissão do documento fiscal",
-        out_required=True,
-        sped_length="8*",
+        string="Data da emissão do documento fiscal", out_required=True, sped_length="8*"
     )
 
     DT_A_P = fields.Date(
@@ -6005,9 +6085,7 @@ class RegistroD350(models.AbstractModel):
     )
 
     ECF_FAB = fields.Char(
-        string="Número de série de fabricação do ECF",
-        out_required=True,
-        sped_length="21",
+        string="Número de série de fabricação do ECF", out_required=True, sped_length="21"
     )
 
     DT_DOC = fields.Date(
@@ -6256,9 +6334,7 @@ class RegistroD500(models.AbstractModel):
     )
 
     DT_DOC = fields.Date(
-        string="Data da emissão do documento fiscal",
-        out_required=True,
-        sped_length="8*",
+        string="Data da emissão do documento fiscal", out_required=True, sped_length="8*"
     )
 
     DT_A_P = fields.Date(
@@ -6587,9 +6663,7 @@ class RegistroD600(models.AbstractModel):
     )
 
     DT_DOC_FIN = fields.Date(
-        string="Data Final dos documentos consolidados",
-        out_required=True,
-        sped_length="8*",
+        string="Data Final dos documentos consolidados", out_required=True, sped_length="8*"
     )
 
     VL_DOC = fields.Monetary(
@@ -12204,9 +12278,7 @@ class Registro1010(models.AbstractModel):
         sped_length="2",
     )
 
-    ID_SEC_JUD = fields.Char(
-        string="Identificação da Seção Judiciária", out_required=True
-    )
+    ID_SEC_JUD = fields.Char(string="Identificação da Seção Judiciária", out_required=True)
 
     ID_VARA = fields.Char(
         string="Identificação da Vara", out_required=True, sped_length="2"

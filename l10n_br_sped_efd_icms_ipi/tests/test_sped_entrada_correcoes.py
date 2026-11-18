@@ -1,6 +1,9 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl-3.0.html).
 
+from datetime import datetime
+
+from odoo.exceptions import ValidationError
 from odoo.tests.common import tagged
 
 from odoo.addons.l10n_br_tax_assessment.tests.common_entrada import SpedEntradaCommon
@@ -145,3 +148,51 @@ class TestSpedEfdIcmsIpiCorrecoes(EntradaHelpers, SpedEntradaCommon):
             .fields_get(["sped_cod_aj"])["sped_cod_aj"]["string"]
         )
         self.assertEqual(label, "Código de Ajuste SPED")
+
+    def test_a_document_without_access_key_is_left_out_and_listed(self):
+        """NF-e without an access key would go out with an empty CHV_NFE and the
+        PVA refuses the file: it stays out and the history lists it."""
+        keyed, _line = self._entry_document()
+        keyless, _line = self._entry_document(document_key=False)
+        declaration = self._declaration_july()
+        c100 = self._c100(declaration)
+        self.assertIn(keyed.document_number, c100)
+        self.assertNotIn(keyless.document_number, c100)
+        history = " ".join(declaration.message_ids.mapped("body"))
+        self.assertIn(keyless.document_number, history)
+
+    def test_dt_e_s_is_never_before_dt_doc(self):
+        """An entry date earlier than the emission goes out as the emission."""
+        doc, _line = self._entry_document(
+            document_date=datetime(2026, 7, 20, 12, 0),
+            date_in_out=datetime(2026, 7, 5, 12, 0),
+        )
+        rec = self._c100(self._declaration_july())[doc.document_number]
+        self.assertEqual(rec["DT_DOC"], "20072026")
+        self.assertEqual(rec["DT_E_S"], "20072026")
+
+    def test_c170_cod_enq_is_blank_for_the_generic_guideline(self):
+        """The generic 999 is not in the table of legal classification of the
+        IPI: blank; a real classification goes out as it is."""
+        _doc, line = self._entry_document()
+        self.assertEqual(self._c170(self._declaration_july())["COD_ENQ"], "")
+        line.ipi_guideline_id = self.env.ref("l10n_br_fiscal.tax_guideline_001")
+        self.assertEqual(self._c170(self._declaration_july())["COD_ENQ"], "001")
+
+    def test_c197_only_goes_out_with_a_10_position_code(self):
+        # the C197 hangs from the C195, the observation of the document
+        for note, code in (("Observacao 1", "SP12345678"), ("Observacao 2", "SP123")):
+            _doc, line = self._entry_document(manual_fiscal_additional_data=note)
+            line.partner_icms_tax_benefit_code = code
+        c197 = self._sped_records(self._declaration_july(), "C197")
+        self.assertEqual([rec["COD_AJ"] for rec in c197], ["SP12345678"])
+
+    def test_the_sped_adjustment_code_must_have_10_positions(self):
+        with self.assertRaises(ValidationError):
+            self.env["l10n_br_fiscal.icms.relief"].create(
+                {"code": "99", "name": "Test", "sped_cod_aj": "SP123"}
+            )
+        relief = self.env["l10n_br_fiscal.icms.relief"].create(
+            {"code": "98", "name": "Test 10", "sped_cod_aj": "SP90090101"}
+        )
+        self.assertEqual(relief.sped_cod_aj, "SP90090101")

@@ -597,12 +597,6 @@
                                         invisible="1"
                                     />
                                     <field
-                                        name="entry_ipi_cst_id"
-                                        readonly="1"
-                                        attrs="{'invisible': [('entry_ipi_cst_id', '=', False)]}"
-                                        options="{'no_create': True, 'no_open': True}"
-                                    />
-                                    <field
                                         name="ipi_guideline_id"
                                         force_save="1"
                                         attrs="{'readonly': [('ipi_tax_id', '!=', False)]}"
@@ -686,12 +680,6 @@
                                         name="pis_cst_code"
                                         readonly="1"
                                         invisible="1"
-                                    />
-                                    <field
-                                        name="entry_pis_cst_id"
-                                        readonly="1"
-                                        attrs="{'invisible': [('entry_pis_cst_id', '=', False)]}"
-                                        options="{'no_create': True, 'no_open': True}"
                                     />
                                     <field
                                         name="pis_credit_id"
@@ -834,12 +822,6 @@
                                         name="cofins_cst_code"
                                         readonly="1"
                                         invisible="1"
-                                    />
-                                    <field
-                                        name="entry_cofins_cst_id"
-                                        readonly="1"
-                                        attrs="{'invisible': [('entry_cofins_cst_id', '=', False)]}"
-                                        options="{'no_create': True, 'no_open': True}"
                                     />
                                     <field
                                         name="cofins_credit_id"

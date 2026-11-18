@@ -1018,7 +1018,7 @@ class RegistroC100(models.Model):
 
         ind_pgto = record._get_sped_ind_pgto()
 
-        cod_sit = record._get_sped_cod_sit(period_start=declaration.DT_INI)
+        cod_sit = record._get_sped_cod_sit()
         if record._is_sped_cancelled():
             # cancelled, denied and unused numbers only carry what the Guia
             # Pratico allows: no partner, no dates, no values
@@ -1046,7 +1046,9 @@ class RegistroC100(models.Model):
             "NUM_DOC": misc.punctuation_rm(str(record.document_number)),
             "CHV_NFE": record.document_key,
             "DT_DOC": record.document_date,
-            "DT_E_S": record.date_in_out,
+            "DT_E_S": record._get_sped_entry_date()
+            if record.fiscal_operation_type == FISCAL_IN
+            else record.date_in_out,
             "VL_DOC": record.fiscal_amount_total,
             "IND_PGTO": ind_pgto,
             "VL_DESC": record.amount_discount_value,
@@ -1432,7 +1434,11 @@ class RegistroC170(models.Model):
             # the CST the company books for the entry when there is one; else
             # the one of the document
             "CST_IPI": record.entry_ipi_cst_id.code or record.ipi_cst_code,
-            "COD_ENQ": record.ipi_guideline_id.code,
+            # "999" (generic, "Tributacao normal IPI; Outros") is not in the
+            # table of legal classification of the IPI: it goes out blank
+            "COD_ENQ": ""
+            if record.ipi_guideline_id.code in (False, "", "999")
+            else record.ipi_guideline_id.code,
             "VL_BC_IPI": record.ipi_base,
             "ALIQ_IPI": record.ipi_percent,
             "VL_IPI": record.ipi_value,
@@ -1892,6 +1898,9 @@ class RegistroC197(models.Model):
                    OR COALESCE(fdl.partner_icms_tax_benefit_code, '') != ''
                    OR fdl.icms_relief_id IS NOT NULL)
         """
+        # the PVA wants the 10 positions of the adjustment table code: no C197
+        # with any other code
+        query = f"SELECT * FROM ({query}) AS adjustment WHERE length(cod_aj) = 10"
         return query, [parent_record["document_id"]]
 
     @api.model
@@ -2380,13 +2389,15 @@ class RegistroC500(models.Model):
             "IND_EMIT": ind_emit,
             "COD_PART": record.partner_id._get_sped_cod_part(),
             "COD_MOD": record.document_type_id.code,
-            "COD_SIT": record._get_sped_cod_sit(period_start=declaration.DT_INI),
+            "COD_SIT": record._get_sped_cod_sit(),
             "SER": record.document_serie or "",
             "SUB": "",  # Rarely used nowadays
             "COD_CONS": getattr(record, "consumption_class_code", ""),  # MISSING FIELD
             "NUM_DOC": punctuation_rm(str(record.document_number)),
             "DT_DOC": record.document_date,
-            "DT_E_S": record.date_in_out,
+            "DT_E_S": record._get_sped_entry_date()
+            if record.fiscal_operation_type == FISCAL_IN
+            else record.date_in_out,
             "VL_DOC": record.fiscal_amount_total or 0.0,
             "VL_DESC": record.amount_discount_value or 0.0,
             "VL_FORN": record.amount_price_gross or 0.0,
@@ -2979,7 +2990,7 @@ class RegistroD100(models.Model):
             "IND_EMIT": "0" if record.issuer == DOCUMENT_ISSUER_COMPANY else "1",
             "COD_PART": record.partner_id._get_sped_cod_part(),
             "COD_MOD": record.document_type_id.code or "",
-            "COD_SIT": record._get_sped_cod_sit(period_start=declaration.DT_INI),
+            "COD_SIT": record._get_sped_cod_sit(),
             "SER": record.document_serie or "",
             "SUB": "",
             "NUM_DOC": record.document_number or "",

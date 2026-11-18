@@ -78,8 +78,10 @@ class TestSpedEfdIcmsIpiEntrada(EntradaHelpers, SpedEntradaCommon):
         self.assertNotIn("|C190|", text)
         self.assertNotIn("|C195|", text)
 
-    def test_the_entry_booked_after_its_emission_is_extemporaneous(self):
-        """Emitted in June and booked in July: COD_SIT 01 (07 if complementary)."""
+    def test_the_entry_received_after_its_emission_is_regular(self):
+        """Emitted in June and received in July is a regular entry of July (00,
+        06 if complementary): 01 and 07 are for a document booked outside the
+        period of its entry date, and the PVA refuses 01 with DT_E_S in the period."""
         late, _line = self._entry_document(
             document_date=datetime(2026, 6, 20, 12, 0),
             date_in_out=datetime(2026, 7, 5, 12, 0),
@@ -94,8 +96,8 @@ class TestSpedEfdIcmsIpiEntrada(EntradaHelpers, SpedEntradaCommon):
             date_in_out=datetime(2026, 7, 5, 12, 0),
         )
         c100 = self._c100(self._declaration_july())
-        self.assertEqual(c100[late.document_number]["COD_SIT"], "01")
-        self.assertEqual(c100[late_complementary.document_number]["COD_SIT"], "07")
+        self.assertEqual(c100[late.document_number]["COD_SIT"], "00")
+        self.assertEqual(c100[late_complementary.document_number]["COD_SIT"], "06")
         self.assertEqual(c100[on_time.document_number]["COD_SIT"], "00")
 
     # B. date and period of the entry

@@ -10,3 +10,4 @@ from . import test_sale_order_amount
 from . import test_sale_order_edition
 from . import test_sale_portal_taxes
 from . import test_search_filters
+from . import test_view_fields

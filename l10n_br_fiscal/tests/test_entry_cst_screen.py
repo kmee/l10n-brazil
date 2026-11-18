@@ -21,7 +21,7 @@ class TestEntryCstScreen(TransactionCase):
     )
 
     def _form_fields(self):
-        view = self.env.ref("l10n_br_fiscal.document_fiscal_line_mixin_form")
+        view = self.env.ref("l10n_br_fiscal.document_line_form")
         arch = self.env["l10n_br_fiscal.document.line"].get_view(view.id)["arch"]
         return etree.fromstring(arch)
 
