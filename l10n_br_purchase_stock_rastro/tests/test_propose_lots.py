@@ -38,7 +38,7 @@ class TestProposeLots(TransactionCase):
             }
         )
 
-    def _line(self, product, rastro):
+    def _line(self, product, rastro, with_move=True):
         move = self.picking.move_ids.filtered(lambda mv: mv.product_id == product)
         order_line = self.order.order_line.filtered(lambda ol: ol.product_id == product)
         return self.env["l10n_br_fiscal.document.line"].create(
@@ -52,38 +52,82 @@ class TestProposeLots(TransactionCase):
                 "fiscal_operation_line_id": self.operation_line.id,
                 "fiscal_operation_type": "in",
                 "import_purchase_line_id": order_line.id,
-                "import_stock_move_id": move.id,
+                "import_stock_move_id": move.id if with_move else False,
                 "nfe40_rastro": [Command.create(vals) for vals in rastro],
             }
         )
 
+    def _two_lots(self, move):
+        half = move.product_uom_qty / 2
+        return half, [
+            {
+                "nfe40_nLote": "L-A",
+                "nfe40_qLote": half,
+                "nfe40_dFab": date(2026, 1, 10),
+                "nfe40_dVal": date(2027, 1, 10),
+            },
+            {
+                "nfe40_nLote": "L-B",
+                "nfe40_qLote": half,
+                "nfe40_dVal": date(2027, 6, 30),
+            },
+        ]
+
     def test_the_lots_of_the_nfe_are_proposed_not_validated(self):
         move = self.picking.move_ids.filtered(lambda mv: mv.product_id == self.tracked)
-        half = move.product_uom_qty / 2
-        self._line(
-            self.tracked,
-            [
-                {
-                    "nfe40_nLote": "L-A",
-                    "nfe40_qLote": half,
-                    "nfe40_dFab": date(2026, 1, 10),
-                    "nfe40_dVal": date(2027, 1, 10),
-                },
-                {
-                    "nfe40_nLote": "L-B",
-                    "nfe40_qLote": half,
-                    "nfe40_dVal": date(2027, 6, 30),
-                },
-            ],
-        )
+        half, rastro = self._two_lots(move)
+        self._line(self.tracked, rastro)
+        self.assertEqual(self.picking.state, "assigned")
         self.assertTrue(self.picking.show_propose_lots_from_nfe)
         self.picking.action_propose_lots_from_nfe()
         lines = move.move_line_ids
-        self.assertEqual(sorted(lines.mapped("lot_id.name")), ["L-A", "L-B"])
+        self.assertEqual(sorted(lines.mapped("lot_name")), ["L-A", "L-B"])
         self.assertEqual(sorted(lines.mapped("qty_done")), [half, half])
-        lot_a = lines.lot_id.filtered(lambda lot: lot.name == "L-A")
-        self.assertEqual(lot_a.expiration_date, datetime(2027, 1, 10))
-        self.assertNotIn(self.picking.state, ("done", "cancel"))
+        line_a = lines.filtered(lambda line: line.lot_name == "L-A")
+        self.assertEqual(line_a.expiration_date, datetime(2027, 1, 10))
+        # the receipt creates the lots on validation: nothing created now
+        self.assertFalse(
+            self.env["stock.lot"].search_count([("name", "in", ["L-A", "L-B"])])
+        )
+        # the receipt stays Ready, it does not go back to Waiting
+        self.assertEqual(self.picking.state, "assigned")
+        self.assertEqual(move.state, "assigned")
+
+    def test_an_existing_lot_is_used_by_its_id(self):
+        move = self.picking.move_ids.filtered(lambda mv: mv.product_id == self.tracked)
+        lot = self.env["stock.lot"].create(
+            {
+                "name": "L-A",
+                "product_id": self.tracked.id,
+                "company_id": move.company_id.id,
+            }
+        )
+        half, rastro = self._two_lots(move)
+        self._line(self.tracked, rastro)
+        move._propose_lots_from_nfe()
+        lines = move.move_line_ids
+        self.assertEqual(lines.filtered(lambda line: line.lot_id).lot_id, lot)
+        self.assertEqual(lines.filtered("lot_name").mapped("lot_name"), ["L-B"])
+
+    def test_a_type_that_does_not_create_lots_gets_the_lot_now(self):
+        move = self.picking.move_ids.filtered(lambda mv: mv.product_id == self.tracked)
+        move.picking_type_id.use_create_lots = False
+        move.picking_type_id.use_existing_lots = True
+        half, rastro = self._two_lots(move)
+        self._line(self.tracked, rastro)
+        move._propose_lots_from_nfe()
+        self.assertEqual(
+            sorted(move.move_line_ids.mapped("lot_id.name")), ["L-A", "L-B"]
+        )
+        self.assertEqual(self.picking.state, "assigned")
+
+    def test_the_receipt_is_found_by_the_order_line_when_no_move_is_recorded(self):
+        move = self.picking.move_ids.filtered(lambda mv: mv.product_id == self.tracked)
+        half, rastro = self._two_lots(move)
+        self._line(self.tracked, rastro, with_move=False)
+        self.assertTrue(self.picking.show_propose_lots_from_nfe)
+        self.picking.action_propose_lots_from_nfe()
+        self.assertEqual(sorted(move.move_line_ids.mapped("lot_name")), ["L-A", "L-B"])
 
     def test_a_product_without_lot_tracking_is_left_alone(self):
         move = self.picking.move_ids.filtered(
