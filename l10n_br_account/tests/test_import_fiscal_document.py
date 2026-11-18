@@ -1,8 +1,11 @@
 # Copyright 2026 - TODAY KMEE - Luis Felipe Mileo <mileo@kmee.com.br>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
+import json
 from datetime import date, datetime
 from unittest import mock
+
+from lxml import etree
 
 from odoo.exceptions import UserError
 from odoo.tests.common import tagged
@@ -131,3 +134,22 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
             move.invoice_line_ids.fiscal_document_line_id,
             document.fiscal_line_ids,
         )
+
+    def test_the_generate_button_follows_the_active_invoice(self):
+        """A cancelled invoice frees the document: the button to generate the
+        invoice shows again, while the counter keeps counting the cancelled."""
+        document = self._create_fiscal_document(imported_document=True)
+        self.assertFalse(document.has_active_move)
+        move_form = self.env["account.move"].import_fiscal_document(document)
+        move = self.env["account.move"].browse(move_form.id)
+        self.assertTrue(document.has_active_move)
+        move.button_cancel()
+        self.assertFalse(document.has_active_move)
+        self.assertEqual(document.move_count, 1)
+        view = document.get_view(self.env.ref("l10n_br_fiscal.document_form").id)
+        button = etree.fromstring(view["arch"]).xpath(
+            "//button[@name='action_generate_account_move']"
+        )[0]
+        invisible = json.loads(button.get("modifiers"))["invisible"]
+        self.assertIn("has_active_move", json.dumps(invisible))
+        self.assertNotIn("move_count", json.dumps(invisible))

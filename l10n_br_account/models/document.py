@@ -32,6 +32,21 @@ class FiscalDocument(models.Model):
         readonly=True,
     )
 
+    has_active_move = fields.Boolean(
+        string="Has Active Invoice",
+        compute="_compute_has_active_move",
+        help="Technical: the document has an invoice that is not cancelled. A "
+        "cancelled invoice frees the document to be invoiced again, so it does "
+        "not count here (the invoice count still shows it).",
+    )
+
+    @api.depends("move_ids.state")
+    def _compute_has_active_move(self):
+        for document in self:
+            document.has_active_move = any(
+                move.state != "cancel" for move in document.move_ids
+            )
+
     # -------------------------------------------------------------------------
     # PROXY FIELDS FOR _inherits SHADOWED NAMES
     # -------------------------------------------------------------------------
