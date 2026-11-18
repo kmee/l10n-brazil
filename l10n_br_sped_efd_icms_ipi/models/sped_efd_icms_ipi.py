@@ -156,7 +156,11 @@ class Registro0000(models.Model):
             ("1", "Outros"),
         ],
         string="Indicador tipo atividade",
-        default="0",
+        default=lambda self: self._default_ind_ativ(),
+        help="Industrial or equivalent (0) only for the company that is an IPI "
+        "taxpayer: it then needs the IPI assessment (E500) and the "
+        "classification of the establishment (0002). Any other company is "
+        "Outros (1).",
     )
 
     CLAS_ESTAB_IND = fields.Selection(
@@ -174,8 +178,43 @@ class Registro0000(models.Model):
         ],
         string="classificação do estabelecimento conforme tabela 4",
         help="classificação do estabelecimento conforme tabela 4.5.5",
-        # required=True,
+        default=lambda self: self._default_clas_estab_ind(),
     )
+
+    @api.model
+    def _is_ipi_taxpayer(self, company):
+        return bool(company.is_industry or company.ripi)
+
+    @api.model
+    def _default_ind_ativ(self):
+        return "0" if self._is_ipi_taxpayer(self.env.company) else "1"
+
+    @api.model
+    def _default_clas_estab_ind(self):
+        company = self.env.company
+        return company.industry_type if self._is_ipi_taxpayer(company) else False
+
+    @api.onchange("company_id")
+    def _onchange_company_activity(self):
+        """The activity indicator and the classification follow the company."""
+        for declaration in self:
+            company = declaration.company_id
+            taxpayer = self._is_ipi_taxpayer(company)
+            declaration.IND_ATIV = "0" if taxpayer else "1"
+            declaration.CLAS_ESTAB_IND = company.industry_type if taxpayer else False
+
+    def _get_posted_ipi_assessments(self):
+        """The IPI assessments of the period the E500 is made from."""
+        self.ensure_one()
+        return self.env["l10n_br_tax.assessment"].search(
+            [
+                ("company_id", "=", self.company_id.id),
+                ("tax_domain", "=", "ipi"),
+                ("date_from", ">=", self.DT_INI),
+                ("date_to", "<=", self.DT_FIN),
+                ("state", "=", "posted"),
+            ]
+        )
 
     @api.model
     def _append_top_view_elements(self, group, inline=False):
@@ -224,6 +263,23 @@ class Registro0000(models.Model):
                         "the file (ICMS assessment of %(start)s to %(end)s).",
                         start=format_date(self.env, declaration.DT_INI),
                         end=format_date(self.env, declaration.DT_FIN),
+                    )
+                )
+            if declaration.debug or declaration.IND_ATIV != "0":
+                continue
+            if not declaration.CLAS_ESTAB_IND:
+                raise UserError(
+                    _(
+                        "Set the classification of the establishment: the "
+                        "industrial activity needs it (record 0002)."
+                    )
+                )
+            if not declaration._get_posted_ipi_assessments():
+                raise UserError(
+                    _(
+                        "Assess and post the IPI of the period before generating "
+                        "the file, or set the activity to Outros if the company "
+                        "is not an IPI taxpayer."
                     )
                 )
         return super().button_create_sped_files()

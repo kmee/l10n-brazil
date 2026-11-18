@@ -144,3 +144,31 @@ class TestSpedEfdIcmsIpiApuracao(EntradaHelpers, SpedEntradaCommon):
         declaration.IND_ATIV = "1"
         declaration.button_create_sped_files()
         self.assertTrue(declaration.message_ids)
+
+    def test_the_activity_and_the_classification_follow_the_company(self):
+        """An IPI taxpayer is industrial with its classification; any other
+        company is Outros, and the industrial one needs the IPI assessment."""
+        self.assertEqual(self.company.industry_type, "00")
+        declaration = self.env["l10n_br_sped.efd_icms_ipi.0000"].create(
+            {
+                "company_id": self.company.id,
+                "DT_INI": "2026-07-01",
+                "DT_FIN": "2026-07-31",
+            }
+        )
+        self.assertEqual(declaration.IND_ATIV, "0")
+        self.assertEqual(declaration.CLAS_ESTAB_IND, "00")
+        self.company.write({"is_industry": False, "ripi": False})
+        declaration._onchange_company_activity()
+        self.assertEqual(declaration.IND_ATIV, "1")
+        self.assertFalse(declaration.CLAS_ESTAB_IND)
+
+    def test_an_industrial_declaration_needs_the_ipi_assessment(self):
+        self._set_accountant()
+        self._purchase_move("fo_compras_compras_comercializacao", "607")
+        self._assess_icms_of_july()
+        declaration = self._declaration_july()
+        self.assertEqual(declaration.IND_ATIV, "0")
+        with self.assertRaises(UserError) as error:
+            declaration.button_create_sped_files()
+        self.assertIn("IPI", error.exception.args[0])
