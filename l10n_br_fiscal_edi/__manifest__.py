@@ -9,7 +9,7 @@
     "maintainers": ["renatonlima", "rvalyi", "mileo"],
     "website": "https://github.com/OCA/l10n-brazil",
     "development_status": "Beta",
-    "version": "16.0.2.3.0",
+    "version": "16.0.2.5.0",
     "depends": [
         "l10n_br_fiscal",
     ],
@@ -33,6 +33,7 @@
         # Menus
         "views/l10n_br_fiscal_menu.xml",
     ],
+    "post_init_hook": "post_init_hook",
     "installable": True,
     "external_dependencies": {
         "python": [

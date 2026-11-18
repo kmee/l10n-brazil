@@ -879,3 +879,137 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_event__display_name
 msgid "name"
 msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model,name:l10n_br_fiscal_edi.model_l10n_br_fiscal_document_import_match_candidate
+msgid "Fiscal Document Import Match Source Candidate"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document_import_match_candidate__source_type__stock_move
+msgid "Incoming Picking Line"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_match_candidate__line_no
+msgid "Line Position"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/wizards/document_import_match_candidate.py:0
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_wizard_line__match_source_id
+#, python-format
+msgid "Match Source"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_match_candidate__qty
+msgid "Open Quantity"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_match_candidate__order_id
+msgid "Order"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_match_candidate__po_line_no
+msgid "PO Line Position"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_match_candidate__picking_id
+msgid "Picking"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_match_candidate__po_ref
+msgid "Purchase Order"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document_import_match_candidate__source_type__po_line
+msgid "Purchase Order Line"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_match_candidate__ref_name
+msgid "Source Reference"
+msgstr ""
+
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_wizard__match_source_available
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_wizard_line__match_source_available
+
+#. module: l10n_br_fiscal_edi
+msgid "Match Source Available"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_wizard_line__match_source_product_matched
+msgid "Match Source Product Matched"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_wizard_line__issuer_partner_id
+msgid "Issuer Partner"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model,name:l10n_br_fiscal_edi.model_l10n_br_fiscal_document_import_wizard_line
+msgid "Fiscal Document Import Wizard Line"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/wizards/document_import_wizard_line.py:0
+#, python-format
+msgid ""
+"The match source %(ref)s belongs to another company than the imported "
+"document."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/wizards/document_import_wizard_line.py:0
+#, python-format
+msgid ""
+"The match source %(ref)s belongs to another supplier than the imported "
+"document."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/wizards/document_import_wizard_line.py:0
+#, python-format
+msgid ""
+"The match source %(ref)s is not for the line's product %(product_name)s."
+msgstr ""
+
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_wizard_line__match_source_id
+msgid ""
+"Pre-existing purchase order line or incoming picking move this XML line "
+"corresponds to. Selecting it sets the product and the internal UoM "
+"automatically and ties the imported document to the referenced "
+"order/receipt."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_wizard__match_source_available
+#: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_wizard_line__match_source_available
+msgid ""
+"True when the document issuer has open purchase order lines or pending "
+"incoming picking moves the imported lines can be matched against (requires "
+"the purchase and/or stock modules)."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_wizard_line__match_source_product_matched
+msgid ""
+"True when the issuer has at least one open purchase order line or pending "
+"incoming picking move for this line's product. False means there is nothing "
+"to match the line against (the imported bill will not be reconcilable with a"
+" receipt for it)."
+msgstr ""

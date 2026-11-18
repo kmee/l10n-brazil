@@ -148,6 +148,10 @@ class FiscalDocument(models.Model):
     @api.depends("issuer", "move_ids.invoice_date")
     def _compute_document_date(self):
         for record in self:
+            if record.imported_document and record.document_date:
+                # the emission date of an imported document is the one of its
+                # file, not the invoice date at midnight
+                continue
             if record.move_ids and record.issuer == DOCUMENT_ISSUER_PARTNER:
                 move_id = record.move_ids[0]
                 if move_id.invoice_date:

@@ -22,7 +22,7 @@ msgstr "1.01"
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.view_l10n_br_fiscal_dfe_document_form_nfe
 msgid "<span class=\"o_stat_text\">Invoice</span>"
-msgstr ""
+msgstr "<span class=\"o_stat_text\">Fatura</span>"
 
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_document_tree
@@ -90,6 +90,11 @@ msgstr "Data"
 #: model:ir.model.fields.selection,name:l10n_br_nfe_dfe.selection__l10n_br_fiscal_dfe_document__manifestation_status__desconhecido
 msgid "Desconhecimento"
 msgstr "Desconhecimento"
+
+#. module: l10n_br_nfe_dfe
+#: model:ir.model.fields,field_description:l10n_br_nfe_dfe.field_nfe_recipient_manifestation_event_wizard__dfe_document_id
+msgid "Dfe Document"
+msgstr "Documento DF-e"
 
 #. module: l10n_br_nfe_dfe
 #: model:ir.model,name:l10n_br_nfe_dfe.model_l10n_br_fiscal_dfe_document
@@ -195,7 +200,7 @@ msgstr "Próxima Consulta Agendada (NF-e)"
 #: code:addons/l10n_br_nfe_dfe/models/dfe_document.py:0
 #, python-format
 msgid "NF-e Recipient Manifestation"
-msgstr ""
+msgstr "Manifestação do Destinatário da NF-e"
 
 #. module: l10n_br_nfe_dfe
 #: model:ir.actions.act_window,name:l10n_br_nfe_dfe.action_nfe_dfe_document
@@ -236,6 +241,13 @@ msgid "Recipient Manifestation"
 msgstr "Manifestação do Destinatário"
 
 #. module: l10n_br_nfe_dfe
+#. odoo-python
+#: code:addons/l10n_br_nfe_dfe/wizards/nfe_md_event_wizard.py:0
+#, python-format
+msgid "Recipient Manifestation created successfully"
+msgstr ""
+
+#. module: l10n_br_nfe_dfe
 #: model:ir.model.fields.selection,name:l10n_br_nfe_dfe.selection__l10n_br_fiscal_dfe_document__manifestation_status__sem_manifestacao
 msgid "Sem manifestação"
 msgstr "Sem manifestação"
@@ -256,9 +268,21 @@ msgid "Status Code"
 msgstr "Código de Status"
 
 #. module: l10n_br_nfe_dfe
+#. odoo-python
+#: code:addons/l10n_br_nfe_dfe/wizards/nfe_md_event_wizard.py:0
+#, python-format
+msgid "Success"
+msgstr ""
+
+#. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_document_tree
 msgid "Type"
 msgstr "Tipo"
+
+#. module: l10n_br_nfe_dfe
+#: model:ir.model,name:l10n_br_nfe_dfe.model_nfe_recipient_manifestation_event_wizard
+msgid "Wizard to manifest"
+msgstr "Assistente de manifestação"
 
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_document_tree

@@ -2,6 +2,9 @@
 #   Magno Costa <magno.costa@akretion.com.br>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
+from lxml import etree
+
+from odoo import Command
 from odoo.tests import Form, TransactionCase
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
@@ -492,12 +495,25 @@ class L10nBrPurchaseBaseTest(TransactionCase):
 
     def test_purchase_report(self):
         """Test Purchase Report"""
-        self.env["purchase.report"].read_group(
-            [("product_id", "=", self.env.ref("product.product_product_12").id)],
-            ["qty_ordered", "price_average:avg"],
-            ["product_id"],
+        lines = self.po_products.order_line.filtered(lambda line: not line.display_type)
+        lines[0].discount_value = 5.0
+        self.env.flush_all()
+        rows = (
+            self.env["purchase.report"]
+            .with_company(self.po_products.company_id)
+            .search([("order_id", "=", self.po_products.id)])
         )
-        # TODO: Algo a ser validado?
+        for fname in ("icms_value", "ipi_value", "pis_value", "cofins_value"):
+            self.assertAlmostEqual(
+                sum(rows.mapped(fname)), sum(lines.mapped(fname)), places=2
+            )
+        # price_total already has the discount, IPI, ST and the other costs
+        self.assertAlmostEqual(
+            sum(rows.mapped("total_with_taxes")),
+            sum(lines.mapped("price_total"))
+            + sum(lines.mapped("amount_tax_withholding")),
+            places=2,
+        )
 
     def test_form_purchase(self):
         """Test Purchase with Form"""
@@ -515,11 +531,94 @@ class L10nBrPurchaseBaseTest(TransactionCase):
         purchase_form.save()
 
     def test_get_view(self):
+        """Executable spec of the fiscal fields injection contract: the fiscal
+        drivers (operation, tax ids) are injected into the order line views,
+        while the C4 census "dead" fiscal computes are pruned out of them."""
         arch, models = self.po_products._get_view()
-        self.assertTrue(
-            arch.findall(".//field[@name='fiscal_operation_id']"),
+        injected = {el.get("name") for el in arch.findall(".//field")}
+        self.assertIn(
+            "fiscal_operation_id",
+            injected,
             "Error to included Operation Line from Purchase Order Line.",
         )
+        self.assertIn("icms_tax_id", injected)
+        for dead in (
+            "ii_percent",
+            "cofins_wh_base_type",
+            "pis_wh_base_type",
+        ):
+            self.assertNotIn(
+                dead,
+                injected,
+                "Pruned dead fiscal field %s must not be injected." % dead,
+            )
+
+    def test_purchase_user_reads_fiscal_data(self):
+        """A buyer without any fiscal group computes the fiscal taxes of the
+        order line, which reads the fiscal models."""
+        buyer = self.env["res.users"].create(
+            {
+                "name": "Buyer without fiscal group",
+                "login": "buyer_without_fiscal_group",
+                "company_id": self.company.id,
+                "company_ids": [Command.set(self.company.ids)],
+                "groups_id": [
+                    Command.set(
+                        (
+                            self.env.ref("purchase.group_purchase_user")
+                            | self.env.ref("uom.group_uom")
+                        ).ids
+                    )
+                ],
+            }
+        )
+        order = self.po_products.with_user(buyer).with_company(self.company)
+        order.onchange_partner_id()
+        order._onchange_fiscal_operation_id()
+        for line in order.order_line:
+            line._onchange_fiscal_tax_ids()
+            self.assertTrue(line.fiscal_operation_id)
+
+    def test_get_view_cache_separates_fiscal_detail_group(self):
+        """The cached form view must not leak the fiscal line popup (the
+        editable attribute) from a user of the group to a user without it."""
+        values = {
+            "company_id": self.company.id,
+            "company_ids": [Command.set(self.company.ids)],
+        }
+        purchase_user = self.env.ref("purchase.group_purchase_user")
+        popup_group = self.env.ref("l10n_br_purchase.group_line_fiscal_detail")
+        user_without_popup = self.env["res.users"].create(
+            dict(
+                values,
+                name="Purchase user without popup",
+                login="purchase_user_without_popup",
+                groups_id=[Command.set(purchase_user.ids)],
+            )
+        )
+        user_with_popup = self.env["res.users"].create(
+            dict(
+                values,
+                name="Purchase user with popup",
+                login="purchase_user_with_popup",
+                groups_id=[Command.set((purchase_user | popup_group).ids)],
+            )
+        )
+        view = self.env.ref("purchase.purchase_order_form")
+        self.env.registry.clear_caches()
+
+        def order_line_tree(user):
+            data = (
+                self.env["purchase.order"]
+                .with_user(user)
+                .with_company(self.company)
+                .get_view(view.id, "form")
+            )
+            arch = etree.fromstring(data["arch"])
+            return arch.xpath("//field[@name='order_line']/tree")[0]
+
+        self.assertNotEqual(order_line_tree(user_without_popup).get("editable"), "")
+        self.assertEqual(order_line_tree(user_with_popup).get("editable"), "")
 
     def test_fields_freight_insurance_other_costs(self):
         """Test fields Freight, Insurance and Other Costs when

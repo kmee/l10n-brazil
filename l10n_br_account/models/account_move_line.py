@@ -16,6 +16,7 @@ class AccountMoveLine(models.Model):
     _inherit = [
         _name,
         "l10n_br_account.decorator.mixin",
+        "l10n_br_fiscal.report.filter.mixin",
     ]
     _inherits = {_fiscal_decorator_model: "fiscal_document_line_id"}
 
@@ -43,6 +44,44 @@ class AccountMoveLine(models.Model):
         " and '3-3' for the last installment.",
     )
 
+    # forcing store=True for these fields makes it easier to plug in SQL bill
+    # reconciliation and makes it compatible with the
+    # stock_picking_bill_matching module for instance.
+    partner_order = fields.Char(
+        related="fiscal_document_line_id.partner_order", store=True
+    )
+    partner_order_line = fields.Char(
+        related="fiscal_document_line_id.partner_order_line", store=True
+    )
+
+    @api.model
+    def _get_bill_matching_reference_sql(self, alias):
+        """Duck-typing hook picked up dynamically by stock_picking_bill_matching.
+
+        The `alias` argument (e.g. 'aml' or 'sm') is passed by the SQL view
+        builder. Lives here (and not in l10n_br_purchase_stock) so the vendor
+        bill side carries a reference whenever the localization is installed,
+        with or without purchase/stock.
+
+        The item part is normalized numerically so that references with
+        different zero-padding ('P00015-1' vs 'P00015-001') still reconcile;
+        both parts are trimmed and truncated to the fiscal field sizes
+        (partner_order is a Char(15), partner_order_line a Char(6)) so the
+        expression matches what the ORM actually stored. Keep it aligned
+        with the stock.move side in l10n_br_purchase_stock.
+        """
+        item = (
+            f"COALESCE(NULLIF(REGEXP_REPLACE("
+            f"BTRIM(LEFT(COALESCE({alias}.partner_order_line, ''), 6)), "
+            f"'[^0-9]', '', 'g'), '')::int::varchar, "
+            f"NULLIF(BTRIM(LEFT(COALESCE({alias}.partner_order_line, ''), 6)), ''), "
+            f"'')"
+        )
+        return (
+            f"NULLIF(BTRIM(LEFT(COALESCE({alias}.partner_order, ''), 15)) "
+            f"|| '-' || {item}, '-')"
+        )
+
     # -------------------------------------------------------------------------
     # SHADOWED FIELDS SYNC
     # These fields have the same name in account.move.line
@@ -56,6 +95,17 @@ class AccountMoveLine(models.Model):
     quantity = fields.Float(inverse="_inverse_quantity")
     price_unit = fields.Float(inverse="_inverse_price_unit")
     product_uom_id = fields.Many2one(inverse="_inverse_product_uom_id")
+
+    # _inherits brings the fields of the fiscal line, not its methods
+    def _get_report_product_code(self):
+        self.ensure_one()
+        line = self.fiscal_document_line_id
+        return line._get_report_product_code() if line else ""
+
+    def _get_report_fiscal_details(self):
+        self.ensure_one()
+        line = self.fiscal_document_line_id
+        return line._get_report_fiscal_details() if line else ""
 
     @api.onchange("product_id")
     def _inverse_product_id(self):
@@ -183,7 +233,43 @@ class AccountMoveLine(models.Model):
         sorted_result = self.env["account.move.line"]
         for idx in inverted_index:
             sorted_result |= result[idx]
+
+        # Must run before account.move.create syncs the invoice lines again.
+        sorted_result._mark_stale_fiscal_taxes_for_recompute()
         return sorted_result
+
+    def _lines_from_source_document(self):
+        """Lines created from a sale or purchase order line.
+
+        Those fields come from modules l10n_br_account does not depend on.
+        """
+        link_fields = [
+            name
+            for name in ("purchase_line_id", "sale_line_ids")
+            if name in self._fields
+        ]
+        if not link_fields:
+            return self.browse()
+        return self.filtered(lambda line: any(line[name] for name in link_fields))
+
+    def _mark_stale_fiscal_taxes_for_recompute(self):
+        """Recompute the tax values copied from the source document.
+
+        They are stored computes with readonly=False, so the values given at
+        create() are kept even when the invoiced quantity is not the one they
+        were calculated on.
+        """
+        stale = self.filtered(
+            lambda line: line.display_type == "product"
+            # Refunds and imported documents keep the values they came with.
+            and line.move_id.move_type in ("in_invoice", "out_invoice")
+            and line.move_id.fiscal_operation_id
+            and line.fiscal_document_line_id
+            and not line.fiscal_document_line_id._is_imported()
+        )._lines_from_source_document()
+        if stale:
+            # Not fiscal_price: the picking wizard sets it explicitly.
+            stale.fiscal_document_line_id.modified(["quantity"])
 
     def unlink(self):
         unlink_fiscal_lines = self.env["l10n_br_fiscal.document.line"]

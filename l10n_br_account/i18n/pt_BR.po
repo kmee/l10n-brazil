@@ -146,7 +146,7 @@ msgstr ""
 #: code:addons/l10n_br_account/wizards/document_import_wizard.py:0
 #, python-format
 msgid "Adjust Importation"
-msgstr ""
+msgstr "Ajustar Importação"
 
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_bank_statement_line__mdfe30_cAerDes
@@ -461,7 +461,7 @@ msgstr ""
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__cbs_reduction
 msgid "CBS % Reduction"
-msgstr ""
+msgstr "% de Redução da CBS"
 
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_bank_statement_line__amount_cbs_base
@@ -474,7 +474,7 @@ msgstr "Base da CBS"
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__cbs_base_type
 msgid "CBS Base Type"
-msgstr ""
+msgstr "Tipo de Base da CBS"
 
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__cbs_cst_code
@@ -509,6 +509,7 @@ msgid "CFOP"
 msgstr "CFOP"
 
 #. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_account_invoice_report__cfop_destination
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__cfop_destination
 msgid "CFOP Destination"
 msgstr "CFOP Destino"
@@ -752,7 +753,7 @@ msgstr "Valor CSLL"
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__cbs_cst_id
 msgid "CST CBS"
-msgstr ""
+msgstr "CST CBS"
 
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__cofins_cst_id
@@ -767,9 +768,10 @@ msgstr "CST COFINS ST"
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__ibs_cst_id
 msgid "CST IBS"
-msgstr ""
+msgstr "CST IBS"
 
 #. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_account_invoice_report__icms_cst_id
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__icms_cst_id
 msgid "CST ICMS"
 msgstr "CST ICMS"
@@ -2692,7 +2694,7 @@ msgstr "Valor Bruto Financeiro"
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_l10n_br_fiscal_document_import_wizard__first_imported_move_id
 msgid "First Imported Move"
-msgstr ""
+msgstr "Primeiro lançamento importado"
 
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_bank_statement_line__fiscal_additional_data
@@ -3439,7 +3441,7 @@ msgstr ""
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__ibs_reduction
 msgid "IBS % Reduction"
-msgstr ""
+msgstr "% de Redução do IBS"
 
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_bank_statement_line__amount_ibs_base
@@ -3452,7 +3454,7 @@ msgstr "Base do IBS"
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__ibs_base_type
 msgid "IBS Base Type"
-msgstr ""
+msgstr "Tipo de Base do IBS"
 
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__ibs_cst_code
@@ -4233,7 +4235,7 @@ msgstr ""
 #. module: l10n_br_account
 #: model_terms:ir.ui.view,arch_db:l10n_br_account.invoice_form
 msgid "Import Fiscal Document"
-msgstr ""
+msgstr "Importar Documento Fiscal"
 
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_bank_statement_line__imported_document
@@ -4247,14 +4249,14 @@ msgstr ""
 #: code:addons/l10n_br_account/wizards/document_import_wizard.py:0
 #, python-format
 msgid "Imported Invoice"
-msgstr ""
+msgstr "Fatura importada"
 
 #. module: l10n_br_account
 #. odoo-python
 #: code:addons/l10n_br_account/wizards/document_import_wizard.py:0
 #, python-format
 msgid "Imported Invoices"
-msgstr ""
+msgstr "Faturas importadas"
 
 #. module: l10n_br_account
 #: model:ir.model.fields.selection,name:l10n_br_account.selection__account_move__fiscal_operation_type__in
@@ -6446,9 +6448,9 @@ msgid "Product (proxy)"
 msgstr ""
 
 #. module: l10n_br_account
-#: model_terms:ir.ui.view,arch_db:l10n_br_account.l10n_br_account_product_view_account_invoice_report_search
+#: model:ir.model.fields,field_description:l10n_br_account.field_account_invoice_report__fiscal_type
 msgid "Product Fiscal Type"
-msgstr ""
+msgstr "Tipo Fiscal do Produto"
 
 #. module: l10n_br_account
 #: model:ir.model.fields.selection,name:l10n_br_account.selection__account_invoice_report__fiscal_type__04
@@ -6717,7 +6719,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_invoice_report__service_type_id
 #: model_terms:ir.ui.view,arch_db:l10n_br_account.l10n_br_account_product_view_account_invoice_report_search
 msgid "Service Type"
-msgstr ""
+msgstr "Tipo de Serviço"
 
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__service_type_id
@@ -6752,7 +6754,7 @@ msgstr ""
 #. module: l10n_br_account
 #: model_terms:ir.ui.view,arch_db:l10n_br_account.account_document_form_inherit
 msgid "Show related invoices"
-msgstr ""
+msgstr "Mostrar faturas relacionadas"
 
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_bank_statement_line__nfe40_UFSaidaPais
@@ -6985,7 +6987,7 @@ msgstr "Código do Benefício Fiscal"
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__cbs_tax_id
 msgid "Tax CBS"
-msgstr ""
+msgstr "Imposto CBS"
 
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__cofins_tax_id
@@ -7013,9 +7015,10 @@ msgid "Tax CSLL RET"
 msgstr ""
 
 #. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_account_invoice_report__tax_classification_id
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__tax_classification_id
 msgid "Tax Classification"
-msgstr ""
+msgstr "Classificação Tributária"
 
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__tax_framework
@@ -7031,7 +7034,7 @@ msgstr "Grupo de Imposto"
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__ibs_tax_id
 msgid "Tax IBS"
-msgstr ""
+msgstr "Imposto IBS"
 
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__icms_tax_id
@@ -9736,3 +9739,19 @@ msgstr ""
 
 #~ msgid "Fiscal Doc UOM"
 #~ msgstr "UOM do documento fiscal"
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_account_invoice_report__state_edoc
+msgid "Situation"
+msgstr "Situação"
+
+#: model_terms:ir.ui.view,arch_db:l10n_br_account.account_document_form_inherit
+
+#. module: l10n_br_account
+msgid "Generate Invoice"
+msgstr "Gerar Fatura"
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_account_invoice_report__partner_state_id
+msgid "Partner State"
+msgstr "UF do Parceiro"

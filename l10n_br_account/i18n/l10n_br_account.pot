@@ -504,6 +504,7 @@ msgid "CFOP"
 msgstr ""
 
 #. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_account_invoice_report__cfop_destination
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__cfop_destination
 msgid "CFOP Destination"
 msgstr ""
@@ -765,6 +766,7 @@ msgid "CST IBS"
 msgstr ""
 
 #. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_account_invoice_report__icms_cst_id
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__icms_cst_id
 msgid "CST ICMS"
 msgstr ""
@@ -6350,7 +6352,7 @@ msgid "Product (proxy)"
 msgstr ""
 
 #. module: l10n_br_account
-#: model_terms:ir.ui.view,arch_db:l10n_br_account.l10n_br_account_product_view_account_invoice_report_search
+#: model:ir.model.fields,field_description:l10n_br_account.field_account_invoice_report__fiscal_type
 msgid "Product Fiscal Type"
 msgstr ""
 
@@ -6912,6 +6914,7 @@ msgid "Tax CSLL RET"
 msgstr ""
 
 #. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_account_invoice_report__tax_classification_id
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__tax_classification_id
 msgid "Tax Classification"
 msgstr ""
@@ -9307,4 +9310,20 @@ msgstr ""
 msgid ""
 "versão do aplicativo utilizado no processo de\n"
 "emissão"
+msgstr ""
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_account_invoice_report__state_edoc
+msgid "Situation"
+msgstr ""
+
+#: model_terms:ir.ui.view,arch_db:l10n_br_account.account_document_form_inherit
+
+#. module: l10n_br_account
+msgid "Generate Invoice"
+msgstr ""
+
+#. module: l10n_br_account
+#: model:ir.model.fields,field_description:l10n_br_account.field_account_invoice_report__partner_state_id
+msgid "Partner State"
 msgstr ""

@@ -39,13 +39,25 @@ class DocumentImportWizard(models.TransientModel):
             infNFe = binding.infNFe
             self.nat_op = infNFe.ide.natOp
             self.amount_total = infNFe.total.ICMSTot.vNF
-            self.fiscal_operation_id = self._find_fiscal_operation(
-                self._most_common_cfop(infNFe),
-                self.nat_op,
-                self.fiscal_operation_type,
-            )
+            self.fiscal_operation_id = self._nfe_default_operation(infNFe)
             self._create_imported_products_by_xml(binding)
         return res
+
+    def _nfe_default_operation(self, infNFe):
+        """Use the company operation for a received NF-e.
+
+        An empty company operation, and an NF-e issued by this company,
+        keep the match by the most common CFOP.
+        """
+        self.ensure_one()
+        operation = self.company_id.nfe_import_fiscal_operation_id
+        if operation and self.fiscal_operation_type == "in":
+            return operation
+        return self._find_fiscal_operation(
+            self._most_common_cfop(infNFe),
+            self.nat_op,
+            self.fiscal_operation_type,
+        )
 
     @api.model
     def _most_common_cfop(self, infNFe):
@@ -108,6 +120,12 @@ class DocumentImportWizard(models.TransientModel):
         supplier_id = self._search_product_supplier_by_product_code(product.prod.cProd)
         product_id = self._match_product(product.prod)
         uom_id = self._match_uom_by_code(product.prod.uCom, product.prod.uTrib)
+        match_source = self._match_import_candidate(product.prod, product_id)
+        if match_source:
+            # the source reference is more authoritative than the generic
+            # product/UoM match: it pins the exact PO/picking line.
+            product_id = match_source.product_id
+            uom_id = match_source.uom_id
 
         return {
             "product_name": product.prod.xProd,
@@ -115,6 +133,7 @@ class DocumentImportWizard(models.TransientModel):
             "ncm_xml": product.prod.NCM,
             "cfop_xml": product.prod.CFOP,
             "product_id": product_id and product_id.id or False,
+            "match_source_id": match_source.id or False,
             "icms_percent": taxes["pICMS"],
             "icms_value": taxes["vICMS"],
             "ipi_percent": taxes["pIPI"],
@@ -127,7 +146,7 @@ class DocumentImportWizard(models.TransientModel):
             "quantity_trib": product.prod.qTrib,
             "price_unit_trib": product.prod.vUnTrib,
             "total": product.prod.vProd,
-            "import_xml_id": self.id,
+            "import_xml_id": self._origin.id or self.id,
             "product_supplier_id": supplier_id.id,
             "uom_conversion_factor": supplier_id.partner_uom_factor or 1,
         }
@@ -178,70 +197,11 @@ class DocumentImportWizard(models.TransientModel):
     def _match_product_by_purchase(self, xml_product):
         """Priority match from the referenced purchase order.
 
-        When ``l10n_br_purchase`` is installed and the XML line references the
-        buyer's purchase order (xPed / nItemPed), take the product from the
-        matching purchase order line first: it is the most authoritative match
-        since the buyer already stated which product was ordered.
-
-        Soft dependency: no-op unless l10n_br_purchase is installed (it adds
-        the partner_order / partner_order_line fields to purchase.order.line;
-        core ``purchase`` alone does not provide them).
+        Thin wrapper over the generic ``_match_po_line`` (l10n_br_fiscal_edi)
+        returning only the product, kept for backward compatibility.
         """
-        pol_model = self.env.get("purchase.order.line")
-        if pol_model is None or "partner_order" not in pol_model._fields:
-            return False
-        xped = (getattr(xml_product, "xPed", "") or "").strip()
-        if not xped:
-            return False
-
-        partner = self.partner_id.id
-        pol = pol_model.sudo()
-        nitemped = (getattr(xml_product, "nItemPed", "") or "").strip()
-
-        # 1) exact agreed reference: xPed + nItemPed on the purchase order line
-        if nitemped:
-            line = pol.search(
-                [
-                    ("order_id.partner_id", "=", partner),
-                    ("partner_order", "=", xped),
-                    ("partner_order_line", "=", nitemped),
-                ],
-                limit=1,
-            )
-            if line:
-                return line.product_id
-
-        # 2) heuristic: narrow to the referenced order (partner_order on the
-        # line, else the buyer PO name / vendor reference), then disambiguate
-        # the line by the XML product code / barcode.
-        lines = pol.search(
-            [("order_id.partner_id", "=", partner), ("partner_order", "=", xped)]
-        )
-        if not lines:
-            order = (
-                self.env["purchase.order"]
-                .sudo()
-                .search(
-                    [
-                        ("partner_id", "=", partner),
-                        "|",
-                        ("partner_ref", "=", xped),
-                        ("name", "=", xped),
-                    ],
-                    limit=1,
-                )
-            )
-            lines = order.order_line
-        if len(lines) == 1:
-            return lines.product_id
-        cprod = getattr(xml_product, "cProd", None)
-        ean = getattr(xml_product, "cEANTrib", None)
-        for line in lines:
-            if cprod and line.product_id.default_code == cprod:
-                return line.product_id
-            if ean and ean != "SEM GTIN" and line.product_id.barcode == ean:
-                return line.product_id
-        return False
+        po_line = self._match_po_line(xml_product)
+        return po_line.product_id if po_line else False
 
     def _get_taxes_from_xml_product(self, product):
         vICMS = 0
@@ -289,6 +249,9 @@ class DocumentImportWizard(models.TransientModel):
             self._attach_original_nfe_xml_to_document(edoc)
             edoc._init_import_states()
             self._apply_wizard_depara(edoc)
+            # the taxes read from the file fill the tax fields of the lines,
+            # but not the fiscal taxes column
+            edoc.fiscal_line_ids._update_fiscal_tax_ids()
 
             if self.fiscal_operation_type == "in":
                 self._update_new_products_standard_price(edoc)

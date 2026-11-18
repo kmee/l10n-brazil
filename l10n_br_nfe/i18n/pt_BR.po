@@ -364,7 +364,7 @@ msgstr "Autorização:"
 #. module: l10n_br_nfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe.view_l10n_br_nfe_recipient_manifestation_event_filter
 msgid "Aware"
-msgstr "Aware"
+msgstr "Ciência"
 
 #. module: l10n_br_nfe
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_nfe_40_rettransp__nfe40_vBCRet
@@ -747,7 +747,7 @@ msgstr ""
 #. module: l10n_br_nfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe.view_nfe_recipient_manifestation_event_wizard_form
 msgid "Close"
-msgstr ""
+msgstr "Fechar"
 
 #. module: l10n_br_nfe
 #: model:ir.model.fields,help:l10n_br_nfe.field_l10n_br_fiscal_document_line__nfe40_CEST
@@ -807,7 +807,7 @@ msgstr "Ajustes de Configurações"
 #. module: l10n_br_nfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe.l10n_br_nfe_recipient_manifestation_event_form
 msgid "Confirm"
-msgstr ""
+msgstr "Confirmar"
 
 #. module: l10n_br_nfe
 #: model:ir.model.fields.selection,name:l10n_br_nfe.selection__nfe_recipient_manifestation_event_wizard__event_type__confirmado
@@ -1384,7 +1384,7 @@ msgstr ""
 #. module: l10n_br_nfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe.l10n_br_nfe_recipient_manifestation_event_tree
 msgid "Date"
-msgstr ""
+msgstr "Data"
 
 #. module: l10n_br_nfe
 #: model:ir.model,name:l10n_br_nfe.model_nfe_40_di
@@ -1530,7 +1530,7 @@ msgstr ""
 #. module: l10n_br_nfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe.l10n_br_nfe_recipient_manifestation_event_form
 msgid "Document Info"
-msgstr ""
+msgstr "Dados do documento"
 
 #. module: l10n_br_nfe
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_nfe_md_event__document_number
@@ -1683,7 +1683,7 @@ msgstr ""
 #. module: l10n_br_nfe
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_nfe_recipient_manifestation_event_wizard__event_type
 msgid "Event Type"
-msgstr ""
+msgstr "Tipo de evento"
 
 #. module: l10n_br_nfe
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document_line__nfe40_indISS
@@ -1750,7 +1750,7 @@ msgstr ""
 #. module: l10n_br_nfe
 #: model:ir.model,name:l10n_br_nfe.model_l10n_br_fiscal_document_import_wizard_line
 msgid "Fiscal Document Import Wizard Line"
-msgstr ""
+msgstr "Linha do assistente de importação de documento fiscal"
 
 #. module: l10n_br_nfe
 #: model:ir.model,name:l10n_br_nfe.model_l10n_br_fiscal_document_type
@@ -2976,7 +2976,7 @@ msgstr "Configurações Padrão da NF-e"
 #. module: l10n_br_nfe
 #: model:ir.actions.act_window,name:l10n_br_nfe.l10n_br_nfe_recipient_manifestation_event_action
 msgid "NF-e Recipient Manifestation"
-msgstr ""
+msgstr "Manifestação do Destinatário da NF-e"
 
 #. module: l10n_br_nfe
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_res_config_settings__nfe_version
@@ -3031,7 +3031,7 @@ msgstr "Versão do Proc da NFe"
 #. module: l10n_br_nfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe.view_nfe_recipient_manifestation_event_wizard_form
 msgid "NFe Recipient's Manifestation"
-msgstr ""
+msgstr "Manifestação do Destinatário da NF-e"
 
 #. module: l10n_br_nfe
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document__nfe_transmission
@@ -3961,7 +3961,7 @@ msgstr ""
 #. module: l10n_br_nfe
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document_import_wizard_line__quantity_trib
 msgid "Quantity Trib"
-msgstr ""
+msgstr "Quantidade tributável"
 
 #. module: l10n_br_nfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe.view_l10n_br_nfe_recipient_manifestation_event_filter
@@ -4537,7 +4537,7 @@ msgstr ""
 #. module: l10n_br_nfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe.l10n_br_nfe_recipient_manifestation_event_form
 msgid "Transmission"
-msgstr ""
+msgstr "Transmissão"
 
 #. module: l10n_br_nfe
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_res_company__nfe_transmission
@@ -4606,12 +4606,12 @@ msgstr ""
 #. module: l10n_br_nfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe.view_l10n_br_nfe_recipient_manifestation_event_filter
 msgid "Unknown"
-msgstr ""
+msgstr "Desconhecimento"
 
 #. module: l10n_br_nfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe.view_l10n_br_nfe_recipient_manifestation_event_filter
 msgid "Unrealized"
-msgstr ""
+msgstr "Não realizada"
 
 #. module: l10n_br_nfe
 #: model:ir.model.fields,help:l10n_br_nfe.field_res_company__nfe40_xNome
@@ -5199,7 +5199,7 @@ msgstr ""
 #. module: l10n_br_nfe
 #: model:ir.model,name:l10n_br_nfe.model_nfe_recipient_manifestation_event_wizard
 msgid "Wizard to manifest"
-msgstr ""
+msgstr "Assistente de manifestação"
 
 #. module: l10n_br_nfe
 #. odoo-python
@@ -5811,3 +5811,13 @@ msgstr ""
 
 #~ msgid "Id"
 #~ msgstr "Id"
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_res_company__nfe_import_fiscal_operation_id
+msgid "Default NF-e Import Operation"
+msgstr "Operação padrão de importação de NF-e"
+
+#. module: l10n_br_nfe
+#: model_terms:ir.ui.view,arch_db:l10n_br_nfe.l10n_br_nfe_import_xml_products_tree
+msgid "Match Source"
+msgstr "Origem"

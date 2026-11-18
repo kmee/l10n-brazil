@@ -111,7 +111,7 @@ msgstr ""
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__cbs_reduction
 msgid "CBS % Reduction"
-msgstr ""
+msgstr "% de Redução da CBS"
 
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order__amount_cbs_base
@@ -122,7 +122,7 @@ msgstr "Base da CBS"
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__cbs_base_type
 msgid "CBS Base Type"
-msgstr ""
+msgstr "Tipo de Base da CBS"
 
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__cbs_cst_code
@@ -151,6 +151,7 @@ msgstr "CFOP"
 
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__cfop_destination
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_report__cfop_destination
 msgid "CFOP Destination"
 msgstr "CFOP Destino"
 
@@ -332,7 +333,7 @@ msgstr "Valor CSLL"
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__cbs_cst_id
 msgid "CST CBS"
-msgstr ""
+msgstr "CST CBS"
 
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__cofins_cst_id
@@ -347,10 +348,11 @@ msgstr "CST COFINS ST"
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__ibs_cst_id
 msgid "CST IBS"
-msgstr ""
+msgstr "CST IBS"
 
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__icms_cst_id
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_report__icms_cst_id
 msgid "CST ICMS"
 msgstr "CST ICMS"
 
@@ -651,7 +653,7 @@ msgstr ""
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__ibs_reduction
 msgid "IBS % Reduction"
-msgstr ""
+msgstr "% de Redução do IBS"
 
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order__amount_ibs_base
@@ -662,7 +664,7 @@ msgstr "Base do IBS"
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__ibs_base_type
 msgid "IBS Base Type"
-msgstr ""
+msgstr "Tipo de Base do IBS"
 
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__ibs_cst_code
@@ -1482,7 +1484,7 @@ msgid "Product"
 msgstr "Produto"
 
 #. module: l10n_br_purchase
-#: model_terms:ir.ui.view,arch_db:l10n_br_purchase.l10n_br_purchase_report_search
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_report__fiscal_type
 msgid "Product Fiscal Type"
 msgstr "Tipo Fiscal do Produto"
 
@@ -1586,7 +1588,7 @@ msgstr "Código do Benefício Fiscal"
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__cbs_tax_id
 msgid "Tax CBS"
-msgstr ""
+msgstr "Imposto CBS"
 
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__cofins_tax_id
@@ -1615,8 +1617,9 @@ msgstr "Imposto CSLL RET"
 
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__tax_classification_id
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_report__tax_classification_id
 msgid "Tax Classification"
-msgstr ""
+msgstr "Classificação Tributária"
 
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__tax_framework
@@ -1626,7 +1629,7 @@ msgstr "Estrutura Tributária"
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__ibs_tax_id
 msgid "Tax IBS"
-msgstr ""
+msgstr "Imposto IBS"
 
 #. module: l10n_br_purchase
 #: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_order_line__icms_tax_id
@@ -3113,3 +3116,243 @@ msgstr ""
 #~ msgstr ""
 #~ "Você deve definir um produto para tudo o que compra,\n"
 #~ "                 Seja um produto físico, material de consumo ou serviços."
+
+#. module: l10n_br_purchase
+#. odoo-python
+#: code:addons/l10n_br_purchase/models/account_move.py:0
+#, python-format
+msgid "A purchase order can only be created from a vendor bill."
+msgstr "Um pedido de compra só pode ser criado a partir de uma fatura de fornecedor."
+
+#. module: l10n_br_purchase
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase.purchase_update_from_nfe_wizard_form
+msgid "Apply"
+msgstr "Aplicar"
+
+#. module: l10n_br_purchase
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase.l10n_br_purchase_move_form
+msgid "Create PO from NFe"
+msgstr "Criar pedido pela NF-e"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__po_quantity
+msgid "Current Quantity"
+msgstr "Quantidade atual"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__po_price_unit
+msgid "Current Unit Price"
+msgstr "Preço unitário atual"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard__move_id
+msgid "Financial Move"
+msgstr "Lançamento financeiro"
+
+#. module: l10n_br_purchase
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase.purchase_update_from_nfe_wizard_form
+msgid "Lines"
+msgstr "Linhas"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__nfe_line_id
+msgid "NFe Line"
+msgstr "Linha da NF-e"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__nfe_quantity
+msgid "NFe Quantity"
+msgstr "Quantidade da NF-e"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__nfe_price_unit
+msgid "NFe Unit Price"
+msgstr "Preço unitário da NF-e"
+
+#. module: l10n_br_purchase
+#. odoo-python
+#: code:addons/l10n_br_purchase/models/account_move.py:0
+#, python-format
+msgid "No matching purchase order line found for the imported document."
+msgstr "Nenhuma linha de pedido de compra encontrada para o documento importado."
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__partner_order
+msgid "PO Reference (xPed)"
+msgstr "Referência do pedido (xPed)"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__partner_order_line
+msgid "PO Reference Line"
+msgstr "Item do pedido (nItemPed)"
+
+#. module: l10n_br_purchase
+#: model:ir.model,name:l10n_br_purchase.model_purchase_update_from_nfe_wizard_line
+msgid "Purchase Order line updated from an imported NFe"
+msgstr "Linha do pedido de compra atualizada por uma NF-e importada"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__new_quantity
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase.purchase_update_from_nfe_wizard_form
+msgid "Quantity"
+msgstr "Quantidade"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard__partner_id
+msgid "Supplier"
+msgstr "Fornecedor"
+
+#. module: l10n_br_purchase
+#. odoo-python
+#: code:addons/l10n_br_purchase/models/account_move.py:0
+#, python-format
+msgid "The vendor bill has no imported fiscal document."
+msgstr "A fatura de fornecedor não tem documento fiscal importado."
+
+#. module: l10n_br_purchase
+#. odoo-python
+#: code:addons/l10n_br_purchase/models/account_move.py:0
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase.l10n_br_purchase_move_form
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase.purchase_update_from_nfe_wizard_form
+#, python-format
+msgid "Update PO from NFe"
+msgstr "Atualizar pedido pela NF-e"
+
+#. module: l10n_br_purchase
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase.purchase_update_from_nfe_wizard_form
+msgid "Update PO line"
+msgstr "Atualizar linha do pedido"
+
+#. module: l10n_br_purchase
+#: model:ir.model,name:l10n_br_purchase.model_purchase_update_from_nfe_wizard
+msgid "Update Purchase Order lines from an imported NFe"
+msgstr "Atualizar linhas do pedido de compra por uma NF-e importada"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__wizard_id
+msgid "Wizard"
+msgstr "Assistente"
+
+#. module: l10n_br_purchase
+#: code:addons/l10n_br_purchase/models/account_move.py:0
+#, python-format
+msgid ""
+"All the lines of the vendor bill are already linked to a purchase order."
+msgstr ""
+"Todas as linhas da fatura de fornecedor já estão ligadas a um pedido de "
+"compra."
+
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase.purchase_update_from_nfe_wizard_form
+
+#. module: l10n_br_purchase
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard__line_ids
+msgid "Order Lines"
+msgstr "Linhas do pedido"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__update_taxes
+msgid "Update Taxes"
+msgstr "Atualizar impostos"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,help:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__update_taxes
+msgid ""
+"Update the fiscal taxes of the purchase order line from the imported "
+"document."
+msgstr "Atualiza os impostos fiscais da linha do pedido de compra com os do documento importado."
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_report__total_with_taxes
+msgid "Total with Taxes"
+msgstr "Total com impostos"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_report__estimate_tax
+msgid "Estimated Taxes (IBPT)"
+msgstr "Tributos estimados (IBPT)"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_report__ind_final
+msgid "Final Customer"
+msgstr "Consumidor final"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_report__icms_destination_value
+msgid "ICMS DIFAL Destination Value"
+msgstr "Valor do ICMS DIFAL de destino"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_report__icms_origin_value
+msgid "ICMS DIFAL Origin Value"
+msgstr "Valor do ICMS DIFAL de origem"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_report__amount_tax_withholding
+msgid "Tax Withholdings"
+msgstr "Retenções de impostos"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_report__amount_tax_included
+msgid "Taxes Included in Price"
+msgstr "Impostos incluídos no preço"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_report__amount_tax_not_included
+msgid "Taxes Not Included in Price"
+msgstr "Impostos não incluídos no preço"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard__create_uid
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__create_uid
+msgid "Created by"
+msgstr "Criado por"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard__create_date
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__create_date
+msgid "Created on"
+msgstr "Criado em"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard__display_name
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__display_name
+msgid "Display Name"
+msgstr "Nome exibido"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard____last_update
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line____last_update
+msgid "Last Modified on"
+msgstr "Última modificação em"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard__write_uid
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__write_uid
+msgid "Last Updated by"
+msgstr "Última atualização por"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard__write_date
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__write_date
+msgid "Last Updated on"
+msgstr "Última atualização em"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard__id
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_update_from_nfe_wizard_line__id
+msgid "ID"
+msgstr "ID"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_report__partner_state_id
+msgid "Partner State"
+msgstr "UF do Parceiro"
+
+#. module: l10n_br_purchase
+#: model:ir.model.fields,field_description:l10n_br_purchase.field_purchase_report__service_type_id
+msgid "Service Type"
+msgstr "Tipo de Serviço"
