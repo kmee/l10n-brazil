@@ -496,6 +496,21 @@ class NFeImportWizardTest(TransactionCase):
             self.assertTrue(line.icms_tax_id)
             self.assertEqual(line.fiscal_tax_ids, own)
 
+    def test_importing_the_same_file_twice_gives_the_same_document(self):
+        self._prepare_wizard(self.xml_1)
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        _binding, first = self.wizard._import_edoc()
+        self._prepare_wizard(self.xml_1)
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        _binding, second = self.wizard._import_edoc()
+        self.assertEqual(first, second)
+        self.assertEqual(
+            self.env["l10n_br_fiscal.document"].search_count(
+                [("document_key", "=", first.document_key)]
+            ),
+            1,
+        )
+
     def test__parse_xml(self):
         self._prepare_wizard(self.xml_1)
 

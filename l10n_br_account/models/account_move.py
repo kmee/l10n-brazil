@@ -694,6 +694,19 @@ class AccountMove(models.Model):
             move = self.env["account.move"].browse(move_id)
         else:
             move = self.env["account.move"]
+            existing = fiscal_document.move_ids.filtered(
+                lambda bill: bill.state != "cancel"
+            )
+            if existing:
+                raise UserError(
+                    _(
+                        "The fiscal document %(document)s already has the "
+                        "invoice %(invoice)s. Open it instead of generating "
+                        "another one, or cancel it first.",
+                        document=fiscal_document.display_name,
+                        invoice=", ".join(existing.mapped("display_name")),
+                    )
+                )
 
         move_form = Form(
             move.with_context(
