@@ -53,7 +53,12 @@ class StockMove(models.Model):
         if self.product_id.tracking != "lot":
             return _("%s is not tracked by lot.", self.product_id.display_name)
         if any(
-            line.lot_id or line.lot_name or line.qty_done for line in self.move_line_ids
+            line.lot_id
+            or line.lot_name
+            or line.qty_done
+            or line.package_id
+            or line.result_package_id
+            for line in self.move_line_ids
         ):
             return _(
                 "The receipt of %s already has lots or quantities.",
@@ -68,11 +73,21 @@ class StockMove(models.Model):
             for rastro in document_line.nfe40_rastro:
                 if not rastro.nfe40_nLote:
                     continue
-                quantity = document_line.uom_id._compute_quantity(
-                    rastro.nfe40_qLote, self.product_uom
-                )
+                # the lot quantity is in the unit of the document line;
+                # _prepare_move_line_vals wants it in the unit of the product
                 lot = self._find_or_create_nfe_lot(rastro)
-                vals = self._prepare_move_line_vals(quantity=quantity)
-                vals.update({"lot_id": lot.id, "qty_done": quantity})
+                vals = self._prepare_move_line_vals(
+                    quantity=document_line.uom_id._compute_quantity(
+                        rastro.nfe40_qLote, self.product_id.uom_id
+                    )
+                )
+                vals.update(
+                    {
+                        "lot_id": lot.id,
+                        "qty_done": document_line.uom_id._compute_quantity(
+                            rastro.nfe40_qLote, self.product_uom
+                        ),
+                    }
+                )
                 MoveLine.create(vals)
         return ""
