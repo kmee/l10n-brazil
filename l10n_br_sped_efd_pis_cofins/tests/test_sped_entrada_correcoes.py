@@ -38,3 +38,22 @@ class TestSpedPisCofinsCorrecoes(SpedPisCofinsEntradaMixin, SpedEntradaCommon):
         self.assertEqual(c100[cash.fiscal_document_id.document_number]["IND_PGTO"], "0")
         self.assertEqual(c100[term.fiscal_document_id.document_number]["IND_PGTO"], "1")
         self.assertEqual(c100[free.document_number]["IND_PGTO"], "9")
+
+    def test_pulling_twice_does_not_duplicate_the_registers(self):
+        self._entry_document()
+        declaration = self._declaration_july()
+        models = ("c100", "c170", "0150", "0200")
+        before = {
+            model: self.env[f"l10n_br_sped.efd_pis_cofins.{model}"].search_count(
+                [("declaration_id", "=", declaration.id)]
+            )
+            for model in models
+        }
+        declaration.button_populate_sped_from_odoo()
+        after = {
+            model: self.env[f"l10n_br_sped.efd_pis_cofins.{model}"].search_count(
+                [("declaration_id", "=", declaration.id)]
+            )
+            for model in models
+        }
+        self.assertEqual(before, after)

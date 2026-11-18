@@ -217,6 +217,9 @@ class SpedDeclaration(models.AbstractModel):
         )
         top_registers = mixin_env._get_top_registers(kind)
 
+        # pulling twice must not duplicate: drop what an earlier pull created
+        mixin_env._flush_generated_registers(kind, self.id)
+
         for register_model in top_registers:  # Iterate over models, not instances
             try:
                 with self.env.cr.savepoint():

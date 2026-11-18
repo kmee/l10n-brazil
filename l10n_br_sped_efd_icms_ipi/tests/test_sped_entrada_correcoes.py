@@ -60,6 +60,30 @@ class TestSpedEfdIcmsIpiCorrecoes(EntradaHelpers, SpedEntradaCommon):
         self.assertEqual(c100[term.fiscal_document_id.document_number]["IND_PGTO"], "1")
         self.assertEqual(c100[free.document_number]["IND_PGTO"], "9")
 
+    def test_pulling_twice_does_not_duplicate_the_registers(self):
+        """Pull Registers is idempotent: what an earlier pull created is
+        replaced, what was typed by hand stays."""
+        self._entry_document()
+        declaration = self._declaration_july()
+        manual = self.env["l10n_br_sped.efd_icms_ipi.0150"].create(
+            {"declaration_id": declaration.id, "COD_PART": "manual", "NOME": "Manual"}
+        )
+        before = {
+            model: self.env[f"l10n_br_sped.efd_icms_ipi.{model}"].search_count(
+                [("declaration_id", "=", declaration.id)]
+            )
+            for model in ("c100", "c170", "c190", "0150", "0200")
+        }
+        declaration.button_populate_sped_from_odoo()
+        after = {
+            model: self.env[f"l10n_br_sped.efd_icms_ipi.{model}"].search_count(
+                [("declaration_id", "=", declaration.id)]
+            )
+            for model in before
+        }
+        self.assertEqual(before, after)
+        self.assertTrue(manual.exists(), "the register typed by hand is kept")
+
     def test_the_sped_adjustment_code_is_on_the_benefit_and_relief_screens(self):
         for model, view in (
             ("l10n_br_fiscal.tax.definition", "l10n_br_fiscal.tax_definition_form"),
