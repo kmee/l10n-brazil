@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Copyright 2026 KMEE
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+    <record id="view_picking_form" model="ir.ui.view">
+        <field name="name">l10n_br_purchase_stock_rastro.picking.form</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//header/button[@name='action_confirm']" position="before">
+                <field name="show_propose_lots_from_nfe" invisible="1" />
+                <button
+                    name="action_propose_lots_from_nfe"
+                    type="object"
+                    string="Propose Lots from NFe"
+                    attrs="{'invisible': [('show_propose_lots_from_nfe', '=', False)]}"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>
