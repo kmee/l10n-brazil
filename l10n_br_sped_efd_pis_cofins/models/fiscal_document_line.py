@@ -6,6 +6,9 @@ from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     FISCAL_IN,
+    FISCAL_OUT,
+    PROFIT_CALCULATION_REAL,
+    TAX_FRAMEWORK_SIMPLES_ALL,
 )
 
 # CST of the credit the EFD Contribuicoes understands without more data than the
@@ -24,12 +27,14 @@ class FiscalDocumentLine(models.Model):
 
     def _get_sped_credit_accounts(self):
         """The analytic account (COD_CTA of the C170, 0500) of the lines of an
-        entry that books a PIS/COFINS credit (CST 50 to 66): the account of the
-        line of the bill. A line without a bill gives none, and the C170 then
-        goes out with a blank COD_CTA, which the PVA refuses."""
+        entry that books a PIS/COFINS credit (CST 50 to 66), and of the sale of a
+        company of the non-cumulative regime (CST 01 to 09), which the PVA also
+        asks the account of: the account of the line of the bill. A line without
+        a bill gives none, and the C170 then goes out with a blank COD_CTA, which
+        the PVA refuses."""
         accounts = self.env["account.account"]
         for line in self:
-            if line._sped_books_credit():
+            if line._sped_books_credit() or line._sped_books_non_cumulative_sale():
                 accounts |= line.account_line_ids[:1].account_id
         return accounts
 
@@ -38,6 +43,21 @@ class FiscalDocumentLine(models.Model):
         return any(
             "50" <= (cst.code or "") <= "66"
             for cst in (self.entry_pis_cst_id, self.entry_cofins_cst_id)
+        )
+
+    def _sped_books_non_cumulative_sale(self):
+        """A sale taxed by PIS or COFINS (CST 01 to 09) of a company of the
+        non-cumulative regime."""
+        self.ensure_one()
+        company = self.company_id
+        return (
+            self.fiscal_operation_type == FISCAL_OUT
+            and company.profit_calculation == PROFIT_CALCULATION_REAL
+            and company.tax_framework not in TAX_FRAMEWORK_SIMPLES_ALL
+            and any(
+                "01" <= (code or "") <= "09"
+                for code in (self.pis_cst_code, self.cofins_cst_code)
+            )
         )
 
     def _sped_credit(self, tax_domain):
