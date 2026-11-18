@@ -100,7 +100,43 @@ class FiscalDocumentLine(models.Model):
                 product=line.product_id,
             )
             if line.fiscal_operation_line_id == default:
-                line.fiscal_operation_line_id = wanted
+                line._set_operation_line_in_draft_bills(wanted)
+
+    def _set_operation_line_in_draft_bills(self, operation_line):
+        """Change the operation line of the line, and of the bill that is still
+        a draft along with it.
+
+        The bill line shares the fiscal line with the document (it delegates to
+        it), so it reads the new operation line, but its accounting taxes were
+        chosen for the old one. The change runs inside the synchronization of
+        the bill, the same one that follows any edition of its lines, so the
+        taxes are chosen again and the bill brings its tax lines and the amounts
+        of its product lines along. A posted bill does not change: the warning
+        of the bill points the person to it.
+        """
+        self.ensure_one()
+        bill_lines = self.env["account.move.line"].search(
+            [
+                ("fiscal_document_line_id", "=", self.id),
+                ("display_type", "=", "product"),
+                ("move_id.state", "=", "draft"),
+            ]
+        )
+        moves = bill_lines.move_id
+        if not moves:
+            self.fiscal_operation_line_id = operation_line
+            return
+        # the bill is balanced again only when all its lines are done
+        moves = moves.with_context(check_move_validity=False)
+        bill_lines = bill_lines.with_context(check_move_validity=False)
+        with moves._sync_dynamic_lines({"records": moves}):
+            self.fiscal_operation_line_id = operation_line
+            for bill_line in bill_lines:
+                bill_line.tax_ids = bill_line._get_computed_taxes()
+        with moves.with_context(check_move_validity=True)._check_balanced(
+            {"records": moves}
+        ):
+            pass
 
     def _import_origin_candidates(self):
         """Open purchase order lines of the supplier for the line product."""
