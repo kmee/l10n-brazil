@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
 from datetime import date, datetime
+from unittest import mock
 
 from odoo.exceptions import UserError
 from odoo.tests.common import tagged
@@ -85,6 +86,36 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
         with self.assertRaisesRegex(UserError, move.display_name):
             self.env["account.move"].import_fiscal_document(document)
         self.assertEqual(document.move_ids, move)
+
+    def test_a_cancelled_bill_frees_the_document_of_the_supplier(self):
+        """Cancelling the bill does not cancel the note of the supplier: the
+        note keeps its state and can be invoiced again."""
+        document = self._create_fiscal_document()
+        state = document.state_edoc
+        move_form = self.env["account.move"].import_fiscal_document(document)
+        move = self.env["account.move"].browse(move_form.id)
+        move.button_cancel()
+        self.assertEqual(move.state, "cancel")
+        self.assertEqual(document.state_edoc, state)
+        self.assertFalse(document._import_block_reason())
+        again_form = self.env["account.move"].import_fiscal_document(document)
+        again = self.env["account.move"].browse(again_form.id)
+        self.assertNotEqual(again, move)
+        self.assertEqual(again.fiscal_document_id, document)
+        again.button_cancel()
+        again.button_draft()
+        self.assertEqual(document.state_edoc, state)
+
+    def test_a_cancelled_bill_cancels_the_document_of_the_company(self):
+        """The control: the note the company issued follows its invoice."""
+        document = self._create_fiscal_document()
+        move_form = self.env["account.move"].import_fiscal_document(document)
+        move = self.env["account.move"].browse(move_form.id)
+        document.issuer = "company"
+        model = type(self.env["l10n_br_fiscal.document"])
+        with mock.patch.object(model, "action_document_cancel") as cancel_document:
+            move.button_cancel()
+        cancel_document.assert_called_once()
 
     def test_import_into_a_new_vendor_bill(self):
         """A vendor fiscal document is imported into a new vendor bill."""

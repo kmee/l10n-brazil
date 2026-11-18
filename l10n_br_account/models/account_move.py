@@ -504,12 +504,23 @@ class AccountMove(models.Model):
             action["domain"] = [("id", "in", self.fiscal_document_ids.ids)]
         return action
 
+    def _acts_on_own_fiscal_document(self):
+        """The invoices whose fiscal document the company itself issued.
+
+        Cancelling or reopening the invoice of a note issued by the supplier
+        says nothing about the note: it stays authorized in SEFAZ, stays booked
+        as regular and can still be invoiced again.
+        """
+        return self.filtered(
+            lambda move: move.document_type_id
+            and move.issuer == DOCUMENT_ISSUER_COMPANY
+        )
+
     def button_draft(self):
-        for move in self.filtered(lambda d: d.document_type_id):
+        for move in self._acts_on_own_fiscal_document():
             if (
                 move.state_edoc == DOCUMENT_STATE_CANCEL
                 and move.document_number
-                and move.issuer == DOCUMENT_ISSUER_COMPANY
                 and move.fiscal_document_id.cancel_event_id
             ):
                 raise UserError(
@@ -635,7 +646,7 @@ class AccountMove(models.Model):
         return new_moves
 
     def button_cancel(self):
-        for doc in self.filtered(lambda d: d.document_type_id):
+        for doc in self._acts_on_own_fiscal_document():
             doc.fiscal_document_id.action_document_cancel()
         return super().button_cancel()
 
