@@ -87,6 +87,23 @@ class TestSimplesSupplierCredit(AccountMoveBRCommon):
             )
         return move
 
+    def _icms_to_recover_account(self):
+        """The account the credit of the normal ICMS of a purchase goes to."""
+        group = self.env.ref("l10n_br_coa.tax_group_icms")
+        tax = self.env["account.tax"].search(
+            [
+                ("tax_group_id", "=", group.id),
+                ("company_id", "=", self.company.id),
+                ("type_tax_use", "=", "purchase"),
+                ("deductible", "=", False),
+                ("no_credit", "=", False),
+            ],
+            limit=1,
+        )
+        return tax.invoice_repartition_line_ids.filtered(
+            lambda line: line.repartition_type == "tax"
+        ).account_id
+
     @staticmethod
     def _icms_credit_lines(move):
         return move.line_ids.filtered(lambda line: line.tax_line_id)
@@ -106,6 +123,11 @@ class TestSimplesSupplierCredit(AccountMoveBRCommon):
         self.assertAlmostEqual(move.invoice_line_ids.balance, 980.0)
         credit = self._icms_credit_lines(move)
         self.assertAlmostEqual(sum(credit.mapped("debit")), 20.0)
+        self.assertEqual(
+            credit.account_id,
+            self._icms_to_recover_account(),
+            "the credit of the Simples supplier goes to the ICMS to recover",
+        )
 
     def test_csosn_101_use_and_consumption_has_no_credit(self):
         move = self._bill(

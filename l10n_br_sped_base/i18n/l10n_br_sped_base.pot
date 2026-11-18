@@ -520,6 +520,13 @@ msgid "Pulled from Odoo"
 msgstr ""
 
 #. module: l10n_br_sped_base
+#. odoo-python
+#: code:addons/l10n_br_sped_base/models/sped_declaration.py:0
+#, python-format
+msgid "You have no access to the company %(company)s of this declaration, so its registers cannot be pulled or its file generated."
+msgstr ""
+
+#. module: l10n_br_sped_base
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__203
 msgid "203 - Administrador"
 msgstr ""
