@@ -249,6 +249,9 @@ class DocumentImportWizard(models.TransientModel):
             self._attach_original_nfe_xml_to_document(edoc)
             edoc._init_import_states()
             self._apply_wizard_depara(edoc)
+            # the taxes read from the file fill the tax fields of the lines,
+            # but not the fiscal taxes column
+            edoc.fiscal_line_ids._update_fiscal_tax_ids()
 
             if self.fiscal_operation_type == "in":
                 self._update_new_products_standard_price(edoc)

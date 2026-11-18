@@ -462,21 +462,23 @@ class FiscalDocumentLineMixin(models.AbstractModel):
             if not isinstance(commands, list):
                 continue
             vals["fiscal_tax_ids"] = [
-                Command.link(command[1])
-                if isinstance(command, (list, tuple))
-                and command
-                and command[0] == Command.UPDATE
-                else command
+                (
+                    Command.link(command[1])
+                    if isinstance(command, (list, tuple))
+                    and command
+                    and command[0] == Command.UPDATE
+                    else command
+                )
                 for command in commands
             ]
         return result
 
     def _update_fiscal_tax_ids(self):
-        taxes = self.env["l10n_br_fiscal.tax"]
-        for fiscal_tax_field in FISCAL_TAX_ID_FIELDS:
-            taxes |= self[fiscal_tax_field]
-
         for line in self:
+            taxes = self.env["l10n_br_fiscal.tax"]
+            for fiscal_tax_field in FISCAL_TAX_ID_FIELDS:
+                taxes |= line[fiscal_tax_field]
+
             taxes_groups = line.fiscal_tax_ids.mapped("tax_domain")
             fiscal_taxes = line.fiscal_tax_ids.filtered(
                 lambda ft, taxes_groups=taxes_groups: ft.tax_domain not in taxes_groups

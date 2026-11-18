@@ -14,6 +14,7 @@ from odoo.exceptions import ValidationError
 from odoo.tests import TransactionCase
 
 from odoo.addons import l10n_br_nfe
+from odoo.addons.l10n_br_fiscal.constants.fiscal import FISCAL_TAX_ID_FIELDS
 
 from ..wizards.document_import_wizard import DocumentImportWizard
 
@@ -483,6 +484,17 @@ class NFeImportWizardTest(TransactionCase):
         self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
         _binding, edoc = self.wizard._import_edoc()
         self.assertFalse(edoc.fiscal_line_ids.mapped("product_id"))
+
+    def test_imported_line_shows_all_its_taxes_in_the_fiscal_taxes_column(self):
+        self._prepare_wizard(self.xml_1)
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        _binding, edoc = self.wizard._import_edoc()
+        for line in edoc.fiscal_line_ids:
+            own = self.env["l10n_br_fiscal.tax"]
+            for field in FISCAL_TAX_ID_FIELDS:
+                own |= line[field]
+            self.assertTrue(line.icms_tax_id)
+            self.assertEqual(line.fiscal_tax_ids, own)
 
     def test__parse_xml(self):
         self._prepare_wizard(self.xml_1)
