@@ -530,6 +530,7 @@ class AccountMoveLine(models.Model):
         "cofins": ("cofins_value", "cofins_base"),
         "issqn": ("issqn_value", "issqn_base"),
         "ii": ("ii_value", "ii_base"),
+        "icmssn": ("icmssn_credit_value", "icmssn_base"),
         "ibs": ("ibs_value", "ibs_base"),
         "cbs": ("cbs_value", "cbs_base"),
     }
