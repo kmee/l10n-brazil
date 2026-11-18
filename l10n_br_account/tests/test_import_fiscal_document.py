@@ -1,6 +1,8 @@
 # Copyright 2026 - TODAY KMEE - Luis Felipe Mileo <mileo@kmee.com.br>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
+from datetime import date, datetime
+
 from odoo.tests.common import tagged
 
 from .common import AccountMoveBRCommon
@@ -23,7 +25,7 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
         cls.configure_normal_company_taxes()
         cls.company = cls.company_data["company"]
 
-    def _create_fiscal_document(self):
+    def _create_fiscal_document(self, **extra):
         document = self.env["l10n_br_fiscal.document"].create(
             {
                 "company_id": self.company.id,
@@ -34,6 +36,7 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
                 "document_serie": "1",
                 "issuer": "partner",
                 "partner_id": self.partner_a.id,
+                **extra,
             }
         )
         self.env["l10n_br_fiscal.document.line"].create(
@@ -51,6 +54,19 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
             }
         )
         return document
+
+    def test_import_keeps_the_emission_date_of_the_file(self):
+        """The emission date of the imported document is not rewritten with
+        the invoice date at midnight of the user timezone."""
+        self.env.user.tz = "Europe/Brussels"
+        emission = datetime(2026, 11, 17, 18, 0, 0)
+        document = self._create_fiscal_document(
+            document_date=emission, imported_document=True
+        )
+        move_form = self.env["account.move"].import_fiscal_document(document)
+        move = self.env["account.move"].browse(move_form.id)
+        self.assertEqual(move.invoice_date, date(2026, 11, 17))
+        self.assertEqual(document.document_date, emission)
 
     def test_import_into_a_new_vendor_bill(self):
         """A vendor fiscal document is imported into a new vendor bill."""
