@@ -68,7 +68,8 @@ class AccountMove(models.Model):
         if not bill_lines:
             raise UserError(
                 _(
-                    "All the lines of the vendor bill are already linked to a purchase order."
+                    "All the lines of the vendor bill are already linked to a "
+                    "purchase order."
                 )
             )
         po = self.env["purchase.order"].create(
