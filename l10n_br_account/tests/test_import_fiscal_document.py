@@ -140,8 +140,8 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
         invoice shows again, while the counter keeps counting the cancelled."""
         document = self._create_fiscal_document(imported_document=True)
         self.assertFalse(document.has_active_move)
-        move_form = self.env["account.move"].import_fiscal_document(document)
-        move = self.env["account.move"].browse(move_form.id)
+        move_form = self.env["account.move"].sudo().import_fiscal_document(document)
+        move = self.env["account.move"].sudo().browse(move_form.id)
         self.assertTrue(document.has_active_move)
         move.button_cancel()
         self.assertFalse(document.has_active_move)
