@@ -68,7 +68,39 @@ class FiscalDocumentLine(models.Model):
                     "resolved" if vals["import_purchase_line_id"] else "pending"
                 ),
             )
-        return super().write(vals)
+        result = super().write(vals)
+        if vals.get("import_origin_state") == "resolved":
+            self.filtered(
+                lambda line: line.import_origin_state == "resolved"
+            )._apply_import_origin_operation_line()
+        return result
+
+    def _apply_import_origin_operation_line(self):
+        """The destination of the order goes into the imported line.
+
+        The operation line of an imported line is the default one for the
+        operation (the CFOP of the supplier, inverted, suggests the operation),
+        and it does not know what the order was bought for. When the origin is
+        decided, the line takes the operation line of the order line, which
+        carries the destination (resale, use and consumption, fixed asset),
+        unless the person already chose another one on the document line.
+        """
+        for line in self:
+            wanted = line.import_purchase_line_id.fiscal_operation_line_id
+            operation = line.fiscal_operation_id
+            if (
+                not wanted
+                or wanted == line.fiscal_operation_line_id
+                or wanted.fiscal_operation_id != operation
+            ):
+                continue
+            default = operation.line_definition(
+                company=line.company_id,
+                partner=line.partner_id,
+                product=line.product_id,
+            )
+            if line.fiscal_operation_line_id == default:
+                line.fiscal_operation_line_id = wanted
 
     def _import_origin_candidates(self):
         """Open purchase order lines of the supplier for the line product."""
