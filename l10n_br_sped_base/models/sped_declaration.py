@@ -9,6 +9,7 @@ from io import StringIO
 from lxml.builder import E
 
 from odoo import _, api, fields, models
+from odoo.osv import expression
 
 from .sped_mixin import LAYOUT_VERSIONS, SPED_ENCODING
 
@@ -110,6 +111,42 @@ class SpedDeclaration(models.AbstractModel):
             for declaration in self
         ]
 
+    def _get_fiscal_document_period_domain(self):
+        """Documents of the declaration period.
+
+        An outgoing document belongs to the period of its emission. An entry
+        belongs to the period it came in (``date_in_out``): the supplier invoice
+        emitted in one month is booked in the month it was received, as an
+        extemporaneous one when that is a later month. An entry without entry
+        date falls back to the emission date. For an entry made from a bill,
+        ``date_in_out`` is the accounting date of the bill: the real receipt
+        date is not recorded in the document.
+        """
+        self.ensure_one()
+        emission = [
+            ("document_date", ">=", self.DT_INI),
+            ("document_date", "<=", self.DT_FIN),
+        ]
+        entry = [
+            ("date_in_out", ">=", self.DT_INI),
+            ("date_in_out", "<=", self.DT_FIN),
+        ]
+        return expression.OR(
+            [
+                expression.AND([[("fiscal_operation_type", "!=", "in")], emission]),
+                expression.AND([[("fiscal_operation_type", "=", "in")], entry]),
+                expression.AND(
+                    [
+                        [
+                            ("fiscal_operation_type", "=", "in"),
+                            ("date_in_out", "=", False),
+                        ],
+                        emission,
+                    ]
+                ),
+            ]
+        )
+
     @api.depends("company_id", "DT_INI", "DT_FIN")
     def _compute_fiscal_documents(self):
         for record in self:
@@ -126,9 +163,8 @@ class SpedDeclaration(models.AbstractModel):
                             "in",
                             ("autorizada", "cancelada", "denegada", "inutilizada"),
                         ),
-                        ("document_date", ">=", record.DT_INI),
-                        ("document_date", "<=", record.DT_FIN),
                     ]
+                    + record._get_fiscal_document_period_domain()
                 )
 
             record.fiscal_document_partner_ids = fiscal_document_ids.mapped(

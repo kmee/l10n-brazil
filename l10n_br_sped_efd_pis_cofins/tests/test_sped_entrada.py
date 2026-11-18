@@ -1,7 +1,7 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl-3.0.html).
 
-from datetime import date
+from datetime import date, datetime
 
 from odoo.tests.common import tagged
 
@@ -51,6 +51,47 @@ class TestSpedPisCofinsEntrada(SpedPisCofinsEntradaMixin, SpedEntradaCommon):
         for name in ("COD_PART", "DT_DOC", "DT_E_S", "VL_DOC", "VL_PIS", "VL_COFINS"):
             self.assertEqual(rec[name], "", f"{name} must be blank")
         self.assertNotIn("|C170|", declaration._generate_sped_text())
+
+    def test_the_entry_booked_after_its_emission_is_extemporaneous(self):
+        late, _line = self._entry_document(
+            document_date=datetime(2026, 6, 20, 12, 0),
+            date_in_out=datetime(2026, 7, 5, 12, 0),
+        )
+        late_complementary, _line = self._entry_document(
+            document_date=datetime(2026, 6, 21, 12, 0),
+            date_in_out=datetime(2026, 7, 6, 12, 0),
+            edoc_purpose="2",
+        )
+        c100 = self._c100(self._declaration_july())
+        self.assertEqual(c100[late.document_number]["COD_SIT"], "01")
+        self.assertEqual(c100[late_complementary.document_number]["COD_SIT"], "07")
+
+    def test_the_period_and_the_entry_date_of_an_entry(self):
+        """The entry is booked in the month it came in, with DT_DOC the emission
+        and DT_E_S the entry date (it used to repeat the emission). An outgoing
+        document keeps the emission date for both."""
+        entry, _line = self._entry_document(
+            document_date=datetime(2026, 6, 28, 12, 0),
+            date_in_out=datetime(2026, 7, 3, 12, 0),
+        )
+        out, _line = self._entry_document(
+            document_date=datetime(2026, 6, 28, 12, 0),
+            date_in_out=datetime(2026, 7, 3, 12, 0),
+            operation="fo_venda",
+            operation_line="fo_venda_venda",
+            imported=False,
+        )
+        july = self._c100(self._declaration_july())
+        self.assertIn(entry.document_number, july)
+        self.assertNotIn(out.document_number, july)
+        self.assertEqual(july[entry.document_number]["DT_DOC"], "28062026")
+        self.assertEqual(july[entry.document_number]["DT_E_S"], "03072026")
+        june = self._c100(
+            self._declaration("efd_pis_cofins", date(2026, 6, 1), date(2026, 6, 30))
+        )
+        self.assertNotIn(entry.document_number, june)
+        self.assertEqual(june[out.document_number]["DT_DOC"], "28062026")
+        self.assertEqual(june[out.document_number]["DT_E_S"], "28062026")
 
     def _c170(self, declaration):
         records = self._sped_records(declaration, "C170")

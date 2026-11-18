@@ -764,7 +764,11 @@ class RegistroC100(models.Model):
             "NUM_DOC": record.document_number or "",
             "CHV_NFE": record.document_key or "",
             "DT_DOC": record.document_date,
-            "DT_E_S": record.document_date,
+            # an entry comes in on its entry date, not on the emission one;
+            # the outgoing documents keep the emission date
+            "DT_E_S": (record.date_in_out or record.document_date)
+            if record.fiscal_operation_type == "in"
+            else record.document_date,
             "VL_DOC": record.fiscal_amount_total or 0,
             "IND_PGTO": "0",
             "VL_DESC": record.amount_discount_value or 0,

@@ -1,7 +1,7 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl-3.0.html).
 
-from datetime import date
+from datetime import date, datetime
 
 from odoo.tests.common import tagged
 
@@ -69,3 +69,53 @@ class TestSpedEfdIcmsIpiEntrada(EntradaHelpers, SpedEntradaCommon):
         text = declaration._generate_sped_text()
         self.assertNotIn("|C170|", text)
         self.assertNotIn("|C190|", text)
+
+    def test_the_entry_booked_after_its_emission_is_extemporaneous(self):
+        """Emitted in June and booked in July: COD_SIT 01 (07 if complementary)."""
+        late, _line = self._entry_document(
+            document_date=datetime(2026, 6, 20, 12, 0),
+            date_in_out=datetime(2026, 7, 5, 12, 0),
+        )
+        late_complementary, _line = self._entry_document(
+            document_date=datetime(2026, 6, 21, 12, 0),
+            date_in_out=datetime(2026, 7, 6, 12, 0),
+            edoc_purpose="2",
+        )
+        on_time, _line = self._entry_document(
+            document_date=datetime(2026, 7, 2, 12, 0),
+            date_in_out=datetime(2026, 7, 5, 12, 0),
+        )
+        c100 = self._c100(self._declaration_july())
+        self.assertEqual(c100[late.document_number]["COD_SIT"], "01")
+        self.assertEqual(c100[late_complementary.document_number]["COD_SIT"], "07")
+        self.assertEqual(c100[on_time.document_number]["COD_SIT"], "00")
+
+    # B. date and period of the entry
+
+    def test_the_period_of_an_entry_is_the_one_of_the_entry_date(self):
+        """Emitted in June, entered in July: it is in the July book only; DT_DOC
+        stays the emission and DT_E_S is the entry date. Outgoing documents keep
+        the emission date for the period."""
+        entry, _line = self._entry_document(
+            document_date=datetime(2026, 6, 28, 12, 0),
+            date_in_out=datetime(2026, 7, 3, 12, 0),
+        )
+        out, _line = self._entry_document(
+            document_date=datetime(2026, 6, 28, 12, 0),
+            date_in_out=datetime(2026, 7, 3, 12, 0),
+            operation="fo_venda",
+            operation_line="fo_venda_venda",
+            imported=False,
+        )
+        july = self._c100(self._declaration_july())
+        self.assertIn(entry.document_number, july)
+        self.assertNotIn(out.document_number, july)
+        self.assertEqual(july[entry.document_number]["DT_DOC"], "28062026")
+        self.assertEqual(july[entry.document_number]["DT_E_S"], "03072026")
+        june = self._c100(
+            self._declaration("efd_icms_ipi", date(2026, 6, 1), date(2026, 6, 30))
+        )
+        self.assertNotIn(entry.document_number, june)
+        self.assertIn(out.document_number, june)
+
+    # C. D. E. items of the entry
