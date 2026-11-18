@@ -167,3 +167,16 @@ class TestPurchaseCostTaxes(AccountMoveBRCommon):
                 operation_line, number=str(number), price_and_quantity=(333.37, 3)
             )
             self._assert_balanced_at_the_total(bill)
+
+    def test_the_lines_with_st_follow_the_destination_too(self):
+        """The operation lines with ICMS ST for assets and for use and
+        consumption carry the destination, so the ICMS is not credited."""
+        for number, operation_line in enumerate(
+            ("fo_compras_compras_ativost", "fo_compras_compras_uso_consumost"),
+            start=160,
+        ):
+            line = self.env.ref(f"l10n_br_fiscal.{operation_line}")
+            self.assertTrue(line.product_destination, operation_line)
+            bill = self._bill(operation_line, number=str(number))
+            self.assertFalse(self._tax_lines(bill, "icms"), operation_line)
+            self._assert_balanced_at_the_total(bill)
