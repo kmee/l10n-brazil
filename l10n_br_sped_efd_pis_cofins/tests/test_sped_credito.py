@@ -253,16 +253,18 @@ class TestSpedPisCofinsCredit(CreditMixin, SpedEntradaCommon):
             "not the credit of the posted assessment", error.exception.args[0]
         )
 
-    def test_the_c170_of_the_sale_carries_the_account_and_the_0500(self):
-        """The PVA asks the analytic account of the sale of the non-cumulative
-        company, and the 0500 declares it."""
+    def test_the_c170_of_a_non_cumulative_company_carries_the_account(self):
+        """The PVA asks the analytic account in the C170 of the sale (CST 01), of
+        the entry with credit (CST 50) and of the entry without credit (CST 70)
+        of the non-cumulative company, and the 0500 declares each one."""
         self._month_with_credit()
         declaration = self._declaration_july()
-        c170 = {rec["CST_PIS"]: rec for rec in self._sped_records(declaration, "C170")}
-        sale_line = c170["01"]
-        self.assertTrue(sale_line["COD_CTA"])
+        c170 = self._sped_records(declaration, "C170")
+        self.assertEqual({rec["CST_PIS"] for rec in c170}, {"01", "50", "70"})
         codes = [rec["COD_CTA"] for rec in self._sped_records(declaration, "0500")]
-        self.assertIn(sale_line["COD_CTA"], codes)
+        for rec in c170:
+            self.assertTrue(rec["COD_CTA"], rec["CST_PIS"])
+            self.assertIn(rec["COD_CTA"], codes)
         self.assertEqual(len(codes), len(set(codes)))
 
 
