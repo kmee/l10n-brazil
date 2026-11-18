@@ -384,6 +384,7 @@ class FiscalDocumentLineMixin(models.AbstractModel):
                     # exactly as imported.
                     if mapping_result["cfop"]:
                         line.cfop_id = mapping_result["cfop"]
+                    line._apply_entry_cfop_safeguard()
                     if mapping_result["ipi_guideline"]:
                         line.ipi_guideline_id = mapping_result["ipi_guideline"]
                     if mapping_result["tax_classification"]:
@@ -1305,6 +1306,23 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         # in a PO line or SO line, there is no document_id
         # and we consider the document is not imported
         return hasattr(self, "document_id") and self.document_id.imported_document
+
+    def _apply_entry_cfop_safeguard(self):
+        """An entry line imported from the supplier document must carry an entry
+        CFOP (1xxx, 2xxx, 3xxx), never the outgoing one the supplier wrote.
+
+        When the operation does not resolve a CFOP, ``cfop_id`` keeps what came
+        in the file (5xxx, 6xxx, 7xxx) or stays empty: the inverse CFOP of the
+        supplier one is the company side of the same operation.
+        """
+        self.ensure_one()
+        if self.fiscal_operation_type != FISCAL_IN:
+            return
+        if self.cfop_id and self.cfop_id.code[:1] not in ("5", "6", "7"):
+            return
+        inverse = self.partner_cfop_id.cfop_inverse_id
+        if inverse:
+            self.cfop_id = inverse
 
     currency_id = fields.Many2one(
         comodel_name="res.currency",

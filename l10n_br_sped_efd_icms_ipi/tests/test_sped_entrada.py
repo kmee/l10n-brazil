@@ -119,3 +119,12 @@ class TestSpedEfdIcmsIpiEntrada(EntradaHelpers, SpedEntradaCommon):
         self.assertIn(out.document_number, june)
 
     # C. D. E. items of the entry
+
+    def test_c170_and_c190_carry_the_entry_cfop(self):
+        """The supplier wrote 6102; the books carry the entry CFOP."""
+        self._entry_document(partner_cfop="6102")
+        declaration = self._declaration_july()
+        self.assertEqual(self._c170(declaration)["CFOP"], "2102")
+        self.assertEqual(
+            [rec["CFOP"] for rec in self._sped_records(declaration, "C190")], ["2102"]
+        )
