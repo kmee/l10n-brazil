@@ -74,11 +74,13 @@ class TestImportBillPurchaseLink(TransactionCase):
         for line in order.order_line:
             self.assertEqual(line.qty_invoiced, line.product_qty)
         self.assertEqual(order.invoice_status, "invoiced")
+        self.assertEqual(move.invoice_origin, order.name)
 
     def test_no_reference_stays_unlinked(self):
         order = self._confirmed_order()
         move = self._import(order, [(False, False)] * len(order.order_line))
         self.assertFalse(move.invoice_line_ids.purchase_line_id)
+        self.assertFalse(move.invoice_origin)
         self.assertEqual(order.invoice_status, "to invoice")
 
     def test_unknown_order_or_item_stays_unlinked(self):

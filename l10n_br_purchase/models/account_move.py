@@ -151,6 +151,8 @@ class AccountMove(models.Model):
             if purchase_line and purchase_line not in taken:
                 line.purchase_line_id = purchase_line
                 taken |= purchase_line
+        if taken and not self.invoice_origin:
+            self.invoice_origin = ", ".join(taken.order_id.mapped("name"))
 
     def _get_purchase_line_from_reference(self, order_name, item, product):
         self.ensure_one()
