@@ -1511,13 +1511,11 @@ class RegistroC170(models.Model):
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         # Format the 3-digit CST (Origin + CST code)
-        icms_without_credit = record._sped_icms_without_credit()
-        ipi_without_credit = record._sped_ipi_without_credit()
-        cst_icms = f"{record.icms_origin or '0'}{record.icms_cst_code or '00'}"
-        if icms_without_credit:
-            # entry without credit right: origin + 90 (others), no base, rate or
-            # value of ICMS: the value stays in the cost of the item
-            cst_icms = f"{record.icms_origin or '0'}90"
+        # the ICMS and the IPI of the line, the same function as the EFD
+        # Contribuicoes uses (an entry without credit right: CST 90 and 49, no
+        # base, rate or value; the value stays in the cost of the item)
+        icms = record._get_sped_icms_values()
+        ipi = record._get_sped_ipi_values()
         # an entry booked without PIS/COFINS credit right carries no base, rate
         # or value for the tax
         pis_no_credit = record._entry_piscofins_without_credit("pis")
@@ -1534,30 +1532,28 @@ class RegistroC170(models.Model):
             "VL_ITEM": record.price_gross or 0.0,
             "VL_DESC": record.discount_value,
             "IND_MOV": "0" if record.cfop_id.stock_move else "1",
-            "CST_ICMS": cst_icms,
+            "CST_ICMS": icms["cst"],
             "CFOP": str(record.cfop_id.code),
             "COD_NAT": record.fiscal_operation_id.code
             or str(record.fiscal_operation_id.id),
-            "VL_BC_ICMS": 0.0 if icms_without_credit else record.icms_base,
-            "ALIQ_ICMS": 0.0 if icms_without_credit else record.icms_percent,
-            "VL_ICMS": 0.0 if icms_without_credit else record.icms_value,
+            "VL_BC_ICMS": icms["base"],
+            "ALIQ_ICMS": icms["percent"],
+            "VL_ICMS": icms["value"],
             "VL_BC_ICMS_ST": record.icmsst_base,
             "ALIQ_ST": record.icmsst_percent,
             "VL_ICMS_ST": record.icmsst_value,
             "IND_APUR": declaration.ind_apur,
             # the CST the company books for the entry when there is one; else
             # the one of the document
-            "CST_IPI": "49"
-            if ipi_without_credit
-            else record.entry_ipi_cst_id.code or record.ipi_cst_code,
+            "CST_IPI": ipi["cst"],
             # "999" (generic, "Tributacao normal IPI; Outros") is not in the
             # table of legal classification of the IPI: it goes out blank
             "COD_ENQ": ""
             if record.ipi_guideline_id.code in (False, "", "999")
             else record.ipi_guideline_id.code,
-            "VL_BC_IPI": 0.0 if ipi_without_credit else record.ipi_base,
-            "ALIQ_IPI": 0.0 if ipi_without_credit else record.ipi_percent,
-            "VL_IPI": 0.0 if ipi_without_credit else record.ipi_value,
+            "VL_BC_IPI": ipi["base"],
+            "ALIQ_IPI": ipi["percent"],
+            "VL_IPI": ipi["value"],
             "CST_PIS": record.entry_pis_cst_id.code or record.pis_cst_code,
             "VL_BC_PIS": 0.0 if pis_no_credit else record.pis_base,
             "ALIQ_PIS": 0.0 if pis_no_credit else record.pis_percent,

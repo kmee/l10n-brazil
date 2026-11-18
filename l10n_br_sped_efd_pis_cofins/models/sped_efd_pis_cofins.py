@@ -965,6 +965,10 @@ class RegistroC100(models.Model):
                 "NUM_DOC": record.document_number or "",
                 "CHV_NFE": "" if unused else record.document_key or "",
             }
+        # the ICMS and the IPI of the document as the books carry them, the
+        # same functions as the EFD ICMS/IPI (an entry without credit right
+        # carries none)
+        icms_base, icms_value = record._get_sped_icms_amounts()
         return {
             "IND_OPER": "0" if record.fiscal_operation_type == "in" else "1",
             "IND_EMIT": "0" if record.issuer == "company" else "1",
@@ -990,11 +994,11 @@ class RegistroC100(models.Model):
             "VL_FRT": record.amount_freight_value or 0,
             "VL_SEG": record.amount_insurance_value or 0,
             "VL_OUT_DA": record.amount_other_value or 0,
-            "VL_BC_ICMS": record.amount_icms_base or 0,
-            "VL_ICMS": record.amount_icms_value or 0,
+            "VL_BC_ICMS": icms_base,
+            "VL_ICMS": icms_value,
             "VL_BC_ICMS_ST": record.amount_icmsst_base or 0,
             "VL_ICMS_ST": record.amount_icmsst_value or 0,
-            "VL_IPI": record.amount_ipi_value or 0,
+            "VL_IPI": record._get_sped_ipi_value(),
             "VL_PIS": record.amount_pis_value or 0,
             "VL_COFINS": record.amount_cofins_value or 0,
             "VL_PIS_ST": record.amount_pis_wh_value or 0,
@@ -1070,6 +1074,10 @@ class RegistroC170(models.Model):
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         pis_no_credit = record._entry_piscofins_without_credit("pis")
         cofins_no_credit = record._entry_piscofins_without_credit("cofins")
+        # the ICMS and the IPI of the line, the same function as the EFD
+        # ICMS/IPI uses: the two files carry the same note the same way
+        icms = record._get_sped_icms_values()
+        ipi = record._get_sped_ipi_values()
         return {
             "NUM_ITEM": str(index + 1),
             "COD_ITEM": record.product_id.default_code or str(record.product_id.id),
@@ -1081,22 +1089,22 @@ class RegistroC170(models.Model):
             "IND_MOV": "0",
             # 3 positions: the origin digit prefixes the 2-digit CST, as the
             # ICMS book writes it
-            "CST_ICMS": (record.icms_origin or "0") + (record.icms_cst_code or ""),
+            "CST_ICMS": icms["cst"],
             "CFOP": record.cfop_id.code or "",
             "COD_NAT": record.fiscal_operation_id.code
             or str(record.fiscal_operation_id.id or ""),
-            "VL_BC_ICMS": record.icms_base or 0,
-            "ALIQ_ICMS": record.icms_percent or 0,
-            "VL_ICMS": record.icms_value or 0,
+            "VL_BC_ICMS": icms["base"] or 0,
+            "ALIQ_ICMS": icms["percent"] or 0,
+            "VL_ICMS": icms["value"] or 0,
             "VL_BC_ICMS_ST": record.icmsst_base or 0,
             "ALIQ_ST": record.icmsst_percent or 0,
             "VL_ICMS_ST": record.icmsst_value or 0,
             "IND_APUR": "0",  # 0=Mensal
-            "CST_IPI": record.entry_ipi_cst_id.code or record.ipi_cst_code or "",
+            "CST_IPI": ipi["cst"] or "",
             "COD_ENQ": "",
-            "VL_BC_IPI": record.ipi_base or 0,
-            "ALIQ_IPI": record.ipi_percent or 0,
-            "VL_IPI": record.ipi_value or 0,
+            "VL_BC_IPI": ipi["base"] or 0,
+            "ALIQ_IPI": ipi["percent"] or 0,
+            "VL_IPI": ipi["value"] or 0,
             "CST_PIS": record.entry_pis_cst_id.code or record.pis_cst_code or "",
             "VL_BC_PIS": 0 if pis_no_credit else record.pis_base or 0,
             "ALIQ_PIS": 0 if pis_no_credit else record.pis_percent or 0,
