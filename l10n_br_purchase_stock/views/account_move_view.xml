@@ -12,11 +12,11 @@
         <field name="arch" type="xml">
             <xpath expr="//div[hasclass('oe_title')]" position="inside">
                 <field name="purchase_divergent" invisible="1" />
-                <span
+                <div
                     class="badge text-bg-warning"
                     attrs="{'invisible': [('purchase_divergent', '=', False)]}"
                     title="Some line differs from the order or the receipt by more than the tolerance"
-                >Divergent</span>
+                >Divergent</div>
             </xpath>
             <xpath expr="//field[@name='invoice_line_ids']/tree" position="attributes">
                 <attribute name="decoration-warning">purchase_divergent</attribute>
