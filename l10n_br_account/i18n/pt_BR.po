@@ -9560,9 +9560,6 @@ msgstr ""
 #~ msgid "Partner Phone"
 #~ msgstr "Telefone Parceiro"
 
-#~ msgid "Partner State"
-#~ msgstr "Estado do Parceiro"
-
 #~ msgid "Partner Street"
 #~ msgstr "Rua do Parceiro"
 
@@ -9755,3 +9752,10 @@ msgstr "Gerar Fatura"
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_invoice_report__partner_state_id
 msgid "Partner State"
 msgstr "UF do Parceiro"
+
+#. module: l10n_br_account
+#. odoo-python
+#: code:addons/l10n_br_account/models/account_move.py:0
+#, python-format
+msgid "The fiscal document %(document)s already has the invoice %(invoice)s. Open it instead of generating another one, or cancel it first."
+msgstr "O documento fiscal %(document)s já tem a fatura %(invoice)s. Abra-a em vez de gerar outra, ou cancele-a primeiro."

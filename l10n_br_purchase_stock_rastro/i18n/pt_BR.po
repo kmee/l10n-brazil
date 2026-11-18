@@ -1,0 +1,70 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* l10n_br_purchase_stock_rastro
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 16.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+"Language: pt_BR\n"
+
+#. module: l10n_br_purchase_stock_rastro
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_rastro/models/stock_picking.py:0
+msgid "Lots of the NF-e"
+msgstr "Lotes da NF-e"
+
+#. module: l10n_br_purchase_stock_rastro
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_rastro/models/stock_picking.py:0
+#, python-format
+msgid "%s move(s) received the lots of the NF-e."
+msgstr "%s movimento(s) receberam os lotes da NF-e."
+
+#. module: l10n_br_purchase_stock_rastro
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_rastro/models/stock_move.py:0
+msgid "The receipt move is already closed."
+msgstr "O movimento de recebimento já está fechado."
+
+#. module: l10n_br_purchase_stock_rastro
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_rastro/models/stock_move.py:0
+#, python-format
+msgid "%s is not tracked by lot."
+msgstr "%s não é rastreado por lote."
+
+#. module: l10n_br_purchase_stock_rastro
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_rastro/models/stock_move.py:0
+#, python-format
+msgid "The receipt of %s already has lots or quantities."
+msgstr "O recebimento de %s já tem lotes ou quantidades."
+
+#. module: l10n_br_purchase_stock_rastro
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_rastro/models/stock_move.py:0
+#, python-format
+msgid "The NF-e has no lot group for %s."
+msgstr "A NF-e não tem grupo de lote para %s."
+
+#. module: l10n_br_purchase_stock_rastro
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_rastro.view_picking_form
+msgid "Propose Lots from NFe"
+msgstr "Propor lotes da NF-e"
+
+#. module: l10n_br_purchase_stock_rastro
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_rastro.field_stock_picking__show_propose_lots_from_nfe
+msgid "Show Propose Lots From Nfe"
+msgstr "Mostrar Propor Lotes da NF-e"
+
+#. module: l10n_br_purchase_stock_rastro
+#: model:ir.model.fields,help:l10n_br_purchase_stock_rastro.field_stock_picking__show_propose_lots_from_nfe
+msgid "Technical: a receipt waiting for lots whose moves are the origin of imported NF-e lines that carry the lot group."
+msgstr "Técnico: recebimento aguardando lotes cujos movimentos são a origem de linhas de NF-e importadas que trazem o grupo de lote."

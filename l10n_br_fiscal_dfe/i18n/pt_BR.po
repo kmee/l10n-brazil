@@ -1056,3 +1056,25 @@ msgstr "XML Formatado"
 #, python-format
 #~ msgid "You can only import the NF-e when the DF-e is completed."
 #~ msgstr "Você só pode importar a NF-e quando o DF-e estiver completo."
+
+#. module: l10n_br_fiscal_dfe
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe/models/dfe_document.py:0
+msgid "This document was cancelled at the source."
+msgstr "Este documento foi cancelado na origem."
+
+#. module: l10n_br_fiscal_dfe
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe/models/dfe_document.py:0
+msgid "This document was denied at the source."
+msgstr "Este documento foi denegado na origem."
+
+#. module: l10n_br_fiscal_dfe
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe.field_l10n_br_fiscal_dfe_document__import_block_reason
+msgid "Import Block Reason"
+msgstr "Motivo do bloqueio da importação"
+
+#. module: l10n_br_fiscal_dfe
+#: model:ir.model.fields,help:l10n_br_fiscal_dfe.field_l10n_br_fiscal_dfe_document__import_block_reason
+msgid "Why this document cannot be imported. Empty when the import can proceed."
+msgstr "Motivo pelo qual este documento não pode ser importado. Vazio quando a importação pode seguir."

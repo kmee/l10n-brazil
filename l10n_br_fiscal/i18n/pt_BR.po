@@ -10973,9 +10973,6 @@ msgstr "{} Estimativa de Imposto Atualizada"
 #~ msgid "Partner Phone"
 #~ msgstr "Telefone Parceiro"
 
-#~ msgid "Partner State"
-#~ msgstr "Estado do Parceiro"
-
 #~ msgid "Partner Street"
 #~ msgstr "Rua do Parceiro"
 
@@ -11733,9 +11730,6 @@ msgstr "{} Estimativa de Imposto Atualizada"
 #~ "Se ativado, permite que novas manifestações sejam automaticamente "
 #~ "pesquisadas com um Cron"
 
-#~ msgid "Imported Documents"
-#~ msgstr "Documentos importados"
-
 #~ msgid "Inclusion Date"
 #~ msgstr "Data de Inclusão"
 
@@ -12354,9 +12348,6 @@ msgstr "{} Estimativa de Imposto Atualizada"
 #~ msgid "PDF"
 #~ msgstr "PDF"
 
-#~ msgid "Pending"
-#~ msgstr "Pendente"
-
 #~ msgid "Pesquisar Chave"
 #~ msgstr "Pesquisar Chave"
 
@@ -12792,3 +12783,49 @@ msgstr "Documentos importados"
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_report_mixin__partner_state_id
 msgid "Partner State"
 msgstr "UF do Parceiro"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__import_state
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__import_state
+msgid "Import State"
+msgstr "Estado da Importação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__import_state__pending
+msgid "Pending"
+msgstr "Pendente"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__import_state__matched
+msgid "Matched"
+msgstr "Sugerido"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__import_state__resolved
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__import_state__resolved
+msgid "Resolved"
+msgstr "Resolvido"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__import_state__pending
+msgid "Pending Review"
+msgstr "Revisão pendente"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__import_state__in_progress
+msgid "Review in Progress"
+msgstr "Revisão em andamento"
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/document.py:0
+#, python-format
+msgid "The document %s was cancelled and cannot be imported."
+msgstr "O documento %s foi cancelado e não pode ser importado."
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/document.py:0
+#, python-format
+msgid "The document %s was denied and cannot be imported."
+msgstr "O documento %s foi denegado e não pode ser importado."
