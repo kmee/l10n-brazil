@@ -339,6 +339,21 @@ class FiscalDocumentLine(models.Model):
                     (line.id, line._import_claimed_quantity(order_line))
                 )
 
+    def _import_origin_has_balance(self, order_line):
+        """True when the order line still has balance for this line: what the
+        bills invoiced and what the other imported documents without a bill
+        already claimed are discounted (the source preselected by the import is
+        read from the open lines of the supplier, which do not know the claims)."""
+        self.ensure_one()
+        order_line = order_line.sudo()
+        balance = self._import_origin_balance(order_line, self._import_origin_pool())
+        return (
+            float_compare(
+                balance, 0.0, precision_rounding=order_line.product_uom.rounding
+            )
+            > 0
+        )
+
     def _apply_import_match_source(self, source, trusted=False):
         """The match source of the import wizard grid becomes the origin of the
         line: resolved when the operator chose it (or the supplier declared it),
@@ -347,7 +362,7 @@ class FiscalDocumentLine(models.Model):
         result = super()._apply_import_match_source(source, trusted=trusted)
         if source.source_type == "po_line":
             order_line = self.env["purchase.order.line"].browse(source.id).exists()
-            if order_line:
+            if order_line and (trusted or self._import_origin_has_balance(order_line)):
                 self.write(
                     {
                         "import_purchase_line_id": order_line.id,
