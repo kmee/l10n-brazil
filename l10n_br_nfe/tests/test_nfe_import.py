@@ -1057,3 +1057,59 @@ class TestNfeDocumentImport(EdiImportCase):
         self.assertEqual(document.fiscal_operation_id, operation)
         self.assertEqual(other.partner_operation_name, "Another nature")
         self.assertNotEqual(other.fiscal_operation_id, operation)
+
+    def _contactless_user(self, login):
+        user = self._fiscal_user(login)
+        self.assertFalse(
+            self.env["res.partner"]
+            .with_user(user)
+            .check_access_rights("create", raise_exception=False)
+        )
+        return self.Document.with_user(user).with_context(
+            allowed_company_ids=self.company.ids
+        )
+
+    def test_a_user_who_cannot_create_contacts_is_told_which_issuer_to_register(self):
+        xml = self._xml(
+            KEY_1,
+            replace=[
+                (b"<CNPJ>59594315000157</CNPJ>", b"<CNPJ>11222333000181</CNPJ>"),
+                (
+                    b"<xNome>Empresa Simples Nacional</xNome>",
+                    b"<xNome>New issuer</xNome>",
+                ),
+            ],
+        )
+
+        documents, errors, _warnings = self._import(
+            xml, model=self._contactless_user("nfe_no_contact")
+        )
+
+        self.assertFalse(documents)
+        self.assertIn("New issuer", errors[0][1])
+        self.assertIn("11.222.333/0001-81", errors[0][1])
+        self.assertIn("not allowed to create contacts", errors[0][1])
+
+    def test_the_carrier_is_the_partner_to_register_when_it_is_the_one_missing(self):
+        issuer = self.env["res.partner"].search(
+            [("cnpj_cpf_stripped", "=", "59594315000157")], limit=1
+        ) or self.env["res.partner"].create(
+            {
+                "name": "Known issuer",
+                "cnpj_cpf": "59.594.315/0001-57",
+                "country_id": self.env.ref("base.br").id,
+            }
+        )
+        self.assertTrue(issuer)
+        carrier = (
+            b"<modFrete>0</modFrete><transporta><CNPJ>11222333000181</CNPJ>"
+            b"<xNome>Transp Nova</xNome></transporta>"
+        )
+        xml = self._xml(KEY_1, replace=[(b"<modFrete>9</modFrete>", carrier)])
+
+        _documents, errors, _warnings = self._import(
+            xml, model=self._contactless_user("nfe_no_contact_carrier")
+        )
+
+        self.assertIn("Transp Nova", errors[0][1])
+        self.assertIn("11.222.333/0001-81", errors[0][1])

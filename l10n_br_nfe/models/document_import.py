@@ -87,3 +87,28 @@ class Document(models.Model):
         )
         document.partner_operation_name = _inf_nfe(parsed.binding).ide.natOp
         return document
+
+    @api.model
+    def _edi_import_partner_hint(self, parsed):
+        """The partner that the NF-e needs registered and the database lacks: the
+        issuer of a note received, the recipient of one the company issued, and
+        then the carrier, whichever is missing first."""
+        inf_nfe = _inf_nfe(parsed.binding)
+        companies = self.env["res.company"].sudo()
+        issued_by_company = False
+        for role, vat in parsed.company_vats:
+            if companies.search_count([("partner_id.cnpj_cpf_stripped", "=", vat)]):
+                issued_by_company = role == "issuer"
+                break
+        main = inf_nfe.dest if issued_by_company else inf_nfe.emit
+        carrier = inf_nfe.transp and inf_nfe.transp.transporta
+        partners = self.env["res.partner"].sudo().with_context(active_test=False)
+        candidates = []
+        for party in (main, carrier):
+            vat = party and (party.CNPJ or party.CPF)
+            if vat:
+                candidates.append((party.xNome or "", vat))
+        for name, vat in candidates:
+            if not partners.search_count([("cnpj_cpf_stripped", "=", vat)]):
+                return name, vat
+        return candidates[0] if candidates else super()._edi_import_partner_hint(parsed)
