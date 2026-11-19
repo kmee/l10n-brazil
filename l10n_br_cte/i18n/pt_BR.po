@@ -4413,6 +4413,17 @@ msgid "Oeste"
 msgstr ""
 
 #. module: l10n_br_cte
+#. odoo-python
+#: code:addons/l10n_br_cte/models/document_import.py:0
+#, python-format
+msgid ""
+"Only the CT-e (model 57) can be imported as a fiscal document. The file "
+"%(name)s is a %(kind)s."
+msgstr ""
+"Apenas o CT-e (modelo 57) pode ser importado como documento fiscal. O "
+"arquivo %(name)s é um %(kind)s."
+
+#. module: l10n_br_cte
 #: model:ir.model,name:l10n_br_cte.model_l10n_br_cte_modal_rodo_occ
 #: model:ir.model.fields,field_description:l10n_br_cte.field_l10n_br_cte_modal_rodo__cte40_occ
 #: model:ir.model.fields,field_description:l10n_br_cte.field_l10n_br_fiscal_document__cte40_occ
@@ -5099,6 +5110,13 @@ msgstr ""
 "O número da averbação associado à apólice de seguro, indicando quaisquer "
 "modificações ou ajustes na cobertura. Este campo é usado principalmente ao "
 "emitir o CT-e."
+
+#. module: l10n_br_cte
+#. odoo-python
+#: code:addons/l10n_br_cte/models/document_import.py:0
+#, python-format
+msgid "The file %s is not a valid CT-e."
+msgstr "O arquivo %s não é um CT-e válido."
 
 #. module: l10n_br_cte
 #: model:ir.model.fields,help:l10n_br_cte.field_l10n_br_fiscal_document__insurance_policy

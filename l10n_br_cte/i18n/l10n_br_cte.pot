@@ -4349,6 +4349,15 @@ msgid "Oeste"
 msgstr ""
 
 #. module: l10n_br_cte
+#. odoo-python
+#: code:addons/l10n_br_cte/models/document_import.py:0
+#, python-format
+msgid ""
+"Only the CT-e (model 57) can be imported as a fiscal document. The file "
+"%(name)s is a %(kind)s."
+msgstr ""
+
+#. module: l10n_br_cte
 #: model:ir.model,name:l10n_br_cte.model_l10n_br_cte_modal_rodo_occ
 #: model:ir.model.fields,field_description:l10n_br_cte.field_l10n_br_cte_modal_rodo__cte40_occ
 #: model:ir.model.fields,field_description:l10n_br_cte.field_l10n_br_fiscal_document__cte40_occ
@@ -5010,6 +5019,13 @@ msgid ""
 "The endorsement number associated with the insurance policy, indicating any "
 "modifications or adjustments to the coverage. This field is primarily used "
 "when issuing the CT-e."
+msgstr ""
+
+#. module: l10n_br_cte
+#. odoo-python
+#: code:addons/l10n_br_cte/models/document_import.py:0
+#, python-format
+msgid "The file %s is not a valid CT-e."
 msgstr ""
 
 #. module: l10n_br_cte
