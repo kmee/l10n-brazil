@@ -12911,9 +12911,9 @@ msgstr "Código de benefício fiscal (<cBenef>) declarado pelo parceiro no docum
 #: code:addons/l10n_br_fiscal/models/document.py:0
 #, python-format
 msgid ""
-"- %(count)s line(s) not resolved yet (%(lines)s): confirm the product of each one (Confirmed column of the import grid, or Resolve button of the line in the document)."
+"- %(count)s line(s) not resolved yet (%(lines)s): confirm the product of each one (Confirmed column of the import grid, or the check icon at the end of the line in the document)."
 msgstr ""
-"- %(count)s linha(s) ainda não resolvida(s) (%(lines)s): confirme o produto de cada uma (coluna Confirmado da grade de importação, ou botão Resolver da linha no documento)."
+"- %(count)s linha(s) ainda não resolvida(s) (%(lines)s): confirme o produto de cada uma (coluna Confirmado da grade de importação, ou o ícone de visto no fim da linha, no documento)."
 
 #. module: l10n_br_fiscal
 #: code:addons/l10n_br_fiscal/models/document.py:0
