@@ -233,6 +233,11 @@ class FiscalDocumentLineMixin(models.AbstractModel):
             arch = self.inject_fiscal_fields(arch)
         return arch, view
 
+    def _get_price_gross(self, round_curr):
+        """Total value of the products or services of the line (vProd)."""
+        self.ensure_one()
+        return round_curr.round(self.price_unit * self.quantity)
+
     @api.depends(
         "discount_value",
         "amount_tax_not_included",
@@ -256,7 +261,7 @@ class FiscalDocumentLineMixin(models.AbstractModel):
             round_curr = record.currency_id or self.env.ref("base.BRL")
 
             # Total value of products or services
-            record.price_gross = round_curr.round(record.price_unit * record.quantity)
+            record.price_gross = record._get_price_gross(round_curr)
             record.amount_fiscal = record.price_gross - record.discount_value
             record.fiscal_amount_tax = record.amount_tax_not_included
 

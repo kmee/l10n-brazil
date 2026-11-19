@@ -567,6 +567,45 @@ class NFeImportWizardTest(TransactionCase):
         )
         self.assertTrue((first | duplicate).exists())
 
+    def test_the_unit_factor_of_the_depara_keeps_the_total_of_the_item(self):
+        """After the de-para with a unit factor (a box of 12, a bag of 25 kg) the
+        total of the item stays the vProd of the file, to the cent."""
+        self._prepare_wizard(self.xml_1)
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.wizard._import_edoc()
+        line = self.wizard.document_id.fiscal_line_ids
+        cases = (
+            # (quantity, unit price of the file, factor)
+            (7, 3.33, 12),
+            (1, 14.0, 3),
+            (10, 1.23, 7),
+            (3, 0.35, 24),
+            (250, 0.07, 12),
+            (13, 7.77, 6),
+        )
+        failures = []
+        for quantity, price, factor in cases:
+            vprod = round(quantity * price, 2)
+            line.write(
+                {
+                    "import_state": "matched",
+                    "quantity": quantity,
+                    "price_unit": price,
+                    "partner_quantity": quantity,
+                    "partner_price_unit": price,
+                    "import_uom_factor": 1.0,
+                }
+            )
+            line._apply_import_depara(factor=factor)
+            if line.quantity != quantity * factor or line.price_gross != vprod:
+                failures.append(
+                    (quantity, price, factor, vprod, line.price_gross, line.price_unit)
+                )
+        self.assertFalse(
+            failures,
+            f"(quantity, price, factor, vProd, total, unit price): {failures}",
+        )
+
     def test_zip_batch_import(self):
         """A zip archive with several XMLs lands as several persisted
         documents waiting for review."""

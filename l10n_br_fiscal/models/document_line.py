@@ -5,6 +5,7 @@ from lxml import etree
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+from odoo.tools import float_compare
 
 from ..constants.fiscal import (
     FISCAL_IN,
@@ -136,6 +137,16 @@ class DocumentLine(models.Model):
         string="Import UoM",
         copy=False,
         help="Internal UoM equivalent to the supplier unit of the imported line.",
+    )
+
+    import_price_gross = fields.Monetary(
+        string="Import Gross Total",
+        copy=False,
+        help="Total value of the item as the supplier file declared it (vProd), "
+        "kept when the de-para converts the unit with a factor: the unit price of "
+        "the line is the supplier price divided by the factor and has the "
+        "precision of the price, so quantity times price may not give back the "
+        "cents of the file. Empty when the line was not converted.",
     )
 
     import_uom_factor = fields.Float(
@@ -384,6 +395,36 @@ class DocumentLine(models.Model):
                 )
             line._apply_import_depara()
 
+    def _get_price_gross(self, round_curr):
+        self.ensure_one()
+        if self.import_price_gross:
+            return self.import_price_gross
+        return super()._get_price_gross(round_curr)
+
+    @api.depends("import_price_gross")
+    def _compute_fiscal_amounts(self):
+        return super()._compute_fiscal_amounts()
+
+    def write(self, vals):
+        if "import_price_gross" in vals or not {"quantity", "price_unit"} & vals.keys():
+            return super().write(vals)
+        # a quantity or a price edited by a person on a converted line: the total
+        # follows them again (the same values written back change nothing)
+        edited = self.filtered(
+            lambda line: (
+                line.import_price_gross
+                and any(
+                    name in vals
+                    and float_compare(vals[name], line[name], precision_digits=8)
+                    for name in ("quantity", "price_unit")
+                )
+            )
+        )
+        if edited:
+            super(DocumentLine, edited).write(dict(vals, import_price_gross=0.0))
+            return super(DocumentLine, self - edited).write(vals)
+        return super().write(vals)
+
     def _suggest_import_origin(self):
         """Hook: suggest the origin (purchase order line, receipt) of the lines
         imported from a fiscal file. The modules that know the origin models
@@ -438,6 +479,14 @@ class DocumentLine(models.Model):
             if factor != 1.0:
                 vals["quantity"] = self.partner_quantity * factor
                 vals["price_unit"] = self.partner_price_unit / factor
+                # the unit price has the precision of the price and cannot give
+                # back, times the new quantity, the total of the file: the total
+                # of the file is the one that stays
+                vals["import_price_gross"] = self.currency_id.round(
+                    self.partner_quantity * self.partner_price_unit
+                )
+            else:
+                vals["import_price_gross"] = 0.0
         if fiscal_operation:
             vals["fiscal_operation_id"] = fiscal_operation.id
         self.write(vals)
