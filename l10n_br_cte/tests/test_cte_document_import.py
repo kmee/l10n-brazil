@@ -1,9 +1,12 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+from datetime import date
+
 from odoo.tools import file_open
 
 from odoo.addons.l10n_br_fiscal_edi.tests.common import EdiImportCase
+from odoo.addons.l10n_br_fiscal_edi.tools import EdiInstallment
 
 CTE_KEY = "35240759594315000157570010000057311040445890"
 CTE_FILE = f"l10n_br_cte/tests/cte/v4_00/leiauteCTe/CTe{CTE_KEY}.xml"
@@ -11,6 +14,12 @@ CTE_FILE = f"l10n_br_cte/tests/cte/v4_00/leiauteCTe/CTe{CTE_KEY}.xml"
 FILE_RECIPIENT = "46081676000158"
 LUCRO_REAL = "46312887000154"
 LUCRO_PRESUMIDO = "81583054000129"
+COLLECTION = (
+    "<cobr><fat><nFat>1</nFat><vOrig>100.00</vOrig><vLiq>100.00</vLiq></fat>"
+    "<dup><nDup>002</nDup><dVenc>2027-01-10</dVenc><vDup>60.00</vDup></dup>"
+    "<dup><nDup>001</nDup><dVenc>2026-12-10</dVenc><vDup>40.00</vDup></dup>"
+    "</cobr>"
+)
 NAMESPACE = "http://www.portalfiscal.inf.br/cte"
 PROTOCOL = (
     '<protCTe versao="4.00"><infProt><tpAmb>2</tpAmb><verAplic>SP_CTE_PL_4.00'
@@ -27,6 +36,7 @@ OTHER_DOCUMENT = (
 
 
 def cte_xml(
+    collection=None,
     taker=None,
     recipient=LUCRO_REAL,
     status=None,
@@ -34,6 +44,7 @@ def cte_xml(
 ):
     """The demo CT-e, with the recipient moved to a company of the demo data.
 
+    :param collection: the ``cobr`` group to add to the CT-e
     :param taker: CNPJ of a taker that is not the recipient (``toma4``)
     :param status: cStat of the protocol; the CT-e then comes as a ``cteProc``
     """
@@ -42,6 +53,8 @@ def cte_xml(
     xml = xml.replace(FILE_RECIPIENT, recipient)
     if related:
         xml = xml.replace("</infNFe>", f"</infNFe>{OTHER_DOCUMENT}", 1)
+    if collection:
+        xml = xml.replace("</infCTeNorm>", f"{collection}</infCTeNorm>")
     if taker:
         xml = xml.replace(
             "<toma3>\n        <toma>3</toma>\n      </toma3>",
@@ -170,6 +183,61 @@ class TestCteDocumentImport(EdiImportCase):
         self.assertFalse(documents)
         self.assertIn("not a fiscal document", errors[0][1])
 
+    def test_a_cte_with_a_collection_declares_its_installments_in_order(self):
+        documents, errors, _warnings = self._import(cte_xml(COLLECTION))
+        self.assertFalse(errors)
+        self.assertEqual(len(documents.cte40_cobr.cte40_dup), 2)
+        self.assertEqual(
+            documents._edi_get_installments(),
+            [
+                EdiInstallment("001", date(2026, 12, 10), 40.0),
+                EdiInstallment("002", date(2027, 1, 10), 60.0),
+            ],
+        )
+
+    def test_the_page_of_a_cte_with_a_collection_shows_the_installments(self):
+        documents, _errors, _warnings = self._import(
+            cte_xml(COLLECTION), operation=True
+        )
+        summary = str(documents.edi_payment_summary)
+        for text in ("001", "002", "40.00", "60.00", "12/10/2026", "01/10/2027"):
+            self.assertIn(text, summary)
+        self.assertFalse(documents._edi_installment_difference())
+        self.assertNotIn("add up", summary)
+
+    def test_installments_that_do_not_add_up_to_the_document_raise_a_warning(self):
+        collection = COLLECTION.replace("60.00", "90.00")
+        documents, _errors, _warnings = self._import(
+            cte_xml(collection), operation=True
+        )
+        self.assertEqual(documents._edi_installment_difference(), -30.0)
+        self.assertIn("add up", str(documents.edi_payment_summary))
+        self.assertIn("add up", documents.import_warning)
+
+    def test_a_cte_without_a_collection_declares_no_installment(self):
+        documents, errors, _warnings = self._import(cte_xml())
+        self.assertFalse(errors)
+        self.assertEqual(documents._edi_get_installments(), [])
+        self.assertFalse(documents.edi_payment_summary)
+
+    def test_an_installment_without_date_or_amount_is_not_declared(self):
+        collection = (
+            "<cobr><dup><nDup>001</nDup><vDup>50.00</vDup></dup>"
+            "<dup><nDup>002</nDup><dVenc>2026-12-10</dVenc></dup>"
+            "<dup><nDup>003</nDup><dVenc>2026-12-20</dVenc><vDup>20.00</vDup></dup>"
+            "</cobr>"
+        )
+        documents, _errors, _warnings = self._import(cte_xml(collection))
+        self.assertEqual(
+            documents._edi_get_installments(),
+            [EdiInstallment("003", date(2026, 12, 20), 20.0)],
+        )
+
+    def test_another_type_of_document_declares_no_cte_installment(self):
+        documents, _errors, _warnings = self._import(cte_xml(COLLECTION))
+        documents.document_type_id = self.env.ref("l10n_br_fiscal.document_55")
+        self.assertEqual(documents._edi_get_installments(), [])
+
     def test_a_common_fiscal_user_imports_a_cte_with_every_related_document(self):
         user = self._fiscal_user("fiscal_user_cte_related", self.other_company)
         model = self.Document.with_user(user).with_context(
@@ -186,6 +254,10 @@ class TestCteDocumentImport(EdiImportCase):
         model = self.Document.with_user(user).with_context(
             allowed_company_ids=self.other_company.ids
         )
-        documents, errors, _warnings = self._import(cte_xml(), model)
+        documents, errors, _warnings = self._import(
+            cte_xml(COLLECTION), model, operation=True
+        )
         self.assertFalse(errors)
         self.assertEqual(documents.create_uid, user)
+        self.assertEqual(len(documents._edi_get_installments()), 2)
+        self.assertIn("40.00", str(documents.edi_payment_summary))
