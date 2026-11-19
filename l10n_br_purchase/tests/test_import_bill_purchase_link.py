@@ -95,7 +95,7 @@ class TestImportBillPurchaseLink(TransactionCase):
         move = self._import(order, [(order.name, "99")] * count)
         self.assertFalse(move.invoice_line_ids.purchase_line_id)
 
-    def _import_split(self, order, quantities):
+    def _import_split(self, order, quantities, decided=False):
         """Import a document whose lines are the first order line split by
         lot: one document line for each quantity, all with the same xPed and
         nItemPed."""
@@ -132,6 +132,14 @@ class TestImportBillPurchaseLink(TransactionCase):
                     "fiscal_operation_type": "in",
                     "partner_order": order.name,
                     "partner_order_line": "1",
+                    **(
+                        {
+                            "import_purchase_line_id": purchase_line.id,
+                            "import_origin_state": "resolved",
+                        }
+                        if decided
+                        else {}
+                    ),
                 }
             )
         move_form = (
@@ -188,3 +196,35 @@ class TestImportBillPurchaseLink(TransactionCase):
             1,
             "1.2 is not within a tolerance of 10%",
         )
+
+    def test_a_line_that_passes_the_balance_is_not_linked_even_alone(self):
+        """No exception for the first line of a bill: it only links while the
+        quantity fits in what is left of the order line."""
+        order = self._confirmed_order()
+        purchase_line = order.order_line[0]
+        quantity = purchase_line.product_qty
+        move = self._import_split(order, [quantity * 1.5], decided=True)
+        self.assertFalse(move.invoice_line_ids.purchase_line_id)
+        self.assertEqual(purchase_line.qty_invoiced, 0)
+        if "purchase_divergent" in move.invoice_line_ids._fields:
+            # the item without order shows as divergent
+            self.assertTrue(move.invoice_line_ids.purchase_divergent)
+            self.assertTrue(move.purchase_divergent)
+            found = self.env["account.move"].search([("purchase_divergent", "=", True)])
+            self.assertIn(move, found)
+
+    def test_the_balance_counts_the_other_bills(self):
+        """The order line was invoiced in full by another bill: a third note does
+        not link (and the bill that has the balance is not touched)."""
+        order = self._confirmed_order()
+        purchase_line = order.order_line[0]
+        quantity = purchase_line.product_qty
+        first = self._import_split(order, [quantity])
+        self.assertEqual(first.invoice_line_ids.purchase_line_id, purchase_line)
+        third = self._import_split(order, [quantity * 0.3])
+        self.assertFalse(third.invoice_line_ids.purchase_line_id)
+        self.assertEqual(purchase_line.qty_invoiced, quantity)
+        # a cancelled bill gives its balance back
+        first.button_cancel()
+        again = self._import_split(order, [quantity * 0.3])
+        self.assertEqual(again.invoice_line_ids.purchase_line_id, purchase_line)
