@@ -46,3 +46,22 @@ class DocumentLine(models.Model):
                 else:
                     vals["uot_id"] = uom.id or False
         return result
+
+    def _get_partner_product_code(self):
+        return self.nfe40_cProd or super()._get_partner_product_code()
+
+    def _get_partner_product_name(self):
+        return self.nfe40_xProd or super()._get_partner_product_name()
+
+    def _prepare_supplierinfo_vals(self):
+        vals = super()._prepare_supplierinfo_vals()
+        declared = self.env["uom.uom"]._match_by_fiscal_code(self.partner_uom_code)
+        if declared:
+            # the factor only holds for the unit it was learned with
+            vals.update(
+                {
+                    "partner_uom_id": declared.id,
+                    "partner_uom_factor": self.import_uom_factor or 1.0,
+                }
+            )
+        return vals

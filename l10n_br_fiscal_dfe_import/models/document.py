@@ -147,6 +147,7 @@ class Document(models.Model):
             {"import_state": "pending"}
         )
         document._dfe_import_suggest_operation(inf_nfe)
+        document._dfe_import_apply_depara()
         new_partners = (
             self.env["res.partner"]
             .with_context(active_test=False)
@@ -158,6 +159,40 @@ class Document(models.Model):
                 % ", ".join(new_partners.mapped("display_name"))
             )
         return document
+
+    def _dfe_import_apply_depara(self):
+        """Resolve the lines whose product the buyer already mapped for this
+        supplier (a previous human decision). A product found only by internal
+        code, barcode or name stays a suggestion."""
+        self.ensure_one()
+        uom_model = self.env["uom.uom"]
+        supplierinfo = self.env["product.supplierinfo"].sudo()
+        for line in self.fiscal_line_ids:
+            code = line._get_partner_product_code()
+            info = code and supplierinfo.search(
+                [
+                    ("partner_id", "=", self.partner_id.id),
+                    ("product_code", "=", code),
+                ],
+                limit=1,
+            )
+            product = info and (
+                info.product_id or info.product_tmpl_id.product_variant_ids[:1]
+            )
+            if not product:
+                continue
+            line.product_id = product
+            declared = uom_model._match_by_fiscal_code(line.partner_uom_code)
+            if declared and info.partner_uom_id == declared:
+                line._apply_import_depara(
+                    product=product,
+                    uom=product.uom_po_id,
+                    factor=info.partner_uom_factor,
+                )
+            elif declared and declared == product.uom_po_id:
+                line._apply_import_depara(product=product, uom=declared, factor=1.0)
+            elif line.uom_id:
+                line.import_state = "matched"
 
     def _dfe_import_suggest_operation(self, inf_nfe):
         """Suggest the inbound operation of the document and of each line from

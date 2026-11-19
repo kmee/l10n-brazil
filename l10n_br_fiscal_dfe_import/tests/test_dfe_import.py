@@ -21,7 +21,7 @@ from odoo.tools.translate import TranslationFileReader
 from odoo.addons.l10n_br_nfe_dfe.tests.test_nfe_dfe import response_sucesso_individual
 
 from ..hooks import uninstall_hook
-from .common import KEY_1, KEY_2, DfeImportCase
+from .common import KEY_1, KEY_2, KEY_3, DfeImportCase
 
 NFE_NS = "http://www.portalfiscal.inf.br/nfe"
 
@@ -563,3 +563,137 @@ class TestDfeImport(DfeImportCase):
 
         self.assertIs(documents.import_warning, False)
         self.assertNotIn("fiscal operation", documents.import_warning or "")
+
+    def _depara_note(self, key, unit=b"UN", code=b"ZZ-NEW-1"):
+        xml = self._xml(key)
+        xml = re.sub(rb"<xProd>[^<]*</xProd>", b"<xProd>Odd name</xProd>", xml)
+        xml = re.sub(rb"<cProd>[^<]*</cProd>", b"<cProd>%s</cProd>" % code, xml)
+        xml = re.sub(rb"<uCom>[^<]*</uCom>", b"<uCom>%s</uCom>" % unit, xml)
+        return re.sub(rb"<uTrib>[^<]*</uTrib>", b"<uTrib>%s</uTrib>" % unit, xml)
+
+    def _supplier_product(self, uom=None, **info):
+        uom = uom or self.uom_unit
+        product = self.env["product.product"].create(
+            {"name": "Mapped product", "uom_id": uom.id, "uom_po_id": uom.id}
+        )
+        issuers = self.env["res.partner"].search(
+            [
+                "|",
+                ("cnpj_cpf_stripped", "=", "81583054000129"),
+                ("vat", "=", "81.583.054/0001-29"),
+            ]
+        )
+        for issuer in issuers:
+            vals = {
+                "partner_id": issuer.id,
+                "product_id": product.id,
+                "product_code": "ZZ-NEW-1",
+                "price": 1,
+            }
+            vals.update(info)
+            self.env["product.supplierinfo"].create(vals)
+        return product
+
+    @property
+    def uom_unit(self):
+        return self.env.ref("uom.product_uom_unit")
+
+    def test_product_mapped_for_the_same_supplier_enters_resolved(self):
+        product = self._supplier_product()
+
+        documents, _errors = self.Document.dfe_import_files(
+            [("nfe.xml", self._depara_note(KEY_2))]
+        )
+
+        line = documents.fiscal_line_ids
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.import_state, "resolved")
+
+    def test_product_found_by_internal_code_is_only_a_suggestion(self):
+        product = self.env["product.product"].create(
+            {"name": "Same code", "default_code": "ZZ-NEW-1"}
+        )
+        infos = self.env["product.supplierinfo"].search_count([])
+
+        documents, _errors = self.Document.dfe_import_files(
+            [("nfe.xml", self._depara_note(KEY_2))]
+        )
+
+        line = documents.fiscal_line_ids
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.import_state, "matched")
+        self.assertEqual(self.env["product.supplierinfo"].search_count([]), infos)
+
+    def test_product_without_any_match_stays_pending(self):
+        documents, _errors = self.Document.dfe_import_files(
+            [("nfe.xml", self._depara_note(KEY_2, code=b"NO-MATCH-1"))]
+        )
+
+        line = documents.fiscal_line_ids
+        self.assertEqual(line.import_state, "pending")
+
+    def test_resolving_by_hand_teaches_the_next_note_of_the_supplier(self):
+        first, _errors = self.Document.dfe_import_files(
+            [("one.xml", self._depara_note(KEY_2, code=b"NO-MATCH-2"))]
+        )
+        product = self.env["product.product"].create({"name": "Chosen by hand"})
+        line = first.fiscal_line_ids
+        line.product_id = product
+        line._apply_import_depara(product=product, uom=self.uom_unit)
+        domain = [("product_code", "=", "NO-MATCH-2"), ("product_id", "=", product.id)]
+        self.assertEqual(self.env["product.supplierinfo"].search_count(domain), 1)
+
+        second, _errors = self.Document.dfe_import_files(
+            [("two.xml", self._depara_note(KEY_3, code=b"NO-MATCH-2"))]
+        )
+
+        self.assertEqual(second.fiscal_line_ids.product_id, product)
+        self.assertEqual(second.fiscal_line_ids.import_state, "resolved")
+        self.assertEqual(self.env["product.supplierinfo"].search_count(domain), 1)
+
+    def test_learned_factor_only_holds_for_the_same_declared_unit(self):
+        kilo = self.env["uom.uom"]._match_by_fiscal_code("KG")
+        product = self._supplier_product(
+            uom=kilo, partner_uom_id=kilo.id, partner_uom_factor=2
+        )
+
+        same, _errors = self.Document.dfe_import_files(
+            [("kg.xml", self._depara_note(KEY_2, unit=b"KG"))]
+        )
+        other, _errors = self.Document.dfe_import_files(
+            [("un.xml", self._depara_note(KEY_3, unit=b"UN"))]
+        )
+
+        self.assertEqual(same.fiscal_line_ids.product_id, product)
+        self.assertEqual(same.fiscal_line_ids.import_state, "resolved")
+        self.assertEqual(same.fiscal_line_ids.quantity, 2)
+        self.assertEqual(other.fiscal_line_ids.import_state, "matched")
+        self.assertEqual(other.fiscal_line_ids.quantity, 2)
+
+    def test_product_mapped_for_another_supplier_is_not_resolved(self):
+        other = self.env["res.partner"].create({"name": "Another supplier"})
+        product = self._supplier_product()
+        product.seller_ids.write({"partner_id": other.id})
+
+        documents, _errors = self.Document.dfe_import_files(
+            [("nfe.xml", self._depara_note(KEY_2))]
+        )
+
+        self.assertEqual(documents.fiscal_line_ids.import_state, "pending")
+
+    def test_resolving_by_hand_records_the_declared_unit_and_factor(self):
+        kilo = self.env["uom.uom"]._match_by_fiscal_code("KG")
+        first, _errors = self.Document.dfe_import_files(
+            [("one.xml", self._depara_note(KEY_2, unit=b"KG", code=b"NO-MATCH-3"))]
+        )
+        product = self.env["product.product"].create({"name": "Chosen by hand"})
+        line = first.fiscal_line_ids
+        line.product_id = product
+        line.import_uom_factor = 2
+
+        line._apply_import_depara(product=product, uom=self.uom_unit)
+
+        info = self.env["product.supplierinfo"].search(
+            [("product_code", "=", "NO-MATCH-3")]
+        )
+        self.assertEqual((info.partner_uom_id, info.partner_uom_factor), (kilo, 2))
