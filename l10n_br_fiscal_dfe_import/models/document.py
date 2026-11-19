@@ -160,6 +160,15 @@ class Document(models.Model):
             )
         return document
 
+    def action_confirm_suggestions(self):
+        """Resolve in a batch the lines whose product is a suggestion: the
+        confirmation of the reviewer."""
+        for document in self:
+            document.fiscal_line_ids.filtered(
+                lambda line: line.import_state == "matched" and line.uom_id
+            ).action_resolve_line()
+        return True
+
     def _dfe_import_apply_depara(self):
         """Resolve the lines whose product the buyer already mapped for this
         supplier (a previous human decision). A product found only by internal

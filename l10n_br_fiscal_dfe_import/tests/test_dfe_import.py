@@ -697,3 +697,18 @@ class TestDfeImport(DfeImportCase):
             [("product_code", "=", "NO-MATCH-3")]
         )
         self.assertEqual((info.partner_uom_id, info.partner_uom_factor), (kilo, 2))
+
+    def test_confirming_the_suggestions_resolves_the_matched_lines_at_once(self):
+        product = self.env["product.product"].create(
+            {"name": "Same code", "default_code": "ZZ-NEW-1"}
+        )
+        documents, _errors = self.Document.dfe_import_files(
+            [("nfe.xml", self._depara_note(KEY_2))]
+        )
+        self.assertEqual(documents.import_state, "pending")
+
+        documents.action_confirm_suggestions()
+
+        self.assertEqual(documents.fiscal_line_ids.import_state, "resolved")
+        self.assertEqual(documents.import_state, "resolved")
+        self.assertEqual(documents.fiscal_line_ids.product_id, product)
