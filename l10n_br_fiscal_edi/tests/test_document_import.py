@@ -291,12 +291,46 @@ class TestDocumentImport(EdiImportCase):
             lines=[{"partner_cfop_id": self.env.ref("l10n_br_fiscal.cfop_5102").id}],
         )
         document._edi_import_after_create(self._parsed(KEY_1), "issuer")
-        document.operation_name = operation.name
+        document.partner_operation_name = operation.name
         document._edi_import_suggest()
         self.assertEqual(document.fiscal_operation_id, operation)
         self.assertEqual(document.fiscal_operation_type, "out")
         self.assertEqual(document.fiscal_line_ids.fiscal_operation_id, operation)
         self.assertEqual(document.fiscal_line_ids.import_state, "pending")
+
+    def test_the_nature_declared_by_the_file_breaks_a_tie_in_the_suggestion(self):
+        """Two operations answer the CFOP of the line: the one named like the nature
+        that the reader stored on the document is suggested."""
+        operation = self.env["l10n_br_fiscal.operation"].create(
+            {
+                "code": "TST-NAT",
+                "name": "Nature declared by the issuer (test)",
+                "fiscal_operation_type": "in",
+                "fiscal_type": "purchase",
+            }
+        )
+        self.env["l10n_br_fiscal.operation.line"].create(
+            {
+                "fiscal_operation_id": operation.id,
+                "name": "Nature declared by the issuer (test)",
+                "cfop_internal_id": self.env.ref("l10n_br_fiscal.cfop_1102").id,
+            }
+        )
+        operation.action_approve()
+        cfop = self.env.ref("l10n_br_fiscal.cfop_5102")
+        for declared, expected in ((operation.name, operation), (False, False)):
+            document = self._create_imported_document(
+                fiscal_operation_id=False,
+                partner_operation_name=declared,
+                lines=[{"partner_cfop_id": cfop.id}],
+            )
+            document._edi_import_after_create(self._parsed(KEY_1), "recipient")
+            document._edi_import_suggest()
+            if expected:
+                self.assertEqual(document.fiscal_operation_id, expected)
+                self.assertEqual(document.fiscal_line_ids.fiscal_operation_id, expected)
+            else:
+                self.assertNotEqual(document.fiscal_operation_id, operation)
 
     def test_the_suggestion_can_run_again_without_undoing_a_decision(self):
         product = self.env["product.product"].create({"name": "Chosen by a person"})
