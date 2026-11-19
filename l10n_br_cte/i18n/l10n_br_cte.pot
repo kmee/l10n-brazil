@@ -1874,6 +1874,11 @@ msgid ""
 msgstr ""
 
 #. module: l10n_br_cte
+#: model:ir.model.fields,field_description:l10n_br_cte.field_res_company__cte_import_product_id
+msgid "Default CT-e Import Product"
+msgstr ""
+
+#. module: l10n_br_cte
 #: model:ir.model.fields,field_description:l10n_br_cte.field_l10n_br_cte_transported_vehicles__cte40_xCor
 msgid "Descrição da cor"
 msgstr ""
@@ -2311,6 +2316,15 @@ msgstr ""
 msgid ""
 "Formato de impressão do DACTE OS\n"
 "Preencher com: 1 - Retrato; 2 - Paisagem."
+msgstr ""
+
+#. module: l10n_br_cte
+#: model:ir.model.fields,help:l10n_br_cte.field_res_company__cte_import_product_id
+msgid ""
+"Freight service suggested on the line of a CT-e that the company receives "
+"when it is imported. The person confirms the suggestion in the review. "
+"Without it the line waits for the choice of the product. The CT-e issued by "
+"the company does not use it."
 msgstr ""
 
 #. module: l10n_br_cte
@@ -2797,6 +2811,11 @@ msgstr ""
 #. module: l10n_br_cte
 #: model:ir.model.fields,help:l10n_br_cte.field_cte_40_tctesimp_infcte__cte40_toma
 msgid "Identificação do tomador do serviço no CT-e"
+msgstr ""
+
+#. module: l10n_br_cte
+#: model_terms:ir.ui.view,arch_db:l10n_br_cte.cte_res_company_form
+msgid "Import"
 msgstr ""
 
 #. module: l10n_br_cte
