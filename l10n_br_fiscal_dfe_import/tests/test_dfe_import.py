@@ -196,8 +196,37 @@ class TestDfeImport(DfeImportCase):
             {"attachment_ids": [Command.set([a.id for a in attachments])]}
         ).action_import()
 
+        self.assert_window_action(single)
+        self.assert_window_action(both)
         self.assertEqual(single["view_mode"], "form")
         self.assertEqual(len(both["domain"][0][2]), 2)
+
+    def test_returned_actions_are_complete_with_the_errors_of_a_batch(self):
+        buffer = BytesIO()
+        with zipfile.ZipFile(buffer, "w") as archive:
+            archive.writestr("one.xml", self._xml(KEY_1))
+            archive.writestr("bad.xml", b"this is not an XML")
+        attachment = self.env["ir.attachment"].create(
+            {"name": "batch.zip", "raw": buffer.getvalue()}
+        )
+        wizard = self.env["l10n_br_fiscal_dfe_import.wizard"].create(
+            {"attachment_ids": [Command.set(attachment.ids)]}
+        )
+
+        notification = wizard.action_import()
+
+        self.assertEqual(notification["tag"], "display_notification")
+        self.assertIn("bad.xml", notification["params"]["message"])
+        self.assertTrue(notification["params"]["sticky"])
+        self.assert_window_action(notification["params"]["next"])
+
+    def test_confirmation_dialog_action_is_complete(self):
+        self._dfe_document(KEY_1)
+        wizard = self.env["l10n_br_fiscal_dfe_import.wizard"].create(
+            {"access_key": KEY_1}
+        )
+
+        self.assert_window_action(wizard.action_import())
 
     def test_uninstall_gives_the_menus_back_to_the_original_actions(self):
         uninstall_hook(self.env.cr, None)

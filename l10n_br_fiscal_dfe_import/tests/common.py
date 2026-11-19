@@ -38,6 +38,18 @@ class DfeImportCase(TransactionCase):
             content = content.replace(old, new)
         return content
 
+    def assert_window_action(self, action):
+        """What the web client needs to open an ir.actions.act_window."""
+        self.assertEqual(action["type"], "ir.actions.act_window")
+        self.assertTrue(action["res_model"])
+        self.assertIn(action["target"], ("current", "new"))
+        self.assertTrue(action["view_mode"])
+        self.assertTrue(action["views"])
+        for view_id, view_type in action["views"]:
+            self.assertIn(view_type, action["view_mode"])
+            self.assertTrue(view_id is False or isinstance(view_id, int))
+        self.assertTrue(action.get("res_id") or action.get("domain"))
+
     def _imported(self, key, company=None):
         return self.Document.search(
             [

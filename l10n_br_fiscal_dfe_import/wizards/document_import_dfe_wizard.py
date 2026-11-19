@@ -155,6 +155,7 @@ class DocumentImportDfeWizard(models.TransientModel):
             "type": "ir.actions.act_window",
             "res_model": self._name,
             "res_id": self.id,
+            "views": [(False, "form")],
             "view_mode": "form",
             "target": "new",
         }
@@ -167,11 +168,19 @@ class DocumentImportDfeWizard(models.TransientModel):
             "target": "current",
         }
         if len(documents) == 1:
-            action.update({"res_id": documents.id, "view_mode": "form"})
+            action.update(
+                {
+                    "res_id": documents.id,
+                    "views": [(False, "form")],
+                    "view_mode": "form",
+                }
+            )
         else:
+            list_view = self.env.ref("l10n_br_fiscal.document_tree")
             action.update(
                 {
                     "domain": [("id", "in", documents.ids)],
+                    "views": [(list_view.id, "tree"), (False, "form")],
                     "view_mode": "tree,form",
                 }
             )

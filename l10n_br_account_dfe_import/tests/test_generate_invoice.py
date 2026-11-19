@@ -39,6 +39,7 @@ class TestGenerateInvoice(DfeImportCase):
 
         action = self.document.action_generate_invoice()
 
+        self.assert_window_action(action)
         move = self.env["account.move"].browse(action["res_id"])
         self.assertEqual(move.fiscal_document_id, self.document)
         self.assertEqual(move.move_type, "in_invoice")
@@ -53,5 +54,6 @@ class TestGenerateInvoice(DfeImportCase):
 
         action = journal.create_document_from_attachment([attachment.id])
 
+        self.assert_window_action(action)
         self.assertEqual(action["res_model"], "l10n_br_fiscal.document")
         self.assertEqual(action["res_id"], self._imported(KEY_2).id)
