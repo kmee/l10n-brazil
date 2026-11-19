@@ -57,7 +57,7 @@
                     name="import_stock_move_id"
                     options="{'no_create': True}"
                     groups="purchase.group_purchase_user"
-                    attrs="{'invisible': [('fiscal_operation_type', '!=', 'in')]}"
+                    attrs="{'invisible': [('fiscal_operation_type', '=', 'out')]}"
                 />
                 <field
                     name="import_no_stock_entry"
