@@ -2535,6 +2535,38 @@ msgid "Customized Odoo Development"
 msgstr "Desenvolvimento personalizado de Odoo"
 
 #. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/tools.py:0
+#, python-format
+msgid ""
+"Declared CFOP %(cfop)s is a domestic CFOP but issuer (%(issuer)s) and company (%(company)s) are in different countries."
+msgstr "O CFOP %(cfop)s informado é de operação nacional, mas o emitente (%(issuer)s) e a empresa (%(company)s) estão em países diferentes."
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/tools.py:0
+#, python-format
+msgid ""
+"Declared CFOP %(cfop)s is a foreign trade CFOP but issuer and company are both in %(country)s."
+msgstr "O CFOP %(cfop)s informado é de comércio exterior, mas o emitente e a empresa estão ambos em %(country)s."
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/tools.py:0
+#, python-format
+msgid ""
+"Declared CFOP %(cfop)s is interstate but issuer and company are both in %(state)s."
+msgstr "O CFOP %(cfop)s informado é interestadual, mas o emitente e a empresa estão ambos em %(state)s."
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/tools.py:0
+#, python-format
+msgid ""
+"Declared CFOP %(cfop)s is intrastate but issuer (%(issuer)s) and company (%(company)s) are in different states."
+msgstr "O CFOP %(cfop)s informado é interno ao estado, mas o emitente (%(issuer)s) e a empresa (%(company)s) estão em estados diferentes."
+
+#. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_operation_indicator__supply_location
 msgid "DFe Supply Location"
 msgstr ""
