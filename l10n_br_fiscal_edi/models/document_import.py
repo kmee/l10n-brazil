@@ -44,7 +44,7 @@ class Document(models.Model):
     @api.depends(
         "imported_document",
         "fiscal_operation_id",
-        "amount_financial_total",
+        "fiscal_amount_total",
         "fiscal_line_ids.partner_ncm_code",
         "fiscal_line_ids.ncm_id",
         "fiscal_line_ids.uom_id",
