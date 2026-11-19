@@ -246,6 +246,18 @@ class TestCreditOpeningChain(CreditMixin, SpedEntradaCommon):
         self.assertFalse(pis.opening_balance_warning)
         self.assertEqual(self._sped_records(self._declaration_month(7), "1100"), [])
 
+    def test_the_stop_of_the_balance_points_to_the_opening_balance(self):
+        """Credit from before the system that is not registered: the message of
+        the stop says where to register it."""
+        self._openings()
+        self._month(7, "401", sales=3)
+        self.env[OPENING].search([]).unlink()
+        self._set_accountant()
+        declaration = self._declaration_month(7)
+        with self.assertRaises(UserError) as error:
+            declaration.button_create_sped_files()
+        self.assertIn("Saldo inicial de crédito de PIS/COFINS", error.exception.args[0])
+
 
 @tagged("post_install", "-at_install")
 class TestCreditOpeningImport(SpedEntradaCommon):

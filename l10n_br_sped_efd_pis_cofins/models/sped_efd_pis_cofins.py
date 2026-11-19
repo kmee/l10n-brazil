@@ -222,7 +222,10 @@ def _previous_credit(env, declaration, tax_domain):
                 "The %(tax)s credit balance that the assessment of the period "
                 "starts from (%(balance)s) is not what the posted assessments of "
                 "the earlier periods give (%(layers)s): assess and post the "
-                "earlier periods, in order, before generating the file.",
+                "earlier periods, in order, before generating the file. If the "
+                "credit comes from before the system, register it as the opening "
+                "balance (menu Invoicing > Accounting > Actions > Saldo inicial "
+                "de crédito de PIS/COFINS).",
                 tax=tax_domain.upper(),
                 balance=formatLang(env, assessment.previous_balance, digits=2),
                 layers=formatLang(env, opening, digits=2),
