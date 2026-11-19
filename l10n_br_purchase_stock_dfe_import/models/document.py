@@ -9,7 +9,7 @@ class FiscalDocument(models.Model):
     _inherit = "l10n_br_fiscal.document"
 
     import_divergent = fields.Boolean(
-        string="Divergent",
+        string="Divergent Document",
         compute="_compute_import_divergent",
         search="_search_import_divergent",
         help="Some line differs from its purchase order line or receipt by "

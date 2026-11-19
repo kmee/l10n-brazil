@@ -34,38 +34,38 @@ class FiscalDocumentLine(models.Model):
     )
 
     import_ordered_qty = fields.Float(
-        string="Ordered Quantity",
+        string="Order Qty",
         compute="_compute_import_comparison",
         digits="Product Unit of Measure",
         help="Quantity of the order line, in the unit of this line.",
     )
     import_received_qty = fields.Float(
-        string="Received Quantity",
+        string="Order Received Qty",
         compute="_compute_import_comparison",
         digits="Product Unit of Measure",
         help="Quantity received for the order line, in the unit of this line.",
     )
     import_order_price_unit = fields.Float(
-        string="Order Unit Price",
+        string="Order Price",
         compute="_compute_import_comparison",
         digits="Product Price",
         help="Unit price of the order line, in the unit of this line.",
     )
     import_qty_difference = fields.Float(
-        string="Quantity Difference",
+        string="Qty vs Receipt",
         compute="_compute_import_comparison",
         digits="Product Unit of Measure",
         help="Quantity of the document for the order line minus the received "
         "quantity that the bills did not take yet.",
     )
     import_price_difference = fields.Float(
-        string="Price Difference",
+        string="Price vs Order",
         compute="_compute_import_comparison",
         digits="Product Price",
         help="Unit price of the line minus the unit price of the order line.",
     )
     import_divergent = fields.Boolean(
-        string="Divergent",
+        string="Divergent Line",
         compute="_compute_import_comparison",
         search="_search_import_divergent",
         help="The line differs from the order and the receipt by more than the "
