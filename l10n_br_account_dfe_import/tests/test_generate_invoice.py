@@ -1,5 +1,8 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+import json
+
+from lxml import etree
 
 from odoo.exceptions import UserError
 
@@ -57,3 +60,19 @@ class TestGenerateInvoice(DfeImportCase):
         self.assert_window_action(action)
         self.assertEqual(action["res_model"], "l10n_br_fiscal.document")
         self.assertEqual(action["res_id"], self._imported(KEY_2).id)
+
+    def _invoice_button_hidden(self, document):
+        admin = self.env.ref("base.user_admin")
+        arch = document.with_user(admin).get_view(view_type="form")["arch"]
+        xpath = "//button[@name='action_generate_invoice']"
+        button = etree.fromstring(arch).xpath(xpath)
+        terms = json.loads(button[0].get("modifiers"))["invisible"]
+        domain = [term for term in terms if term[0] == "import_state"]
+        return bool(domain and document.filtered_domain(domain))
+
+    def test_invoice_button_waits_for_the_review(self):
+        self.assertTrue(self._invoice_button_hidden(self.document))
+
+        self.document.fiscal_line_ids.write({"import_state": "resolved"})
+
+        self.assertFalse(self._invoice_button_hidden(self.document))
