@@ -275,6 +275,9 @@ class Registro0000(models.Model):
                         end=format_date(self.env, declaration.DT_FIN),
                     )
                 )
+            if not declaration.debug:
+                # the credit balance of the earlier months has to be the real one
+                declaration._get_posted_icms_assessments()._check_previous_periods()
             if declaration.debug or declaration.IND_ATIV != "0":
                 continue
             if not declaration.CLAS_ESTAB_IND:
@@ -292,6 +295,7 @@ class Registro0000(models.Model):
                         "is not an IPI taxpayer."
                     )
                 )
+            declaration._get_posted_ipi_assessments()._check_previous_periods()
         return super().button_create_sped_files()
 
     @api.model

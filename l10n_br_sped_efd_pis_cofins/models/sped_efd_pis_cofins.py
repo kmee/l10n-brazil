@@ -209,6 +209,8 @@ def _previous_credit(env, declaration, tax_domain):
     context = env.context  # noqa: F841
     if not assessment:
         return [], 0.0
+    # a month with movement that was never assessed breaks the chain of the balance
+    assessment._check_previous_periods()
     layers = _opening_layers(env, declaration, tax_domain)
     open_layers = [
         layer for layer in layers if layer["original"] - layer["used_before"] > 0.004

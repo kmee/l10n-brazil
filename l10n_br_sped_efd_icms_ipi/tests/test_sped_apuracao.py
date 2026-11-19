@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl-3.0.html).
 
 import base64
+from datetime import date
 
 from odoo.exceptions import UserError
 from odoo.tests.common import tagged
@@ -227,3 +228,18 @@ class TestSpedEfdIcmsIpiApuracao(EntradaHelpers, SpedEntradaCommon):
             declaration.button_create_sped_files()
         self.assertIn("e-mail", error.exception.args[0])
         self.assertIn("city", error.exception.args[0])
+
+    def test_generation_stops_when_an_earlier_month_was_never_assessed(self):
+        """The same hole of the credit balance in the ICMS: June has movement and no
+        assessment, so the balance that July starts from is not the real one."""
+        self._purchase_move(
+            "fo_compras_compras_comercializacao", "609", invoice_date=date(2026, 6, 10)
+        )
+        self._purchase_move("fo_compras_compras_comercializacao", "610")
+        self._assess_icms_of_july()
+        self._set_accountant()
+        declaration = self._declaration_july()
+        declaration.IND_ATIV = "1"
+        with self.assertRaises(UserError) as error:
+            declaration.button_create_sped_files()
+        self.assertIn("06/2026", error.exception.args[0])

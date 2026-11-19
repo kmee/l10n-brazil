@@ -37,6 +37,16 @@ class TaxAssessment(models.Model):
             return round(sum(self._opening_balances().mapped("balance")), 2)
         return super()._get_opening_balance()
 
+    def _get_first_period_date(self):
+        """The movement before the cut-off of an opening balance belongs to the
+        previous system: the months that count start at the cut-off."""
+        self.ensure_one()
+        if self._is_pis_cofins_non_cumulative():
+            openings = self._opening_balances()
+            if openings:
+                return min(openings.mapped("cutoff_date"))
+        return super()._get_first_period_date()
+
     @api.depends(
         "state", "previous_assessment_id", "previous_balance", "date_from", "company_id"
     )
