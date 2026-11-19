@@ -1125,6 +1125,8 @@ class RegistroC100(models.Model):
         ind_pgto = record._get_sped_ind_pgto()
 
         icms_base, icms_value = record._get_sped_icms_amounts()
+        # the PIS and the COFINS of the items, as the C170 carry them
+        pis_value, cofins_value = record._get_sped_pis_cofins_values()
         cod_sit = record._get_sped_cod_sit()
         if record._is_sped_cancelled():
             # cancelled, denied and unused numbers only carry what the Guia
@@ -1172,8 +1174,8 @@ class RegistroC100(models.Model):
             "VL_BC_ICMS_ST": record.amount_icmsst_base,
             "VL_ICMS_ST": record.amount_icmsst_value,
             "VL_IPI": record._get_sped_ipi_value(),
-            "VL_PIS": record.amount_pis_value,
-            "VL_COFINS": record.amount_cofins_value,
+            "VL_PIS": pis_value,
+            "VL_COFINS": cofins_value,
             # "VL_PIS_ST": record.amount_pisst_value,  # don't we have a field?
             # "VL_COFINS_ST": record.amount_cofinsst_value,  # idem
         }
