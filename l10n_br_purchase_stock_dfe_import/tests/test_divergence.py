@@ -1,0 +1,90 @@
+# Copyright 2026 KMEE
+# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
+from psycopg2 import IntegrityError
+
+from odoo.tools import mute_logger
+
+from .common import StockImportCase
+
+
+class TestDivergence(StockImportCase):
+    def _divergent_case(self):
+        """Ordered 10 at 95, received 8; the document says 10 at 100."""
+        order = self._order(quantity=10, price=95.0)
+        self._receive(order, 8)
+        self.line.write({"quantity": 10, "uom_id": self.unit.id, "price_unit": 100.0})
+        self._resolve_product()
+        self.line.import_purchase_line_id = order.order_line
+        return order
+
+    def test_the_document_line_against_the_order_and_the_receipt(self):
+        self._divergent_case()
+        line = self.line
+
+        self.assertEqual(line.import_ordered_qty, 10)
+        self.assertEqual(line.import_received_qty, 8)
+        self.assertEqual(line.import_order_price_unit, 95.0)
+        self.assertEqual(line.import_qty_difference, 2)
+        self.assertAlmostEqual(line.import_price_difference, 5.0)
+        self.assertTrue(line.import_divergent)
+        self.assertTrue(self.document.import_divergent)
+        found = self.env["l10n_br_fiscal.document"].search(
+            [("import_divergent", "=", True)]
+        )
+        self.assertIn(self.document, found)
+        rest = self.env["l10n_br_fiscal.document"].search(
+            [("import_divergent", "=", False)]
+        )
+        self.assertNotIn(self.document, rest)
+
+    def test_inside_the_tolerances_it_is_not_divergent(self):
+        self._divergent_case()
+        self.company.purchase_price_tolerance = 6.0
+        self.company.purchase_quantity_tolerance = 30.0
+        self.assertFalse(self.line.import_divergent)
+        self.assertFalse(self.document.import_divergent)
+
+        # the price alone out of its tolerance is enough
+        self.company.purchase_price_tolerance = 5.0
+        self.assertTrue(self.line.import_divergent)
+
+    def test_a_line_that_matches_is_not_divergent(self):
+        order = self._order(quantity=10, price=95.0)
+        self._receive(order, 8)
+        self.line.write({"quantity": 8, "uom_id": self.unit.id, "price_unit": 95.0})
+        self._resolve_product()
+        self.line.import_purchase_line_id = order.order_line
+
+        self.assertEqual(self.line.import_qty_difference, 0)
+        self.assertEqual(self.line.import_price_difference, 0)
+        self.assertFalse(self.line.import_divergent)
+
+    def test_a_line_without_order_has_nothing_to_compare(self):
+        self._resolve_product()
+
+        self.assertEqual(self.line.import_ordered_qty, 0)
+        self.assertFalse(self.line.import_divergent)
+
+    def test_the_bill_that_is_issued_before_the_receipt_stays_divergent(self):
+        order = self._order(quantity=10, price=100.0)
+        self.line.write({"quantity": 10, "uom_id": self.unit.id, "price_unit": 100.0})
+        self._resolve_product()
+        self.line.import_purchase_line_id = order.order_line
+        self.assertTrue(self.line.import_divergent)
+
+        action = self.document.action_generate_invoice()
+        bill = self.env["account.move"].browse(action["res_id"])
+        self.assertTrue(bill.purchase_divergent)
+        self.assertEqual(bill.invoice_line_ids.purchase_received_qty, 0)
+
+        self._receive(order, 10)
+        bill.invoice_line_ids.invalidate_recordset()
+        self.assertFalse(bill.purchase_divergent)
+
+    def test_the_tolerances_cannot_be_negative(self):
+        with self.assertRaises(IntegrityError), mute_logger(
+            "odoo.sql_db"
+        ), self.env.cr.savepoint():
+            self.company.purchase_price_tolerance = -1.0
+            self.company.flush_recordset()
