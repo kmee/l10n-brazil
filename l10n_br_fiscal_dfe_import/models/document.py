@@ -39,6 +39,8 @@ class Document(models.Model):
         "fiscal_operation_id",
         "fiscal_line_ids.import_ncm_code",
         "fiscal_line_ids.uom_id",
+        "fiscal_line_ids.import_uom_id",
+        "fiscal_line_ids.partner_uom_code",
     )
     def _compute_import_warning(self):
         for document in self:
@@ -60,7 +62,7 @@ class Document(models.Model):
                         % {"line": line.name, "ncm": line.import_ncm_code}
                     )
                 for line in document.fiscal_line_ids.filtered(
-                    lambda line: line.partner_uom_code and not line.uom_id
+                    lambda line: line._dfe_unit_unconfirmed()
                 ):
                     messages.append(
                         _("%(line)s: the unit %(uom)s has no match in the units.")
@@ -144,11 +146,9 @@ class Document(models.Model):
         document._dfe_import_attach_xml(content)
         document._dfe_import_restore_ncm()
         document._init_import_states()
-        document.fiscal_line_ids.filtered(lambda line: not line.uom_id).write(
-            {"import_state": "pending"}
-        )
         document._dfe_import_suggest_operation(inf_nfe)
         document._dfe_import_apply_depara()
+        document._dfe_import_pending_units()
         new_partners = (
             self.env["res.partner"]
             .with_context(active_test=False)
@@ -172,14 +172,45 @@ class Document(models.Model):
             if ncm and line.ncm_id != ncm:
                 line.ncm_id = ncm
 
+    def _dfe_import_pending_units(self):
+        """A unit with no match is not replaced by the unit of the product: the
+        line stays without unit and awaits review."""
+        self.ensure_one()
+        uom_model = self.env["uom.uom"]
+        for line in self.fiscal_line_ids.filtered("partner_uom_code"):
+            if not uom_model._match_by_fiscal_code(line.partner_uom_code):
+                line.uom_id = False
+            if line._dfe_unit_unconfirmed():
+                line.import_state = "pending"
+
     def action_confirm_suggestions(self):
         """Resolve in a batch the lines whose product is a suggestion: the
-        confirmation of the reviewer."""
+        confirmation of the reviewer. A line whose declared unit was not
+        confirmed is left for the review."""
+        skipped = self.env["l10n_br_fiscal.document.line"]
         for document in self:
-            document.fiscal_line_ids.filtered(
-                lambda line: line.import_state == "matched" and line.uom_id
-            ).action_resolve_line()
-        return True
+            matched = document.fiscal_line_ids.filtered(
+                lambda line: line.import_state == "matched"
+            )
+            skipped |= matched.filtered(lambda line: line._dfe_unit_unconfirmed())
+            (matched - skipped).action_resolve_line()
+        if not skipped:
+            return True
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("Some lines were not confirmed"),
+                "message": _(
+                    "%(count)s line(s) kept for the review: the unit declared by "
+                    "the supplier has no match. Choose the unit of each one."
+                )
+                % {"count": len(skipped)},
+                "type": "warning",
+                "sticky": True,
+                "next": {"type": "ir.actions.client", "tag": "reload"},
+            },
+        }
 
     def _dfe_import_apply_depara(self):
         """Resolve the lines whose product the buyer already mapped for this

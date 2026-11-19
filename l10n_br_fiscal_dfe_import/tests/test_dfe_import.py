@@ -667,6 +667,23 @@ class TestDfeImport(DfeImportCase):
         self.assertEqual(line.product_id, product)
         self.assertEqual(line.import_state, "resolved")
 
+    def test_unknown_unit_with_a_product_mapped_by_the_supplier_awaits_review(self):
+        product = self._supplier_product()
+
+        documents, _errors = self.Document.dfe_import_files(
+            [("nfe.xml", self._depara_note(KEY_2, unit=b"XPTO"))]
+        )
+
+        line = documents.fiscal_line_ids
+        self.assertEqual(line.product_id, product)
+        self.assertFalse(line.uom_id)
+        self.assertEqual(line.import_state, "pending")
+        self.assertIn("XPTO", documents.import_warning)
+        line.import_state = "matched"
+        result = documents.action_confirm_suggestions()
+        self.assertEqual(line.import_state, "matched")
+        self.assertIn("1 line", result["params"]["message"])
+
     def test_product_found_by_internal_code_is_only_a_suggestion(self):
         product = self.env["product.product"].create(
             {"name": "Same code", "default_code": "ZZ-NEW-1"}

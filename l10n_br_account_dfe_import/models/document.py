@@ -28,10 +28,7 @@ class Document(models.Model):
                 % "\n".join(f"- {line.name}" for line in pending)
             )
         unconfirmed = self.fiscal_line_ids.filtered(
-            lambda line: line.partner_uom_code
-            and not line.import_uom_id
-            and self.env["uom.uom"]._match_by_fiscal_code(line.partner_uom_code)
-            != line.uom_id
+            lambda line: line._dfe_unit_unconfirmed()
         )
         if unconfirmed:
             raise UserError(

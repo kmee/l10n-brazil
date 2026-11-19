@@ -70,3 +70,11 @@ class DocumentLine(models.Model):
         # the de-para memory is a by-product of the review: the fiscal user has
         # no purchase rights, and the author of the line stays the same
         return super(DocumentLine, self.sudo())._find_or_create_supplierinfo()
+
+    def _dfe_unit_unconfirmed(self):
+        """The unit declared by the supplier was neither matched nor chosen."""
+        self.ensure_one()
+        if not self.partner_uom_code or self.import_uom_id:
+            return False
+        declared = self.env["uom.uom"]._match_by_fiscal_code(self.partner_uom_code)
+        return not self.uom_id or declared != self.uom_id
