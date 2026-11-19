@@ -5,8 +5,10 @@ import logging
 import zipfile
 from io import BytesIO
 
+from erpbrasil.base.fiscal.cnpj_cpf import formata
+
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_ISSUER_COMPANY,
@@ -159,11 +161,18 @@ class Document(models.Model):
             return existing, False
         self._edi_import_check(parsed, company)
         last_partner = self.env["res.partner"].search([], order="id desc", limit=1)
-        document = (
-            self.with_company(company)
-            .with_context(**{EDI_IMPORT_NO_CREATE: True})
-            ._edi_import_create(parsed, company, role)
-        )
+        try:
+            document = (
+                self.with_company(company)
+                .with_context(**{EDI_IMPORT_NO_CREATE: True})
+                ._edi_import_create(parsed, company, role)
+            )
+        except AccessError as error:
+            if self.env["res.partner"].check_access_rights(
+                "create", raise_exception=False
+            ):
+                raise
+            raise UserError(self._edi_import_partner_denied(parsed)) from error
         document.with_context(
             **{LAST_PARTNER_CONTEXT_KEY: last_partner.id}
         )._edi_import_after_create(parsed, role)
@@ -215,6 +224,28 @@ class Document(models.Model):
                 % company.display_name
             )
         return company, role
+
+    @api.model
+    def _edi_import_partner_hint(self, parsed):
+        """Name and CNPJ/CPF of the partner the file needs to be registered, as
+        ``(name, vat)``. A reader that knows the name overrides it; the base knows
+        only the document of the issuer."""
+        return "", parsed.issuer_vat
+
+    @api.model
+    def _edi_import_partner_denied(self, parsed):
+        """Message for a user who cannot create contacts when the file needs one."""
+        name, vat = self._edi_import_partner_hint(parsed)
+        partner = " ".join(
+            part
+            for part in (name, formata(vat) and f"(CNPJ/CPF {formata(vat)})")
+            if part
+        )
+        return _(
+            "The file %(file)s requires registering the partner %(partner)s, and you "
+            "are not allowed to create contacts. Ask someone who can to register "
+            "it, or ask for the permission, and import the file again."
+        ) % {"file": parsed.file_name, "partner": partner or _("(unknown)")}
 
     @api.model
     def _edi_import_check(self, parsed, company):

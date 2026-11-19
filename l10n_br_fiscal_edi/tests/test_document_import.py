@@ -480,6 +480,50 @@ class TestDocumentImport(EdiImportCase):
             )
         )
 
+    def test_a_user_who_cannot_create_contacts_gets_a_clear_message_per_file(self):
+        """The file needs a partner to be registered and the user may not create
+        contacts: that file is refused saying so, nothing is created for it, and
+        the others of the batch enter."""
+        user = self._fiscal_user("fiscal_user_no_partner")
+        self.assertFalse(
+            self.env["res.partner"]
+            .with_user(user)
+            .check_access_rights("create", raise_exception=False)
+        )
+        needs, plain = self._parsed(KEY_1), self._parsed(KEY_2)
+        test = self
+        document_model = type(self.Document)
+        by_name = {needs.file_name: needs, plain.file_name: plain}
+
+        def read(model, name, content):
+            return by_name.get(name)
+
+        def create(model, parsed_file, company, role):
+            if parsed_file is needs:
+                model.env["res.partner"].create({"name": "Needed issuer"})
+            return test._create_imported_document(
+                company=company, model=model, document_key=parsed_file.access_key
+            )
+
+        model = self.Document.with_user(user).with_context(
+            allowed_company_ids=self.company.ids
+        )
+        with patch.object(document_model, "_edi_import_read", read), patch.object(
+            document_model, "_edi_import_create", create
+        ):
+            documents, errors, _warnings = model._edi_import_files(
+                [(needs.file_name, b"x"), (plain.file_name, b"x")]
+            )
+        self.assertEqual(documents.mapped("document_key"), [KEY_2])
+        self.assertEqual([name for name, _msg in errors], [needs.file_name])
+        message = errors[0][1]
+        self.assertIn("59.594.315/0001-57", message)
+        self.assertIn("not allowed to create contacts", message)
+        self.assertIn("import the file again", message)
+        self.assertFalse(
+            self.env["res.partner"].search([("name", "=", "Needed issuer")])
+        )
+
     def test_a_common_fiscal_user_imports_and_learns_as_the_author(self):
         """The fiscal user is not a manager and has no right on purchases: the
         document, the file and the de-para are still born in their name."""
