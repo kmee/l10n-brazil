@@ -8,11 +8,13 @@ from unittest.mock import MagicMock, patch
 
 import nfelib
 import pkg_resources
+from psycopg2 import IntegrityError
 from xsdata.formats.dataclass.parsers import XmlParser
 
-from odoo import Command, fields
+from odoo import Command, fields, tools
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests import TransactionCase
+from odoo.tools import mute_logger
 
 from odoo.addons import l10n_br_nfe
 from odoo.addons.l10n_br_fiscal.constants.fiscal import FISCAL_TAX_ID_FIELDS
@@ -451,6 +453,119 @@ class NFeImportWizardTest(TransactionCase):
         # the box of the wizard goes to each entry of the archive
         entry = wizard.copy({"file": wizard.file})
         self.assertTrue(entry.allow_product_creation)
+
+    # ------------------------------------------------------------------
+    # The same note in two companies of the database, and the unique key
+    # ------------------------------------------------------------------
+
+    def _plain_document(self, number, key=False):
+        issuer_company = self.env.ref("l10n_br_base.empresa_lucro_presumido")
+        document = self.env["l10n_br_fiscal.document"].create(
+            {
+                "company_id": issuer_company.id,
+                "document_type_id": self.env.ref("l10n_br_fiscal.document_55").id,
+                "issuer": "company",
+                "fiscal_operation_type": "out",
+                "document_serie": "1",
+                "document_number": number,
+                "document_key": key,
+            }
+        )
+        # the tests below read and write the table with SQL
+        self.env.flush_all()
+        return document
+
+    def _outgoing_document_of_xml_1(self):
+        """The document the issuer (a company of this database) has for the
+        note of xml_1: the outgoing one."""
+        return self._plain_document("5", "35200181583054000129550010000000052062777166")
+
+    def test_the_import_does_not_find_the_outgoing_document_of_the_issuer(self):
+        """The same note is the outgoing document of the issuer and the
+        incoming one of the recipient. Importing it in the recipient must not
+        return the outgoing document of the other company."""
+        outgoing = self._outgoing_document_of_xml_1()
+        self._prepare_wizard(self.xml_1)
+        self.assertNotEqual(self.wizard.document_id, outgoing)
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        _binding, document = self.wizard._import_edoc()
+        self.assertNotEqual(document, outgoing)
+        self.assertEqual(document.issuer, "partner")
+        self.assertEqual(document.document_key, outgoing.document_key)
+
+    def test_the_import_finds_the_document_of_its_own_company(self):
+        """Importing again the file in the company that already imported it
+        gives the same document: the search keeps finding what is its own."""
+        outgoing = self._outgoing_document_of_xml_1()
+        self._prepare_wizard(self.xml_1)
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        _binding, first = self.wizard._import_edoc()
+        self._prepare_wizard(self.xml_1)
+        self.assertEqual(self.wizard.document_id, first)
+        self.assertNotEqual(self.wizard.document_id, outgoing)
+
+    def test_the_key_is_unique_in_the_database(self):
+        """The uniqueness of the key is also guaranteed by the database: a
+        second document with the same company, issuer and key is refused even
+        when the check of the model is not reached (two imports at once)."""
+        first = self._outgoing_document_of_xml_1()
+        other = self._plain_document("6")
+        with mute_logger("odoo.sql_db"), self.assertRaises(IntegrityError):
+            with self.env.cr.savepoint():
+                self.env.cr.execute(
+                    "UPDATE l10n_br_fiscal_document SET document_key = %s "
+                    "WHERE id = %s",
+                    [first.document_key, other.id],
+                )
+        # the cancelled documents do not hold the key
+        self.env.cr.execute(
+            "UPDATE l10n_br_fiscal_document SET state_edoc = 'cancelada' WHERE id = %s",
+            [first.id],
+        )
+        self.env.cr.execute(
+            "UPDATE l10n_br_fiscal_document SET document_key = %s WHERE id = %s",
+            [first.document_key, other.id],
+        )
+
+    def test_the_check_of_the_key_goes_on_after_a_document_without_key(self):
+        """A document without key must not stop the check of the others."""
+        first = self._outgoing_document_of_xml_1()
+        # the index is not what is being tested here
+        self.env.cr.execute(
+            "DROP INDEX IF EXISTS l10n_br_fiscal_document_unique_key_idx"
+        )
+        no_key = self._plain_document("6")
+        duplicate = self._plain_document("7")
+        self.env.cr.execute(
+            "UPDATE l10n_br_fiscal_document SET document_key = %s WHERE id = %s",
+            [first.document_key, duplicate.id],
+        )
+        duplicate.invalidate_recordset()
+        with self.assertRaises(ValidationError):
+            (no_key | duplicate)._check_key()
+
+    def test_the_index_is_not_created_where_there_are_duplicated_keys(self):
+        """A database that already has duplicated keys keeps working: the index
+        is skipped with a warning, and nothing is deleted."""
+        first = self._outgoing_document_of_xml_1()
+        self.env.cr.execute(
+            "DROP INDEX IF EXISTS l10n_br_fiscal_document_unique_key_idx"
+        )
+        duplicate = self._plain_document("6")
+        self.env.cr.execute(
+            "UPDATE l10n_br_fiscal_document SET document_key = %s WHERE id = %s",
+            [first.document_key, duplicate.id],
+        )
+        with self.assertLogs(
+            "odoo.addons.l10n_br_fiscal.models.document", level="WARNING"
+        ) as logs:
+            self.env["l10n_br_fiscal.document"].init()
+        self.assertIn("duplicated keys", logs.output[0])
+        self.assertIn(first.document_key, logs.output[0])
+        self.assertFalse(
+            tools.index_exists(self.env.cr, "l10n_br_fiscal_document_unique_key_idx")
+        )
+        self.assertTrue((first | duplicate).exists())
 
     def test_zip_batch_import(self):
         """A zip archive with several XMLs lands as several persisted

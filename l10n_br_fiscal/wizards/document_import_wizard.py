@@ -14,6 +14,9 @@ from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 from ..constants.fiscal import (
+    DOCUMENT_ISSUER_COMPANY,
+    DOCUMENT_ISSUER_PARTNER,
+    DOCUMENT_STATE_CANCEL,
     FISCAL_IN,
     FISCAL_IN_OUT,
     FISCAL_OUT,
@@ -278,10 +281,36 @@ class DocumentImportWizard(models.TransientModel):
         )
 
     def _find_existing_document(self):
-        self.document_id = self.env["l10n_br_fiscal.document"].search(
-            [("document_key", "=", self.document_key.replace(" ", ""))],
-            limit=1,
-        )
+        """The document this file already became, in the company it belongs to.
+
+        The key identifies the note, but the same note lives in two documents
+        when the issuer and the recipient are companies of the same database:
+        the outgoing one of the issuer and the incoming one of the recipient.
+        The search follows the criterion of the uniqueness of the key (company,
+        issuer and key), so the import in the recipient never finds the
+        outgoing document of the issuer.
+        """
+        key = (self.document_key or "").replace(" ", "")
+        if not key:
+            self.document_id = False
+            return
+        domain = [
+            ("document_key", "=", key),
+            ("company_id", "=", self.company_id.id),
+            (
+                "issuer",
+                "=",
+                DOCUMENT_ISSUER_PARTNER
+                if self.fiscal_operation_type == FISCAL_IN
+                else DOCUMENT_ISSUER_COMPANY,
+            ),
+        ]
+        document = self.env["l10n_br_fiscal.document"]
+        # a cancelled document does not hold the key (it is not part of the
+        # uniqueness), but it is still found when it is the only one
+        self.document_id = document.search(
+            domain + [("state_edoc", "!=", DOCUMENT_STATE_CANCEL)], limit=1
+        ) or document.search(domain, limit=1)
 
     @api.onchange("file")
     def _onchange_file(self):
@@ -299,12 +328,13 @@ class DocumentImportWizard(models.TransientModel):
         binding = self._parse_file()
         self._detect_binding(binding)
         self._extract_binding_data(binding)
-        self._find_existing_document()
         self._destination_partner_from_binding(binding)
         # the CNPJ of the destination (us) tells which company the document
         # belongs to: the import must run in that company, not in the current
         # one (see _select_company_from_destination)
         self._select_company_from_destination()
+        # the existing document is the one of that company
+        self._find_existing_document()
         return binding
 
     @api.model
