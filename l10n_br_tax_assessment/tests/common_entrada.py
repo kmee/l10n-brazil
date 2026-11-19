@@ -85,7 +85,7 @@ class SpedEntradaCommon(AccountMoveBRCommon):
     def _access_key(number, cnpj="49190159000105"):
         """A valid 44 digits access key (check digit included) for the number,
         issued by the CNPJ (the supplier of the tests by default)."""
-        base = f"35" "2611" f"{cnpj}" "55" "001" f"{number.zfill(9)}1{number.zfill(8)}"
+        base = f"352611{cnpj}55001{number.zfill(9)}1{number.zfill(8)}"
         weights = [2, 3, 4, 5, 6, 7, 8, 9]
         total = sum(
             int(digit) * weights[index % 8]
@@ -202,14 +202,16 @@ class SpedEntradaCommon(AccountMoveBRCommon):
         _logger.info("EVIDENCE %s: %s", register, lines)
         return [dict(zip(names, line.split("|")[2:-1], strict=False)) for line in lines]
 
-    def _purchase_move(self, operation_line, number, payment_term=None):
+    def _purchase_move(
+        self, operation_line, number, payment_term=None, invoice_date=None
+    ):
         """A posted supplier bill with its fiscal document authorized (the
         document of an invoice, as the user launches it)."""
         ref = self.env.ref
         bill = self.init_invoice(
             "in_invoice",
             partner=self.partner_a,
-            invoice_date=date(2026, 7, 10),
+            invoice_date=invoice_date or date(2026, 7, 10),
             products=[self.product_a],
             document_type=ref("l10n_br_fiscal.document_55"),
             fiscal_operation=ref("l10n_br_fiscal.fo_compras"),

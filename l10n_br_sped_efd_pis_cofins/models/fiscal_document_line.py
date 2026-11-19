@@ -86,22 +86,27 @@ class FiscalDocumentLine(models.Model):
         nat_bc = NAT_BC_CRED_BY_DESTINATION.get(self.product_destination)
         if cst != CREDIT_CST or not nat_bc:
             document = self.document_id
-            raise UserError(
-                _(
-                    "The item %(item)s (%(product)s) of the document %(document)s "
-                    "books %(tax)s credit with the CST %(cst)s and the destination "
-                    "%(destination)s. This version of the file only derives the "
-                    "credit of a resale and of an input (CST 50), so it was not "
-                    "generated. Fix the destination or the operation of the line, "
-                    "or handle this credit outside the system.",
-                    item=document.fiscal_line_ids.ids.index(self.id) + 1,
-                    product=self.name or self.product_id.display_name or "",
-                    document=document.document_number or document.id,
-                    tax=tax_domain.upper(),
-                    cst=cst,
-                    destination=self._get_product_destination_label(),
-                )
+            message = _(
+                "The item %(item)s (%(product)s) of the document %(document)s "
+                "books %(tax)s credit with the CST %(cst)s and the destination "
+                "%(destination)s. This version of the file only derives the "
+                "credit of a resale and of an input (CST 50), so it was not "
+                "generated. Fix the destination or the operation of the line, "
+                "or handle this credit outside the system.",
+                item=document.fiscal_line_ids.ids.index(self.id) + 1,
+                product=self.name or self.product_id.display_name or "",
+                document=document.document_number or document.id,
+                tax=tax_domain.upper(),
+                cst=cst,
+                destination=self._get_product_destination_label(),
             )
+            if document._can_recompute_entry_cst():
+                message += " " + _(
+                    "The document is still being typed: the button "
+                    '"Recalcular CST de entrada" of the document recalculates the '
+                    "CST of the lines by the current rule."
+                )
+            raise UserError(message)
         basic = self.company_id.piscofins_id[f"tax_{tax_domain}_id"].percent_amount
         rate = self[f"{tax_domain}_percent"]
         return {

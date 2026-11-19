@@ -91,6 +91,20 @@ msgid "not informed"
 msgstr "não informado"
 
 #. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/sped_efd_pis_cofins.py:0
+#, python-format
+msgid "The %(tax)s credit balance that the assessment of the period starts from (%(balance)s) is not what the posted assessments of the earlier periods give (%(layers)s): assess and post the earlier periods, in order, before generating the file."
+msgstr "O saldo de crédito de %(tax)s de que a apuração do período parte (%(balance)s) não é o que as apurações lançadas dos períodos anteriores dão (%(layers)s): apure e lance os períodos anteriores, em ordem, antes de gerar o arquivo."
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/sped_efd_pis_cofins.py:0
+#, python-format
+msgid "The document is still being typed: the button \"Recalcular CST de entrada\" of the document recalculates the CST of the lines by the current rule."
+msgstr "O documento ainda está em digitação: o botão \"Recalcular CST de entrada\" do documento recalcula o CST das linhas pela regra atual."
+
+#. module: l10n_br_sped_efd_pis_cofins
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_pis_cofins_0000__state__done
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_pis_cofins_6_0000__state__done
 msgid "Done"
