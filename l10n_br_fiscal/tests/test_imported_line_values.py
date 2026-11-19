@@ -80,6 +80,22 @@ class TestImportedLineValues(TransactionCase):
         self.assertEqual(line.fiscal_price, 4.0)
         self.assertEqual(line.fiscal_quantity, 50.0)
 
+    def test_matching_a_product_does_not_give_a_unit_the_file_did_not_bring(self):
+        """The unit the supplier declared matched no unit: the line has none, and the
+        product that is matched to it does not fill one."""
+        self.product.uot_id = self.env.ref("uom.product_uom_ton")
+        line = self._create_line(self.document, uom_id=False)
+        self.assertFalse(line.uom_id)
+        line.product_id = self.product
+        self.assertFalse(line.uom_id)
+        self.assertFalse(line.uot_id)
+        # control: a line that was not imported takes the unit of the product
+        typed = self._create_line(
+            self._create_document(imported=False), uom_id=False, partner_uom_code=False
+        )
+        typed.product_id = self.product
+        self.assertEqual(typed.uom_id, self.uom_kg)
+
     def test_matching_a_product_without_ncm_keeps_the_declared_ncm(self):
         """The NCM of the file is what the books of an inbound document carry,
         even when the product matched has none."""
