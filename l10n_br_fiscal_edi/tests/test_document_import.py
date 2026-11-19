@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from odoo.exceptions import UserError
 
-from ..tools import EDI_IMPORT_NO_CREATE, EDI_IMPORT_PARTNER_BY_VAT
+from ..tools import EDI_IMPORT_NO_CREATE, EDI_IMPORT_PARTNER_BY_VAT, EdiPartnerData
 from .common import KEY_1, KEY_2, KEY_3, EdiImportCase
 
 
@@ -221,6 +221,90 @@ class TestDocumentImport(EdiImportCase):
             allowed_company_ids=self.company.ids, edi_import_last_partner_id=last.id
         )._edi_import_after_create(self._parsed(KEY_1), "recipient")
         self.assertIn(created.display_name, document.message_ids[0].body)
+
+    def _check_partners(self, document, data, partner=None, **context):
+        """Run the comparison with a reader that declares ``data`` for the partner."""
+        partner = partner or document.partner_id
+        with patch.object(
+            type(self.Document),
+            "_edi_import_partner_data",
+            lambda doc, parsed: [(partner, data)],
+        ):
+            document.with_context(**context)._edi_import_check_partners(
+                self._parsed(KEY_1)
+            )
+
+    def test_data_of_the_file_that_differ_from_the_registry_are_listed(self):
+        """Name and address of the file against the registry: the document says what
+        differs, with the value of each side, and the registry is not touched."""
+        self.supplier.write(
+            {
+                "legal_name": "Fornecedor Alfa Ltda",
+                "street_name": "Avenida Afonso Pena",
+                "street_number": "100",
+                "zip": "30130-010",
+            }
+        )
+        document = self._create_imported_document()
+        data = EdiPartnerData(
+            role="issuer",
+            vat="59594315000157",
+            name="FORNECEDOR BETA LTDA",
+            street="AVENIDA AFONSO PENA",
+            street_number="200",
+            zip_code="30130010",
+        )
+        self._check_partners(document, data)
+        warning = document.import_partner_warning
+        self.assertIn("FORNECEDOR BETA LTDA", warning)
+        self.assertIn("Fornecedor Alfa Ltda", warning)
+        self.assertIn('"200"', warning)
+        self.assertIn('"100"', warning)
+        self.assertNotIn("ZIP code", warning)
+        self.assertNotIn("Street", warning)
+        self.assertEqual(document.import_warning.count("FORNECEDOR BETA"), 1)
+        self.assertEqual(self.supplier.legal_name, "Fornecedor Alfa Ltda")
+        self.assertEqual(self.supplier.street_number, "100")
+        self.assertIn("differ from the registry", document.message_ids[0].body)
+
+    def test_the_same_data_written_differently_is_not_reported(self):
+        self.supplier.write(
+            {
+                "legal_name": "Fornecedor Alfa Ltda.",
+                "street_name": "Avenida Afonso Pena",
+                "district": "Funcionarios",
+                "zip": "30130-010",
+            }
+        )
+        document = self._create_imported_document()
+        data = EdiPartnerData(
+            role="issuer",
+            vat="59594315000157",
+            name="FORNECEDOR ALFA LTDA",
+            street="Avenida  Afonso-Pena",
+            district="FUNCIONÁRIOS",
+            zip_code="30130010",
+        )
+        self._check_partners(document, data)
+        self.assertFalse(document.import_partner_warning)
+
+    def test_a_partner_matched_by_name_because_the_file_has_no_vat_is_reported(self):
+        document = self._create_imported_document()
+        self._check_partners(document, EdiPartnerData(role="issuer", name="Whoever"))
+        self.assertIn("matched by name", document.import_partner_warning)
+
+    def test_a_partner_created_by_the_import_is_not_compared(self):
+        document = self._create_imported_document()
+        data = EdiPartnerData(role="issuer", vat="1", name="Other name")
+        self._check_partners(
+            document, data, edi_import_last_partner_id=document.partner_id.id - 1
+        )
+        self.assertFalse(document.import_partner_warning)
+
+    def test_a_reader_with_no_partner_data_reports_nothing(self):
+        document = self._create_imported_document()
+        document._edi_import_check_partners(self._parsed(KEY_1))
+        self.assertFalse(document.import_partner_warning)
 
     def test_a_reader_that_is_not_installed_refuses_the_file(self):
         parsed = self._parsed(KEY_1, reader="cte")

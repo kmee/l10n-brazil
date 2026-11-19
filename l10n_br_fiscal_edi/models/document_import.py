@@ -2,6 +2,8 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 import logging
+import re
+import unicodedata
 import zipfile
 from io import BytesIO
 
@@ -43,9 +45,17 @@ class Document(models.Model):
         help="What the imported document still lacks to be reviewed.",
     )
 
+    import_partner_warning = fields.Text(
+        copy=False,
+        readonly=True,
+        help="Where the data of a partner in the file differ from its registry, "
+        "which the import never changes, and the partners that were matched by name.",
+    )
+
     @api.depends(
         "imported_document",
         "fiscal_operation_id",
+        "import_partner_warning",
         "fiscal_amount_total",
         "fiscal_line_ids.partner_ncm_code",
         "fiscal_line_ids.ncm_id",
@@ -84,6 +94,8 @@ class Document(models.Model):
                     _("%(line)s: the unit %(uom)s has no match in the units.")
                     % {"line": line.name, "uom": line.partner_uom_code}
                 )
+        if self.import_partner_warning:
+            messages.extend(self.import_partner_warning.splitlines())
         return messages
 
     @api.model
@@ -178,6 +190,9 @@ class Document(models.Model):
         document.with_context(
             **{LAST_PARTNER_CONTEXT_KEY: last_partner.id}
         )._edi_import_after_create(parsed, role)
+        document.with_context(
+            **{LAST_PARTNER_CONTEXT_KEY: last_partner.id}
+        )._edi_import_check_partners(parsed)
         document._edi_import_suggest()
         return document, True
 
@@ -309,6 +324,88 @@ class Document(models.Model):
             self._message_log(
                 body=_("Partners created by the import: %s.")
                 % ", ".join(new_partners.mapped("display_name"))
+            )
+
+    def _edi_import_partner_data(self, parsed):
+        """What the file declares about its partners, as a list of
+        ``(partner, EdiPartnerData)``: the partner of the registry that the document
+        was linked to, and the data of the file. A reader that has them overrides it
+        and calls ``super()``; the base declares nothing."""
+        self.ensure_one()
+        return []
+
+    @api.model
+    def _edi_import_normalize(self, value):
+        """Lower case, only letters and digits (NFKD splits the accents off and the
+        punctuation rule drops them): the comparison of the
+        file with the registry does not report formatting."""
+        value = unicodedata.normalize("NFKD", str(value or ""))
+        return re.sub(r"[^a-z0-9]", "", value.lower())
+
+    def _edi_import_registry_values(self, partner):
+        """Values of the registry to compare with ``EdiPartnerData``, by attribute."""
+        return {
+            "name": partner.legal_name or partner.name,
+            "state_tax_number": partner.l10n_br_ie_code,
+            "street": partner.street_name,
+            "street_number": partner.street_number,
+            "district": partner.district,
+            "zip_code": partner.zip,
+            "city": partner.city_id.name or partner.city,
+            "state_code": partner.state_id.code,
+        }
+
+    def _edi_import_check_partners(self, parsed):
+        """Compare the data of the partners in the file with their registry, once,
+        and keep the differences on the document. The registry is never changed."""
+        self.ensure_one()
+        labels = {
+            "name": _("Name"),
+            "state_tax_number": _("State tax number"),
+            "street": _("Street"),
+            "street_number": _("Number"),
+            "district": _("District"),
+            "zip_code": _("ZIP code"),
+            "city": _("City"),
+            "state_code": _("State"),
+        }
+        floor = self.env.context.get(LAST_PARTNER_CONTEXT_KEY)
+        lines = []
+        for partner, data in self._edi_import_partner_data(parsed):
+            if not partner or (floor is not None and partner.id > floor):
+                continue  # none, or created by the import: it is the file
+            if not data.vat:
+                lines.append(
+                    _(
+                        "%(partner)s: the file carries no CNPJ or CPF, so the "
+                        "partner was matched by name. Check that it is the right one."
+                    )
+                    % {"partner": partner.display_name}
+                )
+            registry = self._edi_import_registry_values(partner)
+            for key, label in labels.items():
+                declared = getattr(data, key)
+                if not declared or self._edi_import_normalize(
+                    declared
+                ) == self._edi_import_normalize(registry[key]):
+                    continue
+                lines.append(
+                    _(
+                        '%(partner)s - %(field)s: the file says "%(file)s", the '
+                        'registry says "%(registry)s".'
+                    )
+                    % {
+                        "partner": partner.display_name,
+                        "field": label,
+                        "file": declared,
+                        "registry": registry[key] or "",
+                    }
+                )
+        if lines:
+            self.import_partner_warning = "\n".join(lines)
+            self._message_log(
+                body=_("Partner data that differ from the registry: %s")
+                % "; ".join(lines)
             )
 
     def _edi_import_suggest(self):

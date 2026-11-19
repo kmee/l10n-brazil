@@ -75,3 +75,19 @@ class EdiLot:
     quantity: float  # in the unit declared by the line
     date_manufacture: date | None
     date_expiry: date | None
+
+
+@dataclass(frozen=True)
+class EdiPartnerData:
+    """What the file declares about a partner (issuer, recipient, taker, carrier)."""
+
+    role: str  # "issuer" | "recipient" | "taker" | "carrier"
+    vat: str = ""  # only digits; "" when the file carries no CNPJ nor CPF
+    name: str = ""  # razao social
+    state_tax_number: str = ""  # inscricao estadual
+    street: str = ""
+    street_number: str = ""
+    district: str = ""
+    zip_code: str = ""
+    city: str = ""
+    state_code: str = ""
