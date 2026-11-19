@@ -54,6 +54,12 @@ class DocumentImportWizard(models.TransientModel):
         " choose its product in the product lines above or in the document.",
     )
 
+    file_is_zip = fields.Boolean(
+        compute="_compute_file_is_zip",
+        help="Technical: the file is a zip archive with several fiscal files. Each "
+        "note resolves its own operation, and the wizard has no preview to show.",
+    )
+
     batch_errors = fields.Text(
         readonly=True,
         help="The files of a zip archive that could not be imported, with the "
@@ -108,6 +114,11 @@ class DocumentImportWizard(models.TransientModel):
     destination_type_in_out = fields.Selection(
         selection=FISCAL_IN_OUT, string="Destination Type"
     )
+
+    @api.depends("file")
+    def _compute_file_is_zip(self):
+        for wizard in self:
+            wizard.file_is_zip = wizard._file_is_zip()
 
     @api.depends("issuer_cnpj", "company_id.cnpj_cpf")
     def _compute_fiscal_operation_type(self):
@@ -244,6 +255,7 @@ class DocumentImportWizard(models.TransientModel):
                     "name": _("Imported Documents"),
                     "res_model": "l10n_br_fiscal.document",
                     "view_mode": "tree,form",
+                    "views": [(False, "tree"), (False, "form")],
                     "domain": [("id", "in", documents.ids)],
                 }
             if self.batch_errors:
@@ -279,16 +291,25 @@ class DocumentImportWizard(models.TransientModel):
         for name in archive.namelist():
             if not name.lower().endswith(".xml"):
                 continue
+            stage = "read"
             try:
                 with self.env.cr.savepoint():
                     entry = self.copy(
                         {"file": base64.b64encode(archive.read(name)).decode()}
                     )
                     entry._onchange_file()
+                    stage = "import"
                     entry._import_edoc()
                     documents |= entry.document_id
-            except Exception as error:  # noqa: BLE001 - report per entry
-                errors.append(f"{name}: {error}")
+            except UserError as error:
+                errors.append(f"{name}: {error.args[0]}")
+            except Exception:  # noqa: BLE001 - report per entry
+                _logger.info("Zip import: %s failed", name, exc_info=True)
+                if stage == "read":
+                    reason = _("the file is not a NF-e the import understands.")
+                else:
+                    reason = _("the file could not be imported (see the server log).")
+                errors.append(f"{name}: {reason}")
         self.batch_errors = "\n".join(errors) or False
         if errors and not documents:
             raise UserError(

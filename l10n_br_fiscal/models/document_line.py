@@ -142,11 +142,13 @@ class DocumentLine(models.Model):
     import_price_gross = fields.Monetary(
         string="Import Gross Total",
         copy=False,
-        help="Total value of the item as the supplier file declared it (vProd), "
-        "kept when the de-para converts the unit with a factor: the unit price of "
-        "the line is the supplier price divided by the factor and has the "
-        "precision of the price, so quantity times price may not give back the "
-        "cents of the file. Empty when the line was not converted.",
+        help="Total value of the item as the supplier file declared it (vProd). "
+        "The unit price of the line has the precision of the price (and, when the "
+        "de-para converts the unit with a factor, is the supplier price divided "
+        "by it), so quantity times price may not give back the cents of the file: "
+        "the total of the line follows this value. Empty on a line that was not "
+        "imported with a total, and cleared when a person edits the quantity or "
+        "the price.",
     )
 
     import_uom_factor = fields.Float(
@@ -481,12 +483,12 @@ class DocumentLine(models.Model):
                 vals["price_unit"] = self.partner_price_unit / factor
                 # the unit price has the precision of the price and cannot give
                 # back, times the new quantity, the total of the file: the total
-                # of the file is the one that stays
-                vals["import_price_gross"] = self.currency_id.round(
-                    self.partner_quantity * self.partner_price_unit
+                # of the file (kept from the import) is the one that stays
+                vals["import_price_gross"] = self.import_price_gross or (
+                    self.currency_id.round(
+                        self.partner_quantity * self.partner_price_unit
+                    )
                 )
-            else:
-                vals["import_price_gross"] = 0.0
         if fiscal_operation:
             vals["fiscal_operation_id"] = fiscal_operation.id
         self.write(vals)
@@ -591,6 +593,24 @@ class DocumentLine(models.Model):
             "price": self._get_supplierinfo_price(),
         }
 
+    def _supplierinfo_key_domain(self, vals):
+        """What identifies the de-para of a supplier: the partner, the product
+        and the code the supplier uses for it. The document types that keep more
+        (the unit of the supplier) extend it."""
+        return [
+            ("partner_id", "=", vals["partner_id"]),
+            ("product_id", "=", vals.get("product_id") or False),
+            ("product_code", "=", vals.get("product_code") or False),
+        ]
+
+    def _find_supplierinfo(self, vals):
+        self.ensure_one()
+        return (
+            self.env["product.supplierinfo"]
+            .sudo()
+            .search(self._supplierinfo_key_domain(vals), limit=1)
+        )
+
     def _find_or_create_supplierinfo(self):
         for line in self:
             if not line.product_id or not line.document_id.partner_id:
@@ -601,6 +621,13 @@ class DocumentLine(models.Model):
             if not line.import_supplierinfo_id:
                 vals = line._prepare_supplierinfo_vals()
                 vals["partner_id"] = line.document_id.partner_id.id
+                # the de-para of this supplier, product, code (and unit) is one:
+                # a new import finds it, it does not make another
+                existing = line._find_supplierinfo(vals)
+                if existing:
+                    existing.write(vals)
+                    line.import_supplierinfo_id = existing
+                    continue
                 line.import_supplierinfo_id = (
                     line.env["product.supplierinfo"].sudo().create(vals)
                 )

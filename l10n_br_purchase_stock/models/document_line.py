@@ -66,7 +66,11 @@ class FiscalDocumentLine(models.Model):
         result = super()._apply_import_match_source(source, trusted=trusted)
         if source.source_type == "stock_move":
             move = self.env["stock.move"].browse(-source.id).exists()
-            if move:
+            if move and (
+                trusted
+                or not move.purchase_line_id
+                or self._import_origin_has_balance(move.purchase_line_id)
+            ):
                 self.write(
                     {
                         "import_stock_move_id": move.id,

@@ -13,8 +13,9 @@ from xsdata.formats.dataclass.parsers import XmlParser
 
 from odoo import Command, fields, tools
 from odoo.exceptions import UserError, ValidationError
-from odoo.tests import TransactionCase
+from odoo.tests import Form, TransactionCase
 from odoo.tools import mute_logger
+from odoo.tools.translate import _ as translate
 
 from odoo.addons import l10n_br_nfe
 from odoo.addons.l10n_br_fiscal.constants.fiscal import FISCAL_TAX_ID_FIELDS
@@ -560,8 +561,12 @@ class NFeImportWizardTest(TransactionCase):
             "odoo.addons.l10n_br_fiscal.models.document", level="WARNING"
         ) as logs:
             self.env["l10n_br_fiscal.document"].init()
+            self.env["l10n_br_fiscal.document"].init()
         self.assertIn("duplicated keys", logs.output[0])
         self.assertIn(first.document_key, logs.output[0])
+        self.assertIn("company", logs.output[0])  # the issuer of the duplicates
+        # the other modules that extend the model run init too: one warning only
+        self.assertEqual(len(logs.output), 1)
         self.assertFalse(
             tools.index_exists(self.env.cr, "l10n_br_fiscal_document_unique_key_idx")
         )
@@ -605,6 +610,99 @@ class NFeImportWizardTest(TransactionCase):
             failures,
             f"(quantity, price, factor, vProd, total, unit price): {failures}",
         )
+
+    def test_the_factor_of_the_depara_only_holds_for_the_unit_it_was_learned_in(self):
+        """A note in boxes teaches a factor of 12; another note of the same code
+        in kilos must not inherit it (the quantity would be multiplied by 12)."""
+        product = self._get_xml_product()
+        self._prepare_wizard(self.xml_1)
+        self._supplierinfo(self.wizard.issuer_partner_id).unlink()
+        self.wizard.imported_products_ids.product_id = product
+        self.wizard.imported_products_ids.uom_conversion_factor = 12
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.wizard._import_edoc()
+        document = self.wizard.document_id
+        info = self._supplierinfo(document.partner_id)
+        self.assertEqual(info.partner_uom_factor, 12)
+        self.assertTrue(info.partner_uom_code)
+        self.assertEqual(document.fiscal_line_ids.quantity, 12)
+        document.unlink()
+
+        # the same code and unit again: the factor is inherited
+        self._prepare_wizard(self.xml_1)
+        line = self.wizard.imported_products_ids
+        self.assertEqual(line.uom_conversion_factor, 12)
+        self.assertEqual(line.product_source, "supplier")
+
+        # the same code in kilos: nothing is inherited, the line waits for review
+        xml_kg = (
+            self.xml_1.decode()
+            .replace("<uCom>UNID</uCom>", "<uCom>KG</uCom>")
+            .replace("<uTrib>UNID</uTrib>", "<uTrib>KG</uTrib>")
+            .encode()
+        )
+        self._prepare_wizard(xml_kg)
+        line = self.wizard.imported_products_ids
+        self.assertEqual(line.uom_conversion_factor, 1)
+        self.assertNotEqual(line.product_source, "supplier")
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.wizard._import_edoc()
+        fiscal_line = self.wizard.document_id.fiscal_line_ids
+        self.assertEqual(fiscal_line.quantity, 1)
+        self.assertEqual(fiscal_line.import_state, "matched")
+
+    def test_importing_again_does_not_multiply_the_depara(self):
+        """Each import used to make a new supplier info for the same supplier,
+        product, code and unit. Three imports leave one; the duplicates that
+        already exist are left alone."""
+        product = self._get_xml_product()
+        self._prepare_wizard(self.xml_1)
+        issuer = self.wizard.issuer_partner_id
+        self._supplierinfo(issuer).unlink()
+        for _n in range(3):
+            self._prepare_wizard(self.xml_1)
+            self.wizard.imported_products_ids.product_id = product
+            self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+            self.wizard._import_edoc()
+            self.assertEqual(len(self._supplierinfo(issuer)), 1)
+            self.wizard.document_id.unlink()
+        # duplicates that someone already has are not deleted, nor made worse
+        info = self._supplierinfo(issuer)
+        info.copy()
+        self.assertEqual(len(self._supplierinfo(issuer)), 2)
+        self._prepare_wizard(self.xml_1)
+        self.wizard.imported_products_ids.product_id = product
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.wizard._import_edoc()
+        self.assertEqual(len(self._supplierinfo(issuer)), 2)
+
+    def test_the_total_of_the_item_is_the_vprod_of_the_file(self):
+        """A price with more decimals than the price field keeps (12.3457), with
+        or without a unit factor: the total of the item of the document is the
+        vProd of the file (7 x 12.3457 = 86.42, not 7 x 12.35 = 86.45)."""
+        xml = (
+            self.xml_1.decode()
+            .replace("<qCom>1.0000</qCom>", "<qCom>7.0000</qCom>")
+            .replace("<qTrib>1.0000</qTrib>", "<qTrib>7.0000</qTrib>")
+            .replace("<vUnCom>14.0000000000</vUnCom>", "<vUnCom>12.3457</vUnCom>")
+            .replace("<vUnTrib>14.0000000000</vUnTrib>", "<vUnTrib>12.3457</vUnTrib>")
+            .replace("<vProd>14.00</vProd>", "<vProd>86.42</vProd>")
+            .replace("<vNF>14.00</vNF>", "<vNF>86.42</vNF>")
+            .encode()
+        )
+        for factor in (1, 12):
+            product = self._get_xml_product()
+            self._prepare_wizard(xml)
+            self.wizard.imported_products_ids.product_id = product
+            self.wizard.imported_products_ids.uom_conversion_factor = factor
+            self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+            self.wizard._import_edoc()
+            line = self.wizard.document_id.fiscal_line_ids
+            self.assertEqual(line.quantity, 7 * factor)
+            self.assertEqual(line.price_gross, 86.42, f"factor {factor}")
+            self.assertEqual(line.nfe40_vProd, 86.42)
+            self.assertEqual(line.document_id.amount_price_gross, 86.42)
+            self.wizard.document_id.unlink()
 
     def test_zip_batch_import(self):
         """A zip archive with several XMLs lands as several persisted
@@ -684,6 +782,110 @@ class NFeImportWizardTest(TransactionCase):
         self.assertIn("the de-para blew up", wizard.batch_errors)
         self.assertNotIn("nota1.xml", wizard.batch_errors)
 
+    def test_a_zip_does_not_ask_for_the_operation_and_opens_a_complete_action(self):
+        """With a zip the wizard has no preview and no operation to choose: each
+        note resolves its own. The action it returns is a complete window action
+        (the client cannot open one without views)."""
+        wizard = self._zip_of_two_notes()
+        self.assertTrue(wizard.file_is_zip)
+        with Form(self.env["l10n_br_fiscal.document.import.wizard"]) as form:
+            form.file = wizard.file  # saved with no operation: not required
+        action = wizard.action_import_and_open_document()
+        self.assertEqual(action["type"], "ir.actions.act_window")
+        self.assertEqual(action["res_model"], "l10n_br_fiscal.document")
+        self.assertEqual(action["views"], [(False, "tree"), (False, "form")])
+        self.assertEqual(action["view_mode"], "tree,form")
+        documents = self.env["l10n_br_fiscal.document"].search(action["domain"])
+        self.assertEqual(len(documents), 2)
+
+    def _zip_with_a_file_that_is_not_a_nfe(self):
+        other_xml = pkg_resources.resource_stream(
+            nfelib.__name__,
+            "nfe/samples/v4_0/leiauteNFe/"
+            "35180834128745000152550010000474281920007498-nfe.xml",
+        ).read()
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as archive:
+            archive.writestr("nota1.xml", self.xml_1)
+            archive.writestr("nota2.xml", other_xml)
+            archive.writestr("evento.xml", b"<retEvento><x/></retEvento>")
+        return self.env["l10n_br_fiscal.document.import.wizard"].create(
+            {
+                "company_id": self.env.ref("base.main_company").id,
+                "file": base64.b64encode(buffer.getvalue()),
+            }
+        )
+
+    def test_the_notification_of_a_failed_file_opens_the_list_with_views(self):
+        """Two notes come in and a third file fails: the notification goes first
+        and the list opens after it, as a window action the client can open."""
+        wizard = self._zip_with_a_file_that_is_not_a_nfe()
+        action = wizard.action_import_and_open_document()
+        self.assertEqual(action["tag"], "display_notification")
+        self.assertTrue(action["params"]["sticky"])
+        next_action = action["params"]["next"]
+        self.assertEqual(next_action["type"], "ir.actions.act_window")
+        self.assertEqual(next_action["views"], [(False, "tree"), (False, "form")])
+        self.assertEqual(next_action["view_mode"], "tree,form")
+        self.assertEqual(next_action["res_model"], "l10n_br_fiscal.document")
+        self.assertEqual(len(next_action["domain"][0][2]), 2)
+
+    def test_a_file_that_is_not_a_nfe_is_reported_in_plain_words(self):
+        """The reason of a file of the zip that fails is a sentence for the user,
+        not the text of the parser ("No class found matching root: ...")."""
+        wizard = self._zip_with_a_file_that_is_not_a_nfe()
+        wizard._import_edoc_batch()
+        self.assertIn("evento.xml", wizard.batch_errors)
+        self.assertIn("is not a NF-e", wizard.batch_errors)
+        self.assertNotIn("No class found", wizard.batch_errors)
+
+    def test_an_ncm_that_is_not_registered_is_named(self):
+        """The import does not create the NCM: the message says which one is
+        missing and in which item, instead of a database error."""
+        ncm = "12345678"
+        self.assertFalse(
+            self.env["l10n_br_fiscal.ncm"].search_count([("code_unmasked", "=", ncm)])
+        )
+        xml = self.xml_1.decode().replace("<NCM>94033000</NCM>", f"<NCM>{ncm}</NCM>")
+        self.assertIn(ncm, xml)
+        self._prepare_wizard(xml.encode())
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        ncm_count = self.env["l10n_br_fiscal.ncm"].search_count([])
+        with self.assertRaises(UserError) as caught:
+            self.wizard._import_edoc()
+        self.assertIn(f"NCM {ncm}", str(caught.exception))
+        self.assertIn("item 1", str(caught.exception))
+        self.assertEqual(self.env["l10n_br_fiscal.ncm"].search_count([]), ncm_count)
+
+    def test_the_messages_of_the_import_are_in_portuguese(self):
+        self.env["res.lang"]._activate_lang("pt_BR")
+        modules = self.env["ir.module.module"].search(
+            [("name", "in", ["l10n_br_fiscal", "l10n_br_nfe"])]
+        )
+        modules._update_translations(["pt_BR"])
+        translate_env = self.env(context=dict(self.env.context, lang="pt_BR"))
+        self.assertEqual(
+            translate_env["l10n_br_fiscal.document.import.wizard.line"]
+            ._fields["product_confirmed"]
+            ._description_string(translate_env),
+            "Confirmado",
+        )
+        self.assertEqual(
+            translate_env["l10n_br_fiscal.document.import.wizard.line"]
+            ._fields["uom_com"]
+            ._description_string(translate_env),
+            "Unidade comercial",
+        )
+        self.env = translate_env
+        for source, expected in (
+            (
+                "The NCM below is not in the NCM registry (Fiscal > NCM). Register it "
+                "and import the file again; the import does not create NCMs:\n%s",
+                "não está no cadastro de NCM",
+            ),
+        ):
+            self.assertIn(expected, translate(source))
+
     def test_the_zip_reports_the_failed_entry_to_the_user(self):
         wizard = self._zip_of_two_notes()
         original = DocumentImportWizard._apply_wizard_depara
@@ -699,9 +901,9 @@ class NFeImportWizardTest(TransactionCase):
             action = wizard.action_import_and_open_document()
         self.assertEqual(action["tag"], "display_notification")
         self.assertIn("nota2.xml", action["params"]["message"])
-        self.assertEqual(
-            action["params"]["next"]["res_model"], "l10n_br_fiscal.document"
-        )
+        next_action = action["params"]["next"]
+        self.assertEqual(next_action["res_model"], "l10n_br_fiscal.document")
+        self.assertTrue(next_action["views"])  # the client opens it with views
 
     def test_match_xml_product(self):
         self._prepare_wizard(self.xml_1)

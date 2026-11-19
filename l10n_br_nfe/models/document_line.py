@@ -252,12 +252,18 @@ class NFeLine(spec_models.StackedModel):
     # related to the internal product barcode, the supplier EAN is already
     # consumed by the product matching during the binding build.
 
+    def _supplierinfo_key_domain(self, vals):
+        domain = super()._supplierinfo_key_domain(vals)
+        domain.append(("partner_uom_code", "=", vals.get("partner_uom_code") or False))
+        return domain
+
     def _prepare_supplierinfo_vals(self):
         vals = super()._prepare_supplierinfo_vals()
         vals.update(
             {
                 "partner_uom_id": self.import_uom_id.id,
                 "partner_uom_factor": self.import_uom_factor,
+                "partner_uom_code": self.partner_uom_code,
             }
         )
         return vals
@@ -1251,6 +1257,11 @@ class NFeLine(spec_models.StackedModel):
 
         if key == "nfe40_vUnCom":
             vals["price_unit"] = float(value)
+        if key == "nfe40_vProd":
+            # the total of the item as the supplier declared it: the unit price
+            # has the precision of the price and cannot give it back times the
+            # quantity (7 x 12.3457 = 86.42 is not 7 x 12.35)
+            vals["import_price_gross"] = float(value)
         if key == "nfe40_NCM":
             vals["ncm_id"] = (
                 self.env["l10n_br_fiscal.ncm"]

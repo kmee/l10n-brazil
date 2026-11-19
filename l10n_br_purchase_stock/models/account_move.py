@@ -40,7 +40,21 @@ class AccountMove(models.Model):
                 ("move_id.state", "!=", "cancel"),
             ]
         )
-        divergent_ids = lines.filtered("purchase_divergent").move_id.ids
+        # the lines the bill could not link to the order line decided for them
+        # (no balance left) are divergent too
+        unlinked = self.env["account.move.line"].search(
+            [
+                ("purchase_line_id", "=", False),
+                ("display_type", "=", "product"),
+                ("move_id.move_type", "=", "in_invoice"),
+                ("move_id.state", "!=", "cancel"),
+                ("fiscal_document_line_id.import_purchase_line_id", "!=", False),
+            ]
+        )
+        divergent_ids = (
+            lines.filtered("purchase_divergent")
+            | unlinked.filtered("purchase_divergent")
+        ).move_id.ids
         if (operator == "=") == value:
             return [("id", "in", divergent_ids)]
         return [("id", "not in", divergent_ids)]

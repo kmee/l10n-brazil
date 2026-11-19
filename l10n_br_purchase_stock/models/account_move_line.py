@@ -53,6 +53,18 @@ class AccountMoveLine(models.Model):
         "warns: nothing is blocked.",
     )
 
+    def _import_origin_not_linked(self):
+        """True for a bill line whose imported document line has a decided origin
+        (an order line) that the bill did not link, because of the balance."""
+        self.ensure_one()
+        fiscal_line = self.fiscal_document_line_id
+        return bool(
+            fiscal_line
+            and not self.purchase_line_id
+            and fiscal_line.import_origin_state == "resolved"
+            and fiscal_line.import_purchase_line_id
+        )
+
     @api.model
     def _get_bill_matching_reference_sql(self, alias):
         """The order line the bill line is linked to, which the import decided
@@ -80,6 +92,8 @@ class AccountMoveLine(models.Model):
         "purchase_line_id.invoice_lines.product_uom_id",
         "purchase_line_id.invoice_lines.move_id.state",
         "move_id.invoice_line_ids.purchase_line_id",
+        "fiscal_document_line_id.import_purchase_line_id",
+        "fiscal_document_line_id.import_origin_state",
         "move_id.invoice_line_ids.quantity",
         "purchase_line_id.price_unit",
         "move_id.move_type",
@@ -109,6 +123,15 @@ class AccountMoveLine(models.Model):
                 "purchase_price_difference": 0.0,
                 "purchase_divergent": False,
             }
+            if (
+                not order_line
+                and line.display_type == "product"
+                and line.move_id.is_purchase_document()
+                and line._import_origin_not_linked()
+            ):
+                # the note says which order the line is for, but the order has no
+                # balance left for it: the line is an item without order
+                values["purchase_divergent"] = True
             if order_line and line.move_id.is_purchase_document(include_receipts=True):
                 order_uom = order_line.product_uom
                 uom = line.product_uom_id or order_uom

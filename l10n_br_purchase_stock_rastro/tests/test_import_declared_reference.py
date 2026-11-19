@@ -79,6 +79,7 @@ class TestImportDeclaredReference(common.ImportWizardCommon):
         bill_line = move.invoice_line_ids
         self.assertEqual(bill_line.purchase_line_id, self.order.order_line)
         self.assertEqual(bill_line.partner_order, "OC00589")
+        self.env.flush_all()  # the reference is read with SQL
         expr = self.env["account.move.line"]._get_bill_matching_reference_sql("aml")
         self.env.cr.execute(
             f"SELECT ({expr}) FROM account_move_line aml WHERE aml.id = %s",
