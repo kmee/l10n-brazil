@@ -30,3 +30,10 @@ and taxes of the file. When no operation matches, or the NCM of the file is
 not in the registry, a banner tells what to choose. The Imported Documents menu
 has a column with the review state and a filter for the documents awaiting
 review.
+
+A product that the buyer already mapped for the same supplier (the supplier
+code of the product equal to the code of the note) enters resolved, converted
+with the factor learned for the same declared unit. A product found only by
+internal code, barcode or name is a suggestion: the Confirm Suggestions button
+resolves all of them at once. Resolving a line by hand records the mapping
+once, so the next note of the supplier already enters resolved.

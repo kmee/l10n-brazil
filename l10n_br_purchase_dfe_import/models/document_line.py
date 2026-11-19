@@ -294,6 +294,20 @@ class FiscalDocumentLine(models.Model):
                     (line.id, line._import_claimed_quantity(order_line))
                 )
 
+    def _import_unit_unconfirmed(self):
+        """The unit the supplier declared has no match and nobody chose one: it
+        is not a unit to convert from."""
+        self.ensure_one()
+        return bool(
+            self.partner_uom_code
+            and not self.import_uom_id
+            and (
+                not self.uom_id
+                or self.env["uom.uom"]._match_by_fiscal_code(self.partner_uom_code)
+                != self.uom_id
+            )
+        )
+
     def _apply_import_depara(self, *args, **kwargs):
         result = super()._apply_import_depara(*args, **kwargs)
         # a product decided on the line may open a candidate

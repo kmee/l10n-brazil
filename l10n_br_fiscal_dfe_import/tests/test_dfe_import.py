@@ -13,7 +13,7 @@ from lxml import etree
 from xsdata.formats.dataclass.transports import DefaultTransport
 
 from odoo import Command
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 from odoo.modules import get_module_resource
 from odoo.tools import file_open
 from odoo.tools.translate import TranslationFileReader
@@ -21,7 +21,7 @@ from odoo.tools.translate import TranslationFileReader
 from odoo.addons.l10n_br_nfe_dfe.tests.test_nfe_dfe import response_sucesso_individual
 
 from ..hooks import uninstall_hook
-from .common import KEY_1, KEY_2, DfeImportCase
+from .common import KEY_1, KEY_2, KEY_3, DfeImportCase
 
 NFE_NS = "http://www.portalfiscal.inf.br/nfe"
 
@@ -134,8 +134,12 @@ class TestDfeImport(DfeImportCase):
         )
 
         action = wizard.action_import()
+        wizard.action_import()
 
-        self.assertEqual(action["res_id"], self._imported(KEY_1).id)
+        document = self._imported(KEY_1)
+        self.assertEqual(action["res_id"], document.id)
+        origin = document.message_ids.filtered(lambda msg: KEY_1 in msg.body)
+        self.assertEqual(len(origin), 1)
 
     def test_access_key_with_only_the_summary_asks_to_acknowledge(self):
         dfe_document = self._dfe_document(KEY_1)
@@ -263,7 +267,7 @@ class TestDfeImport(DfeImportCase):
             KEY_1,
             replace=[
                 (b"<NCM>94033000</NCM>", b"<NCM>94033000</NCM><CEST>9999999</CEST>"),
-                (b"<uCom>UNID</uCom>", b"<uCom>ZZZ</uCom>"),
+                (b"<uCom>UN</uCom>", b"<uCom>ZZZ</uCom>"),
                 (b"<cMun>3501152</cMun>", b"<cMun>9999999</cMun>"),
             ],
         )
@@ -332,7 +336,9 @@ class TestDfeImport(DfeImportCase):
     def test_note_of_another_company_opens_in_the_context_of_its_company(self):
         user = self._manager_of(self.company | self.other_company)
         wizard = self.env["l10n_br_fiscal_dfe_import.wizard"].with_user(user)
-        wizard = wizard.with_context(allowed_company_ids=[self.company.id])
+        wizard = wizard.with_context(
+            allowed_company_ids=[self.company.id, self.other_company.id]
+        )
         attachment = self.env["ir.attachment"].create(
             {"name": "nfe.xml", "raw": self._other_company_xml(KEY_1)}
         )
@@ -348,7 +354,7 @@ class TestDfeImport(DfeImportCase):
     def test_repeated_note_of_another_company_opens_the_existing_document(self):
         user = self._manager_of(self.company | self.other_company)
         service = self.Document.with_user(user).with_context(
-            allowed_company_ids=[self.company.id]
+            allowed_company_ids=[self.company.id, self.other_company.id]
         )
         files = [("nfe.xml", self._other_company_xml(KEY_1))]
         first, _errors = service.dfe_import_files(files)
@@ -414,7 +420,7 @@ class TestDfeImport(DfeImportCase):
         self.assertEqual((line.quantity, line.price_unit), (1, 140))
         self.assertEqual(documents.fiscal_amount_total, 140)
         self.assertEqual(documents.fiscal_amount_untaxed, 140)
-        self.assertNotIn("fiscal operation", documents.import_warning)
+        self.assertNotIn("fiscal operation", documents.import_warning or "")
 
     def test_without_a_matching_operation_the_document_says_what_to_choose(self):
         xml = self._xml(KEY_1, replace=[(b"<CFOP>5102</CFOP>", b"<CFOP>5999</CFOP>")])
@@ -429,7 +435,10 @@ class TestDfeImport(DfeImportCase):
         action = self.env.ref("l10n_br_fiscal_dfe_import.imported_document_dfe_action")
         arch = self.Document.get_view(action.view_id.id, "tree")["arch"]
 
-        self.assertTrue(etree.fromstring(arch).xpath("//field[@name='import_state']"))
+        tree = etree.fromstring(arch)
+        self.assertTrue(tree.xpath("//field[@name='import_state']"))
+        self.assertTrue(tree.xpath("//field[@name='fiscal_amount_total']"))
+        self.assertFalse(tree.xpath("//field[@name='fiscal_amount_untaxed']"))
 
     def test_list_of_several_documents_uses_the_same_view(self):
         view = self.env.ref("l10n_br_fiscal_dfe_import.document_import_tree")
@@ -449,3 +458,264 @@ class TestDfeImport(DfeImportCase):
 
         self.assertFalse([term["src"] for term in terms if not term["value"]])
         self.assertIn("Review", [term["src"] for term in terms])
+
+    def test_unknown_unit_stays_empty_and_is_kept_as_declared(self):
+        uom = self.env["uom.uom"].search_count([])
+        xml = self._xml(
+            KEY_1,
+            replace=[(b"<uCom>UN</uCom>", b"<uCom>ZZZ</uCom>")],
+        )
+
+        documents, errors = self.Document.dfe_import_files([("nfe.xml", xml)])
+
+        line = documents.fiscal_line_ids
+        self.assertFalse(errors)
+        self.assertFalse(line.uom_id)
+        self.assertEqual(line.partner_uom_code, "ZZZ")
+        self.assertEqual(line.import_state, "pending")
+        self.assertIn("ZZZ", documents.import_warning)
+        self.assertEqual(self.env["uom.uom"].search_count([]), uom)
+
+    def test_known_unit_is_matched_not_defaulted(self):
+        kilo = self.env["uom.uom"]._match_by_fiscal_code("KG")
+        xml = self._xml(
+            KEY_1,
+            replace=[
+                (b"<uCom>UN</uCom>", b"<uCom>KG</uCom>"),
+                (b"<uTrib>UN</uTrib>", b"<uTrib>KG</uTrib>"),
+            ],
+        )
+
+        documents, _errors = self.Document.dfe_import_files([("nfe.xml", xml)])
+
+        self.assertEqual(documents.fiscal_line_ids.uom_id, kilo)
+        self.assertEqual(documents.fiscal_line_ids.uot_id, kilo)
+
+    def test_matched_product_with_an_unknown_unit_still_awaits_review(self):
+        xml = self._xml(
+            KEY_1,
+            replace=[
+                (b"ZZ-NEW-1", b"E-COM11"),
+                (b"<uCom>UN</uCom>", b"<uCom>ZZZ</uCom>"),
+            ],
+        )
+
+        documents, _errors = self.Document.dfe_import_files([("nfe.xml", xml)])
+
+        line = documents.fiscal_line_ids
+        self.assertTrue(line.product_id)
+        self.assertEqual(line.import_state, "pending")
+
+    def _fiscal_user(self):
+        return self.env["res.users"].create(
+            {
+                "name": "Fiscal only",
+                "login": "dfe_fiscal_only",
+                "groups_id": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            self.env.ref("l10n_br_fiscal.group_manager").id,
+                        ]
+                    )
+                ],
+            }
+        )
+
+    def test_fiscal_user_without_the_nfe_group_cannot_open_the_window(self):
+        user = self._fiscal_user()
+        menu = self.env.ref("l10n_br_nfe.nfe_import_document")
+
+        with self.assertRaises(AccessError):
+            self.env["l10n_br_fiscal_dfe_import.wizard"].with_user(user).create({})
+        self.assertFalse(menu.with_user(user)._filter_visible_menus())
+
+    def test_nfe_manager_sees_the_menu_and_opens_the_window(self):
+        user = self._manager_of(self.company)
+        menu = self.env.ref("l10n_br_nfe.nfe_import_document")
+
+        wizard = self.env["l10n_br_fiscal_dfe_import.wizard"].with_user(user)
+        wizard = wizard.with_context(allowed_company_ids=[self.company.id])
+
+        self.assertTrue(wizard.create({}))
+        self.assertTrue(menu.with_user(user)._filter_visible_menus())
+
+    def test_uninstall_gives_the_menu_back_to_the_fiscal_manager_group(self):
+        uninstall_hook(self.env.cr, None)
+
+        menu = self.env.ref("l10n_br_nfe.nfe_import_document")
+        self.assertEqual(menu.groups_id, self.env.ref("l10n_br_fiscal.group_manager"))
+
+    def test_note_of_a_company_not_selected_in_the_switcher_is_refused(self):
+        user = self._manager_of(self.company | self.other_company)
+        service = self.Document.with_user(user).with_context(
+            allowed_company_ids=[self.company.id]
+        )
+        files = [
+            ("other.xml", self._other_company_xml(KEY_1)),
+            ("mine.xml", self._xml(KEY_2)),
+        ]
+
+        documents, errors = service.dfe_import_files(files)
+
+        self.assertEqual(documents.company_id, self.company)
+        self.assertEqual([name for name, _message in errors], ["other.xml"])
+        self.assertIn(self.other_company.name, errors[0][1])
+        self.assertFalse(self._imported(KEY_1, self.other_company))
+
+    def test_no_warning_leaves_the_field_unset_so_the_banner_stays_hidden(self):
+        documents, _errors = self.Document.dfe_import_files(
+            [("nfe.xml", self._xml(KEY_1))]
+        )
+
+        self.assertIs(documents.import_warning, False)
+        self.assertNotIn("fiscal operation", documents.import_warning or "")
+
+    def _depara_note(self, key, unit=b"UN", code=b"ZZ-NEW-1"):
+        xml = self._xml(key)
+        xml = re.sub(rb"<xProd>[^<]*</xProd>", b"<xProd>Odd name</xProd>", xml)
+        xml = re.sub(rb"<cProd>[^<]*</cProd>", b"<cProd>%s</cProd>" % code, xml)
+        xml = re.sub(rb"<uCom>[^<]*</uCom>", b"<uCom>%s</uCom>" % unit, xml)
+        return re.sub(rb"<uTrib>[^<]*</uTrib>", b"<uTrib>%s</uTrib>" % unit, xml)
+
+    def _supplier_product(self, uom=None, **info):
+        uom = uom or self.uom_unit
+        product = self.env["product.product"].create(
+            {"name": "Mapped product", "uom_id": uom.id, "uom_po_id": uom.id}
+        )
+        issuers = self.env["res.partner"].search(
+            [
+                "|",
+                ("cnpj_cpf_stripped", "=", "81583054000129"),
+                ("vat", "=", "81.583.054/0001-29"),
+            ]
+        )
+        for issuer in issuers:
+            vals = {
+                "partner_id": issuer.id,
+                "product_id": product.id,
+                "product_code": "ZZ-NEW-1",
+                "price": 1,
+            }
+            vals.update(info)
+            self.env["product.supplierinfo"].create(vals)
+        return product
+
+    @property
+    def uom_unit(self):
+        return self.env.ref("uom.product_uom_unit")
+
+    def test_product_mapped_for_the_same_supplier_enters_resolved(self):
+        product = self._supplier_product()
+
+        documents, _errors = self.Document.dfe_import_files(
+            [("nfe.xml", self._depara_note(KEY_2))]
+        )
+
+        line = documents.fiscal_line_ids
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.import_state, "resolved")
+
+    def test_product_found_by_internal_code_is_only_a_suggestion(self):
+        product = self.env["product.product"].create(
+            {"name": "Same code", "default_code": "ZZ-NEW-1"}
+        )
+        infos = self.env["product.supplierinfo"].search_count([])
+
+        documents, _errors = self.Document.dfe_import_files(
+            [("nfe.xml", self._depara_note(KEY_2))]
+        )
+
+        line = documents.fiscal_line_ids
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.import_state, "matched")
+        self.assertEqual(self.env["product.supplierinfo"].search_count([]), infos)
+
+    def test_product_without_any_match_stays_pending(self):
+        documents, _errors = self.Document.dfe_import_files(
+            [("nfe.xml", self._depara_note(KEY_2, code=b"NO-MATCH-1"))]
+        )
+
+        line = documents.fiscal_line_ids
+        self.assertEqual(line.import_state, "pending")
+
+    def test_resolving_by_hand_teaches_the_next_note_of_the_supplier(self):
+        first, _errors = self.Document.dfe_import_files(
+            [("one.xml", self._depara_note(KEY_2, code=b"NO-MATCH-2"))]
+        )
+        product = self.env["product.product"].create({"name": "Chosen by hand"})
+        line = first.fiscal_line_ids
+        line.product_id = product
+        line._apply_import_depara(product=product, uom=self.uom_unit)
+        domain = [("product_code", "=", "NO-MATCH-2"), ("product_id", "=", product.id)]
+        self.assertEqual(self.env["product.supplierinfo"].search_count(domain), 1)
+
+        second, _errors = self.Document.dfe_import_files(
+            [("two.xml", self._depara_note(KEY_3, code=b"NO-MATCH-2"))]
+        )
+
+        self.assertEqual(second.fiscal_line_ids.product_id, product)
+        self.assertEqual(second.fiscal_line_ids.import_state, "resolved")
+        self.assertEqual(self.env["product.supplierinfo"].search_count(domain), 1)
+
+    def test_learned_factor_only_holds_for_the_same_declared_unit(self):
+        kilo = self.env["uom.uom"]._match_by_fiscal_code("KG")
+        product = self._supplier_product(
+            uom=kilo, partner_uom_id=kilo.id, partner_uom_factor=2
+        )
+
+        same, _errors = self.Document.dfe_import_files(
+            [("kg.xml", self._depara_note(KEY_2, unit=b"KG"))]
+        )
+        other, _errors = self.Document.dfe_import_files(
+            [("un.xml", self._depara_note(KEY_3, unit=b"UN"))]
+        )
+
+        self.assertEqual(same.fiscal_line_ids.product_id, product)
+        self.assertEqual(same.fiscal_line_ids.import_state, "resolved")
+        self.assertEqual(same.fiscal_line_ids.quantity, 2)
+        self.assertEqual(other.fiscal_line_ids.import_state, "matched")
+        self.assertEqual(other.fiscal_line_ids.quantity, 2)
+
+    def test_product_mapped_for_another_supplier_is_not_resolved(self):
+        other = self.env["res.partner"].create({"name": "Another supplier"})
+        product = self._supplier_product()
+        product.seller_ids.write({"partner_id": other.id})
+
+        documents, _errors = self.Document.dfe_import_files(
+            [("nfe.xml", self._depara_note(KEY_2))]
+        )
+
+        self.assertEqual(documents.fiscal_line_ids.import_state, "pending")
+
+    def test_resolving_by_hand_records_the_declared_unit_and_factor(self):
+        kilo = self.env["uom.uom"]._match_by_fiscal_code("KG")
+        first, _errors = self.Document.dfe_import_files(
+            [("one.xml", self._depara_note(KEY_2, unit=b"KG", code=b"NO-MATCH-3"))]
+        )
+        product = self.env["product.product"].create({"name": "Chosen by hand"})
+        line = first.fiscal_line_ids
+        line.product_id = product
+        line.import_uom_factor = 2
+
+        line._apply_import_depara(product=product, uom=self.uom_unit)
+
+        info = self.env["product.supplierinfo"].search(
+            [("product_code", "=", "NO-MATCH-3")]
+        )
+        self.assertEqual((info.partner_uom_id, info.partner_uom_factor), (kilo, 2))
+
+    def test_confirming_the_suggestions_resolves_the_matched_lines_at_once(self):
+        product = self.env["product.product"].create(
+            {"name": "Same code", "default_code": "ZZ-NEW-1"}
+        )
+        documents, _errors = self.Document.dfe_import_files(
+            [("nfe.xml", self._depara_note(KEY_2))]
+        )
+        self.assertEqual(documents.import_state, "pending")
+
+        documents.action_confirm_suggestions()
+
+        self.assertEqual(documents.fiscal_line_ids.import_state, "resolved")
+        self.assertEqual(documents.import_state, "resolved")
+        self.assertEqual(documents.fiscal_line_ids.product_id, product)
