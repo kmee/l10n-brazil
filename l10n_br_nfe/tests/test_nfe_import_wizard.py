@@ -671,6 +671,34 @@ class NFeImportWizardTest(TransactionCase):
         self.wizard._import_edoc()
         self.assertEqual(len(self._supplierinfo(issuer)), 2)
 
+    def test_the_total_of_the_item_is_the_vprod_of_the_file(self):
+        """A price with more decimals than the price field keeps (12.3457), with
+        or without a unit factor: the total of the item of the document is the
+        vProd of the file (7 x 12.3457 = 86.42, not 7 x 12.35 = 86.45)."""
+        xml = (
+            self.xml_1.decode()
+            .replace("<qCom>1.0000</qCom>", "<qCom>7.0000</qCom>")
+            .replace("<qTrib>1.0000</qTrib>", "<qTrib>7.0000</qTrib>")
+            .replace("<vUnCom>14.0000000000</vUnCom>", "<vUnCom>12.3457</vUnCom>")
+            .replace("<vUnTrib>14.0000000000</vUnTrib>", "<vUnTrib>12.3457</vUnTrib>")
+            .replace("<vProd>14.00</vProd>", "<vProd>86.42</vProd>")
+            .replace("<vNF>14.00</vNF>", "<vNF>86.42</vNF>")
+            .encode()
+        )
+        for factor in (1, 12):
+            product = self._get_xml_product()
+            self._prepare_wizard(xml)
+            self.wizard.imported_products_ids.product_id = product
+            self.wizard.imported_products_ids.uom_conversion_factor = factor
+            self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+            self.wizard._import_edoc()
+            line = self.wizard.document_id.fiscal_line_ids
+            self.assertEqual(line.quantity, 7 * factor)
+            self.assertEqual(line.price_gross, 86.42, f"factor {factor}")
+            self.assertEqual(line.nfe40_vProd, 86.42)
+            self.assertEqual(line.document_id.amount_price_gross, 86.42)
+            self.wizard.document_id.unlink()
+
     def test_zip_batch_import(self):
         """A zip archive with several XMLs lands as several persisted
         documents waiting for review."""

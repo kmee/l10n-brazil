@@ -142,11 +142,13 @@ class DocumentLine(models.Model):
     import_price_gross = fields.Monetary(
         string="Import Gross Total",
         copy=False,
-        help="Total value of the item as the supplier file declared it (vProd), "
-        "kept when the de-para converts the unit with a factor: the unit price of "
-        "the line is the supplier price divided by the factor and has the "
-        "precision of the price, so quantity times price may not give back the "
-        "cents of the file. Empty when the line was not converted.",
+        help="Total value of the item as the supplier file declared it (vProd). "
+        "The unit price of the line has the precision of the price (and, when the "
+        "de-para converts the unit with a factor, is the supplier price divided "
+        "by it), so quantity times price may not give back the cents of the file: "
+        "the total of the line follows this value. Empty on a line that was not "
+        "imported with a total, and cleared when a person edits the quantity or "
+        "the price.",
     )
 
     import_uom_factor = fields.Float(
@@ -481,12 +483,12 @@ class DocumentLine(models.Model):
                 vals["price_unit"] = self.partner_price_unit / factor
                 # the unit price has the precision of the price and cannot give
                 # back, times the new quantity, the total of the file: the total
-                # of the file is the one that stays
-                vals["import_price_gross"] = self.currency_id.round(
-                    self.partner_quantity * self.partner_price_unit
+                # of the file (kept from the import) is the one that stays
+                vals["import_price_gross"] = self.import_price_gross or (
+                    self.currency_id.round(
+                        self.partner_quantity * self.partner_price_unit
+                    )
                 )
-            else:
-                vals["import_price_gross"] = 0.0
         if fiscal_operation:
             vals["fiscal_operation_id"] = fiscal_operation.id
         self.write(vals)

@@ -12915,6 +12915,6 @@ msgstr "Total bruto da importação"
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__import_price_gross
 msgid ""
-"Total value of the item as the supplier file declared it (vProd), kept when the de-para converts the unit with a factor: the unit price of the line is the supplier price divided by the factor and has the precision of the price, so quantity times price may not give back the cents of the file. Empty when the line was not converted."
+"Total value of the item as the supplier file declared it (vProd). The unit price of the line has the precision of the price (and, when the de-para converts the unit with a factor, is the supplier price divided by it), so quantity times price may not give back the cents of the file: the total of the line follows this value. Empty on a line that was not imported with a total, and cleared when a person edits the quantity or the price."
 msgstr ""
-"Valor total do item como o arquivo do fornecedor declarou (vProd), mantido quando o de-para converte a unidade com um fator: o preço unitário da linha é o preço do fornecedor dividido pelo fator e tem a precisão do preço, então quantidade vezes preço pode não devolver os centavos do arquivo. Vazio quando a linha não foi convertida."
+"Valor total do item como o arquivo do fornecedor declarou (vProd). O preço unitário da linha tem a precisão do preço (e, quando o de-para converte a unidade com um fator, é o preço do fornecedor dividido por ele), então quantidade vezes preço pode não devolver os centavos do arquivo: o total da linha segue este valor. Vazio na linha importada sem total, e limpo quando uma pessoa edita a quantidade ou o preço."

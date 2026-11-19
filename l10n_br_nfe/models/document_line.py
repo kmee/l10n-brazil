@@ -1257,6 +1257,11 @@ class NFeLine(spec_models.StackedModel):
 
         if key == "nfe40_vUnCom":
             vals["price_unit"] = float(value)
+        if key == "nfe40_vProd":
+            # the total of the item as the supplier declared it: the unit price
+            # has the precision of the price and cannot give it back times the
+            # quantity (7 x 12.3457 = 86.42 is not 7 x 12.35)
+            vals["import_price_gross"] = float(value)
         if key == "nfe40_NCM":
             vals["ncm_id"] = (
                 self.env["l10n_br_fiscal.ncm"]
