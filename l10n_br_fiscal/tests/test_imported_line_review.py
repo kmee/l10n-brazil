@@ -276,3 +276,38 @@ class TestImportedLineReview(TransactionCase):
         self.assertEqual(uom_model._match_by_fiscal_code("", "SACKX"), sack)
         self.assertFalse(uom_model._match_by_fiscal_code("NOPE"))
         self.assertFalse(uom_model._match_by_fiscal_code(False))
+
+    def test_search_unit_by_fiscal_code_and_alias(self):
+        """The unit is searched the way people think of it, and the list is exactly
+        the units that answer."""
+        uom_model = self.env["uom.uom"]
+        sack = uom_model.create(
+            {
+                "name": "Zz bag of 25 kg",
+                "category_id": self.uom_kg.category_id.id,
+                "uom_type": "bigger",
+                "factor_inv": 25.0,
+                "code": "ZZB",
+                "alias_ids": [(0, 0, {"code": "SACKX"})],
+            }
+        )
+        search = uom_model.with_context(uom_search_fiscal_code=True)
+        self.assertEqual(
+            [uom.id for uom, _name in self._names(search, "ZZB")], [sack.id]
+        )
+        self.assertEqual(
+            [uom.id for uom, _name in self._names(search, "SACKX")], [sack.id]
+        )
+        self.assertEqual(
+            [uom.id for uom, _name in self._names(search, "Zz bag")], [sack.id]
+        )
+        self.assertEqual(search.name_search("NOPE"), [])
+        # without the context the code is not searched
+        self.assertNotIn(
+            sack.id, [uom_id for uom_id, _name in uom_model.name_search("ZZB")]
+        )
+
+    def _names(self, model, term):
+        return [
+            (model.browse(uom_id), name) for uom_id, name in model.name_search(term)
+        ]
