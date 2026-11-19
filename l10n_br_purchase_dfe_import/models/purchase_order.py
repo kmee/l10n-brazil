@@ -25,7 +25,7 @@ class PurchaseOrder(models.Model):
             [
                 ("document_id.imported_document", "=", True),
                 ("document_id.state_edoc", "=", DOCUMENT_STATE_DRAFT),
-                ("document_id.fiscal_operation_type", "=", "in"),
+                ("document_id.fiscal_operation_type", "in", ("in", False)),
                 ("document_id.company_id", "in", orders.company_id.ids),
                 (
                     "document_id.partner_id.commercial_partner_id",

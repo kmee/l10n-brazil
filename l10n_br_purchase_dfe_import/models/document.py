@@ -30,6 +30,15 @@ class FiscalDocument(models.Model):
             document.fiscal_line_ids._suggest_import_origin()
         return result
 
+    def _dfe_import_suggest_operation(self, inf_nfe):
+        result = super()._dfe_import_suggest_operation(inf_nfe)
+        # the operation comes after the origins were decided: the destination
+        # of the order is applied now
+        self.fiscal_line_ids.filtered(
+            lambda line: line.import_origin_state == "resolved"
+        )._apply_import_origin_operation_line()
+        return result
+
     def action_confirm_import_origins(self):
         """Confirm, in one step, the origins suggested on the lines."""
         for document in self:

@@ -27,13 +27,28 @@ class DfeImportCase(TransactionCase):
         cls.Document = cls.env["l10n_br_fiscal.document"]
 
     @classmethod
-    def _xml(cls, key, recipient=None, product="Brand new thing"):
+    def _xml(cls, key, recipient=None, product="Brand new thing", replace=()):
         with open(os.path.join(FIXTURE_DIR, f"NFe{key}.xml"), "rb") as xml_file:
             content = xml_file.read()
         recipient = recipient or cls.company.partner_id.cnpj_cpf_stripped
         content = FIXTURE_DEST.sub(rb"\1<CNPJ>%s</CNPJ>" % recipient.encode(), content)
         content = content.replace(b"Cabinet with Doors", product.encode())
-        return content.replace(b"E-COM11", b"ZZ-NEW-1")
+        content = content.replace(b"E-COM11", b"ZZ-NEW-1")
+        for old, new in replace:
+            content = content.replace(old, new)
+        return content
+
+    def assert_window_action(self, action):
+        """What the web client needs to open an ir.actions.act_window."""
+        self.assertEqual(action["type"], "ir.actions.act_window")
+        self.assertTrue(action["res_model"])
+        self.assertIn(action["target"], ("current", "new"))
+        self.assertTrue(action["view_mode"])
+        self.assertTrue(action["views"])
+        for view_id, view_type in action["views"]:
+            self.assertIn(view_type, action["view_mode"])
+            self.assertTrue(view_id is False or isinstance(view_id, int))
+        self.assertTrue(action.get("res_id") or action.get("domain"))
 
     def _imported(self, key, company=None):
         return self.Document.search(
@@ -44,7 +59,7 @@ class DfeImportCase(TransactionCase):
             ]
         )
 
-    def _dfe_document(self, key, summary_only=True, days=0):
+    def _dfe_document(self, key, summary_only=True, days=0, recipient=None):
         dfe_document = self.env["l10n_br_fiscal_dfe.document"].create(
             {
                 "access_key": key,
@@ -64,5 +79,5 @@ class DfeImportCase(TransactionCase):
             }
         )
         if not summary_only:
-            dfe.create_xml_attachment(self._xml(key))
+            dfe.create_xml_attachment(self._xml(key, recipient=recipient))
         return dfe_document

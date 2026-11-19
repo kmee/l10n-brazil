@@ -9,6 +9,7 @@
         <field name="arch" type="xml">
             <xpath expr="//form/header" position="inside">
                 <field name="imported_document" invisible="1" />
+                <field name="import_state" invisible="1" />
                 <field name="move_ids" invisible="1" />
                 <button
                     name="action_generate_invoice"
@@ -16,7 +17,7 @@
                     string="Generate Invoice"
                     class="btn-primary"
                     groups="l10n_br_fiscal.group_user"
-                    attrs="{'invisible': ['|', ('imported_document', '=', False), ('move_ids', '!=', [])]}"
+                    attrs="{'invisible': ['|', '|', ('imported_document', '=', False), ('import_state', '!=', 'resolved'), ('move_ids', '!=', [])]}"
                 />
             </xpath>
         </field>

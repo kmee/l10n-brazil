@@ -27,5 +27,7 @@ class Document(models.Model):
             "type": "ir.actions.act_window",
             "res_model": "account.move",
             "res_id": move_form.id,
+            "views": [(False, "form")],
             "view_mode": "form",
+            "target": "current",
         }

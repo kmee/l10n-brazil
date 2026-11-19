@@ -144,8 +144,8 @@ class DocumentMatch(models.Model):
             JOIN res_partner rp ON rp.id = fd.partner_id
             JOIN res_company rc ON rc.id = fd.company_id
             WHERE fd.imported_document
-                AND fd.fiscal_operation_type = 'in'
-                AND fd.edoc_purpose = '1'
+                AND COALESCE(fd.fiscal_operation_type, 'in') = 'in'
+                AND COALESCE(fd.edoc_purpose, '1') = '1'
                 AND fd.state_edoc = '{DOCUMENT_STATE_DRAFT}'
                 AND NOT EXISTS (
                     SELECT 1 FROM account_move am

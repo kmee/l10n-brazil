@@ -18,6 +18,13 @@
                     This document was imported and is awaiting review: resolve
                     each line before generating the invoice.
                 </div>
+                <div
+                    class="alert alert-warning"
+                    role="alert"
+                    attrs="{'invisible': [('import_warning', '=', False)]}"
+                >
+                    <field name="import_warning" nolabel="1" readonly="1" />
+                </div>
             </xpath>
             <xpath
                 expr="//field[@name='fiscal_line_ids']/tree/field[@name='fiscal_amount_total']"
@@ -25,11 +32,30 @@
             >
                 <field
                     name="import_state"
+                    string="Review"
                     widget="badge"
                     decoration-success="import_state == 'resolved'"
                     decoration-warning="import_state in ('pending', 'matched')"
                     optional="show"
                 />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="dfe_document_form" model="ir.ui.view">
+        <field name="name">l10n_br_fiscal_dfe_import.dfe.document.form</field>
+        <field name="model">l10n_br_fiscal_dfe.document</field>
+        <field
+            name="inherit_id"
+            ref="l10n_br_fiscal_dfe.l10n_br_fiscal_dfe_document_form"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//form/sheet" position="after">
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" />
+                    <field name="activity_ids" />
+                    <field name="message_ids" />
+                </div>
             </xpath>
         </field>
     </record>
@@ -42,7 +68,12 @@
             <field name="name" position="after">
                 <field
                     name="import_state"
+                    string="Review"
                     attrs="{'invisible': [('import_state', '=', False)]}"
+                />
+                <field
+                    name="import_ncm_code"
+                    attrs="{'invisible': [('import_ncm_code', '=', False)]}"
                 />
                 <button
                     name="action_resolve_line"
@@ -50,6 +81,24 @@
                     string="Resolve"
                     class="btn-primary"
                     attrs="{'invisible': [('import_state', 'in', [False, 'resolved'])]}"
+                />
+            </field>
+        </field>
+    </record>
+
+    <record id="document_import_tree" model="ir.ui.view">
+        <field name="name">l10n_br_fiscal_dfe_import.document.tree</field>
+        <field name="model">l10n_br_fiscal.document</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.document_tree" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <field name="state_edoc" position="after">
+                <field
+                    name="import_state"
+                    string="Review"
+                    widget="badge"
+                    decoration-success="import_state == 'resolved'"
+                    decoration-warning="import_state in ('pending', 'in_progress')"
                 />
             </field>
         </field>

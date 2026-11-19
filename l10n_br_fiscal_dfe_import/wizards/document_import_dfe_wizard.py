@@ -155,23 +155,36 @@ class DocumentImportDfeWizard(models.TransientModel):
             "type": "ir.actions.act_window",
             "res_model": self._name,
             "res_id": self.id,
+            "views": [(False, "form")],
             "view_mode": "form",
             "target": "new",
         }
 
     def _documents_action(self, documents):
+        allowed = list(self.env.context.get("allowed_company_ids") or [])
+        allowed = allowed or self.env.companies.ids
+        allowed += [cid for cid in documents.company_id.ids if cid not in allowed]
         action = {
             "name": _("Imported Documents"),
             "type": "ir.actions.act_window",
             "res_model": "l10n_br_fiscal.document",
             "target": "current",
+            "context": {"allowed_company_ids": allowed},
         }
         if len(documents) == 1:
-            action.update({"res_id": documents.id, "view_mode": "form"})
+            action.update(
+                {
+                    "res_id": documents.id,
+                    "views": [(False, "form")],
+                    "view_mode": "form",
+                }
+            )
         else:
+            list_view = self.env.ref("l10n_br_fiscal_dfe_import.document_import_tree")
             action.update(
                 {
                     "domain": [("id", "in", documents.ids)],
+                    "views": [(list_view.id, "tree"), (False, "form")],
                     "view_mode": "tree,form",
                 }
             )
