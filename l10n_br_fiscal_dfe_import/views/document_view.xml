@@ -32,6 +32,7 @@
             >
                 <field
                     name="import_state"
+                    string="Review"
                     widget="badge"
                     decoration-success="import_state == 'resolved'"
                     decoration-warning="import_state in ('pending', 'matched')"
@@ -67,6 +68,7 @@
             <field name="name" position="after">
                 <field
                     name="import_state"
+                    string="Review"
                     attrs="{'invisible': [('import_state', '=', False)]}"
                 />
                 <field

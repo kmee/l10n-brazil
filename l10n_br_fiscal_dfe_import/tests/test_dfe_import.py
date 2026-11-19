@@ -14,6 +14,9 @@ from xsdata.formats.dataclass.transports import DefaultTransport
 
 from odoo import Command
 from odoo.exceptions import UserError
+from odoo.modules import get_module_resource
+from odoo.tools import file_open
+from odoo.tools.translate import TranslationFileReader
 
 from odoo.addons.l10n_br_nfe_dfe.tests.test_nfe_dfe import response_sucesso_individual
 
@@ -438,3 +441,11 @@ class TestDfeImport(DfeImportCase):
         action = wizard._documents_action(documents)
 
         self.assertEqual(action["views"][0], (view.id, "tree"))
+
+    def test_pt_br_translation_is_complete(self):
+        path = get_module_resource("l10n_br_fiscal_dfe_import", "i18n", "pt_BR.po")
+        with file_open(path, "rb") as po_file:
+            terms = list(TranslationFileReader(po_file, fileformat="po"))
+
+        self.assertFalse([term["src"] for term in terms if not term["value"]])
+        self.assertIn("Review", [term["src"] for term in terms])

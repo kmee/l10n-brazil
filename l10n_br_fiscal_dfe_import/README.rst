@@ -81,9 +81,13 @@ recipient CNPJ.
 
 **Review**
 
-The imported document shows a banner while its lines wait for review,
-and the Imported Documents menu has a filter for the documents awaiting
-review.
+The imported document is born with the inbound fiscal operation
+suggested from the CFOP declared by the issuer (on the header and on
+each line, with the inbound CFOP of the operation line), without
+changing the quantities, prices and taxes of the file. When no operation
+matches, or the NCM of the file is not in the registry, a banner tells
+what to choose. The Imported Documents menu has a column with the review
+state and a filter for the documents awaiting review.
 
 Known issues / Roadmap
 ======================
@@ -98,6 +102,12 @@ Known issues / Roadmap
 - Linking with purchases, stock and purchase requests, and the final
   manifestation of the recipient, are left to separate modules.
 - Models other than NF-e (CT-e, NFS-e) keep using the previous wizard.
+- The suggestion of the fiscal operation uses the lookup by the issuer
+  CFOP of the wizard (OCA/l10n-brazil#5718).
+- The import never creates registry records (NCM, CEST, CFOP, unit,
+  city, country); the NCM of the file is kept as declared on the line.
+  Partners it creates (issuer, carrier, delivery) are listed in the
+  document history.
 
 Bug Tracker
 ===========
