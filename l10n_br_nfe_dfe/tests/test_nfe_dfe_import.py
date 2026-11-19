@@ -301,12 +301,12 @@ class TestNFeDFeImportByKey(TransactionCase):
         ):
             return wizard.action_confirm_request()
 
-    def _fiscal_user(self):
+    def _fiscal_user(self, email=True):
         return self.env["res.users"].create(
             {
                 "name": "Fiscal importer",
                 "login": "nfe_dfe_importer",
-                "email": "nfe_dfe_importer@example.com",
+                "email": "nfe_dfe_importer@example.com" if email else False,
                 "company_id": self.company.id,
                 "company_ids": [Command.set(self.company.ids)],
                 "groups_id": [
@@ -390,3 +390,16 @@ class TestNFeDFeImportByKey(TransactionCase):
 
         self.assertEqual(dfe_document.manifestations_ids.create_uid, user)
         self.assertEqual(dfe_document.import_requested_user_id, user)
+
+    def test_common_fiscal_user_without_email_acknowledges(self):
+        user = self._fiscal_user(email=False)
+        dfe_document = self._summary()
+        wizard = self.Wizard.with_user(user).browse(
+            dfe_document.with_user(user).import_document()["res_id"]
+        )
+
+        self._acknowledge(wizard)
+
+        self.assertEqual(dfe_document.manifestations_ids.state, "done")
+        self.assertEqual(dfe_document.import_requested_user_id, user)
+        self.assertIn("Acknowledgement", dfe_document.message_ids[0].body)

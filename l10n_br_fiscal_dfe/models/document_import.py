@@ -14,11 +14,13 @@ class Document(models.Model):
             name, content, dfe_document=dfe_document
         )
         if created and dfe_document:
-            document.message_post(
+            # A note in the history, sent to nobody: message_post needs the email of
+            # the sender, which a fiscal user may not have
+            document._message_log(
                 body=_("Document created from the access key %s.")
                 % dfe_document.access_key
             )
-            dfe_document.sudo().message_post(
+            dfe_document.sudo()._message_log(
                 body=_("Fiscal document %s created.") % document.display_name
             )
         return document, created
