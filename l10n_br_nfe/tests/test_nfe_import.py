@@ -7,6 +7,7 @@ import os
 import re
 import zipfile
 from datetime import date
+from unittest import mock
 
 import nfelib
 from nfelib.nfe.bindings.v4_0.leiaute_nfe_v4_00 import TnfeProc
@@ -1113,3 +1114,39 @@ class TestNfeDocumentImport(EdiImportCase):
 
         self.assertIn("Transp Nova", errors[0][1])
         self.assertIn("11.222.333/0001-81", errors[0][1])
+
+    def test_the_note_issued_by_the_company_enters_as_an_authorized_sale(self):
+        recipient = "84148732000113"
+        key = "35200159594315000157550010000000992062777167"
+        xml = self._xml(
+            KEY_3,
+            recipient=recipient,
+            replace=[
+                (KEY_3.encode(), key.encode()),
+                (b"<nNF>3</nNF>", b"<nNF>99</nNF>"),
+            ],
+        )
+        sequences = self.env["ir.sequence"].search([])
+        numbers = sequences.mapped("number_next_actual")
+        sent = []
+
+        def send(document):
+            sent.append(document)
+
+        with mock.patch.object(type(self.Document), "action_document_send", send):
+            document = self._imported(xml)
+            product = self.env["product.product"].create({"name": "Own product"})
+            document.fiscal_line_ids.product_id = product
+            document.fiscal_line_ids.action_resolve_line()
+            document.action_document_confirm()
+
+        self.assertEqual(document.fiscal_operation_type, "out")
+        self.assertEqual(document.issuer, "company")
+        self.assertEqual(document.partner_id.cnpj_cpf_stripped, recipient)
+        self.assertEqual(
+            (document.document_number, document.document_serie), ("99", "1")
+        )
+        self.assertEqual(document.state_edoc, "autorizada")
+        self.assertFalse(sent)
+        self.assertEqual(sequences.mapped("number_next_actual"), numbers)
+        self.assertFalse(product.seller_ids)
