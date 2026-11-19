@@ -287,7 +287,7 @@ class DocumentImportWizard(models.TransientModel):
         self.ensure_one()
         documents = self.env["l10n_br_fiscal.document"]
         errors = []
-        archive = zipfile.ZipFile(io.BytesIO(base64.b64decode(self.file)))
+        archive = zipfile.ZipFile(io.BytesIO(base64.b64decode(self._file_data())))
         for name in archive.namelist():
             if not name.lower().endswith(".xml"):
                 continue
@@ -368,12 +368,30 @@ class DocumentImportWizard(models.TransientModel):
         if self.file and not self._file_is_zip():
             self._fill_wizard_from_binding()
 
+    def _file_data(self):
+        """The content of the uploaded file, as base64.
+
+        The web client reads the record with ``bin_size`` in the context, and then
+        the binary field comes back as its size ("1.2 Kb"), not as its content:
+        everything that decodes the file reads it here, without ``bin_size``.
+        """
+        self.ensure_one()
+        # None, not False: the cache of the binary field is keyed by the value of
+        # bin_size in the context, and a record that is not saved yet (the onchange)
+        # only has it under the key of a context that has no bin_size
+        return self.with_context(bin_size=None).file or self.file
+
     def _file_is_zip(self):
         """A zip archive with several fiscal files can be imported at once:
         each entry lands as a document waiting for review."""
-        if not self.file:
+        self.ensure_one()
+        data = self._file_data()
+        if not data:
             return False
-        return base64.b64decode(self.file)[:4] == b"PK\x03\x04"
+        try:
+            return base64.b64decode(data)[:4] == b"PK\x03\x04"
+        except ValueError:  # not base64 (binascii.Error is a ValueError)
+            return False
 
     def _fill_wizard_from_binding(self):
         binding = self._parse_file()
@@ -483,7 +501,7 @@ class DocumentImportWizard(models.TransientModel):
         return self.env["uom.uom"]._match_by_fiscal_code(*codes)
 
     def _parse_file(self):
-        return self._parse_file_data(self.file)
+        return self._parse_file_data(self._file_data())
 
     @api.model
     def _parse_file_data(self, file_data):

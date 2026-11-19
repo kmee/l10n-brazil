@@ -335,7 +335,7 @@ class Document(models.Model):
             _(
                 "- %(count)s line(s) not resolved yet (%(lines)s): confirm the "
                 "product of each one (Confirmed column of the import grid, or "
-                "Resolve button of the line in the document).",
+                "the check icon at the end of the line in the document).",
                 count=len(pending),
                 lines=", ".join(
                     (line.name or line.product_id.display_name or str(line.id))[:40]
