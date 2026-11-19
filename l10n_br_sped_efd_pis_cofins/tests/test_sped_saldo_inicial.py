@@ -300,3 +300,46 @@ class TestCreditOpeningImport(SpedEntradaCommon):
     def test_a_file_that_is_not_an_efd_contribuicoes_is_refused(self):
         with self.assertRaises(UserError):
             self._import("|9999|1|\n")
+
+
+@tagged("post_install", "-at_install")
+class TestCreditOpeningImportMenu(SpedEntradaCommon):
+    """The import of the opening balance is reachable with the list empty."""
+
+    profit_calculation = "real"
+
+    def test_the_import_is_reached_from_the_menu_with_the_list_empty(self):
+        """The button of the header of a list only shows with a line selected, and
+        the list of the opening balance is empty exactly for who needs the import:
+        it has its own menu item, next to the one of the opening balance."""
+        menu = self.env.ref("l10n_br_sped_efd_pis_cofins.menu_credit_opening_import")
+        action = self.env.ref(
+            "l10n_br_sped_efd_pis_cofins.credit_opening_import_action"
+        )
+        self.assertEqual(menu.action, action)
+        self.assertEqual(
+            menu.parent_id,
+            self.env.ref("l10n_br_sped_efd_pis_cofins.menu_credit_opening").parent_id,
+        )
+        manager = self.env["res.users"].create(
+            {
+                "name": "Accounting manager",
+                "login": "accounting_manager_credit_import",
+                "company_id": self.company.id,
+                "company_ids": [(6, 0, self.company.ids)],
+                "groups_id": [
+                    (
+                        6,
+                        0,
+                        [
+                            self.env.ref("base.group_user").id,
+                            self.env.ref("account.group_account_manager").id,
+                        ],
+                    )
+                ],
+            }
+        )
+        visible = (
+            self.env["ir.ui.menu"].with_user(manager)._visible_menu_ids(debug=False)
+        )
+        self.assertIn(menu.id, visible)

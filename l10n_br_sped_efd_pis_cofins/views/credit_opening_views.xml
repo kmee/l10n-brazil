@@ -45,13 +45,6 @@
         <field name="model">l10n_br_pis_cofins.credit.opening</field>
         <field name="arch" type="xml">
             <tree>
-                <header>
-                    <button
-                        name="%(credit_opening_import_action)d"
-                        type="action"
-                        string="Importar da EFD Contribuições"
-                    />
-                </header>
                 <field name="company_id" groups="base.group_multi_company" />
                 <field name="tax_domain" />
                 <field name="origin_period" />
@@ -118,6 +111,15 @@
         <field name="res_model">l10n_br_pis_cofins.credit.opening</field>
         <field name="view_mode">tree,form</field>
     </record>
+
+    <menuitem
+        id="menu_credit_opening_import"
+        name="Importar saldo inicial da EFD Contribuições"
+        parent="account.menu_finance_entries_actions"
+        action="credit_opening_import_action"
+        groups="account.group_account_manager"
+        sequence="93"
+    />
 
     <menuitem
         id="menu_credit_opening"
