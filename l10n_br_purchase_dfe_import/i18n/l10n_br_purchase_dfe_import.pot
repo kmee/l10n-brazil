@@ -512,3 +512,12 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_dfe_import.document_match_tree
 msgid "Without Order"
 msgstr ""
+
+#. module: l10n_br_purchase_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_purchase_dfe_import/models/document_match.py:0
+#, python-format
+msgid ""
+"The unit %(unit)s declared for the line %(line)s was not confirmed. Choose "
+"the unit on the line before using it here."
+msgstr ""
