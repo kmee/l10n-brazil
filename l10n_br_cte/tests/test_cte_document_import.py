@@ -1,6 +1,7 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import re
 from datetime import date
 
 from odoo.tools import file_open
@@ -41,16 +42,20 @@ def cte_xml(
     recipient=LUCRO_REAL,
     status=None,
     related=False,
+    emitter=None,
 ):
     """The demo CT-e, with the recipient moved to a company of the demo data.
 
     :param collection: the ``cobr`` group to add to the CT-e
     :param taker: CNPJ of a taker that is not the recipient (``toma4``)
+    :param emitter: CNPJ of the issuer, when it is not the one of the file
     :param status: cStat of the protocol; the CT-e then comes as a ``cteProc``
     """
     with file_open(CTE_FILE, "rb") as handle:
         xml = handle.read().decode()
     xml = xml.replace(FILE_RECIPIENT, recipient)
+    if emitter:
+        xml = re.sub(r"(<emit>\s*<CNPJ>)\d+", rf"\g<1>{emitter}", xml)
     if related:
         xml = xml.replace("</infNFe>", f"</infNFe>{OTHER_DOCUMENT}", 1)
     if collection:
@@ -77,17 +82,26 @@ class TestCteDocumentImport(EdiImportCase):
         cls.presumed = cls.env.ref("l10n_br_base.empresa_lucro_presumido")
         # the demo CT-e of the Simples Nacional company has this key
         cls.Document.search([("document_key", "=", CTE_KEY)]).unlink()
+        # and the demo CT-e of the company that issues the number of the file
+        cls.Document.search(
+            [
+                ("company_id", "=", cls.presumed.id),
+                ("document_type_id.code", "=", "57"),
+                ("document_number", "=", "573"),
+            ]
+        ).unlink()
 
-    def _import(self, content, model=None, operation=False):
+    def _import(self, content, model=None, operation=False, issued=False):
         """Import the file; with ``operation``, a person has chosen the operation of
         the document and of its line, as the review asks."""
         documents, errors, warnings = (
             self.Document if model is None else model
         )._edi_import_files([(f"{CTE_KEY}.xml", content)])
         if operation and documents:
-            documents.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+            prefix = "fo_venda" if issued else "fo_compras"
+            documents.fiscal_operation_id = self.env.ref(f"l10n_br_fiscal.{prefix}")
             documents.fiscal_line_ids.fiscal_operation_line_id = self.env.ref(
-                "l10n_br_fiscal.fo_compras_compras"
+                f"l10n_br_fiscal.{prefix}_{'venda' if issued else 'compras'}"
             )
         return documents, errors, warnings
 
@@ -130,6 +144,7 @@ class TestCteDocumentImport(EdiImportCase):
                 ("taker", LUCRO_PRESUMIDO),
                 ("recipient", LUCRO_REAL),
                 ("recipient", "12046835000161"),
+                ("issuer", "59594315000157"),
             ),
         )
         documents, errors, _warnings = self._import(cte_xml(taker=LUCRO_PRESUMIDO))
@@ -141,8 +156,44 @@ class TestCteDocumentImport(EdiImportCase):
         self.assertFalse(errors)
         self.assertEqual(documents.company_id, self.other_company)
 
+    def _sequences(self):
+        return self.env["ir.sequence"].search([]).read(["id", "number_next_actual"])
+
+    def test_a_cte_issued_by_the_company_becomes_an_outgoing_document(self):
+        sequences = self._sequences()
+        content = cte_xml(
+            COLLECTION, recipient="12345678000195", emitter=LUCRO_PRESUMIDO
+        )
+        documents, errors, _warnings = self._import(
+            content, operation=True, issued=True
+        )
+        self.assertFalse(errors)
+        self.assertEqual(documents.company_id, self.presumed)
+        self.assertEqual(documents.issuer, "company")
+        self.assertEqual(documents.fiscal_operation_type, "out")
+        self.assertEqual(documents.state_edoc, "em_digitacao")
+        self.assertTrue(documents.imported_document)
+        self.assertEqual(documents.partner_id.cnpj_cpf_stripped, "12345678000195")
+        self.assertEqual(documents.document_key, CTE_KEY)
+        self.assertEqual(
+            (documents.document_number, documents.document_serie), ("573", "1")
+        )
+        self.assertAlmostEqual(documents.fiscal_line_ids.price_unit, 100.0)
+        self.assertEqual(
+            [i.amount for i in documents._edi_get_installments()], [40.0, 60.0]
+        )
+        self.assertEqual(self._sequences(), sequences)
+
+    def test_a_cte_where_the_company_is_issuer_and_taker_enters_as_the_taker(self):
+        content = cte_xml(taker=LUCRO_PRESUMIDO, emitter=LUCRO_PRESUMIDO)
+        documents, errors, _warnings = self._import(content)
+        self.assertFalse(errors)
+        self.assertEqual(documents.company_id, self.presumed)
+        self.assertEqual(documents.issuer, "partner")
+
     def test_a_cte_for_no_company_is_refused(self):
-        documents, errors, _warnings = self._import(cte_xml(recipient="12345678000195"))
+        content = cte_xml(recipient="12345678000195", emitter="11444777000161")
+        documents, errors, _warnings = self._import(content)
         self.assertFalse(documents)
         self.assertIn("No company of this database", errors[0][1])
 

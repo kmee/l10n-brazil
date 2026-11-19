@@ -3,6 +3,7 @@
 
 import re
 
+from erpbrasil.base.fiscal.cnpj_cpf import formata
 from erpbrasil.base.misc import punctuation_rm
 from lxml import etree
 from nfelib.cte.bindings.v4_0.cte_v4_00 import Cte
@@ -101,20 +102,46 @@ class Document(models.Model):
     @api.model
     def _cte_company_vats(self, infcte):
         """Who may be the company, in order: the taker of the service, the
-        recipient and the sender."""
-        ide = infcte.ide
-        taker = None
-        if getattr(ide, "toma3", None) is not None:
-            party = TAKER_BY_CODE.get(str(_value(ide.toma3.toma)))
-            taker = _vat(getattr(infcte, party, None)) if party else False
-        elif getattr(ide, "toma4", None) is not None:
-            taker = _vat(ide.toma4)
+        recipient, the sender and the issuer. A CT-e in which the company is the
+        issuer and also the taker (own transport) enters as the taker."""
         vats = [
-            ("taker", taker),
+            ("taker", _vat(self._cte_taker(infcte))),
             ("recipient", _vat(getattr(infcte, "dest", None))),
             ("recipient", _vat(getattr(infcte, "rem", None))),
+            ("issuer", _vat(getattr(infcte, "emit", None))),
         ]
         return tuple((role, vat) for role, vat in vats if vat)
+
+    @api.model
+    def _cte_taker(self, infcte):
+        """The party of the CT-e that takes the service."""
+        ide = infcte.ide
+        if getattr(ide, "toma3", None) is not None:
+            code = TAKER_BY_CODE.get(str(_value(ide.toma3.toma)))
+            return getattr(infcte, code, None) if code else None
+        return getattr(ide, "toma4", None)
+
+    @api.model
+    def _cte_taker_partner(self, infcte):
+        """The partner of a CT-e issued by the company is its taker, as in a CT-e
+        that the company issues: found by the CNPJ or created from the file."""
+        taker = self._cte_taker(infcte)
+        digits = _vat(taker)
+        if not digits:
+            return self.env["res.partner"]
+        partner = self.env["res.partner"].search(
+            [("cnpj_cpf_stripped", "=", digits)], limit=1
+        )
+        return partner or self.env["res.partner"].create(
+            {
+                "name": taker.xNome,
+                "legal_name": taker.xNome,
+                "vat": formata(digits),
+                "is_company": len(digits) == 14,
+                "company_type": "company" if len(digits) == 14 else "person",
+                "country_id": self.env.ref("base.br").id,
+            }
+        )
 
     @api.model
     def _cte_status(self, status_code):
@@ -130,7 +157,13 @@ class Document(models.Model):
     def _edi_import_create(self, parsed, company, role):
         if parsed.reader != "cte":
             return super()._edi_import_create(parsed, company, role)
-        document = self.import_binding_cte(parsed.binding, edoc_type="in")
+        issued = role == "issuer"
+        document = self.import_binding_cte(
+            parsed.binding, edoc_type="out" if issued else "in"
+        )
+        if issued:
+            cte = getattr(parsed.binding, "CTe", None) or parsed.binding
+            document.partner_id = self._cte_taker_partner(cte.infCte)
         for line in document.fiscal_line_ids:
             line.partner_cfop_id = line.cfop_id
         return document
