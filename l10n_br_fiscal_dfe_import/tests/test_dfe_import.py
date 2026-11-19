@@ -9,6 +9,7 @@ from io import BytesIO
 from types import SimpleNamespace
 from unittest import mock
 
+from lxml import etree
 from xsdata.formats.dataclass.transports import DefaultTransport
 
 from odoo import Command
@@ -366,3 +367,11 @@ class TestDfeImport(DfeImportCase):
 
     def _other_company_xml(self, key):
         return self._xml(key, recipient=self.other_company.partner_id.cnpj_cpf_stripped)
+
+    def test_confirmation_text_uses_the_full_width_of_the_dialog(self):
+        arch = self.env["l10n_br_fiscal_dfe_import.wizard"].get_view(view_type="form")
+        form = etree.fromstring(arch["arch"])
+
+        message = form.xpath("//field[@name='confirm_message']")[0]
+
+        self.assertFalse(message.xpath("ancestor::group"))

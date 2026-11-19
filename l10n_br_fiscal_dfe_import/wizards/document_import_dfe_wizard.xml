@@ -13,9 +13,13 @@
                     <field name="access_key" />
                     <field name="attachment_ids" widget="many2many_binary" />
                 </group>
-                <group attrs="{'invisible': [('state', '!=', 'confirm')]}">
+                <div
+                    class="alert alert-warning"
+                    role="alert"
+                    attrs="{'invisible': [('state', '!=', 'confirm')]}"
+                >
                     <field name="confirm_message" nolabel="1" />
-                </group>
+                </div>
                 <footer>
                     <button
                         name="action_import"
