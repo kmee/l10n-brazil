@@ -5,8 +5,10 @@ import logging
 import zipfile
 from io import BytesIO
 
+from erpbrasil.base.fiscal.cnpj_cpf import formata
+
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_ISSUER_COMPANY,
@@ -44,7 +46,7 @@ class Document(models.Model):
     @api.depends(
         "imported_document",
         "fiscal_operation_id",
-        "amount_financial_total",
+        "fiscal_amount_total",
         "fiscal_line_ids.partner_ncm_code",
         "fiscal_line_ids.ncm_id",
         "fiscal_line_ids.uom_id",
@@ -66,7 +68,7 @@ class Document(models.Model):
         if not self.fiscal_operation_id:
             messages.append(
                 _(
-                    "No fiscal operation matches the CFOP of the issuer: choose the "
+                    "No fiscal operation matches the CFOP of the document: choose the "
                     "fiscal operation of the document and the operation line of "
                     "each line."
                 )
@@ -159,11 +161,18 @@ class Document(models.Model):
             return existing, False
         self._edi_import_check(parsed, company)
         last_partner = self.env["res.partner"].search([], order="id desc", limit=1)
-        document = (
-            self.with_company(company)
-            .with_context(**{EDI_IMPORT_NO_CREATE: True})
-            ._edi_import_create(parsed, company, role)
-        )
+        try:
+            document = (
+                self.with_company(company)
+                .with_context(**{EDI_IMPORT_NO_CREATE: True})
+                ._edi_import_create(parsed, company, role)
+            )
+        except AccessError as error:
+            if self.env["res.partner"].check_access_rights(
+                "create", raise_exception=False
+            ):
+                raise
+            raise UserError(self._edi_import_partner_denied(parsed)) from error
         document.with_context(
             **{LAST_PARTNER_CONTEXT_KEY: last_partner.id}
         )._edi_import_after_create(parsed, role)
@@ -215,6 +224,28 @@ class Document(models.Model):
                 % company.display_name
             )
         return company, role
+
+    @api.model
+    def _edi_import_partner_hint(self, parsed):
+        """Name and CNPJ/CPF of the partner the file needs to be registered, as
+        ``(name, vat)``. A reader that knows the name overrides it; the base knows
+        only the document of the issuer."""
+        return "", parsed.issuer_vat
+
+    @api.model
+    def _edi_import_partner_denied(self, parsed):
+        """Message for a user who cannot create contacts when the file needs one."""
+        name, vat = self._edi_import_partner_hint(parsed)
+        partner = " ".join(
+            part
+            for part in (name, formata(vat) and f"(CNPJ/CPF {formata(vat)})")
+            if part
+        )
+        return _(
+            "The file %(file)s requires registering the partner %(partner)s, and you "
+            "are not allowed to create contacts. Ask someone who can to register "
+            "it, or ask for the permission, and import the file again."
+        ) % {"file": parsed.file_name, "partner": partner or _("(unknown)")}
 
     @api.model
     def _edi_import_check(self, parsed, company):
@@ -271,7 +302,9 @@ class Document(models.Model):
             .search([("id", ">", floor), ("create_uid", "=", self.env.uid)])
         )
         if new_partners:
-            self.message_post(
+            # A note in the history, sent to nobody: message_post needs the email of
+            # the sender, which a fiscal user may not have
+            self._message_log(
                 body=_("Partners created by the import: %s.")
                 % ", ".join(new_partners.mapped("display_name"))
             )
@@ -281,8 +314,8 @@ class Document(models.Model):
         decided is never undone."""
         for document in self.filtered("imported_document"):
             document._init_import_states()
+            document._edi_import_suggest_operation()
             if document.fiscal_operation_type == FISCAL_IN:
-                document._edi_import_suggest_operation()
                 document._edi_import_apply_supplier_depara()
             for line in document.fiscal_line_ids.filtered(
                 lambda line: line.import_state == "matched"
@@ -292,19 +325,35 @@ class Document(models.Model):
 
     def _edi_import_suggest_operation(self):
         """The operation of the document and of each line that has none, from the
-        CFOP the issuer declared."""
+        CFOP declared in the file: the inverse of the issuer for a document received,
+        the very CFOP for a document the company issued elsewhere. Nothing is
+        assigned when nothing matches: an empty operation would recompute the
+        direction of the document."""
         self.ensure_one()
-        if not self.fiscal_operation_id:
-            self.fiscal_operation_id = self._suggest_fiscal_operation()
-        if not self.fiscal_operation_id:
+        direction = self.fiscal_operation_type
+        if not direction:
             return
         operation_lines = self.env["l10n_br_fiscal.operation.line"]
-        for line in self.fiscal_line_ids.filtered(
-            lambda line: not line.fiscal_operation_line_id
-        ):
-            operation_line = operation_lines._find_by_issuer_cfop(
-                line.partner_cfop_id, self.operation_name, FISCAL_IN
+        found = {
+            line: operation_lines._find_by_issuer_cfop(
+                line.partner_cfop_id, self.partner_operation_name, direction
             )
+            for line in self.fiscal_line_ids.filtered(
+                lambda line: not line.fiscal_operation_line_id
+            )
+        }
+        if not self.fiscal_operation_id:
+            if direction == FISCAL_IN:
+                operation = self._suggest_fiscal_operation()
+            else:
+                votes = [op_line.fiscal_operation_id for op_line in found.values()]
+                votes = [operation for operation in votes if operation]
+                operation = votes and max(set(votes), key=votes.count)
+            if operation:
+                self.fiscal_operation_id = operation
+        if not self.fiscal_operation_id:
+            return
+        for line, operation_line in found.items():
             line.fiscal_operation_id = (
                 operation_line.fiscal_operation_id or self.fiscal_operation_id
             )
@@ -373,10 +422,15 @@ class Document(models.Model):
         }
 
     def action_document_confirm(self):
-        """An imported document is confirmed only when every line was reviewed."""
-        for document in self.filtered(
+        """An imported document is confirmed only when every line was reviewed.
+
+        One that the company issued in another system is already authorized there:
+        it is confirmed as authorized, never validated and sent again.
+        """
+        drafts = self.filtered(
             lambda doc: doc.imported_document and doc.state_edoc == DOCUMENT_STATE_DRAFT
-        ):
+        )
+        for document in drafts:
             unresolved = document.fiscal_line_ids.filtered(
                 lambda line: line.import_state in ("pending", "matched")
             )
@@ -391,4 +445,7 @@ class Document(models.Model):
                         "lines": "\n".join(unresolved.mapped("name")),
                     }
                 )
-        return super().action_document_confirm()
+        own = drafts.filtered(lambda doc: doc.issuer == DOCUMENT_ISSUER_COMPANY)
+        for document in own:
+            document._trigger_fsm("action_confirm_authorized")
+        return super(Document, self - own).action_document_confirm()
