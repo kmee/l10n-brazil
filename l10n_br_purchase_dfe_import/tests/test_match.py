@@ -193,7 +193,7 @@ class TestMatch(PurchaseImportCase):
         )
         values.update(columns)
         return (
-            f"SELECT 399 AS id, '{kind}' AS kind, 'x'::varchar AS description, "
+            f"SELECT 2000000003 AS id, '{kind}' AS kind, 'x'::varchar AS description, "
             "NULL::varchar AS declared_reference, 1.0::float AS quantity, "
             "1.0::float AS open_quantity, 1.0::float AS price_unit, "
             "'r'::varchar AS reference, NULL::date AS date, "
@@ -218,11 +218,13 @@ class TestMatch(PurchaseImportCase):
                 "SELECT id, extra_flag FROM (%s) t ORDER BY id"
                 % self.Match._table_query
             )
-            rows = self.env.cr.fetchall()
+            rows = dict(self.env.cr.fetchall())
 
-        self.assertEqual(rows[-1], (399, 7))
+        self.assertEqual(rows[2000000003], 7)
         self.assertTrue(len(rows) > 2)
-        self.assertEqual({flag for _id, flag in rows[:-1]}, {None})
+        self.assertEqual(
+            {flag for row_id, flag in rows.items() if row_id != 2000000003}, {None}
+        )
 
     def test_a_row_without_partner_is_listed_for_the_supplier_of_the_document(self):
         self._resolve_product()
@@ -243,4 +245,4 @@ class TestMatch(PurchaseImportCase):
             domain = self.document.action_open_origin_match()["domain"]
             found = self.Match.search(domain)
 
-        self.assertIn(399, found.ids)
+        self.assertIn(2000000003, found.ids)
