@@ -2304,7 +2304,7 @@ msgstr ""
 #: model:ir.ui.menu,name:l10n_br_nfe.nfe_import_document
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe.l10n_br_nfe_product_supplierinfo_form_view
 msgid "Import"
-msgstr ""
+msgstr "Importar"
 
 #. module: l10n_br_nfe
 #: model:ir.model,name:l10n_br_nfe.model_l10n_br_fiscal_document_import_wizard

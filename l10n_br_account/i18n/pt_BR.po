@@ -2730,7 +2730,7 @@ msgstr "Total fiscal"
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__fiscal_amount_untaxed
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_payment__fiscal_amount_untaxed
 msgid "Fiscal Amount Untaxed"
-msgstr ""
+msgstr "Valor Fiscal sem Impostos"
 
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_line__fiscal_deductions_value

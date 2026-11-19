@@ -688,7 +688,7 @@ msgstr ""
 #. module: l10n_br_fiscal_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.document_search
 msgid "Rejected"
-msgstr ""
+msgstr "Rejeitada"
 
 #. module: l10n_br_fiscal_edi
 #: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document__state_edoc__rejeitada
@@ -728,7 +728,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.document_search
 #, python-format
 msgid "Sending"
-msgstr ""
+msgstr "Enviando"
 
 #. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_event__sequence
