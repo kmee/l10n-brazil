@@ -71,11 +71,14 @@ class Document(models.Model):
             document.import_warning = "\n".join(messages) or False
 
     @api.model
-    def dfe_import_files(self, files):
+    def dfe_import_files(self, files, warnings=None):
         """Import NF-e XML files as draft fiscal documents.
 
         :param files: iterable of (file name, content in bytes); a zip file
             stands for the files it contains.
+        :param warnings: optional list that receives (file name, message) of
+            the files whose note was already imported (the document returned
+            is the existing one).
         :return: (documents, errors): the documents created or already
             imported, and a list of (file name, message) of the files that
             were not imported. Each file runs in its own savepoint.
@@ -85,7 +88,18 @@ class Document(models.Model):
         for name, content in self._dfe_import_expand(files):
             try:
                 with self.env.cr.savepoint():
-                    documents |= self._dfe_import_file(name, content)
+                    document, created = self._dfe_import_file(name, content)
+                    documents |= document
+                    if not created and warnings is not None:
+                        warnings.append(
+                            (
+                                name,
+                                _(
+                                    "This note was already imported; the "
+                                    "existing document was opened."
+                                ),
+                            )
+                        )
             except UserError as error:
                 _logger.info("Import of %s refused: %s", name, error)
                 errors.append((name, str(error)))
@@ -133,7 +147,7 @@ class Document(models.Model):
             limit=1,
         )
         if existing:
-            return existing
+            return existing, False
         self._dfe_import_check_dfe_state(access_key, company)
         last_partner = self.env["res.partner"].search([], order="id desc", limit=1)
         document = (
@@ -159,7 +173,7 @@ class Document(models.Model):
                 body=_("Partners created by the import: %s.")
                 % ", ".join(new_partners.mapped("display_name"))
             )
-        return document
+        return document, True
 
     def _dfe_import_restore_ncm(self):
         """The NCM of an imported line is the one of the file: matching a

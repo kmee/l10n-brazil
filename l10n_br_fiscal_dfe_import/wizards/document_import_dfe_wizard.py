@@ -1,10 +1,13 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import logging
 from datetime import timedelta
 
 from odoo import _, fields, models
 from odoo.exceptions import UserError
+
+_logger = logging.getLogger(__name__)
 
 # the acknowledgement (ciência) is only accepted until 10 days after the
 # authorization (Ajuste SINIEF 07/05, cláusula décima quinta-C, par. 4)
@@ -65,7 +68,10 @@ class DocumentImportDfeWizard(models.TransientModel):
         )
 
     def _import_files(self, files, dfe_document=None):
-        documents, errors = self.env["l10n_br_fiscal.document"].dfe_import_files(files)
+        warnings = []
+        documents, errors = self.env["l10n_br_fiscal.document"].dfe_import_files(
+            files, warnings=warnings
+        )
         if dfe_document:
             for document in documents.filtered(
                 lambda doc: not any(
@@ -88,8 +94,16 @@ class DocumentImportDfeWizard(models.TransientModel):
         if errors:
             return self._notification(
                 _("Some files were not imported"),
-                messages,
+                "\n".join([messages] + [f"{n}: {m}" for n, m in warnings]),
                 "warning",
+                sticky=True,
+                action=action,
+            )
+        if warnings:
+            return self._notification(
+                _("Note already imported"),
+                "\n".join(f"{name}: {message}" for name, message in warnings),
+                "info",
                 sticky=True,
                 action=action,
             )
@@ -101,9 +115,21 @@ class DocumentImportDfeWizard(models.TransientModel):
         if access_key[20:22] != "55":
             raise UserError(_("Only NF-e (model 55) can be imported by access key."))
         company = self.env.company
+        existing = self.env["l10n_br_fiscal.document"].search(
+            [("document_key", "=", access_key), ("company_id", "=", company.id)],
+            limit=1,
+        )
+        if existing:
+            return self._notification(
+                _("Note already imported"),
+                _("This note was already imported; the existing document was opened."),
+                "info",
+                sticky=True,
+                action=self._documents_action(existing),
+            )
         dfe_document = self._find_dfe_document(access_key, company)
         if not dfe_document:
-            company._dfe_search_specific_document("nfe", access_key=access_key)
+            self._search_distribution(company, access_key)
             dfe_document = self._find_dfe_document(access_key, company)
         if not dfe_document:
             raise UserError(
@@ -121,6 +147,20 @@ class DocumentImportDfeWizard(models.TransientModel):
                 [(attachment.name, attachment.raw)], dfe_document=dfe_document
             )
         return self._ask_acknowledgement(dfe_document)
+
+    def _search_distribution(self, company, access_key):
+        try:
+            company._dfe_search_specific_document("nfe", access_key=access_key)
+        except UserError:
+            raise
+        except Exception as error:  # pylint: disable=broad-except
+            _logger.warning("DF-e query of %s failed", access_key, exc_info=True)
+            raise UserError(
+                _(
+                    "The distribution service could not be reached now. Try "
+                    "again later or upload the XML file of the note."
+                )
+            ) from error
 
     def _find_dfe_document(self, access_key, company):
         return (

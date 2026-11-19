@@ -79,6 +79,54 @@ class TestDfeImport(DfeImportCase):
         self.assertFalse(errors)
         self.assertEqual(first, second)
 
+    def test_repeated_note_opens_the_document_with_a_warning(self):
+        wizard = self.env["l10n_br_fiscal_dfe_import.wizard"]
+        attachment = self.env["ir.attachment"].create(
+            {"name": "nfe.xml", "raw": self._xml(KEY_1)}
+        )
+        first = wizard.create(
+            {"attachment_ids": [Command.set(attachment.ids)]}
+        ).action_import()
+        again = self.env["ir.attachment"].create(
+            {"name": "nfe.xml", "raw": self._xml(KEY_1)}
+        )
+
+        second = wizard.create(
+            {"attachment_ids": [Command.set(again.ids)]}
+        ).action_import()
+
+        self.assertEqual(second["tag"], "display_notification")
+        self.assertIn("already imported", second["params"]["message"])
+        self.assertEqual(second["params"]["next"]["res_id"], first["res_id"])
+
+    def test_repeated_key_opens_the_document_without_asking_the_distribution(self):
+        document, _errors = self.Document.dfe_import_files(
+            [("nfe.xml", self._xml(KEY_1))]
+        )
+        wizard = self.env["l10n_br_fiscal_dfe_import.wizard"].create(
+            {"access_key": KEY_1}
+        )
+        company_model = type(self.company)
+
+        with mock.patch.object(
+            company_model, "_dfe_search_specific_document", side_effect=AssertionError
+        ):
+            action = wizard.action_import()
+
+        self.assertIn("already imported", action["params"]["message"])
+        self.assertEqual(action["params"]["next"]["res_id"], document.id)
+
+    def test_connection_failure_with_the_distribution_is_a_clear_message(self):
+        wizard = self.env["l10n_br_fiscal_dfe_import.wizard"].create(
+            {"access_key": KEY_1}
+        )
+        company_model = type(self.company)
+
+        with mock.patch.object(
+            company_model, "_dfe_search_specific_document", side_effect=OSError("down")
+        ), self.assertRaisesRegex(UserError, "could not be reached"):
+            wizard.action_import()
+
     def test_zip_with_two_notes_and_an_invalid_file(self):
         buffer = BytesIO()
         with zipfile.ZipFile(buffer, "w") as archive:
@@ -195,14 +243,14 @@ class TestDfeImport(DfeImportCase):
             self.env["ir.attachment"].create(
                 {"name": f"{key}.xml", "raw": self._xml(key)}
             )
-            for key in (KEY_1, KEY_2)
+            for key in (KEY_1, KEY_2, KEY_3)
         ]
 
         single = wizard.create(
             {"attachment_ids": [Command.set(attachments[0].ids)]}
         ).action_import()
         both = wizard.create(
-            {"attachment_ids": [Command.set([a.id for a in attachments])]}
+            {"attachment_ids": [Command.set([a.id for a in attachments[1:]])]}
         ).action_import()
 
         self.assert_window_action(single)
