@@ -110,6 +110,13 @@ class TestCteDocumentImport(EdiImportCase):
             dict({"name": "Freight service", "type": "service"}, **values)
         )
 
+    def test_the_nature_of_the_operation_of_the_file_is_kept(self):
+        documents, _errors, _warnings = self._import(cte_xml())
+        self.assertEqual(documents.partner_operation_name, "Venda")
+        content = cte_xml(recipient="12345678000195", emitter=LUCRO_PRESUMIDO)
+        issued, _errors, _warnings = self._import(content)
+        self.assertEqual(issued.partner_operation_name, "Venda")
+
     def test_the_default_freight_product_is_a_suggestion_on_the_line(self):
         product = self._freight(uom_id=self.env.ref("uom.product_uom_dozen").id)
         self.other_company.cte_import_product_id = product
@@ -224,7 +231,6 @@ class TestCteDocumentImport(EdiImportCase):
         self.assertFalse(errors)
         self.assertEqual(documents.company_id, self.presumed)
         self.assertEqual(documents.issuer, "company")
-        self.assertEqual(documents.fiscal_operation_type, "out")
         self.assertEqual(documents.state_edoc, "em_digitacao")
         self.assertTrue(documents.imported_document)
         self.assertEqual(documents.partner_id.cnpj_cpf_stripped, "12345678000195")

@@ -180,11 +180,12 @@ class Document(models.Model):
         document = self.import_binding_cte(
             parsed.binding, edoc_type="out" if issued else "in"
         )
+        cte = getattr(parsed.binding, "CTe", None) or parsed.binding
         if issued:
-            cte = getattr(parsed.binding, "CTe", None) or parsed.binding
             document.partner_id = self._cte_taker_partner(cte.infCte)
         else:
             self._cte_suggest_product(document, company)
+        document.partner_operation_name = cte.infCte.ide.natOp
         for line in document.fiscal_line_ids:
             line.partner_cfop_id = line.cfop_id
         return document
