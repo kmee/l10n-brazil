@@ -13,7 +13,7 @@ from lxml import etree
 from xsdata.formats.dataclass.transports import DefaultTransport
 
 from odoo import Command
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 from odoo.modules import get_module_resource
 from odoo.tools import file_open
 from odoo.tools.translate import TranslationFileReader
@@ -496,3 +496,42 @@ class TestDfeImport(DfeImportCase):
         line = documents.fiscal_line_ids
         self.assertTrue(line.product_id)
         self.assertEqual(line.import_state, "pending")
+
+    def _fiscal_user(self):
+        return self.env["res.users"].create(
+            {
+                "name": "Fiscal only",
+                "login": "dfe_fiscal_only",
+                "groups_id": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            self.env.ref("l10n_br_fiscal.group_manager").id,
+                        ]
+                    )
+                ],
+            }
+        )
+
+    def test_fiscal_user_without_the_nfe_group_cannot_open_the_window(self):
+        user = self._fiscal_user()
+        menu = self.env.ref("l10n_br_nfe.nfe_import_document")
+
+        with self.assertRaises(AccessError):
+            self.env["l10n_br_fiscal_dfe_import.wizard"].with_user(user).create({})
+        self.assertFalse(menu.with_user(user)._filter_visible_menus())
+
+    def test_nfe_manager_sees_the_menu_and_opens_the_window(self):
+        user = self._manager_of(self.company)
+        menu = self.env.ref("l10n_br_nfe.nfe_import_document")
+
+        wizard = self.env["l10n_br_fiscal_dfe_import.wizard"].with_user(user)
+
+        self.assertTrue(wizard.create({}))
+        self.assertTrue(menu.with_user(user)._filter_visible_menus())
+
+    def test_uninstall_gives_the_menu_back_to_the_fiscal_manager_group(self):
+        uninstall_hook(self.env.cr, None)
+
+        menu = self.env.ref("l10n_br_nfe.nfe_import_document")
+        self.assertEqual(menu.groups_id, self.env.ref("l10n_br_fiscal.group_manager"))
