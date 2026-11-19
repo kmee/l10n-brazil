@@ -704,6 +704,7 @@ class AccountMove(models.Model):
         reason = fiscal_document._import_block_reason()
         if reason:
             raise UserError(reason)
+        fiscal_document._check_import_review()
         if move_id:
             move = self.env["account.move"].browse(move_id)
         else:

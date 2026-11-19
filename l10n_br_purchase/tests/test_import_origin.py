@@ -1,6 +1,7 @@
 # Copyright 2026 KMEE - Luis Felipe Mileo <mileo@kmee.com.br>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, tagged
 
 
@@ -56,13 +57,35 @@ class TestImportOrigin(TransactionCase):
             )
         return document
 
-    def test_the_reference_of_the_file_is_suggested(self):
+    def test_the_reference_of_the_file_is_resolved(self):
+        """The supplier declared the order and the item and exactly one open
+        line has the product: there is nothing left to decide."""
         count = len(self.order.order_line)
         document = self._document([(self.order.name, str(n + 1)) for n in range(count)])
         document._init_import_states()
         self.assertEqual(
             document.fiscal_line_ids.mapped("import_purchase_line_id"),
             self.order.order_line,
+        )
+        self.assertEqual(
+            set(document.fiscal_line_ids.mapped("import_origin_state")), {"resolved"}
+        )
+
+    def test_the_only_open_line_of_the_product_is_just_suggested(self):
+        """Without a reference of the file the only open line of the supplier
+        for the product is a guess, and a person confirms it."""
+        order = self.order
+        for line in order.order_line:
+            repeated = order.order_line.filtered(
+                lambda other, line=line: other.product_id == line.product_id
+            )
+            if len(repeated) > 1:
+                self.skipTest("the demo order repeats a product")
+        document = self._document([(False, False)] * len(order.order_line))
+        document._init_import_states()
+        self.assertEqual(
+            document.fiscal_line_ids.mapped("import_purchase_line_id"),
+            order.order_line,
         )
         self.assertEqual(
             set(document.fiscal_line_ids.mapped("import_origin_state")), {"suggested"}
@@ -88,6 +111,8 @@ class TestImportOrigin(TransactionCase):
         self.assertEqual(
             set(document.fiscal_line_ids.mapped("import_origin_state")), {"resolved"}
         )
+        # the bill takes reviewed lines only
+        document.fiscal_line_ids.action_resolve_line()
         move_form = (
             self.env["account.move"]
             .with_company(self.order.company_id)
@@ -98,8 +123,7 @@ class TestImportOrigin(TransactionCase):
         self.assertEqual(move.invoice_origin, self.order.name)
 
     def test_confirming_the_suggestions(self):
-        count = len(self.order.order_line)
-        document = self._document([(self.order.name, str(n + 1)) for n in range(count)])
+        document = self._document([(False, False)] * len(self.order.order_line))
         document._init_import_states()
         self.assertTrue(document.has_suggested_import_origin)
         document.action_confirm_import_origins()
@@ -136,3 +160,111 @@ class TestImportOrigin(TransactionCase):
         # the field offers the candidates and the line already chosen
         domain = line._fields["import_purchase_line_id"].domain
         self.assertIn("import_origin_candidate_ids", domain)
+
+    def test_an_origin_not_confirmed_blocks_the_bill(self):
+        """An origin only suggested, or still pending, is not a decision: the
+        bill is refused and the message says what to do."""
+        count = len(self.order.order_line)
+        document = self._document([(self.order.name, str(n + 1)) for n in range(count)])
+        document._init_import_states()
+        document.fiscal_line_ids.action_resolve_line()
+        line = document.fiscal_line_ids[0]
+        for state in ("suggested", "pending"):
+            line.with_context(import_origin_suggestion=True).write(
+                {"import_origin_state": state}
+            )
+            with self.assertRaisesRegex(UserError, "Confirm Origins"):
+                document._check_document_import()
+            with self.assertRaisesRegex(UserError, "Confirm Origins"):
+                self.env["account.move"].import_fiscal_document(document)
+            with self.assertRaisesRegex(UserError, "Confirm Origins"):
+                document.action_document_confirm()
+        document.action_confirm_import_origins()
+        line.import_origin_state = "resolved"
+        document._check_document_import()  # must not raise
+
+    def test_the_bill_links_only_the_origin_that_was_decided(self):
+        """A suggestion is not linked to the order: the order only counts what
+        was decided (or what the supplier declared with no doubt)."""
+        count = len(self.order.order_line)
+        document = self._document([(self.order.name, str(n + 1)) for n in range(count)])
+        document._init_import_states()
+        document.fiscal_line_ids.action_resolve_line()
+        move_form = (
+            self.env["account.move"]
+            .with_company(self.order.company_id)
+            .import_fiscal_document(document)
+        )
+        move = self.env["account.move"].browse(move_form.id)
+        move.invoice_line_ids.purchase_line_id = False
+        document.fiscal_line_ids.with_context(import_origin_suggestion=True).write(
+            {"import_origin_state": "suggested"}
+        )
+        move._link_purchase_lines_from_fiscal_reference()
+        self.assertFalse(move.invoice_line_ids.purchase_line_id)
+        document.action_confirm_import_origins()
+        move._link_purchase_lines_from_fiscal_reference()
+        self.assertEqual(move.invoice_line_ids.purchase_line_id, self.order.order_line)
+
+    def test_a_pending_origin_with_nothing_to_choose_does_not_block(self):
+        """A line whose product has no open order line only is pending because
+        the supplier has other open orders: there is nothing to decide, so it
+        does not hold the bill."""
+        product = self.env["product.product"].create(
+            {"name": "Product without order", "purchase_ok": True}
+        )
+        document = self._document([(False, False)] * len(self.order.order_line))
+        document.fiscal_line_ids[1:].unlink()
+        line = document.fiscal_line_ids
+        line.product_id = product
+        line.uom_id = product.uom_id
+        document._init_import_states()
+        self.assertEqual(line.import_origin_state, "pending")
+        self.assertFalse(line.import_origin_candidate_ids)
+        line.action_resolve_line()
+        document._check_document_import()  # must not raise
+
+    def test_a_balance_claimed_by_another_imported_document_is_not_offered(self):
+        """Two notes imported and still without a bill cannot both claim the
+        same balance of the order: what the first one took is not offered to
+        the second."""
+        count = len(self.order.order_line)
+        first = self._document([(False, False)] * count)
+        first._init_import_states()
+        taken = first.fiscal_line_ids.mapped("import_purchase_line_id")
+        self.assertTrue(taken)
+        second = self._document([(False, False)] * count)
+        second._init_import_states()
+        for line in second.fiscal_line_ids.filtered(
+            lambda line: line.product_id in taken.mapped("product_id")
+        ):
+            self.assertFalse(line.import_purchase_line_id)
+            self.assertFalse(line.import_origin_candidate_ids)
+        # the first note gives it up: the balance is free again
+        first.fiscal_line_ids.write({"import_purchase_line_id": False})
+        second.fiscal_line_ids._suggest_import_origin()
+        self.assertEqual(
+            second.fiscal_line_ids.mapped("import_purchase_line_id"), taken
+        )
+
+    def test_the_candidates_of_a_big_document_are_read_once(self):
+        """The candidates are read for all the lines together: the number of
+        queries does not grow with the number of lines."""
+
+        def candidates_queries(document):
+            lines = document.fiscal_line_ids
+            lines.invalidate_recordset(["import_origin_candidate_ids"])
+            self.env.flush_all()
+            before = self.env.cr.sql_log_count
+            lines.mapped("import_origin_candidate_ids")
+            return self.env.cr.sql_log_count - before
+
+        small = self._document([(False, False)] * len(self.order.order_line))
+        small_queries = candidates_queries(small)
+        big = self._document([(False, False)] * len(self.order.order_line))
+        # many more lines for the same supplier
+        template = big.fiscal_line_ids[0]
+        for _n in range(20):
+            template.copy({"document_id": big.id})
+        self.assertGreater(len(big.fiscal_line_ids), len(small.fiscal_line_ids) + 15)
+        self.assertLessEqual(candidates_queries(big), small_queries + 3)

@@ -137,14 +137,22 @@ class DocumentImportWizard(models.TransientModel):
     def _prepare_imported_product_values(self, product):
         taxes = self._get_taxes_from_xml_product(product)
         supplier_id = self._search_product_supplier_by_product_code(product.prod.cProd)
-        product_id = self._match_product(product.prod)
+        product_id, product_source = self._match_product_with_source(product.prod)
         uom_id = self._match_uom_by_code(product.prod.uCom, product.prod.uTrib)
         match_source = self._match_import_candidate(product.prod, product_id)
+        # the order the supplier declared (xPed and nItemPed) and the candidate
+        # that pins its line: nothing was guessed
+        declared_line = self._match_po_line(product.prod)
+        declared = bool(
+            match_source and declared_line and match_source.id == declared_line.id
+        )
         if match_source:
             # the source reference is more authoritative than the generic
             # product/UoM match: it pins the exact PO/picking line.
             product_id = match_source.product_id
             uom_id = match_source.uom_id
+            if declared:
+                product_source = "order"
 
         return {
             "product_name": product.prod.xProd,
@@ -153,6 +161,8 @@ class DocumentImportWizard(models.TransientModel):
             "cfop_xml": product.prod.CFOP,
             "product_id": product_id and product_id.id or False,
             "match_source_id": match_source.id or False,
+            "match_source_trusted": declared,
+            "product_source": product_id and product_source or False,
             "icms_percent": taxes["pICMS"],
             "icms_value": taxes["vICMS"],
             "ipi_percent": taxes["pIPI"],
@@ -193,13 +203,24 @@ class DocumentImportWizard(models.TransientModel):
         return variant_ids[0]
 
     def _match_product(self, xml_product):
+        return self._match_product_with_source(xml_product)[0]
+
+    def _match_product_with_source(self, xml_product):
+        """The internal product of an XML line, and where it came from.
+
+        ``order``: the line of the purchase order the supplier declared;
+        ``supplier``: the de-para already learned for this same supplier;
+        ``guess``: found by internal reference, barcode, which anyone may share
+        with another product, so it is only a suggestion for a person to
+        confirm. Nothing matched: ``(empty, False)``.
+        """
         product_id = self._match_product_by_purchase(xml_product)
         if product_id:
-            return product_id
+            return product_id, "order"
 
         product_id = self._get_product_by_supplier(xml_product.cProd)
         if product_id:
-            return product_id
+            return product_id, "supplier"
 
         domain = []
         if hasattr(xml_product, "cProd") and xml_product.cProd:
@@ -211,7 +232,7 @@ class DocumentImportWizard(models.TransientModel):
         rec_id = False
         if domain:
             rec_id = self.env["product.product"].search(domain, limit=1)
-        return rec_id
+        return rec_id, "guess" if rec_id else False
 
     def _match_product_by_purchase(self, xml_product):
         """Priority match from the referenced purchase order.
@@ -251,13 +272,12 @@ class DocumentImportWizard(models.TransientModel):
             # wizard grid is then applied on the persisted lines, which is
             # the single write path (_apply_import_depara).
             binding = self._parse_file()
-            edoc = (
-                self.env["l10n_br_fiscal.document"]
-                .with_context(allow_product_creation=self.allow_product_creation)
-                .import_binding_nfe(
-                    binding,
-                    edoc_type=self.fiscal_operation_type,
-                )
+            edoc = self.env["l10n_br_fiscal.document"].import_binding_nfe(
+                binding,
+                edoc_type=self.fiscal_operation_type,
+                # the box decides: unchecked, no product is created and the
+                # line of an unmapped product stays pending for a person
+                create_missing_products=self.allow_product_creation,
             )
             edoc.document_type_id = self.env.ref("l10n_br_fiscal.document_55").id
             edoc.fiscal_operation_id = self.fiscal_operation_id
@@ -299,19 +319,30 @@ class DocumentImportWizard(models.TransientModel):
         for line in edoc.fiscal_line_ids.filtered("product_id"):
             product = line.product_id
             if (
-                product.create_date >= edoc.create_date
+                self._product_created_by_import(product, edoc)
                 and line.stock_cost_unit
                 and product.standard_price != line.stock_cost_unit
             ):
                 product.standard_price = line.stock_cost_unit
 
+    @api.model
+    def _product_created_by_import(self, product, edoc):
+        """True for a product created by the import of this document (created
+        in the transaction of the document), not found among the existing."""
+        return bool(
+            product and edoc.create_date and product.create_date >= edoc.create_date
+        )
+
     def _apply_wizard_depara(self, edoc):
         """Apply the de-para reviewed in the wizard grid on the persisted
         document lines (both follow the file line order)."""
-        # both recordsets follow the file line order, one wizard line per det
+        # both recordsets follow the file line order, one wizard line per det;
+        # the origin of the lines is suggested once, for the whole document,
+        # after the de-para (not once per line)
         for wizard_line, line in zip(
             self.imported_products_ids, edoc.fiscal_line_ids, strict=True
         ):
+            line = line.with_context(import_origin_deferred=True)
             if wizard_line.product_id:
                 line._apply_import_depara(
                     product=wizard_line.product_id,
@@ -320,6 +351,9 @@ class DocumentImportWizard(models.TransientModel):
                     uom=wizard_line.uom_internal or line.uot_id,
                     factor=wizard_line.uom_conversion_factor,
                     fiscal_operation=self.fiscal_operation_id,
+                    # a product only guessed by the import stays a suggestion
+                    # (and teaches nothing) until a person confirms it
+                    confirm=wizard_line._product_decided(),
                 )
             else:
                 if self.fiscal_operation_id:
@@ -335,10 +369,21 @@ class DocumentImportWizard(models.TransientModel):
                     line.uom_id = wizard_line.uom_internal
                     line.product_id.uom_id = wizard_line.uom_internal
                     line.product_id.uom_po_id = wizard_line.uom_internal
+                if self._product_created_by_import(line.product_id, edoc):
+                    # the person asked for the unmapped products to be created
+                    # from the file: the product is the line of the file, there
+                    # is no guess left to review
+                    line._apply_import_depara(
+                        product=line.product_id,
+                        uom=line.uom_id,
+                        factor=1.0,
+                        fiscal_operation=self.fiscal_operation_id,
+                    )
             if wizard_line.new_cfop_id:
                 # explicit CFOP override reviewed by the user, applied after
                 # the operation remap.
                 line.cfop_id = wizard_line.new_cfop_id
+        edoc.fiscal_line_ids._suggest_import_origin()
 
 
 class DocumentImportWizardLine(models.TransientModel):
@@ -350,6 +395,29 @@ class DocumentImportWizardLine(models.TransientModel):
     """
 
     _inherit = "l10n_br_fiscal.document.import.wizard.line"
+
+    product_source = fields.Selection(
+        selection=[
+            ("order", "Purchase order declared by the supplier"),
+            ("supplier", "De-para of the supplier"),
+            ("guess", "Guessed by the import"),
+            ("user", "Chosen in the grid"),
+        ],
+        copy=False,
+        help="Technical: where the internal product of the line came from. Only "
+        "the product that comes from the order the supplier declared, from the "
+        "de-para already learned for this supplier, or from a person is "
+        "resolved by the import; a guess (internal reference, barcode) stays a "
+        "suggestion until it is confirmed.",
+    )
+
+    product_confirmed = fields.Boolean(
+        string="Confirmed",
+        copy=False,
+        help="Check it to confirm the suggested product of the line: the line is "
+        "then resolved and the supplier de-para is learned. Choosing another "
+        "product in the grid confirms it as well.",
+    )
 
     uom_trib = fields.Char(string="UOM Fiscal")
 
@@ -364,3 +432,19 @@ class DocumentImportWizardLine(models.TransientModel):
     ipi_percent = fields.Char(string="Alíquota IPI")
 
     ipi_value = fields.Char(string="IPI Value")
+
+    def write(self, vals):
+        if "product_id" in vals and "product_source" not in vals:
+            # the product was chosen (or cleared) in the grid: a human decision
+            vals = dict(vals, product_source="user" if vals["product_id"] else False)
+        return super().write(vals)
+
+    def _product_decided(self):
+        """True when the product of the line needs no review: it came from the
+        order the supplier declared, from the de-para of this supplier, or a
+        person chose or confirmed it."""
+        self.ensure_one()
+        return bool(
+            self.product_confirmed
+            or self.product_source in ("order", "supplier", "user")
+        )

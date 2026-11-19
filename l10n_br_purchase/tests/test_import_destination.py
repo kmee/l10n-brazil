@@ -1,6 +1,7 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import TAX_FRAMEWORK_NORMAL
@@ -71,8 +72,6 @@ class TestImportDestination(TransactionCase):
                     "icms_base": base,
                     "icms_percent": 12.0,
                     "icms_value": base * 0.12,
-                    "partner_order": order.name,
-                    "partner_order_line": "1",
                     **line_vals,
                 }
             )
@@ -81,6 +80,10 @@ class TestImportDestination(TransactionCase):
         return document
 
     def _bill(self, document):
+        # the bill takes reviewed lines only
+        document.fiscal_line_ids.filtered(
+            lambda line: line.import_state in ("matched", "pending")
+        ).action_resolve_line()
         move_form = (
             self.env["account.move"]
             .with_company(self.order.company_id)
@@ -99,9 +102,7 @@ class TestImportDestination(TransactionCase):
         document = self._document()
         default = document.fiscal_line_ids.fiscal_operation_line_id
         self.assertNotIn(self.consumption, default, "the default is not the order")
-        control = self._bill(
-            self._document(suggest=False, partner_order=False, partner_order_line=False)
-        )
+        control = self._bill(self._document(suggest=False))
         self.assertTrue(
             self._icms_lines(control), "the default destination takes the credit"
         )
@@ -119,7 +120,7 @@ class TestImportDestination(TransactionCase):
         self.assertAlmostEqual(sum(bill.line_ids.mapped("balance")), 0.0)
 
     def test_choosing_the_order_line_brings_the_destination_too(self):
-        document = self._document(partner_order=False, partner_order_line=False)
+        document = self._document()
         for fiscal_line, order_line in zip(
             document.fiscal_line_ids, self.order.order_line, strict=True
         ):
@@ -133,35 +134,46 @@ class TestImportDestination(TransactionCase):
         for line in document.fiscal_line_ids:
             self.assertEqual(line.fiscal_operation_line_id, self.asset)
 
-    def test_the_bill_of_a_suggested_origin_shows_the_warning(self):
-        """The destination is applied only to a confirmed origin, so the bill
-        generated while the origin is only suggested warns about it."""
+    def test_a_bill_of_a_suggested_origin_is_not_generated(self):
+        """The destination is applied only to a decided origin, so the bill of
+        an origin that is only suggested is refused until it is confirmed."""
         document = self._document()
         self.assertEqual(
             set(document.fiscal_line_ids.mapped("import_origin_state")), {"suggested"}
         )
+        with self.assertRaisesRegex(UserError, "Confirm Origins"):
+            self._bill(document)
+        document.action_confirm_import_origins()
+        self.assertTrue(self._bill(document))
+
+    def test_the_bill_warns_when_the_origin_is_undone_after_it(self):
+        """The origin of a line can be taken back after the bill was generated:
+        the draft bill then warns that the destination was not applied."""
+        document = self._document()
+        document.action_confirm_import_origins()
         bill = self._bill(document)
-        self.assertTrue(bill.has_unconfirmed_import_origin)
+        self.assertFalse(bill.has_unconfirmed_import_origin)
         view = bill.get_view(self.env.ref("account.view_move_form").id, "form")
         self.assertIn("has_unconfirmed_import_origin", view["arch"])
-        document.action_confirm_import_origins()
+        document.fiscal_line_ids[0].import_purchase_line_id = False
         bill.invalidate_recordset(["has_unconfirmed_import_origin"])
-        self.assertFalse(bill.has_unconfirmed_import_origin)
+        self.assertTrue(bill.has_unconfirmed_import_origin)
 
     def test_a_bill_without_pending_origin_has_no_warning(self):
-        document = self._document(
-            suggest=False, partner_order=False, partner_order_line=False
-        )
+        document = self._document(suggest=False)
         bill = self._bill(document)
         self.assertFalse(bill.has_unconfirmed_import_origin)
 
-    def test_the_draft_bill_follows_the_confirmed_origin(self):
-        """Confirming the origins after the bill was generated brings the new
+    def test_the_draft_bill_follows_the_decided_origin(self):
+        """Deciding the origins after the bill was generated brings the new
         destination into the bill that is still a draft."""
-        document = self._document()
+        document = self._document(suggest=False)
         bill = self._bill(document)
         self.assertTrue(self._icms_lines(bill), "the default destination credits")
-        document.action_confirm_import_origins()
+        for fiscal_line, order_line in zip(
+            document.fiscal_line_ids, self.order.order_line, strict=True
+        ):
+            fiscal_line.import_purchase_line_id = order_line
         self.assertEqual(
             bill.invoice_line_ids.fiscal_operation_line_id, self.consumption
         )
@@ -171,12 +183,15 @@ class TestImportDestination(TransactionCase):
             self.assertAlmostEqual(line.balance, line.fiscal_amount_total)
 
     def test_a_posted_bill_is_not_changed(self):
-        document = self._document()
+        document = self._document(suggest=False)
         bill = self._bill(document)
         credit = sum(self._icms_lines(bill).mapped("debit"))
         self.assertTrue(credit)
         bill.invoice_date = bill.date
         bill.action_post()
         self.assertEqual(bill.state, "posted")
-        document.action_confirm_import_origins()
+        for fiscal_line, order_line in zip(
+            document.fiscal_line_ids, self.order.order_line, strict=True
+        ):
+            fiscal_line.import_purchase_line_id = order_line
         self.assertEqual(sum(self._icms_lines(bill).mapped("debit")), credit)

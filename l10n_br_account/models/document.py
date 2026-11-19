@@ -421,6 +421,7 @@ class FiscalDocument(models.Model):
                 # vUnCom=0). Only flag the inconsistent case where amounts
                 # exist but the unit price was not resolved.
                 errors.append(_("- %s: no unit price.") % label)
+        errors.extend(self._import_review_errors())
         if errors:
             raise UserError(
                 _("The document cannot be imported due to incomplete lines:\n%s")

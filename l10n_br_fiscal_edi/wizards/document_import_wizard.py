@@ -55,12 +55,11 @@ class DocumentImportWizard(models.TransientModel):
                 )
             )
 
-    def _import_edoc(self):
-        res = super()._import_edoc()
+    def _after_edoc_created(self, document):
+        super()._after_edoc_created(document)
         # carried into the generic flow so every document importer gets the
-        # match-source reference write-back for free
-        self._propagate_match_source_to_document(self.document_id)
-        return res
+        # origin of its lines for free
+        self._propagate_match_source_to_document(document)
 
     def _match_import_candidate(self, xml_product, product_id):
         """Preselect the match source (open PO line or pending incoming
@@ -236,19 +235,13 @@ class DocumentImportWizard(models.TransientModel):
 
     def _propagate_match_source_to_document(self, edoc):
         """Carry the wizard's match sources onto the fiscal document lines as
-        the canonical (partner_order, partner_order_line) = (PO name, 1-based
-        line position) key.
+        the origin of each line (see ``_apply_import_match_source``).
 
-        Those keys are optional in most document layouts, so most supplier
-        XMLs carry nothing. When the operator (or the auto-preselection)
-        picked a match source, the import synthesizes the key the supplier
-        didn't send: it lands on the fiscal line (l10n_br_fiscal.document.
-        line.mixin fields, available on every document type), flows to the
-        stored related fields on account.move.line (l10n_br_account) and
-        lets stock_picking_bill_matching reconcile the bill against the
-        receipt with no hard dependency between the modules. Service
-        documents (NFSe) and others without stock matching keep the
-        reference as navigation/tracing metadata.
+        The origin is the decision of the operator, or of the import: it never
+        rewrites what the supplier declared. The (partner_order,
+        partner_order_line) pair of the line is the xPed and the nItemPed of the
+        file, which the document keeps and exports as the supplier wrote them;
+        the bill takes its reference to the order from the origin.
 
         Document lines without a selected match source are left untouched.
         """
@@ -289,11 +282,6 @@ class DocumentImportWizard(models.TransientModel):
             if not wizard_line or not wizard_line.match_source_id:
                 continue
             source = wizard_line.match_source_id
-            if source.source_type == "po_line":
-                line.partner_order = source.ref_name[:15]
-                line.partner_order_line = str(source.line_no)[:6]
-            elif source.po_ref:
-                # move linked to a PO line: use the canonical PO key
-                line.partner_order = source.po_ref[:15]
-                line.partner_order_line = str(source.po_line_no)[:6]
-            line._apply_import_match_source(source)
+            line._apply_import_match_source(
+                source, trusted=wizard_line.match_source_trusted
+            )

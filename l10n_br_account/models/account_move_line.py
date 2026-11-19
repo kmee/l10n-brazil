@@ -260,12 +260,14 @@ class AccountMoveLine(models.Model):
         were calculated on.
         """
         stale = self.filtered(
-            lambda line: line.display_type == "product"
-            # Refunds and imported documents keep the values they came with.
-            and line.move_id.move_type in ("in_invoice", "out_invoice")
-            and line.move_id.fiscal_operation_id
-            and line.fiscal_document_line_id
-            and not line.fiscal_document_line_id._is_imported()
+            lambda line: (
+                line.display_type == "product"
+                # Refunds and imported documents keep the values they came with.
+                and line.move_id.move_type in ("in_invoice", "out_invoice")
+                and line.move_id.fiscal_operation_id
+                and line.fiscal_document_line_id
+                and not line.fiscal_document_line_id._is_imported()
+            )
         )._lines_from_source_document()
         if stale:
             # Not fiscal_price: the picking wizard sets it explicitly.
@@ -435,10 +437,24 @@ class AccountMoveLine(models.Model):
         self.env.add_to_compute(self._fields["debit"], container["records"])
         self.env.add_to_compute(self._fields["credit"], container["records"])
 
+    def _get_exact_price_unit(self):
+        """The unit price the totals of the line are computed with.
+
+        A line converted by the de-para of an import (unit factor) keeps the total
+        of the supplier file, which the unit price, with the precision of the
+        price, cannot give back times the quantity: the price used for the totals
+        is then the total of the file over the quantity, without that rounding.
+        """
+        self.ensure_one()
+        if self.import_price_gross and self.quantity:
+            return self.import_price_gross / self.quantity
+        return self.price_unit
+
     @api.depends(
         "quantity",
         "discount",
         "price_unit",
+        "import_price_gross",
         "tax_ids",
         "currency_id",
         "discount",
@@ -474,7 +490,9 @@ class AccountMoveLine(models.Model):
             if line.display_type != "product":
                 continue  # handled in super method
 
-            line_discount_price_unit = line.price_unit * (1 - (line.discount / 100.0))
+            line_discount_price_unit = line._get_exact_price_unit() * (
+                1 - (line.discount / 100.0)
+            )
 
             # Compute 'price_total'.
             if line.tax_ids:
@@ -588,6 +606,7 @@ class AccountMoveLine(models.Model):
         "partner_id",
         "move_id.partner_id",
         "price_unit",
+        "import_price_gross",
         "fiscal_tax_ids",
         "fiscal_operation_line_id",
         "cfop_id",
@@ -623,7 +642,9 @@ class AccountMoveLine(models.Model):
                 line.compute_all_tax_dirty = False
                 continue
             if line.display_type == "product" and line.move_id.is_invoice(True):
-                amount_currency = sign * line.price_unit * (1 - line.discount / 100)
+                amount_currency = (
+                    sign * line._get_exact_price_unit() * (1 - line.discount / 100)
+                )
                 handle_price_include = True
                 quantity = line.quantity
             else:
