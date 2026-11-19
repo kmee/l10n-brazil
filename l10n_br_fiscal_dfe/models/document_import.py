@@ -4,21 +4,9 @@
 from odoo import _, api, models
 from odoo.exceptions import UserError
 
-# Context key that hands the inbox document to the import that the window of the
-# access key runs, which reaches ``_edi_import_files`` through the window
-DFE_DOCUMENT_CONTEXT_KEY = "edi_import_dfe_document_id"
-
 
 class Document(models.Model):
     _inherit = "l10n_br_fiscal.document"
-
-    @api.model
-    def _edi_import_files(self, files, dfe_document=None):
-        if not dfe_document and self.env.context.get(DFE_DOCUMENT_CONTEXT_KEY):
-            dfe_document = self.env["l10n_br_fiscal_dfe.document"].browse(
-                self.env.context[DFE_DOCUMENT_CONTEXT_KEY]
-            )
-        return super()._edi_import_files(files, dfe_document=dfe_document)
 
     @api.model
     def _edi_import_file(self, name, content, dfe_document=None):
@@ -26,11 +14,13 @@ class Document(models.Model):
             name, content, dfe_document=dfe_document
         )
         if created and dfe_document:
-            document.message_post(
+            # A note in the history, sent to nobody: message_post needs the email of
+            # the sender, which a fiscal user may not have
+            document._message_log(
                 body=_("Document created from the access key %s.")
                 % dfe_document.access_key
             )
-            dfe_document.sudo().message_post(
+            dfe_document.sudo()._message_log(
                 body=_("Fiscal document %s created.") % document.display_name
             )
         return document, created

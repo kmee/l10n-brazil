@@ -18,6 +18,11 @@ def _value(node):
     return getattr(node, "value", node)
 
 
+def _inf_nfe(binding):
+    """The ``infNFe`` of a binding, whether it is the ``nfeProc`` or the ``NFe``."""
+    return getattr(getattr(binding, "NFe", binding), "infNFe", None)
+
+
 class Document(models.Model):
     _inherit = "l10n_br_fiscal.document"
 
@@ -29,8 +34,7 @@ class Document(models.Model):
             binding = XmlParser().from_bytes(content)
         except Exception as error:  # pylint: disable=broad-except
             raise UserError(_("The file is not a valid NF-e XML.")) from error
-        nfe = getattr(binding, "NFe", binding)
-        inf_nfe = getattr(nfe, "infNFe", None)
+        inf_nfe = _inf_nfe(binding)
         if inf_nfe is None:
             return super()._edi_import_read(name, content)
         if str(_value(inf_nfe.ide.mod)) != MODELO_FISCAL_NFE:
@@ -78,6 +82,33 @@ class Document(models.Model):
     def _edi_import_create(self, parsed, company, role):
         if parsed.reader != "nfe":
             return super()._edi_import_create(parsed, company, role)
-        return self.import_binding_nfe(
+        document = self.import_binding_nfe(
             parsed.binding, edoc_type="out" if role == "issuer" else "in"
         )
+        document.partner_operation_name = _inf_nfe(parsed.binding).ide.natOp
+        return document
+
+    @api.model
+    def _edi_import_partner_hint(self, parsed):
+        """The partner that the NF-e needs registered and the database lacks: the
+        issuer of a note received, the recipient of one the company issued, and
+        then the carrier, whichever is missing first."""
+        inf_nfe = _inf_nfe(parsed.binding)
+        companies = self.env["res.company"].sudo()
+        issued_by_company = False
+        for role, vat in parsed.company_vats:
+            if companies.search_count([("partner_id.cnpj_cpf_stripped", "=", vat)]):
+                issued_by_company = role == "issuer"
+                break
+        main = inf_nfe.dest if issued_by_company else inf_nfe.emit
+        carrier = inf_nfe.transp and inf_nfe.transp.transporta
+        partners = self.env["res.partner"].sudo().with_context(active_test=False)
+        candidates = []
+        for party in (main, carrier):
+            vat = party and (party.CNPJ or party.CPF)
+            if vat:
+                candidates.append((party.xNome or "", vat))
+        for name, vat in candidates:
+            if not partners.search_count([("cnpj_cpf_stripped", "=", vat)]):
+                return name, vat
+        return candidates[0] if candidates else super()._edi_import_partner_hint(parsed)

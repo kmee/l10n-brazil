@@ -37,6 +37,13 @@ msgid "%(line)s: the unit %(uom)s has no match in the units."
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid "(unknown)"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.report_document_event
 msgid "<strong style=\"font-size:18px;\">CNPJ:</strong>"
 msgstr ""
@@ -773,7 +780,7 @@ msgstr ""
 #: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
 #, python-format
 msgid ""
-"No fiscal operation matches the CFOP of the issuer: choose the fiscal "
+"No fiscal operation matches the CFOP of the document: choose the fiscal "
 "operation of the document and the operation line of each line."
 msgstr ""
 
@@ -1037,6 +1044,16 @@ msgstr ""
 #: code:addons/l10n_br_fiscal_edi/models/document.py:0
 #, python-format
 msgid "The field 'Issuer' is required for brazilian electronic documents!"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid ""
+"The file %(file)s requires registering the partner %(partner)s, and you are "
+"not allowed to create contacts. Ask someone who can to register it, or ask "
+"for the permission, and import the file again."
 msgstr ""
 
 #. module: l10n_br_fiscal_edi

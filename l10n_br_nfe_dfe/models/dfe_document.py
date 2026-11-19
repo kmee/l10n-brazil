@@ -199,7 +199,7 @@ class L10nBrFiscalDfeDocument(models.Model):
                 "XML arrives."
             )
         self.sudo().import_requested_user_id = self.env.user
-        self.sudo().message_post(body=message % self.env.user.name)
+        self.sudo()._message_log(body=message % self.env.user.name)
 
     def make_pdf(self):
         """Generate the DANFE PDF from the complete NF-e XML."""

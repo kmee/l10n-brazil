@@ -251,6 +251,23 @@ class TestDfeImport(EdiImportCase):
 
         self.assertEqual(self._imported(KEY_1).create_uid, user)
 
+    def test_a_fiscal_user_without_email_imports_from_the_inbox(self):
+        user = self._fiscal_user("dfe_fiscal_no_email")
+        self.assertFalse(user.email)
+        dfe_document = self._dfe_document(KEY_1)
+        wizard = self.Wizard.with_user(user).with_context(
+            allowed_company_ids=[self.company.id]
+        )
+
+        self._by_key(KEY_1, model=wizard)
+
+        document = self._imported(KEY_1)
+        self.assertEqual(document.create_uid, user)
+        self.assertIn(KEY_1, "".join(document.message_ids.mapped("body")))
+        self.assertIn(
+            document.display_name, "".join(dfe_document.message_ids.mapped("body"))
+        )
+
     def test_common_fiscal_user_asks_the_distribution_by_key(self):
         user = self._user("dfe_fiscal_query")
         wizard = self.Wizard.with_user(user).with_context(
