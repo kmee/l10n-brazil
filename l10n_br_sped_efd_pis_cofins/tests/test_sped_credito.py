@@ -1,6 +1,7 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl-3.0.html).
 
+import calendar
 from datetime import date, datetime
 
 from odoo.exceptions import UserError
@@ -34,18 +35,18 @@ class CreditMixin(SpedPisCofinsEntradaMixin):
             }
         )
 
-    def _entry(self, operation_line, number):
+    def _entry(self, operation_line, number, invoice_date=None):
         """A posted supplier bill whose fiscal document the import left."""
-        bill = self._purchase_move(operation_line, number)
+        bill = self._purchase_move(operation_line, number, invoice_date=invoice_date)
         bill.fiscal_document_id.imported_document = True
         return bill
 
-    def _sale(self):
+    def _sale(self, day=date(2026, 7, 12)):
         ref = self.env.ref
         sale = self.init_invoice(
             "out_invoice",
             partner=self.partner_a,
-            invoice_date=date(2026, 7, 12),
+            invoice_date=day,
             products=[self.product_a],
             document_type=ref("l10n_br_fiscal.document_55"),
             fiscal_operation=ref("l10n_br_fiscal.fo_venda"),
@@ -54,7 +55,7 @@ class CreditMixin(SpedPisCofinsEntradaMixin):
         )
         sale.action_post()
         # the fiscal document of a posted sale takes the day of the posting
-        when = datetime(2026, 7, 12, 12, 0)
+        when = datetime(day.year, day.month, day.day, 12, 0)
         self.env.cr.execute(
             "UPDATE l10n_br_fiscal_document SET document_date = %s, date_in_out = %s"
             " WHERE id = %s",
@@ -70,8 +71,9 @@ class CreditMixin(SpedPisCofinsEntradaMixin):
         )
         return sale
 
-    def _assess(self, tax_domain, regime="non_cumulative"):
-        """The assessment by the normal path: compute from the ledger, post."""
+    def _assess(self, tax_domain, regime="non_cumulative", month=7, post=True):
+        """The assessment of the month by the normal path: compute from the
+        ledger, post."""
         group = self.env["account.tax.group"].search(
             [
                 (
@@ -88,31 +90,33 @@ class CreditMixin(SpedPisCofinsEntradaMixin):
             "property_tax_payable_account_id": ("PAY", "liability_current"),
             "property_tax_receivable_account_id": ("REC", "asset_current"),
         }
-        group.with_company(self.company).write(
-            {
-                field: self.env["account.account"]
-                .create(
-                    {
-                        "name": f"{tax_domain} {code}",
-                        "code": f"{tax_domain.upper()}{code}",
-                        "account_type": account_type,
-                        "company_id": self.company.id,
-                    }
-                )
-                .id
-                for field, (code, account_type) in accounts.items()
-            }
-        )
+        if not group.with_company(self.company).property_tax_payable_account_id:
+            group.with_company(self.company).write(
+                {
+                    field: self.env["account.account"]
+                    .create(
+                        {
+                            "name": f"{tax_domain} {code}",
+                            "code": f"{tax_domain.upper()}{code}",
+                            "account_type": account_type,
+                            "company_id": self.company.id,
+                        }
+                    )
+                    .id
+                    for field, (code, account_type) in accounts.items()
+                }
+            )
         assessment = self.env["l10n_br_tax.assessment"].create(
             {
                 "company_id": self.company.id,
                 "tax_group_id": group.id,
-                "date_from": "2026-07-01",
-                "date_to": "2026-07-31",
+                "date_from": date(2026, month, 1),
+                "date_to": date(2026, month, calendar.monthrange(2026, month)[1]),
             }
         )
         assessment.action_compute()
-        assessment.action_post()
+        if post:
+            assessment.action_post()
         return assessment
 
     def _month_with_credit(self):
