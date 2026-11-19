@@ -249,7 +249,8 @@ def _check_regime(assessment):
     """The contribution code (table 4.3.5) and the field of the M200 the detail
     points at come from the regime of the assessment: without it the register
     would go out with a blank code, which the PVA refuses."""
-    context = assessment.env.context  # noqa: F841
+    env = getattr(assessment, "env", None)  # a plain object in a unit test
+    context = env.context if env else {}  # noqa: F841
     if assessment.regime not in COD_CONT_BY_REGIME:
         raise UserError(
             _(
