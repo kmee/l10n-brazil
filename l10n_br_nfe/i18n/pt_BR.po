@@ -821,6 +821,7 @@ msgstr ""
 
 #. module: l10n_br_nfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe.view_l10n_br_nfe_recipient_manifestation_event_filter
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document_import_wizard_line__product_confirmed
 msgid "Confirmed"
 msgstr "Confirmado"
 
@@ -5884,3 +5885,19 @@ msgid ""
 "Unit the supplier declared in the file the de-para was learned from (a box, a kilo). The factor of the de-para only holds for this unit: a note of the same product code in another unit does not inherit it."
 msgstr ""
 "Unidade que o fornecedor declarou no arquivo de onde o de-para foi aprendido (uma caixa, um quilo). O fator do de-para só vale para esta unidade: uma nota do mesmo código de produto em outra unidade não o herda."
+
+#. module: l10n_br_nfe
+#: code:addons/l10n_br_nfe/wizards/document_import_wizard.py:0
+#, python-format
+msgid "- item %(item)s (%(product)s): NCM %(ncm)s"
+msgstr "- item %(item)s (%(product)s): NCM %(ncm)s"
+
+#. module: l10n_br_nfe
+#: code:addons/l10n_br_nfe/wizards/document_import_wizard.py:0
+#, python-format
+msgid ""
+"The NCM below is not in the NCM registry (Fiscal > NCM). Register it and import the file again; the import does not create NCMs:\n"
+"%s"
+msgstr ""
+"O NCM abaixo não está no cadastro de NCM (Fiscal > NCM). Cadastre-o e importe o arquivo de novo; a importação não cria NCM:\n"
+"%s"

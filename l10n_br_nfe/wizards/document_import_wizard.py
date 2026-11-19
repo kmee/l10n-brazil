@@ -297,6 +297,33 @@ class DocumentImportWizard(models.TransientModel):
 
         return {"vICMS": vICMS, "pICMS": pICMS, "vIPI": vIPI, "pIPI": pIPI}
 
+    def _check_ncm_registered(self, binding):
+        """The NCM of every item must be in the registry: the import does not
+        create NCMs (a bare NCM has no description, no tax data), and without
+        this check an NCM that is missing ends in a raw database error."""
+        ncm_model = self.env["l10n_br_fiscal.ncm"]
+        missing = []
+        for det in binding.infNFe.det:
+            ncm = det.prod.NCM
+            if ncm and not ncm_model.search_count([("code_unmasked", "=", ncm)]):
+                missing.append(
+                    _(
+                        "- item %(item)s (%(product)s): NCM %(ncm)s",
+                        item=det.nItem,
+                        product=det.prod.xProd,
+                        ncm=ncm,
+                    )
+                )
+        if missing:
+            raise UserError(
+                _(
+                    "The NCM below is not in the NCM registry (Fiscal > NCM). "
+                    "Register it and import the file again; the import does not "
+                    "create NCMs:\n%s"
+                )
+                % "\n".join(missing)
+            )
+
     def _create_edoc_from_file(self):
         if self.document_type == MODELO_FISCAL_NFE:
             # The document is materialized FAITHFULLY from the file (the
@@ -304,6 +331,8 @@ class DocumentImportWizard(models.TransientModel):
             # wizard grid is then applied on the persisted lines, which is
             # the single write path (_apply_import_depara).
             binding = self._parse_file()
+            if not self.allow_product_creation:
+                self._check_ncm_registered(binding)
             edoc = self.env["l10n_br_fiscal.document"].import_binding_nfe(
                 binding,
                 edoc_type=self.fiscal_operation_type,

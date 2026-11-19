@@ -291,16 +291,25 @@ class DocumentImportWizard(models.TransientModel):
         for name in archive.namelist():
             if not name.lower().endswith(".xml"):
                 continue
+            stage = "read"
             try:
                 with self.env.cr.savepoint():
                     entry = self.copy(
                         {"file": base64.b64encode(archive.read(name)).decode()}
                     )
                     entry._onchange_file()
+                    stage = "import"
                     entry._import_edoc()
                     documents |= entry.document_id
-            except Exception as error:  # noqa: BLE001 - report per entry
-                errors.append(f"{name}: {error}")
+            except UserError as error:
+                errors.append(f"{name}: {error.args[0]}")
+            except Exception:  # noqa: BLE001 - report per entry
+                _logger.info("Zip import: %s failed", name, exc_info=True)
+                if stage == "read":
+                    reason = _("the file is not a NF-e the import understands.")
+                else:
+                    reason = _("the file could not be imported (see the server log).")
+                errors.append(f"{name}: {reason}")
         self.batch_errors = "\n".join(errors) or False
         if errors and not documents:
             raise UserError(

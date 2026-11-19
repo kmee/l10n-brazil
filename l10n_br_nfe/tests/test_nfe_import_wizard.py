@@ -15,6 +15,7 @@ from odoo import Command, fields, tools
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests import Form, TransactionCase
 from odoo.tools import mute_logger
+from odoo.tools.translate import _ as translate
 
 from odoo.addons import l10n_br_nfe
 from odoo.addons.l10n_br_fiscal.constants.fiscal import FISCAL_TAX_ID_FIELDS
@@ -824,6 +825,62 @@ class NFeImportWizardTest(TransactionCase):
         self.assertEqual(next_action["view_mode"], "tree,form")
         self.assertEqual(next_action["res_model"], "l10n_br_fiscal.document")
         self.assertEqual(len(next_action["domain"][0][2]), 2)
+
+    def test_a_file_that_is_not_a_nfe_is_reported_in_plain_words(self):
+        """The reason of a file of the zip that fails is a sentence for the user,
+        not the text of the parser ("No class found matching root: ...")."""
+        wizard = self._zip_with_a_file_that_is_not_a_nfe()
+        wizard._import_edoc_batch()
+        self.assertIn("evento.xml", wizard.batch_errors)
+        self.assertIn("is not a NF-e", wizard.batch_errors)
+        self.assertNotIn("No class found", wizard.batch_errors)
+
+    def test_an_ncm_that_is_not_registered_is_named(self):
+        """The import does not create the NCM: the message says which one is
+        missing and in which item, instead of a database error."""
+        ncm = "12345678"
+        self.assertFalse(
+            self.env["l10n_br_fiscal.ncm"].search_count([("code_unmasked", "=", ncm)])
+        )
+        xml = self.xml_1.decode().replace("<NCM>94033000</NCM>", f"<NCM>{ncm}</NCM>")
+        self.assertIn(ncm, xml)
+        self._prepare_wizard(xml.encode())
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        ncm_count = self.env["l10n_br_fiscal.ncm"].search_count([])
+        with self.assertRaises(UserError) as caught:
+            self.wizard._import_edoc()
+        self.assertIn(f"NCM {ncm}", str(caught.exception))
+        self.assertIn("item 1", str(caught.exception))
+        self.assertEqual(self.env["l10n_br_fiscal.ncm"].search_count([]), ncm_count)
+
+    def test_the_messages_of_the_import_are_in_portuguese(self):
+        self.env["res.lang"]._activate_lang("pt_BR")
+        modules = self.env["ir.module.module"].search(
+            [("name", "in", ["l10n_br_fiscal", "l10n_br_nfe"])]
+        )
+        modules._update_translations(["pt_BR"])
+        translate_env = self.env(context=dict(self.env.context, lang="pt_BR"))
+        self.assertEqual(
+            translate_env["l10n_br_fiscal.document.import.wizard.line"]
+            ._fields["product_confirmed"]
+            ._description_string(translate_env),
+            "Confirmado",
+        )
+        self.assertEqual(
+            translate_env["l10n_br_fiscal.document.import.wizard.line"]
+            ._fields["uom_com"]
+            ._description_string(translate_env),
+            "Unidade comercial",
+        )
+        self.env = translate_env
+        for source, expected in (
+            (
+                "The NCM below is not in the NCM registry (Fiscal > NCM). Register it "
+                "and import the file again; the import does not create NCMs:\n%s",
+                "não está no cadastro de NCM",
+            ),
+        ):
+            self.assertIn(expected, translate(source))
 
     def test_the_zip_reports_the_failed_entry_to_the_user(self):
         wizard = self._zip_of_two_notes()

@@ -10880,3 +10880,15 @@ msgstr ""
 msgid ""
 "Total value of the item as the supplier file declared it (vProd). The unit price of the line has the precision of the price (and, when the de-para converts the unit with a factor, is the supplier price divided by it), so quantity times price may not give back the cents of the file: the total of the line follows this value. Empty on a line that was not imported with a total, and cleared when a person edits the quantity or the price."
 msgstr ""
+
+#. module: l10n_br_fiscal
+#: code:addons/l10n_br_fiscal/wizards/document_import_wizard.py:0
+#, python-format
+msgid "the file is not a NF-e the import understands."
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: code:addons/l10n_br_fiscal/wizards/document_import_wizard.py:0
+#, python-format
+msgid "the file could not be imported (see the server log)."
+msgstr ""
