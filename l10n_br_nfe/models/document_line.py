@@ -258,6 +258,7 @@ class NFeLine(spec_models.StackedModel):
             {
                 "partner_uom_id": self.import_uom_id.id,
                 "partner_uom_factor": self.import_uom_factor,
+                "partner_uom_code": self.partner_uom_code,
             }
         )
         return vals

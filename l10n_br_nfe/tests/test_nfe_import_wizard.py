@@ -606,6 +606,46 @@ class NFeImportWizardTest(TransactionCase):
             f"(quantity, price, factor, vProd, total, unit price): {failures}",
         )
 
+    def test_the_factor_of_the_depara_only_holds_for_the_unit_it_was_learned_in(self):
+        """A note in boxes teaches a factor of 12; another note of the same code
+        in kilos must not inherit it (the quantity would be multiplied by 12)."""
+        product = self._get_xml_product()
+        self._prepare_wizard(self.xml_1)
+        self._supplierinfo(self.wizard.issuer_partner_id).unlink()
+        self.wizard.imported_products_ids.product_id = product
+        self.wizard.imported_products_ids.uom_conversion_factor = 12
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.wizard._import_edoc()
+        document = self.wizard.document_id
+        info = self._supplierinfo(document.partner_id)
+        self.assertEqual(info.partner_uom_factor, 12)
+        self.assertTrue(info.partner_uom_code)
+        self.assertEqual(document.fiscal_line_ids.quantity, 12)
+        document.unlink()
+
+        # the same code and unit again: the factor is inherited
+        self._prepare_wizard(self.xml_1)
+        line = self.wizard.imported_products_ids
+        self.assertEqual(line.uom_conversion_factor, 12)
+        self.assertEqual(line.product_source, "supplier")
+
+        # the same code in kilos: nothing is inherited, the line waits for review
+        xml_kg = (
+            self.xml_1.decode()
+            .replace("<uCom>UNID</uCom>", "<uCom>KG</uCom>")
+            .replace("<uTrib>UNID</uTrib>", "<uTrib>KG</uTrib>")
+            .encode()
+        )
+        self._prepare_wizard(xml_kg)
+        line = self.wizard.imported_products_ids
+        self.assertEqual(line.uom_conversion_factor, 1)
+        self.assertNotEqual(line.product_source, "supplier")
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.wizard._import_edoc()
+        fiscal_line = self.wizard.document_id.fiscal_line_ids
+        self.assertEqual(fiscal_line.quantity, 1)
+        self.assertEqual(fiscal_line.import_state, "matched")
+
     def test_zip_batch_import(self):
         """A zip archive with several XMLs lands as several persisted
         documents waiting for review."""

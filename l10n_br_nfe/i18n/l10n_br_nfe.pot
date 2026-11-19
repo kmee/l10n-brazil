@@ -5490,3 +5490,14 @@ msgstr ""
 msgid ""
 "Check it to confirm the suggested product of the line: the line is then resolved and the supplier de-para is learned. Choosing another product in the grid confirms it as well."
 msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_product_supplierinfo__partner_uom_code
+msgid "Supplier Unit Code"
+msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,help:l10n_br_nfe.field_product_supplierinfo__partner_uom_code
+msgid ""
+"Unit the supplier declared in the file the de-para was learned from (a box, a kilo). The factor of the de-para only holds for this unit: a note of the same product code in another unit does not inherit it."
+msgstr ""

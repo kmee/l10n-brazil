@@ -136,7 +136,9 @@ class DocumentImportWizard(models.TransientModel):
 
     def _prepare_imported_product_values(self, product):
         taxes = self._get_taxes_from_xml_product(product)
-        supplier_id = self._search_product_supplier_by_product_code(product.prod.cProd)
+        supplier_id = self._search_product_supplier_by_product_code(
+            product.prod.cProd, self._supplier_uom_key(product.prod)
+        )
         product_id, product_source = self._match_product_with_source(product.prod)
         uom_id = self._match_uom_by_code(product.prod.uCom, product.prod.uTrib)
         match_source = self._match_import_candidate(product.prod, product_id)
@@ -180,19 +182,47 @@ class DocumentImportWizard(models.TransientModel):
             "uom_conversion_factor": supplier_id.partner_uom_factor or 1,
         }
 
-    def _search_product_supplier_by_product_code(self, code):
-        return self.env["product.supplierinfo"].search(
+    def _supplier_uom_key(self, xml_product):
+        """The unit the supplier declared, as the de-para keeps it: the code of
+        the unit matched from uCom (what the line snapshot takes), or uCom itself
+        when no unit matches."""
+        ucom = getattr(xml_product, "uCom", None)
+        if not ucom:
+            return None  # the unit is not known: it is not compared
+        uom = self._match_uom_by_code(ucom)
+        return (uom.code or uom.name) if uom else ucom
+
+    def _search_product_supplier_by_product_code(self, code, uom_code=None):
+        """The de-para of the supplier for the code of the product.
+
+        With ``uom_code`` the de-para only counts for the same unit the supplier
+        declared when it was learned: the conversion factor belongs to that unit
+        (a box of 12) and must not be inherited by a note in another unit (a
+        kilo). A de-para learned before the unit was kept (no unit code) is only
+        trusted when its factor is 1, which converts nothing.
+        """
+        infos = self.env["product.supplierinfo"].search(
             [
                 # the preview runs before the document, and so before the
                 # partner, exist: only the issuer is known then
                 ("partner_id", "=", (self.partner_id or self.issuer_partner_id).id),
                 ("product_code", "=", code),
-            ],
-            limit=1,
+            ]
         )
+        if uom_code is not None:
+            infos = infos.filtered(
+                lambda info: (
+                    info.partner_uom_code == uom_code
+                    or (
+                        not info.partner_uom_code
+                        and (info.partner_uom_factor or 1) == 1
+                    )
+                )
+            )
+        return infos[:1]
 
-    def _get_product_by_supplier(self, code):
-        supplier_id = self._search_product_supplier_by_product_code(code)
+    def _get_product_by_supplier(self, code, uom_code=None):
+        supplier_id = self._search_product_supplier_by_product_code(code, uom_code)
         if not supplier_id:
             return False
 
@@ -218,7 +248,9 @@ class DocumentImportWizard(models.TransientModel):
         if product_id:
             return product_id, "order"
 
-        product_id = self._get_product_by_supplier(xml_product.cProd)
+        product_id = self._get_product_by_supplier(
+            xml_product.cProd, self._supplier_uom_key(xml_product)
+        )
         if product_id:
             return product_id, "supplier"
 
