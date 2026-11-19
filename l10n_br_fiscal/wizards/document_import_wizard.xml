@@ -23,13 +23,20 @@
                         attrs="{'invisible': [('file', '=', False)]}"
                     />
                 </group>
+                <field name="file_is_zip" invisible="1" />
                 <separator
                     string="Preview Data"
-                    attrs="{'invisible': [('file', '=', False)]}"
+                    attrs="{'invisible': ['|', ('file', '=', False), ('file_is_zip', '=', True)]}"
                 />
-                <group id="document_info" attrs="{'invisible': [('file', '=', False)]}">
+                <group
+                    id="document_info"
+                    attrs="{'invisible': ['|', ('file', '=', False), ('file_is_zip', '=', True)]}"
+                >
                     <group>
-                        <field name="fiscal_operation_id" required="1" />
+                        <field
+                            name="fiscal_operation_id"
+                            attrs="{'required': [('file_is_zip', '=', False)]}"
+                        />
                         <field name="fiscal_operation_type" invisible="1" />
                         <field name="document_type_id" readonly="1" force_save="1" />
                         <field name="document_type" readonly="1" force_save="1" />

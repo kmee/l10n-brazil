@@ -13,7 +13,7 @@ from xsdata.formats.dataclass.parsers import XmlParser
 
 from odoo import Command, fields, tools
 from odoo.exceptions import UserError, ValidationError
-from odoo.tests import TransactionCase
+from odoo.tests import Form, TransactionCase
 from odoo.tools import mute_logger
 
 from odoo.addons import l10n_br_nfe
@@ -777,6 +777,54 @@ class NFeImportWizardTest(TransactionCase):
         self.assertIn("the de-para blew up", wizard.batch_errors)
         self.assertNotIn("nota1.xml", wizard.batch_errors)
 
+    def test_a_zip_does_not_ask_for_the_operation_and_opens_a_complete_action(self):
+        """With a zip the wizard has no preview and no operation to choose: each
+        note resolves its own. The action it returns is a complete window action
+        (the client cannot open one without views)."""
+        wizard = self._zip_of_two_notes()
+        self.assertTrue(wizard.file_is_zip)
+        with Form(self.env["l10n_br_fiscal.document.import.wizard"]) as form:
+            form.file = wizard.file  # saved with no operation: not required
+        action = wizard.action_import_and_open_document()
+        self.assertEqual(action["type"], "ir.actions.act_window")
+        self.assertEqual(action["res_model"], "l10n_br_fiscal.document")
+        self.assertEqual(action["views"], [(False, "tree"), (False, "form")])
+        self.assertEqual(action["view_mode"], "tree,form")
+        documents = self.env["l10n_br_fiscal.document"].search(action["domain"])
+        self.assertEqual(len(documents), 2)
+
+    def _zip_with_a_file_that_is_not_a_nfe(self):
+        other_xml = pkg_resources.resource_stream(
+            nfelib.__name__,
+            "nfe/samples/v4_0/leiauteNFe/"
+            "35180834128745000152550010000474281920007498-nfe.xml",
+        ).read()
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as archive:
+            archive.writestr("nota1.xml", self.xml_1)
+            archive.writestr("nota2.xml", other_xml)
+            archive.writestr("evento.xml", b"<retEvento><x/></retEvento>")
+        return self.env["l10n_br_fiscal.document.import.wizard"].create(
+            {
+                "company_id": self.env.ref("base.main_company").id,
+                "file": base64.b64encode(buffer.getvalue()),
+            }
+        )
+
+    def test_the_notification_of_a_failed_file_opens_the_list_with_views(self):
+        """Two notes come in and a third file fails: the notification goes first
+        and the list opens after it, as a window action the client can open."""
+        wizard = self._zip_with_a_file_that_is_not_a_nfe()
+        action = wizard.action_import_and_open_document()
+        self.assertEqual(action["tag"], "display_notification")
+        self.assertTrue(action["params"]["sticky"])
+        next_action = action["params"]["next"]
+        self.assertEqual(next_action["type"], "ir.actions.act_window")
+        self.assertEqual(next_action["views"], [(False, "tree"), (False, "form")])
+        self.assertEqual(next_action["view_mode"], "tree,form")
+        self.assertEqual(next_action["res_model"], "l10n_br_fiscal.document")
+        self.assertEqual(len(next_action["domain"][0][2]), 2)
+
     def test_the_zip_reports_the_failed_entry_to_the_user(self):
         wizard = self._zip_of_two_notes()
         original = DocumentImportWizard._apply_wizard_depara
@@ -792,9 +840,9 @@ class NFeImportWizardTest(TransactionCase):
             action = wizard.action_import_and_open_document()
         self.assertEqual(action["tag"], "display_notification")
         self.assertIn("nota2.xml", action["params"]["message"])
-        self.assertEqual(
-            action["params"]["next"]["res_model"], "l10n_br_fiscal.document"
-        )
+        next_action = action["params"]["next"]
+        self.assertEqual(next_action["res_model"], "l10n_br_fiscal.document")
+        self.assertTrue(next_action["views"])  # the client opens it with views
 
     def test_match_xml_product(self):
         self._prepare_wizard(self.xml_1)

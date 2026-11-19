@@ -54,6 +54,12 @@ class DocumentImportWizard(models.TransientModel):
         " choose its product in the product lines above or in the document.",
     )
 
+    file_is_zip = fields.Boolean(
+        compute="_compute_file_is_zip",
+        help="Technical: the file is a zip archive with several fiscal files. Each "
+        "note resolves its own operation, and the wizard has no preview to show.",
+    )
+
     batch_errors = fields.Text(
         readonly=True,
         help="The files of a zip archive that could not be imported, with the "
@@ -108,6 +114,11 @@ class DocumentImportWizard(models.TransientModel):
     destination_type_in_out = fields.Selection(
         selection=FISCAL_IN_OUT, string="Destination Type"
     )
+
+    @api.depends("file")
+    def _compute_file_is_zip(self):
+        for wizard in self:
+            wizard.file_is_zip = wizard._file_is_zip()
 
     @api.depends("issuer_cnpj", "company_id.cnpj_cpf")
     def _compute_fiscal_operation_type(self):
@@ -244,6 +255,7 @@ class DocumentImportWizard(models.TransientModel):
                     "name": _("Imported Documents"),
                     "res_model": "l10n_br_fiscal.document",
                     "view_mode": "tree,form",
+                    "views": [(False, "tree"), (False, "form")],
                     "domain": [("id", "in", documents.ids)],
                 }
             if self.batch_errors:
