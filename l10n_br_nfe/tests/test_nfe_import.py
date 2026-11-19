@@ -1178,3 +1178,106 @@ class TestNfeDocumentImport(EdiImportCase):
         self.assertFalse(sent)
         self.assertEqual(sequences.mapped("number_next_actual"), numbers)
         self.assertFalse(product.seller_ids)
+
+    # The import creates the partner that does not exist and never changes the one
+    # that does: the registration of the database wins over the file.
+
+    def _register(self, vat, **values):
+        """The partner with this CNPJ, with data that differ from the file's."""
+        city = self.env["res.city"].search(
+            [("state_id.code", "=", "SP"), ("name", "!=", "São Paulo")], limit=1
+        )
+        vals = {
+            "name": "Registered trade name",
+            "legal_name": "Registered legal name",
+            "street_name": "Registered street",
+            "street_number": "999",
+            "district": "Registered district",
+            "zip": "20000000",
+            "city_id": city.id,
+            "state_id": city.state_id.id,
+            "inscr_est": "110042490114",
+            "phone": "+55 21 90000-0000",
+            "email": "registered@example.com",
+        }
+        vals.update(values)
+        partner = self.env["res.partner"].search(
+            [("cnpj_cpf_stripped", "=", vat)], limit=1
+        )
+        if partner:
+            partner.write(vals)
+            return partner
+        vals["cnpj_cpf"] = vat
+        vals["country_id"] = self.env.ref("base.br").id
+        return self.env["res.partner"].create(vals)
+
+    def _snapshot(self, records):
+        """Every stored value of the records, and when they were last written."""
+        names = [
+            name
+            for name, field in records._fields.items()
+            if field.store
+            and field.type not in ("binary", "one2many", "many2many", "html")
+        ]
+        records.invalidate_recordset()
+        return records.read(names)
+
+    def _import_resolve_and_confirm(self, xml):
+        document = self._imported(xml)
+        product = self.env["product.product"].create({"name": "Chosen product"})
+        document.fiscal_line_ids.product_id = product
+        document.fiscal_line_ids.action_resolve_line()
+        document.action_document_confirm()
+        return document
+
+    def test_the_import_of_a_received_note_never_changes_a_registered_partner(self):
+        carrier = (
+            b"<modFrete>0</modFrete><transporta><CNPJ>11222333000181</CNPJ>"
+            b"<xNome>Carrier of the file</xNome><IE>111222333</IE>"
+            b"<xEnder>Carrier street of the file</xEnder><xMun>SAO PAULO</xMun>"
+            b"<UF>SP</UF></transporta>"
+        )
+        xml = self._xml(KEY_1, replace=[(b"<modFrete>9</modFrete>", carrier)])
+        issuer = self._register("59594315000157")
+        transporter = self._register("11222333000181")
+        recipient = self.company
+        records = issuer | transporter | recipient.partner_id
+        before = self._snapshot(records)
+        company_before = self._snapshot(recipient)
+
+        document = self._import_resolve_and_confirm(xml)
+
+        self.assertEqual(document.state_edoc, "autorizada")
+        self.assertEqual(document.partner_id, issuer)
+        self.assertEqual(self._snapshot(records), before)
+        self.assertEqual(self._snapshot(recipient), company_before)
+
+    def test_the_import_of_a_note_the_company_issued_never_changes_a_partner(self):
+        company = self.env.ref("l10n_br_base.empresa_lucro_presumido")
+        carrier = (
+            b"<modFrete>0</modFrete><transporta><CNPJ>11222333000181</CNPJ>"
+            b"<xNome>Carrier of the file</xNome><IE>111222333</IE>"
+            b"<xEnder>Carrier street of the file</xEnder><xMun>SAO PAULO</xMun>"
+            b"<UF>SP</UF></transporta>"
+        )
+        xml = self._xml(
+            KEY_3,
+            recipient="11444777000161",
+            replace=[
+                (KEY_3.encode(), b"35200159594315000157550010000000992062777167"),
+                (b"<nNF>3</nNF>", b"<nNF>99</nNF>"),
+                (b"<modFrete>9</modFrete>", carrier),
+            ],
+        )
+        customer = self._register("11444777000161")
+        transporter = self._register("11222333000181")
+        records = customer | transporter | company.partner_id
+        before = self._snapshot(records)
+        company_before = self._snapshot(company)
+
+        document = self._import_resolve_and_confirm(xml)
+
+        self.assertEqual(document.fiscal_operation_type, "out")
+        self.assertEqual(document.partner_id, customer)
+        self.assertEqual(self._snapshot(records), before)
+        self.assertEqual(self._snapshot(company), company_before)
