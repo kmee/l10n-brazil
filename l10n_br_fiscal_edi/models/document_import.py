@@ -18,7 +18,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     FISCAL_OUT,
 )
 
-from ..tools import EDI_IMPORT_NO_CREATE
+from ..tools import EDI_IMPORT_NO_CREATE, EDI_IMPORT_PARTNER_BY_VAT
 
 _logger = logging.getLogger(__name__)
 
@@ -164,7 +164,9 @@ class Document(models.Model):
         try:
             document = (
                 self.with_company(company)
-                .with_context(**{EDI_IMPORT_NO_CREATE: True})
+                .with_context(
+                    **{EDI_IMPORT_NO_CREATE: True, EDI_IMPORT_PARTNER_BY_VAT: True}
+                )
                 ._edi_import_create(parsed, company, role)
             )
         except AccessError as error:

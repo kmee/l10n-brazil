@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from odoo.exceptions import UserError
 
-from ..tools import EDI_IMPORT_NO_CREATE
+from ..tools import EDI_IMPORT_NO_CREATE, EDI_IMPORT_PARTNER_BY_VAT
 from .common import KEY_1, KEY_2, KEY_3, EdiImportCase
 
 
@@ -28,12 +28,16 @@ class TestDocumentImport(EdiImportCase):
         by_name = {parsed_file.file_name: parsed_file for parsed_file in parsed}
         test = self
         created = []
+        self.partner_by_vat = []
 
         def read(model_, name, content):
             return by_name.get(name)
 
         def create(model_, parsed_file, company, role):
             created.append(model_.env.context.get(EDI_IMPORT_NO_CREATE))
+            self.partner_by_vat.append(
+                model_.env.context.get(EDI_IMPORT_PARTNER_BY_VAT)
+            )
             return test._create_imported_document(
                 company=company,
                 model=model_,
@@ -56,6 +60,7 @@ class TestDocumentImport(EdiImportCase):
         documents, errors, warnings = self._import([(parsed.file_name, b"x")], [parsed])
         self.assertEqual((len(documents), errors, warnings), (1, [], []))
         self.assertEqual(self.create_contexts, [True])
+        self.assertEqual(self.partner_by_vat, [True])
         self.assertTrue(documents.imported_document)
         self.assertEqual(documents.document_key, KEY_1)
 

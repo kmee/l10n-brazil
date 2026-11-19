@@ -30,6 +30,11 @@ def tax_authority_date_to_utc(value):
 # CFOP that the file mentions and the database does not have.
 EDI_IMPORT_NO_CREATE = "edi_import_no_create"
 
+# Context key of the creation of the document: a partner is matched by its CNPJ or CPF
+# and never by its name. Only a file that carries neither (final consumer, foreigner)
+# may match by name, and the document says so.
+EDI_IMPORT_PARTNER_BY_VAT = "edi_import_partner_by_vat"
+
 
 @dataclass(frozen=True)
 class EdiParsedFile:
