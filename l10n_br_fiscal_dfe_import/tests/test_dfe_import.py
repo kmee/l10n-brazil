@@ -396,3 +396,28 @@ class TestDfeImport(DfeImportCase):
         self.assertFalse(errors)
         self.assertTrue(documents)
         self.assertEqual(self.env["l10n_br_fiscal.cfop"].search_count([]), cfop)
+
+    def test_operation_is_suggested_without_touching_the_values_of_the_file(self):
+        documents, _errors = self.Document.dfe_import_files(
+            [("nfe.xml", self._xml(KEY_1))]
+        )
+
+        line = documents.fiscal_line_ids
+        operation = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.assertEqual(documents.fiscal_operation_id, operation)
+        self.assertEqual(line.fiscal_operation_id, operation)
+        self.assertEqual(line.cfop_id.code, "1102")
+        self.assertEqual(line.partner_cfop_id.code, "5102")
+        self.assertEqual((line.quantity, line.price_unit), (1, 140))
+        self.assertEqual(documents.fiscal_amount_total, 140)
+        self.assertEqual(documents.fiscal_amount_untaxed, 140)
+        self.assertNotIn("fiscal operation", documents.import_warning)
+
+    def test_without_a_matching_operation_the_document_says_what_to_choose(self):
+        xml = self._xml(KEY_1, replace=[(b"<CFOP>5102</CFOP>", b"<CFOP>5999</CFOP>")])
+
+        documents, errors = self.Document.dfe_import_files([("nfe.xml", xml)])
+
+        self.assertFalse(errors)
+        self.assertFalse(documents.fiscal_operation_id)
+        self.assertIn("fiscal operation", documents.import_warning)

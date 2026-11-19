@@ -34,11 +34,21 @@ class Document(models.Model):
         help="What the imported document still lacks to be reviewed.",
     )
 
-    @api.depends("imported_document", "fiscal_line_ids.import_ncm_code")
+    @api.depends(
+        "imported_document", "fiscal_operation_id", "fiscal_line_ids.import_ncm_code"
+    )
     def _compute_import_warning(self):
         for document in self:
             messages = []
             if document.imported_document:
+                if not document.fiscal_operation_id:
+                    messages.append(
+                        _(
+                            "No fiscal operation matches the CFOP of the issuer: "
+                            "choose the fiscal operation of the document and the "
+                            "operation line of each line."
+                        )
+                    )
                 for line in document.fiscal_line_ids.filtered(
                     lambda line: line.import_ncm_code and not line.ncm_id
                 ):
@@ -123,6 +133,7 @@ class Document(models.Model):
             document.document_type_id = self.env.ref("l10n_br_fiscal.document_55")
         document._dfe_import_attach_xml(content)
         document._init_import_states()
+        document._dfe_import_suggest_operation(inf_nfe)
         new_partners = (
             self.env["res.partner"]
             .with_context(active_test=False)
@@ -134,6 +145,27 @@ class Document(models.Model):
                 % ", ".join(new_partners.mapped("display_name"))
             )
         return document
+
+    def _dfe_import_suggest_operation(self, inf_nfe):
+        """Suggest the inbound operation of the document and of each line from
+        the CFOP declared by the issuer. Prices, quantities and taxes of the
+        imported lines are protected from the recompute."""
+        self.ensure_one()
+        wizard = self.env["l10n_br_fiscal.document.import.wizard"]
+        nature = inf_nfe.ide.natOp
+        operation = wizard._find_fiscal_operation(
+            wizard._most_common_cfop(inf_nfe), nature, "in"
+        )
+        if not operation:
+            return
+        self.fiscal_operation_id = operation
+        for line in self.fiscal_line_ids:
+            operation_line = wizard._find_fiscal_operation_line(
+                line.partner_cfop_id.code, nature, "in"
+            )
+            line.fiscal_operation_id = operation_line.fiscal_operation_id or operation
+            if operation_line:
+                line.fiscal_operation_line_id = operation_line
 
     @api.model
     def _dfe_import_check_protocol(self, binding):
