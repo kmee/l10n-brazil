@@ -421,3 +421,20 @@ class TestDfeImport(DfeImportCase):
         self.assertFalse(errors)
         self.assertFalse(documents.fiscal_operation_id)
         self.assertIn("fiscal operation", documents.import_warning)
+
+    def test_imported_documents_list_shows_the_review_state(self):
+        action = self.env.ref("l10n_br_fiscal_dfe_import.imported_document_dfe_action")
+        arch = self.Document.get_view(action.view_id.id, "tree")["arch"]
+
+        self.assertTrue(etree.fromstring(arch).xpath("//field[@name='import_state']"))
+
+    def test_list_of_several_documents_uses_the_same_view(self):
+        view = self.env.ref("l10n_br_fiscal_dfe_import.document_import_tree")
+        wizard = self.env["l10n_br_fiscal_dfe_import.wizard"]
+        documents, _errors = self.Document.dfe_import_files(
+            [("one.xml", self._xml(KEY_1)), ("two.xml", self._xml(KEY_2))]
+        )
+
+        action = wizard._documents_action(documents)
+
+        self.assertEqual(action["views"][0], (view.id, "tree"))

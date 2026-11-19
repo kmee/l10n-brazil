@@ -180,7 +180,7 @@ class DocumentImportDfeWizard(models.TransientModel):
                 }
             )
         else:
-            list_view = self.env.ref("l10n_br_fiscal.document_tree")
+            list_view = self.env.ref("l10n_br_fiscal_dfe_import.document_import_tree")
             action.update(
                 {
                     "domain": [("id", "in", documents.ids)],
