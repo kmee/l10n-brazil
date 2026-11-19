@@ -13,7 +13,7 @@ from lxml import etree
 from xsdata.formats.dataclass.transports import DefaultTransport
 
 from odoo import Command
-from odoo.exceptions import AccessError, UserError
+from odoo.exceptions import UserError
 from odoo.modules import get_module_resource
 from odoo.tools import file_open
 from odoo.tools.translate import TranslationFileReader
@@ -314,19 +314,19 @@ class TestDfeImport(DfeImportCase):
         self.assertIn("not a company", activity.note)
 
     def _manager_of(self, companies):
+        """A common fiscal user (no NFe manager group) of the companies."""
         return self.env["res.users"].create(
             {
                 "name": "Importer",
-                "login": "dfe_importer_%s" % len(companies),
+                "email": "importer@example.com",
+                "login": "dfe_importer_%s" % "_".join(map(str, companies.ids)),
                 "company_id": companies[0].id,
                 "company_ids": [Command.set(companies.ids)],
                 "groups_id": [
                     Command.set(
                         [
                             self.env.ref("base.group_user").id,
-                            self.env.ref("base.group_partner_manager").id,
                             self.env.ref("l10n_br_fiscal.group_manager").id,
-                            self.env.ref("l10n_br_nfe.group_manager").id,
                         ]
                     )
                 ],
@@ -506,44 +506,78 @@ class TestDfeImport(DfeImportCase):
         self.assertTrue(line.product_id)
         self.assertEqual(line.import_state, "pending")
 
-    def _fiscal_user(self):
-        return self.env["res.users"].create(
-            {
-                "name": "Fiscal only",
-                "login": "dfe_fiscal_only",
-                "groups_id": [
-                    Command.set(
-                        [
-                            self.env.ref("base.group_user").id,
-                            self.env.ref("l10n_br_fiscal.group_manager").id,
-                        ]
-                    )
-                ],
-            }
-        )
-
-    def test_fiscal_user_without_the_nfe_group_cannot_open_the_window(self):
-        user = self._fiscal_user()
-        menu = self.env.ref("l10n_br_nfe.nfe_import_document")
-
-        with self.assertRaises(AccessError):
-            self.env["l10n_br_fiscal_dfe_import.wizard"].with_user(user).create({})
-        self.assertFalse(menu.with_user(user)._filter_visible_menus())
-
-    def test_nfe_manager_sees_the_menu_and_opens_the_window(self):
+    def test_common_fiscal_user_sees_the_menu_and_opens_the_window(self):
         user = self._manager_of(self.company)
         menu = self.env.ref("l10n_br_nfe.nfe_import_document")
-
         wizard = self.env["l10n_br_fiscal_dfe_import.wizard"].with_user(user)
         wizard = wizard.with_context(allowed_company_ids=[self.company.id])
 
         self.assertTrue(wizard.create({}))
         self.assertTrue(menu.with_user(user)._filter_visible_menus())
 
-    def test_uninstall_gives_the_menu_back_to_the_fiscal_manager_group(self):
-        uninstall_hook(self.env.cr, None)
+    def test_common_fiscal_user_imports_the_file_as_the_author(self):
+        user = self._manager_of(self.company)
+        service = self.Document.with_user(user).with_context(
+            allowed_company_ids=[self.company.id]
+        )
 
+        documents, errors = service.dfe_import_files([("nfe.xml", self._xml(KEY_1))])
+
+        self.assertFalse(errors)
+        self.assertEqual(documents.create_uid, user)
+        self.assertEqual(documents.original_xml_file_id.create_uid, user)
+
+    def test_common_fiscal_user_imports_by_key_and_acknowledges(self):
+        user = self._manager_of(self.company)
+        wizard = self.env["l10n_br_fiscal_dfe_import.wizard"].with_user(user)
+        wizard = wizard.with_context(allowed_company_ids=[self.company.id])
+        self._dfe_document(KEY_1, summary_only=False)
+        action = wizard.create({"access_key": KEY_1}).action_import()
+        self.assertEqual(self._imported(KEY_1).id, action["res_id"])
+        self.assertEqual(self._imported(KEY_1).create_uid, user)
+        dfe_document = self._dfe_document(KEY_2)
+
+        confirm = wizard.create({"access_key": KEY_2})
+        confirm.action_import()
+        event_model = type(self.env["l10n_br_nfe.md_event"])
+        with mock.patch.object(
+            event_model, "_get_processor", return_value=_acknowledgement_processor()
+        ):
+            confirm.action_confirm_acknowledgement()
+
+        self.assertEqual(dfe_document.manifestations_ids.create_uid, user)
+        self.assertEqual(dfe_document.manifestations_ids.state, "done")
+
+    def test_common_fiscal_user_resolves_the_line_and_the_de_para_is_learned(self):
+        user = self._manager_of(self.company)
+        service = self.Document.with_user(user).with_context(
+            allowed_company_ids=[self.company.id]
+        )
+        documents, _errors = service.dfe_import_files([("nfe.xml", self._xml(KEY_1))])
+        product = self.env["product.product"].create({"name": "Chosen"})
+        line = documents.fiscal_line_ids
+
+        line.product_id = product
+        line._apply_import_depara(product=product, uom=self.uom_unit)
+
+        self.assertEqual(line.import_state, "resolved")
+        self.assertEqual(line.write_uid, user)
+        self.assertTrue(line.import_supplierinfo_id)
+
+    def test_common_fiscal_user_of_another_company_cannot_import_the_note(self):
+        user = self._manager_of(self.other_company)
+        service = self.Document.with_user(user).with_context(
+            allowed_company_ids=[self.other_company.id]
+        )
+
+        documents, errors = service.dfe_import_files([("nfe.xml", self._xml(KEY_1))])
+
+        self.assertFalse(documents)
+        self.assertIn("no access to the company", errors[0][1])
+
+    def test_uninstall_does_not_need_to_restore_the_menu_group(self):
         menu = self.env.ref("l10n_br_nfe.nfe_import_document")
+
         self.assertEqual(menu.groups_id, self.env.ref("l10n_br_fiscal.group_manager"))
 
     def test_note_of_a_company_not_selected_in_the_switcher_is_refused(self):

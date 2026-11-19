@@ -4,6 +4,7 @@ import json
 
 from lxml import etree
 
+from odoo import Command
 from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal_dfe_import.tests.common import (
@@ -95,3 +96,24 @@ class TestGenerateInvoice(DfeImportCase):
         self.document.fiscal_line_ids.write({"import_state": "resolved"})
 
         self.assertFalse(self._invoice_button_hidden(self.document))
+
+    def test_fiscal_user_without_accounting_rights_gets_a_clear_message(self):
+        user = self.env["res.users"].create(
+            {
+                "name": "Fiscal only",
+                "email": "fiscal@example.com",
+                "login": "dfe_fiscal_no_billing",
+                "groups_id": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            self.env.ref("l10n_br_fiscal.group_manager").id,
+                        ]
+                    )
+                ],
+            }
+        )
+        self.document.fiscal_line_ids.write({"import_state": "resolved"})
+
+        with self.assertRaisesRegex(UserError, "accounting rights"):
+            self.document.with_user(user).action_generate_invoice()

@@ -1,7 +1,7 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import SUPERUSER_ID, Command, api
+from odoo import SUPERUSER_ID, api
 
 ORIGINAL_MENU_ACTIONS = {
     "l10n_br_nfe.nfe_import_document": "l10n_br_nfe.l10n_br_nfe_import_xml_action",
@@ -15,6 +15,3 @@ def uninstall_hook(cr, registry):
     for menu_xmlid, action_xmlid in ORIGINAL_MENU_ACTIONS.items():
         action = env.ref(action_xmlid)
         env.ref(menu_xmlid).action = f"{action._name},{action.id}"
-    env.ref("l10n_br_nfe.nfe_import_document").groups_id = [
-        Command.set([env.ref("l10n_br_fiscal.group_manager").id])
-    ]

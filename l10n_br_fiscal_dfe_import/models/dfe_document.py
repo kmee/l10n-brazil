@@ -38,14 +38,18 @@ class L10nBrFiscalDfeDocument(models.Model):
                 % self.env.user.name
             )
             return
-        event = self.env["l10n_br_nfe.md_event"].create(
-            {
-                "access_key": self.access_key,
-                "event_type": "ciente",
-                "company_id": self.company_id.id,
-                "document_type": "nfe",
-                "dfe_document_id": self.id,
-            }
+        event = (
+            self.env["l10n_br_nfe.md_event"]
+            .sudo()
+            .create(
+                {
+                    "access_key": self.access_key,
+                    "event_type": "ciente",
+                    "company_id": self.company_id.id,
+                    "document_type": "nfe",
+                    "dfe_document_id": self.id,
+                }
+            )
         )
         event.with_company(self.company_id).action_confirm()
         self.sudo().message_post(

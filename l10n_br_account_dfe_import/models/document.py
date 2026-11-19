@@ -10,6 +10,15 @@ class Document(models.Model):
 
     def action_generate_invoice(self):
         self.ensure_one()
+        if not self.env["account.move"].check_access_rights(
+            "create", raise_exception=False
+        ):
+            raise UserError(
+                _(
+                    "Generating the invoice needs the accounting rights of the "
+                    "Billing group. Ask a user that has them."
+                )
+            )
         pending = self.fiscal_line_ids.filtered(
             lambda line: line.import_state != "resolved"
         )

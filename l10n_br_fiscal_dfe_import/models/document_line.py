@@ -65,3 +65,8 @@ class DocumentLine(models.Model):
                 }
             )
         return vals
+
+    def _find_or_create_supplierinfo(self):
+        # the de-para memory is a by-product of the review: the fiscal user has
+        # no purchase rights, and the author of the line stays the same
+        return super(DocumentLine, self.sudo())._find_or_create_supplierinfo()
