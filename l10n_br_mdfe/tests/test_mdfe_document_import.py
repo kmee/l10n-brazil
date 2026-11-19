@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 import os
+from unittest.mock import patch
 
 import nfelib
 
@@ -52,6 +53,16 @@ class TestMdfeDocumentImport(EdiImportCase):
         super().setUpClass()
         cls.presumed = cls.env.ref("l10n_br_base.empresa_lucro_presumido")
 
+    def _confirm(self, documents):
+        """Confirm as authorized. The check and the export of the XML for the
+        emission (which need what an imported MDF-e does not have) are the
+        business of the emission, and are left out."""
+        model = type(documents)
+        with patch.object(model, "_document_check"), patch.object(
+            model, "_document_export"
+        ):
+            documents.action_document_confirm()
+
     def _import(self, content, model=None):
         return (self.Document if model is None else model)._edi_import_files(
             [("mdfe.xml", content)]
@@ -70,15 +81,45 @@ class TestMdfeDocumentImport(EdiImportCase):
         self.assertFalse(documents.partner_id)
         self.assertTrue(documents.original_xml_file_id)
 
-    def test_the_address_of_the_file_does_not_change_the_registry_of_the_company(self):
-        names = ("name", "legal_name", "street_name", "zip", "state_id", "city_id")
+    def test_the_file_does_not_change_the_registry_of_the_company(self):
+        names = (
+            "name legal_name street_name street_number district zip state_id city_id "
+            "l10n_br_ie_code l10n_br_im_code phone email"
+        ).split()
         partner = self.presumed.partner_id
-        before = (self.presumed.name, [partner[name] for name in names])
-        documents, errors, _warnings = self._import(mdfe_xml())
+        partner.write(
+            {
+                "phone": "11 98888-0000",
+                "email": "company@example.com",
+                "l10n_br_im_code": "5555",
+            }
+        )
+
+        def registry():
+            partner.invalidate_recordset()
+            return (self.presumed.name, [partner[name] for name in names])
+
+        before = registry()
+        documents, errors, _warnings = self._import(mdfe_xml(status="100"))
         self.assertFalse(errors)
         self.assertTrue(documents)
-        partner.invalidate_recordset()
-        self.assertEqual(before, (self.presumed.name, [partner[n] for n in names]))
+        self._confirm(documents)
+        self.assertEqual(registry(), before)
+
+    def test_confirming_an_mdfe_issued_by_the_company_does_not_send_it(self):
+        sequences = (
+            self.env["ir.sequence"].search([]).read(["id", "number_next_actual"])
+        )
+        documents, _errors, _warnings = self._import(mdfe_xml(status="100"))
+        self.assertEqual(documents.fiscal_operation_type, "out")
+        self._confirm(documents)
+        self.assertEqual(documents.state_edoc, "autorizada")
+        self.assertEqual(documents.document_number, "1131")
+        self.assertFalse(documents.send_file_id)
+        self.assertEqual(
+            self.env["ir.sequence"].search([]).read(["id", "number_next_actual"]),
+            sequences,
+        )
 
     def test_the_company_is_the_issuer_of_the_mdfe(self):
         parsed = self.Document._edi_import_read("a.xml", mdfe_xml(emitter=LUCRO_REAL))
