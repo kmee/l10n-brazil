@@ -142,13 +142,6 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_br_sped_efd_pis_cofins/models/credit_opening_import.py:0
 #, python-format
-msgid "The file has no credit balance in the registers 1100 and 1500 to carry to the system."
-msgstr ""
-
-#. module: l10n_br_sped_efd_pis_cofins
-#. odoo-python
-#: code:addons/l10n_br_sped_efd_pis_cofins/models/credit_opening_import.py:0
-#, python-format
 msgid "Opening balance of the PIS/COFINS credit"
 msgstr ""
 
@@ -164,6 +157,20 @@ msgstr ""
 #: code:addons/l10n_br_sped_efd_pis_cofins/models/sped_efd_pis_cofins.py:0
 #, python-format
 msgid "The %(tax)s credit balance that the assessment of the period starts from (%(balance)s) is not what the posted assessments of the earlier periods give (%(layers)s): assess and post the earlier periods, in order, before generating the file. If the credit comes from before the system, register it as the opening balance (menu Invoicing > Accounting > Actions > Saldo inicial de crédito de PIS/COFINS)."
+msgstr ""
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/credit_opening_import.py:0
+#, python-format
+msgid "The CNPJ of the file (%(file)s) is not the one of the company %(company)s (%(company_cnpj)s): the opening balance is of the company that the file was made for."
+msgstr ""
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/credit_opening_import.py:0
+#, python-format
+msgid "The file has no credit balance in the registers 1100, 1500, M100 and M500 to carry to the system."
 msgstr ""
 
 #. module: l10n_br_sped_efd_pis_cofins
