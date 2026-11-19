@@ -20,6 +20,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     FISCAL_OUT,
 )
 
+from ..constants.fiscal import DOCUMENT_STATE_AUTHORIZED
 from ..tools import EDI_IMPORT_NO_CREATE, EDI_IMPORT_PARTNER_BY_VAT
 
 _logger = logging.getLogger(__name__)
@@ -628,11 +629,27 @@ class Document(models.Model):
             },
         }
 
+    def get_state_machine_config(self):
+        config = super().get_state_machine_config()
+        config["transitions"].append(
+            {
+                # Imported, issued by the company and authorized in another system
+                # (a migration): only the state changes.
+                "trigger": "action_confirm_imported",
+                "source": DOCUMENT_STATE_DRAFT,
+                "dest": DOCUMENT_STATE_AUTHORIZED,
+            }
+        )
+        return config
+
     def action_document_confirm(self):
         """An imported document is confirmed only when every line was reviewed.
 
         One that the company issued in another system is already authorized there:
-        it is confirmed as authorized, never validated and sent again.
+        it goes from draft to authorized in a transition of its own, which runs no
+        callback: nothing is checked against the schema of issuing, exported,
+        numbered, sent or turned into an event, and the number, the series, the XML
+        and the protocol are the ones of the file.
         """
         drafts = self.filtered(
             lambda doc: doc.imported_document and doc.state_edoc == DOCUMENT_STATE_DRAFT
@@ -654,5 +671,5 @@ class Document(models.Model):
                 )
         own = drafts.filtered(lambda doc: doc.issuer == DOCUMENT_ISSUER_COMPANY)
         for document in own:
-            document._trigger_fsm("action_confirm_authorized")
+            document._trigger_fsm("action_confirm_imported")
         return super(Document, self - own).action_document_confirm()

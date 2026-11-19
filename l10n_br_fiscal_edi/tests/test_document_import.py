@@ -695,19 +695,66 @@ class TestDocumentImport(EdiImportCase):
         trigger.assert_called_once()
 
     def test_a_document_the_company_issued_is_confirmed_as_authorized(self):
-        """Issued in another system, it is authorized already: confirming it must
-        not validate and send it again."""
+        """Issued and authorized in another system, it goes straight to authorized:
+        nothing is checked, exported, numbered, sent or turned into an event, and
+        the protocol of the file stays."""
         product = self.env["product.product"].create({"name": "Matched product"})
         document = self._create_imported_document(
             issuer="company", lines=[{"product_id": product.id}]
         )
+        number = (document.document_number, document.document_serie)
+        serie = self.env["l10n_br_fiscal.document.serie"].create(
+            {
+                "code": "9",
+                "name": "Series of the file",
+                "company_id": self.company.id,
+                "document_type_id": document.document_type_id.id,
+            }
+        )
+        event = self.env["l10n_br_fiscal.event"].create(
+            {
+                "type": "0",
+                "company_id": self.company.id,
+                "document_id": document.id,
+                "document_type_id": document.document_type_id.id,
+                "document_serie_id": serie.id,
+                "document_number": "1",
+                "protocol_number": "135200000000001",
+                "origin": "Imported",
+                "status_code": "100",
+            }
+        )
+        document.authorization_event_id = event
         document.action_import_confirm_suggestions()
-        with patch.object(
-            type(self.Document), "_trigger_fsm", return_value=True
-        ) as trigger, patch.object(type(self.Document), "action_document_send") as send:
-            document.action_document_confirm()
-        trigger.assert_called_once_with("action_confirm_authorized")
-        send.assert_not_called()
+        model = type(self.Document)
+
+        def forbidden(name):
+            def fail(*args, **kwargs):
+                raise AssertionError(f"{name} must not run")
+
+            return fail
+
+        patchers = [
+            patch.object(model, name, forbidden(name))
+            for name in (
+                "_before_document_validate",
+                "_after_document_authorize",
+                "_document_check",
+                "_document_export",
+                "_document_number",
+                "_document_send_logic",
+                "action_document_send",
+            )
+        ]
+        for patcher in patchers:
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        document.action_document_confirm()
+        self.assertEqual(document.state_edoc, "autorizada")
+        self.assertEqual((document.document_number, document.document_serie), number)
+        self.assertEqual(document.authorization_protocol, "135200000000001")
+        self.assertEqual(document.authorization_event_id, event)
+        self.assertEqual(len(document.event_ids), 1)
 
     def test_a_document_the_company_issued_is_also_refused_with_lines_to_review(self):
         document = self._create_imported_document(issuer="company")
