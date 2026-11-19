@@ -218,6 +218,14 @@ class Document(models.Model):
         help="Review state of the lines of a document imported from a fiscal file.",
     )
 
+    partner_operation_name = fields.Char(
+        string="Operation Declared by Partner",
+        copy=False,
+        readonly=True,
+        help="Nature of the operation as declared by the counterparty in the imported "
+        "document. It breaks the tie between operations that have the same CFOP.",
+    )
+
     import_pending_count = fields.Integer(
         compute="_compute_import_pending_count",
     )
