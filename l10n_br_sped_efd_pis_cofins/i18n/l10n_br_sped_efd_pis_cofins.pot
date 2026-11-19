@@ -184,3 +184,10 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_pis_cofins_6_0000__state__draft
 msgid "Draft"
 msgstr ""
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/tax_assessment.py:0
+#, python-format
+msgid "The start of the assessment of the company (%(start)s) is not the cut-off of the opening balance of the credit (%(cutoff)s): the cut-off of the opening balance is the one that counts for the PIS and the COFINS."
+msgstr ""

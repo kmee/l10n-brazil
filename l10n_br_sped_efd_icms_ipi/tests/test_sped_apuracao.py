@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl-3.0.html).
 
 import base64
+import calendar
 from datetime import date
 
 from odoo.exceptions import UserError
@@ -32,8 +33,9 @@ class TestSpedEfdIcmsIpiApuracao(EntradaHelpers, SpedEntradaCommon):
             }
         )
 
-    def _assess_icms_of_july(self):
-        """The assessment by the normal path: compute from the ledger, post."""
+    def _assess_icms_of_july(self, month=7, post=True):
+        """The assessment of the month by the normal path: compute from the ledger,
+        post."""
         group = self.env["account.tax.group"].search(
             [
                 (
@@ -44,38 +46,40 @@ class TestSpedEfdIcmsIpiApuracao(EntradaHelpers, SpedEntradaCommon):
             ],
             limit=1,
         )
-        payable = self.env["account.account"].create(
-            {
-                "name": "ICMS a recolher",
-                "code": "ICMSPAY",
-                "account_type": "liability_current",
-                "company_id": self.company.id,
-            }
-        )
-        receivable = self.env["account.account"].create(
-            {
-                "name": "ICMS a recuperar",
-                "code": "ICMSREC",
-                "account_type": "asset_current",
-                "company_id": self.company.id,
-            }
-        )
-        group.with_company(self.company).write(
-            {
-                "property_tax_payable_account_id": payable.id,
-                "property_tax_receivable_account_id": receivable.id,
-            }
-        )
+        if not group.with_company(self.company).property_tax_payable_account_id:
+            payable = self.env["account.account"].create(
+                {
+                    "name": "ICMS a recolher",
+                    "code": "ICMSPAY",
+                    "account_type": "liability_current",
+                    "company_id": self.company.id,
+                }
+            )
+            receivable = self.env["account.account"].create(
+                {
+                    "name": "ICMS a recuperar",
+                    "code": "ICMSREC",
+                    "account_type": "asset_current",
+                    "company_id": self.company.id,
+                }
+            )
+            group.with_company(self.company).write(
+                {
+                    "property_tax_payable_account_id": payable.id,
+                    "property_tax_receivable_account_id": receivable.id,
+                }
+            )
         assessment = self.env["l10n_br_tax.assessment"].create(
             {
                 "company_id": self.company.id,
                 "tax_group_id": group.id,
-                "date_from": "2026-07-01",
-                "date_to": "2026-07-31",
+                "date_from": date(2026, month, 1),
+                "date_to": date(2026, month, calendar.monthrange(2026, month)[1]),
             }
         )
         assessment.action_compute()
-        assessment.action_post()
+        if post:
+            assessment.action_post()
         return assessment
 
     def test_generation_stops_without_the_posted_icms_assessment(self):
@@ -232,6 +236,7 @@ class TestSpedEfdIcmsIpiApuracao(EntradaHelpers, SpedEntradaCommon):
     def test_generation_stops_when_an_earlier_month_was_never_assessed(self):
         """The same hole of the credit balance in the ICMS: June has movement and no
         assessment, so the balance that July starts from is not the real one."""
+        self.company.tax_assessment_start = date(2026, 6, 1)
         self._purchase_move(
             "fo_compras_compras_comercializacao", "609", invoice_date=date(2026, 6, 10)
         )
@@ -243,3 +248,56 @@ class TestSpedEfdIcmsIpiApuracao(EntradaHelpers, SpedEntradaCommon):
         with self.assertRaises(UserError) as error:
             declaration.button_create_sped_files()
         self.assertIn("06/2026", error.exception.args[0])
+
+    def _old_base(self):
+        """A base that has years of movement and never used the assessment of the
+        system: bills of 2024 and 2025 and of the months of 2026."""
+        for number, when in (
+            ("701", date(2024, 6, 10)),
+            ("702", date(2025, 6, 10)),
+            ("703", date(2026, 7, 10)),
+            ("704", date(2026, 8, 10)),
+        ):
+            self._purchase_move(
+                "fo_compras_compras_comercializacao", number, invoice_date=when
+            )
+
+    def test_an_existing_base_with_years_of_movement_starts_where_it_is_told(self):
+        """With the start of the assessment defined in July, July is assessed and
+        its file generated: the years before are not asked for one by one."""
+        self._old_base()
+        self.company.tax_assessment_start = date(2026, 7, 1)
+        self._set_accountant()
+        self._assess_icms_of_july()
+        declaration = self._declaration_july()
+        declaration.IND_ATIV = "1"
+        declaration.button_create_sped_files()
+        self.assertIn("|E110|", self._generated_text(declaration))
+
+    def test_the_month_after_the_start_needs_the_month_before_posted(self):
+        """August assessed and posted with July never posted: the file of August
+        stops and says July, and says nothing of 2024 and 2025."""
+        self._old_base()
+        self.company.tax_assessment_start = date(2026, 7, 1)
+        self._set_accountant()
+        self._assess_icms_of_july(month=8)
+        declaration = self._declaration(
+            "efd_icms_ipi", date(2026, 8, 1), date(2026, 8, 31)
+        )
+        declaration.IND_ATIV = "1"
+        with self.assertRaises(UserError) as error:
+            declaration.button_create_sped_files()
+        message = error.exception.args[0]
+        self.assertIn("07/2026", message)
+        self.assertNotIn("2024", message)
+        self.assertNotIn("2025", message)
+
+    def test_without_the_start_the_assessment_asks_for_it(self):
+        """An existing base without the date does not get the whole history asked
+        for: the assessment asks for the start, with the menu path."""
+        self._old_base()
+        with self.assertRaises(UserError) as error:
+            self._assess_icms_of_july()
+        message = error.exception.args[0]
+        self.assertIn("Defina o início da apuração pelo sistema", message)
+        self.assertIn("aba Fiscal", message)

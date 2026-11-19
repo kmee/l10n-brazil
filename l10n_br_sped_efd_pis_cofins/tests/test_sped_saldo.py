@@ -127,6 +127,7 @@ class TestSpedPisCofinsCreditBalance(CreditMixin, SpedEntradaCommon):
         """June has credit and no assessment at all; July is assessed and posted.
         The balance of July starts from zero and the credit of June would be lost
         without a word: the generation stops and says which month is missing."""
+        self.company.tax_assessment_start = date(2026, 6, 1)
         self._entry("fo_compras_compras_comercializacao", "401", date(2026, 6, 10))
         self._entry("fo_compras_compras", "402", date(2026, 7, 10))
         self._sale(date(2026, 7, 12))

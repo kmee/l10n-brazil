@@ -70,9 +70,9 @@ class TaxAssessment(models.Model):
         "procura pis e cofins.",
     )
     regime = fields.Selection(
-        selection=lambda self: self.env["account.tax.group"]
-        ._fields["regime"]
-        .selection,
+        selection=lambda self: (
+            self.env["account.tax.group"]._fields["regime"].selection
+        ),
         compute="_compute_regime",
         store=True,
         readonly=True,
@@ -186,8 +186,7 @@ class TaxAssessment(models.Model):
         string="Saldo devedor apurado",
         compute="_compute_totals",
         store=True,
-        help="Campo 11 do E110: o saldo do período quando devedor, zero "
-        "quando credor.",
+        help="Campo 11 do E110: o saldo do período quando devedor, zero quando credor.",
     )
     deduction_total = fields.Monetary(
         string="Deduções",
@@ -392,17 +391,25 @@ class TaxAssessment(models.Model):
 
     def _get_opening_balance(self):
         """The credit balance the first assessment of the company starts from, when
-        it comes from another system. The modules of the tax that keeps such a
-        balance (the PIS and the COFINS) say it; there is none by default."""
+        it comes from another system: the credit balance informed for the tax and
+        the company (ICMS, IPI). The modules of the tax that keep the credit by
+        period of origin (the PIS and the COFINS) say it in their own way."""
         self.ensure_one()
-        return 0.0
+        openings = self.env["l10n_br_tax.assessment.opening"].search(
+            [
+                ("company_id", "=", self.company_id.id),
+                ("tax_group_id", "=", self.tax_group_id.id),
+            ]
+        )
+        return round(sum(openings.mapped("amount")), 2)
 
     def _get_first_period_date(self):
         """First day of the first month that the system assesses for this tax, when
-        something other than the movement itself says it (the cut-off of an opening
-        balance). By default, the first month with movement."""
+        something says it: the start of the assessment by the system, defined in the
+        company (the cut-off of an opening balance of the PIS and the COFINS wins in
+        their module). Empty while it is not defined."""
         self.ensure_one()
-        return False
+        return self.company_id.tax_assessment_start or False
 
     def _get_unassessed_previous_periods(self):
         """The earlier months with movement of the tax of the group and no posted
@@ -416,6 +423,9 @@ class TaxAssessment(models.Model):
         """
         self.ensure_one()
         if self.regime == "cumulative" or not self.date_from:
+            return []
+        first_system = self._get_first_period_date()
+        if not first_system:
             return []
         lines = self.env["account.move.line"].sudo()
         taxes = self._get_taxes()
@@ -434,9 +444,7 @@ class TaxAssessment(models.Model):
         for group in groups:
             first = group["__range"]["date:month"]["from"]
             moved.add(fields.Date.to_date(first))
-        first_system = self._get_first_period_date()
-        if first_system:
-            moved = {month for month in moved if month >= first_system}
+        moved = {month for month in moved if month >= first_system}
         covered = set()
         for assessment in self.search(
             [
@@ -453,8 +461,43 @@ class TaxAssessment(models.Model):
                 month = (month + timedelta(days=32)).replace(day=1)
         return sorted(moved - covered)
 
+    def _has_earlier_movement(self):
+        """Is there movement of the tax before the period? (a company that has
+        none starts its assessment in this month, with nothing to ask)."""
+        self.ensure_one()
+        return bool(
+            self.env["account.move.line"]
+            .sudo()
+            .search_count(
+                [
+                    ("company_id", "=", self.company_id.id),
+                    ("parent_state", "=", "posted"),
+                    ("tax_line_id", "in", self._get_taxes().ids),
+                    ("date", "<", self.date_from),
+                ]
+            )
+        )
+
+    def _define_start_message(self):
+        return (
+            "Defina o início da apuração pelo sistema desta empresa (Configurações > "
+            "Usuários e Empresas > Empresas > aba Fiscal > Impostos > Início da "
+            "apuração pelo sistema). É o primeiro mês em que o sistema leva o saldo "
+            "credor de um mês para o seguinte: os meses anteriores com movimento "
+            "deixam de ser exigidos, e o saldo credor que vem de antes dessa data é "
+            "informado como saldo inicial (menu de apuração)."
+        )
+
     def _unassessed_previous_periods_message(self):
         self.ensure_one()
+        if self.regime == "cumulative" or not self.date_from:
+            return False
+        if not self._get_first_period_date():
+            # an existing base: it never used the assessment of the system and has
+            # years of movement, which must not be asked for one by one
+            return (
+                self._define_start_message() if self._has_earlier_movement() else False
+            )
         months = self._get_unassessed_previous_periods()
         if not months:
             return False
@@ -491,6 +534,18 @@ class TaxAssessment(models.Model):
                 else False
             )
 
+    def _ensure_assessment_start(self):
+        """The start of the assessment by the system has to be defined before the
+        first assessment: an existing base (with movement before this period) is
+        asked for it, and a company without earlier movement starts in this
+        month, with nothing to ask."""
+        self.ensure_one()
+        if self.regime == "cumulative" or self._get_first_period_date():
+            return
+        if self._has_earlier_movement():
+            raise UserError(self._define_start_message())
+        self.company_id.sudo().tax_assessment_start = self.date_from.replace(day=1)
+
     def _find_previous_assessment(self):
         self.ensure_one()
         return self.search(
@@ -513,6 +568,7 @@ class TaxAssessment(models.Model):
                     _("Só é possível apurar uma apuração em rascunho ou já apurada.")
                 )
             record.line_ids.filtered(lambda line: line.source == "computed").unlink()
+            record._ensure_assessment_start()
 
             previous = record._find_previous_assessment()
             record.previous_assessment_id = previous

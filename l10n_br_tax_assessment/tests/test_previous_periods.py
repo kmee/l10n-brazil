@@ -3,7 +3,7 @@
 
 from datetime import date
 
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 from odoo.tests.common import tagged
 
 from .common_entrada import SpedEntradaCommon
@@ -59,6 +59,7 @@ class TestPreviousPeriods(SpedEntradaCommon):
         return assessment
 
     def test_the_assessment_warns_of_an_earlier_month_with_movement(self):
+        self.company.tax_assessment_start = date(2026, 6, 1)
         self._purchase_move(
             "fo_compras_compras_comercializacao", "601", invoice_date=date(2026, 6, 10)
         )
@@ -70,6 +71,7 @@ class TestPreviousPeriods(SpedEntradaCommon):
         self.assertIn("06/2026", error.exception.args[0])
 
     def test_there_is_no_warning_when_the_earlier_month_is_assessed_and_posted(self):
+        self.company.tax_assessment_start = date(2026, 6, 1)
         self._purchase_move(
             "fo_compras_compras_comercializacao", "601", invoice_date=date(2026, 6, 10)
         )
@@ -83,3 +85,72 @@ class TestPreviousPeriods(SpedEntradaCommon):
         self._purchase_move("fo_compras_compras_comercializacao", "602")
         july = self._assess(7, post=False)
         self.assertFalse(july.previous_periods_warning)
+
+    def _old_base(self):
+        for number, when in (
+            ("701", date(2024, 6, 10)),
+            ("702", date(2025, 6, 10)),
+            ("601", date(2026, 6, 10)),
+        ):
+            self._purchase_move(
+                "fo_compras_compras_comercializacao", number, invoice_date=when
+            )
+        self._purchase_move("fo_compras_compras_comercializacao", "602")
+
+    def test_an_existing_base_without_the_start_is_asked_for_it(self):
+        self._old_base()
+        self.assertFalse(self.company.tax_assessment_start)
+        with self.assertRaises(UserError) as error:
+            self._assess(7, post=False)
+        message = error.exception.args[0]
+        self.assertIn("Defina o início da apuração pelo sistema", message)
+        self.assertIn("Empresas > aba Fiscal", message)
+        self.assertFalse(self.company.tax_assessment_start)
+
+    def test_with_the_start_only_the_months_from_it_are_listed(self):
+        self._old_base()
+        self.company.tax_assessment_start = date(2026, 6, 1)
+        july = self._assess(7, post=False)
+        self.assertIn("06/2026", july.previous_periods_warning)
+        self.assertNotIn("2024", july.previous_periods_warning)
+        self.assertNotIn("2025", july.previous_periods_warning)
+
+    def test_a_new_base_starts_in_the_month_of_the_first_assessment(self):
+        self.assertFalse(self.company.tax_assessment_start)
+        self._purchase_move("fo_compras_compras_comercializacao", "602")
+        self._assess(7, post=False)
+        self.assertEqual(self.company.tax_assessment_start, date(2026, 7, 1))
+
+    def test_the_start_is_the_first_day_of_a_month(self):
+        with self.assertRaises(ValidationError):
+            self.company.tax_assessment_start = date(2026, 6, 15)
+
+    def test_the_informed_opening_balance_is_the_first_previous_balance(self):
+        self._purchase_move("fo_compras_compras_comercializacao", "602")
+        self.company.tax_assessment_start = date(2026, 7, 1)
+        group = self.env["account.tax.group"].search(
+            [
+                (
+                    "fiscal_tax_group_id",
+                    "=",
+                    self.env.ref("l10n_br_fiscal.tax_group_icms").id,
+                )
+            ],
+            limit=1,
+        )
+        opening = self.env["l10n_br_tax.assessment.opening"].create(
+            {
+                "company_id": self.company.id,
+                "tax_group_id": group.id,
+                "amount": 1234.56,
+            }
+        )
+        self.assertEqual(opening.informed_by, self.env.user)
+        july = self._assess(7, post=False)
+        self.assertEqual(july.previous_balance, 1234.56)
+
+    def test_the_company_form_shows_the_start(self):
+        view = self.env["res.company"].get_view(
+            self.env.ref("l10n_br_fiscal.fiscal_res_company_form").id
+        )
+        self.assertIn("tax_assessment_start", view["arch"])

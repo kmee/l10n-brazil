@@ -2,7 +2,7 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl-3.0.html).
 
 from odoo import _, api, fields, models
-from odoo.tools.misc import formatLang
+from odoo.tools.misc import format_date, formatLang
 
 
 class TaxAssessment(models.Model):
@@ -64,6 +64,18 @@ class TaxAssessment(models.Model):
             ):
                 continue
             openings = record._opening_balances()
+            start = record.company_id.tax_assessment_start
+            if openings and start and start != min(openings.mapped("cutoff_date")):
+                # one source only: the cut-off of the opening balance rules
+                record.opening_balance_warning = _(
+                    "The start of the assessment of the company (%(start)s) is not "
+                    "the cut-off of the opening balance of the credit (%(cutoff)s): "
+                    "the cut-off of the opening balance is the one that counts for "
+                    "the PIS and the COFINS.",
+                    start=format_date(self.env, start),
+                    cutoff=format_date(self.env, min(openings.mapped("cutoff_date"))),
+                )
+                continue
             account = record.tax_group_id.with_company(
                 record.company_id
             ).property_tax_receivable_account_id
