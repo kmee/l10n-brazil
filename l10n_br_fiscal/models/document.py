@@ -489,6 +489,10 @@ class Document(models.Model):
         )
         duplicates = cr.fetchall()
         if duplicates:
+            # init runs for each module that extends the model: warn once
+            if getattr(self.pool, "_fiscal_key_index_warned", False):
+                return
+            self.pool._fiscal_key_index_warned = True
             _logger.warning(
                 "The unique index %s of the fiscal documents was not created: "
                 "there are duplicated keys (company, issuer, key, documents): "

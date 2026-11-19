@@ -561,8 +561,12 @@ class NFeImportWizardTest(TransactionCase):
             "odoo.addons.l10n_br_fiscal.models.document", level="WARNING"
         ) as logs:
             self.env["l10n_br_fiscal.document"].init()
+            self.env["l10n_br_fiscal.document"].init()
         self.assertIn("duplicated keys", logs.output[0])
         self.assertIn(first.document_key, logs.output[0])
+        self.assertIn("company", logs.output[0])  # the issuer of the duplicates
+        # the other modules that extend the model run init too: one warning only
+        self.assertEqual(len(logs.output), 1)
         self.assertFalse(
             tools.index_exists(self.env.cr, "l10n_br_fiscal_document_unique_key_idx")
         )
