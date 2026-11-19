@@ -155,6 +155,25 @@ class TestNfseDocumentImport(EdiImportCase):
             documents.partner_operation_name, "Análise e desenvolvimento de sistemas."
         )
 
+    def test_a_user_who_cannot_create_contacts_is_told_which_partner_is_missing(self):
+        user = self._fiscal_user("fiscal_user_nfse_partner", self.presumed)
+        model = self.Document.with_user(user).with_context(
+            allowed_company_ids=self.presumed.ids
+        )
+        documents, errors, _warnings = self._import(
+            nfse_xml(provider=UNKNOWN_PROVIDER), model
+        )
+        self.assertFalse(documents)
+        self.assertIn("EMPRESA PRESTADORA DE TESTE LTDA", errors[0][1])
+        self.assertIn("12.345.678/0001-95", errors[0][1])
+        self.assertIn("not allowed to create contacts", errors[0][1])
+        issued, errors, _warnings = self._import(
+            nfse_xml(taker=OTHER_UNKNOWN, provider=LUCRO_PRESUMIDO), model
+        )
+        self.assertFalse(issued)
+        self.assertIn("EMPRESA TOMADORA DE TESTE LTDA", errors[0][1])
+        self.assertIn("11.444.777/0001-61", errors[0][1])
+
     def test_the_company_is_the_taker_of_the_service(self):
         parsed = self.Document._edi_import_read("a.xml", nfse_xml(taker=LUCRO_REAL))
         self.assertEqual(

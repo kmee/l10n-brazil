@@ -59,6 +59,21 @@ class Document(models.Model):
         return self._nfse_import_create(parsed.binding, role=role)
 
     @api.model
+    def _edi_import_partner_hint(self, parsed):
+        """The provider of a NFS-e that the company receives, the taker of one that
+        it issued: the partner that the document needs registered."""
+        if parsed.reader != "nfse":
+            return super()._edi_import_partner_hint(parsed)
+        try:
+            _company, role = self._edi_import_company(parsed)
+        except UserError:
+            role = False
+        binding = parsed.binding
+        party = binding.taker if role == "issuer" else binding.provider
+        name = party.get("legal_name") or party.get("name") or ""
+        return name, party.get("cnpj") or party.get("cpf") or ""
+
+    @api.model
     def _nfse_import_create(
         self, binding, partner=None, product=None, operation=None, role="taker"
     ):
