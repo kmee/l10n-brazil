@@ -1,13 +1,16 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import os
+import re
 from datetime import timedelta
 from types import SimpleNamespace
 from unittest import mock
 
 from odoo import fields
 
-from odoo.addons.l10n_br_fiscal_edi.tests.common import KEY_1, EdiImportCase
+from odoo.addons import l10n_br_nfe
+from odoo.addons.l10n_br_fiscal_edi.tests.common import KEY_1, KEY_3, EdiImportCase
 from odoo.addons.queue_job.tests.common import trap_jobs
 
 
@@ -130,3 +133,41 @@ class TestNfeManifestOnConfirm(EdiImportCase):
         self._perform(trap)
 
         self.assertEqual(self._events().state, "done")
+
+    def test_a_note_the_company_issued_elsewhere_is_never_manifested(self):
+        """The XML is a real NF-e whose issuer is the company: it enters as an
+        authorized sale and no manifestation is registered."""
+        path = os.path.join(
+            l10n_br_nfe.__path__[0],
+            "tests",
+            "nfe",
+            "v4_00",
+            "leiauteNFe",
+            f"NFe{KEY_3}.xml",
+        )
+        with open(path, "rb") as xml_file:
+            xml = xml_file.read()
+        key = "35200159594315000157550010000000992062777167"
+        xml = xml.replace(KEY_3.encode(), key.encode()).replace(
+            b"<nNF>3</nNF>", b"<nNF>99</nNF>"
+        )
+        xml = re.sub(
+            rb"(<dest>\s*)<CNPJ>\d+</CNPJ>", rb"\1<CNPJ>11444777000161</CNPJ>", xml
+        )
+        company = self.env.ref("l10n_br_base.empresa_lucro_presumido")
+        company.nfe_manifest_on_document_confirm = "confirmacao"
+        documents, errors, _warnings = self.Document._edi_import_files(
+            [("own.xml", xml)]
+        )
+        self.assertFalse(errors)
+        document = documents
+        product = self.env["product.product"].create({"name": "Own product"})
+        document.fiscal_line_ids.product_id = product
+        document.fiscal_line_ids.action_resolve_line()
+
+        with trap_jobs() as trap:
+            document.action_document_confirm()
+
+        self.assertEqual(document.issuer, "company")
+        self.assertEqual(document.state_edoc, "autorizada")
+        trap.assert_jobs_count(0)
