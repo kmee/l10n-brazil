@@ -112,20 +112,20 @@
                         name="action_generate_test_certificate"
                         type="object"
                         string="Generate test certificate"
-                        groups="base.group_system"
+                        groups="l10n_br_bank_connection.group_bank_connection_admin"
                         invisible="environment != 'test' or not uses_certificate"
                         confirm="A new self-signed certificate replaces the one of this connection. Continue?"
                     />
                     <field
                         name="certificate_fingerprint"
                         invisible="1"
-                        groups="base.group_system"
+                        groups="l10n_br_bank_connection.group_bank_connection_admin"
                     />
                     <button
                         name="action_download_certificate_pem"
                         type="object"
                         string="Download certificate (.pem)"
-                        groups="base.group_system"
+                        groups="l10n_br_bank_connection.group_bank_connection_admin"
                         invisible="not uses_certificate or not certificate_fingerprint"
                     />
                     <field name="state" widget="statusbar" />
@@ -158,12 +158,12 @@
                     <field
                         name="certificate_renewal_needed"
                         invisible="1"
-                        groups="base.group_system"
+                        groups="l10n_br_bank_connection.group_bank_connection_admin"
                     />
                     <div
                         class="alert alert-warning"
                         role="alert"
-                        groups="base.group_system"
+                        groups="l10n_br_bank_connection.group_bank_connection_admin"
                         invisible="not certificate_renewal_needed"
                     >
                         The certificate of this connection changed (a renewed A1, for
@@ -214,7 +214,7 @@
                         <page
                             string="Credentials"
                             name="credentials"
-                            groups="base.group_system"
+                            groups="l10n_br_bank_connection.group_bank_connection_admin"
                         >
                             <group>
                                 <group>
@@ -271,7 +271,7 @@
                         <page
                             string="Bank Settings"
                             name="settings"
-                            groups="base.group_system"
+                            groups="l10n_br_bank_connection.group_bank_connection_admin"
                         >
                             <group>
                                 <field name="settings_help" />
@@ -297,7 +297,7 @@
                         <page
                             string="Webhook"
                             name="webhook"
-                            groups="base.group_system"
+                            groups="l10n_br_bank_connection.group_bank_connection_admin"
                         >
                             <group>
                                 <field name="webhook_url" widget="CopyClipboardChar" />
