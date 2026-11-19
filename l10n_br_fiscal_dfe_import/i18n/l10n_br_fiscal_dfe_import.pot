@@ -1,0 +1,325 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* l10n_br_fiscal_dfe_import
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 16.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 01:03+0000\n"
+"PO-Revision-Date: 2026-11-19 01:03+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
+#, python-format
+msgid "(none)"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard__access_key
+msgid "Access Key"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,help:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard__access_key
+msgid "Access key of an NF-e issued to the current company."
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
+#, python-format
+msgid "Acknowledgement registered"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_dfe_import.document_import_search
+msgid "Awaiting Review"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_dfe_import.document_import_dfe_wizard_form
+msgid "Cancel"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_dfe_import.selection__l10n_br_fiscal_dfe_import_wizard__state__confirm
+msgid "Confirm"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard__confirm_message
+msgid "Confirm Message"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard__dfe_document_id
+msgid "Dfe Document"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/dfe_document.py:0
+#, python-format
+msgid "Document created from the access key %s."
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_dfe_import.selection__l10n_br_fiscal_dfe_import_wizard__state__draft
+msgid "Draft"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard__attachment_ids
+msgid "Files"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard__id
+msgid "ID"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_dfe_import.document_import_dfe_wizard_form
+msgid "Import"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
+#: model:ir.actions.act_window,name:l10n_br_fiscal_dfe_import.document_import_dfe_wizard_action
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_dfe_import.document_import_dfe_wizard_form
+#, python-format
+msgid "Import Fiscal Document"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model,name:l10n_br_fiscal_dfe_import.model_l10n_br_fiscal_dfe_import_wizard
+msgid "Import Fiscal Document by File or Access Key"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_document__import_requested_user_id
+msgid "Import Requested By"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
+#: model:ir.actions.act_window,name:l10n_br_fiscal_dfe_import.imported_document_dfe_action
+#, python-format
+msgid "Imported Documents"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
+#, python-format
+msgid "Inform the access key or upload at least one file."
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
+#, python-format
+msgid "Inform the access key or upload files, not both."
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
+#, python-format
+msgid "Issuer partner %s created by the import."
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard____last_update
+msgid "Last Modified on"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
+#, python-format
+msgid ""
+"No file was imported:\n"
+"%s"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,help:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard__attachment_ids
+msgid "One XML file, several, or a zip with them."
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
+#, python-format
+msgid "Only NF-e (model 55) XML files can be imported."
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
+#, python-format
+msgid "Only NF-e (model 55) can be imported by access key."
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_dfe_import.document_import_dfe_wizard_form
+msgid "Register acknowledgement"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_dfe_import.document_line_form
+msgid "Resolve"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
+#, python-format
+msgid "Some files were not imported"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard__state
+msgid "State"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
+#, python-format
+msgid ""
+"The NF-e was not found in the distribution service. Upload its XML file "
+"instead."
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
+#, python-format
+msgid ""
+"The acknowledgement is only possible until %s days after the authorization. "
+"Upload the XML file instead."
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
+#, python-format
+msgid ""
+"The acknowledgement was already registered. The fiscal document will be "
+"created when the complete XML arrives."
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
+#, python-format
+msgid ""
+"The complete XML is only released after the acknowledgement of the operation"
+" (ciência), an event registered at the tax authority that obliges the "
+"company to register the final manifestation afterwards. Register it?"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
+#, python-format
+msgid ""
+"The fiscal document will be created when the complete XML arrives from the "
+"distribution service."
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
+#, python-format
+msgid "The recipient %s is not a company of this database."
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
+#, python-format
+msgid "This NF-e is not authorized (status %s)."
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
+#: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
+#, python-format
+msgid "This NF-e was cancelled by the issuer."
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
+#, python-format
+msgid "This NF-e was cancelled or denied."
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
+#: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
+#, python-format
+msgid "This NF-e was denied by the tax authority."
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_dfe_import.document_form
+msgid ""
+"This document was imported and is awaiting review: resolve\n"
+"                    each line before generating the invoice."
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,help:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_document__import_requested_user_id
+msgid ""
+"User that asked to import this access key. The fiscal document is created "
+"when the complete XML arrives."
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
+#, python-format
+msgid "Waiting for the XML"
+msgstr ""
+

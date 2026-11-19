@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 KMEE
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="imported_document_dfe_action" model="ir.actions.act_window">
+        <field name="name">Imported Documents</field>
+        <field name="res_model">l10n_br_fiscal.document</field>
+        <field name="view_mode">tree,kanban,form</field>
+        <field name="search_view_id" ref="document_import_search" />
+        <field name="view_id" ref="l10n_br_fiscal.document_tree" />
+        <field name="domain">[('imported_document', '=', True)]</field>
+        <field name="context">{'default_fiscal_operation_type': 'in'}</field>
+    </record>
+
+    <record id="l10n_br_nfe.nfe_import_document" model="ir.ui.menu">
+        <field
+            name="action"
+            eval="'ir.actions.act_window,%s' % ref('document_import_dfe_wizard_action')"
+        />
+    </record>
+
+    <record id="l10n_br_nfe.imported_document_menu" model="ir.ui.menu">
+        <field
+            name="action"
+            eval="'ir.actions.act_window,%s' % ref('imported_document_dfe_action')"
+        />
+    </record>
+</odoo>
