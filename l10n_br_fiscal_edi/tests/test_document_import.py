@@ -338,6 +338,24 @@ class TestDocumentImport(EdiImportCase):
         self.assertEqual(line.product_id, product)
         self.assertEqual(line.import_state, "pending")
 
+    def test_the_review_of_a_document_the_company_issued_learns_no_supplier(self):
+        product = self.env["product.product"].create({"name": "Sold product"})
+        customer = self.env["res.partner"].create({"name": "Customer of the sale"})
+        for direction, learned in (("out", 0), ("in", 1)):
+            document = self._create_imported_document(
+                partner=customer,
+                fiscal_operation_type=direction,
+                lines=[{"product_id": product.id}],
+            )
+            document.fiscal_operation_type = direction
+            document.fiscal_line_ids.action_resolve_line()
+            self.assertEqual(
+                self.env["product.supplierinfo"].search_count(
+                    [("partner_id", "=", customer.id)]
+                ),
+                learned,
+            )
+
     def test_a_product_mapped_for_another_supplier_is_not_resolved(self):
         product = self.env["product.product"].create({"name": "Mapped elsewhere"})
         other = self.env["res.partner"].create({"name": "Another supplier"})
