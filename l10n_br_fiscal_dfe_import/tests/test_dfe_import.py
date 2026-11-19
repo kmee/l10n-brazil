@@ -260,6 +260,23 @@ class TestDfeImport(DfeImportCase):
         self.assertIn("99999999", documents.import_warning)
         self.assertEqual(self.env["l10n_br_fiscal.ncm"].search_count([]), ncm)
 
+    def test_matching_a_product_without_ncm_keeps_the_ncm_of_the_file(self):
+        self.env["product.product"].create(
+            {"name": "No NCM", "default_code": "ZZ-NEW-1", "ncm_id": False}
+        )
+        ncm = self.env["l10n_br_fiscal.ncm"].search(
+            [("code_unmasked", "=", "94033000")], limit=1
+        )
+
+        documents, _errors = self.Document.dfe_import_files(
+            [("nfe.xml", self._xml(KEY_1))]
+        )
+
+        line = documents.fiscal_line_ids
+        self.assertTrue(line.product_id)
+        self.assertEqual(line.ncm_id, ncm)
+        self.assertNotIn("NCM", documents.import_warning or "")
+
     def test_unknown_registries_are_not_created(self):
         models = ("l10n_br_fiscal.cest", "uom.uom", "res.city", "res.country")
         counts = [self.env[model].search_count([]) for model in models]

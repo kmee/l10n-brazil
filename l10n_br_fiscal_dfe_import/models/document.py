@@ -142,6 +142,7 @@ class Document(models.Model):
         if not document.document_type_id:
             document.document_type_id = self.env.ref("l10n_br_fiscal.document_55")
         document._dfe_import_attach_xml(content)
+        document._dfe_import_restore_ncm()
         document._init_import_states()
         document.fiscal_line_ids.filtered(lambda line: not line.uom_id).write(
             {"import_state": "pending"}
@@ -159,6 +160,17 @@ class Document(models.Model):
                 % ", ".join(new_partners.mapped("display_name"))
             )
         return document
+
+    def _dfe_import_restore_ncm(self):
+        """The NCM of an imported line is the one of the file: matching a
+        product (that may have no NCM) must not replace it."""
+        ncm_model = self.env["l10n_br_fiscal.ncm"]
+        for line in self.fiscal_line_ids.filtered("import_ncm_code"):
+            ncm = ncm_model.search(
+                [("code_unmasked", "=", line.import_ncm_code)], limit=1
+            )
+            if ncm and line.ncm_id != ncm:
+                line.ncm_id = ncm
 
     def action_confirm_suggestions(self):
         """Resolve in a batch the lines whose product is a suggestion: the
