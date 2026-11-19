@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 13:31+0000\n"
-"PO-Revision-Date: 2026-11-19 13:31+0000\n"
+"POT-Creation-Date: 2026-11-19 16:26+0000\n"
+"PO-Revision-Date: 2026-11-19 16:26+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: pt_BR\n"
@@ -15,6 +15,15 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: \n"
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
+#, python-format
+msgid ""
+"%(count)s line(s) kept for the review: the unit declared by the supplier has"
+" no match. Choose the unit of each one."
+msgstr "%(count)s linha(s) ficaram para a revisão: a unidade declarada pelo fornecedor não tem correspondência. Escolha a unidade de cada uma."
 
 #. module: l10n_br_fiscal_dfe_import
 #. odoo-python
@@ -170,6 +179,12 @@ msgid "Import Fiscal Document by File or Access Key"
 msgstr "Importar documento fiscal por arquivo ou chave de acesso"
 
 #. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_account_move_line__import_price_gross
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_document_line__import_price_gross
+msgid "Import Gross Total"
+msgstr "Total bruto da importação"
+
+#. module: l10n_br_fiscal_dfe_import
 #: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_document__import_requested_user_id
 msgid "Import Requested By"
 msgstr "Importação solicitada por"
@@ -252,6 +267,14 @@ msgid ""
 msgstr "Nenhuma operação fiscal corresponde ao CFOP do emitente: escolha a operação fiscal do documento e a linha de operação de cada linha."
 
 #. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
+#: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
+#, python-format
+msgid "Note already imported"
+msgstr "Nota já importada"
+
+#. module: l10n_br_fiscal_dfe_import
 #: model:ir.model.fields,help:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard__attachment_ids
 msgid "One XML file, several, or a zip with them."
 msgstr "Um arquivo XML, vários, ou um zip com eles."
@@ -302,6 +325,13 @@ msgid "Some files were not imported"
 msgstr "Alguns arquivos não foram importados"
 
 #. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
+#, python-format
+msgid "Some lines were not confirmed"
+msgstr "Algumas linhas não foram confirmadas"
+
+#. module: l10n_br_fiscal_dfe_import
 #: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard__state
 msgid "State"
 msgstr "Situação"
@@ -349,6 +379,15 @@ msgid ""
 " (ciência), an event registered at the tax authority that obliges the "
 "company to register the final manifestation afterwards. Register it?"
 msgstr "O XML completo só é liberado depois da ciência da operação, um evento registrado na SEFAZ que obriga a empresa a registrar depois a manifestação conclusiva. Registrar a ciência?"
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
+#, python-format
+msgid ""
+"The distribution service could not be reached now. Try again later or upload"
+" the XML file of the note."
+msgstr "O serviço de distribuição não pôde ser alcançado agora. Tente de novo mais tarde ou envie o arquivo XML da nota."
 
 #. module: l10n_br_fiscal_dfe_import
 #. odoo-python
@@ -429,6 +468,25 @@ msgid ""
 msgstr ""
 "Este documento foi importado e aguarda revisão: resolva\n"
 "                    cada linha antes de gerar a fatura."
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
+#: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
+#, python-format
+msgid "This note was already imported; the existing document was opened."
+msgstr "Esta nota já estava importada; abrimos o documento existente."
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,help:l10n_br_fiscal_dfe_import.field_account_move_line__import_price_gross
+#: model:ir.model.fields,help:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_document_line__import_price_gross
+msgid ""
+"Total value of the item as the supplier file declared it (vProd). The unit "
+"price has the precision of the price, and the de-para with a unit factor "
+"divides it, so quantity times price may not give back the cents of the file:"
+" the total of the line follows this value. Cleared when a person edits the "
+"quantity or the price."
+msgstr "Valor total do item como o arquivo do fornecedor declarou (vProd). O preço unitário tem a precisão do preço e o de-para com fator de unidade o divide, então quantidade vezes preço pode não devolver os centavos do arquivo: o total da linha segue este valor. Limpo quando uma pessoa edita a quantidade ou o preço."
 
 #. module: l10n_br_fiscal_dfe_import
 #: model:ir.model.fields,help:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_document__import_requested_user_id

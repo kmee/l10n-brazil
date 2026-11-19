@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 13:31+0000\n"
-"PO-Revision-Date: 2026-11-19 13:31+0000\n"
+"POT-Creation-Date: 2026-11-19 16:26+0000\n"
+"PO-Revision-Date: 2026-11-19 16:26+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: pt_BR\n"
@@ -31,6 +31,15 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:l10n_br_account_dfe_import.document_form
 msgid "Generate Invoice"
 msgstr "Gerar fatura"
+
+#. module: l10n_br_account_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_account_dfe_import/models/document.py:0
+#, python-format
+msgid ""
+"Generating the invoice needs the accounting rights of the Billing group. Ask"
+" a user that has them."
+msgstr "Gerar a fatura exige o direito contábil do grupo de Faturamento. Peça a um usuário que o tenha."
 
 #. module: l10n_br_account_dfe_import
 #. odoo-python
