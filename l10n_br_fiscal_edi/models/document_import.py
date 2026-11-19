@@ -302,7 +302,9 @@ class Document(models.Model):
             .search([("id", ">", floor), ("create_uid", "=", self.env.uid)])
         )
         if new_partners:
-            self.message_post(
+            # A note in the history, sent to nobody: message_post needs the email of
+            # the sender, which a fiscal user may not have
+            self._message_log(
                 body=_("Partners created by the import: %s.")
                 % ", ".join(new_partners.mapped("display_name"))
             )

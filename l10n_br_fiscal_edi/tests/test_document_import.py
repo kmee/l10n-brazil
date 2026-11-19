@@ -197,6 +197,26 @@ class TestDocumentImport(EdiImportCase):
         )
         self.assertIn(created.display_name, document.message_ids[0].body)
 
+    def test_a_user_with_no_email_imports_and_the_partners_are_recorded(self):
+        """The history of the import is a note that is sent to nobody, so a fiscal
+        user without an email address can import."""
+        user = self._fiscal_user("fiscal_user_no_email")
+        user.partner_id.email = False
+        self.assertFalse(user.partner_id.email)
+        document = self._create_imported_document()
+        last = self.env["res.partner"].search([], order="id desc", limit=1)
+        created = (
+            self.env["res.partner"]
+            .with_user(user)
+            .sudo()
+            .create({"name": "Born from the file of a user"})
+        )
+        self.assertEqual(created.create_uid, user)
+        document.with_user(user).with_context(
+            allowed_company_ids=self.company.ids, edi_import_last_partner_id=last.id
+        )._edi_import_after_create(self._parsed(KEY_1), "recipient")
+        self.assertIn(created.display_name, document.message_ids[0].body)
+
     def test_a_reader_that_is_not_installed_refuses_the_file(self):
         parsed = self._parsed(KEY_1, reader="cte")
         with patch.object(
