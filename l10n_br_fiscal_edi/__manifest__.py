@@ -21,6 +21,7 @@
         "views/invalidate_number_view.xml",
         "views/document_event_view.xml",
         "views/document_event_template.xml",
+        "views/document_import_view.xml",
         # Reports
         "views/document_event_report.xml",
         # Wizards
@@ -28,10 +29,12 @@
         "wizards/document_correction_wizard.xml",
         "wizards/document_status_wizard.xml",
         "wizards/invalidate_number_wizard.xml",
+        "wizards/document_import_wizard.xml",
         # Actions
         "views/l10n_br_fiscal_action.xml",
         # Menus
         "views/l10n_br_fiscal_menu.xml",
+        "views/document_import_menu.xml",
     ],
     "installable": True,
     "external_dependencies": {

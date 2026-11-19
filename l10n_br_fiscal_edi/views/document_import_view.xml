@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 KMEE
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="document_form_import" model="ir.ui.view">
+        <field name="name">l10n_br_fiscal_edi.document.form.import</field>
+        <field name="model">l10n_br_fiscal.document</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.document_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//form/header" position="inside">
+                <button
+                    name="action_import_confirm_suggestions"
+                    type="object"
+                    string="Confirm Suggestions"
+                    class="btn-primary"
+                    groups="l10n_br_fiscal.group_user"
+                    attrs="{'invisible': [('import_state', 'in', [False, 'resolved'])]}"
+                />
+            </xpath>
+            <xpath expr="//form/sheet" position="before">
+                <div
+                    class="alert alert-info"
+                    role="alert"
+                    attrs="{'invisible': [('import_state', 'in', [False, 'resolved'])]}"
+                >
+                    <field name="import_state" invisible="1" />
+                    <field name="import_pending_count" invisible="1" />
+                    This document was imported and is awaiting review: resolve each line
+                    before confirming it.
+                </div>
+                <div
+                    class="alert alert-warning"
+                    role="alert"
+                    attrs="{'invisible': [('import_warning', '=', False)]}"
+                >
+                    <field name="import_warning" nolabel="1" readonly="1" />
+                </div>
+            </xpath>
+            <xpath
+                expr="//field[@name='fiscal_line_ids']/tree/field[@name='fiscal_amount_total']"
+                position="after"
+            >
+                <field
+                    name="import_state"
+                    string="Review"
+                    widget="badge"
+                    decoration-success="import_state == 'resolved'"
+                    decoration-warning="import_state in ('pending', 'matched')"
+                    optional="show"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="document_line_form_import" model="ir.ui.view">
+        <field name="name">l10n_br_fiscal_edi.document.line.form.import</field>
+        <field name="model">l10n_br_fiscal.document.line</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.document_line_form" />
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field
+                    name="import_state"
+                    string="Review"
+                    attrs="{'invisible': [('import_state', '=', False)]}"
+                />
+                <field
+                    name="import_uom_id"
+                    context="{'uom_search_fiscal_code': True}"
+                    attrs="{'invisible': [('import_state', '=', False)]}"
+                />
+                <field
+                    name="import_uom_factor"
+                    attrs="{'invisible': [('import_state', '=', False)]}"
+                />
+                <field
+                    name="partner_ncm_code"
+                    attrs="{'invisible': [('partner_ncm_code', '=', False)]}"
+                />
+                <button
+                    name="action_resolve_line"
+                    type="object"
+                    string="Resolve"
+                    class="btn-primary"
+                    attrs="{'invisible': [('import_state', 'in', [False, 'resolved'])]}"
+                />
+            </field>
+        </field>
+    </record>
+
+    <record id="document_import_tree" model="ir.ui.view">
+        <field name="name">l10n_br_fiscal_edi.document.import.tree</field>
+        <field name="model">l10n_br_fiscal.document</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.document_tree" />
+        <field name="mode">primary</field>
+        <field name="priority" eval="99" />
+        <field name="arch" type="xml">
+            <field name="fiscal_amount_untaxed" position="replace" />
+            <field name="fiscal_amount_tax" position="replace" />
+            <field name="state_edoc" position="after">
+                <field
+                    name="import_state"
+                    string="Review"
+                    widget="badge"
+                    decoration-success="import_state == 'resolved'"
+                    decoration-warning="import_state in ('pending', 'in_progress')"
+                />
+            </field>
+        </field>
+    </record>
+
+    <record id="document_import_search" model="ir.ui.view">
+        <field name="name">l10n_br_fiscal_edi.document.import.search</field>
+        <field name="model">l10n_br_fiscal.document</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.document_search" />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <filter name="draft" position="before">
+                <filter
+                    name="awaiting_review"
+                    string="Awaiting Review"
+                    domain="[('import_state', 'in', ('pending', 'in_progress'))]"
+                />
+            </filter>
+        </field>
+    </record>
+</odoo>
