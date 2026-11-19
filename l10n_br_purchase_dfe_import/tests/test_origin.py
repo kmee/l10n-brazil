@@ -34,6 +34,14 @@ class TestOrigin(PurchaseImportCase):
         self.assertFalse(self.line.import_purchase_line_id)
         self.assertEqual(self.line.import_origin_state, "pending")
 
+    def test_a_document_without_operation_still_gets_the_suggestion(self):
+        self.document.fiscal_operation_id = False
+        order = self._order()
+        self._resolve_product()
+
+        self.assertEqual(self.line.import_purchase_line_id, order.order_line)
+        self.assertEqual(self.line.import_origin_state, "suggested")
+
     def test_supplier_without_open_orders_leaves_no_state(self):
         self._resolve_product()
 
@@ -108,6 +116,27 @@ class TestOrigin(PurchaseImportCase):
         self.document.action_confirm_import_origins()
 
         self.assertEqual(self.line.fiscal_operation_line_id, destination)
+
+    def test_the_destination_is_applied_after_the_operation_is_suggested(self):
+        # the supplier and the product of the file are known from a first import
+        first, _errors = self.Document.dfe_import_files([("nfe.xml", self._xml(KEY_2))])
+        self.product = first.fiscal_line_ids.product_id
+        order = self._order(partner=first.partner_id)
+        first.unlink()
+        destination = self.env.ref("l10n_br_fiscal.fo_compras_compras_uso_consumo")
+        order.order_line.fiscal_operation_line_id = destination
+        xml = self._xml(KEY_2).replace(
+            b"</prod>",
+            b"<xPed>%s</xPed><nItemPed>1</nItemPed></prod>" % order.name.encode(),
+            1,
+        )
+
+        documents, errors = self.Document.dfe_import_files([("nfe.xml", xml)])
+
+        line = documents.fiscal_line_ids
+        self.assertFalse(errors)
+        self.assertEqual(line.import_origin_state, "resolved")
+        self.assertEqual(line.fiscal_operation_line_id, destination)
 
     def test_destination_does_not_replace_a_manual_choice(self):
         order = self._order()

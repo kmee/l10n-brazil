@@ -123,7 +123,8 @@ class FiscalDocumentLine(models.Model):
         self.ensure_one()
         document = self.document_id
         partner = document.partner_id.commercial_partner_id
-        if not partner or document.fiscal_operation_type != "in":
+        # an imported document may still have no fiscal operation
+        if not partner or document.fiscal_operation_type not in ("in", False):
             return False
         return (document.company_id.id, partner.id)
 

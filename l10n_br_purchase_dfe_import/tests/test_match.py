@@ -116,6 +116,17 @@ class TestMatch(PurchaseImportCase):
         self.assertEqual(self.line.import_purchase_line_id, quote.order_line)
         self.assertEqual(self.line.import_origin_state, "suggested")
 
+    def test_a_document_without_operation_is_in_the_tela_and_follows_the_order(self):
+        # without the operation the purpose of the document is empty too
+        self.document.write({"fiscal_operation_id": False, "edoc_purpose": False})
+        quote = self._order(confirm=False)
+        self._resolve_product()
+        self.assertTrue(self._rows(fiscal_document_id=self.document.id))
+
+        quote.button_confirm()
+
+        self.assertEqual(self.line.import_origin_state, "suggested")
+
     def test_create_the_order_from_the_note(self):
         self._resolve_product()
         note = self._rows(fiscal_document_id=self.document.id)

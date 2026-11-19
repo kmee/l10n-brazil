@@ -54,7 +54,7 @@
                     name="import_purchase_line_id"
                     options="{'no_create': True}"
                     groups="purchase.group_purchase_user"
-                    attrs="{'invisible': [('fiscal_operation_type', '!=', 'in')]}"
+                    attrs="{'invisible': [('fiscal_operation_type', '=', 'out')]}"
                 />
                 <field
                     name="import_origin_state"
