@@ -211,6 +211,15 @@ class Document(models.Model):
                 _("You have no access to the company %s, recipient of the file.")
                 % company.display_name
             )
+        if company not in self.env.companies:
+            raise UserError(
+                _(
+                    "The note is addressed to the company %s, which is not selected "
+                    "in the company switcher. Select it (or switch to it) and "
+                    "import again."
+                )
+                % company.display_name
+            )
         return company
 
     @api.model

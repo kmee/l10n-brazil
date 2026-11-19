@@ -69,6 +69,7 @@ class L10nBrFiscalDfeDocument(models.Model):
         documents, errors = (
             self.env["l10n_br_fiscal.document"]
             .with_user(user)
+            .with_context(allowed_company_ids=self.company_id.ids)
             .dfe_import_files(
                 [
                     (

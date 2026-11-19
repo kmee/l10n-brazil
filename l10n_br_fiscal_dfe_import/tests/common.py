@@ -24,6 +24,9 @@ class DfeImportCase(TransactionCase):
         super().setUpClass()
         cls.company = cls.env.ref("base.main_company")
         cls.other_company = cls.env.ref("l10n_br_base.empresa_lucro_real")
+        presumed = cls.env.ref("l10n_br_base.empresa_lucro_presumido")
+        companies = (cls.company | cls.other_company | presumed).ids
+        cls.env = cls.env(context=dict(cls.env.context, allowed_company_ids=companies))
         cls.Document = cls.env["l10n_br_fiscal.document"]
 
     @classmethod

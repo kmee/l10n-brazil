@@ -332,7 +332,9 @@ class TestDfeImport(DfeImportCase):
     def test_note_of_another_company_opens_in_the_context_of_its_company(self):
         user = self._manager_of(self.company | self.other_company)
         wizard = self.env["l10n_br_fiscal_dfe_import.wizard"].with_user(user)
-        wizard = wizard.with_context(allowed_company_ids=[self.company.id])
+        wizard = wizard.with_context(
+            allowed_company_ids=[self.company.id, self.other_company.id]
+        )
         attachment = self.env["ir.attachment"].create(
             {"name": "nfe.xml", "raw": self._other_company_xml(KEY_1)}
         )
@@ -348,7 +350,7 @@ class TestDfeImport(DfeImportCase):
     def test_repeated_note_of_another_company_opens_the_existing_document(self):
         user = self._manager_of(self.company | self.other_company)
         service = self.Document.with_user(user).with_context(
-            allowed_company_ids=[self.company.id]
+            allowed_company_ids=[self.company.id, self.other_company.id]
         )
         files = [("nfe.xml", self._other_company_xml(KEY_1))]
         first, _errors = service.dfe_import_files(files)
@@ -526,6 +528,7 @@ class TestDfeImport(DfeImportCase):
         menu = self.env.ref("l10n_br_nfe.nfe_import_document")
 
         wizard = self.env["l10n_br_fiscal_dfe_import.wizard"].with_user(user)
+        wizard = wizard.with_context(allowed_company_ids=[self.company.id])
 
         self.assertTrue(wizard.create({}))
         self.assertTrue(menu.with_user(user)._filter_visible_menus())
@@ -535,3 +538,20 @@ class TestDfeImport(DfeImportCase):
 
         menu = self.env.ref("l10n_br_nfe.nfe_import_document")
         self.assertEqual(menu.groups_id, self.env.ref("l10n_br_fiscal.group_manager"))
+
+    def test_note_of_a_company_not_selected_in_the_switcher_is_refused(self):
+        user = self._manager_of(self.company | self.other_company)
+        service = self.Document.with_user(user).with_context(
+            allowed_company_ids=[self.company.id]
+        )
+        files = [
+            ("other.xml", self._other_company_xml(KEY_1)),
+            ("mine.xml", self._xml(KEY_2)),
+        ]
+
+        documents, errors = service.dfe_import_files(files)
+
+        self.assertEqual(documents.company_id, self.company)
+        self.assertEqual([name for name, _message in errors], ["other.xml"])
+        self.assertIn(self.other_company.name, errors[0][1])
+        self.assertFalse(self._imported(KEY_1, self.other_company))
