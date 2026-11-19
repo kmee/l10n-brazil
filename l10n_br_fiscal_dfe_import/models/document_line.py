@@ -7,7 +7,14 @@ from .product_product import NO_CREATE_CONTEXT_KEY
 
 # Char fields that mirror a registry record (NCM, CEST...): writing them when
 # the record does not exist makes the ORM create an empty one.
-REGISTRY_MIRROR_KEYS = ("nfe40_NCM", "nfe40_CEST", "nfe40_EXTIPI", "nfe40_CFOP")
+REGISTRY_MIRROR_KEYS = (
+    "nfe40_NCM",
+    "nfe40_CEST",
+    "nfe40_EXTIPI",
+    "nfe40_CFOP",
+    "nfe40_uCom",
+    "nfe40_uTrib",
+)
 
 
 class DocumentLine(models.Model):
@@ -30,4 +37,12 @@ class DocumentLine(models.Model):
             declared = getattr(node, attr[0], None)
             if key == "nfe40_NCM" and declared:
                 vals["import_ncm_code"] = str(declared)
+            if declared and key in ("nfe40_uCom", "nfe40_uTrib"):
+                # no unit by omission: it stays empty when nothing matches
+                uom = self.env["uom.uom"]._match_by_fiscal_code(str(declared))
+                if key == "nfe40_uCom":
+                    vals["partner_uom_code"] = str(declared)
+                    vals["uom_id"] = uom.id or False
+                else:
+                    vals["uot_id"] = uom.id or False
         return result

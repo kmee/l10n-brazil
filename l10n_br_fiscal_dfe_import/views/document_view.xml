@@ -72,6 +72,14 @@
                     attrs="{'invisible': [('import_state', '=', False)]}"
                 />
                 <field
+                    name="import_uom_id"
+                    attrs="{'invisible': [('import_state', '=', False)]}"
+                />
+                <field
+                    name="import_uom_factor"
+                    attrs="{'invisible': [('import_state', '=', False)]}"
+                />
+                <field
                     name="import_ncm_code"
                     attrs="{'invisible': [('import_ncm_code', '=', False)]}"
                 />

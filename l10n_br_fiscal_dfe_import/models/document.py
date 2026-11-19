@@ -35,7 +35,10 @@ class Document(models.Model):
     )
 
     @api.depends(
-        "imported_document", "fiscal_operation_id", "fiscal_line_ids.import_ncm_code"
+        "imported_document",
+        "fiscal_operation_id",
+        "fiscal_line_ids.import_ncm_code",
+        "fiscal_line_ids.uom_id",
     )
     def _compute_import_warning(self):
         for document in self:
@@ -55,6 +58,13 @@ class Document(models.Model):
                     messages.append(
                         _("%(line)s: the NCM %(ncm)s is not in the registry.")
                         % {"line": line.name, "ncm": line.import_ncm_code}
+                    )
+                for line in document.fiscal_line_ids.filtered(
+                    lambda line: line.partner_uom_code and not line.uom_id
+                ):
+                    messages.append(
+                        _("%(line)s: the unit %(uom)s has no match in the units.")
+                        % {"line": line.name, "uom": line.partner_uom_code}
                     )
             document.import_warning = "\n".join(messages)
 
@@ -133,6 +143,9 @@ class Document(models.Model):
             document.document_type_id = self.env.ref("l10n_br_fiscal.document_55")
         document._dfe_import_attach_xml(content)
         document._init_import_states()
+        document.fiscal_line_ids.filtered(lambda line: not line.uom_id).write(
+            {"import_state": "pending"}
+        )
         document._dfe_import_suggest_operation(inf_nfe)
         new_partners = (
             self.env["res.partner"]

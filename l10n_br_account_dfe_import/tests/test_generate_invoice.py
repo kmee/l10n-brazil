@@ -70,6 +70,16 @@ class TestGenerateInvoice(DfeImportCase):
 
         self.assertEqual(line.name, "Brand new thing")
 
+    def test_line_with_an_unknown_unit_does_not_pass_the_invoice_gate(self):
+        xml = self._xml(KEY_2, replace=[(b"<uCom>KG</uCom>", b"<uCom>ZZZ</uCom>")])
+        document, _errors = self.Document.dfe_import_files([("nfe.xml", xml)])
+        document.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        product = self.env["product.product"].create({"name": "Reviewed product"})
+        document.fiscal_line_ids._apply_import_depara(product=product)
+
+        with self.assertRaisesRegex(UserError, "Choose the unit"):
+            document.action_generate_invoice()
+
     def _invoice_button_hidden(self, document):
         admin = self.env.ref("base.user_admin")
         arch = document.with_user(admin).get_view(view_type="form")["arch"]

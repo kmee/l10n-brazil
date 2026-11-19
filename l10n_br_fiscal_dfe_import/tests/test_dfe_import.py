@@ -263,7 +263,7 @@ class TestDfeImport(DfeImportCase):
             KEY_1,
             replace=[
                 (b"<NCM>94033000</NCM>", b"<NCM>94033000</NCM><CEST>9999999</CEST>"),
-                (b"<uCom>UNID</uCom>", b"<uCom>ZZZ</uCom>"),
+                (b"<uCom>UN</uCom>", b"<uCom>ZZZ</uCom>"),
                 (b"<cMun>3501152</cMun>", b"<cMun>9999999</cMun>"),
             ],
         )
@@ -449,3 +449,50 @@ class TestDfeImport(DfeImportCase):
 
         self.assertFalse([term["src"] for term in terms if not term["value"]])
         self.assertIn("Review", [term["src"] for term in terms])
+
+    def test_unknown_unit_stays_empty_and_is_kept_as_declared(self):
+        uom = self.env["uom.uom"].search_count([])
+        xml = self._xml(
+            KEY_1,
+            replace=[(b"<uCom>UN</uCom>", b"<uCom>ZZZ</uCom>")],
+        )
+
+        documents, errors = self.Document.dfe_import_files([("nfe.xml", xml)])
+
+        line = documents.fiscal_line_ids
+        self.assertFalse(errors)
+        self.assertFalse(line.uom_id)
+        self.assertEqual(line.partner_uom_code, "ZZZ")
+        self.assertEqual(line.import_state, "pending")
+        self.assertIn("ZZZ", documents.import_warning)
+        self.assertEqual(self.env["uom.uom"].search_count([]), uom)
+
+    def test_known_unit_is_matched_not_defaulted(self):
+        kilo = self.env["uom.uom"]._match_by_fiscal_code("KG")
+        xml = self._xml(
+            KEY_1,
+            replace=[
+                (b"<uCom>UN</uCom>", b"<uCom>KG</uCom>"),
+                (b"<uTrib>UN</uTrib>", b"<uTrib>KG</uTrib>"),
+            ],
+        )
+
+        documents, _errors = self.Document.dfe_import_files([("nfe.xml", xml)])
+
+        self.assertEqual(documents.fiscal_line_ids.uom_id, kilo)
+        self.assertEqual(documents.fiscal_line_ids.uot_id, kilo)
+
+    def test_matched_product_with_an_unknown_unit_still_awaits_review(self):
+        xml = self._xml(
+            KEY_1,
+            replace=[
+                (b"ZZ-NEW-1", b"E-COM11"),
+                (b"<uCom>UN</uCom>", b"<uCom>ZZZ</uCom>"),
+            ],
+        )
+
+        documents, _errors = self.Document.dfe_import_files([("nfe.xml", xml)])
+
+        line = documents.fiscal_line_ids
+        self.assertTrue(line.product_id)
+        self.assertEqual(line.import_state, "pending")
