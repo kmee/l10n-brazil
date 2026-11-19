@@ -66,6 +66,15 @@ class TestStockEntry(StockImportCase):
         with self.assertRaisesRegex(UserError, "without order"):
             self._rows(fiscal_document_id=self.document.id).action_create_receipt()
 
+    def test_the_receipt_does_not_convert_a_unit_nobody_confirmed(self):
+        note = self._no_order()
+        self.line.write(
+            {"partner_uom_code": "XYZ", "uom_id": False, "import_uom_id": False}
+        )
+
+        with self.assertRaisesRegex(UserError, "was not confirmed"):
+            note.action_create_receipt()
+
     def test_only_a_manager_marks_no_stock_entry(self):
         self._no_order()
         buyer = self._user("buyer", "purchase.group_purchase_user")

@@ -27,15 +27,16 @@ class DocumentMatch(models.Model):
     )
 
     @api.model
-    def _match_queries(self):
-        # the receipts bring two columns more: the sources that came before
-        # have them empty
-        queries = [
-            "SELECT q.*, NULL::integer AS stock_move_id, "
-            f"NULL::integer AS picking_id FROM ({query}) q"
-            for query in super()._match_queries()
-        ]
-        return queries + [self._match_receipt_query()]
+    def _match_extra_columns(self):
+        columns = super()._match_extra_columns()
+        columns.update({"stock_move_id": "integer", "picking_id": "integer"})
+        return columns
+
+    @api.model
+    def _match_sources(self):
+        sources = super()._match_sources()
+        sources.append((self._match_receipt_query(), ("stock_move_id", "picking_id")))
+        return sources
 
     @api.model
     def _match_receipt_query(self):
@@ -138,6 +139,7 @@ class DocumentMatch(models.Model):
         if not lines:
             raise UserError(_("Select the invoice lines to create the receipt."))
         document = self._editable_document(lines)
+        self._check_units(lines)
         if not all(
             line.import_origin_state == "no_order"
             and not line.import_stock_move_id
