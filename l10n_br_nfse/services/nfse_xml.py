@@ -31,6 +31,7 @@ class NfseNacionalBinding:
         self.provider_name = values.get("provider_name")
         self.provider = values.get("provider") or {}
         self.taker = values.get("taker") or {}
+        self.tax_nature = values.get("tax_nature")
         self.service_value = values.get("service_value") or 0.0
         self.description = values.get("description")
         self.issqn_base = values.get("issqn_base") or 0.0
@@ -385,6 +386,7 @@ def parse_nfse_xml(xml_bytes):
         "provider_name": provider_name,
         "provider": provider,
         "taker": _party(_node(inf_dps, "toma")),
+        "tax_nature": _node_text(inf_nfse, "xTribNac"),
         "service_value": _service_value(inf_nfse, inf_dps),
         "description": _node_text(service, "xDescServ"),
         "issqn_base": _amount(_node_text(note_values, "vBC")),

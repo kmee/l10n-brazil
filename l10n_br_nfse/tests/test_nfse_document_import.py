@@ -149,6 +149,12 @@ class TestNfseDocumentImport(EdiImportCase):
         self.assertEqual(documents.fiscal_operation_type, "in")
         self.assertEqual(documents.issuer, "partner")
 
+    def test_the_description_of_the_taxation_code_is_the_declared_nature(self):
+        documents, _errors, _warnings = self._import(nfse_xml())
+        self.assertEqual(
+            documents.partner_operation_name, "Análise e desenvolvimento de sistemas."
+        )
+
     def test_the_company_is_the_taker_of_the_service(self):
         parsed = self.Document._edi_import_read("a.xml", nfse_xml(taker=LUCRO_REAL))
         self.assertEqual(

@@ -172,6 +172,7 @@ class Document(models.Model):
             "document_serie": binding.serie,
             "document_date": binding.emission_date or fields.Datetime.now(),
             "rps_number": binding.rps_number,
+            "partner_operation_name": binding.tax_nature,
         }
 
     def _nfse_line_vals(self, binding):
