@@ -49,6 +49,15 @@
                     optional="show"
                 />
             </xpath>
+            <xpath expr="//notebook/page[@name='delivery']" position="before">
+                <page
+                    name="edi_payment"
+                    string="Installments"
+                    attrs="{'invisible': [('edi_payment_summary', '=', False)]}"
+                >
+                    <field name="edi_payment_summary" nolabel="1" readonly="1" />
+                </page>
+            </xpath>
         </field>
     </record>
 

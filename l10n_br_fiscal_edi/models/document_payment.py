@@ -3,7 +3,7 @@
 
 # pylint: disable=consider-merging-classes-inherited
 
-from odoo import _, models
+from odoo import _, api, fields, models
 
 
 class Document(models.Model):
@@ -15,6 +15,13 @@ class Document(models.Model):
     """
 
     _inherit = "l10n_br_fiscal.document"
+
+    edi_payment_summary = fields.Html(
+        compute="_compute_edi_payment_summary",
+        sanitize=False,
+        help="Installments and payments declared by the document and the totals "
+        "that go with them. It is not stored.",
+    )
 
     def _edi_get_installments(self):
         """Installments declared by the document, as a list of ``EdiInstallment``."""
@@ -60,6 +67,45 @@ class Document(models.Model):
             "declared": f"{declared:.2f}",
             "net": f"{self.amount_financial_total:.2f}",
         }
+
+    def _edi_payment_summary_values(self):
+        """Values of the template ``document_payment_summary``, which the invoice
+        reuses to show the same page. Empty when there is nothing to show."""
+        self.ensure_one()
+        installments = self._edi_display_installments()
+        payments = self._edi_display_payments()
+        withholding = self.amount_tax_withholding
+        if not (installments or payments or (self.imported_document and withholding)):
+            return {}
+        return {
+            "currency": self.currency_id,
+            "installments": installments,
+            "payments": payments,
+            "totals": [
+                (_("Document total"), self.fiscal_amount_total),
+                (_("Withholdings"), withholding),
+                (_("Net amount payable"), self.amount_financial_total),
+            ],
+            "warning": self._edi_installment_warning(),
+        }
+
+    @api.depends(
+        "imported_document",
+        "state_edoc",
+        "fiscal_amount_total",
+        "amount_tax_withholding",
+        "amount_financial_total",
+    )
+    def _compute_edi_payment_summary(self):
+        for document in self:
+            values = document._edi_payment_summary_values()
+            document.edi_payment_summary = (
+                self.env["ir.qweb"]._render(
+                    "l10n_br_fiscal_edi.document_payment_summary", values
+                )
+                if values
+                else False
+            )
 
     def _edi_import_warnings(self):
         messages = super()._edi_import_warnings()

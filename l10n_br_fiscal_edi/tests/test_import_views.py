@@ -45,6 +45,11 @@ class TestImportViews(EdiImportCase):
         self.assertTrue(
             form.xpath("//button[@name='action_import_confirm_suggestions']")
         )
+        self.assertTrue(
+            form.xpath(
+                "//page[@name='edi_payment']//field[@name='edi_payment_summary']"
+            )
+        )
         self.assertTrue(form.xpath("//field[@name='import_warning']"))
 
     def test_the_line_form_names_existing_fields(self):

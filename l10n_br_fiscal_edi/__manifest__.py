@@ -22,6 +22,7 @@
         "views/document_event_view.xml",
         "views/document_event_template.xml",
         "views/document_import_view.xml",
+        "views/document_payment_template.xml",
         # Reports
         "views/document_event_report.xml",
         # Wizards
