@@ -5072,6 +5072,13 @@ msgid ""
 msgstr ""
 
 #. module: l10n_br_cte
+#. odoo-python
+#: code:addons/l10n_br_cte/models/document_import.py:0
+#, python-format
+msgid "This CT-e is not authorized (status %s)."
+msgstr ""
+
+#. module: l10n_br_cte
 #: model:ir.model.constraint,message:l10n_br_cte.constraint_l10n_br_cte_autxml_autxml_partner_document_uniq
 msgid "This partner is already authorized to download this document XML."
 msgstr ""
