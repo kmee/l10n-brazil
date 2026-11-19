@@ -1,0 +1,149 @@
+# Copyright 2026 KMEE
+# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
+import os
+
+import nfelib
+
+from odoo.addons.l10n_br_fiscal_edi.tests.common import EdiImportCase
+
+MDFE_SAMPLE = os.path.join(
+    os.path.dirname(nfelib.__file__),
+    "mdfe",
+    "samples",
+    "v3_0",
+    "50170876063965000276580010000011311421039568-mdfe.xml",
+)
+MDFE_KEY = "50170876063965000276580010000011311421039568"
+MDFE_NAMESPACE = "http://www.portalfiscal.inf.br/mdfe"
+SAMPLE_CNPJ = "00000000000000"
+# CNPJ of the companies of the demo data
+LUCRO_PRESUMIDO = "81583054000129"
+LUCRO_REAL = "46312887000154"
+PROTOCOL = (
+    '<protMDFe versao="3.00"><infProt><tpAmb>2</tpAmb><verAplic>x</verAplic>'
+    "<chMDFe>%(key)s</chMDFe><dhRecbto>2017-08-01T10:00:00-03:00</dhRecbto>"
+    "<nProt>150170000000001</nProt><digVal>YWJj</digVal><cStat>%(status)s</cStat>"
+    "<xMotivo>x</xMotivo></infProt></protMDFe>"
+)
+
+
+def mdfe_xml(emitter=LUCRO_PRESUMIDO, status=None):
+    """The MDF-e that nfelib ships as a sample, issued by a company of the demo
+    data; with ``status`` it comes as the ``mdfeProc`` that the authority returns."""
+    with open(MDFE_SAMPLE, encoding="utf-8-sig") as handle:
+        xml = handle.read()
+    xml = xml.replace(f"<CNPJ>{SAMPLE_CNPJ}</CNPJ>", f"<CNPJ>{emitter}</CNPJ>", 1)
+    # a municipality the demo data has, so that the unloading has a state
+    xml = xml.replace("<cMunDescarga>0000000<", "<cMunDescarga>1200013<")
+    if status:
+        body = xml.split("?>", 1)[1].strip()
+        xml = (
+            f'<mdfeProc xmlns="{MDFE_NAMESPACE}" versao="3.00">{body}'
+            + PROTOCOL % {"key": MDFE_KEY, "status": status}
+            + "</mdfeProc>"
+        )
+    return xml.encode()
+
+
+class TestMdfeDocumentImport(EdiImportCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.presumed = cls.env.ref("l10n_br_base.empresa_lucro_presumido")
+
+    def _import(self, content, model=None):
+        return (self.Document if model is None else model)._edi_import_files(
+            [("mdfe.xml", content)]
+        )
+
+    def test_an_mdfe_of_the_company_becomes_a_document_it_issued(self):
+        documents, errors, _warnings = self._import(mdfe_xml(status="100"))
+        self.assertFalse(errors)
+        self.assertEqual(documents.document_key, MDFE_KEY)
+        self.assertEqual(documents.document_type_id.code, "58")
+        self.assertEqual(documents.company_id, self.presumed)
+        self.assertTrue(documents.imported_document)
+        self.assertEqual(documents.issuer, "company")
+        self.assertEqual(documents.fiscal_operation_type, "out")
+        self.assertEqual(documents.document_number, "1131")
+        self.assertFalse(documents.partner_id)
+        self.assertTrue(documents.original_xml_file_id)
+
+    def test_the_address_of_the_file_does_not_change_the_registry_of_the_company(self):
+        names = ("name", "legal_name", "street_name", "zip", "state_id", "city_id")
+        partner = self.presumed.partner_id
+        before = (self.presumed.name, [partner[name] for name in names])
+        documents, errors, _warnings = self._import(mdfe_xml())
+        self.assertFalse(errors)
+        self.assertTrue(documents)
+        partner.invalidate_recordset()
+        self.assertEqual(before, (self.presumed.name, [partner[n] for n in names]))
+
+    def test_the_company_is_the_issuer_of_the_mdfe(self):
+        parsed = self.Document._edi_import_read("a.xml", mdfe_xml(emitter=LUCRO_REAL))
+        self.assertEqual(parsed.company_vats, (("issuer", LUCRO_REAL),))
+        self.assertEqual((parsed.reader, parsed.document_type_code), ("mdfe", "58"))
+        self.assertEqual(parsed.issuer_vat, LUCRO_REAL)
+        documents, errors, _warnings = self._import(mdfe_xml(emitter=LUCRO_REAL))
+        self.assertFalse(errors)
+        self.assertEqual(documents.company_id, self.other_company)
+
+    def test_an_mdfe_of_another_issuer_is_refused(self):
+        documents, errors, _warnings = self._import(mdfe_xml(emitter="12345678000195"))
+        self.assertFalse(documents)
+        self.assertIn("No company of this database", errors[0][1])
+
+    def test_the_status_comes_from_the_protocol_of_the_mdfe(self):
+        for status, expected in (
+            ("100", "authorized"),
+            ("132", "authorized"),
+            ("101", "cancelled"),
+            ("999", "unknown"),
+        ):
+            parsed = self.Document._edi_import_read("a.xml", mdfe_xml(status=status))
+            self.assertEqual((parsed.status, parsed.status_code), (expected, status))
+        parsed = self.Document._edi_import_read("a.xml", mdfe_xml())
+        self.assertEqual((parsed.status, parsed.status_code), ("unknown", ""))
+
+    def test_a_cancelled_mdfe_is_refused(self):
+        documents, errors, _warnings = self._import(mdfe_xml(status="101"))
+        self.assertFalse(documents)
+        self.assertIn("cancelled", errors[0][1])
+
+    def test_the_same_mdfe_twice_opens_the_same_document(self):
+        documents, _errors, _warnings = self._import(mdfe_xml())
+        again, errors, warnings = self._import(mdfe_xml())
+        self.assertEqual(again, documents)
+        self.assertFalse(errors)
+        self.assertEqual(len(warnings), 1)
+
+    def test_a_broken_mdfe_is_refused_as_invalid(self):
+        for content in (
+            f'<mdfeProc xmlns="{MDFE_NAMESPACE}"><MDFe/></mdfeProc>',
+            f'<MDFe xmlns="{MDFE_NAMESPACE}"><infMDFe Id="MDFe123"/></MDFe>',
+        ):
+            documents, errors, _warnings = self._import(content.encode())
+            self.assertFalse(documents)
+            self.assertIn("not a valid MDF-e", errors[0][1])
+
+    def test_a_file_that_is_not_an_mdfe_is_not_read_by_the_mdfe_reader(self):
+        cte = '<cteProc xmlns="http://www.portalfiscal.inf.br/cte"><CTe/></cteProc>'
+        nfe = '<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe"><NFe/></nfeProc>'
+        other_namespace = '<mdfeProc xmlns="http://example.com/other"/>'
+        event = f'<eventoMDFe xmlns="{MDFE_NAMESPACE}"/>'
+        for content in (cte, nfe, other_namespace, event, "not xml at all"):
+            self.assertIsNone(self.Document._edi_import_read("a.xml", content.encode()))
+        documents, errors, _warnings = self._import(cte.encode())
+        self.assertFalse(documents)
+        self.assertIn("not a fiscal document", errors[0][1])
+
+    def test_a_common_fiscal_user_imports_an_mdfe(self):
+        user = self._fiscal_user("fiscal_user_mdfe", self.presumed)
+        model = self.Document.with_user(user).with_context(
+            allowed_company_ids=self.presumed.ids
+        )
+        documents, errors, _warnings = self._import(mdfe_xml(status="100"), model)
+        self.assertFalse(errors)
+        self.assertEqual(documents.create_uid, user)
+        self.assertEqual(documents.issuer, "company")
