@@ -162,3 +162,51 @@ class TestBillDivergence(TransactionCase):
         self.assertEqual(line.purchase_ordered_qty, 0)
         self.assertFalse(line.purchase_divergent)
         self.assertFalse(bill.purchase_divergent)
+
+    def test_two_partial_bills_are_not_divergent(self):
+        """The supplier bills the order in two parts, both right: neither of
+        them is divergent, because each one is compared with what the other
+        bills did not take yet and not with the whole receipt."""
+        order = self._order(10, 95.0)
+        self._receive(order, 10)
+        first = self._bill(order, 5, 95.0)
+        second = self._bill(order, 5, 95.0)
+        for bill in (first, second):
+            self.assertEqual(bill.invoice_line_ids.purchase_qty_difference, 0)
+            self.assertFalse(bill.purchase_divergent)
+        # a bill that takes what was already billed is divergent
+        third = self._bill(order, 5, 95.0)
+        self.assertEqual(third.invoice_line_ids.purchase_qty_difference, 5)
+        self.assertTrue(third.purchase_divergent)
+        # the bill that is cancelled does not take anything
+        second.button_cancel()
+        third.invoice_line_ids.invalidate_recordset()
+        self.assertEqual(third.invoice_line_ids.purchase_qty_difference, 0)
+        self.assertFalse(third.purchase_divergent)
+
+    def test_the_lines_of_one_bill_for_the_same_order_line_count_together(self):
+        """The supplier splits the item by lot in two lines of the same bill: the
+        bill is compared as a whole with the receipt."""
+        order = self._order(10, 95.0)
+        self._receive(order, 10)
+        bill = self._bill(order, 5, 95.0)
+        bill.write(
+            {
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product.id,
+                            "quantity": 5,
+                            "price_unit": 95.0,
+                            "product_uom_id": self.unit.id,
+                            "purchase_line_id": order.order_line.id,
+                        }
+                    )
+                ]
+            }
+        )
+        self.assertEqual(len(bill.invoice_line_ids), 2)
+        self.assertEqual(
+            bill.invoice_line_ids.mapped("purchase_qty_difference"), [0, 0]
+        )
+        self.assertFalse(bill.purchase_divergent)

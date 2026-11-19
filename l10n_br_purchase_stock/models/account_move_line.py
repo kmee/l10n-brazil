@@ -35,7 +35,9 @@ class AccountMoveLine(models.Model):
         string="Quantity Difference",
         compute="_compute_purchase_comparison",
         digits="Product Unit of Measure",
-        help="Billed quantity minus the received quantity.",
+        help="Billed quantity minus the received quantity that the other bills "
+        "did not take yet (the lines of this same bill for the order line "
+        "count together).",
     )
     purchase_price_difference = fields.Float(
         string="Price Difference",
@@ -74,6 +76,11 @@ class AccountMoveLine(models.Model):
         "purchase_line_id.product_qty",
         "purchase_line_id.product_uom",
         "purchase_line_id.qty_received",
+        "purchase_line_id.invoice_lines.quantity",
+        "purchase_line_id.invoice_lines.product_uom_id",
+        "purchase_line_id.invoice_lines.move_id.state",
+        "move_id.invoice_line_ids.purchase_line_id",
+        "move_id.invoice_line_ids.quantity",
         "purchase_line_id.price_unit",
         "move_id.move_type",
         "move_id.invoice_date",
@@ -115,7 +122,24 @@ class AccountMoveLine(models.Model):
                         line.company_id,
                         line.move_id.invoice_date or fields.Date.context_today(line),
                     )
-                qty_difference = line.quantity - received
+                # the bill is compared with what is still to be billed: the
+                # received quantity less what the other bills (not cancelled)
+                # already took. The lines of this same bill for the order line
+                # (the supplier splitting the item by lot) count together.
+                elsewhere = order_uom._compute_quantity(
+                    order_line._quantity_billed_elsewhere(line.move_id), uom
+                )
+                billed = (
+                    sum(
+                        (other.product_uom_id or uom)._compute_quantity(
+                            other.quantity, uom
+                        )
+                        for other in line.move_id.invoice_line_ids
+                        if other.purchase_line_id == order_line
+                    )
+                    or line.quantity
+                )
+                qty_difference = billed - (received - elsewhere)
                 price_difference = line.price_unit - price
                 company = line.company_id
                 quantity_tolerance = (
