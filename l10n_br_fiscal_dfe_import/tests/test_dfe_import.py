@@ -416,7 +416,7 @@ class TestDfeImport(DfeImportCase):
         self.assertEqual((line.quantity, line.price_unit), (1, 140))
         self.assertEqual(documents.fiscal_amount_total, 140)
         self.assertEqual(documents.fiscal_amount_untaxed, 140)
-        self.assertNotIn("fiscal operation", documents.import_warning)
+        self.assertNotIn("fiscal operation", documents.import_warning or "")
 
     def test_without_a_matching_operation_the_document_says_what_to_choose(self):
         xml = self._xml(KEY_1, replace=[(b"<CFOP>5102</CFOP>", b"<CFOP>5999</CFOP>")])
@@ -555,3 +555,11 @@ class TestDfeImport(DfeImportCase):
         self.assertEqual([name for name, _message in errors], ["other.xml"])
         self.assertIn(self.other_company.name, errors[0][1])
         self.assertFalse(self._imported(KEY_1, self.other_company))
+
+    def test_no_warning_leaves_the_field_unset_so_the_banner_stays_hidden(self):
+        documents, _errors = self.Document.dfe_import_files(
+            [("nfe.xml", self._xml(KEY_1))]
+        )
+
+        self.assertIs(documents.import_warning, False)
+        self.assertNotIn("fiscal operation", documents.import_warning or "")

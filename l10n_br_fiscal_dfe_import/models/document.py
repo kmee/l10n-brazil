@@ -66,7 +66,7 @@ class Document(models.Model):
                         _("%(line)s: the unit %(uom)s has no match in the units.")
                         % {"line": line.name, "uom": line.partner_uom_code}
                     )
-            document.import_warning = "\n".join(messages)
+            document.import_warning = "\n".join(messages) or False
 
     @api.model
     def dfe_import_files(self, files):
