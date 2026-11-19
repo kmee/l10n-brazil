@@ -773,7 +773,7 @@ msgstr ""
 #: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
 #, python-format
 msgid ""
-"No fiscal operation matches the CFOP of the issuer: choose the fiscal "
+"No fiscal operation matches the CFOP of the document: choose the fiscal "
 "operation of the document and the operation line of each line."
 msgstr ""
 
