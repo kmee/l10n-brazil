@@ -3,10 +3,8 @@
 
 import logging
 
-from odoo import Command, _, fields, models
+from odoo import _, fields, models
 from odoo.exceptions import UserError
-
-from ..models.document_import import DFE_DOCUMENT_CONTEXT_KEY
 
 _logger = logging.getLogger(__name__)
 
@@ -130,11 +128,10 @@ class DocumentImportWizard(models.TransientModel):
             raise UserError(reason)
         complete = dfe_document._get_complete_dfe()
         if complete.attachment_id:
-            self.attachment_ids = [Command.set(complete.attachment_id.ids)]
-            return super(
-                DocumentImportWizard,
-                self.with_context(**{DFE_DOCUMENT_CONTEXT_KEY: dfe_document.id}),
-            ).action_import()
+            attachment = complete.attachment_id.with_context(bin_size=False)
+            return self._import_files(
+                [(attachment.name, attachment.raw)], dfe_document=dfe_document
+            )
         message = dfe_document._dfe_import_confirmation_message()
         if not message:
             dfe_document._dfe_import_request()
