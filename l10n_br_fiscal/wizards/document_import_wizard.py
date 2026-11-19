@@ -203,13 +203,25 @@ class DocumentImportWizard(models.TransientModel):
         reason = self._import_block_reason()
         if reason:
             raise UserError(reason)
-        if not self.document_id:
+        created = not self.document_id
+        if created:
             binding, self.document_id = self._create_edoc_from_file()
         else:
             binding = self._parse_file()
         if self.date_in_out and not self.document_id.date_in_out:
             self.document_id.date_in_out = self.date_in_out
+        if created:
+            self._after_edoc_created(self.document_id)
         return binding, self.document_id
+
+    def _after_edoc_created(self, document):
+        """Hook for what the wizard decided and the new document must carry.
+
+        Only a document that was just built from the file comes here: importing
+        again a file whose document already exists returns that document and
+        changes nothing in it, neither the review states nor what a person
+        decided on its lines.
+        """
 
     def action_import_and_open_document(self):
         if self._file_is_zip():

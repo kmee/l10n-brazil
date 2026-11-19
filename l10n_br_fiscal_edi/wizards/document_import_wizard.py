@@ -55,12 +55,11 @@ class DocumentImportWizard(models.TransientModel):
                 )
             )
 
-    def _import_edoc(self):
-        res = super()._import_edoc()
+    def _after_edoc_created(self, document):
+        super()._after_edoc_created(document)
         # carried into the generic flow so every document importer gets the
         # match-source reference write-back for free
-        self._propagate_match_source_to_document(self.document_id)
-        return res
+        self._propagate_match_source_to_document(document)
 
     def _match_import_candidate(self, xml_product, product_id):
         """Preselect the match source (open PO line or pending incoming
