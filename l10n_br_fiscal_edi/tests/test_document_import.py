@@ -5,7 +5,8 @@ import io
 import zipfile
 from unittest.mock import patch
 
-from odoo.exceptions import UserError
+from odoo import _
+from odoo.exceptions import AccessError, UserError
 
 from ..tools import EDI_IMPORT_NO_CREATE, EDI_IMPORT_PARTNER_BY_VAT, EdiPartnerData
 from .common import KEY_1, KEY_2, KEY_3, EdiImportCase
@@ -832,6 +833,36 @@ class TestDocumentImport(EdiImportCase):
         self.assertFalse(
             self.env["res.partner"].search([("name", "=", "Needed issuer")])
         )
+
+    def test_any_other_refusal_of_access_is_explained_for_the_file(self):
+        """A refusal that is not about contacts is explained too, with what the
+        system said, instead of the raw error, and the batch goes on."""
+        denied, plain = self._parsed(KEY_1), self._parsed(KEY_2)
+        document_model = type(self.Document)
+        by_name = {denied.file_name: denied, plain.file_name: plain}
+        test = self
+
+        def create(model, parsed_file, company, role):
+            if parsed_file is denied:
+                raise AccessError(
+                    _("You may not create 'Product' (product.product) records.")
+                )
+            return test._create_imported_document(
+                company=company, model=model, document_key=parsed_file.access_key
+            )
+
+        with patch.object(
+            document_model, "_edi_import_read", lambda m, n, c: by_name.get(n)
+        ), patch.object(document_model, "_edi_import_create", create):
+            documents, errors, _warnings = self.Document._edi_import_files(
+                [(denied.file_name, b"x"), (plain.file_name, b"x")]
+            )
+        self.assertEqual(documents.mapped("document_key"), [KEY_2])
+        message = errors[0][1]
+        self.assertIn("product.product", message)
+        self.assertIn("you do not have a permission", message)
+        self.assertIn(denied.file_name, message)
+        self.assertNotIn("contacts", message)
 
     def test_a_common_fiscal_user_imports_and_learns_as_the_author(self):
         """The fiscal user is not a manager and has no right on purchases: the

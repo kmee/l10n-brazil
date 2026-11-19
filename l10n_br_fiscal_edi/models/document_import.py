@@ -189,11 +189,7 @@ class Document(models.Model):
                 ._edi_import_create(parsed, company, role)
             )
         except AccessError as error:
-            if self.env["res.partner"].check_access_rights(
-                "create", raise_exception=False
-            ):
-                raise
-            raise UserError(self._edi_import_partner_denied(parsed)) from error
+            raise UserError(self._edi_import_access_denied(parsed, error)) from error
         document.with_context(
             **{LAST_PARTNER_CONTEXT_KEY: last_partner.id}
         )._edi_import_after_create(parsed, role)
@@ -255,6 +251,21 @@ class Document(models.Model):
         ``(name, vat)``. A reader that knows the name overrides it; the base knows
         only the document of the issuer."""
         return "", parsed.issuer_vat
+
+    @api.model
+    def _edi_import_access_denied(self, parsed, error):
+        """Message for the file of a user who may not do something that the import
+        needs: the registration of a partner has its own, any other says what the
+        system refused (it names the model and the operation) and what to do."""
+        if "res.partner" in str(error) and not self.env[
+            "res.partner"
+        ].check_access_rights("create", raise_exception=False):
+            return self._edi_import_partner_denied(parsed)
+        return _(
+            "The file %(file)s could not be imported because you do not have a "
+            "permission that the import needs: %(error)s Ask for the permission to "
+            "whoever manages the access, and import the file again."
+        ) % {"file": parsed.file_name, "error": error.args[0] if error.args else ""}
 
     @api.model
     def _edi_import_partner_denied(self, parsed):
