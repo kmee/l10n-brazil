@@ -701,6 +701,11 @@ msgid "Data e Hora da Emissão"
 msgstr "Data e Hora da Emissão"
 
 #. module: l10n_br_nfse
+#: model:ir.model.fields,field_description:l10n_br_nfse.field_res_company__nfse_import_product_id
+msgid "Default NFS-e Import Product"
+msgstr "Produto padrão de importação de NFS-e"
+
+#. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcinfnfse__nfse10_dhProc
 msgid "Data/Hora da validação da DPS e geração"
 msgstr ""
@@ -1291,6 +1296,11 @@ msgstr "IR"
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfse.danfse_report_template
 msgid "ISS a reter:"
 msgstr "ISS a reter:"
+
+#. module: l10n_br_nfse
+#: model_terms:ir.ui.view,arch_db:l10n_br_nfse.nfse_res_company_form
+msgid "Import"
+msgstr "Importação"
 
 #. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcinfnfse__nfse10_Id
@@ -2114,6 +2124,18 @@ msgid "Rps Type"
 msgstr "Tipo de Rps"
 
 #. module: l10n_br_nfse
+#. odoo-python
+#: code:addons/l10n_br_nfse/models/document_import.py:0
+#, python-format
+msgid "Service"
+msgstr "Serviço"
+
+#. module: l10n_br_nfse
+#: model:ir.model.fields,help:l10n_br_nfse.field_res_company__nfse_import_product_id
+msgid "Service product applied when a national NFS-e is imported."
+msgstr "Produto de serviço aplicado quando uma NFS-e nacional é importada."
+
+#. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcenderecoemitente__nfse10_UF
 msgid "Sigla da unidade da federação"
 msgstr ""
@@ -2394,6 +2416,20 @@ msgstr "Regime Especial Tributação"
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfse.danfse_report_template
 msgid "Telefone:"
 msgstr "Telefone:"
+
+#. module: l10n_br_nfse
+#. odoo-python
+#: code:addons/l10n_br_nfse/models/document_import.py:0
+#, python-format
+msgid "The NFS-e XML does not contain a 50-digit access key."
+msgstr "O XML da NFS-e não contém uma chave de acesso de 50 dígitos."
+
+#. module: l10n_br_nfse
+#. odoo-python
+#: code:addons/l10n_br_nfse/models/document_key.py:0
+#, python-format
+msgid "There is already a fiscal document with this key: %(doc_key)s"
+msgstr "Já existe um documento fiscal com esta chave: %(doc_key)s"
 
 #. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcvaloresnfse__nfse10_tpBM
