@@ -72,7 +72,7 @@ class TestDocumentPayment(EdiImportCase):
 
     def test_installments_that_add_up_raise_no_warning(self):
         document = self._document()
-        net = document.amount_financial_total
+        net = document.fiscal_amount_total
         self.assertTrue(net, "the net amount payable of the document is zero")
         document = self._document(installments=self._installments([net - 10, 10]))
         self.assertFalse(document._edi_installment_difference())
@@ -80,7 +80,7 @@ class TestDocumentPayment(EdiImportCase):
         self.assertFalse(document.import_warning)
 
     def test_installments_that_do_not_add_up_raise_a_warning(self):
-        net = self._document().amount_financial_total
+        net = self._document().fiscal_amount_total
         document = self._document(installments=self._installments([net - 20]))
         self.assertEqual(document._edi_installment_difference(), 20.0)
         self.assertIn("add up", str(document.edi_payment_summary))
@@ -89,15 +89,31 @@ class TestDocumentPayment(EdiImportCase):
 
     def test_withholdings_and_the_net_amount_are_shown_with_no_installment(self):
         """A service document declares no installment, but the page shows what the
-        company retains and what it pays."""
+        company retains and what it pays: gross, withholdings and net that close."""
         document = self._document()
         document.fiscal_line_ids.issqn_wh_value = 5.0
         document.invalidate_recordset()
         self.assertTrue(document.amount_tax_withholding)
+        gross, withholding, net = (
+            total for _label, total in document._edi_payment_summary_values()["totals"]
+        )
+        self.assertEqual((gross, withholding, net), (100.0, 5.0, 95.0))
         summary = str(document.edi_payment_summary)
-        self.assertIn("Withholdings", summary)
-        self.assertIn("Net amount payable", summary)
+        for text in ("Withholdings", "Net amount payable", "100.00", "5.00", "95.00"):
+            self.assertIn(text, summary)
         self.assertNotIn("Installments", summary.replace("In installments", ""))
+
+    def test_without_withholdings_the_total_and_the_net_are_the_same(self):
+        document = self._document(installments=self._installments([100.0]))
+        totals = [t for _label, t in document._edi_payment_summary_values()["totals"]]
+        self.assertEqual(totals, [100.0, 0.0, 100.0])
+
+    def test_installments_are_compared_with_the_net_of_the_withholdings(self):
+        document = self._document(installments=self._installments([95.0]))
+        document.fiscal_line_ids.issqn_wh_value = 5.0
+        document.invalidate_recordset()
+        self.assertEqual(document._edi_installment_difference(), 0.0)
+        self.assertFalse(document.import_warning)
 
     def test_the_page_only_reads(self):
         """Computing the page writes nothing, in the document or elsewhere."""

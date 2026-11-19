@@ -251,13 +251,38 @@ class TestImportedLineReview(TransactionCase):
             }
         )
         operation.action_approve()
-        self.document.operation_name = operation.name
+        self.document.partner_operation_name = operation.name
         suggested = self.line._suggest_fiscal_operation_in()
         self.assertEqual(suggested, operation)
         self.assertEqual(self.document._suggest_fiscal_operation(), operation)
         self.assertFalse(
             self._create_line(partner_cfop_id=False)._suggest_fiscal_operation_in()
         )
+
+    def test_the_nature_declared_breaks_a_tie_between_operations(self):
+        """Two operations answer the same CFOP: the one named like the nature of the
+        operation that the file declared wins."""
+        first = self.line._suggest_fiscal_operation_in()
+        self.assertTrue(first)
+        operation = self.env["l10n_br_fiscal.operation"].create(
+            {
+                "code": "TST-TIE",
+                "name": "Same CFOP as the first (test)",
+                "fiscal_operation_type": "in",
+                "fiscal_type": "purchase",
+            }
+        )
+        self.env["l10n_br_fiscal.operation.line"].create(
+            {
+                "fiscal_operation_id": operation.id,
+                "name": "Same CFOP as the first (test)",
+                "cfop_internal_id": self.env.ref("l10n_br_fiscal.cfop_2102").id,
+            }
+        )
+        operation.action_approve()
+        self.assertNotEqual(first, operation)
+        self.document.partner_operation_name = operation.name
+        self.assertEqual(self.line._suggest_fiscal_operation_in(), operation)
 
     def test_find_unit_by_fiscal_code_then_by_alias(self):
         uom_model = self.env["uom.uom"]
