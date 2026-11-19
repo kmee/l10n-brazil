@@ -42,6 +42,7 @@ class ICMSRelief(models.Model):
 
 
 def _check_sped_cod_aj(records):
+    context = records.env.context  # noqa: F841
     for record in records:
         if record.sped_cod_aj and len(record.sped_cod_aj) != 10:
             raise ValidationError(

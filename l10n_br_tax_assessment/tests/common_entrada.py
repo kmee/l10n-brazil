@@ -60,12 +60,26 @@ class SpedEntradaCommon(AccountMoveBRCommon):
         super().setUpClass()
         cls.configure_normal_company_taxes()
         cls.company = cls.company_data["company"]
+        if cls.profit_calculation == "real":
+            cls._use_the_non_cumulative_rates()
         # the supplier of the tests is a taxpayer of the normal regime: a supplier
         # of the Simples Nacional passes no ICMS credit on (LC 123/2006, art. 23)
         cls.partner_a.fiscal_profile_id = cls.env.ref(
             "l10n_br_fiscal.partner_fiscal_profile_cnt"
         )
         cls._doc_number = 100
+
+    @classmethod
+    def _use_the_non_cumulative_rates(cls):
+        """configure_normal_company_taxes (the common of l10n_br_account, shared
+        by the tests of other modules) defines the cumulative PIS 0.65% and
+        COFINS 3%. A company of the non-cumulative regime pays the basic rates
+        1.65% and 7.6%, so the definitions of the fixture follow the regime."""
+        ref = cls.env.ref
+        cls.pis_tax_definition_empresa_lc.tax_id = ref("l10n_br_fiscal.tax_pis_1_65")
+        cls.cofins_tax_definition_empresa_lc.tax_id = ref(
+            "l10n_br_fiscal.tax_cofins_7_6"
+        )
 
     @staticmethod
     def _access_key(number, cnpj="49190159000105"):

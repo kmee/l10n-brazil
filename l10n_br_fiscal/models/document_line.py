@@ -9,6 +9,7 @@ from odoo.exceptions import UserError
 from ..constants.fiscal import (
     FISCAL_IN,
     PIS_COFINS_CST_ENTRY_WITHOUT_CREDIT,
+    PRODUCT_DESTINATION_CREDIT,
     PROFIT_CALCULATION_REAL,
     TAX_DOMAIN_COFINS,
     TAX_DOMAIN_IPI,
@@ -265,6 +266,7 @@ class DocumentLine(models.Model):
         "partner_id",
         "ncm_id",
         "company_id.profit_calculation",
+        "product_destination",
         "document_id.imported_document",
     )
     def _compute_entry_cst_ids(self):
@@ -299,17 +301,23 @@ class DocumentLine(models.Model):
     def _get_entry_piscofins_cst(self, tax_domain, tax):
         """PIS/COFINS CST of an entry by the regime of the company.
 
-        Non-cumulative (real profit): the credit CST of the mapped tax.
-        Cumulative (presumed or arbitrated profit): 70, acquisition without
-        credit right, whatever the operation maps. Simples Nacional does not
-        take the credit either, but it has no PIS/COFINS book: it keeps the
-        mapped CST.
+        Non-cumulative (real profit): the credit CST of the mapped tax, only for
+        a destination that gives the credit (resale and industrialization, the
+        same ones the ledger credits: ``_get_stock_cost_tax_map``); use and
+        consumption and the fixed asset are 70, acquisition without credit
+        right.
+        Cumulative (presumed or arbitrated profit): 70 as well, whatever the
+        operation maps. Simples Nacional does not take the credit either, but it
+        has no PIS/COFINS book: it keeps the mapped CST.
         """
         self.ensure_one()
         company = self.company_id
-        if (
-            company.tax_framework not in TAX_FRAMEWORK_SIMPLES_ALL
-            and company.profit_calculation != PROFIT_CALCULATION_REAL
+        if company.tax_framework not in TAX_FRAMEWORK_SIMPLES_ALL and (
+            company.profit_calculation != PROFIT_CALCULATION_REAL
+            or (
+                self.product_destination
+                and self.product_destination not in PRODUCT_DESTINATION_CREDIT
+            )
         ):
             return self.env.ref(f"l10n_br_fiscal.cst_{tax_domain}_70")
         return tax.cst_in_id if tax else self.env["l10n_br_fiscal.cst"]

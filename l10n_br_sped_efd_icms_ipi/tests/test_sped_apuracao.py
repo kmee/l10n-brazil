@@ -1,6 +1,8 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl-3.0.html).
 
+import base64
+
 from odoo.exceptions import UserError
 from odoo.tests.common import tagged
 
@@ -180,3 +182,48 @@ class TestSpedEfdIcmsIpiApuracao(EntradaHelpers, SpedEntradaCommon):
         with self.assertRaises(UserError) as error:
             declaration.button_create_sped_files()
         self.assertIn("IPI", error.exception.args[0])
+
+    def _generated_text(self, declaration):
+        attachment = self.env["ir.attachment"].search(
+            [("res_model", "=", declaration._name), ("res_id", "=", declaration.id)],
+            order="id desc",
+            limit=1,
+        )
+        return base64.b64decode(attachment.datas).decode("latin-1")
+
+    def test_the_file_has_the_registers_of_the_moment_of_the_generation(self):
+        """The registers pulled before the assessment and the accountant are
+        pulled again when the file is generated: no E110 or 0100 missing from a
+        file made after the registration was fixed."""
+        self._purchase_move("fo_compras_compras_comercializacao", "607")
+        declaration = self._declaration_july()
+        self.assertEqual(self._sped_records(declaration, "E110"), [])
+        self._set_accountant()
+        self._assess_icms_of_july()
+        declaration.IND_ATIV = "1"
+        declaration.button_create_sped_files()
+        text = self._generated_text(declaration)
+        self.assertIn("|E110|", text)
+        self.assertIn("|0100|", text)
+
+    def test_the_0100_stays_when_the_accountant_has_no_phone(self):
+        """The phone is optional in the layout. The mapping broke on a missing
+        one and the 0100 went out of the file with no word."""
+        self._set_accountant()
+        self.company.accountant_id.phone = False
+        declaration = self._declaration_july()
+        records = self._sped_records(declaration, "0100")
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]["FONE"], "")
+
+    def test_generation_stops_with_what_the_accountant_lacks(self):
+        """The mandatory fields of the 0100 (descriptor of the PVA) that the
+        registration of the accountant does not have, said by name."""
+        self._set_accountant()
+        self.company.accountant_id.write({"email": False, "city_id": False})
+        self._purchase_move("fo_compras_compras_comercializacao", "608")
+        declaration = self._declaration_july()
+        with self.assertRaises(UserError) as error:
+            declaration.button_create_sped_files()
+        self.assertIn("e-mail", error.exception.args[0])
+        self.assertIn("city", error.exception.args[0])

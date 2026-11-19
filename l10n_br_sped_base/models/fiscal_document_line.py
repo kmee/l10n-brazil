@@ -34,3 +34,39 @@ class FiscalDocumentLine(models.Model):
         if self.fiscal_operation_type != FISCAL_IN or not self.product_destination:
             return False
         return self._get_stock_cost_tax_map().get("ipi") == "cost"
+
+    def _get_sped_icms_values(self):
+        """The ICMS of the line as the C170 carries it, in every declaration that
+        has the register (EFD ICMS/IPI and EFD Contribuicoes): the CST (origin
+        plus the 2 digits), the base, the rate and the value. An entry without
+        credit right is CST of the origin plus 90 and no base, rate or value; the
+        other lines keep the ones of the document."""
+        self.ensure_one()
+        origin = self.icms_origin or "0"
+        if self._sped_icms_without_credit():
+            return {
+                "cst": f"{origin}90",
+                "base": 0.0,
+                "percent": 0.0,
+                "value": 0.0,
+            }
+        return {
+            "cst": f"{origin}{self.icms_cst_code or '00'}",
+            "base": self.icms_base,
+            "percent": self.icms_percent,
+            "value": self.icms_value,
+        }
+
+    def _get_sped_ipi_values(self):
+        """The IPI of the line as the C170 carries it: the CST, the base, the rate
+        and the value. An entry without credit right is CST 49 (other entries)
+        and no base, rate or value."""
+        self.ensure_one()
+        if self._sped_ipi_without_credit():
+            return {"cst": "49", "base": 0.0, "percent": 0.0, "value": 0.0}
+        return {
+            "cst": self.entry_ipi_cst_id.code or self.ipi_cst_code,
+            "base": self.ipi_base,
+            "percent": self.ipi_percent,
+            "value": self.ipi_value,
+        }
