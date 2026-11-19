@@ -1009,7 +1009,7 @@ class FiscalDocumentLineMixin(models.AbstractModel):
     @api.depends("product_id", "uom_id")
     def _compute_uot_id(self):
         for line in self:
-            if line._is_imported() and line.uot_id:
+            if line._is_imported() and (line.uot_id or line.partner_uom_code):
                 # the taxation unit of the file (uTrib) does not depend on the
                 # product that was matched to it
                 line.uot_id = line.uot_id

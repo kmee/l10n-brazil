@@ -112,6 +112,36 @@ class TestDocumentImportWizard(EdiImportCase):
         with self.assertRaises(UserError):
             self._wizard([]).action_import()
 
+    def test_the_files_of_the_inbox_are_imported_without_the_window(self):
+        """The DF-e inbox calls the same import, with the document it came from, and
+        gets the same answer as the window."""
+        parsed = self._parsed(KEY_1)
+        dfe_document = object()
+        calls = []
+        original = type(self.Document)._edi_import_files
+
+        def spy(model, files, dfe_document=None):
+            calls.append(dfe_document)
+            return original(model, files, dfe_document=dfe_document)
+
+        wizard_model = self.env["l10n_br_fiscal_edi.document.import.wizard"]
+        by_name = {parsed.file_name: parsed}
+        with patch.object(type(self.Document), "_edi_import_files", spy), patch.object(
+            type(self.Document), "_edi_import_read", lambda m, n, c: by_name.get(n)
+        ), patch.object(
+            type(self.Document),
+            "_edi_import_create",
+            lambda m, p, c, r: self._create_imported_document(
+                company=c, model=m, document_key=p.access_key
+            ),
+        ):
+            action = wizard_model._import_files(
+                [(parsed.file_name, b"x")], dfe_document=dfe_document
+            )
+        self.assertEqual(calls, [dfe_document])
+        self.assertEqual(action["res_model"], "l10n_br_fiscal.document")
+        self.assertEqual(self.Document.browse(action["res_id"]).document_key, KEY_1)
+
     def test_the_size_of_the_file_is_never_read_as_its_content(self):
         """The web client asks for the sizes of the binary fields (bin_size): the
         files are read here, from the bytes, and the import works all the same."""
