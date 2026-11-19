@@ -2,13 +2,30 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
 import importlib.resources
+import io
+import os
 import re
+import zipfile
 
 import nfelib
 from nfelib.nfe.bindings.v4_0.leiaute_nfe_v4_00 import TnfeProc
 
 from odoo.models import NewId
 from odoo.tests import TransactionCase
+
+from odoo.addons import l10n_br_nfe
+from odoo.addons.l10n_br_fiscal_edi.tests.common import (
+    KEY_1,
+    KEY_2,
+    KEY_3,
+    EdiImportCase,
+)
+
+FIXTURE_DIR = os.path.join(
+    l10n_br_nfe.__path__[0], "tests", "nfe", "v4_00", "leiauteNFe"
+)
+FIXTURE_DEST = re.compile(rb"(<dest>\s*)<(?:CNPJ|CPF)>\d+</(?:CNPJ|CPF)>")
+NFE_NS = "http://www.portalfiscal.inf.br/nfe"
 
 
 class NFeImportTest(TransactionCase):
@@ -410,3 +427,511 @@ class NFeImportTest(TransactionCase):
         self.assertEqual(tax.percent_reduction, 33.33)
         self.assertEqual(tax.cst_in_id.code, "20")
         self.assertEqual(tax.name, "ICMS 7.0% Com Red. 33.33% CST 20")
+
+
+class TestNfeDocumentImport(EdiImportCase):
+    """The NF-e reader of the document import, on the XML files of the module."""
+
+    @classmethod
+    def _xml(cls, key, recipient=None, product="Brand new thing", replace=()):
+        with open(os.path.join(FIXTURE_DIR, f"NFe{key}.xml"), "rb") as xml_file:
+            content = xml_file.read()
+        recipient = recipient or cls.company.partner_id.cnpj_cpf_stripped
+        content = FIXTURE_DEST.sub(rb"\1<CNPJ>%s</CNPJ>" % recipient.encode(), content)
+        content = content.replace(b"Cabinet with Doors", product.encode())
+        content = content.replace(b"E-COM11", b"ZZ-NEW-1")
+        for old, new in replace:
+            content = content.replace(old, new)
+        return content
+
+    def _import(self, xml, name="nfe.xml", model=None):
+        return (self.Document if model is None else model)._edi_import_files(
+            [(name, xml)]
+        )
+
+    def _imported(self, xml, **kwargs):
+        documents, errors, _warnings = self._import(xml, **kwargs)
+        self.assertFalse(errors)
+        return documents
+
+    def _protocol(self, status):
+        xml = self._xml(KEY_1).decode().split("?>", 1)[1]
+        protocol = (
+            f'<protNFe versao="4.00"><infProt><chNFe>{KEY_1}</chNFe>'
+            f"<cStat>{status}</cStat></infProt></protNFe>"
+        )
+        xml = xml.replace("</NFe>", "</NFe>" + protocol)
+        return f'<nfeProc xmlns="{NFE_NS}" versao="4.00">{xml}</nfeProc>'.encode()
+
+    def test_xml_becomes_a_draft_document_without_creating_products(self):
+        products = self.env["product.product"].search_count([])
+        xml = self._xml(KEY_1)
+
+        documents = self._imported(xml)
+
+        self.assertEqual(documents.state_edoc, "em_digitacao")
+        self.assertEqual(documents.company_id, self.company)
+        self.assertEqual(documents.document_key, KEY_1)
+        self.assertEqual(documents.import_state, "pending")
+        self.assertEqual(documents.original_xml_file_id.raw, xml)
+        line = documents.fiscal_line_ids
+        self.assertEqual(line.name, "Brand new thing")
+        self.assertEqual((line.quantity, line.price_unit), (1, 140))
+        self.assertFalse(line.product_id)
+        self.assertEqual(self.env["product.product"].search_count([]), products)
+
+    def test_the_same_file_again_opens_the_same_document_with_a_warning(self):
+        first = self._imported(self._xml(KEY_1))
+
+        second, errors, warnings = self._import(self._xml(KEY_1))
+
+        self.assertFalse(errors)
+        self.assertEqual(first, second)
+        self.assertEqual(len(warnings), 1)
+
+    def test_zip_with_two_notes_and_an_invalid_file(self):
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as archive:
+            archive.writestr("one.xml", self._xml(KEY_1))
+            archive.writestr("two.xml", self._xml(KEY_2))
+            archive.writestr("bad.xml", b"this is not an XML")
+
+        documents, errors, _warnings = self._import(buffer.getvalue(), "batch.zip")
+
+        self.assertEqual(len(documents), 2)
+        self.assertEqual([name for name, _message in errors], ["batch.zip/bad.xml"])
+
+    def test_cancelled_denied_or_not_authorized_by_the_protocol_is_refused(self):
+        for status in ("101", "110", "217"):
+            documents, errors, _warnings = self._import(self._protocol(status))
+            self.assertFalse(documents, status)
+            self.assertEqual(len(errors), 1, status)
+        self.assertEqual(len(self._imported(self._protocol("100"))), 1)
+
+    def test_a_note_that_is_not_an_nfe_of_model_55_is_refused(self):
+        xml = self._xml(KEY_1).replace(b"<mod>55</mod>", b"<mod>65</mod>")
+
+        documents, errors, _warnings = self._import(xml)
+
+        self.assertFalse(documents)
+        self.assertIn("model 55", errors[0][1])
+
+    def test_recipient_that_is_not_a_company_of_the_database_is_refused(self):
+        xml = self._xml(KEY_1, recipient="11222333000181")
+
+        documents, errors, _warnings = self._import(xml)
+
+        self.assertFalse(documents)
+        self.assertEqual(len(errors), 1)
+
+    def test_note_goes_to_the_company_of_the_recipient(self):
+        vat = self.other_company.partner_id.cnpj_cpf_stripped
+
+        documents = self._imported(self._xml(KEY_1, recipient=vat))
+
+        self.assertEqual(documents.company_id, self.other_company)
+
+    def test_note_issued_by_the_company_is_imported_as_an_outbound_document(self):
+        issuer = self.env.ref("l10n_br_base.empresa_lucro_presumido")
+        xml = self._xml(KEY_3, recipient="11222333000181")
+
+        documents = self._imported(xml)
+
+        self.assertEqual(documents.company_id, issuer)
+        self.assertEqual(documents.issuer, "company")
+        self.assertEqual(documents.fiscal_operation_type, "out")
+        self.assertNotEqual(documents.partner_id, issuer.partner_id)
+
+    def test_total_of_the_item_is_the_one_declared_in_the_file(self):
+        xml = self._xml(
+            KEY_1,
+            replace=[
+                (b"<qCom>1.0000</qCom>", b"<qCom>3.0000</qCom>"),
+                (b"<qTrib>1.0000</qTrib>", b"<qTrib>3.0000</qTrib>"),
+                (b"<vUnCom>140.0000000000", b"<vUnCom>0.3350000000"),
+                (b"<vUnTrib>140.0000000000", b"<vUnTrib>0.3350000000"),
+                (b"<vProd>140.00</vProd>", b"<vProd>1.00</vProd>"),
+            ],
+        )
+
+        line = self._imported(xml).fiscal_line_ids
+
+        self.assertEqual(line.partner_price_gross, 1.0)
+        self.assertEqual(line.price_gross, 1.0)
+
+    def test_unknown_ncm_is_kept_as_declared_and_not_created(self):
+        ncm = self.env["l10n_br_fiscal.ncm"].search_count([])
+        xml = self._xml(
+            KEY_1, replace=[(b"<NCM>94033000</NCM>", b"<NCM>99999999</NCM>")]
+        )
+
+        documents = self._imported(xml)
+
+        line = documents.fiscal_line_ids
+        self.assertEqual(line.partner_ncm_code, "99999999")
+        self.assertFalse(line.ncm_id)
+        self.assertIn("99999999", documents.import_warning)
+        self.assertEqual(self.env["l10n_br_fiscal.ncm"].search_count([]), ncm)
+
+    def test_matching_a_product_without_ncm_keeps_the_ncm_of_the_file(self):
+        self.env["product.product"].create(
+            {"name": "No NCM", "default_code": "ZZ-NEW-1", "ncm_id": False}
+        )
+        ncm = self.env["l10n_br_fiscal.ncm"].search(
+            [("code_unmasked", "=", "94033000")], limit=1
+        )
+
+        documents = self._imported(self._xml(KEY_1))
+
+        line = documents.fiscal_line_ids
+        self.assertTrue(line.product_id)
+        self.assertEqual(line.ncm_id, ncm)
+        self.assertNotIn("NCM", documents.import_warning or "")
+
+    def test_unknown_registries_are_not_created(self):
+        models = ("l10n_br_fiscal.cest", "uom.uom", "res.city", "res.country")
+        counts = [self.env[model].search_count([]) for model in models]
+        xml = self._xml(
+            KEY_1,
+            replace=[
+                (b"<NCM>94033000</NCM>", b"<NCM>94033000</NCM><CEST>9999999</CEST>"),
+                (b"<uCom>UN</uCom>", b"<uCom>ZZZ</uCom>"),
+                (b"<cMun>3501152</cMun>", b"<cMun>9999999</cMun>"),
+            ],
+        )
+
+        self.assertTrue(self._imported(xml))
+
+        self.assertEqual(counts, [self.env[model].search_count([]) for model in models])
+
+    def test_unknown_cfop_is_not_created_and_does_not_break_the_import(self):
+        cfop = self.env["l10n_br_fiscal.cfop"].search_count([])
+        xml = self._xml(KEY_1, replace=[(b"<CFOP>5102</CFOP>", b"<CFOP>5999</CFOP>")])
+
+        documents = self._imported(xml)
+
+        self.assertFalse(documents.fiscal_operation_id)
+        self.assertIn("fiscal operation", documents.import_warning)
+        self.assertEqual(self.env["l10n_br_fiscal.cfop"].search_count([]), cfop)
+
+    def test_operation_is_suggested_without_touching_the_values_of_the_file(self):
+        documents = self._imported(self._xml(KEY_1))
+
+        line = documents.fiscal_line_ids
+        operation = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.assertEqual(documents.fiscal_operation_id, operation)
+        self.assertEqual(line.fiscal_operation_id, operation)
+        self.assertEqual(line.cfop_id.code, "1102")
+        self.assertEqual(line.partner_cfop_id.code, "5102")
+        self.assertEqual((line.quantity, line.price_unit), (1, 140))
+        self.assertEqual(documents.fiscal_amount_total, 140)
+        self.assertIs(documents.import_warning, False)
+
+    def test_unknown_unit_stays_empty_and_is_kept_as_declared(self):
+        uom = self.env["uom.uom"].search_count([])
+
+        documents = self._imported(
+            self._xml(KEY_1, replace=[(b"<uCom>UN</uCom>", b"<uCom>ZZZ</uCom>")])
+        )
+
+        line = documents.fiscal_line_ids
+        self.assertFalse(line.uom_id)
+        self.assertEqual(line.partner_uom_code, "ZZZ")
+        self.assertEqual(line.import_state, "pending")
+        self.assertIn("ZZZ", documents.import_warning)
+        self.assertEqual(self.env["uom.uom"].search_count([]), uom)
+
+    def test_known_unit_is_matched_not_defaulted(self):
+        kilo = self.env["uom.uom"]._match_by_fiscal_code("KG")
+        xml = self._xml(
+            KEY_1,
+            replace=[
+                (b"<uCom>UN</uCom>", b"<uCom>KG</uCom>"),
+                (b"<uTrib>UN</uTrib>", b"<uTrib>KG</uTrib>"),
+            ],
+        )
+
+        documents = self._imported(xml)
+
+        self.assertEqual(documents.fiscal_line_ids.uom_id, kilo)
+        self.assertEqual(documents.fiscal_line_ids.uot_id, kilo)
+
+    def test_matched_product_with_an_unknown_unit_still_awaits_review(self):
+        xml = self._xml(
+            KEY_1,
+            replace=[
+                (b"ZZ-NEW-1", b"E-COM11"),
+                (b"<uCom>UN</uCom>", b"<uCom>ZZZ</uCom>"),
+            ],
+        )
+
+        line = self._imported(xml).fiscal_line_ids
+
+        self.assertTrue(line.product_id)
+        self.assertEqual(line.import_state, "pending")
+
+    def test_product_is_suggested_by_the_barcode_of_the_commercial_unit(self):
+        product = self.env["product.product"].create(
+            {"name": "Barcode only", "barcode": "7891234567895"}
+        )
+        xml = self._xml(
+            KEY_1,
+            replace=[
+                (b"ZZ-NEW-1", b"OTHER-CODE"),
+                (b"Brand new thing", b"Odd name"),
+                (b"<cEAN>SEM GTIN</cEAN>", b"<cEAN>7891234567895</cEAN>"),
+            ],
+        )
+
+        line = self._imported(xml).fiscal_line_ids
+
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.import_state, "matched")
+
+    def test_product_is_suggested_by_the_barcode_of_the_taxable_unit(self):
+        product = self.env["product.product"].create(
+            {"name": "Barcode only", "barcode": "7891234567895"}
+        )
+        xml = self._xml(
+            KEY_1,
+            replace=[
+                (b"ZZ-NEW-1", b"OTHER-CODE"),
+                (b"Brand new thing", b"Odd name"),
+                (
+                    b"<cEANTrib>SEM GTIN</cEANTrib>",
+                    b"<cEANTrib>7891234567895</cEANTrib>",
+                ),
+            ],
+        )
+
+        line = self._imported(xml).fiscal_line_ids
+
+        self.assertEqual(line.product_id, product)
+
+    def test_the_barcode_of_the_file_never_creates_a_product(self):
+        products = self.env["product.product"].search_count([])
+        xml = self._xml(
+            KEY_1,
+            replace=[(b"<cEAN>SEM GTIN</cEAN>", b"<cEAN>7891234567895</cEAN>")],
+        )
+
+        line = self._imported(xml).fiscal_line_ids
+
+        self.assertFalse(line.product_id)
+        self.assertEqual(self.env["product.product"].search_count([]), products)
+
+    # The de-para of the supplier: what a person decided on a note answers the next.
+
+    def _depara_note(self, key, unit=b"UN", code=b"ZZ-NEW-1"):
+        xml = self._xml(key)
+        xml = re.sub(rb"<xProd>[^<]*</xProd>", b"<xProd>Odd name</xProd>", xml)
+        xml = re.sub(rb"<cProd>[^<]*</cProd>", b"<cProd>%s</cProd>" % code, xml)
+        xml = re.sub(rb"<uCom>[^<]*</uCom>", b"<uCom>%s</uCom>" % unit, xml)
+        return re.sub(rb"<uTrib>[^<]*</uTrib>", b"<uTrib>%s</uTrib>" % unit, xml)
+
+    def _supplier_product(self, uom=None, **info):
+        uom = uom or self.uom_unit
+        product = self.env["product.product"].create(
+            {"name": "Mapped product", "uom_id": uom.id, "uom_po_id": uom.id}
+        )
+        issuers = self.env["res.partner"].search(
+            [
+                "|",
+                ("cnpj_cpf_stripped", "=", "81583054000129"),
+                ("vat", "=", "81.583.054/0001-29"),
+            ]
+        )
+        for issuer in issuers:
+            vals = {
+                "partner_id": issuer.id,
+                "product_id": product.id,
+                "product_code": "ZZ-NEW-1",
+                "price": 1,
+            }
+            vals.update(info)
+            self.env["product.supplierinfo"].create(vals)
+        return product
+
+    def _dozen_note(self, code=b"ZZ-NEW-1"):
+        """10 boxes at 35.00 (vProd 350.00)."""
+        return (
+            self._depara_note(KEY_2, unit=b"CX", code=code)
+            .replace(b"<qCom>1.0000</qCom>", b"<qCom>10.0000</qCom>")
+            .replace(b"<qTrib>1.0000</qTrib>", b"<qTrib>10.0000</qTrib>")
+            .replace(
+                b"<vUnCom>1950.0000000000</vUnCom>", b"<vUnCom>35.0000000000</vUnCom>"
+            )
+            .replace(
+                b"<vUnTrib>1950.0000000000</vUnTrib>",
+                b"<vUnTrib>35.0000000000</vUnTrib>",
+            )
+            .replace(b"<vProd>1950.00</vProd>", b"<vProd>350.00</vProd>")
+        )
+
+    def test_product_mapped_for_the_same_supplier_enters_resolved(self):
+        product = self._supplier_product()
+
+        line = self._imported(self._depara_note(KEY_2)).fiscal_line_ids
+
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.import_state, "resolved")
+
+    def test_unknown_unit_with_a_product_mapped_by_the_supplier_awaits_review(self):
+        product = self._supplier_product()
+
+        documents = self._imported(self._depara_note(KEY_2, unit=b"XPTO"))
+
+        line = documents.fiscal_line_ids
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.import_state, "pending")
+        self.assertIn("XPTO", documents.import_warning)
+        line.import_state = "matched"
+        result = documents.action_import_confirm_suggestions()
+        self.assertEqual(line.import_state, "matched")
+        self.assertIn("1 line", result["params"]["message"])
+
+    def test_total_of_the_file_holds_with_a_factor_from_the_de_para(self):
+        box = self.env["uom.uom"]._match_by_fiscal_code("CX")
+        product = self._supplier_product(partner_uom_id=box.id, partner_uom_factor=12)
+
+        documents = self._imported(self._dozen_note())
+
+        line = documents.fiscal_line_ids
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.quantity, 120)
+        self.assertEqual(line.import_state, "resolved")
+        self.assertEqual(line.fiscal_amount_untaxed, 350)
+        self.assertEqual(documents.fiscal_amount_untaxed, 350)
+
+    def test_total_of_the_file_holds_when_a_person_resolves_with_a_factor(self):
+        documents = self._imported(self._dozen_note(code=b"NO-MATCH-4"))
+        product = self.env["product.product"].create({"name": "Chosen by hand"})
+        line = documents.fiscal_line_ids
+        line.product_id = product
+        line.import_uom_factor = 12
+
+        line._apply_import_depara(product=product, uom=self.uom_unit)
+
+        self.assertEqual(line.quantity, 120)
+        self.assertEqual(line.fiscal_amount_untaxed, 350)
+        self.assertEqual(documents.fiscal_amount_untaxed, 350)
+        line.price_unit = 3
+        self.assertEqual(line.fiscal_amount_untaxed, 360)
+
+    def test_product_found_by_internal_code_is_only_a_suggestion(self):
+        product = self.env["product.product"].create(
+            {"name": "Same code", "default_code": "ZZ-NEW-1"}
+        )
+        infos = self.env["product.supplierinfo"].search_count([])
+
+        documents = self._imported(self._depara_note(KEY_2))
+
+        line = documents.fiscal_line_ids
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.import_state, "matched")
+        self.assertEqual(self.env["product.supplierinfo"].search_count([]), infos)
+        documents.action_import_confirm_suggestions()
+        self.assertEqual(line.import_state, "resolved")
+        self.assertEqual(documents.import_state, "resolved")
+
+    def test_product_without_any_match_stays_pending(self):
+        line = self._imported(
+            self._depara_note(KEY_2, code=b"NO-MATCH-1")
+        ).fiscal_line_ids
+
+        self.assertEqual(line.import_state, "pending")
+
+    def test_resolving_by_hand_teaches_the_next_note_of_the_supplier(self):
+        first = self._imported(self._depara_note(KEY_2, code=b"NO-MATCH-2"))
+        product = self.env["product.product"].create({"name": "Chosen by hand"})
+        line = first.fiscal_line_ids
+        line.product_id = product
+        line._apply_import_depara(product=product, uom=self.uom_unit)
+        domain = [("product_code", "=", "NO-MATCH-2"), ("product_id", "=", product.id)]
+        self.assertEqual(self.env["product.supplierinfo"].search_count(domain), 1)
+
+        second = self._imported(self._depara_note(KEY_3, code=b"NO-MATCH-2"))
+
+        self.assertEqual(second.fiscal_line_ids.product_id, product)
+        self.assertEqual(second.fiscal_line_ids.import_state, "resolved")
+        self.assertEqual(self.env["product.supplierinfo"].search_count(domain), 1)
+
+    def test_learned_factor_only_holds_for_the_same_declared_unit(self):
+        kilo = self.env["uom.uom"]._match_by_fiscal_code("KG")
+        product = self._supplier_product(
+            uom=kilo, partner_uom_id=kilo.id, partner_uom_factor=2
+        )
+
+        same = self._imported(self._depara_note(KEY_2, unit=b"KG"), name="kg.xml")
+        other = self._imported(self._depara_note(KEY_3, unit=b"UN"), name="un.xml")
+
+        self.assertEqual(same.fiscal_line_ids.product_id, product)
+        self.assertEqual(same.fiscal_line_ids.import_state, "resolved")
+        self.assertEqual(same.fiscal_line_ids.quantity, 2)
+        self.assertEqual(other.fiscal_line_ids.import_state, "matched")
+        self.assertEqual(other.fiscal_line_ids.quantity, 2)
+
+    def test_product_mapped_for_another_supplier_is_not_resolved(self):
+        other = self.env["res.partner"].create({"name": "Another supplier"})
+        product = self._supplier_product()
+        product.seller_ids.write({"partner_id": other.id})
+
+        line = self._imported(self._depara_note(KEY_2)).fiscal_line_ids
+
+        self.assertEqual(line.import_state, "pending")
+
+    def test_resolving_by_hand_records_the_declared_unit_and_factor(self):
+        kilo = self.env["uom.uom"]._match_by_fiscal_code("KG")
+        first = self._imported(self._depara_note(KEY_2, unit=b"KG", code=b"NO-MATCH-3"))
+        product = self.env["product.product"].create({"name": "Chosen by hand"})
+        line = first.fiscal_line_ids
+        line.product_id = product
+        line.import_uom_factor = 2
+
+        line._apply_import_depara(product=product, uom=self.uom_unit)
+
+        info = self.env["product.supplierinfo"].search(
+            [("product_code", "=", "NO-MATCH-3")]
+        )
+        self.assertEqual((info.partner_uom_id, info.partner_uom_factor), (kilo, 2))
+
+    # The common fiscal user: the group that imports, reviews and confirms.
+
+    def test_common_fiscal_user_imports_the_file_as_the_author(self):
+        user = self._fiscal_user("fiscal_nfe_import")
+        service = self.Document.with_user(user).with_context(
+            allowed_company_ids=[self.company.id]
+        )
+
+        documents = self._imported(self._xml(KEY_1), model=service)
+
+        self.assertEqual(documents.create_uid, user)
+        self.assertEqual(documents.original_xml_file_id.create_uid, user)
+        self.assertTrue(documents.nfe40_detPag)
+
+    def test_common_fiscal_user_resolves_the_line_and_the_de_para_is_learned(self):
+        user = self._fiscal_user("fiscal_nfe_depara")
+        service = self.Document.with_user(user).with_context(
+            allowed_company_ids=[self.company.id]
+        )
+        documents = self._imported(self._xml(KEY_1), model=service)
+        product = self.env["product.product"].create({"name": "Chosen"})
+        line = documents.fiscal_line_ids
+
+        line.product_id = product
+        line._apply_import_depara(product=product, uom=self.uom_unit)
+
+        self.assertEqual(line.import_state, "resolved")
+        self.assertEqual(line.write_uid, user)
+        self.assertTrue(line.import_supplierinfo_id)
+
+    def test_common_fiscal_user_of_another_company_cannot_import_the_note(self):
+        user = self._fiscal_user("fiscal_nfe_other", self.other_company)
+        service = self.Document.with_user(user).with_context(
+            allowed_company_ids=[self.other_company.id]
+        )
+
+        documents, errors, _warnings = self._import(self._xml(KEY_1), model=service)
+
+        self.assertFalse(documents)
+        self.assertIn("no access to the company", errors[0][1])
