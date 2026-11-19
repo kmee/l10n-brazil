@@ -106,7 +106,7 @@ class Document(models.Model):
         self._dfe_import_check_protocol(binding)
         company = self._dfe_import_company(inf_nfe)
         access_key = inf_nfe.Id[3:]
-        existing = self.search(
+        existing = self.with_company(company).search(
             [("document_key", "=", access_key), ("company_id", "=", company.id)],
             limit=1,
         )
@@ -151,7 +151,7 @@ class Document(models.Model):
     @api.model
     def _dfe_import_company(self, inf_nfe):
         recipient = inf_nfe.dest and (inf_nfe.dest.CNPJ or inf_nfe.dest.CPF)
-        company = self.env["res.company"]
+        company = self.env["res.company"].sudo()
         if recipient:
             company = company.search(
                 [("partner_id.cnpj_cpf_stripped", "=", recipient)], limit=1
@@ -160,6 +160,11 @@ class Document(models.Model):
             raise UserError(
                 _("The recipient %s is not a company of this database.")
                 % (formata(recipient) if recipient else _("(none)"))
+            )
+        if not self.env.su and company not in self.env.user.company_ids:
+            raise UserError(
+                _("You have no access to the company %s, recipient of the file.")
+                % company.display_name
             )
         return company
 

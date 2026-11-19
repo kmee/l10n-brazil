@@ -161,11 +161,15 @@ class DocumentImportDfeWizard(models.TransientModel):
         }
 
     def _documents_action(self, documents):
+        allowed = list(self.env.context.get("allowed_company_ids") or [])
+        allowed = allowed or self.env.companies.ids
+        allowed += [cid for cid in documents.company_id.ids if cid not in allowed]
         action = {
             "name": _("Imported Documents"),
             "type": "ir.actions.act_window",
             "res_model": "l10n_br_fiscal.document",
             "target": "current",
+            "context": {"allowed_company_ids": allowed},
         }
         if len(documents) == 1:
             action.update(

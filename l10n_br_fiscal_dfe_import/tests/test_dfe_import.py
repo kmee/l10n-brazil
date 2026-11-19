@@ -303,3 +303,66 @@ class TestDfeImport(DfeImportCase):
         activity = dfe_document.activity_ids
         self.assertEqual(activity.user_id, self.env.user)
         self.assertIn("not a company", activity.note)
+
+    def _manager_of(self, companies):
+        return self.env["res.users"].create(
+            {
+                "name": "Importer",
+                "login": "dfe_importer_%s" % len(companies),
+                "company_id": companies[0].id,
+                "company_ids": [Command.set(companies.ids)],
+                "groups_id": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            self.env.ref("base.group_partner_manager").id,
+                            self.env.ref("l10n_br_fiscal.group_manager").id,
+                            self.env.ref("l10n_br_nfe.group_manager").id,
+                        ]
+                    )
+                ],
+            }
+        )
+
+    def test_note_of_another_company_opens_in_the_context_of_its_company(self):
+        user = self._manager_of(self.company | self.other_company)
+        wizard = self.env["l10n_br_fiscal_dfe_import.wizard"].with_user(user)
+        wizard = wizard.with_context(allowed_company_ids=[self.company.id])
+        attachment = self.env["ir.attachment"].create(
+            {"name": "nfe.xml", "raw": self._other_company_xml(KEY_1)}
+        )
+
+        action = wizard.create(
+            {"attachment_ids": [Command.set(attachment.ids)]}
+        ).action_import()
+
+        self.assertIn(self.other_company.id, action["context"]["allowed_company_ids"])
+        document = self.Document.browse(action["res_id"])
+        self.assertEqual(document.company_id, self.other_company)
+
+    def test_repeated_note_of_another_company_opens_the_existing_document(self):
+        user = self._manager_of(self.company | self.other_company)
+        service = self.Document.with_user(user).with_context(
+            allowed_company_ids=[self.company.id]
+        )
+        files = [("nfe.xml", self._other_company_xml(KEY_1))]
+        first, _errors = service.dfe_import_files(files)
+
+        second, errors = service.dfe_import_files(files)
+
+        self.assertFalse(errors)
+        self.assertEqual(first, second)
+
+    def test_note_of_a_company_the_user_cannot_access_is_refused(self):
+        user = self._manager_of(self.company)
+        service = self.Document.with_user(user)
+
+        documents, errors = service.dfe_import_files(
+            [("nfe.xml", self._other_company_xml(KEY_1))]
+        )
+
+        self.assertFalse(documents)
+        self.assertIn("no access to the company", errors[0][1])
+
+    def _other_company_xml(self, key):
+        return self._xml(key, recipient=self.other_company.partner_id.cnpj_cpf_stripped)
