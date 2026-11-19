@@ -19,6 +19,21 @@ class CreditMixin(SpedPisCofinsEntradaMixin):
     def _number(text):
         return float(text.replace(",", ".") or 0)
 
+    def _set_accountant(self):
+        city = self.env["res.city"].search([("state_id.code", "=", "SP")], limit=1)
+        self.company.accountant_id = self.env["res.partner"].create(
+            {
+                "name": "Accountant",
+                "is_accountant": True,
+                "cnpj_cpf": "111.444.777-35",
+                "crc_code": "1SP123456/O-0",
+                "email": "accountant@example.com",
+                "country_id": self.env.ref("base.br").id,
+                "state_id": self.env.ref("base.state_br_sp").id,
+                "city_id": city.id,
+            }
+        )
+
     def _entry(self, operation_line, number):
         """A posted supplier bill whose fiscal document the import left."""
         bill = self._purchase_move(operation_line, number)
@@ -67,7 +82,8 @@ class CreditMixin(SpedPisCofinsEntradaMixin):
             ],
             limit=1,
         )
-        group.regime = regime
+        if regime:
+            group.regime = regime
         accounts = {
             "property_tax_payable_account_id": ("PAY", "liability_current"),
             "property_tax_receivable_account_id": ("REC", "asset_current"),
@@ -234,6 +250,7 @@ class TestSpedPisCofinsCredit(CreditMixin, SpedEntradaCommon):
         """The M200 comes from the assessment: credit in the documents and no
         posted assessment is a file the PVA would refuse."""
         self._entry("fo_compras_compras_comercializacao", "401")
+        self._set_accountant()
         declaration = self._declaration_july()
         with self.assertRaises(UserError) as error:
             declaration.button_create_sped_files()
@@ -246,6 +263,7 @@ class TestSpedPisCofinsCredit(CreditMixin, SpedEntradaCommon):
         self._assess("pis")
         self._assess("cofins")
         self._entry("fo_compras_compras", "402")
+        self._set_accountant()
         declaration = self._declaration_july()
         with self.assertRaises(UserError) as error:
             declaration.button_create_sped_files()

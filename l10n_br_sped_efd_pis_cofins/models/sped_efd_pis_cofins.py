@@ -9,6 +9,7 @@ from erpbrasil.base import misc
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+from odoo.tools.misc import formatLang
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import SITUACAO_FISCAL_INUTILIZADO
 from odoo.addons.l10n_br_sped_base.models.sped_mixin import LAYOUT_VERSIONS
@@ -127,6 +128,11 @@ def _credit_groups(env, declaration, tax_domain):
     if not rows and not assessment.credit_total:
         return []
     label = tax_domain.upper()
+    # `_()` finds the language of the message in a `context` of the caller, or in
+    # the `self` of a method: in a function of the module it is this one, or the
+    # message goes out in the language of the user of the session, not the one of
+    # the declaration
+    context = env.context  # noqa: F841
     if not assessment:
         raise UserError(
             _(
@@ -141,12 +147,12 @@ def _credit_groups(env, declaration, tax_domain):
     if abs(total - assessment.credit_total) > 0.01:
         raise UserError(
             _(
-                "The %(tax)s credit of the documents (%(documents).2f) is not the "
-                "credit of the posted assessment (%(assessment).2f): assess the "
+                "The %(tax)s credit of the documents (%(documents)s) is not the "
+                "credit of the posted assessment (%(assessment)s): assess the "
                 "period again before generating the file.",
                 tax=label,
-                documents=total,
-                assessment=assessment.credit_total,
+                documents=formatLang(env, total, digits=2),
+                assessment=formatLang(env, assessment.credit_total, digits=2),
             )
         )
     if assessment.previous_balance:
@@ -239,6 +245,25 @@ def _credit_detail_vals(detail, field_prefix):
     }
 
 
+def _check_regime(assessment):
+    """The contribution code (table 4.3.5) and the field of the M200 the detail
+    points at come from the regime of the assessment: without it the register
+    would go out with a blank code, which the PVA refuses."""
+    env = getattr(assessment, "env", None)  # a plain object in a unit test
+    context = env.context if env else {}  # noqa: F841
+    if assessment.regime not in COD_CONT_BY_REGIME:
+        raise UserError(
+            _(
+                "The contribution code (table 4.3.5) of the assessment "
+                "%(assessment)s cannot be determined: its tax group does not "
+                "say the PIS/COFINS regime and the company does not tell it "
+                "(Lucro Real or Presumido). Set the regime in the tax group "
+                "(Accounting > Configuration > Tax groups).",
+                assessment=assessment.display_name,
+            )
+        )
+
+
 def _detail_domain(declaration, tax_domain):
     """Assessed debit lines, which is one per tax and therefore one per rate."""
     return [
@@ -276,8 +301,9 @@ def _detail_vals(record, rate_field, declaration):
     base_amount = (
         round(record.tax_amount / rate * 100, 2) if rate else record.base_amount
     )
+    _check_regime(record.assessment_id)
     vals = {
-        "COD_CONT": COD_CONT_BY_REGIME.get(record.assessment_id.regime, ""),
+        "COD_CONT": COD_CONT_BY_REGIME[record.assessment_id.regime],
         # Gross revenue and tax base are reported as the same amount while the
         # exclusions from the base are not written: inventing a split between
         # them would be worse than stating they were not computed.
@@ -308,6 +334,10 @@ class Registro0000(models.Model):
     _inherit = ["l10n_br_sped.efd_pis_cofins.6.0000"]
     _odoo_model = "res.company"
 
+    def _get_accountant_required(self):
+        # what the layout marks as mandatory in the 0100 (the descriptor of the PVA)
+        return [("cnpj_cpf", _("CPF")), ("crc_code", _("CRC"))]
+
     def button_create_sped_files(self):
         """The credit block (M100 to M505) and the M200/M600 come from the
         documents and from the assessment of the period, and the pull of a
@@ -317,6 +347,7 @@ class Registro0000(models.Model):
         for declaration in self:
             if declaration.debug:
                 continue
+            declaration._check_accountant()
             declaration = declaration._in_company_context()
             for tax_domain in ("pis", "cofins"):
                 _credit_groups(declaration.env, declaration, tax_domain)
@@ -942,6 +973,12 @@ class RegistroC100(models.Model):
                 "NUM_DOC": record.document_number or "",
                 "CHV_NFE": "" if unused else record.document_key or "",
             }
+        # the ICMS and the IPI of the document as the books carry them, the
+        # same functions as the EFD ICMS/IPI (an entry without credit right
+        # carries none)
+        icms_base, icms_value = record._get_sped_icms_amounts()
+        # the PIS and the COFINS of the items, as the C170 carry them
+        pis_value, cofins_value = record._get_sped_pis_cofins_values()
         return {
             "IND_OPER": "0" if record.fiscal_operation_type == "in" else "1",
             "IND_EMIT": "0" if record.issuer == "company" else "1",
@@ -967,13 +1004,13 @@ class RegistroC100(models.Model):
             "VL_FRT": record.amount_freight_value or 0,
             "VL_SEG": record.amount_insurance_value or 0,
             "VL_OUT_DA": record.amount_other_value or 0,
-            "VL_BC_ICMS": record.amount_icms_base or 0,
-            "VL_ICMS": record.amount_icms_value or 0,
+            "VL_BC_ICMS": icms_base,
+            "VL_ICMS": icms_value,
             "VL_BC_ICMS_ST": record.amount_icmsst_base or 0,
             "VL_ICMS_ST": record.amount_icmsst_value or 0,
-            "VL_IPI": record.amount_ipi_value or 0,
-            "VL_PIS": record.amount_pis_value or 0,
-            "VL_COFINS": record.amount_cofins_value or 0,
+            "VL_IPI": record._get_sped_ipi_value(),
+            "VL_PIS": pis_value,
+            "VL_COFINS": cofins_value,
             "VL_PIS_ST": record.amount_pis_wh_value or 0,
             "VL_COFINS_ST": record.amount_cofins_wh_value or 0,
         }
@@ -1047,6 +1084,10 @@ class RegistroC170(models.Model):
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         pis_no_credit = record._entry_piscofins_without_credit("pis")
         cofins_no_credit = record._entry_piscofins_without_credit("cofins")
+        # the ICMS and the IPI of the line, the same function as the EFD
+        # ICMS/IPI uses: the two files carry the same note the same way
+        icms = record._get_sped_icms_values()
+        ipi = record._get_sped_ipi_values()
         return {
             "NUM_ITEM": str(index + 1),
             "COD_ITEM": record.product_id.default_code or str(record.product_id.id),
@@ -1058,22 +1099,22 @@ class RegistroC170(models.Model):
             "IND_MOV": "0",
             # 3 positions: the origin digit prefixes the 2-digit CST, as the
             # ICMS book writes it
-            "CST_ICMS": (record.icms_origin or "0") + (record.icms_cst_code or ""),
+            "CST_ICMS": icms["cst"],
             "CFOP": record.cfop_id.code or "",
             "COD_NAT": record.fiscal_operation_id.code
             or str(record.fiscal_operation_id.id or ""),
-            "VL_BC_ICMS": record.icms_base or 0,
-            "ALIQ_ICMS": record.icms_percent or 0,
-            "VL_ICMS": record.icms_value or 0,
+            "VL_BC_ICMS": icms["base"] or 0,
+            "ALIQ_ICMS": icms["percent"] or 0,
+            "VL_ICMS": icms["value"] or 0,
             "VL_BC_ICMS_ST": record.icmsst_base or 0,
             "ALIQ_ST": record.icmsst_percent or 0,
             "VL_ICMS_ST": record.icmsst_value or 0,
             "IND_APUR": "0",  # 0=Mensal
-            "CST_IPI": record.entry_ipi_cst_id.code or record.ipi_cst_code or "",
+            "CST_IPI": ipi["cst"] or "",
             "COD_ENQ": "",
-            "VL_BC_IPI": record.ipi_base or 0,
-            "ALIQ_IPI": record.ipi_percent or 0,
-            "VL_IPI": record.ipi_value or 0,
+            "VL_BC_IPI": ipi["base"] or 0,
+            "ALIQ_IPI": ipi["percent"] or 0,
+            "VL_IPI": ipi["value"] or 0,
             "CST_PIS": record.entry_pis_cst_id.code or record.pis_cst_code or "",
             "VL_BC_PIS": 0 if pis_no_credit else record.pis_base or 0,
             "ALIQ_PIS": 0 if pis_no_credit else record.pis_percent or 0,
@@ -3124,6 +3165,7 @@ class RegistroM205(models.Model):
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        _check_regime(record)
         return {
             "NUM_CAMPO": NUM_CAMPO_BY_REGIME[record.regime],
             "COD_REC": COD_REC[("pis", record.regime)],
@@ -3481,6 +3523,7 @@ class RegistroM605(models.Model):
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        _check_regime(record)
         return {
             "NUM_CAMPO": NUM_CAMPO_BY_REGIME[record.regime],
             "COD_REC": COD_REC[("cofins", record.regime)],

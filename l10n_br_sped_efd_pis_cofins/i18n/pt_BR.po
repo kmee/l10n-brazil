@@ -38,8 +38,8 @@ msgstr "Separar SPED por Bloco"
 #. odoo-python
 #: code:addons/l10n_br_sped_efd_pis_cofins/models/fiscal_document_line.py:0
 #, python-format
-msgid "The line %(line)s of the document %(document)s books the %(tax)s credit with the CST %(cst)s and the destination %(destination)s, which the file does not derive (only the CST 50 of a resale or of an input)."
-msgstr "A linha %(line)s do documento %(document)s escritura o crédito de %(tax)s com o CST %(cst)s e o destino %(destination)s, que o arquivo não deriva (somente o CST 50 de uma revenda ou de um insumo)."
+msgid "The item %(item)s (%(product)s) of the document %(document)s books %(tax)s credit with the CST %(cst)s and the destination %(destination)s. This version of the file only derives the credit of a resale and of an input (CST 50), so it was not generated. Fix the destination or the operation of the line, or handle this credit outside the system."
+msgstr "O item %(item)s (%(product)s) do documento %(document)s escritura crédito de %(tax)s com o CST %(cst)s e o destino %(destination)s. Esta versão do arquivo só deriva o crédito de revenda e de insumo (CST 50), por isso ele não foi gerado. Corrija o destino ou a operação da linha, ou trate esse crédito fora do sistema."
 
 #. module: l10n_br_sped_efd_pis_cofins
 #. odoo-python
@@ -52,8 +52,8 @@ msgstr "Os documentos do período escrituram crédito de %(tax)s (CST 50 a 66), 
 #. odoo-python
 #: code:addons/l10n_br_sped_efd_pis_cofins/models/sped_efd_pis_cofins.py:0
 #, python-format
-msgid "The %(tax)s credit of the documents (%(documents).2f) is not the credit of the posted assessment (%(assessment).2f): assess the period again before generating the file."
-msgstr "O crédito de %(tax)s dos documentos (%(documents).2f) não é o crédito da apuração lançada (%(assessment).2f): apure o período de novo antes de gerar o arquivo."
+msgid "The %(tax)s credit of the documents (%(documents)s) is not the credit of the posted assessment (%(assessment)s): assess the period again before generating the file."
+msgstr "O crédito de %(tax)s dos documentos (%(documents)s) não é o crédito da apuração lançada (%(assessment)s): apure o período de novo antes de gerar o arquivo."
 
 #. module: l10n_br_sped_efd_pis_cofins
 #. odoo-python
@@ -61,6 +61,34 @@ msgstr "O crédito de %(tax)s dos documentos (%(documents).2f) não é o crédit
 #, python-format
 msgid "The %(tax)s assessment of the period uses the credit balance of a previous period, which the file informs in the register 1100 (credit control), not written yet."
 msgstr "A apuração de %(tax)s do período usa o saldo de crédito de um período anterior, que o arquivo informa no registro 1100 (controle de créditos), ainda não escrito."
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/sped_efd_pis_cofins.py:0
+#, python-format
+msgid "CPF"
+msgstr "CPF"
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/sped_efd_pis_cofins.py:0
+#, python-format
+msgid "CRC"
+msgstr "CRC"
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/sped_efd_pis_cofins.py:0
+#, python-format
+msgid "The contribution code (table 4.3.5) of the assessment %(assessment)s cannot be determined: its tax group does not say the PIS/COFINS regime and the company does not tell it (Lucro Real or Presumido). Set the regime in the tax group (Accounting > Configuration > Tax groups)."
+msgstr "Não foi possível determinar o código da contribuição (tabela 4.3.5) da apuração %(assessment)s: o grupo de imposto não informa o regime de PIS/COFINS e a empresa não o define (Lucro Real ou Presumido). Informe o regime no grupo de imposto (Contabilidade > Configuração > Grupos de imposto)."
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/fiscal_document_line.py:0
+#, python-format
+msgid "not informed"
+msgstr "não informado"
 
 #. module: l10n_br_sped_efd_pis_cofins
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_pis_cofins_0000__state__done

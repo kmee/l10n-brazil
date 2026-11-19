@@ -57,6 +57,16 @@ class FiscalDocumentLine(models.Model):
             for code in codes
         )
 
+    def _get_product_destination_label(self):
+        """The destination of the product as the user reads it (translated), not
+        the value of the selection."""
+        self.ensure_one()
+        value = self.product_destination
+        if not value:
+            return _("not informed")
+        field = self._fields["product_destination"]
+        return dict(field._description_selection(self.env)).get(value, value)
+
     def _sped_credit(self, tax_domain):
         """The credit this entry line books in the C170 (CST 50 to 66) for the
         M100/M105 (PIS) or M500/M505 (COFINS), or None when it books none.
@@ -75,17 +85,21 @@ class FiscalDocumentLine(models.Model):
             return None
         nat_bc = NAT_BC_CRED_BY_DESTINATION.get(self.product_destination)
         if cst != CREDIT_CST or not nat_bc:
+            document = self.document_id
             raise UserError(
                 _(
-                    "The line %(line)s of the document %(document)s books the "
-                    "%(tax)s credit with the CST %(cst)s and the destination "
-                    "%(destination)s, which the file does not derive (only the CST "
-                    "50 of a resale or of an input).",
-                    line=self.name or self.id,
-                    document=self.document_id.document_number or self.document_id.id,
+                    "The item %(item)s (%(product)s) of the document %(document)s "
+                    "books %(tax)s credit with the CST %(cst)s and the destination "
+                    "%(destination)s. This version of the file only derives the "
+                    "credit of a resale and of an input (CST 50), so it was not "
+                    "generated. Fix the destination or the operation of the line, "
+                    "or handle this credit outside the system.",
+                    item=document.fiscal_line_ids.ids.index(self.id) + 1,
+                    product=self.name or self.product_id.display_name or "",
+                    document=document.document_number or document.id,
                     tax=tax_domain.upper(),
                     cst=cst,
-                    destination=self.product_destination or "",
+                    destination=self._get_product_destination_label(),
                 )
             )
         basic = self.company_id.piscofins_id[f"tax_{tax_domain}_id"].percent_amount
