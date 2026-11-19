@@ -584,11 +584,32 @@ class NFe(spec_models.StackedModel):
 
     # <vICMSDeson>0.00</vICMSDeson> TODO
 
-    nfe40_vFCPUFDest = fields.Monetary(related="amount_icmsfcp_value")
+    # Must match the sum of the items that carry ICMSUFDest
+    nfe40_vFCPUFDest = fields.Monetary(compute="_compute_nfe40_ICMSUFDest_totals")
 
-    nfe40_vICMSUFDest = fields.Monetary(related="amount_icms_destination_value")
+    nfe40_vICMSUFDest = fields.Monetary(compute="_compute_nfe40_ICMSUFDest_totals")
 
-    nfe40_vICMSUFRemet = fields.Monetary(related="amount_icms_origin_value")
+    nfe40_vICMSUFRemet = fields.Monetary(compute="_compute_nfe40_ICMSUFDest_totals")
+
+    @api.depends(
+        "fiscal_line_ids.partner_id.ind_ie_dest",
+        "fiscal_line_ids.partner_id.state_id",
+        "fiscal_line_ids.partner_id.country_id",
+        "fiscal_line_ids.company_id.state_id",
+        "fiscal_line_ids.company_id.country_id",
+        "fiscal_line_ids.icms_value",
+        "fiscal_line_ids.icmsfcp_value",
+        "fiscal_line_ids.icms_destination_value",
+        "fiscal_line_ids.icms_origin_value",
+    )
+    def _compute_nfe40_ICMSUFDest_totals(self):
+        for record in self:
+            lines = record.fiscal_line_ids.filtered(
+                lambda line: line._nfe40_has_ICMSUFDest()
+            )
+            record.nfe40_vFCPUFDest = sum(lines.mapped("icmsfcp_value"))
+            record.nfe40_vICMSUFDest = sum(lines.mapped("icms_destination_value"))
+            record.nfe40_vICMSUFRemet = sum(lines.mapped("icms_origin_value"))
 
     # <vFCP>0.00</vFCP> TODO
 
@@ -1116,18 +1137,17 @@ class NFe(spec_models.StackedModel):
             company_vat = self.env.company.vat.translate(
                 str.maketrans("", "", string.punctuation)
             )
-            if new_value.get("nfe40_CNPJ"):
-                dest_vat = new_value.get("nfe40_CNPJ").translate(
-                    str.maketrans("", "", string.punctuation)
-                )
-            elif new_value.get("nfe40_CPF"):
-                dest_vat = new_value.get("nfe40_CPF").translate(
-                    str.maketrans("", "", string.punctuation)
-                )
+            # A recipient abroad has neither CNPJ nor CPF: it is identified by
+            # idEstrangeiro, so there is no document number to compare with the
+            # company or to store as the partner vat.
+            dest_vat = (
+                new_value.get("nfe40_CNPJ") or new_value.get("nfe40_CPF") or ""
+            ).translate(str.maketrans("", "", string.punctuation))
             if company_vat != dest_vat:
                 vals["issuer"] = "partner"
             new_value["is_company"] = True
-            new_value["vat"] = dest_vat
+            if dest_vat:
+                new_value["vat"] = dest_vat
             super()._build_many2one(
                 self.env["res.partner"], vals, new_value, "partner_id", value, path
             )

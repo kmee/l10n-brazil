@@ -31,6 +31,7 @@ class AccountMove(models.Model):
     _inherit = [
         _name,
         "l10n_br_account.decorator.mixin",
+        "l10n_br_fiscal.report.filter.mixin",
     ]
 
     # an account.move has normally 0 or 1 related fiscal document:
@@ -447,7 +448,7 @@ class AccountMove(models.Model):
                         values = {
                             "balance": term.get("company_amount"),
                             "amount_currency": term.get("foreign_amount"),
-                            "discount_amount_currency": term.get(
+                            "discount_amount_currency": invoice_payment_terms.get(
                                 "discount_amount_currency"
                             )
                             or 0.0,

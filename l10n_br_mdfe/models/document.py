@@ -8,7 +8,7 @@ from unicodedata import normalize
 
 from erpbrasil.base.fiscal.edoc import ChaveEdoc
 from erpbrasil.base.misc import punctuation_rm
-from erpbrasil.transmissao import TransmissaoSOAP
+from erpbrasil.edoc.mdfe import TransmissaoMDFE
 from nfelib.mdfe.bindings.v3_0.mdfe_v3_00 import Mdfe
 from nfelib.nfe.ws.edoc_legacy import MDFeAdapter as edoc_mdfe
 from requests import Session
@@ -578,7 +578,32 @@ class MDFe(spec_models.StackedModel):
                 {"document_id": self.id}
             )
 
-        return self.mdfe_modal_rodoviario_id._build_binding("mdfe", "30")
+        binding = self.mdfe_modal_rodoviario_id._build_binding("mdfe", "30")
+        return self._mdfe_remove_infantt_vazio(binding)
+
+    def _mdfe_remove_infantt_vazio(self, binding):
+        """Tira do XML os grupos infANTT e valePed quando nascem vazios."""
+        inf_antt = getattr(binding, "infANTT", None)
+        if inf_antt is None:
+            return binding
+
+        vale_pedagio = getattr(inf_antt, "valePed", None)
+        if vale_pedagio is not None and not getattr(vale_pedagio, "disp", None):
+            inf_antt.valePed = None
+
+        if not any(
+            getattr(inf_antt, field_name, None)
+            for field_name in (
+                "RNTRC",
+                "infCIOT",
+                "valePed",
+                "infContratante",
+                "infPag",
+            )
+        ):
+            binding.infANTT = None
+
+        return binding
 
     ##########################
     # MDF-e tag: seg
@@ -960,10 +985,10 @@ class MDFe(spec_models.StackedModel):
         session.verify = False
 
         params = {
-            "transmissao": TransmissaoSOAP(certificado, session),
+            "transmissao": TransmissaoMDFE(certificado, session),
             "uf": self.company_id.state_id.ibge_code,
             "versao": self.mdfe_version,
-            "ambiente": self.mdfe_environment,
+            "ambiente": int(self.mdfe_environment),
         }
         return edoc_mdfe(**params)
 
