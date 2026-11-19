@@ -5,6 +5,7 @@
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+from odoo.tools import float_compare
 
 
 class AccountMove(models.Model):
@@ -57,9 +58,11 @@ class AccountMove(models.Model):
     def _get_nfe_lines_without_purchase_line(self):
         self.ensure_one()
         return self.invoice_line_ids.filtered(
-            lambda line: line.display_type == "product"
-            and line.product_id
-            and not line.purchase_line_id
+            lambda line: (
+                line.display_type == "product"
+                and line.product_id
+                and not line.purchase_line_id
+            )
         )
 
     def action_update_po_from_nfe(self):
@@ -197,14 +200,22 @@ class AccountMove(models.Model):
         order counts the quantity as invoiced.
 
         A document line without origin still falls back to the xPed and
-        nItemPed it carries. A purchase order line is linked to one bill line
-        only; anything else stays unlinked.
+        nItemPed it carries. An order line takes more than one bill line (the
+        supplier splits the same item by lot) as long as the sum stays within
+        what is left of it (the tolerance of the quantity of the company
+        included); a line that would pass it stays unlinked.
         """
         self.ensure_one()
         if self.move_type != "in_invoice":
             return
         PurchaseLine = self.env["purchase.order.line"]
-        taken = self.invoice_line_ids.purchase_line_id
+        linked = {}
+        for line in self.invoice_line_ids.filtered(
+            lambda aml: aml.display_type == "product" and aml.purchase_line_id
+        ):
+            linked[line.purchase_line_id] = linked.get(
+                line.purchase_line_id, 0.0
+            ) + self._quantity_in_order_unit(line, line.purchase_line_id)
         for line in self.invoice_line_ids.filtered(
             lambda aml: aml.display_type == "product" and not aml.purchase_line_id
         ):
@@ -221,8 +232,38 @@ class AccountMove(models.Model):
                     fiscal_line.partner_order_line,
                     line.product_id,
                 )
-            if purchase_line and purchase_line not in taken:
-                line.purchase_line_id = purchase_line
-                taken |= purchase_line
-        if taken and not self.invoice_origin:
-            self.invoice_origin = ", ".join(taken.order_id.mapped("name"))
+            if not purchase_line:
+                continue
+            quantity = self._quantity_in_order_unit(line, purchase_line)
+            if purchase_line in linked and not self._fits_in_order_line(
+                purchase_line, linked[purchase_line] + quantity
+            ):
+                continue
+            line.purchase_line_id = purchase_line
+            linked[purchase_line] = linked.get(purchase_line, 0.0) + quantity
+        if linked and not self.invoice_origin:
+            self.invoice_origin = ", ".join(
+                PurchaseLine.concat(*linked).order_id.mapped("name")
+            )
+
+    @staticmethod
+    def _quantity_in_order_unit(bill_line, purchase_line):
+        return bill_line.product_uom_id._compute_quantity(
+            bill_line.quantity, purchase_line.product_uom, raise_if_failure=False
+        )
+
+    def _fits_in_order_line(self, purchase_line, quantity):
+        """True when ``quantity`` of this bill fits in what is left of the order
+        line after the other bills, with the tolerance of the company."""
+        self.ensure_one()
+        balance = (
+            purchase_line.product_qty
+            + purchase_line._import_quantity_tolerance()
+            - purchase_line._quantity_billed_elsewhere(self)
+        )
+        return (
+            float_compare(
+                quantity, balance, precision_rounding=purchase_line.product_uom.rounding
+            )
+            <= 0
+        )
