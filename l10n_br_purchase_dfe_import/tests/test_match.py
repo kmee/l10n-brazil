@@ -1,6 +1,8 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+from unittest import mock
+
 from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal_dfe_import.tests.common import KEY_2
@@ -174,3 +176,39 @@ class TestMatch(PurchaseImportCase):
     def test_the_tela_follows_the_company_rule(self):
         rule = self.env["ir.rule"].search([("model_id.model", "=", self.Match._name)])
         self.assertIn("company_ids", rule.domain_force)
+
+    def test_a_source_of_another_module_adds_its_rows_and_columns(self):
+        self._order()
+        self._resolve_product()
+        self.env.flush_all()
+        model = type(self.Match)
+        sources = self.Match._match_sources()
+        literal = ", ".join(
+            "NULL::integer AS %s" % name
+            for name in (
+                "company_id partner_id product_id uom_id currency_id "
+                "fiscal_document_id fiscal_line_id purchase_order_id "
+                "purchase_line_id suggested_purchase_line_id"
+            ).split()
+        )
+        extra = (
+            "SELECT 399 AS id, 'note' AS kind, 'x'::varchar AS description, "
+            "NULL::varchar AS declared_reference, 1.0::float AS quantity, "
+            "1.0::float AS open_quantity, 1.0::float AS price_unit, "
+            "'r'::varchar AS reference, NULL::date AS date, "
+            "'none'::varchar AS line_state, 7 AS extra_flag, " + literal
+        )
+        with mock.patch.object(
+            model, "_match_extra_columns", return_value={"extra_flag": "integer"}
+        ), mock.patch.object(
+            model, "_match_sources", return_value=sources + [(extra, ("extra_flag",))]
+        ):
+            self.env.cr.execute(
+                "SELECT id, extra_flag FROM (%s) t ORDER BY id"
+                % self.Match._table_query
+            )
+            rows = self.env.cr.fetchall()
+
+        self.assertEqual(rows[-1], (399, 7))
+        self.assertTrue(len(rows) > 2)
+        self.assertEqual({flag for _id, flag in rows[:-1]}, {None})

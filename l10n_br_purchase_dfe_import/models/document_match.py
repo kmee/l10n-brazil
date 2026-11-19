@@ -17,6 +17,30 @@ SOURCE_COUNT = 4
 SOURCE_NOTE = 0
 SOURCE_ORDER_LINE = 1
 
+# The columns every source gives, in this order.
+MATCH_COLUMNS = (
+    "id",
+    "kind",
+    "company_id",
+    "partner_id",
+    "product_id",
+    "description",
+    "declared_reference",
+    "uom_id",
+    "quantity",
+    "open_quantity",
+    "price_unit",
+    "currency_id",
+    "reference",
+    "date",
+    "line_state",
+    "fiscal_document_id",
+    "fiscal_line_id",
+    "purchase_order_id",
+    "purchase_line_id",
+    "suggested_purchase_line_id",
+)
+
 
 class DocumentMatch(models.Model):
     """Read model: what the system knows about where an imported document came
@@ -110,9 +134,32 @@ class DocumentMatch(models.Model):
         return " UNION ALL ".join(self._match_queries())
 
     @api.model
+    def _match_extra_columns(self):
+        """The columns that the sources of other modules add, as
+        ``{name: SQL type}``. A module that adds a column (and its field) extends
+        this with ``super()``; the sources that do not give it have it empty."""
+        return {}
+
+    @api.model
+    def _match_sources(self):
+        """The sources, as ``[(SELECT, names of the extra columns it gives)]``.
+        Each ``SELECT`` gives ``MATCH_COLUMNS`` and the extra columns it names; a
+        module that adds a source extends this list with ``super()``."""
+        return [(self._match_note_query(), ()), (self._match_order_query(), ())]
+
+    @api.model
     def _match_queries(self):
         """The ``SELECT`` of each source, all with the same columns."""
-        return [self._match_note_query(), self._match_order_query()]
+        extras = self._match_extra_columns()
+        queries = []
+        for select, given in self._match_sources():
+            columns = [f"q.{name}" for name in MATCH_COLUMNS]
+            columns += [
+                f"q.{name}" if name in given else f"NULL::{sql_type} AS {name}"
+                for name, sql_type in extras.items()
+            ]
+            queries.append(f"SELECT {', '.join(columns)} FROM ({select}) q")
+        return queries
 
     @api.model
     def _match_note_query(self):
