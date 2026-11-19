@@ -684,6 +684,54 @@ class TestDfeImport(DfeImportCase):
         self.assertEqual(line.import_state, "matched")
         self.assertIn("1 line", result["params"]["message"])
 
+    def _dozen_note(self, code=b"ZZ-NEW-1"):
+        """10 boxes at 35.00 (vProd 350.00)."""
+        return (
+            self._depara_note(KEY_2, unit=b"CX", code=code)
+            .replace(b"<qCom>1.0000</qCom>", b"<qCom>10.0000</qCom>")
+            .replace(b"<qTrib>1.0000</qTrib>", b"<qTrib>10.0000</qTrib>")
+            .replace(
+                b"<vUnCom>1950.0000000000</vUnCom>", b"<vUnCom>35.0000000000</vUnCom>"
+            )
+            .replace(
+                b"<vUnTrib>1950.0000000000</vUnTrib>",
+                b"<vUnTrib>35.0000000000</vUnTrib>",
+            )
+            .replace(b"<vProd>1950.00</vProd>", b"<vProd>350.00</vProd>")
+        )
+
+    def test_total_of_the_file_holds_with_a_factor_from_the_de_para(self):
+        box = self.env["uom.uom"]._match_by_fiscal_code("CX")
+        product = self._supplier_product(partner_uom_id=box.id, partner_uom_factor=12)
+
+        documents, _errors = self.Document.dfe_import_files(
+            [("nfe.xml", self._dozen_note())]
+        )
+
+        line = documents.fiscal_line_ids
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.quantity, 120)
+        self.assertEqual(line.import_state, "resolved")
+        self.assertEqual(line.fiscal_amount_untaxed, 350)
+        self.assertEqual(documents.fiscal_amount_untaxed, 350)
+
+    def test_total_of_the_file_holds_when_a_person_resolves_with_a_factor(self):
+        documents, _errors = self.Document.dfe_import_files(
+            [("nfe.xml", self._dozen_note(code=b"NO-MATCH-4"))]
+        )
+        product = self.env["product.product"].create({"name": "Chosen by hand"})
+        line = documents.fiscal_line_ids
+        line.product_id = product
+        line.import_uom_factor = 12
+
+        line._apply_import_depara(product=product, uom=self.uom_unit)
+
+        self.assertEqual(line.quantity, 120)
+        self.assertEqual(line.fiscal_amount_untaxed, 350)
+        self.assertEqual(documents.fiscal_amount_untaxed, 350)
+        line.price_unit = 3
+        self.assertEqual(line.fiscal_amount_untaxed, 360)
+
     def test_product_found_by_internal_code_is_only_a_suggestion(self):
         product = self.env["product.product"].create(
             {"name": "Same code", "default_code": "ZZ-NEW-1"}
