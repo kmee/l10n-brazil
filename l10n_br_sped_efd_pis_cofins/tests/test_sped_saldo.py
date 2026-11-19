@@ -108,8 +108,8 @@ class TestSpedPisCofinsCreditBalance(CreditMixin, SpedEntradaCommon):
 
     def test_the_file_stops_when_the_earlier_month_is_not_posted(self):
         """The balance comes from the assessment of July, computed but not posted:
-        the chain of the earlier periods does not give it, and the message says
-        to assess and post them in order."""
+        the month with movement has no posted assessment, and the message says
+        which one to assess and post."""
         self._entry("fo_compras_compras_comercializacao", "401", JULY)
         self._entry("fo_compras_compras", "402", JULY)
         self._sale(date(2026, 7, 12))
@@ -120,4 +120,22 @@ class TestSpedPisCofinsCreditBalance(CreditMixin, SpedEntradaCommon):
         declaration = self._declaration_month(8)
         with self.assertRaises(UserError) as error:
             declaration.button_create_sped_files()
-        self.assertIn("earlier periods", error.exception.args[0])
+        self.assertIn("07/2026", error.exception.args[0])
+        self.assertIn("Faltam as apurações lançadas", error.exception.args[0])
+
+    def test_the_file_stops_when_an_earlier_month_was_never_assessed(self):
+        """June has credit and no assessment at all; July is assessed and posted.
+        The balance of July starts from zero and the credit of June would be lost
+        without a word: the generation stops and says which month is missing."""
+        self.company.tax_assessment_start = date(2026, 6, 1)
+        self._entry("fo_compras_compras_comercializacao", "401", date(2026, 6, 10))
+        self._entry("fo_compras_compras", "402", date(2026, 7, 10))
+        self._sale(date(2026, 7, 12))
+        self._assess("pis", month=7)
+        self._assess("cofins", month=7)
+        self._set_accountant()
+        declaration = self._declaration_month(7)
+        with self.assertRaises(UserError) as error:
+            declaration.button_create_sped_files()
+        self.assertIn("06/2026", error.exception.args[0])
+        self.assertIn("Faltam as apurações lançadas", error.exception.args[0])

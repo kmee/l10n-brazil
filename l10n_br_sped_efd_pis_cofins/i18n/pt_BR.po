@@ -94,15 +94,85 @@ msgstr "não informado"
 #. odoo-python
 #: code:addons/l10n_br_sped_efd_pis_cofins/models/sped_efd_pis_cofins.py:0
 #, python-format
-msgid "The %(tax)s credit balance that the assessment of the period starts from (%(balance)s) is not what the posted assessments of the earlier periods give (%(layers)s): assess and post the earlier periods, in order, before generating the file."
-msgstr "O saldo de crédito de %(tax)s de que a apuração do período parte (%(balance)s) não é o que as apurações lançadas dos períodos anteriores dão (%(layers)s): apure e lance os períodos anteriores, em ordem, antes de gerar o arquivo."
+msgid "The document is still being typed: the button \"Recalcular CST de entrada\" of the document recalculates the CST of the lines by the current rule."
+msgstr "O documento ainda está em digitação: o botão \"Recalcular CST de entrada\" do documento recalcula o CST das linhas pela regra atual."
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/credit_opening.py:0
+#, python-format
+msgid "The credit values cannot be negative."
+msgstr "Os valores do crédito não podem ser negativos."
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/credit_opening.py:0
+#, python-format
+msgid "The credit already used cannot be above the credit assessed."
+msgstr "O crédito já utilizado não pode ser maior que o crédito apurado."
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/credit_opening.py:0
+#, python-format
+msgid "Inform the first day of the month in the periods."
+msgstr "Informe o primeiro dia do mês nos períodos."
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/credit_opening.py:0
+#, python-format
+msgid "The period of origin of the credit has to be before the first period of the system."
+msgstr "O período de origem do crédito tem de ser anterior ao primeiro período do sistema."
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/credit_opening.py:0
+#, python-format
+msgid "Inform the CNPJ of the assignor of a credit that was transferred."
+msgstr "Informe o CNPJ da cedente de um crédito transferido."
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/credit_opening_import.py:0
+#, python-format
+msgid "The file is not an EFD Contribuicoes: the record 0000 is missing."
+msgstr "O arquivo não é uma EFD Contribuições: falta o registro 0000."
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/credit_opening_import.py:0
+#, python-format
+msgid "Opening balance of the PIS/COFINS credit"
+msgstr "Saldo inicial de crédito de PIS/COFINS"
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/tax_assessment.py:0
+#, python-format
+msgid "The balance of the account %(account)s before the period (%(ledger)s) is not the opening balance of the credit (%(opening)s). The system books no entry for the opening balance: check the opening balance sheet."
+msgstr "O saldo da conta %(account)s antes do período (%(ledger)s) não é o saldo inicial do crédito (%(opening)s). O sistema não faz lançamento do saldo inicial: confira o balanço de abertura."
 
 #. module: l10n_br_sped_efd_pis_cofins
 #. odoo-python
 #: code:addons/l10n_br_sped_efd_pis_cofins/models/sped_efd_pis_cofins.py:0
 #, python-format
-msgid "The document is still being typed: the button \"Recalcular CST de entrada\" of the document recalculates the CST of the lines by the current rule."
-msgstr "O documento ainda está em digitação: o botão \"Recalcular CST de entrada\" do documento recalcula o CST das linhas pela regra atual."
+msgid "The %(tax)s credit balance that the assessment of the period starts from (%(balance)s) is not what the posted assessments of the earlier periods give (%(layers)s): assess and post the earlier periods, in order, before generating the file. If the credit comes from before the system, register it as the opening balance (menu Invoicing > Accounting > Actions > Saldo inicial de crédito de PIS/COFINS)."
+msgstr "O saldo de crédito de %(tax)s de que a apuração do período parte (%(balance)s) não é o que as apurações lançadas dos períodos anteriores dão (%(layers)s): apure e lance os períodos anteriores, em ordem, antes de gerar o arquivo. Se o crédito vem de antes do sistema, informe-o como saldo inicial (menu Faturamento > Financeiro > Ações > Saldo inicial de crédito de PIS/COFINS)."
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/credit_opening_import.py:0
+#, python-format
+msgid "The CNPJ of the file (%(file)s) is not the one of the company %(company)s (%(company_cnpj)s): the opening balance is of the company that the file was made for."
+msgstr "O CNPJ do arquivo (%(file)s) não é o da empresa %(company)s (%(company_cnpj)s): o saldo inicial é da empresa para a qual o arquivo foi feito."
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/credit_opening_import.py:0
+#, python-format
+msgid "The file has no credit balance in the registers 1100, 1500, M100 and M500 to carry to the system."
+msgstr "O arquivo não tem saldo de crédito nos registros 1100, 1500, M100 e M500 para levar ao sistema."
 
 #. module: l10n_br_sped_efd_pis_cofins
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_pis_cofins_0000__state__done
@@ -115,3 +185,10 @@ msgstr "Concluída"
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_efd_pis_cofins_6_0000__state__draft
 msgid "Draft"
 msgstr "Rascunho"
+
+#. module: l10n_br_sped_efd_pis_cofins
+#. odoo-python
+#: code:addons/l10n_br_sped_efd_pis_cofins/models/tax_assessment.py:0
+#, python-format
+msgid "The start of the assessment of the company (%(start)s) is not the cut-off of the opening balance of the credit (%(cutoff)s): the cut-off of the opening balance is the one that counts for the PIS and the COFINS."
+msgstr "O início da apuração da empresa (%(start)s) não é a data de corte do saldo inicial do crédito (%(cutoff)s): para o PIS e a COFINS vale a data de corte do saldo inicial."
