@@ -336,10 +336,13 @@ class DocumentImportWizard(models.TransientModel):
     def _apply_wizard_depara(self, edoc):
         """Apply the de-para reviewed in the wizard grid on the persisted
         document lines (both follow the file line order)."""
-        # both recordsets follow the file line order, one wizard line per det
+        # both recordsets follow the file line order, one wizard line per det;
+        # the origin of the lines is suggested once, for the whole document,
+        # after the de-para (not once per line)
         for wizard_line, line in zip(
             self.imported_products_ids, edoc.fiscal_line_ids, strict=True
         ):
+            line = line.with_context(import_origin_deferred=True)
             if wizard_line.product_id:
                 line._apply_import_depara(
                     product=wizard_line.product_id,
@@ -380,6 +383,7 @@ class DocumentImportWizard(models.TransientModel):
                 # explicit CFOP override reviewed by the user, applied after
                 # the operation remap.
                 line.cfop_id = wizard_line.new_cfop_id
+        edoc.fiscal_line_ids._suggest_import_origin()
 
 
 class DocumentImportWizardLine(models.TransientModel):

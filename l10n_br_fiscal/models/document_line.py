@@ -384,6 +384,12 @@ class DocumentLine(models.Model):
                 )
             line._apply_import_depara()
 
+    def _suggest_import_origin(self):
+        """Hook: suggest the origin (purchase order line, receipt) of the lines
+        imported from a fiscal file. The modules that know the origin models
+        (purchase, stock) implement it."""
+        return True
+
     def _apply_import_depara(
         self, product=None, uom=None, factor=None, fiscal_operation=None, confirm=True
     ):

@@ -223,3 +223,48 @@ class TestImportOrigin(TransactionCase):
         self.assertFalse(line.import_origin_candidate_ids)
         line.action_resolve_line()
         document._check_document_import()  # must not raise
+
+    def test_a_balance_claimed_by_another_imported_document_is_not_offered(self):
+        """Two notes imported and still without a bill cannot both claim the
+        same balance of the order: what the first one took is not offered to
+        the second."""
+        count = len(self.order.order_line)
+        first = self._document([(False, False)] * count)
+        first._init_import_states()
+        taken = first.fiscal_line_ids.mapped("import_purchase_line_id")
+        self.assertTrue(taken)
+        second = self._document([(False, False)] * count)
+        second._init_import_states()
+        for line in second.fiscal_line_ids.filtered(
+            lambda line: line.product_id in taken.mapped("product_id")
+        ):
+            self.assertFalse(line.import_purchase_line_id)
+            self.assertFalse(line.import_origin_candidate_ids)
+        # the first note gives it up: the balance is free again
+        first.fiscal_line_ids.write({"import_purchase_line_id": False})
+        second.fiscal_line_ids._suggest_import_origin()
+        self.assertEqual(
+            second.fiscal_line_ids.mapped("import_purchase_line_id"), taken
+        )
+
+    def test_the_candidates_of_a_big_document_are_read_once(self):
+        """The candidates are read for all the lines together: the number of
+        queries does not grow with the number of lines."""
+
+        def candidates_queries(document):
+            lines = document.fiscal_line_ids
+            lines.invalidate_recordset(["import_origin_candidate_ids"])
+            self.env.flush_all()
+            before = self.env.cr.sql_log_count
+            lines.mapped("import_origin_candidate_ids")
+            return self.env.cr.sql_log_count - before
+
+        small = self._document([(False, False)] * len(self.order.order_line))
+        small_queries = candidates_queries(small)
+        big = self._document([(False, False)] * len(self.order.order_line))
+        # many more lines for the same supplier
+        template = big.fiscal_line_ids[0]
+        for _n in range(20):
+            template.copy({"document_id": big.id})
+        self.assertGreater(len(big.fiscal_line_ids), len(small.fiscal_line_ids) + 15)
+        self.assertLessEqual(candidates_queries(big), small_queries + 3)
