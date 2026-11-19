@@ -139,6 +139,44 @@ class TestNfseImportReader(TransactionCase):
         self.assertEqual(document.fiscal_operation_id, operation)
         self.assertEqual(wizard.document_id, document)
 
+    def test_the_wizard_never_writes_a_registered_partner_or_the_company(self):
+        names = "name legal_name street_name zip city_id state_id l10n_br_im_code phone email".split()
+        partner = self.env["res.partner"].create(
+            {
+                "name": "Registered as is",
+                "legal_name": "Registered legal name",
+                "vat": "12.345.678/0001-95",
+                "is_company": True,
+                "country_id": self.env.ref("base.br").id,
+                "state_id": self.env.ref("base.state_br_sp").id,
+                "city_id": self.env.ref("l10n_br_base.city_3550308").id,
+                "street_name": "Registered street",
+                "zip": "01310-100",
+                "l10n_br_im_code": "222222",
+                "phone": "11 99999-0000",
+                "email": "registered@example.com",
+            }
+        )
+        watched = partner | self.company.partner_id
+
+        def registry():
+            watched.invalidate_recordset()
+            return [[record[name] for name in names] for record in watched]
+
+        before = (self.company.name, registry())
+        wizard = self._wizard(
+            nfse_xml(provider_cnpj="12345678000195", provider_name="Another name")
+        )
+        _binding, document = wizard._create_edoc_from_file()
+        self.assertEqual(document.partner_id, partner)
+        line = document.fiscal_line_ids
+        line.product_id = self.env["product.product"].create(
+            {"name": "Reviewed", "type": "service"}
+        )
+        line.action_resolve_line()
+        document.action_document_confirm()
+        self.assertEqual((self.company.name, registry()), before)
+
     def test_the_wizard_records_the_partners_that_the_file_created(self):
         cnpj = "12345678000195"
         content = nfse_xml(provider_cnpj=cnpj, provider_name="Born from the file")

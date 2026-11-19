@@ -5,6 +5,7 @@ import os
 import re
 
 import nfelib
+from erpbrasil.base.fiscal.cnpj_cpf import formata
 
 from odoo.addons.l10n_br_fiscal_edi.tests.common import EdiImportCase
 
@@ -173,6 +174,64 @@ class TestNfseDocumentImport(EdiImportCase):
         self.assertFalse(issued)
         self.assertIn("EMPRESA TOMADORA DE TESTE LTDA", errors[0][1])
         self.assertIn("11.444.777/0001-61", errors[0][1])
+
+    def _registry(self, partners):
+        """What is registered of each partner: the import never changes it."""
+        names = (
+            "name legal_name street_name street_number district zip city_id state_id "
+            "l10n_br_ie_code l10n_br_im_code phone email"
+        ).split()
+        partners.invalidate_recordset()
+        return {partner.id: [partner[name] for name in names] for partner in partners}
+
+    def _registered(self, cnpj):
+        return self.env["res.partner"].create(
+            {
+                "name": "Registered as is",
+                "legal_name": "Registered legal name",
+                "vat": formata(cnpj),
+                "is_company": True,
+                "country_id": self.env.ref("base.br").id,
+                "state_id": self.env.ref("base.state_br_sp").id,
+                "city_id": self.env.ref("l10n_br_base.city_3550308").id,
+                "street_name": "Registered street",
+                "street_number": "999",
+                "district": "Registered district",
+                "zip": "20000-000",
+                "l10n_br_ie_code": "110042490114",
+                "l10n_br_im_code": "222222",
+                "phone": "21 99999-0000",
+                "email": "registered@example.com",
+            }
+        )
+
+    def _review_and_confirm(self, documents):
+        line = documents.fiscal_line_ids
+        line.product_id = self.env["product.product"].create(
+            {"name": "Reviewed service", "type": "service"}
+        )
+        line.action_resolve_line()
+        documents.action_document_confirm()
+
+    def _assert_registry_untouched(self, content, issued):
+        partner = self._registered(UNKNOWN_PROVIDER)
+        company = self.presumed
+        watched = partner | company.partner_id
+        before = (company.name, self._registry(watched))
+        documents, errors, _warnings = self._import(
+            content, operation=True, operation_type="out" if issued else "in"
+        )
+        self.assertFalse(errors)
+        self.assertEqual(documents.partner_id, partner)
+        self._review_and_confirm(documents)
+        self.assertEqual((company.name, self._registry(watched)), before)
+
+    def test_a_registered_provider_and_the_company_are_never_written(self):
+        self._assert_registry_untouched(nfse_xml(provider=UNKNOWN_PROVIDER), False)
+
+    def test_a_registered_taker_and_the_company_are_never_written(self):
+        content = nfse_xml(taker=UNKNOWN_PROVIDER, provider=LUCRO_PRESUMIDO)
+        self._assert_registry_untouched(content, True)
 
     def test_the_company_is_the_taker_of_the_service(self):
         parsed = self.Document._edi_import_read("a.xml", nfse_xml(taker=LUCRO_REAL))
