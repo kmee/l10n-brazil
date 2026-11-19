@@ -591,6 +591,24 @@ class DocumentLine(models.Model):
             "price": self._get_supplierinfo_price(),
         }
 
+    def _supplierinfo_key_domain(self, vals):
+        """What identifies the de-para of a supplier: the partner, the product
+        and the code the supplier uses for it. The document types that keep more
+        (the unit of the supplier) extend it."""
+        return [
+            ("partner_id", "=", vals["partner_id"]),
+            ("product_id", "=", vals.get("product_id") or False),
+            ("product_code", "=", vals.get("product_code") or False),
+        ]
+
+    def _find_supplierinfo(self, vals):
+        self.ensure_one()
+        return (
+            self.env["product.supplierinfo"]
+            .sudo()
+            .search(self._supplierinfo_key_domain(vals), limit=1)
+        )
+
     def _find_or_create_supplierinfo(self):
         for line in self:
             if not line.product_id or not line.document_id.partner_id:
@@ -601,6 +619,13 @@ class DocumentLine(models.Model):
             if not line.import_supplierinfo_id:
                 vals = line._prepare_supplierinfo_vals()
                 vals["partner_id"] = line.document_id.partner_id.id
+                # the de-para of this supplier, product, code (and unit) is one:
+                # a new import finds it, it does not make another
+                existing = line._find_supplierinfo(vals)
+                if existing:
+                    existing.write(vals)
+                    line.import_supplierinfo_id = existing
+                    continue
                 line.import_supplierinfo_id = (
                     line.env["product.supplierinfo"].sudo().create(vals)
                 )

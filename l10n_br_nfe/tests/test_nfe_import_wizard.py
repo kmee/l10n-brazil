@@ -646,6 +646,31 @@ class NFeImportWizardTest(TransactionCase):
         self.assertEqual(fiscal_line.quantity, 1)
         self.assertEqual(fiscal_line.import_state, "matched")
 
+    def test_importing_again_does_not_multiply_the_depara(self):
+        """Each import used to make a new supplier info for the same supplier,
+        product, code and unit. Three imports leave one; the duplicates that
+        already exist are left alone."""
+        product = self._get_xml_product()
+        self._prepare_wizard(self.xml_1)
+        issuer = self.wizard.issuer_partner_id
+        self._supplierinfo(issuer).unlink()
+        for _n in range(3):
+            self._prepare_wizard(self.xml_1)
+            self.wizard.imported_products_ids.product_id = product
+            self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+            self.wizard._import_edoc()
+            self.assertEqual(len(self._supplierinfo(issuer)), 1)
+            self.wizard.document_id.unlink()
+        # duplicates that someone already has are not deleted, nor made worse
+        info = self._supplierinfo(issuer)
+        info.copy()
+        self.assertEqual(len(self._supplierinfo(issuer)), 2)
+        self._prepare_wizard(self.xml_1)
+        self.wizard.imported_products_ids.product_id = product
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.wizard._import_edoc()
+        self.assertEqual(len(self._supplierinfo(issuer)), 2)
+
     def test_zip_batch_import(self):
         """A zip archive with several XMLs lands as several persisted
         documents waiting for review."""

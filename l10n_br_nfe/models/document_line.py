@@ -252,6 +252,11 @@ class NFeLine(spec_models.StackedModel):
     # related to the internal product barcode, the supplier EAN is already
     # consumed by the product matching during the binding build.
 
+    def _supplierinfo_key_domain(self, vals):
+        domain = super()._supplierinfo_key_domain(vals)
+        domain.append(("partner_uom_code", "=", vals.get("partner_uom_code") or False))
+        return domain
+
     def _prepare_supplierinfo_vals(self):
         vals = super()._prepare_supplierinfo_vals()
         vals.update(
