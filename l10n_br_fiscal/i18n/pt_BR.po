@@ -4499,6 +4499,15 @@ msgid "How it works"
 msgstr "Como funciona"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__import_uom_factor
+msgid ""
+"How many units of the company make one unit of the supplier (25 for a bag of"
+" 25 kg received in KG)."
+msgstr ""
+"Quantas unidades da empresa formam uma unidade do fornecedor (25 para um "
+"saco de 25 kg recebido em KG)."
+
+#. module: l10n_br_fiscal
 #. odoo-python
 #: code:addons/l10n_br_fiscal/models/ibpt.py:0
 #, python-format
@@ -6259,6 +6268,32 @@ msgid "Import Fiscal Document"
 msgstr "Importar Documento Fiscal"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__import_pending_count
+msgid "Import Pending Count"
+msgstr "Linhas pendentes da importação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__import_state
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__import_state
+msgid "Import State"
+msgstr "Situação da importação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__import_supplierinfo_id
+msgid "Import Supplier Info"
+msgstr "Informação do fornecedor da importação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__import_uom_id
+msgid "Import UoM"
+msgstr "Unidade da importação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__import_uom_factor
+msgid "Import UoM Factor"
+msgstr "Fator da unidade da importação"
+
+#. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard_line__import_xml_id
 msgid "Import Xml"
 msgstr "Importação de XML"
@@ -6999,6 +7034,11 @@ msgstr "Dado Adicional Fiscal Manual"
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__icmsst_base_type__4
 msgid "Margem Valor Agregado (%)"
 msgstr "Margem Valor Agregado (%)"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__import_state__matched
+msgid "Matched"
+msgstr "Sugerida"
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_cest__segment__10
@@ -8433,6 +8473,16 @@ msgid "Pauta (valor)"
 msgstr "Pauta (valor)"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__import_state__pending
+msgid "Pending"
+msgstr "Pendente"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__import_state__pending
+msgid "Pending Review"
+msgstr "Aguardando revisão"
+
+#. module: l10n_br_fiscal
 #. odoo-python
 #: code:addons/l10n_br_fiscal/constants/fiscal.py:0
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_tax__percent_amount
@@ -9276,6 +9326,12 @@ msgid "Reset To Draft"
 msgstr "Voltar para rascunho"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__import_state__resolved
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__import_state__resolved
+msgid "Resolved"
+msgstr "Resolvida"
+
+#. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__activity_user_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_icms_regulation__activity_user_id
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_nbs__activity_user_id
@@ -9328,6 +9384,33 @@ msgstr "Devolução?"
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.tax_definition_form
 msgid "Review"
 msgstr "Revisar"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__import_state__in_progress
+msgid "Review in Progress"
+msgstr "Revisão em andamento"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__import_state
+msgid ""
+"Review state of a line imported from a fiscal document file. Pending: no "
+"product was resolved, or the unit declared by the supplier was neither "
+"matched nor chosen. Matched: a suggestion waits for the confirmation of a "
+"person. Resolved: the review was applied. Empty on a line that was not "
+"imported."
+msgstr ""
+"Situação da revisão de uma linha importada de um arquivo de documento "
+"fiscal. Pendente: nenhum produto foi resolvido, ou a unidade declarada pelo "
+"fornecedor não foi reconhecida nem escolhida. Sugerida: uma sugestão espera "
+"a confirmação de uma pessoa. Resolvida: a revisão foi aplicada. Vazio em "
+"linha que não foi importada."
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document__import_state
+msgid "Review state of the lines of a document imported from a fiscal file."
+msgstr ""
+"Situação da revisão das linhas de um documento importado de um arquivo "
+"fiscal."
 
 #. module: l10n_br_fiscal
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.tax_definition_form
@@ -9557,6 +9640,13 @@ msgstr "Serviço Municipal"
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__stock_move__fiscal_type__09
 msgid "Serviços"
 msgstr "Serviços"
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/document_line.py:0
+#, python-format
+msgid "Set the product of the line %s before resolving it."
+msgstr "Informe o produto da linha %s antes de resolvê-la."
 
 #. module: l10n_br_fiscal
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.document_form
@@ -10690,6 +10780,13 @@ msgid "The fiscal operation {} has no return Fiscal Operation defined"
 msgstr "A operação fiscal {} não tem retorno Operação Fiscal definida"
 
 #. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/document_line.py:0
+#, python-format
+msgid "The review can only be applied on the line of an imported document."
+msgstr "A revisão só pode ser aplicada na linha de um documento importado."
+
+#. module: l10n_br_fiscal
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.tax_icms_regulation_form
 msgid ""
 "The internal and interstate rates of all the\n"
@@ -11018,6 +11115,11 @@ msgstr "O código da Unidade de Medida deve ser único!"
 msgid ""
 "Unit of measure as declared by the counterparty in the imported document."
 msgstr "Unidade de medida como declarada pela contraparte no documento importado."
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__import_uom_id
+msgid "Unit of the company that is equivalent to the unit of the supplier."
+msgstr "Unidade da empresa equivalente à unidade do fornecedor."
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__partner_price_unit
@@ -13324,9 +13426,6 @@ msgstr "{} Estimativa de Imposto Atualizada"
 
 #~ msgid "PDF"
 #~ msgstr "PDF"
-
-#~ msgid "Pending"
-#~ msgstr "Pendente"
 
 #~ msgid "Pesquisar Chave"
 #~ msgstr "Pesquisar Chave"
