@@ -20,6 +20,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     FISCAL_OUT,
     MODELO_FISCAL_NFE,
 )
+from odoo.addons.l10n_br_fiscal.models.document_line import IMPORT_REVIEW_CONTEXT_KEY
 
 from .constants import (
     MOVE_TO_OPERATION,
@@ -801,9 +802,10 @@ class AccountMove(models.Model):
                 )
 
         # Write safely bypassing strict validity checks mid-loop
-        move.with_context(check_move_validity=False).write(
-            {"invoice_line_ids": invoice_line_write_vals}
-        )
+        # the quantity and the price come from the document, not from a person
+        move.with_context(
+            check_move_validity=False, **{IMPORT_REVIEW_CONTEXT_KEY: True}
+        ).write({"invoice_line_ids": invoice_line_write_vals})
 
         if dummy_lines_to_unlink:
             dummy_lines_to_unlink.unlink()
