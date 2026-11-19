@@ -15,8 +15,15 @@ CNPJ_SUC = 4
 COD_CRED = 5
 VL_TOT_CRED_APU = 8
 SLD_CRED_FIM = 18
+# the M100 (PIS) and the M500 (COFINS) of the month of the file: the credit that was
+# left in the own month and goes to the next ones
+M_COD_CRED = 2
+M_VL_CRED_DISP = 12
+M_SLD_CRED = 15
+FILE_CNPJ = 9
 
 REGISTER_TAX = {"1100": "pis", "1500": "cofins"}
+OWN_MONTH_TAX = {"M100": "pis", "M500": "cofins"}
 
 
 def _number(text):
@@ -50,26 +57,45 @@ class CreditOpeningImport(models.TransientModel):
         self.ensure_one()
         text = base64.b64decode(self.file).decode("latin-1")
         period_end = None
+        cnpj = ""
         rows = []
+        own_month = []
         for line in text.splitlines():
             fields_ = line.strip().split("|")
             if len(fields_) < 3:
                 continue
             register = fields_[1]
-            if register == "0000" and len(fields_) > 7:
+            if register == "0000" and len(fields_) > FILE_CNPJ:
                 period_end = datetime.strptime(fields_[7], "%d%m%Y").date()
+                cnpj = "".join(ch for ch in fields_[FILE_CNPJ] if ch.isdigit())
             elif register in REGISTER_TAX and len(fields_) > SLD_CRED_FIM:
                 rows.append((REGISTER_TAX[register], fields_))
-        return period_end, rows
+            elif register in OWN_MONTH_TAX and len(fields_) > M_SLD_CRED:
+                own_month.append((OWN_MONTH_TAX[register], fields_))
+        return period_end, cnpj, rows, own_month
 
     def action_import(self):
         """Create one opening balance for each layer of the file that still has
         balance, valid from the month after the period of the file."""
         self.ensure_one()
-        period_end, rows = self._read_registers()
+        period_end, cnpj, rows, own_month = self._read_registers()
         if not period_end:
             raise UserError(
                 _("The file is not an EFD Contribuicoes: the record 0000 is missing.")
+            )
+        company_cnpj = "".join(
+            ch for ch in (self.company_id.partner_id.cnpj_cpf or "") if ch.isdigit()
+        )
+        if company_cnpj != cnpj:
+            raise UserError(
+                _(
+                    "The CNPJ of the file (%(file)s) is not the one of the company "
+                    "%(company)s (%(company_cnpj)s): the opening balance is of the "
+                    "company that the file was made for.",
+                    file=cnpj or "-",
+                    company=self.company_id.name,
+                    company_cnpj=company_cnpj or "-",
+                )
             )
         cutoff = (period_end.replace(day=1) + timedelta(days=32)).replace(day=1)
         opening = self.env["l10n_br_pis_cofins.credit.opening"]
@@ -93,11 +119,37 @@ class CreditOpeningImport(models.TransientModel):
                     "used_before": round(amount - balance, 2),
                 }
             )
+        # the credit that was left in the own month of the file (M100 and M500)
+        # is also carried: the layer of the month of the file, by type of credit
+        period = period_end.replace(day=1)
+        own = {}
+        for tax_domain, row in own_month:
+            available = _number(row[M_VL_CRED_DISP])
+            balance = _number(row[M_SLD_CRED])
+            if balance <= 0:
+                continue
+            key = (tax_domain, row[M_COD_CRED])
+            layer = own.setdefault(key, [0.0, 0.0])
+            layer[0] += available
+            layer[1] += balance
+        for (tax_domain, cod_cred), (available, balance) in own.items():
+            created |= opening.create(
+                {
+                    "company_id": self.company_id.id,
+                    "tax_domain": tax_domain,
+                    "cutoff_date": cutoff,
+                    "origin_period": period,
+                    "cod_cred": cod_cred,
+                    "orig_cred": "01",
+                    "amount": round(available, 2),
+                    "used_before": round(available - balance, 2),
+                }
+            )
         if not created:
             raise UserError(
                 _(
-                    "The file has no credit balance in the registers 1100 and 1500 "
-                    "to carry to the system."
+                    "The file has no credit balance in the registers 1100, 1500, "
+                    "M100 and M500 to carry to the system."
                 )
             )
         return {

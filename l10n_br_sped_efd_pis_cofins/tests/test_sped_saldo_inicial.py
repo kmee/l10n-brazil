@@ -260,9 +260,10 @@ class TestCreditOpeningChain(CreditMixin, SpedEntradaCommon):
 
 
 @tagged("post_install", "-at_install")
-class TestCreditOpeningImport(SpedEntradaCommon):
+class TestCreditOpeningImport(CreditMixin, SpedEntradaCommon):
     """The opening balance read from the last EFD Contribuicoes of the previous
-    system (registers 1100 and 1500)."""
+    system (registers 1100 and 1500, and the credit that was left in the own month,
+    M100 and M500)."""
 
     profit_calculation = "real"
 
@@ -272,8 +273,15 @@ class TestCreditOpeningImport(SpedEntradaCommon):
         "|1100|042026|01||101|40,00||40,00|10,00|||30,00|5,00|||||25,00|\n"
         "|1100|052026|01||101|20,00||20,00|0|||20,00|20,00|||||0|\n"
         "|1500|042026|01||101|200,00||200,00|50,00|||150,00|0|||||150,00|\n"
+        "|M100|101|0|2000,00|1,65|||33,00|0|0|0|33,00|1||33,00|\n"
+        "|M500|101|0|2000,00|7,6|||152,00|0|0|0|152,00|1|52,00|100,00|\n"
         "|1990|3|\n"
     )
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.company.partner_id.cnpj_cpf = "11.222.333/0001-81"
 
     def _import(self, text):
         wizard = self.env["l10n_br_pis_cofins.credit.opening.import"].create(
@@ -285,17 +293,70 @@ class TestCreditOpeningImport(SpedEntradaCommon):
         )
         return wizard.action_import()
 
-    def test_the_balance_of_the_1100_and_the_1500_becomes_the_opening_balance(self):
-        action = self._import(self.FILE)
+    def _layers(self, action):
         records = self.env[OPENING].search(action["domain"])
-        self.assertEqual(len(records), 2, "the layer that was used up is left out")
-        by_key = {(rec.tax_domain, rec.origin_period): rec for rec in records}
-        pis_april = by_key[("pis", date(2026, 4, 1))]
+        return {
+            (rec.tax_domain, rec.origin_period, rec.cod_cred): rec for rec in records
+        }
+
+    def test_the_balance_of_the_1100_and_the_1500_becomes_the_opening_balance(self):
+        layers = self._layers(self._import(self.FILE))
+        pis_april = layers[("pis", date(2026, 4, 1), "101")]
         self.assertEqual(pis_april.amount, 40.0)
         self.assertEqual(pis_april.balance, 25.0)
         self.assertEqual(pis_april.used_before, 15.0)
         self.assertEqual(pis_april.cutoff_date, date(2026, 7, 1))
-        self.assertEqual(by_key[("cofins", date(2026, 4, 1))].balance, 150.0)
+        self.assertEqual(layers[("cofins", date(2026, 4, 1), "101")].balance, 150.0)
+        self.assertNotIn(("pis", date(2026, 5, 1), "101"), layers, "used up")
+
+    def test_the_credit_left_in_the_own_month_of_the_file_is_carried_too(self):
+        """The M100 and the M500 of the month of the file: the balance to use in
+        the future periods is what is left in the 1100 and the 1500 and also what
+        is left of the credit of the month itself."""
+        layers = self._layers(self._import(self.FILE))
+        own_pis = layers[("pis", date(2026, 6, 1), "101")]
+        self.assertEqual((own_pis.amount, own_pis.used_before), (33.0, 0.0))
+        own_cofins = layers[("cofins", date(2026, 6, 1), "101")]
+        self.assertEqual((own_cofins.amount, own_cofins.balance), (152.0, 100.0))
+        total = sum(rec.balance for key, rec in layers.items() if key[0] == "pis")
+        self.assertEqual(total, 58.0)
+
+    def test_the_first_month_pays_the_same_as_the_equivalent_manual_balance(self):
+        """The imported layers are the ones a person would have typed, so the first
+        month of the system gives the same amount to pay."""
+        self._import(self.FILE)
+        manual = {
+            ("pis", date(2026, 4, 1), 40.0, 15.0),
+            ("pis", date(2026, 6, 1), 33.0, 0.0),
+        }
+        imported = {
+            (rec.tax_domain, rec.origin_period, rec.amount, rec.used_before)
+            for rec in self.env[OPENING].search([("tax_domain", "=", "pis")])
+        }
+        self.assertEqual(imported, manual)
+        # July: a resale (credit 16.50) and five sales (contribution 82.50): the
+        # balance of 58.00 and the credit of the month cover 74.50, 8.00 is due
+        self._entry("fo_compras_compras_comercializacao", "401", date(2026, 7, 10))
+        for _index in range(5):
+            self._sale(date(2026, 7, 12))
+        self._assess("pis", month=7)
+        self._assess("cofins", month=7)
+        self._set_accountant()
+        declaration = self._declaration(
+            "efd_pis_cofins", date(2026, 7, 1), date(2026, 7, 31)
+        )
+        m200 = self._sped_records(declaration, "M200")[0]
+        self.assertEqual(m200["VL_TOT_CONT_NC_PER"], "82,50")
+        self.assertEqual(m200["VL_TOT_CRED_DESC_ANT"], "58,00")
+        self.assertEqual(m200["VL_TOT_CRED_DESC"], "16,50")
+        self.assertEqual(m200["VL_CONT_NC_REC"], "8,00")
+
+    def test_a_file_of_another_company_is_refused(self):
+        other = self.FILE.replace("11222333000181", "99888777000166")
+        with self.assertRaises(UserError) as error:
+            self._import(other)
+        self.assertIn("CNPJ", error.exception.args[0])
+        self.assertFalse(self.env[OPENING].search([]))
 
     def test_a_file_that_is_not_an_efd_contribuicoes_is_refused(self):
         with self.assertRaises(UserError):
