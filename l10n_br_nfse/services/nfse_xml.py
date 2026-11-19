@@ -30,6 +30,7 @@ class NfseNacionalBinding:
         self.provider_cnpj = values.get("provider_cnpj")
         self.provider_name = values.get("provider_name")
         self.provider = values.get("provider") or {}
+        self.taker = values.get("taker") or {}
         self.service_value = values.get("service_value") or 0.0
         self.description = values.get("description")
         self.issqn_base = values.get("issqn_base") or 0.0
@@ -383,6 +384,7 @@ def parse_nfse_xml(xml_bytes):
         "provider_cnpj": provider_cnpj or False,
         "provider_name": provider_name,
         "provider": provider,
+        "taker": _party(_node(inf_dps, "toma")),
         "service_value": _service_value(inf_nfse, inf_dps),
         "description": _node_text(service, "xDescServ"),
         "issqn_base": _amount(_node_text(note_values, "vBC")),
