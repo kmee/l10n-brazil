@@ -782,6 +782,33 @@ class NFeImportWizardTest(TransactionCase):
         self.assertIn("the de-para blew up", wizard.batch_errors)
         self.assertNotIn("nota1.xml", wizard.batch_errors)
 
+    def test_the_wizard_survives_what_the_web_client_reads(self):
+        """The web client reads the record with bin_size in the context, and then
+        the file comes back as its size ("1.2 Kb"), not as its content. The flag
+        of the zip is computed from the file, and must not break on it: one note
+        or a zip, through the form as the client does."""
+        zip_wizard = self._zip_of_two_notes()
+        for data, is_zip in (
+            (self.xml_1, False),
+            (base64.b64decode(zip_wizard.file), True),
+        ):
+            model = self.env["l10n_br_fiscal.document.import.wizard"].with_context(
+                bin_size=True
+            )
+            form = Form(model)
+            form.file = base64.b64encode(data)
+            self.assertEqual(form.file_is_zip, is_zip)
+            record = form.save()
+            client = record.with_context(bin_size=True)
+            self.assertNotEqual(client.file, base64.b64encode(data))  # its size
+            self.assertEqual(client.read(["file_is_zip"])[0]["file_is_zip"], is_zip)
+            self.assertEqual(client.file_is_zip, is_zip)
+            # and the same for a file that is not base64 at all
+            record.invalidate_recordset()
+        garbage = self.env["l10n_br_fiscal.document.import.wizard"].new({})
+        garbage.file = b"1.2 Kb"
+        self.assertFalse(garbage.file_is_zip)
+
     def test_a_zip_does_not_ask_for_the_operation_and_opens_a_complete_action(self):
         """With a zip the wizard has no preview and no operation to choose: each
         note resolves its own. The action it returns is a complete window action

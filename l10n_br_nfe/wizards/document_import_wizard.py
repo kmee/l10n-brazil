@@ -70,7 +70,7 @@ class DocumentImportWizard(models.TransientModel):
             return reason
         # the authorization protocol travelling with the file tells whether
         # the note was cancelled or denied at the source
-        protocol = getattr(self._parse_file_data(self.file), "protNFe", None)
+        protocol = getattr(self._parse_file_data(self._file_data()), "protNFe", None)
         status = str(getattr(getattr(protocol, "infProt", None), "cStat", "") or "")
         if status in NFE_CANCELLED_STATUS:
             return _("This NF-e was cancelled at the source and cannot be imported.")
@@ -363,7 +363,7 @@ class DocumentImportWizard(models.TransientModel):
         """Attach the untouched supplier XML and link it as the document
         original XML (used by View XML / View PDF on imported documents)."""
         attachment = edoc._attach_imported_xml(
-            self.file, f"NFe-Importada-{edoc.document_key}.xml"
+            self._file_data(), f"NFe-Importada-{edoc.document_key}.xml"
         )
         edoc.original_xml_file_id = attachment
         return attachment

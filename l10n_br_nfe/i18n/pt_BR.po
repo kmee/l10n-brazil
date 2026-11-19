@@ -3587,7 +3587,7 @@ msgstr "Fator de Unidade de Medida do Parceiro"
 #. module: l10n_br_nfe
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_product_supplierinfo__partner_uom_id
 msgid "Partner Unit of Measure"
-msgstr ""
+msgstr "Unidade de medida do parceiro"
 
 #. module: l10n_br_nfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe.report_danfe_nfce
