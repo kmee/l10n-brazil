@@ -161,6 +161,20 @@ class TestCteDocumentImport(EdiImportCase):
         self.assertFalse(errors)
         self.assertFalse(documents.fiscal_line_ids.product_id)
 
+    def test_a_user_who_cannot_create_contacts_is_told_which_partner_is_missing(self):
+        user = self._fiscal_user("fiscal_user_cte_partner", self.other_company)
+        model = self.Document.with_user(user).with_context(
+            allowed_company_ids=self.other_company.ids
+        )
+        documents, errors, _warnings = self._import(
+            cte_xml(emitter="12345678000195"), model
+        )
+        self.assertFalse(documents)
+        message = errors[0][1]
+        self.assertIn("Empresa Simples Nacional", message)
+        self.assertIn("12.345.678/0001-95", message)
+        self.assertIn("not allowed to create contacts", message)
+
     def test_a_cte_is_read_and_becomes_a_document_of_the_recipient(self):
         documents, errors, _warnings = self._import(cte_xml(status="100"))
         self.assertFalse(errors)

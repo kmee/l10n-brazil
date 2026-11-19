@@ -155,6 +155,20 @@ class Document(models.Model):
             document.fiscal_line_ids.product_id = product
 
     @api.model
+    def _edi_import_partner_hint(self, parsed):
+        """The emitter of a CT-e that the company receives, the taker of one that it
+        issued: the partner that the document needs registered."""
+        if parsed.reader != "cte":
+            return super()._edi_import_partner_hint(parsed)
+        try:
+            _company, role = self._edi_import_company(parsed)
+        except UserError:
+            role = False
+        cte = getattr(parsed.binding, "CTe", None) or parsed.binding
+        party = self._cte_taker(cte.infCte) if role == "issuer" else cte.infCte.emit
+        return party.xNome or "", _vat(party)
+
+    @api.model
     def _cte_status(self, status_code):
         if status_code in PROTOCOL_AUTHORIZED:
             return "authorized"
