@@ -1105,8 +1105,8 @@ class TestNfeDocumentImport(EdiImportCase):
                 (KEY_3.encode(), b"35200159594315000157550010000000992062777167"),
                 (b"<nNF>3</nNF>", b"<nNF>99</nNF>"),
                 (
-                    b"<xNome>NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL",
-                    b"<xNome>New customer",
+                    b"NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL",
+                    b"New customer",
                 ),
             ],
         )
