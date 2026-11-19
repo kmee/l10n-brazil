@@ -1,6 +1,8 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl-3.0.html).
 
+from datetime import date
+
 from odoo.exceptions import UserError
 from odoo.tests.common import tagged
 
@@ -62,3 +64,26 @@ class TestRecomputeEntryCst(SpedEntradaCommon):
         with self.assertRaises(UserError) as error:
             line._sped_credit("pis")
         self.assertNotIn("Recalcular CST de entrada", error.exception.args[0])
+
+    def test_the_stop_reaches_the_screen_for_a_draft_in_a_debug_declaration(self):
+        """Step by step: an imported entry of use and consumption still in typing,
+        with the entry CST 50 of the old rule; a declaration of the EFD
+        Contribuicoes in debug mode (the only one that takes documents in typing);
+        Pull Registers from Odoo. The pull reports the stop with the button. A
+        declaration that is not in debug mode never takes a document in typing: the
+        documents of the file are the authorized ones."""
+        document, line = self._old_entry()
+        self.env["l10n_br_sped.mixin"]._flush_registers("efd_pis_cofins")
+        values = {
+            "company_id": self.company.id,
+            "DT_INI": date(2026, 7, 1),
+            "DT_FIN": date(2026, 7, 31),
+        }
+        normal = self.env["l10n_br_sped.efd_pis_cofins.0000"].create(values)
+        self.assertNotIn(document, normal.fiscal_document_ids)
+        debug = self.env["l10n_br_sped.efd_pis_cofins.0000"].create(
+            {**values, "debug": True}
+        )
+        self.assertIn(document, debug.fiscal_document_ids)
+        errors = debug._populate_sped_from_odoo()
+        self.assertTrue(any("Recalcular CST de entrada" in err for err in errors))
