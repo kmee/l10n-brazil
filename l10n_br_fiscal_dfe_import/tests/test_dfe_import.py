@@ -435,7 +435,10 @@ class TestDfeImport(DfeImportCase):
         action = self.env.ref("l10n_br_fiscal_dfe_import.imported_document_dfe_action")
         arch = self.Document.get_view(action.view_id.id, "tree")["arch"]
 
-        self.assertTrue(etree.fromstring(arch).xpath("//field[@name='import_state']"))
+        tree = etree.fromstring(arch)
+        self.assertTrue(tree.xpath("//field[@name='import_state']"))
+        self.assertTrue(tree.xpath("//field[@name='fiscal_amount_total']"))
+        self.assertFalse(tree.xpath("//field[@name='fiscal_amount_untaxed']"))
 
     def test_list_of_several_documents_uses_the_same_view(self):
         view = self.env.ref("l10n_br_fiscal_dfe_import.document_import_tree")
