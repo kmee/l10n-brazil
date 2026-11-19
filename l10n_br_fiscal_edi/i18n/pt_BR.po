@@ -40,6 +40,13 @@ msgid "%(line)s: the unit %(uom)s has no match in the units."
 msgstr "%(line)s: a unidade %(uom)s não corresponde a nenhuma unidade de medida."
 
 #. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid "(unknown)"
+msgstr "(desconhecido)"
+
+#. module: l10n_br_fiscal_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.report_document_event
 msgid "<strong style=\"font-size:18px;\">CNPJ:</strong>"
 msgstr ""
@@ -1053,6 +1060,19 @@ msgstr ""
 #, python-format
 msgid "The field 'Issuer' is required for brazilian electronic documents!"
 msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid ""
+"The file %(file)s requires registering the partner %(partner)s, and you are "
+"not allowed to create contacts. Ask someone who can to register it, or ask "
+"for the permission, and import the file again."
+msgstr ""
+"O arquivo %(file)s exige o cadastro do parceiro %(partner)s, e você não tem "
+"permissão para criar contatos. Peça o cadastro a quem tenha essa permissão, "
+"ou peça a permissão para você, e importe o arquivo de novo."
 
 #. module: l10n_br_fiscal_edi
 #. odoo-python
