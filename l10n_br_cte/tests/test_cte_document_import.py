@@ -131,6 +131,11 @@ class TestCteDocumentImport(EdiImportCase):
         parsed = self.Document._edi_import_read("a.xml", cte_xml())
         self.assertEqual((parsed.status, parsed.status_code), ("unknown", ""))
 
+    def test_a_cte_whose_protocol_does_not_authorize_it_is_refused(self):
+        documents, errors, _warnings = self._import(cte_xml(status="999"))
+        self.assertFalse(documents)
+        self.assertIn("not authorized (status 999)", errors[0][1])
+
     def test_a_cancelled_cte_is_refused(self):
         documents, errors, _warnings = self._import(cte_xml(status="101"))
         self.assertFalse(documents)

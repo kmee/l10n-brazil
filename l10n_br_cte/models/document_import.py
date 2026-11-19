@@ -154,6 +154,14 @@ class Document(models.Model):
         return "unknown"
 
     @api.model
+    def _edi_import_check(self, parsed, company):
+        if parsed.reader == "cte" and parsed.status == "unknown" and parsed.status_code:
+            raise UserError(
+                _("This CT-e is not authorized (status %s).") % parsed.status_code
+            )
+        return super()._edi_import_check(parsed, company)
+
+    @api.model
     def _edi_import_create(self, parsed, company, role):
         if parsed.reader != "cte":
             return super()._edi_import_create(parsed, company, role)
