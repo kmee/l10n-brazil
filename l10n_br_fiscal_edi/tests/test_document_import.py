@@ -228,6 +228,25 @@ class TestDocumentImport(EdiImportCase):
         self.assertEqual((line.quantity, line.price_unit), (3.0, 7.5))
         self.assertEqual(line.partner_cfop_id.code, "5102")
 
+    def test_a_document_with_no_matching_operation_keeps_its_direction(self):
+        """Nothing matches the CFOP: the operation stays empty, and the direction
+        that the import gave the document is not recomputed away."""
+        cfop = self.env.ref("l10n_br_fiscal.cfop_6102")
+        for role, direction in (("recipient", "in"), ("issuer", "out")):
+            document = self._create_imported_document(
+                fiscal_operation_id=False,
+                lines=[{"partner_cfop_id": cfop.id}],
+            )
+            document._edi_import_after_create(self._parsed(KEY_1), role)
+            with patch.object(
+                type(self.env["l10n_br_fiscal.operation.line"]),
+                "_find_by_issuer_cfop",
+                lambda *args: self.env["l10n_br_fiscal.operation.line"],
+            ):
+                document._edi_import_suggest()
+            self.assertFalse(document.fiscal_operation_id)
+            self.assertEqual(document.fiscal_operation_type, direction)
+
     def test_the_suggestion_can_run_again_without_undoing_a_decision(self):
         product = self.env["product.product"].create({"name": "Chosen by a person"})
         document = self._create_imported_document()

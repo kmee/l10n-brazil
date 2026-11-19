@@ -295,7 +295,10 @@ class Document(models.Model):
         CFOP the issuer declared."""
         self.ensure_one()
         if not self.fiscal_operation_id:
-            self.fiscal_operation_id = self._suggest_fiscal_operation()
+            # An empty operation would recompute the direction of the document
+            operation = self._suggest_fiscal_operation()
+            if operation:
+                self.fiscal_operation_id = operation
         if not self.fiscal_operation_id:
             return
         operation_lines = self.env["l10n_br_fiscal.operation.line"]
