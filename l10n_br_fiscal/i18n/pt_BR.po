@@ -73,6 +73,41 @@ msgid "(-) Withholdings (%s)"
 msgstr "(-) Retenções (%s)"
 
 #. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/document_entry_cst.py:0
+#, python-format
+msgid "Only an imported document that is still being typed can have its entry CST recalculated, and the document %(document)s is not: a confirmed document is never touched."
+msgstr "Só uma nota importada ainda em digitação pode ter o CST de entrada recalculado, e o documento %(document)s não está: um documento confirmado nunca é alterado."
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/document_entry_cst.py:0
+#, python-format
+msgid "Item %(item)s, CST of the %(tax)s: %(old)s to %(new)s"
+msgstr "Item %(item)s, CST do %(tax)s: de %(old)s para %(new)s"
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/document_entry_cst.py:0
+#, python-format
+msgid "Entry CST recalculated:"
+msgstr "CST de entrada recalculado:"
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/document_entry_cst.py:0
+#, python-format
+msgid "Entry CST"
+msgstr "CST de entrada"
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/models/document_entry_cst.py:0
+#, python-format
+msgid "%(done)s document(s) recalculated, %(skipped)s left as they are (not imported, or not in typing)."
+msgstr "%(done)s documento(s) recalculado(s), %(skipped)s deixado(s) como está(ão) (não importado, ou fora de digitação)."
+
+#. module: l10n_br_fiscal
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__contract_line__icms_origin__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__icms_origin__0
 #: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line_mixin__icms_origin__0
