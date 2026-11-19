@@ -134,8 +134,12 @@ class TestDfeImport(DfeImportCase):
         )
 
         action = wizard.action_import()
+        wizard.action_import()
 
-        self.assertEqual(action["res_id"], self._imported(KEY_1).id)
+        document = self._imported(KEY_1)
+        self.assertEqual(action["res_id"], document.id)
+        origin = document.message_ids.filtered(lambda msg: KEY_1 in msg.body)
+        self.assertEqual(len(origin), 1)
 
     def test_access_key_with_only_the_summary_asks_to_acknowledge(self):
         dfe_document = self._dfe_document(KEY_1)
