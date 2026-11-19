@@ -1972,9 +1972,6 @@ msgstr ""
 #~ msgid "Partner/Product"
 #~ msgstr "Parceiro/Produto"
 
-#~ msgid "Picking"
-#~ msgstr "Separação"
-
 #~ msgid "Stock"
 #~ msgstr "Estoque"
 
@@ -2013,8 +2010,7 @@ msgstr "Agrupar por"
 msgid "Total"
 msgstr "Total"
 
-#: model_terms:ir.ui.view,arch_db:l10n_br_stock_account.stock_move_fiscal_report_search
-
 #. module: l10n_br_stock_account
+#: model_terms:ir.ui.view,arch_db:l10n_br_stock_account.stock_move_fiscal_report_search
 msgid "Picking"
 msgstr "Transferência"
