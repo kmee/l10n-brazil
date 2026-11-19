@@ -210,8 +210,10 @@ class DocumentLine(models.Model):
     @api.depends("product_id")
     def _compute_uom_id(self):
         for line in self:
-            if line._is_imported() and line.uom_id:
-                # the unit declared in the file; the review applies the internal one
+            if line._is_imported() and (line.uom_id or line.partner_uom_code):
+                # the unit declared in the file, even when it matched no unit: the
+                # product does not give a unit the file did not bring, and the
+                # review applies the internal one
                 line.uom_id = line.uom_id
                 continue
             if line.fiscal_operation_type == "in":
