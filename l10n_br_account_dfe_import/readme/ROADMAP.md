@@ -1,0 +1,1 @@
+- Purchase order and receipt matching is left to the purchase and stock links.
