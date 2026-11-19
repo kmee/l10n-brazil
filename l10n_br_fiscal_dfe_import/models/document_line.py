@@ -7,7 +7,7 @@ from .product_product import NO_CREATE_CONTEXT_KEY
 
 # Char fields that mirror a registry record (NCM, CEST...): writing them when
 # the record does not exist makes the ORM create an empty one.
-REGISTRY_MIRROR_KEYS = ("nfe40_NCM", "nfe40_CEST", "nfe40_EXTIPI")
+REGISTRY_MIRROR_KEYS = ("nfe40_NCM", "nfe40_CEST", "nfe40_EXTIPI", "nfe40_CFOP")
 
 
 class DocumentLine(models.Model):

@@ -386,3 +386,13 @@ class TestDfeImport(DfeImportCase):
         document = self._imported(KEY_1)
         self.assertIn(KEY_1, document.message_ids[0].body)
         self.assertIn("created", dfe_document.message_ids[0].body)
+
+    def test_unknown_cfop_is_not_created_and_does_not_break_the_import(self):
+        cfop = self.env["l10n_br_fiscal.cfop"].search_count([])
+        xml = self._xml(KEY_1, replace=[(b"<CFOP>5102</CFOP>", b"<CFOP>5999</CFOP>")])
+
+        documents, errors = self.Document.dfe_import_files([("nfe.xml", xml)])
+
+        self.assertFalse(errors)
+        self.assertTrue(documents)
+        self.assertEqual(self.env["l10n_br_fiscal.cfop"].search_count([]), cfop)
