@@ -2130,7 +2130,7 @@ msgid "Technical: a draft vendor bill of an imported document that has a line wh
 msgstr ""
 
 #. module: l10n_br_purchase
-#: code:addons/l10n_br_purchase/models/document.py
+#: code:addons/l10n_br_purchase/models/document.py:0
 #, python-format
 msgid ""
 "- %(count)s line(s) with the origin (purchase order line) not decided yet: use Confirm Origins to accept the suggestions, choose the order line of each one, or mark the origin of the line as Resolved to go on without an order."

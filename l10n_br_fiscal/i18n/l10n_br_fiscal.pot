@@ -10840,14 +10840,14 @@ msgid "Fiscal benefit code (<cBenef>) declared by the counterparty in the import
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: code:addons/l10n_br_fiscal/models/document.py
+#: code:addons/l10n_br_fiscal/models/document.py:0
 #, python-format
 msgid ""
 "- %(count)s line(s) not resolved yet (%(lines)s): confirm the product of each one (Confirmed column of the import grid, or Resolve button of the line in the document)."
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: code:addons/l10n_br_fiscal/models/document.py
+#: code:addons/l10n_br_fiscal/models/document.py:0
 #, python-format
 msgid ""
 "The imported document %(document)s was not reviewed yet:\n"

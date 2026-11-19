@@ -12873,7 +12873,7 @@ msgid "Fiscal benefit code (<cBenef>) declared by the counterparty in the import
 msgstr "Código de benefício fiscal (<cBenef>) declarado pelo parceiro no documento importado. Preservado como veio para o C197 do SPED (COD_AJ); o código do benefício da empresa vem do próprio de-para."
 
 #. module: l10n_br_fiscal
-#: code:addons/l10n_br_fiscal/models/document.py
+#: code:addons/l10n_br_fiscal/models/document.py:0
 #, python-format
 msgid ""
 "- %(count)s line(s) not resolved yet (%(lines)s): confirm the product of each one (Confirmed column of the import grid, or Resolve button of the line in the document)."
@@ -12881,7 +12881,7 @@ msgstr ""
 "- %(count)s linha(s) ainda não resolvida(s) (%(lines)s): confirme o produto de cada uma (coluna Confirmado da grade de importação, ou botão Resolver da linha no documento)."
 
 #. module: l10n_br_fiscal
-#: code:addons/l10n_br_fiscal/models/document.py
+#: code:addons/l10n_br_fiscal/models/document.py:0
 #, python-format
 msgid ""
 "The imported document %(document)s was not reviewed yet:\n"
