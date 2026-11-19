@@ -9,10 +9,14 @@ from io import BytesIO
 from types import SimpleNamespace
 from unittest import mock
 
+from lxml import etree
 from xsdata.formats.dataclass.transports import DefaultTransport
 
 from odoo import Command
 from odoo.exceptions import UserError
+from odoo.modules import get_module_resource
+from odoo.tools import file_open
+from odoo.tools.translate import TranslationFileReader
 
 from odoo.addons.l10n_br_nfe_dfe.tests.test_nfe_dfe import response_sucesso_individual
 
@@ -154,6 +158,7 @@ class TestDfeImport(DfeImportCase):
         self.assertEqual(dfe_document.manifestations_ids.event_type, "ciente")
         self.assertEqual(dfe_document.manifestations_ids.state, "done")
         self.assertEqual(dfe_document.import_requested_user_id, self.env.user)
+        self.assertIn("Acknowledgement", dfe_document.message_ids[0].body)
         self.assertFalse(self._imported(KEY_1))
 
     @mock.patch.object(DefaultTransport, "post")
@@ -196,8 +201,37 @@ class TestDfeImport(DfeImportCase):
             {"attachment_ids": [Command.set([a.id for a in attachments])]}
         ).action_import()
 
+        self.assert_window_action(single)
+        self.assert_window_action(both)
         self.assertEqual(single["view_mode"], "form")
         self.assertEqual(len(both["domain"][0][2]), 2)
+
+    def test_returned_actions_are_complete_with_the_errors_of_a_batch(self):
+        buffer = BytesIO()
+        with zipfile.ZipFile(buffer, "w") as archive:
+            archive.writestr("one.xml", self._xml(KEY_1))
+            archive.writestr("bad.xml", b"this is not an XML")
+        attachment = self.env["ir.attachment"].create(
+            {"name": "batch.zip", "raw": buffer.getvalue()}
+        )
+        wizard = self.env["l10n_br_fiscal_dfe_import.wizard"].create(
+            {"attachment_ids": [Command.set(attachment.ids)]}
+        )
+
+        notification = wizard.action_import()
+
+        self.assertEqual(notification["tag"], "display_notification")
+        self.assertIn("bad.xml", notification["params"]["message"])
+        self.assertTrue(notification["params"]["sticky"])
+        self.assert_window_action(notification["params"]["next"])
+
+    def test_confirmation_dialog_action_is_complete(self):
+        self._dfe_document(KEY_1)
+        wizard = self.env["l10n_br_fiscal_dfe_import.wizard"].create(
+            {"access_key": KEY_1}
+        )
+
+        self.assert_window_action(wizard.action_import())
 
     def test_uninstall_gives_the_menus_back_to_the_original_actions(self):
         uninstall_hook(self.env.cr, None)
@@ -206,3 +240,212 @@ class TestDfeImport(DfeImportCase):
         self.assertEqual(
             menu.action, self.env.ref("l10n_br_nfe.l10n_br_nfe_import_xml_action")
         )
+
+    def test_unknown_ncm_is_kept_as_declared_and_not_created(self):
+        ncm = self.env["l10n_br_fiscal.ncm"].search_count([])
+        xml = self._xml(
+            KEY_1, replace=[(b"<NCM>94033000</NCM>", b"<NCM>99999999</NCM>")]
+        )
+
+        documents, errors = self.Document.dfe_import_files([("nfe.xml", xml)])
+
+        line = documents.fiscal_line_ids
+        self.assertFalse(errors)
+        self.assertEqual(line.import_ncm_code, "99999999")
+        self.assertFalse(line.ncm_id)
+        self.assertIn("99999999", documents.import_warning)
+        self.assertEqual(self.env["l10n_br_fiscal.ncm"].search_count([]), ncm)
+
+    def test_unknown_registries_are_not_created(self):
+        models = ("l10n_br_fiscal.cest", "uom.uom", "res.city", "res.country")
+        counts = [self.env[model].search_count([]) for model in models]
+        xml = self._xml(
+            KEY_1,
+            replace=[
+                (b"<NCM>94033000</NCM>", b"<NCM>94033000</NCM><CEST>9999999</CEST>"),
+                (b"<uCom>UNID</uCom>", b"<uCom>ZZZ</uCom>"),
+                (b"<cMun>3501152</cMun>", b"<cMun>9999999</cMun>"),
+            ],
+        )
+
+        documents, errors = self.Document.dfe_import_files([("nfe.xml", xml)])
+
+        self.assertFalse(errors)
+        self.assertTrue(documents)
+        self.assertEqual(counts, [self.env[model].search_count([]) for model in models])
+
+    def test_partners_created_by_the_import_are_logged(self):
+        carrier = (
+            b"<modFrete>0</modFrete><transporta><CNPJ>11222333000181</CNPJ>"
+            b"<xNome>Transp Nova</xNome></transporta>"
+        )
+        xml = self._xml(KEY_1, replace=[(b"<modFrete>9</modFrete>", carrier)])
+
+        documents, _errors = self.Document.dfe_import_files([("nfe.xml", xml)])
+
+        self.assertIn("Transp Nova", "".join(documents.message_ids.mapped("body")))
+
+    def test_unexpected_error_is_reported_without_the_raw_message(self):
+        model = type(self.Document)
+        with mock.patch.object(
+            model, "import_binding_nfe", side_effect=RuntimeError("raw boom")
+        ):
+            _documents, errors = self.Document.dfe_import_files(
+                [("nfe.xml", self._xml(KEY_1))]
+            )
+
+        self.assertIn("unexpected error", errors[0][1])
+        self.assertNotIn("raw boom", errors[0][1])
+
+    def test_failed_import_from_the_inbox_warns_who_asked(self):
+        dfe_document = self._dfe_document(
+            KEY_1, summary_only=False, recipient="11222333000181"
+        )
+        dfe_document.import_requested_user_id = self.env.user
+
+        dfe_document._dfe_import_requested_xml()
+
+        activity = dfe_document.activity_ids
+        self.assertEqual(activity.user_id, self.env.user)
+        self.assertIn("not a company", activity.note)
+
+    def _manager_of(self, companies):
+        return self.env["res.users"].create(
+            {
+                "name": "Importer",
+                "login": "dfe_importer_%s" % len(companies),
+                "company_id": companies[0].id,
+                "company_ids": [Command.set(companies.ids)],
+                "groups_id": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            self.env.ref("base.group_partner_manager").id,
+                            self.env.ref("l10n_br_fiscal.group_manager").id,
+                            self.env.ref("l10n_br_nfe.group_manager").id,
+                        ]
+                    )
+                ],
+            }
+        )
+
+    def test_note_of_another_company_opens_in_the_context_of_its_company(self):
+        user = self._manager_of(self.company | self.other_company)
+        wizard = self.env["l10n_br_fiscal_dfe_import.wizard"].with_user(user)
+        wizard = wizard.with_context(allowed_company_ids=[self.company.id])
+        attachment = self.env["ir.attachment"].create(
+            {"name": "nfe.xml", "raw": self._other_company_xml(KEY_1)}
+        )
+
+        action = wizard.create(
+            {"attachment_ids": [Command.set(attachment.ids)]}
+        ).action_import()
+
+        self.assertIn(self.other_company.id, action["context"]["allowed_company_ids"])
+        document = self.Document.browse(action["res_id"])
+        self.assertEqual(document.company_id, self.other_company)
+
+    def test_repeated_note_of_another_company_opens_the_existing_document(self):
+        user = self._manager_of(self.company | self.other_company)
+        service = self.Document.with_user(user).with_context(
+            allowed_company_ids=[self.company.id]
+        )
+        files = [("nfe.xml", self._other_company_xml(KEY_1))]
+        first, _errors = service.dfe_import_files(files)
+
+        second, errors = service.dfe_import_files(files)
+
+        self.assertFalse(errors)
+        self.assertEqual(first, second)
+
+    def test_note_of_a_company_the_user_cannot_access_is_refused(self):
+        user = self._manager_of(self.company)
+        service = self.Document.with_user(user)
+
+        documents, errors = service.dfe_import_files(
+            [("nfe.xml", self._other_company_xml(KEY_1))]
+        )
+
+        self.assertFalse(documents)
+        self.assertIn("no access to the company", errors[0][1])
+
+    def _other_company_xml(self, key):
+        return self._xml(key, recipient=self.other_company.partner_id.cnpj_cpf_stripped)
+
+    def test_confirmation_text_uses_the_full_width_of_the_dialog(self):
+        arch = self.env["l10n_br_fiscal_dfe_import.wizard"].get_view(view_type="form")
+        form = etree.fromstring(arch["arch"])
+
+        message = form.xpath("//field[@name='confirm_message']")[0]
+
+        self.assertFalse(message.xpath("ancestor::group"))
+
+    def test_document_born_from_the_inbox_is_recorded_in_both_histories(self):
+        dfe_document = self._dfe_document(KEY_1, summary_only=False)
+        dfe_document.import_requested_user_id = self.env.user
+
+        dfe_document._dfe_import_requested_xml()
+
+        document = self._imported(KEY_1)
+        self.assertIn(KEY_1, document.message_ids[0].body)
+        self.assertIn("created", dfe_document.message_ids[0].body)
+
+    def test_unknown_cfop_is_not_created_and_does_not_break_the_import(self):
+        cfop = self.env["l10n_br_fiscal.cfop"].search_count([])
+        xml = self._xml(KEY_1, replace=[(b"<CFOP>5102</CFOP>", b"<CFOP>5999</CFOP>")])
+
+        documents, errors = self.Document.dfe_import_files([("nfe.xml", xml)])
+
+        self.assertFalse(errors)
+        self.assertTrue(documents)
+        self.assertEqual(self.env["l10n_br_fiscal.cfop"].search_count([]), cfop)
+
+    def test_operation_is_suggested_without_touching_the_values_of_the_file(self):
+        documents, _errors = self.Document.dfe_import_files(
+            [("nfe.xml", self._xml(KEY_1))]
+        )
+
+        line = documents.fiscal_line_ids
+        operation = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.assertEqual(documents.fiscal_operation_id, operation)
+        self.assertEqual(line.fiscal_operation_id, operation)
+        self.assertEqual(line.cfop_id.code, "1102")
+        self.assertEqual(line.partner_cfop_id.code, "5102")
+        self.assertEqual((line.quantity, line.price_unit), (1, 140))
+        self.assertEqual(documents.fiscal_amount_total, 140)
+        self.assertEqual(documents.fiscal_amount_untaxed, 140)
+        self.assertNotIn("fiscal operation", documents.import_warning)
+
+    def test_without_a_matching_operation_the_document_says_what_to_choose(self):
+        xml = self._xml(KEY_1, replace=[(b"<CFOP>5102</CFOP>", b"<CFOP>5999</CFOP>")])
+
+        documents, errors = self.Document.dfe_import_files([("nfe.xml", xml)])
+
+        self.assertFalse(errors)
+        self.assertFalse(documents.fiscal_operation_id)
+        self.assertIn("fiscal operation", documents.import_warning)
+
+    def test_imported_documents_list_shows_the_review_state(self):
+        action = self.env.ref("l10n_br_fiscal_dfe_import.imported_document_dfe_action")
+        arch = self.Document.get_view(action.view_id.id, "tree")["arch"]
+
+        self.assertTrue(etree.fromstring(arch).xpath("//field[@name='import_state']"))
+
+    def test_list_of_several_documents_uses_the_same_view(self):
+        view = self.env.ref("l10n_br_fiscal_dfe_import.document_import_tree")
+        wizard = self.env["l10n_br_fiscal_dfe_import.wizard"]
+        documents, _errors = self.Document.dfe_import_files(
+            [("one.xml", self._xml(KEY_1)), ("two.xml", self._xml(KEY_2))]
+        )
+
+        action = wizard._documents_action(documents)
+
+        self.assertEqual(action["views"][0], (view.id, "tree"))
+
+    def test_pt_br_translation_is_complete(self):
+        path = get_module_resource("l10n_br_fiscal_dfe_import", "i18n", "pt_BR.po")
+        with file_open(path, "rb") as po_file:
+            terms = list(TranslationFileReader(po_file, fileformat="po"))
+
+        self.assertFalse([term["src"] for term in terms if not term["value"]])
+        self.assertIn("Review", [term["src"] for term in terms])

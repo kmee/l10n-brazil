@@ -23,5 +23,10 @@ database. Each note goes to the company of its recipient CNPJ.
 
 **Review**
 
-The imported document shows a banner while its lines wait for review, and the
-Imported Documents menu has a filter for the documents awaiting review.
+The imported document is born with the inbound fiscal operation suggested from
+the CFOP declared by the issuer (on the header and on each line, with the
+inbound CFOP of the operation line), without changing the quantities, prices
+and taxes of the file. When no operation matches, or the NCM of the file is
+not in the registry, a banner tells what to choose. The Imported Documents menu
+has a column with the review state and a filter for the documents awaiting
+review.

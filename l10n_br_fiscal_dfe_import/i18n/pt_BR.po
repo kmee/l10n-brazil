@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 01:03+0000\n"
-"PO-Revision-Date: 2026-11-19 01:03+0000\n"
+"POT-Creation-Date: 2026-11-19 11:25+0000\n"
+"PO-Revision-Date: 2026-11-19 11:25+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: pt_BR\n"
@@ -15,6 +15,22 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: \n"
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
+#, python-format
+msgid "%(line)s: the NCM %(ncm)s is not in the registry."
+msgstr "%(line)s: o NCM %(ncm)s não está no cadastro."
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/dfe_document.py:0
+#, python-format
+msgid ""
+"%s asked to import this NF-e. The acknowledgement was already registered: "
+"the fiscal document is created when the complete XML arrives."
+msgstr "%s pediu para importar esta NF-e. A ciência já estava registrada: o documento fiscal é criado quando o XML completo chegar."
 
 #. module: l10n_br_fiscal_dfe_import
 #. odoo-python
@@ -32,6 +48,16 @@ msgstr "Chave de acesso"
 #: model:ir.model.fields,help:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard__access_key
 msgid "Access key of an NF-e issued to the current company."
 msgstr "Chave de acesso de uma NF-e emitida para a empresa atual."
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/dfe_document.py:0
+#, python-format
+msgid ""
+"Acknowledgement of the operation registered by %s. The final manifestation "
+"of the recipient is now mandatory, and the fiscal document is created when "
+"the complete XML arrives."
+msgstr "Ciência da operação registrada por %s. A manifestação conclusiva do destinatário agora é obrigatória, e o documento fiscal é criado quando o XML completo chegar."
 
 #. module: l10n_br_fiscal_dfe_import
 #. odoo-python
@@ -83,6 +109,7 @@ msgstr "Nome exibido"
 #. module: l10n_br_fiscal_dfe_import
 #. odoo-python
 #: code:addons/l10n_br_fiscal_dfe_import/models/dfe_document.py:0
+#: code:addons/l10n_br_fiscal_dfe_import/models/dfe_document.py:0
 #, python-format
 msgid "Document created from the access key %s."
 msgstr "Documento criado a partir da chave de acesso %s."
@@ -96,6 +123,13 @@ msgstr "Rascunho"
 #: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard__attachment_ids
 msgid "Files"
 msgstr "Arquivos"
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/dfe_document.py:0
+#, python-format
+msgid "Fiscal document %s created."
+msgstr "Documento fiscal %s criado."
 
 #. module: l10n_br_fiscal_dfe_import
 #: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard__id
@@ -127,6 +161,14 @@ msgid "Import Requested By"
 msgstr "Importação solicitada por"
 
 #. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_account_bank_statement_line__import_warning
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_account_move__import_warning
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_account_payment__import_warning
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_document__import_warning
+msgid "Import Warning"
+msgstr "Aviso da importação"
+
+#. module: l10n_br_fiscal_dfe_import
 #. odoo-python
 #: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
 #: model:ir.actions.act_window,name:l10n_br_fiscal_dfe_import.imported_document_dfe_action
@@ -149,13 +191,6 @@ msgid "Inform the access key or upload files, not both."
 msgstr "Informe a chave de acesso ou envie arquivos, não os dois."
 
 #. module: l10n_br_fiscal_dfe_import
-#. odoo-python
-#: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
-#, python-format
-msgid "Issuer partner %s created by the import."
-msgstr "Parceiro emitente %s criado pela importação."
-
-#. module: l10n_br_fiscal_dfe_import
 #: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard____last_update
 msgid "Last Modified on"
 msgstr "Última modificação em"
@@ -171,6 +206,18 @@ msgid "Last Updated on"
 msgstr "Última atualização em"
 
 #. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_account_move_line__import_ncm_code
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_document_line__import_ncm_code
+msgid "NCM Declared"
+msgstr "NCM declarado"
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,help:l10n_br_fiscal_dfe_import.field_account_move_line__import_ncm_code
+#: model:ir.model.fields,help:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_document_line__import_ncm_code
+msgid "NCM as declared in the imported file, kept as it came."
+msgstr "NCM como declarado no arquivo importado, guardado como veio."
+
+#. module: l10n_br_fiscal_dfe_import
 #. odoo-python
 #: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
 #, python-format
@@ -180,6 +227,15 @@ msgid ""
 msgstr ""
 "Nenhum arquivo foi importado:\n"
 "%s"
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
+#, python-format
+msgid ""
+"No fiscal operation matches the CFOP of the issuer: choose the fiscal "
+"operation of the document and the operation line of each line."
+msgstr "Nenhuma operação fiscal corresponde ao CFOP do emitente: escolha a operação fiscal do documento e a linha de operação de cada linha."
 
 #. module: l10n_br_fiscal_dfe_import
 #: model:ir.model.fields,help:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard__attachment_ids
@@ -201,6 +257,13 @@ msgid "Only NF-e (model 55) can be imported by access key."
 msgstr "Só é possível importar NF-e (modelo 55) pela chave de acesso."
 
 #. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
+#, python-format
+msgid "Partners created by the import: %s."
+msgstr "Parceiros criados pela importação: %s."
+
+#. module: l10n_br_fiscal_dfe_import
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_dfe_import.document_import_dfe_wizard_form
 msgid "Register acknowledgement"
 msgstr "Registrar ciência"
@@ -209,6 +272,13 @@ msgstr "Registrar ciência"
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_dfe_import.document_line_form
 msgid "Resolve"
 msgstr "Resolver"
+
+#. module: l10n_br_fiscal_dfe_import
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_dfe_import.document_form
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_dfe_import.document_import_tree
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_dfe_import.document_line_form
+msgid "Review"
+msgstr "Revisão"
 
 #. module: l10n_br_fiscal_dfe_import
 #. odoo-python
@@ -221,6 +291,13 @@ msgstr "Alguns arquivos não foram importados"
 #: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard__state
 msgid "State"
 msgstr "Situação"
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/dfe_document.py:0
+#, python-format
+msgid "The NF-e could not be imported"
+msgstr "Não foi possível importar a NF-e"
 
 #. module: l10n_br_fiscal_dfe_import
 #. odoo-python
@@ -258,6 +335,22 @@ msgid ""
 " (ciência), an event registered at the tax authority that obliges the "
 "company to register the final manifestation afterwards. Register it?"
 msgstr "O XML completo só é liberado depois da ciência da operação, um evento registrado na SEFAZ que obriga a empresa a registrar depois a manifestação conclusiva. Registrar a ciência?"
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
+#, python-format
+msgid ""
+"The file could not be imported because of an unexpected error. Send it to "
+"the support."
+msgstr "O arquivo não pôde ser importado por um erro inesperado. Envie-o ao suporte."
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
+#, python-format
+msgid "The file is not a valid NF-e XML."
+msgstr "O arquivo não é um XML de NF-e válido."
 
 #. module: l10n_br_fiscal_dfe_import
 #. odoo-python
@@ -327,3 +420,18 @@ msgstr "Usuário que pediu a importação desta chave de acesso. O documento fis
 #, python-format
 msgid "Waiting for the XML"
 msgstr "Aguardando o XML"
+
+#. module: l10n_br_fiscal_dfe_import
+#: model:ir.model.fields,help:l10n_br_fiscal_dfe_import.field_account_bank_statement_line__import_warning
+#: model:ir.model.fields,help:l10n_br_fiscal_dfe_import.field_account_move__import_warning
+#: model:ir.model.fields,help:l10n_br_fiscal_dfe_import.field_account_payment__import_warning
+#: model:ir.model.fields,help:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_document__import_warning
+msgid "What the imported document still lacks to be reviewed."
+msgstr "O que ainda falta no documento importado para ser revisado."
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
+#, python-format
+msgid "You have no access to the company %s, recipient of the file."
+msgstr "Você não tem acesso à empresa %s, destinatária do arquivo."
