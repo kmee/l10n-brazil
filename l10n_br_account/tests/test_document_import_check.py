@@ -53,3 +53,27 @@ class TestDocumentImportCheck(TransactionCase):
         self.line.product_id = False
         with self.assertRaises(UserError):
             self.document._check_document_import()
+
+    def test_a_line_not_reviewed_blocks_the_bill(self):
+        """The bill of an imported document rests on reviewed lines only: a
+        line that is just a suggestion of the import (or has no product yet)
+        refuses the bill, however it is asked for."""
+        self.line.price_unit = 10.0
+        for state in ("matched", "pending"):
+            self.line.import_state = state
+            with self.assertRaisesRegex(UserError, "not resolved yet"):
+                self.document._check_document_import()
+            with self.assertRaisesRegex(UserError, "not reviewed"):
+                self.env["account.move"].import_fiscal_document(self.document)
+            with self.assertRaisesRegex(UserError, "not resolved yet"):
+                self.document.action_generate_account_move()
+        self.line.import_state = "resolved"
+        self.document._check_document_import()  # must not raise
+
+    def test_confirming_an_imported_document_needs_the_review(self):
+        """The confirmation takes a partner document to authorized, and so to
+        the books: it refuses the lines that were not resolved."""
+        self.line.price_unit = 10.0
+        self.line.import_state = "matched"
+        with self.assertRaisesRegex(UserError, "not reviewed"):
+            self.document.action_document_confirm()

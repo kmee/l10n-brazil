@@ -56,7 +56,6 @@
                 />
                 <field
                     name="import_origin_state"
-                    readonly="1"
                     attrs="{'invisible': [('import_origin_state', '=', False)]}"
                 />
             </xpath>

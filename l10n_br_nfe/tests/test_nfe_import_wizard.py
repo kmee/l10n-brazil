@@ -8,11 +8,13 @@ from unittest.mock import MagicMock, patch
 
 import nfelib
 import pkg_resources
+from psycopg2 import IntegrityError
 from xsdata.formats.dataclass.parsers import XmlParser
 
-from odoo import Command, fields
+from odoo import Command, fields, tools
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests import TransactionCase
+from odoo.tools import mute_logger
 
 from odoo.addons import l10n_br_nfe
 from odoo.addons.l10n_br_fiscal.constants.fiscal import FISCAL_TAX_ID_FIELDS
@@ -269,6 +271,341 @@ class NFeImportWizardTest(TransactionCase):
         self.assertEqual(document.fiscal_line_ids[0].import_state, "pending")
         self.assertEqual(document.import_state, "pending")
 
+    # ------------------------------------------------------------------
+    # What the import resolves by itself, and what waits for a person
+    # ------------------------------------------------------------------
+
+    def _supplierinfo(self, partner, code="E-COM11"):
+        return self.env["product.supplierinfo"].search(
+            [("partner_id", "=", partner.id), ("product_code", "=", code)]
+        )
+
+    def _import_xml_1(self):
+        self._prepare_wizard(self.xml_1)
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.wizard._import_edoc()
+        return self.wizard.document_id
+
+    def test_a_product_guessed_by_the_import_is_only_suggested(self):
+        """A product found by the internal reference, the barcode or the name
+        is a guess: the line stays matched and the import teaches nothing to
+        the supplier de-para until a person confirms it."""
+        product = self._get_xml_product()
+        issuer = self._create_xml_issuer_supplier()
+        self._supplierinfo(issuer).unlink()
+        document = self._import_xml_1()
+        line = document.fiscal_line_ids[0]
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.import_state, "matched")
+        self.assertFalse(self._supplierinfo(document.partner_id))
+        self.assertTrue(document.import_pending_count)
+        # the confirmation is what resolves the line and teaches the de-para
+        line.action_resolve_line()
+        self.assertEqual(line.import_state, "resolved")
+        self.assertTrue(self._supplierinfo(document.partner_id))
+
+    def test_a_product_of_the_supplier_depara_is_resolved(self):
+        """The de-para already learned for this same supplier needs no review."""
+        product = self._get_xml_product()
+        self._prepare_wizard(self.xml_1)
+        issuer = self.wizard.issuer_partner_id
+        self.env["product.supplierinfo"].create(
+            {
+                "partner_id": issuer.id,
+                "product_tmpl_id": product.product_tmpl_id.id,
+                "product_code": "E-COM11",
+                "product_name": "Cabinet with Doors",
+            }
+        )
+        self._prepare_wizard(self.xml_1)
+        self.assertEqual(self.wizard.imported_products_ids.product_source, "supplier")
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.wizard._import_edoc()
+        line = self.wizard.document_id.fiscal_line_ids[0]
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.import_state, "resolved")
+
+    def test_the_de_para_of_another_supplier_is_not_trusted(self):
+        """The same supplier code in the de-para of ANOTHER supplier is a
+        coincidence: it is a guess here."""
+        product = self._get_xml_product()
+        self._prepare_wizard(self.xml_1)
+        issuer = self.wizard.issuer_partner_id
+        self._supplierinfo(issuer).unlink()
+        other = self.env["res.partner"].create({"name": "Another supplier"})
+        self.env["product.supplierinfo"].create(
+            {
+                "partner_id": other.id,
+                "product_tmpl_id": product.product_tmpl_id.id,
+                "product_code": "E-COM11",
+                "product_name": "Cabinet with Doors",
+            }
+        )
+        document = self._import_xml_1()
+        line = document.fiscal_line_ids[0]
+        self.assertEqual(line.import_state, "matched")
+        self.assertFalse(self._supplierinfo(document.partner_id))
+
+    def test_the_product_chosen_in_the_grid_is_resolved_and_learned(self):
+        """What the person chose in the grid is a human decision."""
+        self._get_xml_product()
+        chosen = self.env["product.product"].create(
+            {"name": "Chosen in the grid", "purchase_ok": True}
+        )
+        self._prepare_wizard(self.xml_1)
+        self._supplierinfo(self.wizard.issuer_partner_id).unlink()
+        self.wizard.imported_products_ids.product_id = chosen
+        self.assertEqual(self.wizard.imported_products_ids.product_source, "user")
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.wizard._import_edoc()
+        document = self.wizard.document_id
+        line = document.fiscal_line_ids[0]
+        self.assertEqual(line.product_id, chosen)
+        self.assertEqual(line.import_state, "resolved")
+        self.assertTrue(self._supplierinfo(document.partner_id))
+
+    def test_confirming_the_suggestion_in_the_grid_counts_as_a_decision(self):
+        product = self._get_xml_product()
+        self._prepare_wizard(self.xml_1)
+        self._supplierinfo(self.wizard.issuer_partner_id).unlink()
+        self.wizard.imported_products_ids.product_confirmed = True
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.wizard._import_edoc()
+        document = self.wizard.document_id
+        line = document.fiscal_line_ids[0]
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.import_state, "resolved")
+        self.assertTrue(self._supplierinfo(document.partner_id))
+
+    def test_the_zip_never_resolves_a_guess(self):
+        """Nobody sees the grid of a zip: what is guessed waits for review."""
+        product = self._get_xml_product()
+        issuer = self._create_xml_issuer_supplier()
+        self._supplierinfo(issuer).unlink()
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as archive:
+            archive.writestr("nota1.xml", self.xml_1)
+        wizard = self.env["l10n_br_fiscal.document.import.wizard"].create(
+            {
+                "company_id": self.env.ref("base.main_company").id,
+                "file": base64.b64encode(buffer.getvalue()),
+                "fiscal_operation_id": self.env.ref("l10n_br_fiscal.fo_compras").id,
+            }
+        )
+        documents = wizard._import_edoc_batch()
+        line = documents.fiscal_line_ids[0]
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.import_state, "matched")
+        self.assertFalse(self._supplierinfo(documents.partner_id))
+
+    def _unknown_product_xml(self):
+        return (
+            self.xml_1.decode()
+            .replace("E-COM11", "NAOEXISTE2")
+            .replace("Cabinet with Doors", "Produto Desconhecido ZZZ")
+            .encode()
+        )
+
+    def test_the_box_unchecked_creates_no_product(self):
+        """The wizard creates no product unless the box asks for it: the line
+        of an unmapped product waits, pending, for a person."""
+        self.assertFalse(
+            self.env["l10n_br_fiscal.document.import.wizard"]
+            .create({})
+            .allow_product_creation
+        )
+        products_before = self.env["product.product"].search_count([])
+        self._prepare_wizard(self._unknown_product_xml())
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.wizard._import_edoc()
+        self.assertEqual(self.env["product.product"].search_count([]), products_before)
+        line = self.wizard.document_id.fiscal_line_ids
+        self.assertFalse(line.product_id)
+        self.assertEqual(line.import_state, "pending")
+
+    def test_the_box_checked_creates_the_product(self):
+        products_before = self.env["product.product"].search_count([])
+        self._prepare_wizard(self._unknown_product_xml())
+        self.wizard.allow_product_creation = True
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.wizard._import_edoc()
+        self.assertEqual(
+            self.env["product.product"].search_count([]), products_before + 1
+        )
+        line = self.wizard.document_id.fiscal_line_ids
+        self.assertEqual(line.product_id.default_code, "NAOEXISTE2")
+
+    def test_the_zip_follows_the_box_too(self):
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as archive:
+            archive.writestr("nota1.xml", self._unknown_product_xml())
+        products_before = self.env["product.product"].search_count([])
+        wizard = self.env["l10n_br_fiscal.document.import.wizard"].create(
+            {
+                "company_id": self.env.ref("base.main_company").id,
+                "file": base64.b64encode(buffer.getvalue()),
+            }
+        )
+        documents = wizard._import_edoc_batch()
+        self.assertEqual(self.env["product.product"].search_count([]), products_before)
+        self.assertFalse(documents.fiscal_line_ids.product_id)
+        wizard.allow_product_creation = True
+        # the box of the wizard goes to each entry of the archive
+        entry = wizard.copy({"file": wizard.file})
+        self.assertTrue(entry.allow_product_creation)
+
+    # ------------------------------------------------------------------
+    # The same note in two companies of the database, and the unique key
+    # ------------------------------------------------------------------
+
+    def _plain_document(self, number, key=False):
+        issuer_company = self.env.ref("l10n_br_base.empresa_lucro_presumido")
+        document = self.env["l10n_br_fiscal.document"].create(
+            {
+                "company_id": issuer_company.id,
+                "document_type_id": self.env.ref("l10n_br_fiscal.document_55").id,
+                "issuer": "company",
+                "fiscal_operation_type": "out",
+                "document_serie": "1",
+                "document_number": number,
+                "document_key": key,
+            }
+        )
+        # the tests below read and write the table with SQL
+        self.env.flush_all()
+        return document
+
+    def _outgoing_document_of_xml_1(self):
+        """The document the issuer (a company of this database) has for the
+        note of xml_1: the outgoing one."""
+        return self._plain_document("5", "35200181583054000129550010000000052062777166")
+
+    def test_the_import_does_not_find_the_outgoing_document_of_the_issuer(self):
+        """The same note is the outgoing document of the issuer and the
+        incoming one of the recipient. Importing it in the recipient must not
+        return the outgoing document of the other company."""
+        outgoing = self._outgoing_document_of_xml_1()
+        self._prepare_wizard(self.xml_1)
+        self.assertNotEqual(self.wizard.document_id, outgoing)
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        _binding, document = self.wizard._import_edoc()
+        self.assertNotEqual(document, outgoing)
+        self.assertEqual(document.issuer, "partner")
+        self.assertEqual(document.document_key, outgoing.document_key)
+
+    def test_the_import_finds_the_document_of_its_own_company(self):
+        """Importing again the file in the company that already imported it
+        gives the same document: the search keeps finding what is its own."""
+        outgoing = self._outgoing_document_of_xml_1()
+        self._prepare_wizard(self.xml_1)
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        _binding, first = self.wizard._import_edoc()
+        self._prepare_wizard(self.xml_1)
+        self.assertEqual(self.wizard.document_id, first)
+        self.assertNotEqual(self.wizard.document_id, outgoing)
+
+    def test_the_key_is_unique_in_the_database(self):
+        """The uniqueness of the key is also guaranteed by the database: a
+        second document with the same company, issuer and key is refused even
+        when the check of the model is not reached (two imports at once)."""
+        first = self._outgoing_document_of_xml_1()
+        other = self._plain_document("6")
+        with mute_logger("odoo.sql_db"), self.assertRaises(IntegrityError):
+            with self.env.cr.savepoint():
+                self.env.cr.execute(
+                    "UPDATE l10n_br_fiscal_document SET document_key = %s "
+                    "WHERE id = %s",
+                    [first.document_key, other.id],
+                )
+        # the cancelled documents do not hold the key
+        self.env.cr.execute(
+            "UPDATE l10n_br_fiscal_document SET state_edoc = 'cancelada' WHERE id = %s",
+            [first.id],
+        )
+        self.env.cr.execute(
+            "UPDATE l10n_br_fiscal_document SET document_key = %s WHERE id = %s",
+            [first.document_key, other.id],
+        )
+
+    def test_the_check_of_the_key_goes_on_after_a_document_without_key(self):
+        """A document without key must not stop the check of the others."""
+        first = self._outgoing_document_of_xml_1()
+        # the index is not what is being tested here
+        self.env.cr.execute(
+            "DROP INDEX IF EXISTS l10n_br_fiscal_document_unique_key_idx"
+        )
+        no_key = self._plain_document("6")
+        duplicate = self._plain_document("7")
+        self.env.cr.execute(
+            "UPDATE l10n_br_fiscal_document SET document_key = %s WHERE id = %s",
+            [first.document_key, duplicate.id],
+        )
+        duplicate.invalidate_recordset()
+        with self.assertRaises(ValidationError):
+            (no_key | duplicate)._check_key()
+
+    def test_the_index_is_not_created_where_there_are_duplicated_keys(self):
+        """A database that already has duplicated keys keeps working: the index
+        is skipped with a warning, and nothing is deleted."""
+        first = self._outgoing_document_of_xml_1()
+        self.env.cr.execute(
+            "DROP INDEX IF EXISTS l10n_br_fiscal_document_unique_key_idx"
+        )
+        duplicate = self._plain_document("6")
+        self.env.cr.execute(
+            "UPDATE l10n_br_fiscal_document SET document_key = %s WHERE id = %s",
+            [first.document_key, duplicate.id],
+        )
+        with self.assertLogs(
+            "odoo.addons.l10n_br_fiscal.models.document", level="WARNING"
+        ) as logs:
+            self.env["l10n_br_fiscal.document"].init()
+        self.assertIn("duplicated keys", logs.output[0])
+        self.assertIn(first.document_key, logs.output[0])
+        self.assertFalse(
+            tools.index_exists(self.env.cr, "l10n_br_fiscal_document_unique_key_idx")
+        )
+        self.assertTrue((first | duplicate).exists())
+
+    def test_the_unit_factor_of_the_depara_keeps_the_total_of_the_item(self):
+        """After the de-para with a unit factor (a box of 12, a bag of 25 kg) the
+        total of the item stays the vProd of the file, to the cent."""
+        self._prepare_wizard(self.xml_1)
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.wizard._import_edoc()
+        line = self.wizard.document_id.fiscal_line_ids
+        cases = (
+            # (quantity, unit price of the file, factor)
+            (7, 3.33, 12),
+            (1, 14.0, 3),
+            (10, 1.23, 7),
+            (3, 0.35, 24),
+            (250, 0.07, 12),
+            (13, 7.77, 6),
+        )
+        failures = []
+        for quantity, price, factor in cases:
+            vprod = round(quantity * price, 2)
+            line.write(
+                {
+                    "import_state": "matched",
+                    "quantity": quantity,
+                    "price_unit": price,
+                    "partner_quantity": quantity,
+                    "partner_price_unit": price,
+                    "import_uom_factor": 1.0,
+                }
+            )
+            line._apply_import_depara(factor=factor)
+            if line.quantity != quantity * factor or line.price_gross != vprod:
+                failures.append(
+                    (quantity, price, factor, vprod, line.price_gross, line.price_unit)
+                )
+        self.assertFalse(
+            failures,
+            f"(quantity, price, factor, vProd, total, unit price): {failures}",
+        )
+
     def test_zip_batch_import(self):
         """A zip archive with several XMLs lands as several persisted
         documents waiting for review."""
@@ -299,6 +636,72 @@ class NFeImportWizardTest(TransactionCase):
         documents = wizard._import_edoc_batch()
         self.assertEqual(len(documents), 2)
         self.assertTrue(all(documents.mapped("imported_document")))
+
+    def _zip_of_two_notes(self):
+        other_xml = pkg_resources.resource_stream(
+            nfelib.__name__,
+            "nfe/samples/v4_0/leiauteNFe/"
+            "35180834128745000152550010000474281920007498-nfe.xml",
+        ).read()
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as archive:
+            archive.writestr("nota1.xml", self.xml_1)
+            archive.writestr("nota2.xml", other_xml)
+        return self.env["l10n_br_fiscal.document.import.wizard"].create(
+            {
+                "company_id": self.env.ref("base.main_company").id,
+                "file": base64.b64encode(buffer.getvalue()),
+            }
+        )
+
+    def test_a_zip_entry_that_fails_is_undone_and_the_others_enter(self):
+        """Each entry of the archive has its own restore point: the one that
+        fails after its document was created leaves nothing behind (a second
+        upload would find that half configured document and give it back with
+        no review), is reported, and the other entries are imported."""
+        wizard = self._zip_of_two_notes()
+        original = DocumentImportWizard._apply_wizard_depara
+        calls = []
+
+        def failing_second(self, edoc):
+            calls.append(edoc.document_key)
+            if len(calls) == 2:
+                raise UserError("the de-para blew up")
+            return original(self, edoc)
+
+        with patch.object(DocumentImportWizard, "_apply_wizard_depara", failing_second):
+            documents = wizard._import_edoc_batch()
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(len(documents), 1)
+        self.assertEqual(documents.document_key, calls[0])
+        # the entry that failed left no document behind
+        self.assertFalse(
+            self.env["l10n_br_fiscal.document"].search_count(
+                [("document_key", "=", calls[1])]
+            )
+        )
+        self.assertIn("nota2.xml", wizard.batch_errors)
+        self.assertIn("the de-para blew up", wizard.batch_errors)
+        self.assertNotIn("nota1.xml", wizard.batch_errors)
+
+    def test_the_zip_reports_the_failed_entry_to_the_user(self):
+        wizard = self._zip_of_two_notes()
+        original = DocumentImportWizard._apply_wizard_depara
+        calls = []
+
+        def failing_second(self, edoc):
+            calls.append(edoc)
+            if len(calls) == 2:
+                raise UserError("the de-para blew up")
+            return original(self, edoc)
+
+        with patch.object(DocumentImportWizard, "_apply_wizard_depara", failing_second):
+            action = wizard.action_import_and_open_document()
+        self.assertEqual(action["tag"], "display_notification")
+        self.assertIn("nota2.xml", action["params"]["message"])
+        self.assertEqual(
+            action["params"]["next"]["res_model"], "l10n_br_fiscal.document"
+        )
 
     def test_match_xml_product(self):
         self._prepare_wizard(self.xml_1)
@@ -440,7 +843,8 @@ class NFeImportWizardTest(TransactionCase):
         matched from the XML uCom/uTrib. Otherwise ``_check_document_import``
         rejects the document with "no unit of measure".
         """
-        self._prepare_wizard(self.xml_1)
+        # a product the base does not have, so that the import really creates it
+        self._prepare_wizard(self._unknown_product_xml())
         self.wizard.allow_product_creation = True
         self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
         _binding, edoc = self.wizard._import_edoc()
@@ -705,9 +1109,9 @@ class NFeImportWizardTest(TransactionCase):
     def test_match_source_preselection_and_writeback(self):
         """A single open PO line for the XML product is preselected as the
         match source (even when its receipt move exists too), sets the
-        product, and the import writes the canonical (PO name, line position)
-        key onto the fiscal line — synthesizing the xPed/nItemPed the
-        supplier XML didn't send, for the later bill matching."""
+        product, and the import writes it as the origin of the fiscal line, which
+        is what the later bill matching follows (the xPed/nItemPed the supplier
+        did not send stay empty)."""
         if self.env.get("purchase.order") is None:
             self.skipTest("purchase module not installed")
         supplier = self._create_xml_issuer_supplier()
@@ -736,8 +1140,14 @@ class NFeImportWizardTest(TransactionCase):
         self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
         _binding, edoc = self.wizard._import_edoc()
         fiscal_line = edoc.fiscal_line_ids[0]
-        self.assertEqual(fiscal_line.partner_order, order.name)
-        self.assertEqual(fiscal_line.partner_order_line, "1")
+        # the origin is the one chosen on the import; the (partner_order,
+        # partner_order_line) pair is what the supplier declared, and the file
+        # declared nothing
+        if "import_purchase_line_id" in fiscal_line._fields:
+            # l10n_br_purchase holds the origin of the line
+            self.assertEqual(fiscal_line.import_purchase_line_id, order.order_line)
+        self.assertFalse(fiscal_line.partner_order)
+        self.assertFalse(fiscal_line.partner_order_line)
 
     def test_match_source_ambiguity_no_preselection(self):
         """The same product on two lines of the same PO (or on two POs)
@@ -914,8 +1324,7 @@ class NFeImportWizardTest(TransactionCase):
 
     def test_match_source_writeback_duplicate_product_lines(self):
         """The same product on two XML lines, with two DIFFERENT sources
-        picked by the operator, must stamp each fiscal line with its own
-        reference.
+        picked by the operator, must give each fiscal line its own origin.
 
         Regression: the write-back used to index the wizard lines by
         product (a dict), so the last line won and both fiscal lines were
@@ -950,15 +1359,16 @@ class NFeImportWizardTest(TransactionCase):
         self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
         _binding, edoc = self.wizard._import_edoc()
         self.assertEqual(len(edoc.fiscal_line_ids), 2)
-        self.assertEqual(
-            edoc.fiscal_line_ids.mapped("partner_order"),
-            [order.name, order.name],
-        )
-        self.assertEqual(
-            edoc.fiscal_line_ids.mapped("partner_order_line"),
-            ["2", "1"],
-            "each fiscal line must carry the reference of ITS own source",
-        )
+        if "import_purchase_line_id" in edoc.fiscal_line_ids._fields:
+            # l10n_br_purchase holds the origin of the line
+            self.assertEqual(
+                edoc.fiscal_line_ids[0].import_purchase_line_id, order.order_line[1]
+            )
+            self.assertEqual(
+                edoc.fiscal_line_ids[1].import_purchase_line_id, order.order_line[0]
+            )
+        # what the supplier declared is not rewritten by the origin
+        self.assertEqual(edoc.fiscal_line_ids.mapped("partner_order"), [False, False])
 
     def test_match_po_line_ambiguous_xped(self):
         """A duplicated xPed must not pick an order arbitrarily: disambiguate

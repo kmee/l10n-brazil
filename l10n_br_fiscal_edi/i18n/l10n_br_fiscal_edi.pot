@@ -1013,3 +1013,14 @@ msgid ""
 "to match the line against (the imported bill will not be reconcilable with a"
 " receipt for it)."
 msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_wizard_line__match_source_trusted
+msgid ""
+"Technical: the match source needs no further review, because the operator chose it in the grid or because the supplier declared the order and the item in the file. A source only guessed by the import stays a suggestion on the imported line."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_import_wizard_line__match_source_trusted
+msgid "Match Source Trusted"
+msgstr ""

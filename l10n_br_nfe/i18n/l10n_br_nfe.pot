@@ -5453,3 +5453,40 @@ msgstr ""
 #: code:addons/l10n_br_nfe/wizards/document_import_wizard.py:0
 msgid "This NF-e was denied at the source and cannot be imported."
 msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields.selection,name:l10n_br_nfe.selection__l10n_br_fiscal_document_import_wizard_line__product_source__order
+msgid "Purchase order declared by the supplier"
+msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields.selection,name:l10n_br_nfe.selection__l10n_br_fiscal_document_import_wizard_line__product_source__supplier
+msgid "De-para of the supplier"
+msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields.selection,name:l10n_br_nfe.selection__l10n_br_fiscal_document_import_wizard_line__product_source__guess
+msgid "Guessed by the import"
+msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields.selection,name:l10n_br_nfe.selection__l10n_br_fiscal_document_import_wizard_line__product_source__user
+msgid "Chosen in the grid"
+msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document_import_wizard_line__product_source
+msgid "Product Source"
+msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,help:l10n_br_nfe.field_l10n_br_fiscal_document_import_wizard_line__product_source
+msgid ""
+"Technical: where the internal product of the line came from. Only the product that comes from the order the supplier declared, from the de-para already learned for this supplier, or from a person is resolved by the import; a guess (internal reference, barcode) stays a suggestion until it is confirmed."
+msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,help:l10n_br_nfe.field_l10n_br_fiscal_document_import_wizard_line__product_confirmed
+msgid ""
+"Check it to confirm the suggested product of the line: the line is then resolved and the supplier de-para is learned. Choosing another product in the grid confirms it as well."
+msgstr ""

@@ -5634,9 +5634,9 @@ msgstr ""
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard__allow_product_creation
 msgid ""
 "If enabled, products that don't match an existing record will be "
-"automatically created during import. If disabled (default), the import will "
-"raise an error when an unmapped product is found so you can map it in the "
-"product lines above before importing."
+"automatically created during import. If disabled (default), no product is "
+"created: the line of an unmapped product stays pending until you choose its "
+"product in the product lines above or in the document."
 msgstr ""
 
 #. module: l10n_br_fiscal
@@ -10872,4 +10872,46 @@ msgstr ""
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__partner_icms_tax_benefit_code
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__partner_icms_tax_benefit_code
 msgid "Fiscal benefit code (<cBenef>) declared by the counterparty in the imported document. Preserved verbatim for SPED C197 (COD_AJ), while icms_tax_benefit_id/code reflects the company's own de-para mapping."
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: code:addons/l10n_br_fiscal/models/document.py:0
+#, python-format
+msgid ""
+"- %(count)s line(s) not resolved yet (%(lines)s): confirm the product of each one (Confirmed column of the import grid, or Resolve button of the line in the document)."
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: code:addons/l10n_br_fiscal/models/document.py:0
+#, python-format
+msgid ""
+"The imported document %(document)s was not reviewed yet:\n"
+"%(errors)s"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: code:addons/l10n_br_fiscal/wizards/document_import_wizard.py:0
+msgid "Some files of the archive were not imported"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard__batch_errors
+msgid ""
+"The files of a zip archive that could not be imported, with the reason of each one."
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard__batch_errors
+msgid "Batch Errors"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__import_price_gross
+msgid "Import Gross Total"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__import_price_gross
+msgid ""
+"Total value of the item as the supplier file declared it (vProd), kept when the de-para converts the unit with a factor: the unit price of the line is the supplier price divided by the factor and has the precision of the price, so quantity times price may not give back the cents of the file. Empty when the line was not converted."
 msgstr ""
