@@ -340,6 +340,47 @@ class NFeImportTest(TransactionCase):
         # in the same company but started from the right current company)
         self.assertAlmostEqual(move.amount_total, 12108.10, places=2)
 
+    def test_the_unit_factor_of_the_depara_keeps_the_total_of_the_bill_line(self):
+        """The de-para converts a unit with a factor (a box of 7 kg): the bill
+        line closes with the total of the document, to the cent, even though the
+        unit price divided by the factor does not have the cents for it."""
+        file_path = os.path.join(
+            l10n_br_account_nfe.__path__[0],
+            "tests",
+            "nfe",
+            "35231149647316000169550010000661061151600085-nfe.xml",
+        )
+        with open(file_path, "rb") as file:
+            file_content = file.read()
+        wizard = self.env["l10n_br_fiscal.document.import.wizard"].create({})
+        with Form(wizard) as import_form:
+            import_form.file = base64.b64encode(file_content)
+            import_form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+            import_form.allow_product_creation = True
+        line = wizard.imported_products_ids[0]
+        self.assertEqual(line.total, 4065.8)
+        product = self.env["product.product"].create(
+            {
+                "name": "Celofane by the box",
+                "purchase_ok": True,
+                "uom_id": line.uom_internal.id,
+                "uom_po_id": line.uom_internal.id,
+            }
+        )
+        line.product_id = product
+        line.uom_conversion_factor = 7
+        action = wizard.action_import_and_open_move()
+        move = self.env["account.move"].browse(action["res_id"])
+        bill_line = move.invoice_line_ids[0]
+        self.assertEqual(bill_line.product_id, product)
+        self.assertAlmostEqual(bill_line.quantity, 70.1 * 7, places=4)
+        self.assertEqual(bill_line.fiscal_document_line_id.price_gross, 4065.8)
+        self.assertEqual(bill_line.price_subtotal, 4065.8)
+        self.assertAlmostEqual(sum(move.line_ids.mapped("balance")), 0.0, places=2)
+        self.assertAlmostEqual(
+            move.amount_untaxed, sum(move.invoice_line_ids.mapped("price_subtotal"))
+        )
+
     def test_import_captures_infadic_observation(self):
         """The XML <infAdic> observations must survive the import so they can
         be exported back to the SPED C195/0460 registers."""
