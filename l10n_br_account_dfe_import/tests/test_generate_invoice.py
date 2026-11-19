@@ -61,6 +61,15 @@ class TestGenerateInvoice(DfeImportCase):
         self.assertEqual(action["res_model"], "l10n_br_fiscal.document")
         self.assertEqual(action["res_id"], self._imported(KEY_2).id)
 
+    def test_picking_the_product_keeps_the_name_declared_by_the_supplier(self):
+        line = self.document.fiscal_line_ids
+        product = self.env["product.product"].create({"name": "Reviewed product"})
+
+        line.product_id = product
+        line.action_resolve_line()
+
+        self.assertEqual(line.name, "Brand new thing")
+
     def _invoice_button_hidden(self, document):
         admin = self.env.ref("base.user_admin")
         arch = document.with_user(admin).get_view(view_type="form")["arch"]
