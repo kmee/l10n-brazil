@@ -144,6 +144,17 @@ class Document(models.Model):
         )
 
     @api.model
+    def _cte_suggest_product(self, document, company):
+        """The freight product of the company, when the user can see it, goes to the
+        line of a received CT-e, which takes the unit of the product: the review
+        then finds a suggestion to confirm. Nothing is created."""
+        product = self.env["product.product"].search(
+            [("id", "=", company.cte_import_product_id.id)]
+        )
+        if product:
+            document.fiscal_line_ids.product_id = product
+
+    @api.model
     def _cte_status(self, status_code):
         if status_code in PROTOCOL_AUTHORIZED:
             return "authorized"
@@ -172,6 +183,8 @@ class Document(models.Model):
         if issued:
             cte = getattr(parsed.binding, "CTe", None) or parsed.binding
             document.partner_id = self._cte_taker_partner(cte.infCte)
+        else:
+            self._cte_suggest_product(document, company)
         for line in document.fiscal_line_ids:
             line.partner_cfop_id = line.cfop_id
         return document

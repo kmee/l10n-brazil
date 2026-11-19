@@ -105,6 +105,55 @@ class TestCteDocumentImport(EdiImportCase):
             )
         return documents, errors, warnings
 
+    def _freight(self, **values):
+        return self.env["product.product"].create(
+            dict({"name": "Freight service", "type": "service"}, **values)
+        )
+
+    def test_the_default_freight_product_is_a_suggestion_on_the_line(self):
+        product = self._freight(uom_id=self.env.ref("uom.product_uom_dozen").id)
+        self.other_company.cte_import_product_id = product
+        documents, errors, _warnings = self._import(cte_xml())
+        self.assertFalse(errors)
+        line = documents.fiscal_line_ids
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.uom_id, product.uom_id)
+        self.assertEqual(line.import_state, "matched")
+
+    def test_without_the_default_product_the_line_waits_for_the_choice(self):
+        documents, _errors, _warnings = self._import(cte_xml())
+        line = documents.fiscal_line_ids
+        self.assertFalse(line.product_id)
+        self.assertEqual(line.import_state, "pending")
+
+    def test_confirming_the_suggestions_resolves_the_freight_line(self):
+        self.other_company.cte_import_product_id = self._freight()
+        documents, _errors, _warnings = self._import(cte_xml())
+        self.assertEqual(documents.fiscal_line_ids.import_state, "matched")
+        documents.action_import_confirm_suggestions()
+        self.assertEqual(documents.fiscal_line_ids.import_state, "resolved")
+
+    def test_a_product_of_another_company_is_not_suggested(self):
+        self.other_company.cte_import_product_id = self._freight(
+            company_id=self.presumed.id
+        )
+        user = self._fiscal_user("fiscal_user_cte_product", self.other_company)
+        model = self.Document.with_user(user).with_context(
+            allowed_company_ids=self.other_company.ids
+        )
+        documents, errors, _warnings = self._import(cte_xml(), model)
+        self.assertFalse(errors)
+        line = documents.fiscal_line_ids
+        self.assertFalse(line.product_id)
+        self.assertEqual(line.import_state, "pending")
+
+    def test_a_cte_issued_by_the_company_does_not_get_the_freight_product(self):
+        self.presumed.cte_import_product_id = self._freight()
+        content = cte_xml(recipient="12345678000195", emitter=LUCRO_PRESUMIDO)
+        documents, errors, _warnings = self._import(content)
+        self.assertFalse(errors)
+        self.assertFalse(documents.fiscal_line_ids.product_id)
+
     def test_a_cte_is_read_and_becomes_a_document_of_the_recipient(self):
         documents, errors, _warnings = self._import(cte_xml(status="100"))
         self.assertFalse(errors)

@@ -35,6 +35,17 @@ class ResCompany(spec_models.SpecModel):
         string="CT-e Default Serie",
     )
 
+    cte_import_product_id = fields.Many2one(
+        comodel_name="product.product",
+        string="Default CT-e Import Product",
+        domain="[('type', '=', 'service'), '|', ('company_id', '=', False),"
+        " ('company_id', '=', id)]",
+        help="Freight service suggested on the line of a CT-e that the company "
+        "receives when it is imported. The person confirms the suggestion in the "
+        "review. Without it the line waits for the choice of the product. The "
+        "CT-e issued by the company does not use it.",
+    )
+
     cte_dacte_layout = fields.Selection(
         selection=[("1", "Paisagem"), ("2", "Retrato")],
         string="CT-e DACTE Layout",
