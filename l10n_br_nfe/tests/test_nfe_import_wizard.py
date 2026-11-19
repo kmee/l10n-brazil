@@ -1143,7 +1143,9 @@ class NFeImportWizardTest(TransactionCase):
         # the origin is the one chosen on the import; the (partner_order,
         # partner_order_line) pair is what the supplier declared, and the file
         # declared nothing
-        self.assertEqual(fiscal_line.import_purchase_line_id, order.order_line)
+        if "import_purchase_line_id" in fiscal_line._fields:
+            # l10n_br_purchase holds the origin of the line
+            self.assertEqual(fiscal_line.import_purchase_line_id, order.order_line)
         self.assertFalse(fiscal_line.partner_order)
         self.assertFalse(fiscal_line.partner_order_line)
 
@@ -1357,17 +1359,14 @@ class NFeImportWizardTest(TransactionCase):
         self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
         _binding, edoc = self.wizard._import_edoc()
         self.assertEqual(len(edoc.fiscal_line_ids), 2)
-        self.assertEqual(
-            edoc.fiscal_line_ids.mapped("import_purchase_line_id"),
-            order.order_line[1] | order.order_line[0],
-            "each fiscal line must carry the origin of ITS own source",
-        )
-        self.assertEqual(
-            edoc.fiscal_line_ids[0].import_purchase_line_id, order.order_line[1]
-        )
-        self.assertEqual(
-            edoc.fiscal_line_ids[1].import_purchase_line_id, order.order_line[0]
-        )
+        if "import_purchase_line_id" in edoc.fiscal_line_ids._fields:
+            # l10n_br_purchase holds the origin of the line
+            self.assertEqual(
+                edoc.fiscal_line_ids[0].import_purchase_line_id, order.order_line[1]
+            )
+            self.assertEqual(
+                edoc.fiscal_line_ids[1].import_purchase_line_id, order.order_line[0]
+            )
         # what the supplier declared is not rewritten by the origin
         self.assertEqual(edoc.fiscal_line_ids.mapped("partner_order"), [False, False])
 

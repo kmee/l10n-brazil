@@ -538,7 +538,9 @@ class NFeImportTest(TransactionCase):
             f"SELECT ({expr}) FROM account_move_line aml WHERE aml.id = %s",
             [matched.id],
         )
-        self.assertEqual(self.env.cr.fetchone()[0], f"{order.name}-1")
+        if "purchase_ordered_qty" in self.env["account.move.line"]._fields:
+            # l10n_br_purchase_stock: the key is the one of the linked order line
+            self.assertEqual(self.env.cr.fetchone()[0], f"{order.name}-1")
 
         # the other lines keep the reference the document declared (xPed), as
         # the chosen line does: the mapping is per line
