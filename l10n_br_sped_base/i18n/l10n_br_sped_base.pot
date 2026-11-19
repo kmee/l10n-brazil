@@ -550,6 +550,20 @@ msgid "The registration of the accountant %(name)s lacks %(missing)s, which the 
 msgstr ""
 
 #. module: l10n_br_sped_base
+#. odoo-python
+#: code:addons/l10n_br_sped_base/models/sped_declaration.py:0
+#, python-format
+msgid "Flushed all Registers from Declaration!"
+msgstr ""
+
+#. module: l10n_br_sped_base
+#. odoo-python
+#: code:addons/l10n_br_sped_base/models/sped_mixin.py:0
+#, python-format
+msgid "Imported from file:"
+msgstr ""
+
+#. module: l10n_br_sped_base
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__203
 msgid "203 - Administrador"
 msgstr ""

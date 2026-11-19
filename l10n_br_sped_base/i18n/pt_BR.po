@@ -355,7 +355,7 @@ msgstr ""
 msgid ""
 "O signatario %(nome)s e contabilista e precisa do numero de inscricao no CRC"
 " para assinar a ECF."
-msgstr ""
+msgstr "O signatário %(nome)s é contabilista e precisa do número de inscrição no CRC para assinar a ECF."
 
 #. module: l10n_br_sped_base
 #: model:ir.model.fields,field_description:l10n_br_sped_base.field_l10n_br_sped_declaration__res_model
@@ -397,7 +397,7 @@ msgstr "ID do Registro"
 #: code:addons/l10n_br_sped_base/models/sped_mixin.py:0
 #, python-format
 msgid "Register %(code)s doesn't match Odoo %(kind)s SPED structure!"
-msgstr ""
+msgstr "O registro %(code)s não confere com a estrutura SPED %(kind)s do Odoo!"
 
 #. module: l10n_br_sped_base
 #. odoo-python
@@ -489,7 +489,7 @@ msgstr ""
 #: code:addons/l10n_br_sped_base/models/sped_mixin.py:0
 #, python-format
 msgid "Undefined mapping model for Register %(name)s and model %(model)s"
-msgstr ""
+msgstr "Modelo de mapeamento indefinido para o registro %(name)s e o modelo %(model)s"
 
 #. module: l10n_br_sped_base
 #: model:ir.model.fields,field_description:l10n_br_sped_base.field_l10n_br_sped_declaration__website_message_ids
@@ -551,6 +551,20 @@ msgstr "Cadastre o contador da empresa (campo Contador, com CPF e CRC) antes de 
 #, python-format
 msgid "The registration of the accountant %(name)s lacks %(missing)s, which the record 0100 of the file needs. Fill it in the contact of the accountant."
 msgstr "O cadastro do contador %(name)s não tem %(missing)s, que o registro 0100 do arquivo exige. Preencha no contato do contador."
+
+#. module: l10n_br_sped_base
+#. odoo-python
+#: code:addons/l10n_br_sped_base/models/sped_declaration.py:0
+#, python-format
+msgid "Flushed all Registers from Declaration!"
+msgstr "Todos os registros da declaração foram limpos!"
+
+#. module: l10n_br_sped_base
+#. odoo-python
+#: code:addons/l10n_br_sped_base/models/sped_mixin.py:0
+#, python-format
+msgid "Imported from file:"
+msgstr "Importado do arquivo:"
 
 #. module: l10n_br_sped_base
 #: model:ir.model.fields.selection,name:l10n_br_sped_base.selection__l10n_br_sped_signer__qualification__203

@@ -128,6 +128,11 @@ def _credit_groups(env, declaration, tax_domain):
     if not rows and not assessment.credit_total:
         return []
     label = tax_domain.upper()
+    # `_()` finds the language of the message in a `context` of the caller, or in
+    # the `self` of a method: in a function of the module it is this one, or the
+    # message goes out in the language of the user of the session, not the one of
+    # the declaration
+    context = env.context  # noqa: F841
     if not assessment:
         raise UserError(
             _(
@@ -244,6 +249,7 @@ def _check_regime(assessment):
     """The contribution code (table 4.3.5) and the field of the M200 the detail
     points at come from the regime of the assessment: without it the register
     would go out with a blank code, which the PVA refuses."""
+    context = assessment.env.context  # noqa: F841
     if assessment.regime not in COD_CONT_BY_REGIME:
         raise UserError(
             _(

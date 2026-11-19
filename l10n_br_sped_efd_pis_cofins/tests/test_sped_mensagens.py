@@ -4,6 +4,9 @@
 from odoo.exceptions import UserError
 from odoo.tests.common import tagged
 
+from odoo.addons.l10n_br_sped_efd_pis_cofins.models.sped_efd_pis_cofins import (
+    _check_regime,
+)
 from odoo.addons.l10n_br_tax_assessment.tests.common_entrada import SpedEntradaCommon
 
 from .test_sped_credito import CreditMixin
@@ -56,3 +59,40 @@ class TestSpedPisCofinsMessages(CreditMixin, SpedEntradaCommon):
         self.assertIn("33,00", message)
         self.assertIn("16,50", message)
         self.assertNotIn("33.00", message)
+
+    def test_the_message_of_the_mismatch_is_in_portuguese(self):
+        """A message of a function of the module has no self: the language is the
+        one of the declaration, not the one of the user of the session."""
+        self._entry("fo_compras_compras_comercializacao", "401")
+        self._assess("pis")
+        self._assess("cofins")
+        self._entry("fo_compras_compras", "402")
+        self._set_accountant()
+        declaration = self._declaration_july()
+        with self.assertRaises(UserError) as error:
+            declaration.with_context(lang="pt_BR").button_create_sped_files()
+        self.assertIn("não é o crédito da apuração lançada", error.exception.args[0])
+        self.assertNotIn("is not the credit", error.exception.args[0])
+
+    def test_the_message_without_assessment_is_in_portuguese(self):
+        self._entry("fo_compras_compras_comercializacao", "401")
+        self._set_accountant()
+        declaration = self._declaration_july()
+        with self.assertRaises(UserError) as error:
+            declaration.with_context(lang="pt_BR").button_create_sped_files()
+        self.assertIn(
+            "apuração de PIS do regime não cumulativo", error.exception.args[0]
+        )
+
+    def test_the_message_of_the_contribution_code_is_in_portuguese(self):
+        """A function of the module again: the language is the one of the
+        assessment it is called with."""
+        pis = self._assess("pis", regime=None)
+        self.env.cr.execute(
+            "UPDATE l10n_br_tax_assessment SET regime = 'not_applicable' WHERE id = %s",
+            (pis.id,),
+        )
+        pis.invalidate_recordset(["regime"])
+        with self.assertRaises(UserError) as error:
+            _check_regime(pis.with_context(lang="pt_BR"))
+        self.assertIn("código da contribuição", error.exception.args[0])
