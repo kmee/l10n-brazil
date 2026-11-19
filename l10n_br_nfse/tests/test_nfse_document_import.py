@@ -255,7 +255,13 @@ class TestNfseDocumentImport(EdiImportCase):
         self.assertAlmostEqual(documents.amount_financial_total, 938.5)
         self.assertEqual(documents._edi_get_installments(), [])
         summary = str(documents.edi_payment_summary)
-        for text in ("Withholdings", "61.50", "Net amount payable", "938.50"):
+        for text in (
+            "Withholdings",
+            "1,000.00",
+            "61.50",
+            "Net amount payable",
+            "938.50",
+        ):
             self.assertIn(text, summary)
 
     def test_every_withholding_of_the_file_has_value_base_and_tax(self):
@@ -285,6 +291,29 @@ class TestNfseDocumentImport(EdiImportCase):
         self.assertAlmostEqual(documents.amount_tax_withholding, withheld)
         self.assertAlmostEqual(
             documents.amount_financial_total, line.amount_fiscal - withheld
+        )
+
+    def test_confirming_a_nfse_issued_by_the_company_neither_sends_nor_learns(self):
+        content = nfse_xml(taker=UNKNOWN_PROVIDER, provider=LUCRO_PRESUMIDO)
+        documents, _errors, _warnings = self._import(
+            content, operation=True, operation_type="out"
+        )
+        self.assertEqual(documents.fiscal_operation_type, "out")
+        line = documents.fiscal_line_ids
+        line.product_id = self.env["product.product"].create(
+            {"name": "Service", "type": "service"}
+        )
+        line.action_resolve_line()
+        sequences = self._sequences()
+        documents.action_document_confirm()
+        self.assertEqual(documents.state_edoc, "autorizada")
+        self.assertEqual(documents.document_number, "1")
+        self.assertEqual(self._sequences(), sequences)
+        self.assertFalse(documents.send_file_id)
+        self.assertFalse(
+            self.env["product.supplierinfo"].search(
+                [("partner_id", "=", documents.partner_id.id)]
+            )
         )
 
     def test_a_common_fiscal_user_imports_a_nfse(self):
