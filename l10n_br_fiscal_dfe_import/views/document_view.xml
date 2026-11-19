@@ -83,6 +83,7 @@
                 />
                 <field
                     name="import_uom_id"
+                    context="{'dfe_import_uom_search': True}"
                     attrs="{'invisible': [('import_state', '=', False)]}"
                 />
                 <field

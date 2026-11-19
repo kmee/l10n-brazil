@@ -127,6 +127,26 @@ class TestDfeImport(DfeImportCase):
         ), self.assertRaisesRegex(UserError, "could not be reached"):
             wizard.action_import()
 
+    def test_import_unit_is_searched_by_fiscal_code_and_alias(self):
+        unit = self.env["uom.uom"].create(
+            {
+                "name": "Wrapping",
+                "code": "WRP9",
+                "category_id": self.uom_unit.category_id.id,
+                "uom_type": "smaller",
+                "factor_inv": 1,
+                "alias_ids": [Command.create({"code": "EMBALAGEM9"})],
+            }
+        )
+        search = self.env["uom.uom"].with_context(dfe_import_uom_search=True)
+
+        by_code = [uom_id for uom_id, _name in search.name_search("WRP9")]
+        by_alias = [uom_id for uom_id, _name in search.name_search("EMBALAGEM9")]
+
+        self.assertIn(unit.id, by_code)
+        self.assertIn(unit.id, by_alias)
+        self.assertFalse(self.env["uom.uom"].name_search("WRP9"))
+
     def test_zip_with_two_notes_and_an_invalid_file(self):
         buffer = BytesIO()
         with zipfile.ZipFile(buffer, "w") as archive:
