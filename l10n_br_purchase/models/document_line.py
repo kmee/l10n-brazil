@@ -33,7 +33,9 @@ class FiscalDocumentLine(models.Model):
         index=True,
         help="Review of the origin of an imported line. Pending: the supplier "
         "has open order lines and none was chosen. Suggested: an automatic "
-        "suggestion waits for confirmation. Resolved: a person chose it. "
+        "suggestion waits for confirmation. Resolved: a person chose it, or the "
+        "supplier declared it with no doubt (order and item of the file); "
+        "resolved with no order line means the line has no order. "
         "Empty when there is nothing to choose from.",
     )
 
@@ -182,10 +184,12 @@ class FiscalDocumentLine(models.Model):
     def _suggest_import_origin(self):
         """Suggest the origin of an imported line, never overriding a choice.
 
-        The reference of the file (xPed and nItemPed) wins; without it, the
-        only open order line of the supplier for the product is suggested;
-        otherwise the line waits for a decision, and with nothing to choose
-        from it has no origin state at all. Nothing is inferred by value.
+        The reference of the file (xPed and nItemPed) wins and, when it points
+        to exactly one open line with the product, the origin is resolved: the
+        supplier declared it. Without it, the only open order line of the
+        supplier for the product is just suggested; otherwise the line waits
+        for a decision, and with nothing to choose from it has no origin state
+        at all. Nothing is inferred by value.
         """
         for line in self:
             if (
@@ -196,9 +200,14 @@ class FiscalDocumentLine(models.Model):
                 continue
             order_line = line._find_purchase_line_by_reference()
             candidates = line._import_origin_candidates()
-            if not order_line and len(candidates) == 1:
-                order_line = candidates
             if order_line:
+                # the supplier declared the order and the item, and exactly one
+                # open line of the order has the product: nothing left to decide
+                state = "resolved"
+            elif len(candidates) == 1:
+                # the only open line of the supplier for the product is a
+                # guess: a person confirms it
+                order_line = candidates
                 state = "suggested"
             elif candidates or (
                 line.document_id.partner_id
@@ -255,6 +264,11 @@ class FiscalDocumentLine(models.Model):
     def _apply_import_depara(self, *args, **kwargs):
         result = super()._apply_import_depara(*args, **kwargs)
         self._suggest_import_origin()
+        # the de-para brings the operation line of the operation back to its
+        # default: a decided origin takes the destination of its order again
+        self.filtered(
+            lambda line: line.import_origin_state == "resolved"
+        )._apply_import_origin_operation_line()
         return result
 
     @api.model

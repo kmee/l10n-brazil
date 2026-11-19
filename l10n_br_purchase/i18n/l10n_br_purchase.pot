@@ -2081,7 +2081,7 @@ msgstr ""
 
 #. module: l10n_br_purchase
 #: model:ir.model.fields,help:l10n_br_purchase.field_l10n_br_fiscal_document_line__import_origin_state
-msgid "Review of the origin of an imported line. Pending: the supplier has open order lines and none was chosen. Suggested: an automatic suggestion waits for confirmation. Resolved: a person chose it. Empty when there is nothing to choose from."
+msgid "Review of the origin of an imported line. Pending: the supplier has open order lines and none was chosen. Suggested: an automatic suggestion waits for confirmation. Resolved: a person chose it, or the supplier declared it with no doubt (order and item of the file); resolved with no order line means the line has no order. Empty when there is nothing to choose from."
 msgstr ""
 
 #. module: l10n_br_purchase
@@ -2127,4 +2127,11 @@ msgstr ""
 #. module: l10n_br_purchase
 #: model:ir.model.fields,help:l10n_br_purchase.field_account_move__has_unconfirmed_import_origin
 msgid "Technical: a draft vendor bill of an imported document that has a line whose purchase order origin was only suggested or is still pending, so the destination of the order was not applied."
+msgstr ""
+
+#. module: l10n_br_purchase
+#: code:addons/l10n_br_purchase/models/document.py
+#, python-format
+msgid ""
+"- %(count)s line(s) with the origin (purchase order line) not decided yet: use Confirm Origins to accept the suggestions, choose the order line of each one, or mark the origin of the line as Resolved to go on without an order."
 msgstr ""

@@ -10838,3 +10838,18 @@ msgstr ""
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__partner_icms_tax_benefit_code
 msgid "Fiscal benefit code (<cBenef>) declared by the counterparty in the imported document. Preserved verbatim for SPED C197 (COD_AJ), while icms_tax_benefit_id/code reflects the company's own de-para mapping."
 msgstr ""
+
+#. module: l10n_br_fiscal
+#: code:addons/l10n_br_fiscal/models/document.py
+#, python-format
+msgid ""
+"- %(count)s line(s) not resolved yet (%(lines)s): confirm the product of each one (Confirmed column of the import grid, or Resolve button of the line in the document)."
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: code:addons/l10n_br_fiscal/models/document.py
+#, python-format
+msgid ""
+"The imported document %(document)s was not reviewed yet:\n"
+"%(errors)s"
+msgstr ""

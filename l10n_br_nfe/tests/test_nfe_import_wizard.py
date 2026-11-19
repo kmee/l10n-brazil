@@ -623,7 +623,8 @@ class NFeImportWizardTest(TransactionCase):
         matched from the XML uCom/uTrib. Otherwise ``_check_document_import``
         rejects the document with "no unit of measure".
         """
-        self._prepare_wizard(self.xml_1)
+        # a product the base does not have, so that the import really creates it
+        self._prepare_wizard(self._unknown_product_xml())
         self.wizard.allow_product_creation = True
         self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
         _binding, edoc = self.wizard._import_edoc()

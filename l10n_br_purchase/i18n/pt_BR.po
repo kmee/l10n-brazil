@@ -3347,8 +3347,8 @@ msgstr "Estado da Origem"
 
 #. module: l10n_br_purchase
 #: model:ir.model.fields,help:l10n_br_purchase.field_l10n_br_fiscal_document_line__import_origin_state
-msgid "Review of the origin of an imported line. Pending: the supplier has open order lines and none was chosen. Suggested: an automatic suggestion waits for confirmation. Resolved: a person chose it. Empty when there is nothing to choose from."
-msgstr "Revisão da origem de uma linha importada. Pendente: o fornecedor tem linhas de pedido em aberto e nenhuma foi escolhida. Sugerida: uma sugestão automática aguarda confirmação. Resolvida: uma pessoa escolheu. Vazio quando não há o que escolher."
+msgid "Review of the origin of an imported line. Pending: the supplier has open order lines and none was chosen. Suggested: an automatic suggestion waits for confirmation. Resolved: a person chose it, or the supplier declared it with no doubt (order and item of the file); resolved with no order line means the line has no order. Empty when there is nothing to choose from."
+msgstr "Revisão da origem de uma linha importada. Pendente: o fornecedor tem linhas de pedido em aberto e nenhuma foi escolhida. Sugerida: uma sugestão automática aguarda confirmação. Resolvida: uma pessoa escolheu, ou o fornecedor declarou sem dúvida (pedido e item do arquivo); resolvida sem linha de pedido significa que a linha não tem pedido. Vazio quando não há o que escolher."
 
 #. module: l10n_br_purchase
 #: model:ir.model.fields.selection,name:l10n_br_purchase.selection__l10n_br_fiscal_document_line__import_origin_state__pending
@@ -3394,3 +3394,11 @@ msgstr "Tem origem de importação não confirmada"
 #: model:ir.model.fields,help:l10n_br_purchase.field_account_move__has_unconfirmed_import_origin
 msgid "Technical: a draft vendor bill of an imported document that has a line whose purchase order origin was only suggested or is still pending, so the destination of the order was not applied."
 msgstr "Técnico: fatura de fornecedor em rascunho de um documento importado que tem linha cuja origem de pedido de compra foi apenas sugerida ou ainda está pendente, de modo que a destinação do pedido não foi aplicada."
+
+#. module: l10n_br_purchase
+#: code:addons/l10n_br_purchase/models/document.py
+#, python-format
+msgid ""
+"- %(count)s line(s) with the origin (purchase order line) not decided yet: use Confirm Origins to accept the suggestions, choose the order line of each one, or mark the origin of the line as Resolved to go on without an order."
+msgstr ""
+"- %(count)s linha(s) com a origem (linha do pedido de compra) ainda não decidida: use Confirmar origens para aceitar as sugestões, escolha a linha do pedido de cada uma, ou marque a origem da linha como Resolvida para seguir sem pedido."

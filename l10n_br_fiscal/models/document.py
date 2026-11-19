@@ -7,7 +7,7 @@ from ast import literal_eval
 from erpbrasil.base.fiscal.edoc import ChaveEdoc
 
 from odoo import _, api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 
 from ..constants.fiscal import (
     COMMENT_TYPE_COMMERCIAL,
@@ -310,6 +310,54 @@ class Document(models.Model):
         for document in self.filtered("imported_document"):
             for line in document.fiscal_line_ids:
                 line.import_state = "matched" if line.product_id else "pending"
+
+    def _import_review_errors(self):
+        """What still waits for a human decision in an imported document.
+
+        One message per kind of pending review; the modules that add a review
+        of their own (the origin of the line, for instance) extend it. Lines
+        without a review state were not imported from a file and are not asked
+        for anything.
+        """
+        self.ensure_one()
+        if not self.imported_document:
+            return []
+        pending = self.fiscal_line_ids.filtered(
+            lambda line: line.import_state and line.import_state != "resolved"
+        )
+        if not pending:
+            return []
+        return [
+            _(
+                "- %(count)s line(s) not resolved yet (%(lines)s): confirm the "
+                "product of each one (Confirmed column of the import grid, or "
+                "Resolve button of the line in the document).",
+                count=len(pending),
+                lines=", ".join(
+                    (line.name or line.product_id.display_name or str(line.id))[:40]
+                    for line in pending[:5]
+                )
+                + (", ..." if len(pending) > 5 else ""),
+            )
+        ]
+
+    def _check_import_review(self):
+        """Refuse to go on with an imported document that was not reviewed.
+
+        The bill, and the bookkeeping that follows the confirmation of the
+        document, must not rest on a guess made by the import.
+        """
+        for document in self:
+            errors = document._import_review_errors()
+            if errors:
+                raise UserError(
+                    _(
+                        "The imported document %(document)s was not reviewed "
+                        "yet:\n%(errors)s",
+                        document=document.display_name,
+                        errors="\n".join(errors),
+                    )
+                )
 
     def _suggest_fiscal_operation(self):
         """Suggest the document fiscal operation from the operation most

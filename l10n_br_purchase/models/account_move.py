@@ -193,8 +193,8 @@ class AccountMove(models.Model):
 
     def _link_purchase_lines_from_fiscal_reference(self):
         """Link the imported bill lines to the purchase order lines decided
-        on the lines of the imported document (suggested or resolved origin),
-        so the order counts the quantity as invoiced.
+        on the lines of the imported document (resolved origin only), so the
+        order counts the quantity as invoiced.
 
         A document line without origin still falls back to the xPed and
         nItemPed it carries. A purchase order line is linked to one bill line
@@ -210,6 +210,9 @@ class AccountMove(models.Model):
         ):
             fiscal_line = line.fiscal_document_line_id
             purchase_line = fiscal_line.import_purchase_line_id
+            if fiscal_line.import_origin_state != "resolved":
+                # a suggestion (or a pending choice) is not linked to the order
+                purchase_line = purchase_line.browse()
             if not purchase_line and not fiscal_line.import_origin_state:
                 purchase_line = PurchaseLine._find_by_import_reference(
                     self.company_id,

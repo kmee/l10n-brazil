@@ -319,11 +319,19 @@ class DocumentImportWizard(models.TransientModel):
         for line in edoc.fiscal_line_ids.filtered("product_id"):
             product = line.product_id
             if (
-                product.create_date >= edoc.create_date
+                self._product_created_by_import(product, edoc)
                 and line.stock_cost_unit
                 and product.standard_price != line.stock_cost_unit
             ):
                 product.standard_price = line.stock_cost_unit
+
+    @api.model
+    def _product_created_by_import(self, product, edoc):
+        """True for a product created by the import of this document (created
+        in the transaction of the document), not found among the existing."""
+        return bool(
+            product and edoc.create_date and product.create_date >= edoc.create_date
+        )
 
     def _apply_wizard_depara(self, edoc):
         """Apply the de-para reviewed in the wizard grid on the persisted
@@ -358,6 +366,16 @@ class DocumentImportWizard(models.TransientModel):
                     line.uom_id = wizard_line.uom_internal
                     line.product_id.uom_id = wizard_line.uom_internal
                     line.product_id.uom_po_id = wizard_line.uom_internal
+                if self._product_created_by_import(line.product_id, edoc):
+                    # the person asked for the unmapped products to be created
+                    # from the file: the product is the line of the file, there
+                    # is no guess left to review
+                    line._apply_import_depara(
+                        product=line.product_id,
+                        uom=line.uom_id,
+                        factor=1.0,
+                        fiscal_operation=self.fiscal_operation_id,
+                    )
             if wizard_line.new_cfop_id:
                 # explicit CFOP override reviewed by the user, applied after
                 # the operation remap.
