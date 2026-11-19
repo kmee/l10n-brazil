@@ -66,7 +66,7 @@ class Document(models.Model):
         if not self.fiscal_operation_id:
             messages.append(
                 _(
-                    "No fiscal operation matches the CFOP of the issuer: choose the "
+                    "No fiscal operation matches the CFOP of the document: choose the "
                     "fiscal operation of the document and the operation line of "
                     "each line."
                 )
@@ -281,8 +281,8 @@ class Document(models.Model):
         decided is never undone."""
         for document in self.filtered("imported_document"):
             document._init_import_states()
+            document._edi_import_suggest_operation()
             if document.fiscal_operation_type == FISCAL_IN:
-                document._edi_import_suggest_operation()
                 document._edi_import_apply_supplier_depara()
             for line in document.fiscal_line_ids.filtered(
                 lambda line: line.import_state == "matched"
@@ -292,22 +292,35 @@ class Document(models.Model):
 
     def _edi_import_suggest_operation(self):
         """The operation of the document and of each line that has none, from the
-        CFOP the issuer declared."""
+        CFOP declared in the file: the inverse of the issuer for a document received,
+        the very CFOP for a document the company issued elsewhere. Nothing is
+        assigned when nothing matches: an empty operation would recompute the
+        direction of the document."""
         self.ensure_one()
+        direction = self.fiscal_operation_type
+        if not direction:
+            return
+        operation_lines = self.env["l10n_br_fiscal.operation.line"]
+        found = {
+            line: operation_lines._find_by_issuer_cfop(
+                line.partner_cfop_id, self.operation_name, direction
+            )
+            for line in self.fiscal_line_ids.filtered(
+                lambda line: not line.fiscal_operation_line_id
+            )
+        }
         if not self.fiscal_operation_id:
-            # An empty operation would recompute the direction of the document
-            operation = self._suggest_fiscal_operation()
+            if direction == FISCAL_IN:
+                operation = self._suggest_fiscal_operation()
+            else:
+                votes = [op_line.fiscal_operation_id for op_line in found.values()]
+                votes = [operation for operation in votes if operation]
+                operation = votes and max(set(votes), key=votes.count)
             if operation:
                 self.fiscal_operation_id = operation
         if not self.fiscal_operation_id:
             return
-        operation_lines = self.env["l10n_br_fiscal.operation.line"]
-        for line in self.fiscal_line_ids.filtered(
-            lambda line: not line.fiscal_operation_line_id
-        ):
-            operation_line = operation_lines._find_by_issuer_cfop(
-                line.partner_cfop_id, self.operation_name, FISCAL_IN
-            )
+        for line, operation_line in found.items():
             line.fiscal_operation_id = (
                 operation_line.fiscal_operation_id or self.fiscal_operation_id
             )

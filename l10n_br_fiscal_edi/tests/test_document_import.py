@@ -247,6 +247,37 @@ class TestDocumentImport(EdiImportCase):
             self.assertFalse(document.fiscal_operation_id)
             self.assertEqual(document.fiscal_operation_type, direction)
 
+    def test_a_document_the_company_issued_gets_its_operation_as_an_output(self):
+        """A document the company issued in another system is reviewed like any
+        other: its operation is the one of its own CFOP, in the direction of out."""
+        operation = self.env["l10n_br_fiscal.operation"].create(
+            {
+                "code": "TST-OUT",
+                "name": "Own sale (test)",
+                "fiscal_operation_type": "out",
+                "fiscal_type": "sale",
+            }
+        )
+        self.env["l10n_br_fiscal.operation.line"].create(
+            {
+                "fiscal_operation_id": operation.id,
+                "name": "Own sale (test)",
+                "cfop_internal_id": self.env.ref("l10n_br_fiscal.cfop_5102").id,
+            }
+        )
+        operation.action_approve()
+        document = self._create_imported_document(
+            fiscal_operation_id=False,
+            lines=[{"partner_cfop_id": self.env.ref("l10n_br_fiscal.cfop_5102").id}],
+        )
+        document._edi_import_after_create(self._parsed(KEY_1), "issuer")
+        document.operation_name = operation.name
+        document._edi_import_suggest()
+        self.assertEqual(document.fiscal_operation_id, operation)
+        self.assertEqual(document.fiscal_operation_type, "out")
+        self.assertEqual(document.fiscal_line_ids.fiscal_operation_id, operation)
+        self.assertEqual(document.fiscal_line_ids.import_state, "pending")
+
     def test_the_suggestion_can_run_again_without_undoing_a_decision(self):
         product = self.env["product.product"].create({"name": "Chosen by a person"})
         document = self._create_imported_document()
