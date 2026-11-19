@@ -14,6 +14,7 @@
             "erpbrasil.edoc",
             "erpbrasil.transmissao",
             "erpbrasil-base>=2.4.2",
+            "nfelib>=3.2.0",
         ],
     },
     "depends": [

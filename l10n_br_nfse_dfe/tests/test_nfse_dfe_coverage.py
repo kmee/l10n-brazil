@@ -17,21 +17,23 @@ from odoo import fields
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests.common import TransactionCase
 
+from odoo.addons.l10n_br_nfse.models.document_key import (
+    L10nBrFiscalDocument as NfseDocument,
+)
+from odoo.addons.l10n_br_nfse.services.nfse_xml import (
+    NfseNacionalBinding,
+    normalize_access_key,
+    parse_nfse_datetime,
+    parse_nfse_xml,
+)
 from odoo.addons.l10n_br_nfse_dfe.models.dfe_document import (
     L10nBrFiscalDfeDocument as NfseDfeDocument,
 )
-from odoo.addons.l10n_br_nfse_dfe.models.document import (
-    L10nBrFiscalDocument as NfseDocument,
-)
-from odoo.addons.l10n_br_nfse_dfe.services.nfse_xml import (
-    NfseNacionalBinding,
+from odoo.addons.l10n_br_nfse_dfe.services.nfse_dfe_xml import (
     decode_arquivo_xml,
     is_cancel_event,
-    normalize_access_key,
-    parse_nfse_datetime,
     parse_nfse_event_xml,
     parse_nfse_file,
-    parse_nfse_xml,
     xml_root_is_nfse,
 )
 from odoo.addons.l10n_br_nfse_dfe.services.sefin_nfse import SefinNfseClient
@@ -90,7 +92,7 @@ class TestNfseXmlEdges(TransactionCase):
         self.assertTrue(decode_arquivo_xml(b"<NFSe/>").startswith(b"<"))
         self.assertTrue(decode_arquivo_xml("<NFSe/>").startswith(b"<"))
         with mock.patch(
-            "odoo.addons.l10n_br_nfse_dfe.services.nfse_xml.base64.b64decode",
+            "odoo.addons.l10n_br_nfse_dfe.services.nfse_dfe_xml.base64.b64decode",
             side_effect=ValueError("bad"),
         ):
             self.assertIsNone(decode_arquivo_xml("abc"))

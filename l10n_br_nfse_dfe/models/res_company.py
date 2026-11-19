@@ -25,6 +25,10 @@ from odoo.addons.l10n_br_fiscal_dfe.constants.dfe import (
     CSTAT_SUCCESS,
 )
 from odoo.addons.l10n_br_fiscal_dfe.tools import utils
+from odoo.addons.l10n_br_nfse.services.nfse_xml import (
+    normalize_access_key,
+    parse_nfse_xml,
+)
 
 from ..constants.nfse_dfe import (
     NFSE_EVENT_DOCUMENT_TYPES,
@@ -37,13 +41,11 @@ from ..constants.nfse_dfe import (
     NFSE_STATE_AUTHORIZED,
     NFSE_STATE_CANCELLED,
 )
-from ..services.nfse_xml import (
+from ..services.nfse_dfe_xml import (
     decode_arquivo_xml,
     is_cancel_event,
-    normalize_access_key,
     normalize_event_code,
     parse_nfse_event_xml,
-    parse_nfse_xml,
     xml_root_is_nfse,
 )
 from ..services.sefin_nfse import NfseHttpResponse, SefinNfseClient

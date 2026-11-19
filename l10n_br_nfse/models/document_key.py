@@ -1,6 +1,8 @@
 # Copyright 2026 Escodoo - Marcel Savegnago <marcel.savegnago@escodoo.com.br>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+# pylint: disable=consider-merging-classes-inherited
+
 import re
 
 from odoo import _, api, models
@@ -8,7 +10,7 @@ from odoo.exceptions import ValidationError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import MODELO_FISCAL_NFSE
 
-from ..constants.nfse_dfe import NFSE_ACCESS_KEY_SIZE
+from ..constants.nfse import NFSE_ACCESS_KEY_SIZE
 
 
 class L10nBrFiscalDocument(models.Model):

@@ -16,9 +16,9 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     TAX_DOMAIN_ISSQN,
 )
 from odoo.addons.l10n_br_fiscal_dfe.tools import utils
+from odoo.addons.l10n_br_nfse.constants.nfse import NFSE_ACCESS_KEY_SIZE
 
-from ..constants.nfse_dfe import NFSE_ACCESS_KEY_SIZE
-from ..services.nfse_xml import parse_nfse_file
+from ..services.nfse_dfe_xml import parse_nfse_file
 
 
 class DocumentImportWizard(models.TransientModel):
