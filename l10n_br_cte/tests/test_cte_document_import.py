@@ -187,6 +187,59 @@ class TestCteDocumentImport(EdiImportCase):
         self.assertIn("12.345.678/0001-95", errors[0][1])
         self.assertNotIn("81.583.054/0001-29", errors[0][1])
 
+    def _registered(self, cnpj):
+        return self.env["res.partner"].create(
+            {
+                "name": "Registered as is",
+                "legal_name": "Registered legal name",
+                "vat": f"{cnpj[:2]}.{cnpj[2:5]}.{cnpj[5:8]}/{cnpj[8:12]}-{cnpj[12:]}",
+                "is_company": True,
+                "country_id": self.env.ref("base.br").id,
+                "state_id": self.env.ref("base.state_br_sp").id,
+                "city_id": self.env.ref("l10n_br_base.city_3550308").id,
+                "street_name": "Registered street",
+                "street_number": "999",
+                "district": "Registered district",
+                "zip": "01310-100",
+                "l10n_br_ie_code": "110042490114",
+                "l10n_br_im_code": "222222",
+                "phone": "11 99999-0000",
+                "email": "registered@example.com",
+            }
+        )
+
+    def _assert_registry_untouched(self, content, company, issued):
+        names = (
+            "name legal_name street_name street_number district zip city_id state_id "
+            "l10n_br_ie_code l10n_br_im_code phone email"
+        ).split()
+        partner = self._registered("12345678000195")
+        watched = partner | company.partner_id
+
+        def registry():
+            watched.invalidate_recordset()
+            return (company.name, [[p[name] for name in names] for p in watched])
+
+        before = registry()
+        documents, errors, _warnings = self._import(content)
+        self.assertFalse(errors)
+        self.assertEqual(documents.partner_id, partner)
+        line = documents.fiscal_line_ids
+        line.product_id = self._freight()
+        line.action_resolve_line()
+        with patch.object(type(documents), "_document_export"):
+            documents.action_document_confirm()
+        self.assertEqual(registry(), before)
+
+    def test_a_registered_emitter_and_the_company_are_never_written(self):
+        self._assert_registry_untouched(
+            cte_xml(emitter="12345678000195"), self.other_company, False
+        )
+
+    def test_a_registered_taker_and_the_company_are_never_written(self):
+        content = cte_xml(recipient="12345678000195", emitter=LUCRO_PRESUMIDO)
+        self._assert_registry_untouched(content, self.presumed, True)
+
     def test_a_cte_is_read_and_becomes_a_document_of_the_recipient(self):
         documents, errors, _warnings = self._import(cte_xml(status="100"))
         self.assertFalse(errors)
