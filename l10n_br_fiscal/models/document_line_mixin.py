@@ -41,6 +41,8 @@ from ..constants.fiscal import (
     TAX_DOMAIN_PIS_ST,
     TAX_DOMAIN_PIS_WH,
     TAX_ICMS_OR_ISSQN,
+    TAX_VALUE_FIELD_NAMES,
+    TAX_VALUE_FIELDS,
 )
 from ..constants.icms import (
     ICMS_BASE_TYPE,
@@ -79,6 +81,7 @@ class FiscalDocumentLineMixin(models.AbstractModel):
     """
 
     _name = "l10n_br_fiscal.document.line.mixin"
+    _inherit = "l10n_br_fiscal.report.filter.mixin"
     _description = "Document Fiscal Mixin"
 
     @api.model
@@ -367,6 +370,12 @@ class FiscalDocumentLineMixin(models.AbstractModel):
             # Por segurança, sempre recalcula se um campo relevante mudou.
             self._update_fiscal_tax_ids()
 
+        imported = self.filtered(lambda line: line._is_imported())
+        if imported and TAX_VALUE_FIELD_NAMES.intersection(vals):
+            tax_groups = imported._tax_groups_by_domain()
+            for line in imported:
+                line._update_imported_tax_amounts(tax_groups)
+
         return res
 
     def _update_fiscal_tax_ids(self):
@@ -430,7 +439,13 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         Compute base, percent, value... tax fields for ICMS, IPI, PIS, COFINS... taxes.
         """
         null_mask = None
-        for line in self.filtered(lambda line: not line._is_imported()):
+        tax_groups = None
+        for line in self:
+            if line._is_imported():
+                if tax_groups is None:
+                    tax_groups = line._tax_groups_by_domain()
+                line._update_imported_tax_amounts(tax_groups)
+                continue
             if null_mask is None:
                 null_mask = self._build_null_mask_dict()
             to_update = null_mask.copy()
@@ -498,6 +513,38 @@ class FiscalDocumentLineMixin(models.AbstractModel):
                 line.update(to_update)
             else:
                 line.write(to_update)
+
+    def _tax_groups_by_domain(self):
+        groups = self.env["l10n_br_fiscal.tax.group"].search([])
+        return {group.tax_domain: group for group in groups}
+
+    def _update_imported_tax_amounts(self, tax_groups):
+        self.ensure_one()
+        empty_group = self.env["l10n_br_fiscal.tax.group"]
+        amount_included = amount_not_included = amount_withholding = 0.0
+        for tax_field in FISCAL_TAX_ID_FIELDS:
+            tax_domain = tax_field[: -len("_tax_id")]
+            tax_value = self[TAX_VALUE_FIELDS[tax_domain]]
+            if not tax_value:
+                continue
+            tax_group = self[tax_field].tax_group_id or tax_groups.get(
+                tax_domain, empty_group
+            )
+            if tax_group.tax_withholding:
+                amount_withholding += tax_value
+            elif tax_group.tax_include:
+                amount_included += tax_value
+            else:
+                amount_not_included += tax_value
+        to_update = {
+            "amount_tax_included": amount_included,
+            "amount_tax_not_included": amount_not_included,
+            "amount_tax_withholding": amount_withholding,
+        }
+        if self != self._origin:
+            self.update(to_update)
+        else:
+            self.write(to_update)
 
     def _prepare_tax_fields(self, compute_result):
         self.ensure_one()
@@ -2807,3 +2854,39 @@ class FiscalDocumentLineMixin(models.AbstractModel):
             doc_line.currency_id = doc_line._get_company().currency_id or self.env.ref(
                 "base.BRL"
             )
+
+    def _get_document_split_fields(self, document_type):
+        """Fields that must be equal in every line of one fiscal document."""
+        self.ensure_one()
+        if document_type.type != "service":
+            return []
+        # most service layouts (ABRASF, national DPS) declare a single service
+        return [
+            "service_type_id",
+            "city_taxation_code_id",
+            "national_taxation_code_id",
+            "nbs_id",
+            "issqn_fg_city_id",
+            "issqn_eligibility",
+            "issqn_percent",
+            "issqn_wh_percent",
+            "tax_classification_id",
+            "operation_indicator_id",
+            "cbs_cst_id",
+            "ibs_cst_id",
+        ]
+
+    def _get_document_split_key(self, document_type=None):
+        """Lines with different keys need separate fiscal documents."""
+        self.ensure_one()
+        if document_type is None:
+            document_type = self.env["l10n_br_fiscal.document.type"]
+            if self.fiscal_operation_line_id:
+                document_type = self.fiscal_operation_line_id.get_document_type(
+                    self._get_company()
+                )
+        key = [document_type.id]
+        for name in self._get_document_split_fields(document_type):
+            value = self[name]
+            key.append(value.id if isinstance(value, models.BaseModel) else value)
+        return tuple(key)

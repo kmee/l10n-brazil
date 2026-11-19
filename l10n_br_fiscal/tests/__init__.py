@@ -10,9 +10,11 @@ from . import (
     test_tax_classification,
     test_tax_benefit,
     test_document_edition,
+    test_document_imported,
     test_ibpt_product,
     test_ibpt_service,
     test_icms_regulation,
+    test_icms_difal,
     test_ncm,
     test_partner_profile,
     test_service_type,
@@ -23,4 +25,5 @@ from . import (
     test_icmssn,
     test_simplified_tax,
     test_tax_pis_cofins,
+    test_document_line_report,
 )

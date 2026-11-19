@@ -10,7 +10,7 @@
     "maintainers": ["renatonlima", "rvalyi"],
     "website": "https://github.com/OCA/l10n-brazil",
     "development_status": "Production/Stable",
-    "version": "18.0.11.0.0",
+    "version": "18.0.11.2.0",
     "depends": [
         "product",
         "uom_alias",
@@ -117,6 +117,7 @@
         "views/l10n_br_fiscal_action.xml",
         # Menus
         "views/l10n_br_fiscal_menu.xml",
+        "views/document_line_report_view.xml",
     ],
     "assets": {
         "web.assets_backend": [
