@@ -105,3 +105,46 @@ class TestCreditOpening(SpedEntradaCommon):
         opening.with_user(reader).read(["balance"])
         with self.assertRaises(AccessError):
             opening.with_user(reader).write({"amount": 200.0})
+
+
+@tagged("post_install", "-at_install")
+class TestCreditOpeningImport(SpedEntradaCommon):
+    """The opening balance read from the last EFD Contribuicoes of the previous
+    system (registers 1100 and 1500)."""
+
+    profit_calculation = "real"
+
+    FILE = (
+        "|0000|006|0|||01062026|30062026|Empresa|11222333000181|SP|3550308||00|0|\n"
+        "|1001|0|\n"
+        "|1100|042026|01||101|40,00||40,00|10,00|||30,00|5,00|||||25,00|\n"
+        "|1100|052026|01||101|20,00||20,00|0|||20,00|20,00|||||0|\n"
+        "|1500|042026|01||101|200,00||200,00|50,00|||150,00|0|||||150,00|\n"
+        "|1990|3|\n"
+    )
+
+    def _import(self, text):
+        wizard = self.env["l10n_br_pis_cofins.credit.opening.import"].create(
+            {
+                "company_id": self.company.id,
+                "file": base64.b64encode(text.encode("latin-1")),
+                "filename": "efd.txt",
+            }
+        )
+        return wizard.action_import()
+
+    def test_the_balance_of_the_1100_and_the_1500_becomes_the_opening_balance(self):
+        action = self._import(self.FILE)
+        records = self.env[OPENING].search(action["domain"])
+        self.assertEqual(len(records), 2, "the layer that was used up is left out")
+        by_key = {(rec.tax_domain, rec.origin_period): rec for rec in records}
+        pis_april = by_key[("pis", date(2026, 4, 1))]
+        self.assertEqual(pis_april.amount, 40.0)
+        self.assertEqual(pis_april.balance, 25.0)
+        self.assertEqual(pis_april.used_before, 15.0)
+        self.assertEqual(pis_april.cutoff_date, date(2026, 7, 1))
+        self.assertEqual(by_key[("cofins", date(2026, 4, 1))].balance, 150.0)
+
+    def test_a_file_that_is_not_an_efd_contribuicoes_is_refused(self):
+        with self.assertRaises(UserError):
+            self._import("|9999|1|\n")
