@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 import logging
+import time
 from datetime import datetime
 from decimal import Decimal
 
@@ -60,6 +61,13 @@ PIS_COFINS_CSLL_WITHHOLDING = {
     (False, False, True): "8",
     (True, False, True): "9",
 }
+# nfse_incidence_location of the operation indicators whose IBS/CBS is due in
+# the city of the customer
+INCIDENCE_AT_CUSTOMER = ("Endereço do Tomador/Adquirente", "Endereço do Destinatário")
+# A02: the city hall is still busy with the previous request of the company
+GISS_BUSY = "A02"
+GISS_BUSY_ATTEMPTS = 3
+GISS_BUSY_WAIT = 3.0
 
 
 def filter_giss(record):
@@ -213,6 +221,8 @@ class Document(models.Model):
         # customer, with the foreign trade group
         eligibility = line.issqn_eligibility or "1"
         export = eligibility == "4"
+        # the item goes with the leading zero (01.04) and comes back as 1.04
+        item = (line.service_type_id.code or "").zfill(5)
         valores = tipos.TcValoresDeclaracaoServico(
             valor_servicos=_decimal(dados["valor_servicos"]),
             valor_deducoes=_optional(dados["valor_deducoes"]),
@@ -235,12 +245,15 @@ class Document(models.Model):
             valores=valores,
             iss_retido=dados["iss_retido"],
             responsavel_retencao="1" if retido else None,
-            # the item goes with the leading zero (01.04) and comes back as 1.04
-            item_lista_servico=tipos.TsItemListaServico(
-                (line.service_type_id.code or "").zfill(5)
-            ),
+            item_lista_servico=tipos.TsItemListaServico(item),
             codigo_cnae=int(dados["codigo_cnae"]) if dados["codigo_cnae"] else None,
-            codigo_tributacao_municipio=dados["codigo_tributacao_municipio"],
+            # the homologation is shared by every city and knows none of their
+            # codes: there the city code of the service is the item itself
+            codigo_tributacao_municipio=(
+                item
+                if self.nfse_environment == "2"
+                else dados["codigo_tributacao_municipio"]
+            ),
             # 9 digits on the way in, dotted on the way back
             codigo_nbs=dados["codigo_nbs_unmasked"] or None,
             discriminacao=self._giss_discriminacao(),
@@ -274,15 +287,16 @@ class Document(models.Model):
                 bool(dados["valor_cofins_retido"]),
                 bool(dados["valor_csll_retido"]),
             )
+            # with a CST the webservice wants every value, zeros included (E160)
             pis_cofins = tipos.TctribOutrosPisCofins(
                 cst=tipos.TstipoCst(dados["situacao_tributaria_pis"]),
-                v_bcpis_cofins=_optional(
+                v_bcpis_cofins=_decimal(
                     dados["base_calculo_pis"] or dados["base_calculo_cofins"]
                 ),
-                p_aliq_pis=_optional(dados["aliquota_pis"]),
-                p_aliq_cofins=_optional(dados["aliquota_cofins"]),
-                v_pis=_optional(dados["valor_pis"]),
-                v_cofins=_optional(dados["valor_cofins"]),
+                p_aliq_pis=_decimal(dados["aliquota_pis"]),
+                p_aliq_cofins=_decimal(dados["aliquota_cofins"]),
+                v_pis=_decimal(dados["valor_pis"]),
+                v_cofins=_decimal(dados["valor_cofins"]),
                 tp_ret_pis_cofins=tipos.TstipoRetPiscofins(
                     PIS_COFINS_CSLL_WITHHOLDING[withheld]
                 ),
@@ -310,10 +324,15 @@ class Document(models.Model):
         if not self._nfse_export_ibscbs():
             return None
         line = self._nfse_ibscbs_line()
+        # the operation indicator says where the IBS/CBS is due (E160 when the
+        # city differs); a customer abroad has no city code
+        indicator = line.operation_indicator_id
+        if indicator.nfse_incidence_location in INCIDENCE_AT_CUSTOMER:
+            municipio = self.partner_id.city_id.ibge_code or municipio
         return tipos.TcrtcinfoIbscbs(
             fin_nfse=tipos.TsrtcfinNfse("0"),
             ind_final=tipos.TsrtcindFinal("1" if self.ind_final == "1" else "0"),
-            c_ind_op=line.operation_indicator_id.code,
+            c_ind_op=indicator.code,
             ind_dest=tipos.TsrtcindDest("0"),
             valores=tipos.TcrtcinfoValoresIbscbs(
                 trib=tipos.TcrtcinfoTributosIbscbs(
@@ -498,6 +517,17 @@ class Document(models.Model):
         else:
             self._giss_reject(retorno)
 
+    def _giss_send_lot(self, provider, xml):
+        """Send the lot, again while the city hall answers it is still busy
+        with the query by RPS made just before."""
+        for attempt in range(GISS_BUSY_ATTEMPTS):
+            if attempt:
+                time.sleep(GISS_BUSY_WAIT)
+            retorno = provider.recepcionar_lote_rps(xml)
+            if GISS_BUSY not in [m.codigo for m in retorno.mensagens + retorno.alertas]:
+                break
+        return retorno
+
     def _eletronic_document_send(self):
         result = super()._eletronic_document_send()
         for record in self.filtered(filter_processador_edoc_nfse).filtered(filter_giss):
@@ -513,7 +543,7 @@ class Document(models.Model):
                     record._giss_authorize(anterior)
                     continue
                 xml = XmlSerializer().render(record._serialize_nfse_giss())
-                envio_lote = provider.recepcionar_lote_rps(xml)
+                envio_lote = record._giss_send_lot(provider, xml)
                 if not envio_lote.sucesso or not envio_lote.protocolo:
                     record._giss_reject(envio_lote)
                     continue

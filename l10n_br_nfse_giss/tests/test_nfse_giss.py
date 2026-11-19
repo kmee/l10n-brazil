@@ -99,6 +99,14 @@ LOTE_RECUSADO = soap(
         mensagem("E160", "Arquivo em desacordo com o XML Schema"),
     ),
 )
+LOTE_OCUPADO = soap(
+    "RecepcionarLoteRps",
+    resposta(
+        "enviar-lote-rps-resposta",
+        "EnviarLoteRpsResposta",
+        mensagem("A02", "Empresa ja esta com uma consulta em andamento"),
+    ),
+)
 LOTE_PROCESSADO = soap(
     "ConsultarLoteRps",
     resposta(
@@ -296,11 +304,45 @@ class TestNFSeGiss(TestFiscalDocumentNFSeCommon):
         classificacao = grupo.find(f"{T}valores/{T}trib/{T}gIBSCBS")
         self.assertEqual(classificacao.findtext(f"{T}cClassTrib"), "000001")
         self.assertEqual(grupo.findtext(f"{T}valores/{T}cLocalidadeIncid"), "3518800")
+        # due in the city of the customer when the indicator says so
+        self.line.operation_indicator_id = self.env.ref(
+            "l10n_br_fiscal.operation_indicator_100301"
+        )
+        self.nfse.partner_id.city_id = self.env.ref("l10n_br_base.city_3547304")
+        self.assertEqual(
+            self._rps().findtext(f".//{T}IBSCBS/{T}valores/{T}cLocalidadeIncid"),
+            "3547304",
+        )
 
     @mute_logger("odoo.addons.l10n_br_nfse.models.document")
     def test_rps_with_partial_tax_reform_data_has_no_ibscbs_group(self):
         self.line.operation_indicator_id = False
         self.assertIsNone(self._rps().find(f".//{T}IBSCBS"))
+
+    def test_rps_in_homologation_takes_the_item_as_the_city_code(self):
+        self.nfse.nfse_environment = "2"
+        servico = self._rps().find(f".//{T}Servico")
+        self.assertEqual(
+            servico.findtext(f"{T}CodigoTributacaoMunicipio"),
+            servico.findtext(f"{T}ItemListaServico"),
+        )
+
+    def test_rps_pis_cofins_without_incidence_goes_with_zeros(self):
+        self.line.write(
+            {
+                "pis_cst_id": self.env.ref("l10n_br_fiscal.cst_pis_08").id,
+                "pis_base": 0.0,
+                "pis_percent": 0.0,
+                "pis_value": 0.0,
+                "cofins_base": 0.0,
+                "cofins_percent": 0.0,
+                "cofins_value": 0.0,
+            }
+        )
+        grupo = self._rps().find(f".//{T}piscofins")
+        self.assertEqual(grupo.findtext(f"{T}CST"), "08")
+        for tag in ("vBCPisCofins", "pAliqPis", "pAliqCofins", "vPis", "vCofins"):
+            self.assertEqual(grupo.findtext(f"{T}{tag}"), "0.00", tag)
 
     def test_rps_describes_every_line(self):
         self.line.name = "Frete aereo"
@@ -427,6 +469,11 @@ class TestNFSeGiss(TestFiscalDocumentNFSeCommon):
         self.assertEqual(self.nfse.state_edoc, "rejeitada")
         self.assertIn("E160", self.nfse.edoc_error_message)
         self.assertFalse(self.nfse.authorization_protocol)
+
+    def test_send_again_while_the_city_hall_is_busy(self):
+        self._send(RPS_NAO_ENCONTRADO, LOTE_OCUPADO, PROTOCOLO, LOTE_PROCESSADO)
+        self.assertEqual(self.session.operacoes.count("RecepcionarLoteRps"), 2)
+        self.assertEqual(self.nfse.state_edoc, "autorizada")
 
     def test_send_lot_with_error(self):
         self._send(RPS_NAO_ENCONTRADO, PROTOCOLO, LOTE_COM_ERRO)
