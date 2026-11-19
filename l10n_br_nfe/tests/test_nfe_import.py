@@ -671,6 +671,7 @@ class TestNfeDocumentImport(EdiImportCase):
         line = self._imported(xml).fiscal_line_ids
 
         self.assertTrue(line.product_id)
+        self.assertFalse(line.uom_id)
         self.assertEqual(line.import_state, "pending")
 
     def test_product_is_suggested_by_the_barcode_of_the_commercial_unit(self):
@@ -786,6 +787,7 @@ class TestNfeDocumentImport(EdiImportCase):
 
         line = documents.fiscal_line_ids
         self.assertEqual(line.product_id, product)
+        self.assertFalse(line.uom_id)
         self.assertEqual(line.import_state, "pending")
         self.assertIn("XPTO", documents.import_warning)
         line.import_state = "matched"
