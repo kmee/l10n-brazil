@@ -42,7 +42,7 @@ class FiscalDocumentLine(models.Model):
 
     @api.model
     def _pending_moves_of(self, order_line):
-        return order_line.move_ids.filtered(
+        return order_line.sudo().move_ids.filtered(
             lambda move: move.state not in ("done", "cancel")
         )
 
@@ -62,16 +62,20 @@ class FiscalDocumentLine(models.Model):
                 )
         return result
 
-    def _apply_import_match_source(self, source):
-        result = super()._apply_import_match_source(source)
+    def _apply_import_match_source(self, source, trusted=False):
+        result = super()._apply_import_match_source(source, trusted=trusted)
         if source.source_type == "stock_move":
             move = self.env["stock.move"].browse(-source.id).exists()
-            if move:
+            if move and (
+                trusted
+                or not move.purchase_line_id
+                or self._import_origin_has_balance(move.purchase_line_id)
+            ):
                 self.write(
                     {
                         "import_stock_move_id": move.id,
                         "import_purchase_line_id": move.purchase_line_id.id,
-                        "import_origin_state": "suggested",
+                        "import_origin_state": "resolved" if trusted else "suggested",
                     }
                 )
         return result

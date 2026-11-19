@@ -8,6 +8,13 @@ from odoo import api, models
 class PurchaseOrderLine(models.Model):
     _inherit = "purchase.order.line"
 
+    def _import_quantity_tolerance(self):
+        """The quantity tolerance of the company, on the ordered quantity."""
+        tolerance = super()._import_quantity_tolerance()
+        return tolerance + abs(self.product_qty) * (
+            self.company_id.purchase_quantity_tolerance / 100
+        )
+
     def _prepare_stock_moves(self, picking):
         """Prepare the stock moves data for one order line.
         This function returns a list of

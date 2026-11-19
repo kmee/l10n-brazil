@@ -23,7 +23,7 @@
                 <group
                     id='xml_product_lines'
                     col="4"
-                    attrs="{ 'invisible': [ '|', ('file', '=', False), ('document_id', '!=', False), ] }"
+                    attrs="{ 'invisible': [ '|', '|', ('file', '=', False), ('file_is_zip', '=', True), ('document_id', '!=', False), ] }"
                 >
                     <separator string="NFe XML Products" colspan="4" />
                     <group
@@ -65,6 +65,7 @@
                     options="{'no_quick_create': True, 'no_create': True}"
                     domain="[('purchase_ok', '=', True)]"
                 />
+                <field name="product_confirmed" />
                 <field name="product_name" readonly="1" />
                 <field name="product_code" readonly="1" />
                 <field name="uom_internal" />

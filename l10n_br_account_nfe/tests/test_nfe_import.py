@@ -67,6 +67,8 @@ class NFeImportTest(TransactionCase):
         with Form(wizard) as import_form:
             import_form.file = base64.b64encode(file_content)
             import_form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+            # the box decides: these notes bring products the base does not have
+            import_form.allow_product_creation = True
             lines = import_form.imported_products_ids._records
         for line in lines:  # ensure testing consistency
             del line["id"]
@@ -77,6 +79,8 @@ class NFeImportTest(TransactionCase):
             # depend on the installed purchase/stock modules and demo data
             del line["match_source_id"]
             del line["match_source_available"]
+            # the confirmation of the suggested product is a column of the grid
+            del line["product_confirmed"]
             del line["match_source_product_matched"]
             del line["company_id"]
             del line["issuer_partner_id"]
@@ -275,6 +279,8 @@ class NFeImportTest(TransactionCase):
         with Form(wizard) as import_form:
             import_form.file = base64.b64encode(file_content)
             import_form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+            # the box decides: these notes bring products the base does not have
+            import_form.allow_product_creation = True
 
         # materialize the draft only (no move yet)
         _binding, document = wizard._import_edoc()
@@ -323,6 +329,7 @@ class NFeImportTest(TransactionCase):
         self.assertEqual(wizard.fiscal_operation_type, "in")
 
         wizard.fiscal_operation_id = env.ref("l10n_br_fiscal.fo_compras")
+        wizard.allow_product_creation = True
         action = wizard.action_import_and_open_move()
         move = env["account.move"].browse(action["res_id"])
 
@@ -332,6 +339,91 @@ class NFeImportTest(TransactionCase):
         # totals are the ones of the fixture (see test_import_in_nfe, imported
         # in the same company but started from the right current company)
         self.assertAlmostEqual(move.amount_total, 12108.10, places=2)
+
+    def test_the_unit_factor_of_the_depara_keeps_the_total_of_the_bill_line(self):
+        """The de-para converts a unit with a factor (a box of 7 kg): the bill
+        line closes with the total of the document, to the cent, even though the
+        unit price divided by the factor does not have the cents for it."""
+        file_path = os.path.join(
+            l10n_br_account_nfe.__path__[0],
+            "tests",
+            "nfe",
+            "35231149647316000169550010000661061151600085-nfe.xml",
+        )
+        with open(file_path, "rb") as file:
+            file_content = file.read()
+        wizard = self.env["l10n_br_fiscal.document.import.wizard"].create({})
+        with Form(wizard) as import_form:
+            import_form.file = base64.b64encode(file_content)
+            import_form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+            import_form.allow_product_creation = True
+        line = wizard.imported_products_ids[0]
+        self.assertEqual(line.total, 4065.8)
+        product = self.env["product.product"].create(
+            {
+                "name": "Celofane by the box",
+                "purchase_ok": True,
+                "uom_id": line.uom_internal.id,
+                "uom_po_id": line.uom_internal.id,
+            }
+        )
+        line.product_id = product
+        line.uom_conversion_factor = 7
+        action = wizard.action_import_and_open_move()
+        move = self.env["account.move"].browse(action["res_id"])
+        bill_line = move.invoice_line_ids[0]
+        self.assertEqual(bill_line.product_id, product)
+        self.assertAlmostEqual(bill_line.quantity, 70.1 * 7, places=4)
+        self.assertEqual(bill_line.fiscal_document_line_id.price_gross, 4065.8)
+        self.assertEqual(bill_line.price_subtotal, 4065.8)
+        self.assertAlmostEqual(sum(move.line_ids.mapped("balance")), 0.0, places=2)
+        self.assertAlmostEqual(
+            move.amount_untaxed, sum(move.invoice_line_ids.mapped("price_subtotal"))
+        )
+
+    def test_the_bill_line_closes_with_the_vprod_of_a_price_with_many_decimals(self):
+        """7 boxes at 12.3457, factor 12: the document and the bill line close with
+        the 86.42 of the file, not with 86.45."""
+        file_path = os.path.join(
+            l10n_br_account_nfe.__path__[0],
+            "tests",
+            "nfe",
+            "35231149647316000169550010000661061151600085-nfe.xml",
+        )
+        with open(file_path, encoding="utf-8") as file:
+            raw = file.read()
+        xml = (
+            raw.replace("<qCom>70.1000</qCom>", "<qCom>7.0000</qCom>", 1)
+            .replace("<qTrib>70.1000</qTrib>", "<qTrib>7.0000</qTrib>", 1)
+            .replace("<vUnCom>58.0000000000</vUnCom>", "<vUnCom>12.3457</vUnCom>", 1)
+            .replace(
+                "<vUnTrib>58.0000000000</vUnTrib>", "<vUnTrib>12.3457</vUnTrib>", 1
+            )
+            .replace("<vProd>4065.80</vProd>", "<vProd>86.42</vProd>", 1)
+        )
+        self.assertIn("86.42", xml)
+        wizard = self.env["l10n_br_fiscal.document.import.wizard"].create({})
+        with Form(wizard) as import_form:
+            import_form.file = base64.b64encode(xml.encode("utf-8"))
+            import_form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+            import_form.allow_product_creation = True
+        line = wizard.imported_products_ids[0]
+        product = self.env["product.product"].create(
+            {
+                "name": "Celofane by the box",
+                "purchase_ok": True,
+                "uom_id": line.uom_internal.id,
+                "uom_po_id": line.uom_internal.id,
+            }
+        )
+        line.product_id = product
+        line.uom_conversion_factor = 12
+        action = wizard.action_import_and_open_move()
+        move = self.env["account.move"].browse(action["res_id"])
+        bill_line = move.invoice_line_ids[0]
+        self.assertAlmostEqual(bill_line.quantity, 7 * 12, places=4)
+        self.assertEqual(bill_line.fiscal_document_line_id.price_gross, 86.42)
+        self.assertEqual(bill_line.price_subtotal, 86.42)
 
     def test_import_captures_infadic_observation(self):
         """The XML <infAdic> observations must survive the import so they can
@@ -418,6 +510,8 @@ class NFeImportTest(TransactionCase):
         with Form(wizard) as import_form:
             import_form.file = base64.b64encode(file_content)
             import_form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+            # the box decides: these notes bring products the base does not have
+            import_form.allow_product_creation = True
 
         _binding, document = wizard._import_edoc()
         # Break one line to simulate an unmatched product.
@@ -427,11 +521,10 @@ class NFeImportTest(TransactionCase):
 
     def test_import_carries_the_order_reference_onto_the_bill(self):
         """End to end from the import wizard to the vendor bill: the order
-        reference of the document (or the canonical one the operator
-        synthesized by picking a match source) must reach the
-        (partner_order, partner_order_line) fields of the bill lines, line by
-        line — that pair is what the stock bill matching reconciles on, and
-        this module neither requires nor imports stock."""
+        reference the supplier declared (xPed) reaches the (partner_order,
+        partner_order_line) fields of the bill lines untouched, and the order
+        the operator picked as the match source links the bill line to the
+        order line, which is what the stock bill matching reconciles on."""
         if "purchase.order" not in self.env:
             self.skipTest("purchase module not installed")
         file_path = os.path.join(
@@ -488,6 +581,7 @@ class NFeImportTest(TransactionCase):
         )
         wizard._onchange_file()
         wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        wizard.allow_product_creation = True
         wizard.issuer_partner_id = supplier
         self.assertTrue(wizard.match_source_available)
 
@@ -511,14 +605,17 @@ class NFeImportTest(TransactionCase):
             lambda aml: aml.product_id.code == "1070147"
         )
         self.assertEqual(len(matched), 1)
-        self.assertEqual(matched.partner_order, order.name)
-        self.assertEqual(matched.partner_order_line, "1")
+        # what the supplier declared (xPed) is kept as it was written; the
+        # reference to the order comes from the origin the operator chose
+        self.assertEqual(matched.partner_order, "OC00589")
+        self.assertFalse(matched.partner_order_line)
         fiscal_line = matched.fiscal_document_line_id
         if "import_purchase_line_id" in fiscal_line._fields:
             # the origin lives on the persisted line of the document and the
             # bill follows it
             self.assertEqual(fiscal_line.import_purchase_line_id, order.order_line)
-            self.assertEqual(fiscal_line.import_origin_state, "suggested")
+            # chosen by the operator in the grid: a decision, not a suggestion
+            self.assertEqual(fiscal_line.import_origin_state, "resolved")
             self.assertEqual(matched.purchase_line_id, order.order_line)
         # the canonical reference, i.e. the value the matching screen displays
         expr = self.env["account.move.line"]._get_bill_matching_reference_sql("aml")
@@ -526,10 +623,12 @@ class NFeImportTest(TransactionCase):
             f"SELECT ({expr}) FROM account_move_line aml WHERE aml.id = %s",
             [matched.id],
         )
-        self.assertEqual(self.env.cr.fetchone()[0], f"{order.name}-1")
+        if "purchase_ordered_qty" in self.env["account.move.line"]._fields:
+            # l10n_br_purchase_stock: the key is the one of the linked order line
+            self.assertEqual(self.env.cr.fetchone()[0], f"{order.name}-1")
 
-        # the other lines keep the reference the document declared (xPed), they
-        # are not stamped with the chosen source: the mapping is per line
+        # the other lines keep the reference the document declared (xPed), as
+        # the chosen line does: the mapping is per line
         others = move.invoice_line_ids - matched
         self.assertEqual(others.mapped("partner_order"), ["OC00589"] * len(others))
         self.assertEqual(others.mapped("partner_order_line"), [False] * len(others))

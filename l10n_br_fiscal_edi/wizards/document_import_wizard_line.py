@@ -21,6 +21,14 @@ class DocumentImportWizardLine(models.TransientModel):
         "referenced order/receipt.",
     )
 
+    match_source_trusted = fields.Boolean(
+        copy=False,
+        help="Technical: the match source needs no further review, because the "
+        "operator chose it in the grid or because the supplier declared the "
+        "order and the item in the file. A source only guessed by the import "
+        "stays a suggestion on the imported line.",
+    )
+
     company_id = fields.Many2one(related="import_xml_id.company_id")
 
     issuer_partner_id = fields.Many2one(related="import_xml_id.issuer_partner_id")
@@ -64,6 +72,12 @@ class DocumentImportWizardLine(models.TransientModel):
             line.match_source_product_matched = (
                 line.product_id.id in matched_by_key[key]
             )
+
+    def write(self, vals):
+        if "match_source_id" in vals and "match_source_trusted" not in vals:
+            # chosen (or cleared) on the grid: a human decision
+            vals = dict(vals, match_source_trusted=bool(vals["match_source_id"]))
+        return super().write(vals)
 
     @api.onchange("match_source_id")
     def _onchange_match_source_id(self):

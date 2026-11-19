@@ -5,6 +5,7 @@ from lxml import etree
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+from odoo.tools import float_compare
 
 from ..constants.fiscal import (
     FISCAL_IN,
@@ -135,7 +136,19 @@ class DocumentLine(models.Model):
         comodel_name="uom.uom",
         string="Import UoM",
         copy=False,
-        help="Internal UoM equivalent to the supplier unit of the imported " "line.",
+        help="Internal UoM equivalent to the supplier unit of the imported line.",
+    )
+
+    import_price_gross = fields.Monetary(
+        string="Import Gross Total",
+        copy=False,
+        help="Total value of the item as the supplier file declared it (vProd). "
+        "The unit price of the line has the precision of the price (and, when the "
+        "de-para converts the unit with a factor, is the supplier price divided "
+        "by it), so quantity times price may not give back the cents of the file: "
+        "the total of the line follows this value. Empty on a line that was not "
+        "imported with a total, and cleared when a person edits the quantity or "
+        "the price.",
     )
 
     import_uom_factor = fields.Float(
@@ -384,8 +397,44 @@ class DocumentLine(models.Model):
                 )
             line._apply_import_depara()
 
+    def _get_price_gross(self, round_curr):
+        self.ensure_one()
+        if self.import_price_gross:
+            return self.import_price_gross
+        return super()._get_price_gross(round_curr)
+
+    @api.depends("import_price_gross")
+    def _compute_fiscal_amounts(self):
+        return super()._compute_fiscal_amounts()
+
+    def write(self, vals):
+        if "import_price_gross" in vals or not {"quantity", "price_unit"} & vals.keys():
+            return super().write(vals)
+        # a quantity or a price edited by a person on a converted line: the total
+        # follows them again (the same values written back change nothing)
+        edited = self.filtered(
+            lambda line: (
+                line.import_price_gross
+                and any(
+                    name in vals
+                    and float_compare(vals[name], line[name], precision_digits=8)
+                    for name in ("quantity", "price_unit")
+                )
+            )
+        )
+        if edited:
+            super(DocumentLine, edited).write(dict(vals, import_price_gross=0.0))
+            return super(DocumentLine, self - edited).write(vals)
+        return super().write(vals)
+
+    def _suggest_import_origin(self):
+        """Hook: suggest the origin (purchase order line, receipt) of the lines
+        imported from a fiscal file. The modules that know the origin models
+        (purchase, stock) implement it."""
+        return True
+
     def _apply_import_depara(
-        self, product=None, uom=None, factor=None, fiscal_operation=None
+        self, product=None, uom=None, factor=None, fiscal_operation=None, confirm=True
     ):
         """Apply the reviewed de-para on a line imported from a fiscal file.
 
@@ -395,6 +444,11 @@ class DocumentLine(models.Model):
         multiplied by the factor, the unit price divided by it), applies the
         fiscal operation of the line and persists the supplier info
         learning. The original file stays untouched as an attachment.
+
+        With ``confirm=False`` the product is only a suggestion (it was found
+        by the import through the code, the barcode or the name): it is set on
+        the line, which stays ``matched``, and nothing is learned until a
+        person confirms it (``action_resolve_line``).
         """
         self.ensure_one()
         if not self._is_imported():
@@ -416,7 +470,7 @@ class DocumentLine(models.Model):
             )
 
         vals = {
-            "import_state": "resolved",
+            "import_state": "resolved" if confirm else "matched",
             "import_uom_factor": factor,
         }
         if product:
@@ -427,10 +481,18 @@ class DocumentLine(models.Model):
             if factor != 1.0:
                 vals["quantity"] = self.partner_quantity * factor
                 vals["price_unit"] = self.partner_price_unit / factor
+                # the unit price has the precision of the price and cannot give
+                # back, times the new quantity, the total of the file: the total
+                # of the file (kept from the import) is the one that stays
+                vals["import_price_gross"] = self.import_price_gross or (
+                    self.currency_id.round(
+                        self.partner_quantity * self.partner_price_unit
+                    )
+                )
         if fiscal_operation:
             vals["fiscal_operation_id"] = fiscal_operation.id
         self.write(vals)
-        if product:
+        if product and confirm:
             self._find_or_create_supplierinfo()
         return True
 
@@ -531,6 +593,24 @@ class DocumentLine(models.Model):
             "price": self._get_supplierinfo_price(),
         }
 
+    def _supplierinfo_key_domain(self, vals):
+        """What identifies the de-para of a supplier: the partner, the product
+        and the code the supplier uses for it. The document types that keep more
+        (the unit of the supplier) extend it."""
+        return [
+            ("partner_id", "=", vals["partner_id"]),
+            ("product_id", "=", vals.get("product_id") or False),
+            ("product_code", "=", vals.get("product_code") or False),
+        ]
+
+    def _find_supplierinfo(self, vals):
+        self.ensure_one()
+        return (
+            self.env["product.supplierinfo"]
+            .sudo()
+            .search(self._supplierinfo_key_domain(vals), limit=1)
+        )
+
     def _find_or_create_supplierinfo(self):
         for line in self:
             if not line.product_id or not line.document_id.partner_id:
@@ -541,6 +621,13 @@ class DocumentLine(models.Model):
             if not line.import_supplierinfo_id:
                 vals = line._prepare_supplierinfo_vals()
                 vals["partner_id"] = line.document_id.partner_id.id
+                # the de-para of this supplier, product, code (and unit) is one:
+                # a new import finds it, it does not make another
+                existing = line._find_supplierinfo(vals)
+                if existing:
+                    existing.write(vals)
+                    line.import_supplierinfo_id = existing
+                    continue
                 line.import_supplierinfo_id = (
                     line.env["product.supplierinfo"].sudo().create(vals)
                 )

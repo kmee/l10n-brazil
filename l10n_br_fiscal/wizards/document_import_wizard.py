@@ -14,6 +14,9 @@ from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 from ..constants.fiscal import (
+    DOCUMENT_ISSUER_COMPANY,
+    DOCUMENT_ISSUER_PARTNER,
+    DOCUMENT_STATE_CANCEL,
     FISCAL_IN,
     FISCAL_IN_OUT,
     FISCAL_OUT,
@@ -46,9 +49,21 @@ class DocumentImportWizard(models.TransientModel):
         string="Create unmapped products",
         default=False,
         help="If enabled, products that don't match an existing record will be"
-        " automatically created during import. If disabled (default), the"
-        " import will raise an error when an unmapped product is found so you"
-        " can map it in the product lines above before importing.",
+        " automatically created during import. If disabled (default), no product"
+        " is created: the line of an unmapped product stays pending until you"
+        " choose its product in the product lines above or in the document.",
+    )
+
+    file_is_zip = fields.Boolean(
+        compute="_compute_file_is_zip",
+        help="Technical: the file is a zip archive with several fiscal files. Each "
+        "note resolves its own operation, and the wizard has no preview to show.",
+    )
+
+    batch_errors = fields.Text(
+        readonly=True,
+        help="The files of a zip archive that could not be imported, with the "
+        "reason of each one.",
     )
 
     date_in_out = fields.Datetime(
@@ -99,6 +114,11 @@ class DocumentImportWizard(models.TransientModel):
     destination_type_in_out = fields.Selection(
         selection=FISCAL_IN_OUT, string="Destination Type"
     )
+
+    @api.depends("file")
+    def _compute_file_is_zip(self):
+        for wizard in self:
+            wizard.file_is_zip = wizard._file_is_zip()
 
     @api.depends("issuer_cnpj", "company_id.cnpj_cpf")
     def _compute_fiscal_operation_type(self):
@@ -203,48 +223,94 @@ class DocumentImportWizard(models.TransientModel):
         reason = self._import_block_reason()
         if reason:
             raise UserError(reason)
-        if not self.document_id:
+        created = not self.document_id
+        if created:
             binding, self.document_id = self._create_edoc_from_file()
         else:
             binding = self._parse_file()
         if self.date_in_out and not self.document_id.date_in_out:
             self.document_id.date_in_out = self.date_in_out
+        if created:
+            self._after_edoc_created(self.document_id)
         return binding, self.document_id
+
+    def _after_edoc_created(self, document):
+        """Hook for what the wizard decided and the new document must carry.
+
+        Only a document that was just built from the file comes here: importing
+        again a file whose document already exists returns that document and
+        changes nothing in it, neither the review states nor what a person
+        decided on its lines.
+        """
 
     def action_import_and_open_document(self):
         if self._file_is_zip():
             documents = self._import_edoc_batch()
             if len(documents) == 1:
                 self.document_id = documents
-                return self.action_open_document()
-            return {
-                "type": "ir.actions.act_window",
-                "name": _("Imported Documents"),
-                "res_model": "l10n_br_fiscal.document",
-                "view_mode": "tree,form",
-                "domain": [("id", "in", documents.ids)],
-            }
+                action = self.action_open_document()
+            else:
+                action = {
+                    "type": "ir.actions.act_window",
+                    "name": _("Imported Documents"),
+                    "res_model": "l10n_br_fiscal.document",
+                    "view_mode": "tree,form",
+                    "views": [(False, "tree"), (False, "form")],
+                    "domain": [("id", "in", documents.ids)],
+                }
+            if self.batch_errors:
+                # the files that failed are reported, and the others are open
+                return {
+                    "type": "ir.actions.client",
+                    "tag": "display_notification",
+                    "params": {
+                        "title": _("Some files of the archive were not imported"),
+                        "message": self.batch_errors,
+                        "type": "warning",
+                        "sticky": True,
+                        "next": action,
+                    },
+                }
+            return action
         self._import_edoc()
         return self.action_open_document()
 
     def _import_edoc_batch(self):
         """Import every fiscal file of the uploaded zip archive: each entry
         is processed by the regular single-file path and lands as a
-        persisted document waiting for review."""
+        persisted document waiting for review.
+
+        Each entry runs in its own savepoint: the entry that fails is undone
+        whole (no half configured document stays in the transaction for a
+        second upload to find) and reported in ``batch_errors``, and the other
+        entries are imported."""
         self.ensure_one()
         documents = self.env["l10n_br_fiscal.document"]
         errors = []
-        archive = zipfile.ZipFile(io.BytesIO(base64.b64decode(self.file)))
+        archive = zipfile.ZipFile(io.BytesIO(base64.b64decode(self._file_data())))
         for name in archive.namelist():
             if not name.lower().endswith(".xml"):
                 continue
-            entry = self.copy({"file": base64.b64encode(archive.read(name)).decode()})
+            stage = "read"
             try:
-                entry._onchange_file()
-                entry._import_edoc()
-                documents |= entry.document_id
-            except Exception as error:  # noqa: BLE001 - report per entry
-                errors.append(f"{name}: {error}")
+                with self.env.cr.savepoint():
+                    entry = self.copy(
+                        {"file": base64.b64encode(archive.read(name)).decode()}
+                    )
+                    entry._onchange_file()
+                    stage = "import"
+                    entry._import_edoc()
+                    documents |= entry.document_id
+            except UserError as error:
+                errors.append(f"{name}: {error.args[0]}")
+            except Exception:  # noqa: BLE001 - report per entry
+                _logger.info("Zip import: %s failed", name, exc_info=True)
+                if stage == "read":
+                    reason = _("the file is not a NF-e the import understands.")
+                else:
+                    reason = _("the file could not be imported (see the server log).")
+                errors.append(f"{name}: {reason}")
+        self.batch_errors = "\n".join(errors) or False
         if errors and not documents:
             raise UserError(
                 _("No file of the archive could be imported:\n%s") % "\n".join(errors)
@@ -266,33 +332,78 @@ class DocumentImportWizard(models.TransientModel):
         )
 
     def _find_existing_document(self):
-        self.document_id = self.env["l10n_br_fiscal.document"].search(
-            [("document_key", "=", self.document_key.replace(" ", ""))],
-            limit=1,
-        )
+        """The document this file already became, in the company it belongs to.
+
+        The key identifies the note, but the same note lives in two documents
+        when the issuer and the recipient are companies of the same database:
+        the outgoing one of the issuer and the incoming one of the recipient.
+        The search follows the criterion of the uniqueness of the key (company,
+        issuer and key), so the import in the recipient never finds the
+        outgoing document of the issuer.
+        """
+        key = (self.document_key or "").replace(" ", "")
+        if not key:
+            self.document_id = False
+            return
+        domain = [
+            ("document_key", "=", key),
+            ("company_id", "=", self.company_id.id),
+            (
+                "issuer",
+                "=",
+                DOCUMENT_ISSUER_PARTNER
+                if self.fiscal_operation_type == FISCAL_IN
+                else DOCUMENT_ISSUER_COMPANY,
+            ),
+        ]
+        document = self.env["l10n_br_fiscal.document"]
+        # a cancelled document does not hold the key (it is not part of the
+        # uniqueness), but it is still found when it is the only one
+        self.document_id = document.search(
+            domain + [("state_edoc", "!=", DOCUMENT_STATE_CANCEL)], limit=1
+        ) or document.search(domain, limit=1)
 
     @api.onchange("file")
     def _onchange_file(self):
         if self.file and not self._file_is_zip():
             self._fill_wizard_from_binding()
 
+    def _file_data(self):
+        """The content of the uploaded file, as base64.
+
+        The web client reads the record with ``bin_size`` in the context, and then
+        the binary field comes back as its size ("1.2 Kb"), not as its content:
+        everything that decodes the file reads it here, without ``bin_size``.
+        """
+        self.ensure_one()
+        # None, not False: the cache of the binary field is keyed by the value of
+        # bin_size in the context, and a record that is not saved yet (the onchange)
+        # only has it under the key of a context that has no bin_size
+        return self.with_context(bin_size=None).file or self.file
+
     def _file_is_zip(self):
         """A zip archive with several fiscal files can be imported at once:
         each entry lands as a document waiting for review."""
-        if not self.file:
+        self.ensure_one()
+        data = self._file_data()
+        if not data:
             return False
-        return base64.b64decode(self.file)[:4] == b"PK\x03\x04"
+        try:
+            return base64.b64decode(data)[:4] == b"PK\x03\x04"
+        except ValueError:  # not base64 (binascii.Error is a ValueError)
+            return False
 
     def _fill_wizard_from_binding(self):
         binding = self._parse_file()
         self._detect_binding(binding)
         self._extract_binding_data(binding)
-        self._find_existing_document()
         self._destination_partner_from_binding(binding)
         # the CNPJ of the destination (us) tells which company the document
         # belongs to: the import must run in that company, not in the current
         # one (see _select_company_from_destination)
         self._select_company_from_destination()
+        # the existing document is the one of that company
+        self._find_existing_document()
         return binding
 
     @api.model
@@ -390,7 +501,7 @@ class DocumentImportWizard(models.TransientModel):
         return self.env["uom.uom"]._match_by_fiscal_code(*codes)
 
     def _parse_file(self):
-        return self._parse_file_data(self.file)
+        return self._parse_file_data(self._file_data())
 
     @api.model
     def _parse_file_data(self, file_data):

@@ -232,6 +232,28 @@ class PurchaseOrderLine(models.Model):
     def _get_total_for_tax_totals(self):
         return self.order_id.amount_total
 
+    def _import_quantity_tolerance(self):
+        """Quantity above the ordered one that the bills may still take; the
+        modules that have a tolerance for it (purchase stock) extend it."""
+        self.ensure_one()
+        return 0.0
+
+    def _quantity_billed_elsewhere(self, move=None):
+        """The quantity of the order line on the bills that are not cancelled
+        (the credit notes take from it), in the unit of the order line, leaving
+        out the lines of ``move``."""
+        self.ensure_one()
+        total = 0.0
+        for bill_line in self.invoice_lines:
+            bill = bill_line.move_id
+            if bill == move or bill.state == "cancel":
+                continue
+            quantity = bill_line.product_uom_id._compute_quantity(
+                bill_line.quantity, self.product_uom, raise_if_failure=False
+            )
+            total += -quantity if bill.move_type == "in_refund" else quantity
+        return total
+
     @api.model
     def _find_by_import_reference(self, company, partner, order_name, item, product):
         """The open purchase order line a supplier referred to (xPed and

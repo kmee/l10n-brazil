@@ -13,6 +13,7 @@
                     string="Import Account Move"
                     class="btn-primary"
                     type="object"
+                    attrs="{'invisible': [('file_is_zip', '=', True)]}"
                 />
             </button>
         </field>

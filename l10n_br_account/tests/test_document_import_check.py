@@ -1,8 +1,13 @@
 # Copyright (C) 2026  Luis Felipe Mileo - KMEE
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
+import json
+
+from lxml import etree
+
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase
+from odoo.tools.translate import _ as translate
 
 
 class TestDocumentImportCheck(TransactionCase):
@@ -53,3 +58,55 @@ class TestDocumentImportCheck(TransactionCase):
         self.line.product_id = False
         with self.assertRaises(UserError):
             self.document._check_document_import()
+
+    def test_a_line_not_reviewed_blocks_the_bill(self):
+        """The bill of an imported document rests on reviewed lines only: a
+        line that is just a suggestion of the import (or has no product yet)
+        refuses the bill, however it is asked for."""
+        self.line.price_unit = 10.0
+        for state in ("matched", "pending"):
+            self.line.import_state = state
+            with self.assertRaisesRegex(UserError, "not resolved yet"):
+                self.document._check_document_import()
+            with self.assertRaisesRegex(UserError, "not reviewed"):
+                self.env["account.move"].import_fiscal_document(self.document)
+            with self.assertRaisesRegex(UserError, "not resolved yet"):
+                self.document.action_generate_account_move()
+        self.line.import_state = "resolved"
+        self.document._check_document_import()  # must not raise
+
+    def test_confirming_an_imported_document_needs_the_review(self):
+        """The confirmation takes a partner document to authorized, and so to
+        the books: it refuses the lines that were not resolved."""
+        self.line.price_unit = 10.0
+        self.line.import_state = "matched"
+        with self.assertRaisesRegex(UserError, "not reviewed"):
+            self.document.action_document_confirm()
+
+    def test_the_refusal_is_in_portuguese(self):
+        """The header of the message that refuses the bill, and the reason of each
+        line, are in Portuguese for the user."""
+        self.env["res.lang"]._activate_lang("pt_BR")
+        self.env["ir.module.module"].search(
+            [("name", "=", "l10n_br_account")]
+        )._update_translations(["pt_BR"])
+        self.env = self.env(context=dict(self.env.context, lang="pt_BR"))
+        header = translate(
+            "The document cannot be imported due to incomplete lines:\n%s"
+        )
+        self.assertIn("linhas incompletas", header)
+        self.assertIn("nenhum produto", translate("- %s: no product matched."))
+        self.assertIn("sem quantidade", translate("- %s: no quantity."))
+
+    def test_the_bill_button_of_the_wizard_is_hidden_for_a_zip(self):
+        """A zip has no single bill to open: only the document import button is
+        offered."""
+        view = self.env["l10n_br_fiscal.document.import.wizard"].get_view(
+            view_type="form"
+        )
+        tree = etree.fromstring(view["arch"])
+        button = tree.xpath("//button[@name='action_import_and_open_move']")[0]
+        self.assertEqual(
+            json.loads(button.get("modifiers")).get("invisible"),
+            [["file_is_zip", "=", True]],
+        )

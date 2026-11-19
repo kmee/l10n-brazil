@@ -31,7 +31,7 @@ class DocumentImportWizard(models.TransientModel):
     )
 
     def _parse_file(self):
-        binding = parse_nfse_file(self.file)
+        binding = parse_nfse_file(self._file_data())
         if binding:
             return binding
         return super()._parse_file()
@@ -109,7 +109,7 @@ class DocumentImportWizard(models.TransientModel):
         self.env["ir.attachment"].create(
             {
                 "name": f"NFSe-{binding.access_key}.xml",
-                "datas": self.file,
+                "datas": self._file_data(),
                 "res_model": document._name,
                 "res_id": document.id,
             }

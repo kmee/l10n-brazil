@@ -39,28 +39,28 @@ msgstr ""
 #: code:addons/l10n_br_account/models/document.py:0
 #, python-format
 msgid "- %s: no product matched."
-msgstr ""
+msgstr "- %s: nenhum produto correspondente."
 
 #. module: l10n_br_account
 #. odoo-python
 #: code:addons/l10n_br_account/models/document.py:0
 #, python-format
 msgid "- %s: no quantity."
-msgstr ""
+msgstr "- %s: sem quantidade."
 
 #. module: l10n_br_account
 #. odoo-python
 #: code:addons/l10n_br_account/models/document.py:0
 #, python-format
 msgid "- %s: no unit of measure."
-msgstr ""
+msgstr "- %s: sem unidade de medida."
 
 #. module: l10n_br_account
 #. odoo-python
 #: code:addons/l10n_br_account/models/document.py:0
 #, python-format
 msgid "- %s: no unit price."
-msgstr ""
+msgstr "- %s: sem preço unitário."
 
 #. module: l10n_br_account
 #: model_terms:ir.ui.view,arch_db:l10n_br_account.invoice_form
@@ -7223,7 +7223,7 @@ msgstr ""
 msgid ""
 "The document cannot be imported due to incomplete lines:\n"
 "%s"
-msgstr ""
+msgstr "O documento não pode ser importado porque há linhas incompletas ou não revisadas:\n%s"
 
 #. module: l10n_br_account
 #: model:ir.model.fields,help:l10n_br_account.field_account_bank_statement_line__insurance_endorsement
@@ -7895,7 +7895,7 @@ msgstr ""
 #: code:addons/l10n_br_account/models/document.py:0
 #, python-format
 msgid "Unknown"
-msgstr ""
+msgstr "Desconhecido"
 
 #. module: l10n_br_account
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_reversal__journal_id

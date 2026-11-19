@@ -2500,6 +2500,38 @@ msgid "Customized Odoo Development"
 msgstr "Desenvolvimento personalizado de Odoo"
 
 #. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/tools.py:0
+#, python-format
+msgid ""
+"Declared CFOP %(cfop)s is a domestic CFOP but issuer (%(issuer)s) and company (%(company)s) are in different countries."
+msgstr "O CFOP %(cfop)s informado é de operação nacional, mas o emitente (%(issuer)s) e a empresa (%(company)s) estão em países diferentes."
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/tools.py:0
+#, python-format
+msgid ""
+"Declared CFOP %(cfop)s is a foreign trade CFOP but issuer and company are both in %(country)s."
+msgstr "O CFOP %(cfop)s informado é de comércio exterior, mas o emitente e a empresa estão ambos em %(country)s."
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/tools.py:0
+#, python-format
+msgid ""
+"Declared CFOP %(cfop)s is interstate but issuer and company are both in %(state)s."
+msgstr "O CFOP %(cfop)s informado é interestadual, mas o emitente e a empresa estão ambos em %(state)s."
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal/tools.py:0
+#, python-format
+msgid ""
+"Declared CFOP %(cfop)s is intrastate but issuer (%(issuer)s) and company (%(company)s) are in different states."
+msgstr "O CFOP %(cfop)s informado é interno ao estado, mas o emitente (%(issuer)s) e a empresa (%(company)s) estão em estados diferentes."
+
+#. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_operation_indicator__supply_location
 msgid "DFe Supply Location"
 msgstr ""
@@ -5672,10 +5704,10 @@ msgstr "Se marcado, algumas mensagens tem erro de entrega."
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard__allow_product_creation
 msgid ""
 "If enabled, products that don't match an existing record will be "
-"automatically created during import. If disabled (default), the import will "
-"raise an error when an unmapped product is found so you can map it in the "
-"product lines above before importing."
-msgstr "Se ativado, os produtos sem correspondência em um cadastro existente serão criados automaticamente na importação. Se desativado (padrão), a importação acusa erro ao achar um produto sem correspondência, para que ele seja mapeado nas linhas de produto acima antes de importar."
+"automatically created during import. If disabled (default), no product is "
+"created: the line of an unmapped product stays pending until you choose its "
+"product in the product lines above or in the document."
+msgstr "Se ativado, os produtos sem correspondência em um cadastro existente serão criados automaticamente na importação. Se desativado (padrão), nenhum produto é criado: a linha de um produto sem correspondência fica pendente até você escolher o produto nas linhas de produto acima ou no documento."
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,help:l10n_br_fiscal.field_res_company__is_industry
@@ -9968,7 +10000,7 @@ msgstr ""
 #: code:addons/l10n_br_fiscal/models/document.py:0
 #, python-format
 msgid "There is already a fiscal document with this key: {} !"
-msgstr ""
+msgstr "Já existe um documento fiscal com esta chave: {} !"
 
 #. module: l10n_br_fiscal
 #: model_terms:ir.actions.act_window,help:l10n_br_fiscal.operation_dashboard_action
@@ -10117,7 +10149,7 @@ msgstr "Unidade"
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard_line__uom_com
 msgid "UOM Comercial"
-msgstr ""
+msgstr "Unidade comercial"
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard_line__uom_conversion_factor
@@ -10399,7 +10431,7 @@ msgstr "CFOP do XML"
 #, python-format
 msgid ""
 "XML CFOP %(cfop)s is interstate but issuer and company are both in %(state)s."
-msgstr ""
+msgstr "CFOP %(cfop)s do XML é interestadual, mas emitente e empresa estão ambos em %(state)s."
 
 #. module: l10n_br_fiscal
 #. odoo-python
@@ -10408,7 +10440,7 @@ msgstr ""
 msgid ""
 "XML CFOP %(cfop)s is intrastate but issuer (%(issuer)s) and company "
 "(%(company)s) are in different states."
-msgstr ""
+msgstr "CFOP %(cfop)s do XML é intraestadual, mas o emitente (%(issuer)s) e a empresa (%(company)s) estão em estados diferentes."
 
 #. module: l10n_br_fiscal
 #: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard_line__ncm_xml
@@ -12871,3 +12903,62 @@ msgstr "Código de Benefício Fiscal do Fornecedor (cBenef)"
 #: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line_mixin__partner_icms_tax_benefit_code
 msgid "Fiscal benefit code (<cBenef>) declared by the counterparty in the imported document. Preserved verbatim for SPED C197 (COD_AJ), while icms_tax_benefit_id/code reflects the company's own de-para mapping."
 msgstr "Código de benefício fiscal (<cBenef>) declarado pelo parceiro no documento importado. Preservado como veio para o C197 do SPED (COD_AJ); o código do benefício da empresa vem do próprio de-para."
+
+#. module: l10n_br_fiscal
+#: code:addons/l10n_br_fiscal/models/document.py:0
+#, python-format
+msgid ""
+"- %(count)s line(s) not resolved yet (%(lines)s): confirm the product of each one (Confirmed column of the import grid, or the check icon at the end of the line in the document)."
+msgstr ""
+"- %(count)s linha(s) ainda não resolvida(s) (%(lines)s): confirme o produto de cada uma (coluna Confirmado da grade de importação, ou o ícone de visto no fim da linha, no documento)."
+
+#. module: l10n_br_fiscal
+#: code:addons/l10n_br_fiscal/models/document.py:0
+#, python-format
+msgid ""
+"The imported document %(document)s was not reviewed yet:\n"
+"%(errors)s"
+msgstr ""
+"O documento importado %(document)s ainda não foi revisado:\n"
+"%(errors)s"
+
+#. module: l10n_br_fiscal
+#: code:addons/l10n_br_fiscal/wizards/document_import_wizard.py:0
+msgid "Some files of the archive were not imported"
+msgstr "Alguns arquivos do zip não foram importados"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard__batch_errors
+msgid ""
+"The files of a zip archive that could not be imported, with the reason of each one."
+msgstr ""
+"Os arquivos de um zip que não puderam ser importados, com o motivo de cada um."
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard__batch_errors
+msgid "Batch Errors"
+msgstr "Erros do lote"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_line__import_price_gross
+msgid "Import Gross Total"
+msgstr "Total bruto da importação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_line__import_price_gross
+msgid ""
+"Total value of the item as the supplier file declared it (vProd). The unit price of the line has the precision of the price (and, when the de-para converts the unit with a factor, is the supplier price divided by it), so quantity times price may not give back the cents of the file: the total of the line follows this value. Empty on a line that was not imported with a total, and cleared when a person edits the quantity or the price."
+msgstr ""
+"Valor total do item como o arquivo do fornecedor declarou (vProd). O preço unitário da linha tem a precisão do preço (e, quando o de-para converte a unidade com um fator, é o preço do fornecedor dividido por ele), então quantidade vezes preço pode não devolver os centavos do arquivo: o total da linha segue este valor. Vazio na linha importada sem total, e limpo quando uma pessoa edita a quantidade ou o preço."
+
+#. module: l10n_br_fiscal
+#: code:addons/l10n_br_fiscal/wizards/document_import_wizard.py:0
+#, python-format
+msgid "the file is not a NF-e the import understands."
+msgstr "o arquivo não é uma NF-e que a importação entenda."
+
+#. module: l10n_br_fiscal
+#: code:addons/l10n_br_fiscal/wizards/document_import_wizard.py:0
+#, python-format
+msgid "the file could not be imported (see the server log)."
+msgstr "o arquivo não pôde ser importado (veja o log do servidor)."

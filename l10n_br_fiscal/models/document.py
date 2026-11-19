@@ -2,12 +2,14 @@
 # Copyright (C) 2019  KMEE
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
+import logging
 from ast import literal_eval
 
 from erpbrasil.base.fiscal.edoc import ChaveEdoc
+from psycopg2 import sql
 
-from odoo import _, api, fields, models
-from odoo.exceptions import ValidationError
+from odoo import _, api, fields, models, tools
+from odoo.exceptions import UserError, ValidationError
 
 from ..constants.fiscal import (
     COMMENT_TYPE_COMMERCIAL,
@@ -34,6 +36,8 @@ from ..constants.fiscal import (
     SITUACAO_EDOC_INUTILIZADA,
     SITUACAO_FISCAL,
 )
+
+_logger = logging.getLogger(__name__)
 
 
 class Document(models.Model):
@@ -311,6 +315,54 @@ class Document(models.Model):
             for line in document.fiscal_line_ids:
                 line.import_state = "matched" if line.product_id else "pending"
 
+    def _import_review_errors(self):
+        """What still waits for a human decision in an imported document.
+
+        One message per kind of pending review; the modules that add a review
+        of their own (the origin of the line, for instance) extend it. Lines
+        without a review state were not imported from a file and are not asked
+        for anything.
+        """
+        self.ensure_one()
+        if not self.imported_document:
+            return []
+        pending = self.fiscal_line_ids.filtered(
+            lambda line: line.import_state and line.import_state != "resolved"
+        )
+        if not pending:
+            return []
+        return [
+            _(
+                "- %(count)s line(s) not resolved yet (%(lines)s): confirm the "
+                "product of each one (Confirmed column of the import grid, or "
+                "the check icon at the end of the line in the document).",
+                count=len(pending),
+                lines=", ".join(
+                    (line.name or line.product_id.display_name or str(line.id))[:40]
+                    for line in pending[:5]
+                )
+                + (", ..." if len(pending) > 5 else ""),
+            )
+        ]
+
+    def _check_import_review(self):
+        """Refuse to go on with an imported document that was not reviewed.
+
+        The bill, and the bookkeeping that follows the confirmation of the
+        document, must not rest on a guess made by the import.
+        """
+        for document in self:
+            errors = document._import_review_errors()
+            if errors:
+                raise UserError(
+                    _(
+                        "The imported document %(document)s was not reviewed "
+                        "yet:\n%(errors)s",
+                        document=document.display_name,
+                        errors="\n".join(errors),
+                    )
+                )
+
     def _suggest_fiscal_operation(self):
         """Suggest the document fiscal operation from the operation most
         suggested among its imported lines (through the inverse CFOP)."""
@@ -387,11 +439,81 @@ class Document(models.Model):
 
     customer_additional_data = fields.Text()
 
+    _unique_key_index = "l10n_br_fiscal_document_unique_key_idx"
+
+    @api.model
+    def _unique_key_where(self):
+        """The documents the key is unique among: the same criterion as
+        ``_check_key``."""
+        return sql.SQL(
+            "document_key IS NOT NULL AND document_key != '' "
+            "AND state_edoc != 'cancelada' "
+            "AND document_type IN ({types})"
+        ).format(
+            types=sql.SQL(", ").join(
+                sql.Literal(code)
+                for code in (
+                    MODELO_FISCAL_CTE,
+                    MODELO_FISCAL_NFCE,
+                    MODELO_FISCAL_NFE,
+                    MODELO_FISCAL_NFSE,
+                )
+            )
+        )
+
+    def init(self):
+        """The uniqueness of the key in the database, not only in Python.
+
+        The constraint ``_check_key`` reads and then writes, so two imports of
+        the same file at the same time can both pass it. The index closes that
+        gap with the same criterion (company, issuer and key, ignoring the
+        cancelled documents and the models that repeat the key).
+
+        A database that already holds duplicated keys keeps working: the index
+        is not created, a warning lists the keys, and nothing is deleted or
+        changed. It is created at the next update, after the duplicates were
+        solved by hand.
+        """
+        super().init()
+        cr = self.env.cr
+        if tools.index_exists(cr, self._unique_key_index):
+            return
+        where = self._unique_key_where()
+        cr.execute(
+            sql.SQL(
+                "SELECT company_id, issuer, document_key, COUNT(*) "
+                "FROM l10n_br_fiscal_document WHERE {where} "
+                "GROUP BY company_id, issuer, document_key "
+                "HAVING COUNT(*) > 1 LIMIT 10"
+            ).format(where=where)
+        )
+        duplicates = cr.fetchall()
+        if duplicates:
+            # init runs for each module that extends the model: warn once
+            if getattr(self.pool, "_fiscal_key_index_warned", False):
+                return
+            self.pool._fiscal_key_index_warned = True
+            _logger.warning(
+                "The unique index %s of the fiscal documents was not created: "
+                "there are duplicated keys (company, issuer, key, documents): "
+                "%s. Solve them (cancel or fix the repeated documents) and "
+                "update the module again.",
+                self._unique_key_index,
+                duplicates,
+            )
+            return
+        cr.execute(
+            sql.SQL(
+                "CREATE UNIQUE INDEX {index} ON l10n_br_fiscal_document "
+                "(company_id, issuer, document_key) WHERE {where}"
+            ).format(index=sql.Identifier(self._unique_key_index), where=where)
+        )
+
     @api.constrains("document_key")
     def _check_key(self):
         for record in self:
             if not record.document_key:
-                return
+                continue
 
             documents = record.env["l10n_br_fiscal.document"].search_count(
                 [
