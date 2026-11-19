@@ -89,7 +89,9 @@ class FiscalDocument(models.Model):
         )
         domain = [
             ("company_id", "=", self.company_id.id),
-            ("partner_id", "=", self.partner_id.commercial_partner_id.id),
+            # a source may have no partner (a purchase request without preferred
+            # supplier): it can be the origin of the document of any supplier
+            ("partner_id", "in", [self.partner_id.commercial_partner_id.id, False]),
             "|",
             ("fiscal_document_id", "=", self.id),
             ("kind", "!=", "note"),

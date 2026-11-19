@@ -177,31 +177,42 @@ class TestMatch(PurchaseImportCase):
         rule = self.env["ir.rule"].search([("model_id.model", "=", self.Match._name)])
         self.assertIn("company_ids", rule.domain_force)
 
+    def _extra_source(self, **columns):
+        """One row of a source of another module, with the extra column."""
+        values = dict(
+            company_id="NULL::integer",
+            partner_id="NULL::integer",
+            product_id="NULL::integer",
+            uom_id="NULL::integer",
+            currency_id="NULL::integer",
+            fiscal_document_id="NULL::integer",
+            fiscal_line_id="NULL::integer",
+            purchase_order_id="NULL::integer",
+            purchase_line_id="NULL::integer",
+            suggested_purchase_line_id="NULL::integer",
+        )
+        values.update(columns)
+        return (
+            "SELECT 399 AS id, 'note' AS kind, 'x'::varchar AS description, "
+            "NULL::varchar AS declared_reference, 1.0::float AS quantity, "
+            "1.0::float AS open_quantity, 1.0::float AS price_unit, "
+            "'r'::varchar AS reference, NULL::date AS date, "
+            "'none'::varchar AS line_state, 7 AS extra_flag, "
+            + ", ".join(f"{value} AS {name}" for name, value in values.items())
+        )
+
     def test_a_source_of_another_module_adds_its_rows_and_columns(self):
         self._order()
         self._resolve_product()
         self.env.flush_all()
         model = type(self.Match)
         sources = self.Match._match_sources()
-        literal = ", ".join(
-            "NULL::integer AS %s" % name
-            for name in (
-                "company_id partner_id product_id uom_id currency_id "
-                "fiscal_document_id fiscal_line_id purchase_order_id "
-                "purchase_line_id suggested_purchase_line_id"
-            ).split()
-        )
-        extra = (
-            "SELECT 399 AS id, 'note' AS kind, 'x'::varchar AS description, "
-            "NULL::varchar AS declared_reference, 1.0::float AS quantity, "
-            "1.0::float AS open_quantity, 1.0::float AS price_unit, "
-            "'r'::varchar AS reference, NULL::date AS date, "
-            "'none'::varchar AS line_state, 7 AS extra_flag, " + literal
-        )
         with mock.patch.object(
             model, "_match_extra_columns", return_value={"extra_flag": "integer"}
         ), mock.patch.object(
-            model, "_match_sources", return_value=sources + [(extra, ("extra_flag",))]
+            model,
+            "_match_sources",
+            return_value=sources + [(self._extra_source(), ("extra_flag",))],
         ):
             self.env.cr.execute(
                 "SELECT id, extra_flag FROM (%s) t ORDER BY id"
@@ -212,3 +223,22 @@ class TestMatch(PurchaseImportCase):
         self.assertEqual(rows[-1], (399, 7))
         self.assertTrue(len(rows) > 2)
         self.assertEqual({flag for _id, flag in rows[:-1]}, {None})
+
+    def test_a_row_without_partner_is_listed_for_the_supplier_of_the_document(self):
+        self._resolve_product()
+        self.env.flush_all()
+        model = type(self.Match)
+        extra = self._extra_source(
+            company_id=str(self.company.id), product_id=str(self.product.id)
+        )
+        with mock.patch.object(
+            model, "_match_extra_columns", return_value={"extra_flag": "integer"}
+        ), mock.patch.object(
+            model,
+            "_match_sources",
+            return_value=self.Match._match_sources() + [(extra, ("extra_flag",))],
+        ):
+            domain = self.document.action_open_origin_match()["domain"]
+            found = self.Match.search(domain)
+
+        self.assertIn(399, found.ids)
