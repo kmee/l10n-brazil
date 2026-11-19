@@ -54,6 +54,12 @@ class DocumentImportWizard(models.TransientModel):
         " choose its product in the product lines above or in the document.",
     )
 
+    batch_errors = fields.Text(
+        readonly=True,
+        help="The files of a zip archive that could not be imported, with the "
+        "reason of each one.",
+    )
+
     date_in_out = fields.Datetime(
         default=fields.Datetime.now,
         help="Effective incoming/outgoing date of the goods (DT_E_S in the "
@@ -231,21 +237,41 @@ class DocumentImportWizard(models.TransientModel):
             documents = self._import_edoc_batch()
             if len(documents) == 1:
                 self.document_id = documents
-                return self.action_open_document()
-            return {
-                "type": "ir.actions.act_window",
-                "name": _("Imported Documents"),
-                "res_model": "l10n_br_fiscal.document",
-                "view_mode": "tree,form",
-                "domain": [("id", "in", documents.ids)],
-            }
+                action = self.action_open_document()
+            else:
+                action = {
+                    "type": "ir.actions.act_window",
+                    "name": _("Imported Documents"),
+                    "res_model": "l10n_br_fiscal.document",
+                    "view_mode": "tree,form",
+                    "domain": [("id", "in", documents.ids)],
+                }
+            if self.batch_errors:
+                # the files that failed are reported, and the others are open
+                return {
+                    "type": "ir.actions.client",
+                    "tag": "display_notification",
+                    "params": {
+                        "title": _("Some files of the archive were not imported"),
+                        "message": self.batch_errors,
+                        "type": "warning",
+                        "sticky": True,
+                        "next": action,
+                    },
+                }
+            return action
         self._import_edoc()
         return self.action_open_document()
 
     def _import_edoc_batch(self):
         """Import every fiscal file of the uploaded zip archive: each entry
         is processed by the regular single-file path and lands as a
-        persisted document waiting for review."""
+        persisted document waiting for review.
+
+        Each entry runs in its own savepoint: the entry that fails is undone
+        whole (no half configured document stays in the transaction for a
+        second upload to find) and reported in ``batch_errors``, and the other
+        entries are imported."""
         self.ensure_one()
         documents = self.env["l10n_br_fiscal.document"]
         errors = []
@@ -253,13 +279,17 @@ class DocumentImportWizard(models.TransientModel):
         for name in archive.namelist():
             if not name.lower().endswith(".xml"):
                 continue
-            entry = self.copy({"file": base64.b64encode(archive.read(name)).decode()})
             try:
-                entry._onchange_file()
-                entry._import_edoc()
-                documents |= entry.document_id
+                with self.env.cr.savepoint():
+                    entry = self.copy(
+                        {"file": base64.b64encode(archive.read(name)).decode()}
+                    )
+                    entry._onchange_file()
+                    entry._import_edoc()
+                    documents |= entry.document_id
             except Exception as error:  # noqa: BLE001 - report per entry
                 errors.append(f"{name}: {error}")
+        self.batch_errors = "\n".join(errors) or False
         if errors and not documents:
             raise UserError(
                 _("No file of the archive could be imported:\n%s") % "\n".join(errors)

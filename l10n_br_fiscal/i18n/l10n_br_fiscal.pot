@@ -10853,3 +10853,19 @@ msgid ""
 "The imported document %(document)s was not reviewed yet:\n"
 "%(errors)s"
 msgstr ""
+
+#. module: l10n_br_fiscal
+#: code:addons/l10n_br_fiscal/wizards/document_import_wizard.py:0
+msgid "Some files of the archive were not imported"
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard__batch_errors
+msgid ""
+"The files of a zip archive that could not be imported, with the reason of each one."
+msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard__batch_errors
+msgid "Batch Errors"
+msgstr ""

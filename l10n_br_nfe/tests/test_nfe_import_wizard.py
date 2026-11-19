@@ -598,6 +598,72 @@ class NFeImportWizardTest(TransactionCase):
         self.assertEqual(len(documents), 2)
         self.assertTrue(all(documents.mapped("imported_document")))
 
+    def _zip_of_two_notes(self):
+        other_xml = pkg_resources.resource_stream(
+            nfelib.__name__,
+            "nfe/samples/v4_0/leiauteNFe/"
+            "35180834128745000152550010000474281920007498-nfe.xml",
+        ).read()
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as archive:
+            archive.writestr("nota1.xml", self.xml_1)
+            archive.writestr("nota2.xml", other_xml)
+        return self.env["l10n_br_fiscal.document.import.wizard"].create(
+            {
+                "company_id": self.env.ref("base.main_company").id,
+                "file": base64.b64encode(buffer.getvalue()),
+            }
+        )
+
+    def test_a_zip_entry_that_fails_is_undone_and_the_others_enter(self):
+        """Each entry of the archive has its own restore point: the one that
+        fails after its document was created leaves nothing behind (a second
+        upload would find that half configured document and give it back with
+        no review), is reported, and the other entries are imported."""
+        wizard = self._zip_of_two_notes()
+        original = DocumentImportWizard._apply_wizard_depara
+        calls = []
+
+        def failing_second(self, edoc):
+            calls.append(edoc.document_key)
+            if len(calls) == 2:
+                raise UserError("the de-para blew up")
+            return original(self, edoc)
+
+        with patch.object(DocumentImportWizard, "_apply_wizard_depara", failing_second):
+            documents = wizard._import_edoc_batch()
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(len(documents), 1)
+        self.assertEqual(documents.document_key, calls[0])
+        # the entry that failed left no document behind
+        self.assertFalse(
+            self.env["l10n_br_fiscal.document"].search_count(
+                [("document_key", "=", calls[1])]
+            )
+        )
+        self.assertIn("nota2.xml", wizard.batch_errors)
+        self.assertIn("the de-para blew up", wizard.batch_errors)
+        self.assertNotIn("nota1.xml", wizard.batch_errors)
+
+    def test_the_zip_reports_the_failed_entry_to_the_user(self):
+        wizard = self._zip_of_two_notes()
+        original = DocumentImportWizard._apply_wizard_depara
+        calls = []
+
+        def failing_second(self, edoc):
+            calls.append(edoc)
+            if len(calls) == 2:
+                raise UserError("the de-para blew up")
+            return original(self, edoc)
+
+        with patch.object(DocumentImportWizard, "_apply_wizard_depara", failing_second):
+            action = wizard.action_import_and_open_document()
+        self.assertEqual(action["tag"], "display_notification")
+        self.assertIn("nota2.xml", action["params"]["message"])
+        self.assertEqual(
+            action["params"]["next"]["res_model"], "l10n_br_fiscal.document"
+        )
+
     def test_match_xml_product(self):
         self._prepare_wizard(self.xml_1)
 

@@ -12889,3 +12889,20 @@ msgid ""
 msgstr ""
 "O documento importado %(document)s ainda não foi revisado:\n"
 "%(errors)s"
+
+#. module: l10n_br_fiscal
+#: code:addons/l10n_br_fiscal/wizards/document_import_wizard.py:0
+msgid "Some files of the archive were not imported"
+msgstr "Alguns arquivos do zip não foram importados"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard__batch_errors
+msgid ""
+"The files of a zip archive that could not be imported, with the reason of each one."
+msgstr ""
+"Os arquivos de um zip que não puderam ser importados, com o motivo de cada um."
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document_import_wizard__batch_errors
+msgid "Batch Errors"
+msgstr "Erros do lote"
