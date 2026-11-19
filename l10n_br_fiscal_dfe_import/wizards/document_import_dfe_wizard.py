@@ -64,8 +64,22 @@ class DocumentImportDfeWizard(models.TransientModel):
             "info",
         )
 
-    def _import_files(self, files):
+    def _import_files(self, files, dfe_document=None):
         documents, errors = self.env["l10n_br_fiscal.document"].dfe_import_files(files)
+        if dfe_document:
+            for document in documents.filtered(
+                lambda doc: not any(
+                    dfe_document.access_key in (msg.body or "")
+                    for msg in doc.message_ids
+                )
+            ):
+                document.message_post(
+                    body=_("Document created from the access key %s.")
+                    % dfe_document.access_key
+                )
+                dfe_document.sudo().message_post(
+                    body=_("Fiscal document %s created.") % document.display_name
+                )
         messages = "\n".join(f"{name}: {message}" for name, message in errors)
         if not documents:
             raise UserError(_("No file was imported:\n%s") % messages)
@@ -103,7 +117,9 @@ class DocumentImportDfeWizard(models.TransientModel):
         complete = dfe_document._get_complete_dfe()
         if complete.attachment_id:
             attachment = complete.attachment_id
-            return self._import_files([(attachment.name, attachment.raw)])
+            return self._import_files(
+                [(attachment.name, attachment.raw)], dfe_document=dfe_document
+            )
         return self._ask_acknowledgement(dfe_document)
 
     def _find_dfe_document(self, access_key, company):

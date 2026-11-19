@@ -7,6 +7,16 @@
         <field name="model">l10n_br_fiscal.document</field>
         <field name="inherit_id" ref="l10n_br_fiscal.document_form" />
         <field name="arch" type="xml">
+            <xpath expr="//form/header" position="inside">
+                <button
+                    name="action_confirm_suggestions"
+                    type="object"
+                    string="Confirm Suggestions"
+                    class="btn-primary"
+                    groups="l10n_br_fiscal.group_user"
+                    attrs="{'invisible': [('import_state', 'in', [False, 'resolved'])]}"
+                />
+            </xpath>
             <xpath expr="//form/sheet" position="before">
                 <div
                     class="alert alert-info"
@@ -72,6 +82,14 @@
                     attrs="{'invisible': [('import_state', '=', False)]}"
                 />
                 <field
+                    name="import_uom_id"
+                    attrs="{'invisible': [('import_state', '=', False)]}"
+                />
+                <field
+                    name="import_uom_factor"
+                    attrs="{'invisible': [('import_state', '=', False)]}"
+                />
+                <field
                     name="import_ncm_code"
                     attrs="{'invisible': [('import_ncm_code', '=', False)]}"
                 />
@@ -91,7 +109,10 @@
         <field name="model">l10n_br_fiscal.document</field>
         <field name="inherit_id" ref="l10n_br_fiscal.document_tree" />
         <field name="mode">primary</field>
+        <field name="priority" eval="99" />
         <field name="arch" type="xml">
+            <field name="fiscal_amount_untaxed" position="replace" />
+            <field name="fiscal_amount_tax" position="replace" />
             <field name="state_edoc" position="after">
                 <field
                     name="import_state"

@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 11:25+0000\n"
-"PO-Revision-Date: 2026-11-19 11:25+0000\n"
+"POT-Creation-Date: 2026-11-19 13:31+0000\n"
+"PO-Revision-Date: 2026-11-19 13:31+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -20,6 +20,13 @@ msgstr ""
 #: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
 #, python-format
 msgid "%(line)s: the NCM %(ncm)s is not in the registry."
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
+#, python-format
+msgid "%(line)s: the unit %(uom)s has no match in the units."
 msgstr ""
 
 #. module: l10n_br_fiscal_dfe_import
@@ -86,6 +93,11 @@ msgid "Confirm Message"
 msgstr ""
 
 #. module: l10n_br_fiscal_dfe_import
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_dfe_import.document_form
+msgid "Confirm Suggestions"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
 #: model:ir.model.fields,field_description:l10n_br_fiscal_dfe_import.field_l10n_br_fiscal_dfe_import_wizard__create_uid
 msgid "Created by"
 msgstr ""
@@ -109,6 +121,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_br_fiscal_dfe_import/models/dfe_document.py:0
 #: code:addons/l10n_br_fiscal_dfe_import/models/dfe_document.py:0
+#: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
 #, python-format
 msgid "Document created from the access key %s."
 msgstr ""
@@ -126,6 +139,7 @@ msgstr ""
 #. module: l10n_br_fiscal_dfe_import
 #. odoo-python
 #: code:addons/l10n_br_fiscal_dfe_import/models/dfe_document.py:0
+#: code:addons/l10n_br_fiscal_dfe_import/wizards/document_import_dfe_wizard.py:0
 #, python-format
 msgid "Fiscal document %s created."
 msgstr ""
@@ -356,6 +370,15 @@ msgstr ""
 msgid ""
 "The fiscal document will be created when the complete XML arrives from the "
 "distribution service."
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe_import
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe_import/models/document.py:0
+#, python-format
+msgid ""
+"The note is addressed to the company %s, which is not selected in the "
+"company switcher. Select it (or switch to it) and import again."
 msgstr ""
 
 #. module: l10n_br_fiscal_dfe_import

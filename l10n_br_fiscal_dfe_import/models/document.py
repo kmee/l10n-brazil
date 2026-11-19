@@ -35,7 +35,10 @@ class Document(models.Model):
     )
 
     @api.depends(
-        "imported_document", "fiscal_operation_id", "fiscal_line_ids.import_ncm_code"
+        "imported_document",
+        "fiscal_operation_id",
+        "fiscal_line_ids.import_ncm_code",
+        "fiscal_line_ids.uom_id",
     )
     def _compute_import_warning(self):
         for document in self:
@@ -56,7 +59,14 @@ class Document(models.Model):
                         _("%(line)s: the NCM %(ncm)s is not in the registry.")
                         % {"line": line.name, "ncm": line.import_ncm_code}
                     )
-            document.import_warning = "\n".join(messages)
+                for line in document.fiscal_line_ids.filtered(
+                    lambda line: line.partner_uom_code and not line.uom_id
+                ):
+                    messages.append(
+                        _("%(line)s: the unit %(uom)s has no match in the units.")
+                        % {"line": line.name, "uom": line.partner_uom_code}
+                    )
+            document.import_warning = "\n".join(messages) or False
 
     @api.model
     def dfe_import_files(self, files):
@@ -133,7 +143,11 @@ class Document(models.Model):
             document.document_type_id = self.env.ref("l10n_br_fiscal.document_55")
         document._dfe_import_attach_xml(content)
         document._init_import_states()
+        document.fiscal_line_ids.filtered(lambda line: not line.uom_id).write(
+            {"import_state": "pending"}
+        )
         document._dfe_import_suggest_operation(inf_nfe)
+        document._dfe_import_apply_depara()
         new_partners = (
             self.env["res.partner"]
             .with_context(active_test=False)
@@ -145,6 +159,49 @@ class Document(models.Model):
                 % ", ".join(new_partners.mapped("display_name"))
             )
         return document
+
+    def action_confirm_suggestions(self):
+        """Resolve in a batch the lines whose product is a suggestion: the
+        confirmation of the reviewer."""
+        for document in self:
+            document.fiscal_line_ids.filtered(
+                lambda line: line.import_state == "matched" and line.uom_id
+            ).action_resolve_line()
+        return True
+
+    def _dfe_import_apply_depara(self):
+        """Resolve the lines whose product the buyer already mapped for this
+        supplier (a previous human decision). A product found only by internal
+        code, barcode or name stays a suggestion."""
+        self.ensure_one()
+        uom_model = self.env["uom.uom"]
+        supplierinfo = self.env["product.supplierinfo"].sudo()
+        for line in self.fiscal_line_ids:
+            code = line._get_partner_product_code()
+            info = code and supplierinfo.search(
+                [
+                    ("partner_id", "=", self.partner_id.id),
+                    ("product_code", "=", code),
+                ],
+                limit=1,
+            )
+            product = info and (
+                info.product_id or info.product_tmpl_id.product_variant_ids[:1]
+            )
+            if not product:
+                continue
+            line.product_id = product
+            declared = uom_model._match_by_fiscal_code(line.partner_uom_code)
+            if declared and info.partner_uom_id == declared:
+                line._apply_import_depara(
+                    product=product,
+                    uom=product.uom_po_id,
+                    factor=info.partner_uom_factor,
+                )
+            elif declared and declared == product.uom_po_id:
+                line._apply_import_depara(product=product, uom=declared, factor=1.0)
+            elif line.uom_id:
+                line.import_state = "matched"
 
     def _dfe_import_suggest_operation(self, inf_nfe):
         """Suggest the inbound operation of the document and of each line from
@@ -196,6 +253,15 @@ class Document(models.Model):
         if not self.env.su and company not in self.env.user.company_ids:
             raise UserError(
                 _("You have no access to the company %s, recipient of the file.")
+                % company.display_name
+            )
+        if company not in self.env.companies:
+            raise UserError(
+                _(
+                    "The note is addressed to the company %s, which is not selected "
+                    "in the company switcher. Select it (or switch to it) and "
+                    "import again."
+                )
                 % company.display_name
             )
         return company

@@ -16,6 +16,7 @@ FIXTURE_DIR = os.path.join(
 FIXTURE_DEST = re.compile(rb"(<dest>\s*)<(?:CNPJ|CPF)>\d+</(?:CNPJ|CPF)>")
 KEY_1 = "35200159594315000157550010000000012062777161"
 KEY_2 = "35200159594315000157550010000000022062777169"
+KEY_3 = "35200159594315000157550010000000032062777166"
 
 
 class DfeImportCase(TransactionCase):
@@ -24,6 +25,9 @@ class DfeImportCase(TransactionCase):
         super().setUpClass()
         cls.company = cls.env.ref("base.main_company")
         cls.other_company = cls.env.ref("l10n_br_base.empresa_lucro_real")
+        presumed = cls.env.ref("l10n_br_base.empresa_lucro_presumido")
+        companies = (cls.company | cls.other_company | presumed).ids
+        cls.env = cls.env(context=dict(cls.env.context, allowed_company_ids=companies))
         cls.Document = cls.env["l10n_br_fiscal.document"]
 
     @classmethod
