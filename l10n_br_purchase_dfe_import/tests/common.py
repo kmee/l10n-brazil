@@ -54,4 +54,5 @@ class PurchaseImportCase(DfeImportCase):
     def _rows(self, **domain):
         # the read model is SQL: what the test wrote has to reach the database
         self.env.flush_all()
+        self.env.invalidate_all()
         return self.Match.search([(key, "=", value) for key, value in domain.items()])
