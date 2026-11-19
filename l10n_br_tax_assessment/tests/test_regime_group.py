@@ -64,3 +64,28 @@ class TestRegimeOfTheGroup(SpedEntradaCommon):
         assessment = self._assessment("pis")
         assessment.tax_group_id.regime = "non_cumulative"
         self.assertEqual(assessment.regime, "non_cumulative")
+
+    def test_the_fiscal_manager_reaches_the_tax_groups_without_debug_mode(self):
+        """The menu of the core for the tax groups needs the developer mode: the
+        menu next to the assessment opens the same action to the accounting
+        manager."""
+        menu = self.env.ref("l10n_br_tax_assessment.menu_tax_group_regime")
+        self.assertEqual(menu.action, self.env.ref("account.action_tax_group"))
+        user = self.env["res.users"].create(
+            {
+                "name": "Accounting manager",
+                "login": "accounting_manager_tax_group",
+                "groups_id": [
+                    (
+                        6,
+                        0,
+                        [
+                            self.env.ref("base.group_user").id,
+                            self.env.ref("account.group_account_manager").id,
+                        ],
+                    )
+                ],
+            }
+        )
+        visible = self.env["ir.ui.menu"].with_user(user)._visible_menu_ids(debug=False)
+        self.assertIn(menu.id, visible)

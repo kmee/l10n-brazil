@@ -29,4 +29,18 @@
             </field>
         </field>
     </record>
+
+    <!--
+      The menu of the core for the tax groups only shows in the developer mode.
+      The fiscal user who sets the regime of the PIS and the COFINS gets the same
+      action, with no copy of it, next to the assessment.
+    -->
+    <menuitem
+        id="menu_tax_group_regime"
+        name="Grupos de imposto (regime de apuração)"
+        parent="account.menu_finance_entries_actions"
+        action="account.action_tax_group"
+        groups="account.group_account_manager"
+        sequence="91"
+    />
 </odoo>
