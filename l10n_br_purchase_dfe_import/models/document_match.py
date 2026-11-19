@@ -264,6 +264,20 @@ class DocumentMatch(models.Model):
             )
         return document
 
+    @api.model
+    def _check_units(self, lines):
+        """A unit the supplier declared and nobody confirmed is not converted
+        silently: the person chooses it on the line first."""
+        for line in lines.filtered(lambda line: line._import_unit_unconfirmed()):
+            raise UserError(
+                _(
+                    "The unit %(unit)s declared for the line %(line)s was not "
+                    "confirmed. Choose the unit on the line before using it here.",
+                    unit=line.partner_uom_code,
+                    line=line.name,
+                )
+            )
+
     def action_match(self):
         """Resolve the origin of invoice lines to one confirmed order line."""
         notes, orders, quotes = self._split_selection()
@@ -279,6 +293,7 @@ class DocumentMatch(models.Model):
         if len(orders) != 1:
             raise UserError(_("Select one order line to match."))
         document = self._editable_document(notes)
+        self._check_units(notes)
         order_line = orders
         if order_line.order_id.state not in ("purchase", "done"):
             raise UserError(
@@ -391,6 +406,7 @@ class DocumentMatch(models.Model):
         if orders or quotes or not notes:
             raise UserError(_("Select only invoice lines to create the order."))
         document = self._editable_document(notes)
+        self._check_units(notes)
         if not all(line.product_id for line in notes):
             raise UserError(_("Resolve the product of the selected lines first."))
         if notes.filtered(lambda line: line.import_origin_state == "resolved"):

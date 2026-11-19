@@ -30,6 +30,12 @@ class FiscalDocument(models.Model):
             document.fiscal_line_ids._suggest_import_origin()
         return result
 
+    def _dfe_import_apply_depara(self):
+        result = super()._dfe_import_apply_depara()
+        # the lines that got their product from the de-para of the supplier
+        self.fiscal_line_ids._suggest_import_origin()
+        return result
+
     def _dfe_import_suggest_operation(self, inf_nfe):
         result = super()._dfe_import_suggest_operation(inf_nfe)
         # the operation comes after the origins were decided: the destination

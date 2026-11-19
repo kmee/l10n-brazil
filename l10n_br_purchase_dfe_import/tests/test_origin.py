@@ -138,6 +138,66 @@ class TestOrigin(PurchaseImportCase):
         self.assertEqual(line.import_origin_state, "resolved")
         self.assertEqual(line.fiscal_operation_line_id, destination)
 
+    def test_a_line_resolved_by_the_depara_at_the_import_gets_its_origin(self):
+        first, _errors = self.Document.dfe_import_files([("nfe.xml", self._xml(KEY_2))])
+        self.product = first.fiscal_line_ids.product_id
+        declared = self.env["uom.uom"]._match_by_fiscal_code(
+            first.fiscal_line_ids.partner_uom_code
+        )
+        self.env["product.supplierinfo"].create(
+            {
+                "partner_id": first.partner_id.id,
+                "product_tmpl_id": self.product.product_tmpl_id.id,
+                "product_code": first.fiscal_line_ids._get_partner_product_code(),
+                "partner_uom_id": declared.id,
+                "partner_uom_factor": 1.0,
+            }
+        )
+        order = self._order(partner=first.partner_id)
+        first.unlink()
+        xml = self._xml(KEY_2).replace(
+            b"</prod>",
+            b"<xPed>%s</xPed><nItemPed>1</nItemPed></prod>" % order.name.encode(),
+            1,
+        )
+
+        documents, errors = self.Document.dfe_import_files([("nfe.xml", xml)])
+
+        line = documents.fiscal_line_ids
+        self.assertFalse(errors)
+        self.assertEqual(line.import_state, "resolved")
+        self.assertEqual(line.import_purchase_line_id, order.order_line)
+        self.assertEqual(line.import_origin_state, "resolved")
+
+    def test_a_line_matched_by_the_supplier_code_gets_its_origin(self):
+        first, _errors = self.Document.dfe_import_files([("nfe.xml", self._xml(KEY_2))])
+        # the buyer mapped the code of the supplier to a product that the name or
+        # the code of the file do not find, in a unit that is not the declared one
+        self.product.uom_po_id = self.env.ref("uom.product_uom_dozen")
+        self.env["product.supplierinfo"].create(
+            {
+                "partner_id": first.partner_id.id,
+                "product_tmpl_id": self.product.product_tmpl_id.id,
+                "product_code": first.fiscal_line_ids._get_partner_product_code(),
+            }
+        )
+        order = self._order(partner=first.partner_id)
+        order.order_line.product_uom = self.unit
+        first.unlink()
+        xml = self._xml(KEY_2).replace(
+            b"</prod>",
+            b"<xPed>%s</xPed><nItemPed>1</nItemPed></prod>" % order.name.encode(),
+            1,
+        )
+
+        documents, errors = self.Document.dfe_import_files([("nfe.xml", xml)])
+
+        line = documents.fiscal_line_ids
+        self.assertFalse(errors)
+        self.assertEqual(line.product_id, self.product)
+        self.assertEqual(line.import_state, "matched")
+        self.assertEqual(line.import_purchase_line_id, order.order_line)
+
     def test_destination_does_not_replace_a_manual_choice(self):
         order = self._order()
         destination = self.env.ref("l10n_br_fiscal.fo_compras_compras_uso_consumo")

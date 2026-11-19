@@ -63,10 +63,28 @@ class TestMatch(PurchaseImportCase):
     def test_match_refuses_a_unit_that_does_not_convert(self):
         order = self._order()
         note = self._rows(fiscal_document_id=self.document.id)
-        self.line.uom_id = self.env.ref("uom.product_uom_kgm")
+        kilogram = self.env.ref("uom.product_uom_kgm")
+        self.line.write({"uom_id": kilogram.id, "import_uom_id": kilogram.id})
 
         with self.assertRaisesRegex(UserError, "does not convert"):
             (note | self._rows(purchase_line_id=order.order_line.id)).action_match()
+
+    def test_a_unit_nobody_confirmed_is_not_converted_silently(self):
+        order = self._order()
+        self.line.write({"partner_uom_code": "XYZ", "uom_id": False})
+        rows = self._rows(fiscal_document_id=self.document.id)
+        both = rows | self._rows(purchase_line_id=order.order_line.id)
+
+        with self.assertRaisesRegex(UserError, "was not confirmed"):
+            both.action_match()
+        with self.assertRaisesRegex(UserError, "was not confirmed"):
+            rows.action_create_order()
+        self.assertFalse(self.line.import_origin_state == "resolved")
+
+        # the person chose the unit on the line: now it converts
+        self.line.write({"uom_id": self.unit.id, "import_uom_id": self.unit.id})
+        both.action_match()
+        self.assertEqual(self.line.import_origin_state, "resolved")
 
     def test_one_document_at_a_time(self):
         other, _errors = self.Document.dfe_import_files([("nfe.xml", self._xml(KEY_2))])
