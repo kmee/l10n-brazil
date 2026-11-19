@@ -14,6 +14,15 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: l10n_br_nfe_dfe
+#. odoo-python
+#: code:addons/l10n_br_nfe_dfe/models/dfe_document.py:0
+#, python-format
+msgid ""
+"%s asked to import this NF-e. The acknowledgement was already registered: "
+"the fiscal document is created when the complete XML arrives."
+msgstr ""
+
+#. module: l10n_br_nfe_dfe
 #: model:ir.model.fields.selection,name:l10n_br_nfe_dfe.selection__res_company__nfe_dfe_version__1_01
 msgid "1.01"
 msgstr ""
@@ -21,6 +30,16 @@ msgstr ""
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.view_l10n_br_fiscal_dfe_document_form_nfe
 msgid "<span class=\"o_stat_text\">Invoice</span>"
+msgstr ""
+
+#. module: l10n_br_nfe_dfe
+#. odoo-python
+#: code:addons/l10n_br_nfe_dfe/models/dfe_document.py:0
+#, python-format
+msgid ""
+"Acknowledgement of the operation registered by %s. The final manifestation "
+"of the recipient is now mandatory, and the fiscal document is created when "
+"the complete XML arrives."
 msgstr ""
 
 #. module: l10n_br_nfe_dfe
@@ -269,6 +288,25 @@ msgstr ""
 #: code:addons/l10n_br_nfe_dfe/wizards/nfe_md_event_wizard.py:0
 #, python-format
 msgid "Success"
+msgstr ""
+
+#. module: l10n_br_nfe_dfe
+#. odoo-python
+#: code:addons/l10n_br_nfe_dfe/models/dfe_document.py:0
+#, python-format
+msgid ""
+"The acknowledgement is only possible until %s days after the authorization. "
+"Upload the XML file instead."
+msgstr ""
+
+#. module: l10n_br_nfe_dfe
+#. odoo-python
+#: code:addons/l10n_br_nfe_dfe/models/dfe_document.py:0
+#, python-format
+msgid ""
+"The complete XML is only released after the acknowledgement of the operation"
+" (ciencia), an event registered at the tax authority that obliges the "
+"company to register the final manifestation afterwards. Register it?"
 msgstr ""
 
 #. module: l10n_br_nfe_dfe
