@@ -18,6 +18,13 @@
                     This document was imported and is awaiting review: resolve
                     each line before generating the invoice.
                 </div>
+                <div
+                    class="alert alert-warning"
+                    role="alert"
+                    attrs="{'invisible': [('import_warning', '=', False)]}"
+                >
+                    <field name="import_warning" nolabel="1" readonly="1" />
+                </div>
             </xpath>
             <xpath
                 expr="//field[@name='fiscal_line_ids']/tree/field[@name='fiscal_amount_total']"
@@ -43,6 +50,10 @@
                 <field
                     name="import_state"
                     attrs="{'invisible': [('import_state', '=', False)]}"
+                />
+                <field
+                    name="import_ncm_code"
+                    attrs="{'invisible': [('import_ncm_code', '=', False)]}"
                 />
                 <button
                     name="action_resolve_line"

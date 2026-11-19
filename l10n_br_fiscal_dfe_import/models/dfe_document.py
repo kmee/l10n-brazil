@@ -9,7 +9,12 @@ _logger = logging.getLogger(__name__)
 
 
 class L10nBrFiscalDfeDocument(models.Model):
-    _inherit = "l10n_br_fiscal_dfe.document"
+    _name = "l10n_br_fiscal_dfe.document"
+    _inherit = [
+        "l10n_br_fiscal_dfe.document",
+        "mail.thread",
+        "mail.activity.mixin",
+    ]
 
     import_requested_user_id = fields.Many2one(
         comodel_name="res.users",
@@ -40,6 +45,7 @@ class L10nBrFiscalDfeDocument(models.Model):
         """Create the fiscal document of an import asked by access key."""
         self.ensure_one()
         user = self.import_requested_user_id
+        self = self.with_context(lang=user.lang)
         complete = self._get_complete_dfe()
         if not user or not complete.attachment_id:
             return
@@ -64,3 +70,10 @@ class L10nBrFiscalDfeDocument(models.Model):
             )
         for _name, message in errors:
             self.company_id._dfe_log(message, log_type="error", fiscal_type="nfe")
+        if errors:
+            self.sudo().activity_schedule(
+                "mail.mail_activity_data_warning",
+                user_id=user.id,
+                summary=_("The NF-e could not be imported"),
+                note="\n".join(message for _name, message in errors),
+            )

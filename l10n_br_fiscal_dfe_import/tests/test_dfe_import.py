@@ -206,3 +206,71 @@ class TestDfeImport(DfeImportCase):
         self.assertEqual(
             menu.action, self.env.ref("l10n_br_nfe.l10n_br_nfe_import_xml_action")
         )
+
+    def test_unknown_ncm_is_kept_as_declared_and_not_created(self):
+        ncm = self.env["l10n_br_fiscal.ncm"].search_count([])
+        xml = self._xml(
+            KEY_1, replace=[(b"<NCM>94033000</NCM>", b"<NCM>99999999</NCM>")]
+        )
+
+        documents, errors = self.Document.dfe_import_files([("nfe.xml", xml)])
+
+        line = documents.fiscal_line_ids
+        self.assertFalse(errors)
+        self.assertEqual(line.import_ncm_code, "99999999")
+        self.assertFalse(line.ncm_id)
+        self.assertIn("99999999", documents.import_warning)
+        self.assertEqual(self.env["l10n_br_fiscal.ncm"].search_count([]), ncm)
+
+    def test_unknown_registries_are_not_created(self):
+        models = ("l10n_br_fiscal.cest", "uom.uom", "res.city", "res.country")
+        counts = [self.env[model].search_count([]) for model in models]
+        xml = self._xml(
+            KEY_1,
+            replace=[
+                (b"<NCM>94033000</NCM>", b"<NCM>94033000</NCM><CEST>9999999</CEST>"),
+                (b"<uCom>UNID</uCom>", b"<uCom>ZZZ</uCom>"),
+                (b"<cMun>3501152</cMun>", b"<cMun>9999999</cMun>"),
+            ],
+        )
+
+        documents, errors = self.Document.dfe_import_files([("nfe.xml", xml)])
+
+        self.assertFalse(errors)
+        self.assertTrue(documents)
+        self.assertEqual(counts, [self.env[model].search_count([]) for model in models])
+
+    def test_partners_created_by_the_import_are_logged(self):
+        carrier = (
+            b"<modFrete>0</modFrete><transporta><CNPJ>11222333000181</CNPJ>"
+            b"<xNome>Transp Nova</xNome></transporta>"
+        )
+        xml = self._xml(KEY_1, replace=[(b"<modFrete>9</modFrete>", carrier)])
+
+        documents, _errors = self.Document.dfe_import_files([("nfe.xml", xml)])
+
+        self.assertIn("Transp Nova", "".join(documents.message_ids.mapped("body")))
+
+    def test_unexpected_error_is_reported_without_the_raw_message(self):
+        model = type(self.Document)
+        with mock.patch.object(
+            model, "import_binding_nfe", side_effect=RuntimeError("raw boom")
+        ):
+            _documents, errors = self.Document.dfe_import_files(
+                [("nfe.xml", self._xml(KEY_1))]
+            )
+
+        self.assertIn("unexpected error", errors[0][1])
+        self.assertNotIn("raw boom", errors[0][1])
+
+    def test_failed_import_from_the_inbox_warns_who_asked(self):
+        dfe_document = self._dfe_document(
+            KEY_1, summary_only=False, recipient="11222333000181"
+        )
+        dfe_document.import_requested_user_id = self.env.user
+
+        dfe_document._dfe_import_requested_xml()
+
+        activity = dfe_document.activity_ids
+        self.assertEqual(activity.user_id, self.env.user)
+        self.assertIn("not a company", activity.note)
