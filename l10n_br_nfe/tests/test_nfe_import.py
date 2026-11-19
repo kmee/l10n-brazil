@@ -1025,3 +1025,35 @@ class TestNfeDocumentImport(EdiImportCase):
 
         self.assertEqual(len(document._edi_get_installments()), 2)
         self.assertEqual(document.nfe40_vol.nfe40_qVol, "2")
+
+    # The nature of the operation, the partner that is missing and the own note.
+
+    def test_the_nature_declared_in_the_file_chooses_among_operations_of_the_cfop(
+        self,
+    ):
+        operation = self.env["l10n_br_fiscal.operation"].create(
+            {
+                "code": "TST-VENDA",
+                "name": "Venda",
+                "fiscal_operation_type": "in",
+                "fiscal_type": "purchase",
+            }
+        )
+        self.env["l10n_br_fiscal.operation.line"].create(
+            {
+                "fiscal_operation_id": operation.id,
+                "name": "Venda",
+                "cfop_internal_id": self.env.ref("l10n_br_fiscal.cfop_1102").id,
+            }
+        )
+        operation.action_approve()
+
+        document = self._imported(self._xml(KEY_1))
+        other = self._imported(
+            self._xml(KEY_2, replace=[(b"<natOp>Venda", b"<natOp>Another nature")])
+        )
+
+        self.assertEqual(document.partner_operation_name, "Venda")
+        self.assertEqual(document.fiscal_operation_id, operation)
+        self.assertEqual(other.partner_operation_name, "Another nature")
+        self.assertNotEqual(other.fiscal_operation_id, operation)

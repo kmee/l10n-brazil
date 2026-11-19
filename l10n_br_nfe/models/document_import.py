@@ -18,6 +18,11 @@ def _value(node):
     return getattr(node, "value", node)
 
 
+def _inf_nfe(binding):
+    """The ``infNFe`` of a binding, whether it is the ``nfeProc`` or the ``NFe``."""
+    return getattr(getattr(binding, "NFe", binding), "infNFe", None)
+
+
 class Document(models.Model):
     _inherit = "l10n_br_fiscal.document"
 
@@ -29,8 +34,7 @@ class Document(models.Model):
             binding = XmlParser().from_bytes(content)
         except Exception as error:  # pylint: disable=broad-except
             raise UserError(_("The file is not a valid NF-e XML.")) from error
-        nfe = getattr(binding, "NFe", binding)
-        inf_nfe = getattr(nfe, "infNFe", None)
+        inf_nfe = _inf_nfe(binding)
         if inf_nfe is None:
             return super()._edi_import_read(name, content)
         if str(_value(inf_nfe.ide.mod)) != MODELO_FISCAL_NFE:
@@ -78,6 +82,8 @@ class Document(models.Model):
     def _edi_import_create(self, parsed, company, role):
         if parsed.reader != "nfe":
             return super()._edi_import_create(parsed, company, role)
-        return self.import_binding_nfe(
+        document = self.import_binding_nfe(
             parsed.binding, edoc_type="out" if role == "issuer" else "in"
         )
+        document.partner_operation_name = _inf_nfe(parsed.binding).ide.natOp
+        return document
