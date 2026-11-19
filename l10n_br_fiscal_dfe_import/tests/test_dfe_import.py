@@ -147,6 +147,25 @@ class TestDfeImport(DfeImportCase):
         self.assertIn(unit.id, by_alias)
         self.assertFalse(self.env["uom.uom"].name_search("WRP9"))
 
+    def test_product_is_suggested_by_the_barcode_of_the_commercial_unit(self):
+        product = self.env["product.product"].create(
+            {"name": "Barcode only", "barcode": "7891234567895"}
+        )
+        xml = self._xml(
+            KEY_1,
+            replace=[
+                (b"ZZ-NEW-1", b"OTHER-CODE"),
+                (b"Brand new thing", b"Odd name"),
+                (b"<cEAN>SEM GTIN</cEAN>", b"<cEAN>7891234567895</cEAN>"),
+            ],
+        )
+
+        documents, _errors = self.Document.dfe_import_files([("nfe.xml", xml)])
+
+        line = documents.fiscal_line_ids
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.import_state, "matched")
+
     def test_zip_with_two_notes_and_an_invalid_file(self):
         buffer = BytesIO()
         with zipfile.ZipFile(buffer, "w") as archive:

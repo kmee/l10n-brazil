@@ -17,4 +17,11 @@ class ProductProduct(models.Model):
         rec_id = super(
             ProductProduct, self.with_context(dry_run=True)
         ).match_or_create_m2o(rec_dict, parent_dict, model)
-        return False if isinstance(rec_id, models.NewId) else rec_id
+        if not isinstance(rec_id, models.NewId):
+            return rec_id
+        # the match of the NF-e only looks at the barcode of the taxable unit
+        # (cEANTrib): the one of the commercial unit (cEAN) matches as well
+        ean = parent_dict.get("nfe40_cEAN")
+        if ean and ean != "SEM GTIN":
+            return self.search([("barcode", "=", ean)], limit=1).id or False
+        return False
