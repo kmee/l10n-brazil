@@ -29,6 +29,14 @@ class L10nBrFiscalDfeDocument(models.Model):
         self.ensure_one()
         self.sudo().import_requested_user_id = self.env.user
         if self.manifestation_status != "sem_manifestacao":
+            self.sudo().message_post(
+                body=_(
+                    "%s asked to import this NF-e. The acknowledgement was already "
+                    "registered: the fiscal document is created when the complete "
+                    "XML arrives."
+                )
+                % self.env.user.name
+            )
             return
         event = self.env["l10n_br_nfe.md_event"].create(
             {
@@ -40,6 +48,14 @@ class L10nBrFiscalDfeDocument(models.Model):
             }
         )
         event.with_company(self.company_id).action_confirm()
+        self.sudo().message_post(
+            body=_(
+                "Acknowledgement of the operation registered by %s. The final "
+                "manifestation of the recipient is now mandatory, and the fiscal "
+                "document is created when the complete XML arrives."
+            )
+            % self.env.user.name
+        )
 
     def _dfe_import_requested_xml(self):
         """Create the fiscal document of an import asked by access key."""
@@ -63,6 +79,11 @@ class L10nBrFiscalDfeDocument(models.Model):
             )
         )
         for document in documents:
+            text = _("Document created from the access key %s.") % self.access_key
+            document.message_post(body=text)
+            self.sudo().message_post(
+                body=_("Fiscal document %s created.") % document.display_name
+            )
             document.activity_schedule(
                 "mail.mail_activity_data_todo",
                 user_id=user.id,

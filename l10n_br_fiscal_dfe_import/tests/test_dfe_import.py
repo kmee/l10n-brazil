@@ -155,6 +155,7 @@ class TestDfeImport(DfeImportCase):
         self.assertEqual(dfe_document.manifestations_ids.event_type, "ciente")
         self.assertEqual(dfe_document.manifestations_ids.state, "done")
         self.assertEqual(dfe_document.import_requested_user_id, self.env.user)
+        self.assertIn("Acknowledgement", dfe_document.message_ids[0].body)
         self.assertFalse(self._imported(KEY_1))
 
     @mock.patch.object(DefaultTransport, "post")
@@ -375,3 +376,13 @@ class TestDfeImport(DfeImportCase):
         message = form.xpath("//field[@name='confirm_message']")[0]
 
         self.assertFalse(message.xpath("ancestor::group"))
+
+    def test_document_born_from_the_inbox_is_recorded_in_both_histories(self):
+        dfe_document = self._dfe_document(KEY_1, summary_only=False)
+        dfe_document.import_requested_user_id = self.env.user
+
+        dfe_document._dfe_import_requested_xml()
+
+        document = self._imported(KEY_1)
+        self.assertIn(KEY_1, document.message_ids[0].body)
+        self.assertIn("created", dfe_document.message_ids[0].body)
