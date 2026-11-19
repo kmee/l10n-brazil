@@ -233,6 +233,35 @@ class TestNfseDocumentImport(EdiImportCase):
         for text in ("Withholdings", "61.50", "Net amount payable", "938.50"):
             self.assertIn(text, summary)
 
+    def test_every_withholding_of_the_file_has_value_base_and_tax(self):
+        documents, errors, _warnings = self._import(
+            nfse_xml(withholdings=True).replace(b"<tpRetISSQN>1<", b"<tpRetISSQN>2<"),
+            operation=True,
+        )
+        self.assertFalse(errors)
+        line = documents.fiscal_line_ids
+        expected = {
+            "issqn_wh": (20.0, 1000.0, "tax_issqn_wh_2"),
+            "pis_wh": (6.5, 1000.0, "tax_pis_wh_0_65"),
+            "cofins_wh": (30.0, 1000.0, "tax_cofins_wh_3"),
+            "irpj_wh": (15.0, 1000.0, "tax_irpj_wh_1"),
+            "csll_wh": (10.0, 1000.0, "tax_csll_wh_1"),
+        }
+        for prefix, (value, base, xmlid) in expected.items():
+            self.assertAlmostEqual(line[f"{prefix}_value"], value, msg=prefix)
+            self.assertAlmostEqual(line[f"{prefix}_base"], base, msg=prefix)
+            self.assertEqual(
+                line[f"{prefix}_tax_id"],
+                self.env.ref(f"l10n_br_fiscal.{xmlid}"),
+                prefix,
+            )
+            self.assertIn(line[f"{prefix}_tax_id"], line.fiscal_tax_ids, prefix)
+        withheld = sum(value for value, _base, _xmlid in expected.values())
+        self.assertAlmostEqual(documents.amount_tax_withholding, withheld)
+        self.assertAlmostEqual(
+            documents.amount_financial_total, line.amount_fiscal - withheld
+        )
+
     def test_a_common_fiscal_user_imports_a_nfse(self):
         user = self._fiscal_user("fiscal_user_nfse", self.presumed)
         model = self.Document.with_user(user).with_context(

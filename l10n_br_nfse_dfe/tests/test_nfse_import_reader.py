@@ -99,6 +99,12 @@ class TestNfseImportReader(TransactionCase):
         _binding, document = wizard._create_edoc_from_file()
         line = document.fiscal_line_ids
         self.assertAlmostEqual(line.pis_wh_value, 25.44)
+        self.assertEqual(
+            line.pis_wh_tax_id, self.env.ref("l10n_br_fiscal.tax_pis_wh_0_65")
+        )
+        self.assertEqual(
+            line.cofins_wh_tax_id, self.env.ref("l10n_br_fiscal.tax_cofins_wh_3")
+        )
         self.assertAlmostEqual(line.irpj_wh_value, 58.71)
         self.assertAlmostEqual(line.csll_wh_value, 39.14)
         self.assertAlmostEqual(line.ibs_value, 2.5)

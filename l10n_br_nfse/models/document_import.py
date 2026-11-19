@@ -332,7 +332,11 @@ class Document(models.Model):
                 cofins_tax,
             )
         )
+        pis_wh_tax = cofins_wh_tax = self.env["l10n_br_fiscal.tax"]
         if binding.pis_withheld:
+            pis_wh_tax = self._nfse_match_tax(
+                "l10n_br_fiscal.tax_group_pis_wh", binding.pis_percent
+            )
             vals.update(
                 self._nfse_amount_vals(
                     "pis_wh",
@@ -341,10 +345,13 @@ class Document(models.Model):
                     binding.pis_value,
                     0.0,
                     False,
-                    self.env["l10n_br_fiscal.tax"].browse(),
+                    pis_wh_tax,
                 )
             )
         if binding.cofins_withheld:
+            cofins_wh_tax = self._nfse_match_tax(
+                "l10n_br_fiscal.tax_group_cofins_wh", binding.cofins_percent
+            )
             vals.update(
                 self._nfse_amount_vals(
                     "cofins_wh",
@@ -353,10 +360,10 @@ class Document(models.Model):
                     binding.cofins_value,
                     0.0,
                     False,
-                    self.env["l10n_br_fiscal.tax"].browse(),
+                    cofins_wh_tax,
                 )
             )
-        for tax in (pis_tax, cofins_tax):
+        for tax in (pis_tax, cofins_tax, pis_wh_tax, cofins_wh_tax):
             if tax:
                 tax_ids.append(tax.id)
         return vals
