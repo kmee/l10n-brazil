@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 KMEE
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl-3.0.html). -->
+<odoo>
+    <record id="credit_opening_tree" model="ir.ui.view">
+        <field name="name">l10n_br_pis_cofins.credit.opening.tree</field>
+        <field name="model">l10n_br_pis_cofins.credit.opening</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="company_id" groups="base.group_multi_company" />
+                <field name="tax_domain" />
+                <field name="origin_period" />
+                <field name="cod_cred" />
+                <field name="orig_cred" />
+                <field name="amount" sum="Total" />
+                <field name="used_before" sum="Total" />
+                <field name="balance" sum="Total" />
+                <field name="cutoff_date" />
+                <field name="currency_id" invisible="1" />
+            </tree>
+        </field>
+    </record>
+
+    <record id="credit_opening_form" model="ir.ui.view">
+        <field name="name">l10n_br_pis_cofins.credit.opening.form</field>
+        <field name="model">l10n_br_pis_cofins.credit.opening</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        Informe aqui o crédito de PIS e de COFINS que a empresa já
+                        tinha acumulado antes de usar o sistema. Os valores vêm da
+                        última EFD Contribuições transmitida pelo sistema anterior,
+                        nos registros 1100 (PIS) e 1500 (COFINS): um lançamento para
+                        cada período de origem e tipo de crédito. Esse saldo é usado
+                        primeiro (é o crédito mais antigo) e a apuração do primeiro
+                        mês no sistema parte dele. O sistema não faz lançamento
+                        contábil: o saldo de impostos a recuperar deve estar no
+                        balanço de abertura.
+                    </div>
+                    <group>
+                        <group>
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company"
+                            />
+                            <field name="tax_domain" />
+                            <field name="cutoff_date" />
+                        </group>
+                        <group>
+                            <field name="origin_period" />
+                            <field name="cod_cred" />
+                            <field name="orig_cred" />
+                            <field
+                                name="cnpj_suc"
+                                attrs="{'invisible': [('orig_cred', '!=', '02')], 'required': [('orig_cred', '=', '02')]}"
+                            />
+                        </group>
+                    </group>
+                    <group>
+                        <field name="currency_id" invisible="1" />
+                        <field name="amount" />
+                        <field name="used_before" />
+                        <field name="balance" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="credit_opening_action" model="ir.actions.act_window">
+        <field name="name">Saldo inicial de crédito de PIS/COFINS</field>
+        <field name="res_model">l10n_br_pis_cofins.credit.opening</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem
+        id="menu_credit_opening"
+        name="Saldo inicial de crédito de PIS/COFINS"
+        parent="account.menu_finance_entries_actions"
+        action="credit_opening_action"
+        groups="account.group_account_manager"
+        sequence="92"
+    />
+</odoo>
