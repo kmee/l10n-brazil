@@ -177,7 +177,7 @@ class TestMatch(PurchaseImportCase):
         rule = self.env["ir.rule"].search([("model_id.model", "=", self.Match._name)])
         self.assertIn("company_ids", rule.domain_force)
 
-    def _extra_source(self, **columns):
+    def _extra_source(self, kind="note", **columns):
         """One row of a source of another module, with the extra column."""
         values = dict(
             company_id="NULL::integer",
@@ -193,7 +193,7 @@ class TestMatch(PurchaseImportCase):
         )
         values.update(columns)
         return (
-            "SELECT 399 AS id, 'note' AS kind, 'x'::varchar AS description, "
+            f"SELECT 399 AS id, '{kind}' AS kind, 'x'::varchar AS description, "
             "NULL::varchar AS declared_reference, 1.0::float AS quantity, "
             "1.0::float AS open_quantity, 1.0::float AS price_unit, "
             "'r'::varchar AS reference, NULL::date AS date, "
@@ -229,7 +229,9 @@ class TestMatch(PurchaseImportCase):
         self.env.flush_all()
         model = type(self.Match)
         extra = self._extra_source(
-            company_id=str(self.company.id), product_id=str(self.product.id)
+            kind="order",
+            company_id=str(self.company.id),
+            product_id=str(self.product.id),
         )
         with mock.patch.object(
             model, "_match_extra_columns", return_value={"extra_flag": "integer"}
