@@ -306,6 +306,125 @@ class TestDocumentImport(EdiImportCase):
         document._edi_import_check_partners(self._parsed(KEY_1))
         self.assertFalse(document.import_partner_warning)
 
+    def _own_document(self, lines, direction="out", **values):
+        """Imported document, issued by the company when ``direction`` is out, whose
+        lines declare the code of their product."""
+        document = self._create_imported_document(
+            issuer="company" if direction == "out" else "partner",
+            fiscal_operation_id=False,
+            lines=lines,
+            **values,
+        )
+        document.fiscal_operation_type = direction
+        return document
+
+    def _declared_codes(self):
+        return patch.object(
+            type(self.env["l10n_br_fiscal.document.line"]),
+            "_get_partner_product_code",
+            lambda line: line.name.split()[0],
+        )
+
+    def test_a_line_of_a_document_the_company_issued_resolves_by_its_own_code(self):
+        """In a document the company issued the code of the file is the internal
+        code: the line enters resolved. In a document received it is only a
+        suggestion, as before."""
+        product = self.env["product.product"].create(
+            {"name": "Own product", "default_code": "OWN-1"}
+        )
+        for direction, state in (("out", "resolved"), ("in", "matched")):
+            document = self._own_document(
+                [{"name": "OWN-1 sold item"}], direction=direction
+            )
+            with self._declared_codes():
+                document._edi_import_suggest()
+            line = document.fiscal_line_ids
+            if direction == "out":
+                self.assertEqual(line.product_id, product)
+                self.assertEqual(line.import_state, state)
+                self.assertFalse(line.import_supplierinfo_id)
+            else:
+                self.assertNotEqual(line.import_state, "resolved")
+
+    def test_a_declared_unit_that_is_not_confirmed_blocks_the_own_product(self):
+        product = self.env["product.product"].create(
+            {"name": "Own product", "default_code": "OWN-2"}
+        )
+        document = self._own_document(
+            [{"name": "OWN-2 sold item", "partner_uom_code": "ZZZ"}]
+        )
+        with self._declared_codes():
+            document._edi_import_suggest()
+        line = document.fiscal_line_ids
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.import_state, "pending")
+
+    def test_the_missing_products_are_created_by_an_explicit_action(self):
+        ncm = self.env["l10n_br_fiscal.ncm"].create(
+            {"name": "NCM of the file", "code": "9999.99.99"}
+        )
+        document = self._own_document(
+            [
+                {"name": "OWN-3 first", "ncm_id": ncm.id, "icms_origin": "1"},
+                {"name": "OWN-3 again"},
+                {"name": "OWN-4 known", "product_id": False},
+                {"name": "OWN-5 odd unit", "partner_uom_code": "ZZZ"},
+            ]
+        )
+        product_model = self.env["product.product"]
+        with self._declared_codes():
+            before = product_model.search_count([])
+            # the import never creates a product
+            document._edi_import_suggest()
+            self.assertEqual(
+                product_model.search([("default_code", "=", "OWN-3")]).ids, []
+            )
+            # a product with a code of the file appears before the action is run
+            existing = product_model.create(
+                {"name": "Already there", "default_code": "OWN-4"}
+            )
+            before += 1
+            action = document.action_import_create_products()
+            created = product_model.search([("default_code", "=", "OWN-3")])
+            self.assertEqual(len(created), 1)
+            self.assertEqual(created.name, "OWN-3 first")
+            self.assertEqual(created.ncm_id, ncm)
+            self.assertEqual(created.icms_origin, "1")
+            self.assertEqual(created.uom_id, self.uom_unit)
+            self.assertEqual(product_model.search_count([]), before + 1)
+            lines = document.fiscal_line_ids
+            self.assertEqual(lines[0].product_id, created)
+            self.assertEqual(lines[1].product_id, created)
+            self.assertEqual(lines[2].product_id, existing)
+            self.assertEqual(lines.mapped("import_state")[:3], ["resolved"] * 3)
+            # the unit that matched nothing blocks: no product, no unit created
+            self.assertFalse(lines[3].product_id)
+            self.assertFalse(product_model.search([("default_code", "=", "OWN-5")]))
+            self.assertEqual(action["tag"], "display_notification")
+            self.assertIn("Products created by", document.message_ids[0].body)
+            self.assertIn("OWN-3", document.message_ids[0].body)
+            # the second time creates nothing
+            document.action_import_create_products()
+            self.assertEqual(product_model.search_count([]), before + 1)
+
+    def test_products_are_not_created_for_a_document_received(self):
+        document = self._own_document([{"name": "REC-1 item"}], direction="in")
+        with self.assertRaises(UserError):
+            document.action_import_create_products()
+
+    def test_a_user_who_cannot_create_products_cannot_run_the_action(self):
+        user = self._fiscal_user("fiscal_user_no_product")
+        document = self._own_document([{"name": "NOP-1 item"}])
+        model = document.with_user(user).with_context(
+            allowed_company_ids=self.company.ids
+        )
+        self.assertFalse(model.import_can_create_products)
+        with self.assertRaises(UserError):
+            model.action_import_create_products()
+        self.assertFalse(
+            self.env["product.product"].search([("default_code", "=", "NOP-1")])
+        )
+
     def test_a_reader_that_is_not_installed_refuses_the_file(self):
         parsed = self._parsed(KEY_1, reader="cte")
         with patch.object(

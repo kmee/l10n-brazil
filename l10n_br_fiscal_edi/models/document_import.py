@@ -45,6 +45,12 @@ class Document(models.Model):
         help="What the imported document still lacks to be reviewed.",
     )
 
+    import_can_create_products = fields.Boolean(
+        compute="_compute_import_can_create_products",
+        help="The user may create products, which the action of the imported "
+        "documents the company issued needs.",
+    )
+
     import_partner_warning = fields.Text(
         copy=False,
         readonly=True,
@@ -336,8 +342,8 @@ class Document(models.Model):
 
     @api.model
     def _edi_import_normalize(self, value):
-        """Lower case, only letters and digits (NFKD splits the accents off and the
-        punctuation rule drops them): the comparison of the
+        """Lower case, only letters and digits (the accents are split off by NFKD and
+        dropped with the punctuation): the comparison of the
         file with the registry does not report formatting."""
         value = unicodedata.normalize("NFKD", str(value or ""))
         return re.sub(r"[^a-z0-9]", "", value.lower())
@@ -416,6 +422,8 @@ class Document(models.Model):
             document._edi_import_suggest_operation()
             if document.fiscal_operation_type == FISCAL_IN:
                 document._edi_import_apply_supplier_depara()
+            elif document.fiscal_operation_type == FISCAL_OUT:
+                document._edi_import_apply_own_products()
             for line in document.fiscal_line_ids.filtered(
                 lambda line: line.import_state == "matched"
                 and line._import_unit_unconfirmed()
@@ -458,6 +466,106 @@ class Document(models.Model):
             )
             if operation_line:
                 line.fiscal_operation_line_id = operation_line
+
+    def _compute_import_can_create_products(self):
+        can_create = self.env["product.product"].check_access_rights(
+            "create", raise_exception=False
+        )
+        for document in self:
+            document.import_can_create_products = can_create
+
+    def _edi_import_own_product(self, code):
+        """The product of the company with this internal code: in a document the
+        company issued, the code of the product in the file is its own."""
+        self.ensure_one()
+        return self.env["product.product"].search(
+            [
+                ("default_code", "=", code),
+                ("company_id", "in", [False, self.company_id.id]),
+            ],
+            limit=1,
+        )
+
+    def _edi_import_apply_own_products(self):
+        """Resolve the lines of a document the company issued whose code is the
+        internal code of one of its products, when the unit declared is confirmed;
+        otherwise the product is only suggested."""
+        self.ensure_one()
+        for line in self.fiscal_line_ids.filtered(
+            lambda line: line.import_state in (False, "pending", "matched")
+        ):
+            code = line._get_partner_product_code()
+            product = code and self._edi_import_own_product(code)
+            if not product:
+                continue
+            line.product_id = product
+            if line._import_unit_unconfirmed():
+                line.import_state = "pending"
+            else:
+                line._apply_import_depara(product=product, uom=line.uom_id)
+
+    def action_import_create_products(self):
+        """Create the products that a document the company issued lacks: one for each
+        distinct code declared, and resolve the lines. It is an explicit action of
+        who may create products; the import itself never creates one, and a product
+        that already has the code is used, not duplicated. A line whose unit was not
+        confirmed is left for the review."""
+        product_model = self.env["product.product"]
+        if not product_model.check_access_rights("create", raise_exception=False):
+            raise UserError(_("You are not allowed to create products."))
+        blocked = self.env["l10n_br_fiscal.document.line"]
+        for document in self:
+            if not (
+                document.imported_document
+                and document.fiscal_operation_type == FISCAL_OUT
+            ):
+                raise UserError(
+                    _("Products are created only for a document the company issued.")
+                )
+            lines = document.fiscal_line_ids.filtered(
+                lambda line: not line.product_id and line._get_partner_product_code()
+            )
+            blocked |= lines.filtered(lambda line: line._import_unit_unconfirmed())
+            by_code = {}
+            for line in lines - blocked:
+                code = line._get_partner_product_code()
+                by_code[code] = by_code.get(code, blocked.browse()) | line
+            created = product_model
+            for code, group in by_code.items():
+                product = document._edi_import_own_product(code)
+                if not product:
+                    product = product_model.with_company(document.company_id).create(
+                        group[0]._edi_import_product_vals()
+                    )
+                    created |= product
+                for line in group:
+                    line.product_id = product
+                    line._apply_import_depara(product=product, uom=line.uom_id)
+            if created:
+                document._message_log(
+                    body=_("Products created by %(user)s: %(products)s")
+                    % {
+                        "user": self.env.user.display_name,
+                        "products": ", ".join(created.mapped("display_name")),
+                    }
+                )
+        if not blocked:
+            return True
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("Some lines were left for the review"),
+                "message": _(
+                    "%(count)s line(s) have a unit that was not confirmed, and no "
+                    "product was created for them. Choose the unit of each one."
+                )
+                % {"count": len(blocked)},
+                "type": "warning",
+                "sticky": True,
+                "next": {"type": "ir.actions.client", "tag": "reload"},
+            },
+        }
 
     def _edi_import_apply_supplier_depara(self):
         """Resolve the lines whose product the buyer already mapped for this
