@@ -200,10 +200,11 @@ class AccountMove(models.Model):
         order counts the quantity as invoiced.
 
         A document line without origin still falls back to the xPed and
-        nItemPed it carries. An order line takes more than one bill line (the
-        supplier splits the same item by lot) as long as the sum stays within
-        what is left of it (the tolerance of the quantity of the company
-        included); a line that would pass it stays unlinked.
+        nItemPed it carries. An order line takes the bill lines (more than one
+        when the supplier splits the same item by lot) as long as their sum stays
+        within what is left of it, the quantity of the other bills not cancelled
+        discounted and the tolerance of the quantity of the company included; a
+        line that would pass it stays unlinked.
         """
         self.ensure_one()
         if self.move_type != "in_invoice":
@@ -235,9 +236,11 @@ class AccountMove(models.Model):
             if not purchase_line:
                 continue
             quantity = self._quantity_in_order_unit(line, purchase_line)
-            if purchase_line in linked and not self._fits_in_order_line(
-                purchase_line, linked[purchase_line] + quantity
+            if not self._fits_in_order_line(
+                purchase_line, linked.get(purchase_line, 0.0) + quantity
             ):
+                # no balance left in the order line (the other bills counted):
+                # the line stays without order, and shows as divergent
                 continue
             line.purchase_line_id = purchase_line
             linked[purchase_line] = linked.get(purchase_line, 0.0) + quantity

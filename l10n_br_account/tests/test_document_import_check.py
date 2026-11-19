@@ -3,6 +3,7 @@
 
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase
+from odoo.tools.translate import _ as translate
 
 
 class TestDocumentImportCheck(TransactionCase):
@@ -77,3 +78,18 @@ class TestDocumentImportCheck(TransactionCase):
         self.line.import_state = "matched"
         with self.assertRaisesRegex(UserError, "not reviewed"):
             self.document.action_document_confirm()
+
+    def test_the_refusal_is_in_portuguese(self):
+        """The header of the message that refuses the bill, and the reason of each
+        line, are in Portuguese for the user."""
+        self.env["res.lang"]._activate_lang("pt_BR")
+        self.env["ir.module.module"].search(
+            [("name", "=", "l10n_br_account")]
+        )._update_translations(["pt_BR"])
+        self.env = self.env(context=dict(self.env.context, lang="pt_BR"))
+        header = translate(
+            "The document cannot be imported due to incomplete lines:\n%s"
+        )
+        self.assertIn("linhas incompletas", header)
+        self.assertIn("nenhum produto", translate("- %s: no product matched."))
+        self.assertIn("sem quantidade", translate("- %s: no quantity."))

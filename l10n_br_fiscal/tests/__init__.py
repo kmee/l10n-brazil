@@ -39,3 +39,4 @@ from . import (
 )
 from . import test_entry_cst_screen
 from . import test_migration_st_destination
+from . import test_import_messages_translated

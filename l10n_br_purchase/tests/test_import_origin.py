@@ -268,3 +268,39 @@ class TestImportOrigin(TransactionCase):
             template.copy({"document_id": big.id})
         self.assertGreater(len(big.fiscal_line_ids), len(small.fiscal_line_ids) + 15)
         self.assertLessEqual(candidates_queries(big), small_queries + 3)
+
+    def _one_line_document(self, order_line):
+        """An imported document with one line that takes the whole order line."""
+        document = self._document([(False, False)] * len(self.order.order_line))
+        extra = document.fiscal_line_ids.filtered(
+            lambda line: line.product_id != order_line.product_id
+        )
+        extra.unlink()
+        line = document.fiscal_line_ids
+        line.quantity = order_line.product_qty
+        return document
+
+    def test_four_notes_never_claim_the_same_balance_whatever_the_way_they_enter(self):
+        """Four notes for the whole order line: only the first one gets it, in
+        separate runs (cold cache between them) and in the same batch (the zip),
+        always the same result."""
+        order_line = self.order.order_line[0]
+        # separate runs: a cold cache before each note
+        documents = []
+        for _n in range(4):
+            self.env.invalidate_all()
+            document = self._one_line_document(order_line)
+            document._init_import_states()
+            documents.append(document)
+        suggested = [bool(d.fiscal_line_ids.import_purchase_line_id) for d in documents]
+        self.assertEqual(suggested, [True, False, False, False])
+
+        # the same batch: the notes exist before the suggestion, which runs once
+        for document in documents:
+            document.fiscal_line_ids.write({"import_purchase_line_id": False})
+        batch = self.env["l10n_br_fiscal.document.line"]
+        for document in documents:
+            batch |= document.fiscal_line_ids
+        batch._suggest_import_origin()
+        suggested = [bool(d.fiscal_line_ids.import_purchase_line_id) for d in documents]
+        self.assertEqual(suggested, [True, False, False, False])

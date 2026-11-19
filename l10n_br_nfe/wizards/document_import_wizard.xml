@@ -23,7 +23,7 @@
                 <group
                     id='xml_product_lines'
                     col="4"
-                    attrs="{ 'invisible': [ '|', ('file', '=', False), ('document_id', '!=', False), ] }"
+                    attrs="{ 'invisible': [ '|', '|', ('file', '=', False), ('file_is_zip', '=', True), ('document_id', '!=', False), ] }"
                 >
                     <separator string="NFe XML Products" colspan="4" />
                     <group

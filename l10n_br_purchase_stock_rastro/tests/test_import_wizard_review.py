@@ -100,3 +100,25 @@ class TestImportWizardReview(common.ImportWizardCommon):
         line.import_origin_state = False
         line.with_user(importer)._suggest_import_origin()
         self.assertEqual(line.import_purchase_line_id, self.order.order_line)
+
+    def test_a_source_preselected_by_the_import_respects_the_claims(self):
+        """The import preselects the only open line of the product from the
+        orders of the supplier, which do not know what the notes already
+        imported claimed: a line already claimed in full is not suggested."""
+        order_line = self.order.order_line
+        claim = self._wizard()
+        claim._import_edoc()
+        claimed = claim.document_id.fiscal_line_ids
+        self.assertEqual(claimed.import_purchase_line_id, order_line)
+        claimed.quantity = order_line.product_qty
+        claim.document_id.write({"document_key": False, "document_number": "991"})
+        # a second note of the same supplier and product, for the same line
+        wizard = self._wizard()
+        wizard.imported_products_ids.match_source_id = (
+            self.env["l10n_br_fiscal.document.import.match.candidate"]
+            .search([("po_line_id", "=", order_line.id)], limit=1)
+            .id
+        )
+        wizard.imported_products_ids.match_source_trusted = False
+        wizard._import_edoc()
+        self.assertFalse(wizard.document_id.fiscal_line_ids.import_purchase_line_id)

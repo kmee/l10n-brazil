@@ -381,6 +381,50 @@ class NFeImportTest(TransactionCase):
             move.amount_untaxed, sum(move.invoice_line_ids.mapped("price_subtotal"))
         )
 
+    def test_the_bill_line_closes_with_the_vprod_of_a_price_with_many_decimals(self):
+        """7 boxes at 12.3457, factor 12: the document and the bill line close with
+        the 86.42 of the file, not with 86.45."""
+        file_path = os.path.join(
+            l10n_br_account_nfe.__path__[0],
+            "tests",
+            "nfe",
+            "35231149647316000169550010000661061151600085-nfe.xml",
+        )
+        with open(file_path, encoding="utf-8") as file:
+            raw = file.read()
+        xml = (
+            raw.replace("<qCom>70.1000</qCom>", "<qCom>7.0000</qCom>", 1)
+            .replace("<qTrib>70.1000</qTrib>", "<qTrib>7.0000</qTrib>", 1)
+            .replace("<vUnCom>58.0000000000</vUnCom>", "<vUnCom>12.3457</vUnCom>", 1)
+            .replace(
+                "<vUnTrib>58.0000000000</vUnTrib>", "<vUnTrib>12.3457</vUnTrib>", 1
+            )
+            .replace("<vProd>4065.80</vProd>", "<vProd>86.42</vProd>", 1)
+        )
+        self.assertIn("86.42", xml)
+        wizard = self.env["l10n_br_fiscal.document.import.wizard"].create({})
+        with Form(wizard) as import_form:
+            import_form.file = base64.b64encode(xml.encode("utf-8"))
+            import_form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+            import_form.allow_product_creation = True
+        line = wizard.imported_products_ids[0]
+        product = self.env["product.product"].create(
+            {
+                "name": "Celofane by the box",
+                "purchase_ok": True,
+                "uom_id": line.uom_internal.id,
+                "uom_po_id": line.uom_internal.id,
+            }
+        )
+        line.product_id = product
+        line.uom_conversion_factor = 12
+        action = wizard.action_import_and_open_move()
+        move = self.env["account.move"].browse(action["res_id"])
+        bill_line = move.invoice_line_ids[0]
+        self.assertAlmostEqual(bill_line.quantity, 7 * 12, places=4)
+        self.assertEqual(bill_line.fiscal_document_line_id.price_gross, 86.42)
+        self.assertEqual(bill_line.price_subtotal, 86.42)
+
     def test_import_captures_infadic_observation(self):
         """The XML <infAdic> observations must survive the import so they can
         be exported back to the SPED C195/0460 registers."""
