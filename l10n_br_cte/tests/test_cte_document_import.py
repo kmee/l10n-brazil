@@ -3,6 +3,7 @@
 
 import re
 from datetime import date
+from unittest.mock import patch
 
 from odoo.tools import file_open
 
@@ -239,10 +240,9 @@ class TestCteDocumentImport(EdiImportCase):
         content = cte_xml(
             COLLECTION, recipient="12345678000195", emitter=LUCRO_PRESUMIDO
         )
-        documents, errors, _warnings = self._import(
-            content, operation=True, issued=True
-        )
+        documents, errors, _warnings = self._import(content)
         self.assertFalse(errors)
+        self.assertEqual(documents.fiscal_operation_type, "out")
         self.assertEqual(documents.company_id, self.presumed)
         self.assertEqual(documents.issuer, "company")
         self.assertEqual(documents.state_edoc, "em_digitacao")
@@ -258,12 +258,36 @@ class TestCteDocumentImport(EdiImportCase):
         )
         self.assertEqual(self._sequences(), sequences)
 
+    def test_confirming_a_cte_issued_by_the_company_neither_sends_nor_learns(self):
+        self.presumed.cte_import_product_id = False
+        content = cte_xml(recipient="12345678000195", emitter=LUCRO_PRESUMIDO)
+        documents, _errors, _warnings = self._import(
+            content, operation=True, issued=True
+        )
+        line = documents.fiscal_line_ids
+        line.product_id = self._freight()
+        line.action_resolve_line()
+        sequences = self._sequences()
+        with patch.object(type(documents), "_document_export") as export:
+            documents.action_document_confirm()
+        export.assert_called_once()
+        self.assertEqual(documents.state_edoc, "autorizada")
+        self.assertEqual(documents.document_number, "573")
+        self.assertEqual(self._sequences(), sequences)
+        self.assertFalse(documents.send_file_id)
+        self.assertFalse(
+            self.env["product.supplierinfo"].search(
+                [("partner_id", "=", documents.partner_id.id)]
+            )
+        )
+
     def test_a_cte_where_the_company_is_issuer_and_taker_enters_as_the_taker(self):
         content = cte_xml(taker=LUCRO_PRESUMIDO, emitter=LUCRO_PRESUMIDO)
         documents, errors, _warnings = self._import(content)
         self.assertFalse(errors)
         self.assertEqual(documents.company_id, self.presumed)
         self.assertEqual(documents.issuer, "partner")
+        self.assertEqual(documents.fiscal_operation_type, "in")
 
     def test_a_cte_for_no_company_is_refused(self):
         content = cte_xml(recipient="12345678000195", emitter="11444777000161")
