@@ -17,6 +17,7 @@ from . import document
 from . import document_import
 from . import document_line
 from . import document_line_import
+from . import document_payment
 from . import document_supplement
 from . import nfe_di
 from . import res_city

@@ -6,6 +6,7 @@ import io
 import os
 import re
 import zipfile
+from datetime import date
 
 import nfelib
 from nfelib.nfe.bindings.v4_0.leiaute_nfe_v4_00 import TnfeProc
@@ -20,6 +21,7 @@ from odoo.addons.l10n_br_fiscal_edi.tests.common import (
     KEY_3,
     EdiImportCase,
 )
+from odoo.addons.l10n_br_fiscal_edi.tools import EdiInstallment, EdiPayment
 
 FIXTURE_DIR = os.path.join(
     l10n_br_nfe.__path__[0], "tests", "nfe", "v4_00", "leiauteNFe"
@@ -935,3 +937,91 @@ class TestNfeDocumentImport(EdiImportCase):
 
         self.assertFalse(documents)
         self.assertIn("no access to the company", errors[0][1])
+
+    # What the NF-e declares to be paid: the duplicates (dup) and the payments (detPag).
+
+    def _collection_xml(self, key, installments, means="15", term="1"):
+        """The note with a collection (cobr) of the given ``(date, amount)`` and
+        the payment declared as ``means`` and ``term``."""
+        cobr = (
+            "<cobr><fat><nFat>1</nFat><vOrig>140.00</vOrig><vDesc>0.00</vDesc>"
+            "<vLiq>140.00</vLiq></fat>"
+        )
+        for number, (due, amount) in enumerate(installments, 1):
+            cobr += (
+                f"<dup><nDup>{number:03d}</nDup><dVenc>{due}</dVenc>"
+                f"<vDup>{amount:.2f}</vDup></dup>"
+            )
+        cobr += "</cobr>"
+        return self._xml(
+            key,
+            replace=[
+                (b"<pag>", cobr.encode() + b"<pag>"),
+                (b"<indPag>0</indPag>", f"<indPag>{term}</indPag>".encode()),
+                (b"<tPag>01</tPag>", f"<tPag>{means}</tPag>".encode()),
+            ],
+        )
+
+    def test_the_duplicates_and_the_payment_declared_are_read(self):
+        xml = self._collection_xml(KEY_1, [("2026-12-10", 70.0), ("2027-01-10", 70.0)])
+
+        document = self._imported(xml)
+
+        self.assertEqual(
+            document._edi_get_installments(),
+            [
+                EdiInstallment("001", date(2026, 12, 10), 70.0),
+                EdiInstallment("002", date(2027, 1, 10), 70.0),
+            ],
+        )
+        self.assertEqual(
+            document._edi_get_payments(), [EdiPayment("15", 140.0, "installments")]
+        )
+
+    def test_a_note_without_collection_declares_only_the_payment(self):
+        document = self._imported(self._xml(KEY_1))
+
+        self.assertEqual(document._edi_get_installments(), [])
+        self.assertEqual(
+            document._edi_get_payments(), [EdiPayment("01", 140.0, "cash")]
+        )
+        summary = str(document.edi_payment_summary)
+        self.assertIn("Payments", summary)
+        self.assertNotIn("Installments", summary)
+
+    def test_the_page_of_installments_shows_the_declared_ones(self):
+        xml = self._collection_xml(KEY_1, [("2026-12-10", 70.0), ("2027-01-10", 70.0)])
+
+        document = self._imported(xml)
+
+        summary = str(document.edi_payment_summary)
+        for text in ("001", "002", "70.00", "12/10/2026", "01/10/2027"):
+            self.assertIn(text, summary)
+        self.assertNotIn("alert-warning", summary)
+        self.assertNotIn("installments add up", document.import_warning or "")
+
+    def test_installments_that_do_not_add_up_to_the_net_amount_are_warned(self):
+        xml = self._collection_xml(KEY_1, [("2026-12-10", 60.0), ("2027-01-10", 70.0)])
+
+        document = self._imported(xml)
+
+        self.assertIn("130.00", str(document.edi_payment_summary))
+        self.assertIn("alert-warning", str(document.edi_payment_summary))
+        self.assertIn("installments add up", document.import_warning)
+
+    def test_common_fiscal_user_imports_the_note_with_collection_and_volumes(self):
+        user = self._fiscal_user("fiscal_nfe_collection")
+        service = self.Document.with_user(user).with_context(
+            allowed_company_ids=[self.company.id]
+        )
+        xml = self._collection_xml(
+            KEY_1, [("2026-12-10", 70.0), ("2027-01-10", 70.0)]
+        ).replace(
+            b"<modFrete>9</modFrete>",
+            b"<modFrete>9</modFrete><vol><qVol>2</qVol></vol>",
+        )
+
+        document = self._imported(xml, model=service)
+
+        self.assertEqual(len(document._edi_get_installments()), 2)
+        self.assertEqual(document.nfe40_vol.nfe40_qVol, "2")
