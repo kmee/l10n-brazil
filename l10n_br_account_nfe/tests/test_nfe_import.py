@@ -436,11 +436,10 @@ class NFeImportTest(TransactionCase):
 
     def test_import_carries_the_order_reference_onto_the_bill(self):
         """End to end from the import wizard to the vendor bill: the order
-        reference of the document (or the canonical one the operator
-        synthesized by picking a match source) must reach the
-        (partner_order, partner_order_line) fields of the bill lines, line by
-        line — that pair is what the stock bill matching reconciles on, and
-        this module neither requires nor imports stock."""
+        reference the supplier declared (xPed) reaches the (partner_order,
+        partner_order_line) fields of the bill lines untouched, and the order
+        the operator picked as the match source links the bill line to the
+        order line, which is what the stock bill matching reconciles on."""
         if "purchase.order" not in self.env:
             self.skipTest("purchase module not installed")
         file_path = os.path.join(
@@ -521,8 +520,10 @@ class NFeImportTest(TransactionCase):
             lambda aml: aml.product_id.code == "1070147"
         )
         self.assertEqual(len(matched), 1)
-        self.assertEqual(matched.partner_order, order.name)
-        self.assertEqual(matched.partner_order_line, "1")
+        # what the supplier declared (xPed) is kept as it was written; the
+        # reference to the order comes from the origin the operator chose
+        self.assertEqual(matched.partner_order, "OC00589")
+        self.assertFalse(matched.partner_order_line)
         fiscal_line = matched.fiscal_document_line_id
         if "import_purchase_line_id" in fiscal_line._fields:
             # the origin lives on the persisted line of the document and the
@@ -539,8 +540,8 @@ class NFeImportTest(TransactionCase):
         )
         self.assertEqual(self.env.cr.fetchone()[0], f"{order.name}-1")
 
-        # the other lines keep the reference the document declared (xPed), they
-        # are not stamped with the chosen source: the mapping is per line
+        # the other lines keep the reference the document declared (xPed), as
+        # the chosen line does: the mapping is per line
         others = move.invoice_line_ids - matched
         self.assertEqual(others.mapped("partner_order"), ["OC00589"] * len(others))
         self.assertEqual(others.mapped("partner_order_line"), [False] * len(others))

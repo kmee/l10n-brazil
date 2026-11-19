@@ -23,6 +23,9 @@ class TestBillMatchingSQLRefs(TransactionCase):
         sql = self.env["account.move.line"]._get_bill_matching_reference_sql(
             alias="aml"
         )
-        self.assertTrue(sql.startswith("NULLIF("))
+        # the order line the bill line is linked to first, then what the
+        # supplier declared
+        self.assertTrue(sql.startswith("COALESCE("))
+        self.assertIn("aml.purchase_line_id", sql)
         self.assertIn("aml.partner_order", sql)
         self.assertIn("aml.partner_order_line", sql)

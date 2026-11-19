@@ -4,6 +4,8 @@
 from odoo import api, fields, models
 from odoo.tools import float_compare
 
+from .stock_move import _PO_LINE_POSITION_SQL
+
 
 class AccountMoveLine(models.Model):
     _inherit = "account.move.line"
@@ -48,6 +50,25 @@ class AccountMoveLine(models.Model):
         "than the tolerances of the company (price and quantity). It only "
         "warns: nothing is blocked.",
     )
+
+    @api.model
+    def _get_bill_matching_reference_sql(self, alias):
+        """The order line the bill line is linked to, which the import decided
+        (or a person chose on the bill), gives the reference to the order:
+        (order name, 1-based position of the line), the same key the receipt
+        has. It wins over what the supplier declared (xPed and nItemPed), which
+        the document keeps untouched and which is only the fallback of the
+        bill lines with no linked order line."""
+        declared = super()._get_bill_matching_reference_sql(alias)
+        decided = (
+            "(SELECT LEFT(po_ref.name, 15) || '-' || "
+            + _PO_LINE_POSITION_SQL.format(pol_alias="pol_ref")
+            + "::varchar"
+            " FROM purchase_order_line pol_ref"
+            " JOIN purchase_order po_ref ON po_ref.id = pol_ref.order_id"
+            f" WHERE pol_ref.id = {alias}.purchase_line_id)"
+        )
+        return f"COALESCE({decided}, {declared})"
 
     @api.depends(
         "purchase_line_id.product_qty",

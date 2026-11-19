@@ -889,9 +889,9 @@ class NFeImportWizardTest(TransactionCase):
     def test_match_source_preselection_and_writeback(self):
         """A single open PO line for the XML product is preselected as the
         match source (even when its receipt move exists too), sets the
-        product, and the import writes the canonical (PO name, line position)
-        key onto the fiscal line — synthesizing the xPed/nItemPed the
-        supplier XML didn't send, for the later bill matching."""
+        product, and the import writes it as the origin of the fiscal line, which
+        is what the later bill matching follows (the xPed/nItemPed the supplier
+        did not send stay empty)."""
         if self.env.get("purchase.order") is None:
             self.skipTest("purchase module not installed")
         supplier = self._create_xml_issuer_supplier()
@@ -920,8 +920,12 @@ class NFeImportWizardTest(TransactionCase):
         self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
         _binding, edoc = self.wizard._import_edoc()
         fiscal_line = edoc.fiscal_line_ids[0]
-        self.assertEqual(fiscal_line.partner_order, order.name)
-        self.assertEqual(fiscal_line.partner_order_line, "1")
+        # the origin is the one chosen on the import; the (partner_order,
+        # partner_order_line) pair is what the supplier declared, and the file
+        # declared nothing
+        self.assertEqual(fiscal_line.import_purchase_line_id, order.order_line)
+        self.assertFalse(fiscal_line.partner_order)
+        self.assertFalse(fiscal_line.partner_order_line)
 
     def test_match_source_ambiguity_no_preselection(self):
         """The same product on two lines of the same PO (or on two POs)
@@ -1098,8 +1102,7 @@ class NFeImportWizardTest(TransactionCase):
 
     def test_match_source_writeback_duplicate_product_lines(self):
         """The same product on two XML lines, with two DIFFERENT sources
-        picked by the operator, must stamp each fiscal line with its own
-        reference.
+        picked by the operator, must give each fiscal line its own origin.
 
         Regression: the write-back used to index the wizard lines by
         product (a dict), so the last line won and both fiscal lines were
@@ -1135,14 +1138,18 @@ class NFeImportWizardTest(TransactionCase):
         _binding, edoc = self.wizard._import_edoc()
         self.assertEqual(len(edoc.fiscal_line_ids), 2)
         self.assertEqual(
-            edoc.fiscal_line_ids.mapped("partner_order"),
-            [order.name, order.name],
+            edoc.fiscal_line_ids.mapped("import_purchase_line_id"),
+            order.order_line[1] | order.order_line[0],
+            "each fiscal line must carry the origin of ITS own source",
         )
         self.assertEqual(
-            edoc.fiscal_line_ids.mapped("partner_order_line"),
-            ["2", "1"],
-            "each fiscal line must carry the reference of ITS own source",
+            edoc.fiscal_line_ids[0].import_purchase_line_id, order.order_line[1]
         )
+        self.assertEqual(
+            edoc.fiscal_line_ids[1].import_purchase_line_id, order.order_line[0]
+        )
+        # what the supplier declared is not rewritten by the origin
+        self.assertEqual(edoc.fiscal_line_ids.mapped("partner_order"), [False, False])
 
     def test_match_po_line_ambiguous_xped(self):
         """A duplicated xPed must not pick an order arbitrarily: disambiguate
