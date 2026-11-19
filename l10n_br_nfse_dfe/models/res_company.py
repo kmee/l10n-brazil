@@ -82,13 +82,6 @@ class ResCompany(models.Model):
         string="Auto-fetch NFS-e",
         help="Periodically query the ADN for NFS-e documents issued to this company.",
     )
-    nfse_import_product_id = fields.Many2one(
-        comodel_name="product.product",
-        string="Default NFS-e Import Product",
-        domain="[('type', '=', 'service')]",
-        help="Service product applied when a national NFS-e is imported "
-        "and the wizard has no product yet.",
-    )
 
     def _dfe_document_distribution(self, fiscal_type):
         if fiscal_type == "nfse":
