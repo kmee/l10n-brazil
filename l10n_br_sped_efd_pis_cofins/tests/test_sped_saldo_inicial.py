@@ -108,6 +108,146 @@ class TestCreditOpening(SpedEntradaCommon):
 
 
 @tagged("post_install", "-at_install")
+class TestCreditOpeningChain(CreditMixin, SpedEntradaCommon):
+    """The opening balance enters the control as the oldest credit and the
+    assessment of the first month of the system starts from it."""
+
+    profit_calculation = "real"
+
+    def _openings(self):
+        """PIS: 40.00 of April (10.00 already used) and 20.00 of May, balance
+        50.00; COFINS: 200.00 of April (50.00 used) and 100.00 of May, balance
+        250.00. The system begins in July."""
+        for tax, april, april_used, may in (
+            ("pis", 40.0, 10.0, 20.0),
+            ("cofins", 200.0, 50.0, 100.0),
+        ):
+            for month, amount, used in ((4, april, april_used), (5, may, 0.0)):
+                self.env[OPENING].create(
+                    {
+                        "company_id": self.company.id,
+                        "tax_domain": tax,
+                        "cutoff_date": date(2026, 7, 1),
+                        "origin_period": date(2026, month, 1),
+                        "cod_cred": "101",
+                        "amount": amount,
+                        "used_before": used,
+                    }
+                )
+
+    def _month(self, month, number, sales):
+        day = date(2026, month, 10)
+        self._entry("fo_compras_compras_comercializacao", number, day)
+        for _index in range(sales):
+            self._sale(date(2026, month, 12))
+        self._assess("pis", month=month)
+        self._assess("cofins", month=month)
+
+    def _declaration_month(self, month):
+        return self._declaration(
+            "efd_pis_cofins", date(2026, month, 1), date(2026, month, 31)
+        )
+
+    def test_the_first_assessment_starts_from_the_opening_balance(self):
+        self._openings()
+        self._month(7, "401", sales=3)
+        pis = self.env["l10n_br_tax.assessment"].search(
+            [("tax_domain", "=", "pis"), ("date_from", "=", date(2026, 7, 1))]
+        )
+        self.assertEqual(pis.previous_balance, 50.0)
+        # 49.50 of the contribution used 49.50 of the 50.00, 16.50 of own credit
+        self.assertAlmostEqual(pis.amount_carried_forward, 17.0, places=2)
+
+    def test_the_opening_balance_is_the_oldest_credit_and_goes_to_the_1100(self):
+        self._openings()
+        self._month(7, "401", sales=3)
+        declaration = self._declaration_month(7)
+        rows = {
+            rec["PER_APU_CRED"]: rec for rec in self._sped_records(declaration, "1100")
+        }
+        self.assertEqual(sorted(rows), ["042026", "052026"])
+        april, may = rows["042026"], rows["052026"]
+        self.assertEqual(april["ORIG_CRED"], "01")
+        self.assertEqual(april["COD_CRED"], "101")
+        self.assertEqual(april["VL_CRED_APU"], "40,00")
+        self.assertEqual(april["VL_CRED_DESC_PA_ANT"], "10,00")
+        self.assertEqual(april["SD_CRED_DISP_EFD"], "30,00")
+        self.assertEqual(april["VL_CRED_DESC_EFD"], "30,00")
+        self.assertEqual(april["SLD_CRED_FIM"], "0")
+        self.assertEqual(may["VL_CRED_DESC_EFD"], "19,50")
+        self.assertEqual(may["SLD_CRED_FIM"], "0,50")
+        m200 = self._sped_records(declaration, "M200")[0]
+        self.assertEqual(m200["VL_TOT_CONT_NC_PER"], "49,50")
+        self.assertEqual(m200["VL_TOT_CRED_DESC_ANT"], "49,50")
+        self.assertEqual(self._number(m200["VL_TOT_CRED_DESC"]), 0.0)
+        self.assertEqual(self._number(m200["VL_TOT_CONT_NC_DEV"]), 0.0)
+        self.assertEqual(len(self._sped_records(declaration, "1500")), 2)
+
+    def test_the_second_month_goes_on_from_what_is_left(self):
+        self._openings()
+        self._month(7, "401", sales=3)
+        self._month(8, "402", sales=1)
+        declaration = self._declaration_month(8)
+        rows = {
+            rec["PER_APU_CRED"]: rec for rec in self._sped_records(declaration, "1100")
+        }
+        self.assertEqual(sorted(rows), ["052026", "072026"])
+        self.assertEqual(rows["052026"]["SD_CRED_DISP_EFD"], "0,50")
+        self.assertEqual(rows["052026"]["VL_CRED_DESC_EFD"], "0,50")
+        self.assertEqual(rows["072026"]["VL_CRED_APU"], "16,50")
+        self.assertEqual(rows["072026"]["VL_CRED_DESC_EFD"], "16,00")
+        self.assertEqual(rows["072026"]["SLD_CRED_FIM"], "0,50")
+
+    def test_the_assessment_warns_when_the_account_is_not_the_opening_balance(self):
+        """The system books no entry for the opening balance: when the account of
+        the tax to recover does not hold it, the assessment says so (and does not
+        block)."""
+        self._openings()
+        self._month(7, "401", sales=3)
+        pis = self.env["l10n_br_tax.assessment"].search(
+            [("tax_domain", "=", "pis"), ("date_from", "=", date(2026, 7, 1))]
+        )
+        self.assertIn("opening balance of the credit", pis.opening_balance_warning)
+        account = pis.tax_group_id.with_company(
+            self.company
+        ).property_tax_receivable_account_id
+        other = self.env["account.account"].create(
+            {
+                "name": "Opening balance",
+                "code": "OPENBAL",
+                "account_type": "equity",
+                "company_id": self.company.id,
+            }
+        )
+        journal = self.env["account.journal"].search(
+            [("company_id", "=", self.company.id), ("type", "=", "general")], limit=1
+        )
+        move = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "journal_id": journal.id,
+                "date": date(2026, 6, 30),
+                "line_ids": [
+                    (0, 0, {"account_id": account.id, "debit": 50.0, "credit": 0.0}),
+                    (0, 0, {"account_id": other.id, "debit": 0.0, "credit": 50.0}),
+                ],
+            }
+        )
+        move.action_post()
+        pis.invalidate_recordset()
+        self.assertFalse(pis.opening_balance_warning)
+
+    def test_without_an_opening_balance_nothing_changes(self):
+        self._month(7, "401", sales=3)
+        pis = self.env["l10n_br_tax.assessment"].search(
+            [("tax_domain", "=", "pis"), ("date_from", "=", date(2026, 7, 1))]
+        )
+        self.assertEqual(pis.previous_balance, 0.0)
+        self.assertFalse(pis.opening_balance_warning)
+        self.assertEqual(self._sped_records(self._declaration_month(7), "1100"), [])
+
+
+@tagged("post_install", "-at_install")
 class TestCreditOpeningImport(SpedEntradaCommon):
     """The opening balance read from the last EFD Contribuicoes of the previous
     system (registers 1100 and 1500)."""

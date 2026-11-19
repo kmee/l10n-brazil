@@ -129,17 +129,38 @@ def _opening_layers(env, declaration, tax_domain):
     total has to be the balance the assessment of the period starts from.
     """
     company = declaration.company_id
-    earlier = env["l10n_br_tax.assessment"].search(
+    # the credit that came from another system is the oldest: the opening balance
+    # registered by period of origin and type of credit, valid from its cut-off
+    openings = env["l10n_br_pis_cofins.credit.opening"].search(
         [
             ("company_id", "=", company.id),
             ("tax_domain", "=", tax_domain),
-            ("regime", "=", "non_cumulative"),
-            ("state", "=", "posted"),
-            ("date_to", "<", declaration.DT_INI),
+            ("cutoff_date", "<=", declaration.DT_INI),
         ],
-        order="date_from",
+        order="origin_period, cod_cred, id",
     )
-    layers = []
+    layers = [
+        {
+            "period": opening.origin_period,
+            "cod_cred": opening.cod_cred,
+            "orig_cred": opening.orig_cred,
+            "cnpj_suc": opening.cnpj_suc or "",
+            "original": opening.amount,
+            "used_before": opening.used_before,
+        }
+        for opening in openings
+    ]
+    domain = [
+        ("company_id", "=", company.id),
+        ("tax_domain", "=", tax_domain),
+        ("regime", "=", "non_cumulative"),
+        ("state", "=", "posted"),
+        ("date_to", "<", declaration.DT_INI),
+    ]
+    if openings:
+        # what the system assessed before the cut-off is not part of the chain
+        domain.append(("date_from", ">=", min(openings.mapped("cutoff_date"))))
+    earlier = env["l10n_br_tax.assessment"].search(domain, order="date_from")
     for assessment in earlier:
         # the documents of that period, as the declaration of the period would
         # take them
@@ -301,7 +322,8 @@ def _previous_credit_vals(layer):
     return {
         "PER_APU_CRED": f"{layer['period'].month:02d}{layer['period'].year}",
         # 01: credit of the operations of the company itself
-        "ORIG_CRED": "01",
+        "ORIG_CRED": layer.get("orig_cred", "01"),
+        "CNPJ_SUC": layer.get("cnpj_suc", ""),
         "COD_CRED": layer["cod_cred"],
         "VL_CRED_APU": layer["original"],
         "VL_TOT_CRED_APU": layer["original"],

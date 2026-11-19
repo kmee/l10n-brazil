@@ -388,6 +388,13 @@ class TaxAssessment(models.Model):
             ]
         )
 
+    def _get_opening_balance(self):
+        """The credit balance the first assessment of the company starts from, when
+        it comes from another system. The modules of the tax that keeps such a
+        balance (the PIS and the COFINS) say it; there is none by default."""
+        self.ensure_one()
+        return 0.0
+
     def _find_previous_assessment(self):
         self.ensure_one()
         return self.search(
@@ -413,7 +420,13 @@ class TaxAssessment(models.Model):
 
             previous = record._find_previous_assessment()
             record.previous_assessment_id = previous
-            record.previous_balance = previous.amount_carried_forward
+            # the first assessment of the company has no previous one: the credit
+            # that came from another system is its opening balance
+            record.previous_balance = (
+                previous.amount_carried_forward
+                if previous
+                else record._get_opening_balance()
+            )
 
             taxes = record._get_taxes().with_context(**record._get_period_context())
             discarded = self.env["account.tax"]
