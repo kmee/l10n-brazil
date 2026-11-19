@@ -40,7 +40,11 @@ class Document(models.Model):
             document_type_code=MODELO_FISCAL_NFSE,
             access_key=binding.access_key,
             issuer_vat=binding.provider_cnpj or "",
-            company_vats=(("taker", taker),) if taker else (),
+            company_vats=tuple(
+                (role, vat)
+                for role, vat in (("taker", taker), ("issuer", binding.provider_cnpj))
+                if vat
+            ),
             status="authorized",
             status_code="",
             binding=binding,
@@ -52,23 +56,29 @@ class Document(models.Model):
     def _edi_import_create(self, parsed, company, role):
         if parsed.reader != "nfse":
             return super()._edi_import_create(parsed, company, role)
-        return self._nfse_import_create(parsed.binding)
+        return self._nfse_import_create(parsed.binding, role=role)
 
     @api.model
-    def _nfse_import_create(self, binding, partner=None, product=None, operation=None):
+    def _nfse_import_create(
+        self, binding, partner=None, product=None, operation=None, role="taker"
+    ):
         """Create the draft document of a national NFS-e.
 
-        The provider is the partner, found by its CNPJ or created when there is
-        none; the service product comes from the company and the operation is the
-        default one of the purchases. The three can be given, as the wizard does.
+        The partner is the other party of the note: the provider when the company
+        is the taker, the taker when the company issued it. It is found by its CNPJ
+        or created when there is none. The service product comes from the company
+        and the operation is the default one of the purchases, or of the sales for
+        a note issued by the company. The three can be given, as the wizard does.
         """
+        issued = role == "issuer"
+        party = binding.taker if issued else binding.provider
         partner = (
             partner
-            or self._nfse_find_partner(binding)
-            or self._nfse_create_provider_partner(binding)
+            or self._nfse_find_partner(party)
+            or self._nfse_create_partner(party)
         )
         product = product or self.env.company.nfse_import_product_id
-        operation = operation or self._nfse_default_operation()
+        operation = operation or self._nfse_default_operation("out" if issued else "in")
         document = self.create(self._nfse_document_vals(binding, partner, operation))
         line = self.env["l10n_br_fiscal.document.line"].create(
             {
@@ -82,9 +92,8 @@ class Document(models.Model):
         return document
 
     @api.model
-    def _nfse_find_partner(self, binding):
-        provider = binding.provider or {}
-        digits = provider.get("cnpj") or provider.get("cpf") or binding.provider_cnpj
+    def _nfse_find_partner(self, party):
+        digits = party.get("cnpj") or party.get("cpf")
         if not digits:
             return self.env["res.partner"]
         return self.env["res.partner"].search(
@@ -96,23 +105,23 @@ class Document(models.Model):
         )
 
     @api.model
-    def _nfse_default_operation(self):
-        operation = self.env.ref("l10n_br_fiscal.fo_compras", raise_if_not_found=False)
-        if operation and operation.fiscal_operation_type == "in":
+    def _nfse_default_operation(self, fiscal_type="in"):
+        xmlid = (
+            "l10n_br_fiscal.fo_compras"
+            if fiscal_type == "in"
+            else ("l10n_br_fiscal.fo_venda")
+        )
+        operation = self.env.ref(xmlid, raise_if_not_found=False)
+        if operation and operation.fiscal_operation_type == fiscal_type:
             return operation
         return self.env["l10n_br_fiscal.operation"].search(
-            [("fiscal_operation_type", "=", "in"), ("state", "=", "approved")],
+            [("fiscal_operation_type", "=", fiscal_type), ("state", "=", "approved")],
             limit=1,
         )
 
     @api.model
-    def _nfse_create_provider_partner(self, binding):
-        provider = binding.provider or {}
-        digits = re.sub(
-            r"\D",
-            "",
-            provider.get("cnpj") or provider.get("cpf") or binding.provider_cnpj or "",
-        )
+    def _nfse_create_partner(self, provider):
+        digits = re.sub(r"\D", "", provider.get("cnpj") or provider.get("cpf") or "")
         if len(digits) not in (11, 14):
             return self.env["res.partner"]
         city = self.env["res.city"]

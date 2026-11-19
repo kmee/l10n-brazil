@@ -18,6 +18,7 @@ PROVIDER = "59594315000157"
 LUCRO_PRESUMIDO = "81583054000129"
 LUCRO_REAL = "46312887000154"
 UNKNOWN_PROVIDER = "12345678000195"
+OTHER_UNKNOWN = "11444777000161"
 WITHHOLDINGS = (
     "<tribFed><piscofins><CST>01</CST><vBCPisCofins>1000.00</vBCPisCofins>"
     "<pAliqPis>0.65</pAliqPis><pAliqCofins>3.00</pAliqCofins><vPis>6.50</vPis>"
@@ -50,15 +51,17 @@ class TestNfseDocumentImport(EdiImportCase):
             [("cnpj_cpf_stripped", "=", PROVIDER)], limit=1
         )
 
-    def _import(self, content, model=None, operation=False):
+    def _import(self, content, model=None, operation=False, operation_type="in"):
         """Import the file; with ``operation``, a person has chosen the operation
         line of the service, as the review asks."""
         documents, errors, warnings = (
             self.Document if model is None else model
         )._edi_import_files([("nfse.xml", content)])
-        if operation and documents:
+        if (operation or operation_type == "out") and documents:
             documents.fiscal_line_ids.fiscal_operation_line_id = self.env.ref(
                 "l10n_br_fiscal.fo_compras_compras"
+                if operation_type == "in"
+                else "l10n_br_fiscal.fo_venda_venda"
             )
         return documents, errors, warnings
 
@@ -90,9 +93,67 @@ class TestNfseDocumentImport(EdiImportCase):
         line._compute_issqn_fg_city_id()
         self.assertEqual(line.issqn_fg_city_id, city)
 
+    def _sequences(self):
+        return self.env["ir.sequence"].search([]).read(["id", "number_next_actual"])
+
+    def test_a_nfse_issued_by_the_company_becomes_an_outgoing_document(self):
+        sequences = self._sequences()
+        documents, errors, _warnings = self._import(
+            nfse_xml(taker=UNKNOWN_PROVIDER, provider=LUCRO_PRESUMIDO),
+            operation_type="out",
+        )
+        self.assertFalse(errors)
+        self.assertEqual(documents.company_id, self.presumed)
+        self.assertEqual(documents.issuer, "company")
+        self.assertEqual(documents.fiscal_operation_type, "out")
+        self.assertEqual(documents.fiscal_operation_id.fiscal_operation_type, "out")
+        self.assertEqual(documents.state_edoc, "em_digitacao")
+        self.assertTrue(documents.imported_document)
+        self.assertEqual(documents.partner_id.cnpj_cpf_stripped, UNKNOWN_PROVIDER)
+        self.assertEqual(
+            documents.partner_id.legal_name, "EMPRESA TOMADORA DE TESTE LTDA"
+        )
+        self.assertEqual(documents.document_key, SAMPLE_KEY)
+        self.assertEqual(documents.document_number, "1")
+        self.assertEqual(documents.document_serie, "00007")
+        line = documents.fiscal_line_ids
+        self.assertEqual(line.name, "Desenvolvimento de sistema sob encomenda")
+        self.assertAlmostEqual(line.price_unit, 1000.0)
+        self.assertAlmostEqual(line.issqn_value, 20.0)
+        self.assertEqual(self._sequences(), sequences)
+
+    def test_a_nfse_issued_by_the_company_keeps_the_withholdings_and_the_net(self):
+        documents, errors, _warnings = self._import(
+            nfse_xml(
+                taker=UNKNOWN_PROVIDER, provider=LUCRO_PRESUMIDO, withholdings=True
+            ),
+            operation_type="out",
+        )
+        self.assertFalse(errors)
+        self.assertAlmostEqual(documents.amount_tax_withholding, 61.5)
+        self.assertAlmostEqual(documents.amount_financial_total, 938.5)
+        self.assertIn("938.50", str(documents.edi_payment_summary))
+
+    def test_the_company_as_taker_and_provider_is_the_taker_and_the_note_enters(self):
+        parsed = self.Document._edi_import_read(
+            "a.xml", nfse_xml(taker=LUCRO_PRESUMIDO, provider=LUCRO_PRESUMIDO)
+        )
+        self.assertEqual(
+            parsed.company_vats,
+            (("taker", LUCRO_PRESUMIDO), ("issuer", LUCRO_PRESUMIDO)),
+        )
+        documents, errors, _warnings = self._import(
+            nfse_xml(taker=LUCRO_PRESUMIDO, provider=LUCRO_PRESUMIDO)
+        )
+        self.assertFalse(errors)
+        self.assertEqual(documents.fiscal_operation_type, "in")
+        self.assertEqual(documents.issuer, "partner")
+
     def test_the_company_is_the_taker_of_the_service(self):
         parsed = self.Document._edi_import_read("a.xml", nfse_xml(taker=LUCRO_REAL))
-        self.assertEqual(parsed.company_vats, (("taker", LUCRO_REAL),))
+        self.assertEqual(
+            parsed.company_vats, (("taker", LUCRO_REAL), ("issuer", PROVIDER))
+        )
         self.assertEqual((parsed.reader, parsed.document_type_code), ("nfse", "SE"))
         self.assertEqual(parsed.issuer_vat, PROVIDER)
         documents, errors, _warnings = self._import(nfse_xml(taker=LUCRO_REAL))
@@ -100,7 +161,9 @@ class TestNfseDocumentImport(EdiImportCase):
         self.assertEqual(documents.company_id, self.other_company)
 
     def test_a_nfse_for_no_company_is_refused(self):
-        documents, errors, _warnings = self._import(nfse_xml(taker=UNKNOWN_PROVIDER))
+        documents, errors, _warnings = self._import(
+            nfse_xml(taker=UNKNOWN_PROVIDER, provider=OTHER_UNKNOWN)
+        )
         self.assertFalse(documents)
         self.assertIn("No company of this database", errors[0][1])
 
