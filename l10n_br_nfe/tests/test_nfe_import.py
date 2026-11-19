@@ -1061,15 +1061,16 @@ class TestNfeDocumentImport(EdiImportCase):
         self.assertEqual(other.partner_operation_name, "Another nature")
         self.assertNotEqual(other.fiscal_operation_id, operation)
 
-    def _contactless_user(self, login):
-        user = self._fiscal_user(login)
+    def _contactless_user(self, login, company=None):
+        company = company or self.company
+        user = self._fiscal_user(login, company)
         self.assertFalse(
             self.env["res.partner"]
             .with_user(user)
             .check_access_rights("create", raise_exception=False)
         )
         return self.Document.with_user(user).with_context(
-            allowed_company_ids=self.company.ids
+            allowed_company_ids=company.ids
         )
 
     def test_a_user_who_cannot_create_contacts_is_told_which_issuer_to_register(self):
@@ -1092,6 +1093,31 @@ class TestNfeDocumentImport(EdiImportCase):
         self.assertIn("New issuer", errors[0][1])
         self.assertIn("11.222.333/0001-81", errors[0][1])
         self.assertIn("not allowed to create contacts", errors[0][1])
+
+    def test_the_recipient_is_the_partner_to_register_for_a_note_the_company_issued(
+        self,
+    ):
+        issuer = self.env.ref("l10n_br_base.empresa_lucro_presumido")
+        xml = self._xml(
+            KEY_3,
+            recipient="11222333000181",
+            replace=[
+                (KEY_3.encode(), b"35200159594315000157550010000000992062777167"),
+                (b"<nNF>3</nNF>", b"<nNF>99</nNF>"),
+                (
+                    b"<xNome>NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL",
+                    b"<xNome>New customer",
+                ),
+            ],
+        )
+
+        documents, errors, _warnings = self._import(
+            xml, model=self._contactless_user("nfe_no_contact_own", issuer)
+        )
+
+        self.assertFalse(documents)
+        self.assertIn("New customer", errors[0][1])
+        self.assertIn("11.222.333/0001-81", errors[0][1])
 
     def test_the_carrier_is_the_partner_to_register_when_it_is_the_one_missing(self):
         issuer = self.env["res.partner"].search(
