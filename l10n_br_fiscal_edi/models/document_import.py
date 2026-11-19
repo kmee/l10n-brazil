@@ -389,10 +389,15 @@ class Document(models.Model):
         }
 
     def action_document_confirm(self):
-        """An imported document is confirmed only when every line was reviewed."""
-        for document in self.filtered(
+        """An imported document is confirmed only when every line was reviewed.
+
+        One that the company issued in another system is already authorized there:
+        it is confirmed as authorized, never validated and sent again.
+        """
+        drafts = self.filtered(
             lambda doc: doc.imported_document and doc.state_edoc == DOCUMENT_STATE_DRAFT
-        ):
+        )
+        for document in drafts:
             unresolved = document.fiscal_line_ids.filtered(
                 lambda line: line.import_state in ("pending", "matched")
             )
@@ -407,4 +412,7 @@ class Document(models.Model):
                         "lines": "\n".join(unresolved.mapped("name")),
                     }
                 )
-        return super().action_document_confirm()
+        own = drafts.filtered(lambda doc: doc.issuer == DOCUMENT_ISSUER_COMPANY)
+        for document in own:
+            document._trigger_fsm("action_confirm_authorized")
+        return super(Document, self - own).action_document_confirm()

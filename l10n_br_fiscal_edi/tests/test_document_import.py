@@ -414,6 +414,26 @@ class TestDocumentImport(EdiImportCase):
             document.action_document_confirm()
         trigger.assert_called_once()
 
+    def test_a_document_the_company_issued_is_confirmed_as_authorized(self):
+        """Issued in another system, it is authorized already: confirming it must
+        not validate and send it again."""
+        product = self.env["product.product"].create({"name": "Matched product"})
+        document = self._create_imported_document(
+            issuer="company", lines=[{"product_id": product.id}]
+        )
+        document.action_import_confirm_suggestions()
+        with patch.object(
+            type(self.Document), "_trigger_fsm", return_value=True
+        ) as trigger, patch.object(type(self.Document), "action_document_send") as send:
+            document.action_document_confirm()
+        trigger.assert_called_once_with("action_confirm_authorized")
+        send.assert_not_called()
+
+    def test_a_document_the_company_issued_is_also_refused_with_lines_to_review(self):
+        document = self._create_imported_document(issuer="company")
+        with self.assertRaises(UserError):
+            document.action_document_confirm()
+
     def test_the_warning_is_unset_when_there_is_nothing_to_say(self):
         document = self._create_imported_document()
         self.assertFalse(document.import_warning)
