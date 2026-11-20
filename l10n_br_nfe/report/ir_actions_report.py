@@ -31,6 +31,8 @@ class IrActionsReport(models.Model):
         if nfe.document_type != "55":
             raise UserError(_("You can only print a DANFE of a NFe(55)."))
 
+        # The binary fields answer their size, not their content, with bin_size
+        nfe = nfe.with_context(bin_size=False)
         nfe_xml = False
         if nfe.authorization_file_id:
             nfe_xml = base64.b64decode(nfe.authorization_file_id.datas)

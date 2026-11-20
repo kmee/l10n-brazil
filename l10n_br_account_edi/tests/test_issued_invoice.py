@@ -75,6 +75,19 @@ class TestIssuedInvoice(AccountEdiCase):
         self.assertIn("In installments", summary)
         self.assertIn("Net amount payable", summary)
 
+    def test_the_preview_shows_the_gross_the_withholdings_and_the_net(self):
+        self.move.invoice_payment_term_id = self.payment_term
+        net = self.move.fiscal_amount_total
+        field = self.move._fields["amount_tax_withholding"]
+        self.env.cache.set(self.move, field, 10.0)
+        self.move.invalidate_recordset(["edi_payment_summary"])
+
+        summary = self.move.edi_payment_summary
+
+        self.assertIn(f"{net + 10.0:,.2f}", summary)
+        self.assertIn(f"{net:,.2f}", summary)
+        self.assertIn("10.00", summary)
+
     def test_the_document_previews_the_installments_of_the_draft_invoice(self):
         self.move.invoice_payment_term_id = self.payment_term
 
@@ -89,11 +102,14 @@ class TestIssuedInvoice(AccountEdiCase):
             self.assertIn(format_date(self.env, installment.date_due), summary)
 
     def test_nothing_is_written_in_the_document_until_the_invoice_is_posted(self):
-        with mock.patch.object(
-            self.document_model, "_edi_set_installments", autospec=True
-        ) as set_installments, mock.patch.object(
-            self.document_model, "_edi_set_payments", autospec=True
-        ) as set_payments:
+        with (
+            mock.patch.object(
+                self.document_model, "_edi_set_installments", autospec=True
+            ) as set_installments,
+            mock.patch.object(
+                self.document_model, "_edi_set_payments", autospec=True
+            ) as set_payments,
+        ):
             self.move.invoice_payment_term_id = self.payment_term
             self.assertTrue(self.move.edi_payment_summary)
             self.assertTrue(self.document.edi_payment_summary)
@@ -160,3 +176,85 @@ class TestIssuedInvoice(AccountEdiCase):
             document_arch.xpath("//button[@name='action_generate_invoice']")
         )
         self.assertTrue(document_arch.xpath("//field[@name='edi_payment_summary']"))
+
+    def _own_imported_document(self):
+        """A note the company issued in another system, imported and authorized."""
+        document_type = self.env.ref("l10n_br_fiscal.document_SE")
+        serie = self.env["l10n_br_fiscal.document.serie"].create(
+            {
+                "code": "001",
+                "name": "Series 1",
+                "document_type_id": document_type.id,
+                "company_id": self.company.id,
+            }
+        )
+        operation = self.env.ref("l10n_br_fiscal.fo_venda")
+        document = self.env["l10n_br_fiscal.document"].create(
+            {
+                "company_id": self.company.id,
+                "document_type_id": document_type.id,
+                "document_serie_id": serie.id,
+                "document_number": "777",
+                "issuer": "company",
+                "partner_id": self.partner_a.id,
+                "fiscal_operation_id": operation.id,
+                "fiscal_operation_type": "out",
+                "document_date": "2026-01-10 12:00:00",
+                "imported_document": True,
+                "fiscal_line_ids": [
+                    Command.create(
+                        {
+                            "name": "Imported line",
+                            "product_id": self.product_a.id,
+                            "uom_id": self.product_a.uom_id.id,
+                            "quantity": 1,
+                            "price_unit": 1000.0,
+                            "fiscal_operation_type": "out",
+                            "fiscal_operation_id": operation.id,
+                            "fiscal_operation_line_id": self.env.ref(
+                                "l10n_br_fiscal.fo_venda_servico"
+                            ).id,
+                            "import_state": "resolved",
+                        }
+                    )
+                ],
+            }
+        )
+        document._trigger_fsm("action_confirm_imported")
+        return document
+
+    def test_an_imported_document_of_the_company_is_invoiced_as_a_customer_one(self):
+        document = self._own_imported_document()
+
+        move = self.env["account.move"].browse(
+            document.action_generate_invoice()["res_id"]
+        )
+
+        self.assertEqual(move.move_type, "out_invoice")
+        self.assertEqual(move.fiscal_document_id, document)
+        self.assertEqual(
+            (document.document_number, document.document_serie), ("777", "001")
+        )
+
+    def test_posting_the_invoice_of_an_imported_document_of_the_company_writes_nothing(
+        self,
+    ):
+        document = self._own_imported_document()
+        model = type(document)
+        with (
+            mock.patch.object(
+                model, "_edi_set_installments", autospec=True
+            ) as set_installments,
+            mock.patch.object(
+                model, "_edi_set_payments", autospec=True
+            ) as set_payments,
+        ):
+            move = self.env["account.move"].browse(
+                document.action_generate_invoice()["res_id"]
+            )
+            self.assertFalse(move.edi_payment_summary)
+            move.action_post()
+
+        set_installments.assert_not_called()
+        set_payments.assert_not_called()
+        self.assertEqual(document.state_edoc, "autorizada")

@@ -53,6 +53,7 @@ class Document(models.Model):
         self.ensure_one()
         if (
             self.issuer == DOCUMENT_ISSUER_COMPANY
+            and not self.imported_document
             and self.state_edoc == DOCUMENT_STATE_DRAFT
         ):
             return self.move_ids[:1]

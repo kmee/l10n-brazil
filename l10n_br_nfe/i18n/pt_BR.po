@@ -344,6 +344,13 @@ msgid "Assinatura digital padrão RSA"
 msgstr ""
 
 #. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document_import.py:0
+#, python-format
+msgid "Authorization protocol of the file: %(protocol)s, %(date)s."
+msgstr "Protocolo de autorização do arquivo: %(protocol)s, %(date)s."
+
+#. module: l10n_br_nfe
 #: model:ir.model.fields,help:l10n_br_nfe.field_nfe_40_paasignature__nfe40_signatureValue
 msgid ""
 "Assinatura digital padrão RSA\n"

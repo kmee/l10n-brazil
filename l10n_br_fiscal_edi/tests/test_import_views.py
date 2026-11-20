@@ -3,6 +3,8 @@
 
 from lxml import etree
 
+from odoo.tools.safe_eval import safe_eval
+
 from .common import EdiImportCase
 
 
@@ -51,6 +53,7 @@ class TestImportViews(EdiImportCase):
             )
         )
         self.assertTrue(form.xpath("//field[@name='import_warning']"))
+        self.assertTrue(form.xpath("//button[@name='action_import_create_products']"))
 
     def test_the_line_form_names_existing_fields(self):
         line_model = self.env["l10n_br_fiscal.document.line"]
@@ -71,6 +74,18 @@ class TestImportViews(EdiImportCase):
     def test_the_window_view_loads(self):
         wizard = self.env["l10n_br_fiscal_edi.document.import.wizard"]
         self._check_fields(wizard._name, wizard.get_view(view_type="form")["arch"])
+
+    def test_the_list_of_imported_documents_does_not_assume_a_direction(self):
+        """Documents received and documents the company issued are both listed,
+        and a new one is not created as an entry."""
+        action = self.env.ref("l10n_br_fiscal_edi.imported_document_action")
+        self.assertNotIn("fiscal_operation_type", action.context or "")
+        received = self._create_imported_document()
+        own = self._create_imported_document(issuer="company")
+        own.fiscal_operation_type = "out"
+        listed = self.Document.search(safe_eval(action.domain))
+        self.assertIn(received, listed)
+        self.assertIn(own, listed)
 
     def test_the_actions_open_the_right_views(self):
         action = self.env.ref("l10n_br_fiscal_edi.imported_document_action")
