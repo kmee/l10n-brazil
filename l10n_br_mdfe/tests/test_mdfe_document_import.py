@@ -2,7 +2,6 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 import os
-from unittest.mock import patch
 
 import nfelib
 
@@ -53,16 +52,6 @@ class TestMdfeDocumentImport(EdiImportCase):
         super().setUpClass()
         cls.presumed = cls.env.ref("l10n_br_base.empresa_lucro_presumido")
 
-    def _confirm(self, documents):
-        """Confirm as authorized. The check and the export of the XML for the
-        emission (which need what an imported MDF-e does not have) are the
-        business of the emission, and are left out."""
-        model = type(documents)
-        with patch.object(model, "_document_check"), patch.object(
-            model, "_document_export"
-        ):
-            documents.action_document_confirm()
-
     def _import(self, content, model=None):
         return (self.Document if model is None else model)._edi_import_files(
             [("mdfe.xml", content)]
@@ -103,7 +92,7 @@ class TestMdfeDocumentImport(EdiImportCase):
         documents, errors, _warnings = self._import(mdfe_xml(status="100"))
         self.assertFalse(errors)
         self.assertTrue(documents)
-        self._confirm(documents)
+        documents.action_document_confirm()
         self.assertEqual(registry(), before)
 
     def test_confirming_an_mdfe_issued_by_the_company_does_not_send_it(self):
@@ -112,7 +101,7 @@ class TestMdfeDocumentImport(EdiImportCase):
         )
         documents, _errors, _warnings = self._import(mdfe_xml(status="100"))
         self.assertEqual(documents.fiscal_operation_type, "out")
-        self._confirm(documents)
+        documents.action_document_confirm()
         self.assertEqual(documents.state_edoc, "autorizada")
         self.assertEqual(documents.document_number, "1131")
         self.assertFalse(documents.send_file_id)
