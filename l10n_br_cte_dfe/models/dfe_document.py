@@ -51,31 +51,6 @@ class L10nBrFiscalDfeDocument(models.Model):
             "view_mode": "form",
         }
 
-    def import_document(self):
-        if self.fiscal_type != "cte":
-            return super().import_document()
-        complete = self._cte_dfe_complete()
-        if complete.schema_type not in CTE_IMPORTABLE_SCHEMAS:
-            raise UserError(
-                _(
-                    "Only the CT-e (model 57) can be imported as a fiscal "
-                    "document. This DF-e is a %(schema)s.",
-                    schema=complete.schema_type,
-                )
-            )
-        return {
-            "name": _("Import CT-e XML"),
-            "type": "ir.actions.act_window",
-            "res_model": "l10n_br_fiscal.document.import.wizard",
-            "view_mode": "form",
-            "target": "new",
-            "context": {
-                "default_file": complete.attachment_id.with_context(
-                    bin_size=False
-                ).datas,
-            },
-        }
-
     def make_pdf(self):
         """Generate the DACTE PDF from the complete CT-e XML."""
         if self.fiscal_type != "cte":
