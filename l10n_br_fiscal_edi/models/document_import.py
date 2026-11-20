@@ -87,6 +87,8 @@ class Document(models.Model):
         "fiscal_operation_id",
         "import_partner_warning",
         "fiscal_amount_total",
+        "fiscal_line_ids.fiscal_operation_id",
+        "fiscal_line_ids.fiscal_operation_line_id",
         "fiscal_line_ids.partner_ncm_code",
         "fiscal_line_ids.ncm_id",
         "fiscal_line_ids.uom_id",
@@ -114,6 +116,14 @@ class Document(models.Model):
                 )
             )
         for line in self.fiscal_line_ids:
+            if line.fiscal_operation_id and not line.fiscal_operation_line_id:
+                messages.append(
+                    _(
+                        "%(line)s: more than one operation line fits the operation: "
+                        "choose the operation line of the line."
+                    )
+                    % {"line": line.name}
+                )
             if line.partner_ncm_code and not line.ncm_id:
                 messages.append(
                     _("%(line)s: the NCM %(ncm)s is not in the registry.")
@@ -241,11 +251,14 @@ class Document(models.Model):
                 _("The file %s is not a fiscal document that can be imported.") % name
             )
         company, role = self._edi_import_company(parsed)
-        self._edi_import_lock(company, parsed.access_key)
+        contested = self._edi_import_lock(company, parsed.access_key)
         existing = self.with_company(company)._edi_import_find_existing(parsed, company)
         if existing:
             return existing, False
-        if self._edi_import_committed_elsewhere(parsed, company):
+        # Only a lock that had to be waited for can hide a document committed after
+        # the snapshot; checking with a cursor of its own otherwise would wait for the
+        # locks of a transaction that holds the tables (the installation, with demo).
+        if contested and self._edi_import_committed_elsewhere(parsed, company):
             raise EdiImportConcurrencyError(
                 f"The note {name} was imported by a concurrent transaction."
             )
@@ -366,11 +379,20 @@ class Document(models.Model):
         not exist and both create it, and nothing in the database forbids it (an
         existing database may have duplicates, so there is no unique index). The second
         waits here until the first commits, and then finds the document and answers
-        that the note was already imported."""
+        that the note was already imported.
+
+        :return: whether the lock was contested, that is, somebody else held it and
+            this transaction had to wait. Only then can the document it looks for have
+            been committed after the snapshot of this transaction.
+        """
+        params = (company.id, access_key)
         self.env.cr.execute(
-            "SELECT pg_advisory_xact_lock(%s, hashtext(%s))",
-            (company.id, access_key),
+            "SELECT pg_try_advisory_xact_lock(%s, hashtext(%s))", params
         )
+        if self.env.cr.fetchone()[0]:
+            return False
+        self.env.cr.execute("SELECT pg_advisory_xact_lock(%s, hashtext(%s))", params)
+        return True
 
     @api.model
     def _edi_import_check(self, parsed, company):
@@ -610,19 +632,27 @@ class Document(models.Model):
                 operation_line.fiscal_operation_id or self.fiscal_operation_id
             )
             if not operation_line:
-                # No line answers the CFOP of the file (a CT-e, for instance) and
-                # the line has no product to pick one: the best approved line of
-                # the operation stands, or the line would add nothing to the total.
-                operation_line = (
-                    line.fiscal_operation_line_id
-                    or line.fiscal_operation_id._select_best_line(
-                        line.fiscal_operation_id.line_ids.filtered(
-                            lambda op_line: op_line.state == "approved"
-                        )
-                    )
+                # No line answers the CFOP of the file (a CT-e, for instance): the
+                # operation line is applied only when the operation has a single
+                # candidate. With more, the line is left to the person, who is warned.
+                candidates = self._edi_import_operation_line_candidates(
+                    line.fiscal_operation_id
+                )
+                operation_line = line.fiscal_operation_line_id or (
+                    candidates if len(candidates) == 1 else candidates.browse()
                 )
             if operation_line:
                 line.fiscal_operation_line_id = operation_line
+
+    @api.model
+    def _edi_import_operation_line_candidates(self, operation):
+        """The approved lines of the operation, of its type."""
+        return operation.line_ids.filtered(
+            lambda op_line: (
+                op_line.state == "approved"
+                and op_line.fiscal_operation_type == operation.fiscal_operation_type
+            )
+        )
 
     def _edi_import_operation_lines_found(self):
         """The operation line of each line that has none, by the CFOP of the file."""

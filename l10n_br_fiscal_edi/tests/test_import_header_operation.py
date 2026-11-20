@@ -110,13 +110,56 @@ class TestImportHeaderOperation(EdiImportCase):
         self.assertAlmostEqual(document.amount_financial_total, 100.0)
         self.assertAlmostEqual(document.fiscal_amount_total, 100.0)
 
-    def test_a_line_whose_cfop_matches_no_operation_line_still_adds_to_the_total(self):
-        """A CT-e has a CFOP that no line of the operation answers and no product to
-        pick one: the best approved line of the operation stands."""
+    def _unmatched_document(self):
+        """A document whose line has a CFOP that no operation line answers (a CT-e)
+        and no product to pick one."""
         document = self._declared_document()
         cfop = self.env["l10n_br_fiscal.cfop"].search([("code", "=", "5352")], limit=1)
         self.assertTrue(cfop)
         document.fiscal_line_ids.partner_cfop_id = cfop
-        self._choose_operation(document, self.env.ref("l10n_br_fiscal.fo_compras"))
-        self.assertTrue(document.fiscal_line_ids.fiscal_operation_line_id)
+        return document
+
+    def _operation(self, lines):
+        operation = self.env["l10n_br_fiscal.operation"].create(
+            {
+                "code": f"TST-{lines}",
+                "name": f"Test operation with {lines} line(s)",
+                "fiscal_operation_type": "in",
+                "fiscal_type": "purchase",
+            }
+        )
+        for number in range(lines):
+            self.env["l10n_br_fiscal.operation.line"].create(
+                {
+                    "fiscal_operation_id": operation.id,
+                    "name": f"Line {number}",
+                    "cfop_internal_id": self.env.ref("l10n_br_fiscal.cfop_1102").id,
+                    # the line has no product, so the definition by product picks none
+                    "product_type": "00",
+                }
+            )
+        operation.action_approve()
+        return operation
+
+    def test_a_single_candidate_line_is_applied_when_no_cfop_matches(self):
+        """The operation has one approved line: it is the one, so the line adds to
+        the total as the amounts of the file."""
+        document = self._unmatched_document()
+        operation = self._operation(1)
+        self._choose_operation(document, operation)
+        line = document.fiscal_line_ids
+        self.assertEqual(line.fiscal_operation_line_id, operation.line_ids)
         self.assertAlmostEqual(document.amount_financial_total, 100.0)
+        self.assertNotIn("operation line", document.import_warning or "")
+
+    def test_several_candidate_lines_are_left_to_the_person_with_a_warning(self):
+        """With more than one candidate nothing is guessed: the line stays without
+        operation line and the document tells the person to choose."""
+        document = self._unmatched_document()
+        operation = self._operation(2)
+        self._choose_operation(document, operation)
+        line = document.fiscal_line_ids
+        self.assertFalse(line.fiscal_operation_line_id)
+        self.assertIn("choose the operation line", document.import_warning)
+        line.fiscal_operation_line_id = operation.line_ids[:1]
+        self.assertNotIn("choose the operation line", document.import_warning or "")
