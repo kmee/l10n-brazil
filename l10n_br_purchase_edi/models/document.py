@@ -80,7 +80,9 @@ class FiscalDocument(models.Model):
                     "%(count)s line(s) have the origin (purchase order line) "
                     "not decided yet. Use Confirm Origins to accept the "
                     "suggestions, or Match with Orders to choose the order line "
-                    "of each one or to mark the line as without order.",
+                    "of each one or to mark the line as without order. A line whose "
+                    "product is still a suggestion only gets its origin after Confirm "
+                    "Suggestions.",
                     count=len(undecided),
                 )
             )

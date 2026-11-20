@@ -335,5 +335,5 @@ class TestOrigin(PurchaseEdiCase):
         self._order()
         self._resolve_product()
 
-        with self.assertRaisesRegex(UserError, "not decided"):
+        with self.assertRaisesRegex(UserError, "Confirm Suggestions"):
             self.document.action_generate_invoice()
