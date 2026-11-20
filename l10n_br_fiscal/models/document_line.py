@@ -182,6 +182,8 @@ class DocumentLine(models.Model):
         "partner_id",
         "ncm_id",
         "company_id.profit_calculation",
+        "company_id.piscofins_id",
+        "cfop_id",
         "document_id.imported_document",
     )
     def _compute_entry_cst_ids(self):
@@ -205,17 +207,37 @@ class DocumentLine(models.Model):
             line.entry_cofins_cst_id = cofins
 
     def _get_entry_piscofins_cst(self, tax_domain, tax):
-        """Non-cumulative regime: the credit CST of the mapped tax. Cumulative
-        regime (presumed or arbitrated profit): 70. Simples Nacional keeps the
-        mapped CST."""
+        """Non-cumulative regime: the credit CST of the mapped tax, or 70 when
+        the credit is vetoed (``_tax_credit_vetoed``: use and consumption, fixed
+        asset). Cumulative regime (presumed or arbitrated profit): 70. Simples
+        Nacional keeps the mapped CST."""
         self.ensure_one()
         company = self.company_id
-        if (
-            company.tax_framework not in TAX_FRAMEWORK_SIMPLES_ALL
-            and company.profit_calculation != PROFIT_CALCULATION_REAL
+        cst = tax.cst_in_id if tax else self.env["l10n_br_fiscal.cst"]
+        if company.tax_framework in TAX_FRAMEWORK_SIMPLES_ALL:
+            return cst
+        if company.profit_calculation != PROFIT_CALCULATION_REAL or (
+            cst.default_creditable_tax and self._tax_credit_vetoed(tax_domain)
         ):
             return self.env.ref(f"l10n_br_fiscal.cst_{tax_domain}_70")
-        return tax.cst_in_id if tax else self.env["l10n_br_fiscal.cst"]
+        return cst
+
+    def _tax_credit_vetoed(self, tax_domain):
+        """Whether the buyer regime, the CFOP or a Simples supplier forbid the
+        credit of ``tax_domain`` on this entry, whatever its CST.
+
+        It is the creditability map without its CST gate: an imported entry
+        keeps the CST of the supplier, an outgoing one the map never credits,
+        while the books carry the CST of the entry.
+        """
+        self.ensure_one()
+        if self.cfop_id.type_in_out != FISCAL_IN:
+            return False
+        if not self._creditable_tax_regime_gates().get(tax_domain):
+            return True
+        if not self._creditable_tax_destination_gates().get(tax_domain, True):
+            return True
+        return tax_domain == "icms" and self._is_simples_supplier_without_credit()
 
     def _entry_piscofins_without_credit(self, tax_domain):
         """True when the entry books PIS or COFINS without credit right (CST 70

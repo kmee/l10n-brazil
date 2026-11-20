@@ -126,6 +126,29 @@ class TestDocumentEntryCst(TransactionCase):
         self.assertFalse(line._entry_piscofins_without_credit("pis"))
         self.assertFalse(line._entry_piscofins_without_credit("cofins"))
 
+    def _assert_entry_without_piscofins_credit(self, operation_line, type_move):
+        line = self._document(
+            self.company_real,
+            fiscal_operation_line_id=self.env.ref(
+                f"l10n_br_fiscal.{operation_line}"
+            ).id,
+        ).fiscal_line_ids
+        self.assertEqual(line.cfop_id.type_move, type_move)
+        self.assertEqual(line.entry_pis_cst_id.code, "70")
+        self.assertEqual(line.entry_cofins_cst_id.code, "70")
+        self.assertTrue(line._entry_piscofins_without_credit("pis"))
+        self.assertTrue(line._entry_piscofins_without_credit("cofins"))
+
+    def test_entry_cst_non_cumulative_use_and_consumption_books_70(self):
+        self._assert_entry_without_piscofins_credit(
+            "fo_compras_compras_uso_consumo", "purchase_ownuse"
+        )
+
+    def test_entry_cst_non_cumulative_fixed_asset_books_70(self):
+        self._assert_entry_without_piscofins_credit(
+            "fo_compras_compras_ativo", "purchase_asset"
+        )
+
     def test_entry_cst_cumulative_regime_books_70(self):
         line = self._document(self.company_presumed).fiscal_line_ids
         self.assertEqual(
