@@ -4,6 +4,9 @@
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 
+from psycopg2 import OperationalError
+from psycopg2.errorcodes import SERIALIZATION_FAILURE
+
 from odoo import fields
 
 
@@ -34,6 +37,17 @@ EDI_IMPORT_NO_CREATE = "edi_import_no_create"
 # and never by its name. Only a file that carries neither (final consumer, foreigner)
 # may match by name, and the document says so.
 EDI_IMPORT_PARTNER_BY_VAT = "edi_import_partner_by_vat"
+
+
+class EdiImportConcurrencyError(OperationalError):
+    """The note was imported by a transaction that committed after this one began.
+
+    The transaction cannot see that document (its snapshot is older), so it cannot
+    answer that the note was already imported. Raised as a serialization failure,
+    which makes the framework roll back and run the call again in a new transaction,
+    where the document exists."""
+
+    pgcode = SERIALIZATION_FAILURE
 
 
 @dataclass(frozen=True)
@@ -67,6 +81,7 @@ class EdiPayment:
     amount: float
     term: str  # "cash" | "installments"  (indPag 0 / 1)
     description: str = ""  # xPag when tPag = "99"
+    label: str = ""  # name of the means, for the page of the payments
 
 
 @dataclass(frozen=True)
