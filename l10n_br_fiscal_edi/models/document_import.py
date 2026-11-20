@@ -251,11 +251,14 @@ class Document(models.Model):
                 _("The file %s is not a fiscal document that can be imported.") % name
             )
         company, role = self._edi_import_company(parsed)
-        self._edi_import_lock(company, parsed.access_key)
+        contested = self._edi_import_lock(company, parsed.access_key)
         existing = self.with_company(company)._edi_import_find_existing(parsed, company)
         if existing:
             return existing, False
-        if self._edi_import_committed_elsewhere(parsed, company):
+        # Only a lock that had to be waited for can hide a document committed after
+        # the snapshot; checking with a cursor of its own otherwise would wait for the
+        # locks of a transaction that holds the tables (the installation, with demo).
+        if contested and self._edi_import_committed_elsewhere(parsed, company):
             raise EdiImportConcurrencyError(
                 f"The note {name} was imported by a concurrent transaction."
             )
@@ -376,11 +379,20 @@ class Document(models.Model):
         not exist and both create it, and nothing in the database forbids it (an
         existing database may have duplicates, so there is no unique index). The second
         waits here until the first commits, and then finds the document and answers
-        that the note was already imported."""
+        that the note was already imported.
+
+        :return: whether the lock was contested, that is, somebody else held it and
+            this transaction had to wait. Only then can the document it looks for have
+            been committed after the snapshot of this transaction.
+        """
+        params = (company.id, access_key)
         self.env.cr.execute(
-            "SELECT pg_advisory_xact_lock(%s, hashtext(%s))",
-            (company.id, access_key),
+            "SELECT pg_try_advisory_xact_lock(%s, hashtext(%s))", params
         )
+        if self.env.cr.fetchone()[0]:
+            return False
+        self.env.cr.execute("SELECT pg_advisory_xact_lock(%s, hashtext(%s))", params)
+        return True
 
     @api.model
     def _edi_import_check(self, parsed, company):
