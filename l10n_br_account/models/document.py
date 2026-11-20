@@ -85,28 +85,28 @@ class FiscalDocument(models.Model):
     @api.onchange("company_id")
     def _inverse_company_id(self):
         for doc in self:
-            for move in doc.move_ids:
+            for move in doc.sudo().move_ids:
                 if move.company_id != doc.company_id:
                     move.company_id = doc.company_id
 
     @api.onchange("partner_id")
     def _inverse_partner_id(self):
         for doc in self:
-            for move in doc.move_ids:
+            for move in doc.sudo().move_ids:
                 if move.partner_id != doc.partner_id:
                     move.partner_id = doc.partner_id
 
     @api.onchange("partner_shipping_id")
     def _inverse_partner_shipping_id(self):
         for doc in self:
-            for move in doc.move_ids:
+            for move in doc.sudo().move_ids:
                 if move.partner_shipping_id != doc.partner_shipping_id:
                     move.partner_shipping_id = doc.partner_shipping_id
 
     @api.onchange("user_id")
     def _inverse_user_id(self):
         for doc in self:
-            for move in doc.move_ids:
+            for move in doc.sudo().move_ids:
                 if move.user_id != doc.user_id:
                     move.user_id = doc.user_id
 
@@ -198,7 +198,7 @@ class FiscalDocument(models.Model):
     @api.depends("move_ids.invoice_incoterm_id")
     def _compute_incoterm_id(self):
         for record in self:
-            for move in record.move_ids:
+            for move in record.sudo().move_ids:
                 if move.invoice_incoterm_id:
                     record.incoterm_id = move.invoice_incoterm_id
                 else:
@@ -206,13 +206,13 @@ class FiscalDocument(models.Model):
 
     def _inverse_incoterm_id(self):
         for record in self:
-            if record.move_ids:
-                record.move_ids.invoice_incoterm_id = record.incoterm_id
+            if record.sudo().move_ids:
+                record.sudo().move_ids.invoice_incoterm_id = record.incoterm_id
 
     @api.depends("move_ids")
     def _compute_move_count(self):
         for record in self:
-            record.move_count = len(record.move_ids)
+            record.move_count = len(record.sudo().move_ids)
 
     def unlink(self):
         non_draft_documents = self.filtered(
@@ -279,14 +279,15 @@ class FiscalDocument(models.Model):
         """
         res = super().message_post(**kwargs)
         for doc in self:
-            for move in doc.move_ids:
+            for move in doc.sudo().move_ids:
                 move.message_post(**kwargs)
         return res
 
     def _check_cancel_move_ids_allowed(self):
         """Fail fast on closed period before the irreversible SEFAZ call."""
         for record in self:
-            moves = record.move_ids.filtered(lambda m: m.state == "posted")
+            # a check, which holds whatever the rights of who asks
+            moves = record.sudo().move_ids.filtered(lambda m: m.state == "posted")
             if moves:
                 moves._check_fiscalyear_lock_date()
                 moves.line_ids._check_tax_lock_date()
@@ -296,9 +297,9 @@ class FiscalDocument(models.Model):
         # without invoking the override that blocks documents already
         # cancelled at SEFAZ.
         for record in self:
-            moves = record.move_ids
-            if not moves:
+            if not record.sudo().move_ids:
                 continue
+            moves = record.move_ids
             moves.mapped("line_ids.analytic_line_ids").unlink()
             moves.mapped("line_ids").remove_move_reconcile()
             moves.button_cancel()
@@ -348,7 +349,7 @@ class FiscalDocument(models.Model):
 
     def action_document_back2draft(self):
         result = super().action_document_back2draft()
-        if self.move_ids:
+        if self.sudo().move_ids:
             self.move_ids.button_draft()
         return result
 

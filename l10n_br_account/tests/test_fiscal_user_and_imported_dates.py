@@ -41,6 +41,11 @@ class TestFiscalUserAndImportedDates(AccountMoveBRCommon):
             }
         )
 
+    def _reload(self):
+        """What the web client does not have in memory is read again, as the user."""
+        self.env.flush_all()
+        self.env.invalidate_all()
+
     def _imported_document(self, **values):
         vals = {
             "company_id": self.company.id,
@@ -75,6 +80,7 @@ class TestFiscalUserAndImportedDates(AccountMoveBRCommon):
 
     def test_a_fiscal_user_without_accounting_opens_the_document(self):
         document = self._imported_document().with_user(self.fiscal_user)
+        self._reload()
 
         arch = etree.fromstring(document.get_view(view_type="form")["arch"])
         names = [
@@ -90,6 +96,7 @@ class TestFiscalUserAndImportedDates(AccountMoveBRCommon):
 
     def test_a_fiscal_user_without_accounting_confirms_the_document(self):
         document = self._imported_document().with_user(self.fiscal_user)
+        self._reload()
 
         document.action_document_confirm()
 
@@ -113,10 +120,27 @@ class TestFiscalUserAndImportedDates(AccountMoveBRCommon):
             fiscal_operation_type="out",
             fiscal_operation_id=self.env.ref("l10n_br_fiscal.fo_venda").id,
         ).with_user(self.fiscal_user)
+        self._reload()
 
         document.action_document_confirm()
 
         self.assertEqual(document.state_edoc, "a_enviar")
+
+    def test_a_fiscal_user_without_accounting_works_on_the_document(self):
+        document = self._imported_document().with_user(self.fiscal_user)
+        self._reload()
+
+        # the onchanges of the form, the counter and the incoterm, the check and the
+        # cleaning of the invoices when the document is cancelled or reopened
+        document._inverse_company_id()
+        document._inverse_partner_id()
+        document._inverse_partner_shipping_id()
+        document._inverse_user_id()
+        self.assertEqual(document.move_count, 0)
+        self.assertFalse(document.incoterm_id)
+        document._check_cancel_move_ids_allowed()
+        document.cancel_move_ids()
+        document.action_document_back2draft()
 
     def test_the_invoice_of_the_accountant_is_posted_with_the_document(self):
         document = self._imported_document()
