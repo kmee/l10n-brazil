@@ -120,3 +120,28 @@ class TestCreateOrder(RequestEdiCase):
 
         with self.assertRaisesRegex(UserError, "was not confirmed"):
             self._note_rows_and_request(request).action_create_order_from_request()
+
+    def test_creating_the_order_does_not_write_on_the_partner(self):
+        request = self._request()
+        self._note()
+        before = (self.supplier.name, self.supplier.write_date)
+
+        action = self._note_rows_and_request(request).action_create_order_from_request()
+
+        order = self.env["purchase.order"].browse(action["res_id"])
+        self.assertEqual(order.partner_id, self.supplier)
+        self.assertEqual((self.supplier.name, self.supplier.write_date), before)
+
+    def test_a_document_issued_by_the_company_gets_no_request_origin(self):
+        self._request()
+        document = self._imported_document(
+            lines=[{"product_id": self.product.id}],
+            issuer="company",
+            partner_id=self.supplier.id,
+        )
+
+        document._edi_import_suggest()
+
+        line = document.fiscal_line_ids
+        self.assertFalse(line.import_request_line_id)
+        self.assertFalse(self._rows(fiscal_document_id=document.id))
