@@ -1406,3 +1406,55 @@ class TestNfeOwnNoteImport(EdiImportCase):
 
         self.assertEqual(document.partner_id, issuer)
         self.assertEqual(issuer.tax_framework, "3")
+
+    def _register_issuer(self, **values):
+        """The demo partner of the issuer, registered as the file declares it."""
+        city = self.env["res.city"].search(
+            [("state_id.code", "=", "SP"), ("name", "=", "Alumínio")], limit=1
+        )
+        issuer = self.env["res.partner"].search(
+            [("cnpj_cpf_stripped", "=", "59594315000157")], limit=1
+        )
+        vals = {
+            "name": "Empresa Simples Nacional",
+            "legal_name": "Empresa Simples Nacional",
+            "state_id": city.state_id.id,
+            "city_id": city.id,
+            "street_name": "Rua Paulo Dias",
+            "street_number": "586",
+            "district": "Vila Santa Luzia",
+            "zip": "18125-000",
+            "inscr_est": "755338250133",
+        }
+        vals.update(values)
+        issuer.write(vals)
+        return issuer
+
+    def test_a_registry_that_differs_from_the_file_is_warned_and_left_as_it_is(self):
+        issuer = self._register_issuer(
+            street_name="Rua Outra", street_number="1", inscr_est="110042490114"
+        )
+        before = issuer.read(["street_name", "street_number", "inscr_est", "zip"])
+
+        document = self._import(self._received_xml())
+
+        self.assertEqual(document.partner_id, issuer)
+        warning = document.import_partner_warning
+        self.assertIn("Rua Paulo Dias", warning)
+        self.assertIn("755338250133", warning)
+        self.assertIn("Rua Outra", warning)
+        self.assertEqual(
+            issuer.read(["street_name", "street_number", "inscr_est", "zip"]), before
+        )
+
+    def test_a_difference_only_of_case_accent_or_punctuation_is_not_warned(self):
+        issuer = self._register_issuer(
+            legal_name="EMPRESA SIMPLES NACIONAL",
+            street_name="RUA PAULO DIAS.",
+            district="vila santa luzia",
+        )
+
+        document = self._import(self._received_xml())
+
+        self.assertEqual(document.partner_id, issuer)
+        self.assertFalse(document.import_partner_warning)

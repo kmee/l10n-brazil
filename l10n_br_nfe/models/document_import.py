@@ -6,8 +6,14 @@ from xsdata.formats.dataclass.parsers import XmlParser
 from odoo import _, api, models
 from odoo.exceptions import UserError
 
-from odoo.addons.l10n_br_fiscal.constants.fiscal import MODELO_FISCAL_NFE
-from odoo.addons.l10n_br_fiscal_edi.tools import EdiParsedFile
+from odoo.addons.l10n_br_fiscal.constants.fiscal import (
+    DOCUMENT_ISSUER_COMPANY,
+    MODELO_FISCAL_NFE,
+)
+from odoo.addons.l10n_br_fiscal_edi.tools import (
+    EdiParsedFile,
+    EdiPartnerData,
+)
 
 PROTOCOL_AUTHORIZED = ("100", "150")
 PROTOCOL_CANCELLED = ("101", "151", "155")
@@ -114,3 +120,62 @@ class Document(models.Model):
             if not partners.search_count([("cnpj_cpf_stripped", "=", vat)]):
                 return name, vat
         return candidates[0] if candidates else super()._edi_import_partner_hint(parsed)
+
+    def _edi_import_partner_data(self, parsed):
+        result = super()._edi_import_partner_data(parsed)
+        if parsed.reader != "nfe":
+            return result
+        self.ensure_one()
+        inf_nfe = _inf_nfe(parsed.binding)
+        company_partner = self.company_id.partner_id
+        issued = self.issuer == DOCUMENT_ISSUER_COMPANY
+        parties = (
+            (
+                "issuer",
+                inf_nfe.emit,
+                inf_nfe.emit.enderEmit,
+                company_partner if issued else self.partner_id,
+            ),
+            (
+                "recipient",
+                inf_nfe.dest,
+                inf_nfe.dest and inf_nfe.dest.enderDest,
+                self.partner_id if issued else company_partner,
+            ),
+        )
+        for role, party, address, partner in parties:
+            if party is None or partner == company_partner:
+                # the registry of the company is its own, not the counterparty's
+                continue
+            result.append((partner, self._nfe_partner_data(role, party, address)))
+        carrier = inf_nfe.transp and inf_nfe.transp.transporta
+        if carrier is not None:
+            result.append(
+                (
+                    self.nfe40_transporta,
+                    EdiPartnerData(
+                        role="carrier",
+                        vat=carrier.CNPJ or carrier.CPF or "",
+                        name=carrier.xNome or "",
+                        state_tax_number=carrier.IE or "",
+                        city=carrier.xMun or "",
+                        state_code=str(_value(carrier.UF) or ""),
+                    ),
+                )
+            )
+        return result
+
+    @api.model
+    def _nfe_partner_data(self, role, party, address):
+        return EdiPartnerData(
+            role=role,
+            vat=party.CNPJ or party.CPF or "",
+            name=party.xNome or "",
+            state_tax_number=party.IE or "",
+            street=getattr(address, "xLgr", "") or "",
+            street_number=getattr(address, "nro", "") or "",
+            district=getattr(address, "xBairro", "") or "",
+            zip_code=getattr(address, "CEP", "") or "",
+            city=getattr(address, "xMun", "") or "",
+            state_code=str(_value(getattr(address, "UF", "")) or ""),
+        )
