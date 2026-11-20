@@ -20,7 +20,10 @@ class DocumentMatch(models.Model):
         ]
     )
     purchase_request_line_id = fields.Many2one(
-        comodel_name="purchase.request.line", string="Request Line", readonly=True
+        comodel_name="purchase.request.line",
+        string="Request Line",
+        readonly=True,
+        groups="purchase_request.group_purchase_request_user",
     )
     requested_by_id = fields.Many2one(
         comodel_name="res.users", string="Requested by", readonly=True
@@ -121,6 +124,10 @@ class DocumentMatch(models.Model):
         order that waits for it leaves the lines only suggested, and they are
         resolved when it is confirmed.
         """
+        if not self.env.su and not self.env.user.has_group(
+            "purchase_request.group_purchase_request_user"
+        ):
+            raise UserError(_("You have no access to the purchase requests."))
         rows = self.sudo()
         request = rows.filtered(
             lambda row: row.kind == "request"

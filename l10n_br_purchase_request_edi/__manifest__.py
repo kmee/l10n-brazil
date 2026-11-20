@@ -16,6 +16,7 @@
         "l10n_br_purchase_edi",
     ],
     "data": [
+        "security/security.xml",
         "views/document_view.xml",
         "views/document_match_view.xml",
     ],
