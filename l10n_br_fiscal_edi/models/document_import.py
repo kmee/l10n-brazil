@@ -13,7 +13,7 @@ from erpbrasil.base.fiscal.cnpj_cpf import formata
 
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
-from odoo.tools.misc import format_datetime
+from odoo.tools.misc import file_open, format_datetime
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_ISSUER_COMPANY,
@@ -193,6 +193,28 @@ class Document(models.Model):
                     )
                 )
         return documents, errors, warnings
+
+    @api.model
+    def _edi_import_demo_files(self, module, relative_paths):
+        """Import the sample files that a module ships in its demo data.
+
+        Called from the ``demo`` XML of the modules that read a type of file, so that
+        the documents of the demo are imported, reviewed and confirmed by the same
+        service as the ones of a person. A file that fails stops the installation:
+        a broken demo must show up at once.
+
+        :param module: name of the module that holds the files
+        :param relative_paths: paths of the files inside the module
+        :return: the imported documents
+        """
+        files = []
+        for path in relative_paths:
+            with file_open(f"{module}/{path}", "rb") as sample:
+                files.append((path.rsplit("/", 1)[-1], sample.read()))
+        documents, errors, _warnings = self._edi_import_files(files)
+        if errors:
+            raise UserError("\n".join(f"{name}: {message}" for name, message in errors))
+        return documents
 
     @api.model
     def _edi_import_expand(self, files):
