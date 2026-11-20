@@ -7,7 +7,13 @@ from unittest.mock import patch
 
 from odoo.tools import file_open
 
+from odoo.addons.l10n_br_cte.models.document import CTe as CteDocument
 from odoo.addons.l10n_br_cte.models.document_import import Document as CteReader
+from odoo.addons.l10n_br_cte.models.res_city import ResCity
+from odoo.addons.l10n_br_cte.models.res_company import ResCompany
+from odoo.addons.l10n_br_cte.models.res_country import ResCountry
+from odoo.addons.l10n_br_cte.models.res_country_state import ResCountryState
+from odoo.addons.l10n_br_cte.models.res_partner import ResPartner
 from odoo.addons.l10n_br_fiscal_edi.tests.common import EdiImportCase
 from odoo.addons.l10n_br_fiscal_edi.tools import EdiInstallment
 
@@ -497,6 +503,43 @@ class TestCteDocumentImport(EdiImportCase):
                 )
             read = CteReader._edi_import_read(self.Document, "a.xml", cte_xml())
         self.assertEqual(read.reader, "cte")
+
+    def test_the_overrides_of_the_cte_act_only_on_the_cte_schema(self):
+        """The import dictionaries of another schema (NF-e, MDF-e) go to the next
+        override of the chain, never to the rules of the CT-e."""
+        cases = (
+            (ResCity, "res.city", "match_or_create_m2o", ({"ibge_code": "1"}, {})),
+            (ResCountry, "res.country", "match_or_create_m2o", ({"bc_code": "1"}, {})),
+            (
+                ResCountryState,
+                "res.country.state",
+                "match_or_create_m2o",
+                ({"code": "SP"}, {}),
+            ),
+            (ResCompany, "res.company", "_prepare_import_dict", ({"x": 1},)),
+            (ResPartner, "res.partner", "_prepare_import_dict", ({"x": 1},)),
+            (ResPartner, "res.partner", "match_or_create_m2o", ({"cnpj_cpf": "1"}, {})),
+            (
+                CteDocument,
+                "l10n_br_fiscal.document",
+                "_prepare_import_dict",
+                ({"x": 1},),
+            ),
+        )
+        checked = 0
+        for cls, model_name, method, args in cases:
+            model = self.env[model_name].with_context(spec_schema="other")
+            mro = type(model).__mro__
+            following = next(
+                (base for base in mro[mro.index(cls) + 1 :] if method in vars(base)),
+                None,
+            )
+            if following is None:
+                continue  # nothing of another schema can reach this override
+            checked += 1
+            with patch.object(following, method, return_value="next"):
+                self.assertEqual(getattr(cls, method)(model, *args), "next", cls)
+        self.assertGreaterEqual(checked, 3)
 
     def test_a_cte_with_a_collection_declares_its_installments_in_order(self):
         documents, errors, _warnings = self._import(cte_xml(COLLECTION))
