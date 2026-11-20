@@ -1,6 +1,5 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-import base64
 import os
 
 from odoo import fields
@@ -25,6 +24,10 @@ class TestNFeImportDatetime(TransactionCase):
         super().setUpClass()
         cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
         cls.env.user.tz = "America/Sao_Paulo"
+        company = cls.env.ref("l10n_br_base.empresa_lucro_presumido")
+        cls.env = cls.env(
+            context=dict(cls.env.context, allowed_company_ids=company.ids)
+        )
         # the check of the key against the issue date only runs with the processor
         cls.env.company.processador_edoc = "oca"
         path = os.path.join(
@@ -37,15 +40,11 @@ class TestNFeImportDatetime(TransactionCase):
         xml = self.xml.replace(SAMPLE_DH, dh_emi.encode(), 1)
         xml = xml.replace(SAMPLE_DH, (dh_sai_ent or dh_emi).encode(), 1)
         self.assertNotIn(SAMPLE_DH, xml)
-        wizard = self.env["l10n_br_fiscal.document.import.wizard"].create(
-            {
-                "company_id": self.env.ref("base.main_company").id,
-                "file": base64.b64encode(xml),
-            }
-        )
-        wizard._onchange_file()
-        wizard._import_edoc()
-        return wizard.document_id
+        documents, errors, _warnings = self.env[
+            "l10n_br_fiscal.document"
+        ]._edi_import_files([("nfe.xml", xml)])
+        self.assertFalse(errors)
+        return documents
 
     def _local(self, document, field="document_date"):
         return fields.Datetime.context_timestamp(document, document[field])
