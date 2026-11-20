@@ -1,0 +1,122 @@
+# Copyright 2026 KMEE
+# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
+from datetime import date
+from unittest.mock import patch
+
+from odoo.tests import Form, tagged
+
+from ..tools import EdiInstallment
+from .common import EdiImportCase
+
+
+@tagged("post_install", "-at_install")
+class TestImportHeaderOperation(EdiImportCase):
+    """The operation chosen on the header of an imported document reaches its lines,
+    and what the file declared is not touched by it."""
+
+    def _declared_document(self, code="55", issuer="partner"):
+        document_type = self.env["l10n_br_fiscal.document.type"].search(
+            [("code", "=", code)], limit=1
+        )
+        document = self._create_imported_document(
+            document_type_id=document_type.id,
+            issuer=issuer,
+            document_serie="1",
+            document_number="1",
+            fiscal_operation_id=False,
+            lines=[{"name": "Freight", "price_unit": 100.0}],
+        )
+        document._init_import_states()
+        return document
+
+    def _declare_installments(self):
+        installments = [
+            EdiInstallment("001", date(2026, 12, 10), 60.0),
+            EdiInstallment("002", date(2027, 1, 10), 40.0),
+        ]
+        patcher = patch.object(
+            type(self.Document), "_edi_get_installments", lambda doc: installments
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _choose_operation(self, document, operation):
+        with Form(document) as form:
+            form.fiscal_operation_id = operation
+        return document
+
+    def _declared(self, document):
+        line = document.fiscal_line_ids
+        return {
+            "price_unit": line.price_unit,
+            "quantity": line.quantity,
+            "fiscal_amount_total": line.fiscal_amount_total,
+        }
+
+    def test_the_operation_of_the_header_reaches_the_lines(self):
+        document = self._declared_document()
+        line = document.fiscal_line_ids
+        self.assertFalse(line.fiscal_operation_id)
+        operation = self.env.ref("l10n_br_fiscal.fo_compras")
+        self._choose_operation(document, operation)
+        self.assertEqual(line.fiscal_operation_id, operation)
+        self.assertTrue(line.fiscal_operation_line_id)
+
+    def test_what_the_file_declared_is_not_touched_by_the_operation(self):
+        document = self._declared_document()
+        before = self._declared(document)
+        self.assertEqual(before["price_unit"], 100.0)
+        self._choose_operation(document, self.env.ref("l10n_br_fiscal.fo_compras"))
+        self.assertEqual(self._declared(document), before)
+
+    def test_the_amounts_of_the_document_stay_the_ones_of_the_file(self):
+        document = self._declared_document()
+        self._choose_operation(document, self.env.ref("l10n_br_fiscal.fo_compras"))
+        self.assertAlmostEqual(document.fiscal_amount_total, 100.0)
+        self.assertAlmostEqual(document.amount_financial_total, 100.0)
+        gross, withholding, net = document._edi_payment_totals()
+        self.assertEqual((gross, withholding, net), (100.0, 0.0, 100.0))
+
+    def test_the_page_of_installments_warns_of_nothing_with_the_operation(self):
+        document = self._declared_document()
+        self._declare_installments()
+        self._choose_operation(document, self.env.ref("l10n_br_fiscal.fo_compras"))
+        self.assertFalse(document._edi_installment_warning())
+
+    def test_a_line_that_has_an_operation_keeps_it(self):
+        document = self._declared_document()
+        other = self.env.ref("l10n_br_fiscal.fo_venda")
+        line = document.fiscal_line_ids
+        line.fiscal_operation_id = other
+        self._choose_operation(document, self.env.ref("l10n_br_fiscal.fo_compras"))
+        self.assertEqual(line.fiscal_operation_id, other)
+
+    def test_a_document_the_company_issued_keeps_its_amounts_when_confirmed(self):
+        document = self._declared_document(issuer="company")
+        operation = self.env.ref("l10n_br_fiscal.fo_venda")
+        self._choose_operation(document, operation)
+        line = document.fiscal_line_ids
+        self.assertEqual(line.fiscal_operation_id, operation)
+        self.assertTrue(line.fiscal_operation_line_id)
+        self.assertAlmostEqual(document.amount_financial_total, 100.0)
+        line._apply_import_depara(
+            product=self.env["product.product"].create({"name": "Own item"}),
+            uom=self.uom_unit,
+        )
+        self.assertAlmostEqual(document.amount_financial_total, 100.0)
+        document.action_document_confirm()
+        self.assertEqual(document.state_edoc, "autorizada")
+        self.assertAlmostEqual(document.amount_financial_total, 100.0)
+        self.assertAlmostEqual(document.fiscal_amount_total, 100.0)
+
+    def test_a_line_whose_cfop_matches_no_operation_line_still_adds_to_the_total(self):
+        """A CT-e has a CFOP that no line of the operation answers and no product to
+        pick one: the best approved line of the operation stands."""
+        document = self._declared_document()
+        cfop = self.env["l10n_br_fiscal.cfop"].search([("code", "=", "5352")], limit=1)
+        self.assertTrue(cfop)
+        document.fiscal_line_ids.partner_cfop_id = cfop
+        self._choose_operation(document, self.env.ref("l10n_br_fiscal.fo_compras"))
+        self.assertTrue(document.fiscal_line_ids.fiscal_operation_line_id)
+        self.assertAlmostEqual(document.amount_financial_total, 100.0)

@@ -7,6 +7,8 @@ from contextlib import closing
 from unittest.mock import patch
 
 from erpbrasil.base.fiscal.cnpj_cpf import formata
+from psycopg2 import OperationalError
+from psycopg2.errorcodes import SERIALIZATION_FAILURE
 
 from odoo import _
 from odoo.exceptions import AccessError, UserError
@@ -39,6 +41,7 @@ class TestDocumentImport(EdiImportCase):
             return by_name.get(name)
 
         def create(model_, parsed_file, company, role):
+            self.create_context = dict(model_.env.context)
             created.append(model_.env.context.get(EDI_IMPORT_NO_CREATE))
             self.partner_by_vat.append(
                 model_.env.context.get(EDI_IMPORT_PARTNER_BY_VAT)
@@ -91,6 +94,67 @@ class TestDocumentImport(EdiImportCase):
         self.assertFalse(self._another_transaction_can_lock(self.company, KEY_1))
         self.assertTrue(self._another_transaction_can_lock(self.company, KEY_2))
         self.assertTrue(self._another_transaction_can_lock(self.other_company, KEY_1))
+
+    def test_a_note_committed_by_a_concurrent_transaction_makes_the_call_run_again(
+        self,
+    ):
+        """The transaction that waited for the lock reads a snapshot older than the
+        commit of the first one, so it does not see the document: it must neither
+        create a second one nor report an unexpected error, but ask the framework to
+        run the call again (a serialization failure), where the document exists."""
+        parsed = self._parsed(KEY_1)
+        with patch.object(
+            type(self.Document), "_edi_import_committed_elsewhere", lambda *args: True
+        ), self.assertRaises(OperationalError) as caught:
+            self._import([(parsed.file_name, b"x")], [parsed])
+        self.assertEqual(caught.exception.pgcode, SERIALIZATION_FAILURE)
+        self.assertFalse(self.Document.search([("document_key", "=", KEY_1)]))
+
+    def test_a_note_that_nobody_holds_does_not_ask_to_run_again(self):
+        parsed = self._parsed(KEY_1)
+        documents, errors, _warnings = self._import(
+            [(parsed.file_name, b"x")], [parsed]
+        )
+        self.assertEqual((len(documents), errors), (1, []))
+
+    def test_the_committed_note_is_looked_for_in_a_transaction_of_its_own(self):
+        """What another transaction committed is seen by a cursor of its own, what
+        this one only wrote is not (it is the snapshot that matters, not the cache)."""
+        committed = self.Document.search(
+            [("document_key", "!=", False), ("company_id", "!=", False)], limit=1
+        )
+        self.assertTrue(committed, "the demo data has documents with a key")
+        found = self.Document._edi_import_committed_elsewhere(
+            self._parsed(committed.document_key), committed.company_id
+        )
+        self.assertTrue(found)
+        self.assertFalse(
+            self.Document._edi_import_committed_elsewhere(
+                self._parsed(KEY_3), self.company
+            )
+        )
+
+    def test_the_demo_files_of_a_module_are_imported_by_the_service(self):
+        document = self._create_imported_document(document_key=KEY_1)
+        calls = []
+
+        def service(model, files, **kwargs):
+            calls.append(files)
+            return document, [], []
+
+        with patch.object(type(self.Document), "_edi_import_files", service):
+            documents = self.Document._edi_import_demo_files(
+                "l10n_br_fiscal_edi", ["__manifest__.py"]
+            )
+        self.assertEqual(documents, document)
+        self.assertEqual([name for name, _content in calls[0]], ["__manifest__.py"])
+        self.assertIn(b"Common EDI fiscal features", calls[0][0][1])
+
+    def test_a_demo_file_that_fails_stops_the_installation(self):
+        with self.assertRaises(UserError):
+            self.Document._edi_import_demo_files(
+                "l10n_br_fiscal_edi", ["__manifest__.py"]
+            )
 
     def test_the_same_note_twice_opens_the_same_document_with_a_warning(self):
         parsed = self._parsed(KEY_1)
@@ -907,6 +971,31 @@ class TestDocumentImport(EdiImportCase):
         self.assertFalse(document.import_warning)
         document.fiscal_operation_id = False
         self.assertIn("No fiscal operation", document.import_warning)
+
+    def test_the_defaults_of_the_window_do_not_reach_the_documents(self):
+        """A window action that calls the import carries ``default_*`` keys for its
+        own records (a type of document, a partner): they must not fill the fields
+        of the documents and lines the import creates."""
+        model = self.Document.with_context(
+            default_fiscal_type="nfe",
+            default_partner_id=self.supplier.id,
+            lang="pt_BR",
+        )
+        _documents, errors, _warnings = self._import(
+            [(f"{KEY_1}.xml", b"<x/>")], parsed=[self._parsed(KEY_1)], model=model
+        )
+        self.assertFalse(errors)
+        self.assertEqual(
+            [key for key in self.create_context if key.startswith("default_")], []
+        )
+        self.assertEqual(self.create_context.get("lang"), "pt_BR")
+
+    def test_a_document_without_lines_has_no_operation_to_suggest(self):
+        """An MDF-e of the company has no line, so no CFOP to match an operation: the
+        warning that no operation matches the CFOP only makes sense with lines."""
+        document = self._create_imported_document(lines=[], fiscal_operation_id=False)
+        self.assertFalse(document.fiscal_line_ids)
+        self.assertFalse(document.import_warning)
 
     def test_the_review_is_also_a_state_of_the_list(self):
         document = self._create_imported_document()
