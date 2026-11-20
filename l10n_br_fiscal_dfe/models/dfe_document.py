@@ -325,7 +325,7 @@ class L10nBrFiscalDfeDocument(models.Model):
         """Import the document into the fiscal system: from the complete XML, or,
         when only the summary is here, asking for the XML first."""
         self.ensure_one()
-        if not self.env.user.has_group("l10n_br_fiscal.group_user"):
+        if not (self.env.su or self.env.user.has_group("l10n_br_fiscal.group_user")):
             raise UserError(
                 _("Only the fiscal users can import a document from the inbox.")
             )
