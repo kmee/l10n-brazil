@@ -7,7 +7,7 @@ from lxml import etree
 
 from odoo import Command
 from odoo.exceptions import UserError
-from odoo.tests import tagged
+from odoo.tests import Form, tagged
 
 from .common import AccountEdiCase
 
@@ -204,3 +204,46 @@ class TestImportedDocumentScreen(AccountEdiCase):
         document.fiscal_operation_id = False
 
         self.assertTrue(document.edi_can_generate_invoice)
+
+    def _sequences(self):
+        return self.env["ir.sequence"].search([]).mapped("number_next_actual")
+
+    def test_an_own_document_without_a_serie_record_is_invoiced(self):
+        numbers = self._sequences()
+        document = self._own_imported_document(with_serie=False)
+        self.assertFalse(document.document_serie_id)
+
+        move = self.env["account.move"].browse(
+            document.action_generate_invoice()["res_id"]
+        )
+
+        self.assertEqual(move.move_type, "out_invoice")
+        self.assertEqual(
+            (document.document_serie, document.document_number), ("001", "777")
+        )
+        self.assertFalse(document.document_serie_id)
+        self.assertEqual(self._sequences(), numbers)
+
+    def test_an_own_document_without_a_serie_record_is_confirmed(self):
+        numbers = self._sequences()
+        document = self._own_imported_document(confirm=False, with_serie=False)
+
+        document.with_user(self.fiscal_user).action_document_confirm()
+
+        self.assertEqual(document.state_edoc, "autorizada")
+        self.assertEqual(self._sequences(), numbers)
+
+    def test_a_fiscal_user_without_accounting_edits_saves_and_confirms(self):
+        document = self._own_imported_document(confirm=False, with_serie=False)
+        document = document.with_user(self.fiscal_user)
+        self.env.flush_all()
+        self.env.invalidate_all()
+
+        with Form(document) as form:
+            form.date_in_out = "2026-01-11 09:45:00"
+        self.env.flush_all()
+        self.env.invalidate_all()
+        document.action_document_confirm()
+
+        self.assertEqual(document.state_edoc, "autorizada")
+        self.assertEqual(document.date_in_out.hour, 9)
