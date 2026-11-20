@@ -127,3 +127,21 @@ class TestFiscalUserAndImportedDates(AccountMoveBRCommon):
         document.action_document_confirm()
 
         self.assertEqual(move.state, "posted")
+
+    def test_the_dates_of_the_file_survive_the_invoice(self):
+        document = self._imported_document(date_in_out="2026-01-11 09:45:00")
+        issued = document.document_date
+        entered = document.date_in_out
+
+        self.env["account.move"].import_fiscal_document(document)
+
+        self.assertEqual(document.document_date, issued)
+        self.assertEqual(document.date_in_out, entered)
+
+    def test_without_a_date_of_entry_the_invoice_does_not_make_one(self):
+        document = self._imported_document()
+        self.assertFalse(document.date_in_out)
+
+        self.env["account.move"].import_fiscal_document(document)
+
+        self.assertFalse(document.date_in_out)

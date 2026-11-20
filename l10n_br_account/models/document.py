@@ -149,7 +149,11 @@ class FiscalDocument(models.Model):
     def _compute_document_date(self):
         for record in self:
             moves = record.sudo().move_ids
-            if record.issuer == DOCUMENT_ISSUER_PARTNER and moves:
+            if (
+                record.issuer == DOCUMENT_ISSUER_PARTNER
+                and not record.imported_document
+                and moves
+            ):
                 move_id = moves[0]
                 if move_id.invoice_date:
                     user_tz = timezone(self.env.user.tz or "UTC")
@@ -170,7 +174,11 @@ class FiscalDocument(models.Model):
     def _compute_date_in_out(self):
         for record in self:
             moves = record.sudo().move_ids
-            if record.issuer == DOCUMENT_ISSUER_PARTNER and moves:
+            if (
+                record.issuer == DOCUMENT_ISSUER_PARTNER
+                and not record.imported_document
+                and moves
+            ):
                 move_id = moves[0]
                 if move_id.date:
                     user_tz = timezone(self.env.user.tz or "UTC")
