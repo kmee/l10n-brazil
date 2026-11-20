@@ -73,8 +73,10 @@ class AccountMove(models.Model):
         """The installments of the invoice, by due date."""
         self.ensure_one()
         due_lines = self.line_ids.filtered(
-            lambda line: line.account_id.account_type in PAYABLE_RECEIVABLE
-            and line.date_maturity
+            lambda line: (
+                line.account_id.account_type in PAYABLE_RECEIVABLE
+                and line.date_maturity
+            )
         ).sorted("date_maturity")
         return [
             EdiInstallment(
@@ -130,9 +132,12 @@ class AccountMove(models.Model):
                     "installments": move._edi_installments(),
                     "payments": move._edi_payments(),
                     "totals": [
-                        (_("Document total"), move.fiscal_amount_total),
+                        (
+                            _("Document total"),
+                            move.fiscal_amount_total + move.amount_tax_withholding,
+                        ),
                         (_("Withholdings"), move.amount_tax_withholding),
-                        (_("Net amount payable"), move.amount_financial_total),
+                        (_("Net amount payable"), move.fiscal_amount_total),
                     ],
                     "warning": False,
                 },
@@ -144,7 +149,10 @@ class AccountMove(models.Model):
         installments is only a preview."""
         for move in self.filtered(lambda m: m.state == "draft"):
             for document in move.fiscal_document_ids.filtered(
-                lambda d: d.document_type_id and d.issuer == DOCUMENT_ISSUER_COMPANY
+                lambda d: (
+                    d.document_type_id
+                    and d.issuer == DOCUMENT_ISSUER_COMPANY
+                    )
             ):
                 document._edi_set_installments(move._edi_installments())
                 document._edi_set_payments(move._edi_payments())

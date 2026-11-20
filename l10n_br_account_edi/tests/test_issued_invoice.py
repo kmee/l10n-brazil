@@ -75,6 +75,19 @@ class TestIssuedInvoice(AccountEdiCase):
         self.assertIn("In installments", summary)
         self.assertIn("Net amount payable", summary)
 
+    def test_the_preview_shows_the_gross_the_withholdings_and_the_net(self):
+        self.move.invoice_payment_term_id = self.payment_term
+        net = self.move.fiscal_amount_total
+        field = self.move._fields["amount_tax_withholding"]
+        self.env.cache.set(self.move, field, 10.0)
+        self.move.invalidate_recordset(["edi_payment_summary"])
+
+        summary = self.move.edi_payment_summary
+
+        self.assertIn(f"{net + 10.0:,.2f}", summary)
+        self.assertIn(f"{net:,.2f}", summary)
+        self.assertIn("10.00", summary)
+
     def test_the_document_previews_the_installments_of_the_draft_invoice(self):
         self.move.invoice_payment_term_id = self.payment_term
 
@@ -89,11 +102,14 @@ class TestIssuedInvoice(AccountEdiCase):
             self.assertIn(format_date(self.env, installment.date_due), summary)
 
     def test_nothing_is_written_in_the_document_until_the_invoice_is_posted(self):
-        with mock.patch.object(
-            self.document_model, "_edi_set_installments", autospec=True
-        ) as set_installments, mock.patch.object(
-            self.document_model, "_edi_set_payments", autospec=True
-        ) as set_payments:
+        with (
+            mock.patch.object(
+                self.document_model, "_edi_set_installments", autospec=True
+            ) as set_installments,
+            mock.patch.object(
+                self.document_model, "_edi_set_payments", autospec=True
+            ) as set_payments,
+        ):
             self.move.invoice_payment_term_id = self.payment_term
             self.assertTrue(self.move.edi_payment_summary)
             self.assertTrue(self.document.edi_payment_summary)
