@@ -20,13 +20,18 @@ class FiscalDocumentLine(models.Model):
     )
 
     def write(self, vals):
+        result = super().write(vals)
         if "import_purchase_line_id" in vals and "import_request_line_id" not in vals:
-            # the origin changed: it does not come from the request any longer
-            vals = dict(vals, import_request_line_id=False)
-        return super().write(vals)
+            # the origin changed: it does not come from the request any longer.
+            # Done with sudo because a user of the fiscal group changes the origin
+            # and cannot write the field of the request.
+            self.sudo().filtered("import_request_line_id").write(
+                {"import_request_line_id": False}
+            )
+        return result
 
     def _suggest_import_origin(self):
         # an order created from a request and waiting for its approval is a
         # decision of the person, not a suggestion to be recomputed
-        lines = self.filtered(lambda line: not line.import_request_line_id)
+        lines = self.filtered(lambda line: not line.sudo().import_request_line_id)
         return super(FiscalDocumentLine, lines)._suggest_import_origin()

@@ -145,3 +145,17 @@ class TestCreateOrder(RequestEdiCase):
         line = document.fiscal_line_ids
         self.assertFalse(line.import_request_line_id)
         self.assertFalse(self._rows(fiscal_document_id=document.id))
+
+    def test_a_fiscal_user_without_the_request_group_changes_the_origin(self):
+        request = self._request()
+        self._note()
+        self._note_rows_and_request(request).action_create_order_from_request()
+        user = self._fiscal_user("fiscal-no-request")
+        line = self.line.with_user(user).with_context(
+            allowed_company_ids=user.company_ids.ids
+        )
+
+        line.import_purchase_line_id = False
+        line._suggest_import_origin()
+
+        self.assertFalse(self.line.sudo().import_request_line_id)
