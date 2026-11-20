@@ -3,12 +3,14 @@
 
 import io
 import zipfile
+from contextlib import closing
 from unittest.mock import patch
 
 from erpbrasil.base.fiscal.cnpj_cpf import formata
 
 from odoo import _
 from odoo.exceptions import AccessError, UserError
+from odoo.sql_db import db_connect
 
 from ..tools import EDI_IMPORT_NO_CREATE, EDI_IMPORT_PARTNER_BY_VAT, EdiPartnerData
 from .common import KEY_1, KEY_2, KEY_3, EdiImportCase
@@ -66,6 +68,29 @@ class TestDocumentImport(EdiImportCase):
         self.assertEqual(self.partner_by_vat, [True])
         self.assertTrue(documents.imported_document)
         self.assertEqual(documents.document_key, KEY_1)
+
+    def _another_transaction_can_lock(self, company, key):
+        """Whether a transaction of its own could take the lock of the note now."""
+        connection = db_connect(self.env.cr.dbname)
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                "SELECT pg_try_advisory_xact_lock(%s, hashtext(%s))", (company.id, key)
+            )
+            free = cursor.fetchone()[0]
+            cursor.rollback()
+        return free
+
+    def test_the_import_of_a_note_holds_its_lock_until_the_transaction_ends(self):
+        """Two imports of the same note at once must end in one document: the second
+        waits for the first, so it finds the document. Another transaction cannot take
+        the lock of the note of that company, but can take the one of another note and
+        the one of the same note in another company."""
+        parsed = self._parsed(KEY_1)
+        self.assertTrue(self._another_transaction_can_lock(self.company, KEY_1))
+        self._import([(parsed.file_name, b"x")], [parsed])
+        self.assertFalse(self._another_transaction_can_lock(self.company, KEY_1))
+        self.assertTrue(self._another_transaction_can_lock(self.company, KEY_2))
+        self.assertTrue(self._another_transaction_can_lock(self.other_company, KEY_1))
 
     def test_the_same_note_twice_opens_the_same_document_with_a_warning(self):
         parsed = self._parsed(KEY_1)

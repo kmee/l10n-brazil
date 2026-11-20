@@ -202,6 +202,7 @@ class Document(models.Model):
                 _("The file %s is not a fiscal document that can be imported.") % name
             )
         company, role = self._edi_import_company(parsed)
+        self._edi_import_lock(company, parsed.access_key)
         existing = self.with_company(company)._edi_import_find_existing(parsed, company)
         if existing:
             return existing, False
@@ -313,6 +314,20 @@ class Document(models.Model):
             "are not allowed to create contacts. Ask someone who can to register "
             "it, or ask for the permission, and import the file again."
         ) % {"file": parsed.file_name, "partner": partner or _("(unknown)")}
+
+    @api.model
+    def _edi_import_lock(self, company, access_key):
+        """Take, until the end of the transaction, the lock of the note of this company.
+
+        Two imports of the same note that run together would both find that it does
+        not exist and both create it, and nothing in the database forbids it (an
+        existing database may have duplicates, so there is no unique index). The second
+        waits here until the first commits, and then finds the document and answers
+        that the note was already imported."""
+        self.env.cr.execute(
+            "SELECT pg_advisory_xact_lock(%s, hashtext(%s))",
+            (company.id, access_key),
+        )
 
     @api.model
     def _edi_import_check(self, parsed, company):
