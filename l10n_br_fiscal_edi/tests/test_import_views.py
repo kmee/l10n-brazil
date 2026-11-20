@@ -1,13 +1,17 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import json
+
 from lxml import etree
 
+from odoo.tests import tagged
 from odoo.tools.safe_eval import safe_eval
 
 from .common import EdiImportCase
 
 
+@tagged("post_install", "-at_install")
 class TestImportViews(EdiImportCase):
     """Every view of the import loads, and every field it names exists."""
 
@@ -53,7 +57,39 @@ class TestImportViews(EdiImportCase):
             )
         )
         self.assertTrue(form.xpath("//field[@name='import_warning']"))
-        self.assertTrue(form.xpath("//button[@name='action_import_create_products']"))
+        self.assertTrue(
+            form.xpath("//button[@name='action_import_check_partners_again']")
+        )
+        create = form.xpath("//button[@name='action_import_create_products']")
+        self.assertTrue(create)
+        # offered only while there is a product to create
+        self.assertIn("import_missing_products", create[0].get("modifiers"))
+
+    def test_the_confirm_button_of_an_imported_document_is_given_back(self):
+        """Another module (the NF-e) hides the button to confirm for an imported
+        document. A common fiscal user must still see it on the form, of a document
+        received and of one the company issued, to confirm after the review."""
+        self.env["ir.ui.view"].create(
+            {
+                "name": "hides the confirm button of an imported document",
+                "model": "l10n_br_fiscal.document",
+                "inherit_id": self.env.ref("l10n_br_fiscal.document_form").id,
+                "arch": """<xpath
+                    expr="//header/button[@name='action_document_confirm']"
+                    position="attributes">
+                    <attribute name="attrs">{'invisible': ['|',
+                    ('state_edoc', '!=', 'em_digitacao'),
+                    ('imported_document', '=', True)]}</attribute>
+                </xpath>""",
+            }
+        )
+        user = self._fiscal_user("confirm_fiscal_user")
+        arch = self.Document.with_user(user).get_view(view_type="form")["arch"]
+        button = etree.fromstring(arch).xpath(
+            "//button[@name='action_document_confirm']"
+        )[0]
+        modifiers = json.loads(button.get("modifiers"))
+        self.assertEqual(modifiers["invisible"], [["state_edoc", "!=", "em_digitacao"]])
 
     def test_the_line_form_names_existing_fields(self):
         line_model = self.env["l10n_br_fiscal.document.line"]

@@ -62,6 +62,19 @@ class TestDocumentPayment(EdiImportCase):
         self.assertIn("01", summary)
         self.assertIn("In installments", summary)
 
+    def test_the_means_of_payment_is_shown_by_its_name_when_the_type_knows_it(self):
+        document = self._document(payments=[EdiPayment("15", 100.0, "installments")])
+        self.assertIn(">15<", str(document.edi_payment_summary).replace(" ", ""))
+        with patch.object(
+            type(self.Document),
+            "_edi_payment_means_label",
+            lambda doc, means: {"15": "Bank slip"}.get(means, means),
+        ):
+            document.invalidate_recordset()
+            summary = str(document.edi_payment_summary)
+        self.assertIn("Bank slip", summary)
+        self.assertNotIn(">15<", summary.replace(" ", ""))
+
     def test_a_payment_that_is_other_says_what_it_is(self):
         document = self._document(
             payments=[EdiPayment("99", 100.0, "cash", description="Barter")]
@@ -114,6 +127,22 @@ class TestDocumentPayment(EdiImportCase):
         document.invalidate_recordset()
         self.assertEqual(document._edi_installment_difference(), 0.0)
         self.assertFalse(document.import_warning)
+
+    def test_a_document_without_a_fiscal_operation_shows_the_amounts_of_the_file(self):
+        """A CT-e comes without an operation until a person chooses one, and the total
+        of the document is only computed with it: the page and the warning must not
+        show zero, nor warn that the installments do not add up."""
+        document = self._document(
+            installments=self._installments([100.0]), fiscal_operation_id=False
+        )
+        document.fiscal_line_ids.write({"quantity": 1.0, "price_unit": 100.0})
+        self.assertFalse(document.fiscal_operation_id)
+        self.assertFalse(document.fiscal_amount_total)
+        totals = [t for _label, t in document._edi_payment_summary_values()["totals"]]
+        self.assertEqual(totals, [100.0, 0.0, 100.0])
+        self.assertFalse(document._edi_installment_difference())
+        self.assertNotIn("add up", document.import_warning)
+        self.assertNotIn("add up", str(document.edi_payment_summary))
 
     def test_the_page_only_reads(self):
         """Computing the page writes nothing, in the document or elsewhere."""
