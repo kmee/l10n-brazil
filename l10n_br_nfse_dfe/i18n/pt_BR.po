@@ -72,11 +72,6 @@ msgid "Date"
 msgstr "Data"
 
 #. module: l10n_br_nfse_dfe
-#: model:ir.model.fields,field_description:l10n_br_nfse_dfe.field_res_company__nfse_import_product_id
-msgid "Default NFS-e Import Product"
-msgstr "Produto padrão de importação de NFS-e"
-
-#. module: l10n_br_nfse_dfe
 #. odoo-python
 #: code:addons/l10n_br_nfse_dfe/models/res_company.py:0
 msgid "Documents found."
@@ -296,24 +291,9 @@ msgid "Search NFS-e"
 msgstr "Pesquisar NFS-e"
 
 #. module: l10n_br_nfse_dfe
-#. odoo-python
-#: code:addons/l10n_br_nfse_dfe/wizards/document_import_wizard.py:0
-msgid "Service"
-msgstr "Serviço"
-
-#. module: l10n_br_nfse_dfe
 #: model:ir.model.fields,field_description:l10n_br_nfse_dfe.field_l10n_br_fiscal_document_import_wizard__product_id
 msgid "Service Product"
 msgstr "Produto de Serviço"
-
-#. module: l10n_br_nfse_dfe
-#: model:ir.model.fields,help:l10n_br_nfse_dfe.field_res_company__nfse_import_product_id
-msgid ""
-"Service product applied when a national NFS-e is imported and the wizard has"
-" no product yet."
-msgstr ""
-"Produto de serviço aplicado quando uma NFS-e nacional é importada e o "
-"assistente ainda não tem um produto."
 
 #. module: l10n_br_nfse_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfse_dfe.nfse_dfe_res_company_form
@@ -334,12 +314,6 @@ msgstr "Status"
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfse_dfe.nfse_dfe_res_company_form
 msgid "Status Code"
 msgstr "Código de Status"
-
-#. module: l10n_br_nfse_dfe
-#. odoo-python
-#: code:addons/l10n_br_nfse_dfe/wizards/document_import_wizard.py:0
-msgid "The NFS-e XML does not contain a 50-digit access key."
-msgstr "O XML da NFS-e não contém uma chave de acesso de 50 dígitos."
 
 #. module: l10n_br_nfse_dfe
 #. odoo-python
@@ -364,12 +338,6 @@ msgstr "Não foi possível ler o certificado e-CNPJ."
 #: code:addons/l10n_br_nfse_dfe/models/res_company.py:0
 msgid "The service rate limit is active. Try again later."
 msgstr "O limite de taxa do serviço está ativo. Tente novamente mais tarde."
-
-#. module: l10n_br_nfse_dfe
-#. odoo-python
-#: code:addons/l10n_br_nfse_dfe/models/document.py:0
-msgid "There is already a fiscal document with this key: %(doc_key)s"
-msgstr "Já existe um documento fiscal com esta chave: %(doc_key)s"
 
 #. module: l10n_br_nfse_dfe
 #: model:ir.actions.act_window,name:l10n_br_nfse_dfe.action_nfse_dfe_document
