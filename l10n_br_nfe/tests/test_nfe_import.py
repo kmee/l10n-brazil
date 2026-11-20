@@ -1617,6 +1617,38 @@ class TestNfeOwnNoteImport(EdiImportCase):
 
         self._danfe_without_mail(document)
 
+    def _print_action_pdf(self, document):
+        report = self.env.ref("l10n_br_nfe.report_danfe")
+        return report._render_qweb_pdf("main_template_danfe", document.ids)[0]
+
+    def _same_file_by_both_paths(self, document):
+        document.action_document_confirm()
+        self.assertFalse(document.file_report_id)
+
+        printed = self._print_action_pdf(document)
+
+        stored = document.file_report_id
+        self.assertEqual(stored.with_context(bin_size=False).raw, printed)
+        self.assertEqual(self._print_action_pdf(document), printed)
+        action = document.view_pdf()
+        self.assertEqual(document.file_report_id, stored)
+        self.assertIn(str(stored.id), action["url"])
+
+    def test_the_print_action_and_the_view_of_the_own_note_give_the_same_stored_file(
+        self,
+    ):
+        document = self._resolved(self._own_xml(3, protocol="135200000000003"))
+
+        self._same_file_by_both_paths(document)
+
+    def test_the_print_action_and_the_view_of_a_received_note_give_the_same_file(self):
+        document = self._import(self._received_xml())
+        product = self.env["product.product"].create({"name": "Received product"})
+        document.fiscal_line_ids.product_id = product
+        document.fiscal_line_ids.action_resolve_line()
+
+        self._same_file_by_both_paths(document)
+
 
 class TestNfeInvoiceOfTheCollection(EdiImportCase):
     """The ``fat`` of the collection mirrors fields of the document and must not
