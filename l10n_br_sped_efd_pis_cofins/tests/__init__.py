@@ -8,3 +8,4 @@ from . import test_sped_saldo_inicial
 from . import test_sped_company_context
 from . import test_sped_geracao
 from . import test_sped_regime
+from . import test_sped_mesma_nota
