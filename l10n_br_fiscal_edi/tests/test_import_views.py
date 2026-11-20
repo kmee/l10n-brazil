@@ -46,7 +46,11 @@ class TestImportViews(EdiImportCase):
 
     def test_the_form_has_the_review_the_page_and_the_button(self):
         user = self._fiscal_user("view_fiscal_user")
-        arch = self.Document.with_user(user).get_view(view_type="form")["arch"]
+        arch = (
+            self.Document.with_user(user)
+            .with_context(allowed_company_ids=user.company_ids.ids)
+            .get_view(view_type="form")["arch"]
+        )
         form = etree.fromstring(arch)
         self.assertTrue(
             form.xpath("//button[@name='action_import_confirm_suggestions']")
@@ -84,7 +88,11 @@ class TestImportViews(EdiImportCase):
             }
         )
         user = self._fiscal_user("confirm_fiscal_user")
-        arch = self.Document.with_user(user).get_view(view_type="form")["arch"]
+        arch = (
+            self.Document.with_user(user)
+            .with_context(allowed_company_ids=user.company_ids.ids)
+            .get_view(view_type="form")["arch"]
+        )
         button = etree.fromstring(arch).xpath(
             "//button[@name='action_document_confirm']"
         )[0]
