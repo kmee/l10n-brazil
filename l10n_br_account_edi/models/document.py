@@ -51,6 +51,10 @@ class Document(models.Model):
     def _edi_draft_move(self):
         """The draft invoice that will issue this document, if there is one."""
         self.ensure_one()
+        if not self.env["account.move"].check_access_rights(
+            "read", raise_exception=False
+        ):
+            return self.env["account.move"]
         if (
             self.issuer == DOCUMENT_ISSUER_COMPANY
             and not self.imported_document

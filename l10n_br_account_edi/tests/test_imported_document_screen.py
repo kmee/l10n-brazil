@@ -1,0 +1,91 @@
+# Copyright 2026 KMEE
+# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
+from lxml import etree
+
+from odoo import Command
+from odoo.exceptions import UserError
+from odoo.tests import tagged
+
+from .common import AccountEdiCase
+
+
+@tagged("post_install", "-at_install")
+class TestImportedDocumentScreen(AccountEdiCase):
+    @classmethod
+    def setUpClass(cls, chart_template_ref=None):
+        super().setUpClass(chart_template_ref=chart_template_ref)
+        cls.fiscal_user = cls.env["res.users"].create(
+            {
+                "name": "Fiscal without accounting",
+                "email": "fiscal-no-accounting@example.com",
+                "login": "edi_fiscal_no_accounting",
+                "company_id": cls.company.id,
+                "company_ids": [Command.set(cls.company.ids)],
+                "groups_id": [
+                    Command.set(
+                        [
+                            cls.env.ref("base.group_user").id,
+                            cls.env.ref("l10n_br_fiscal.group_user").id,
+                        ]
+                    )
+                ],
+            }
+        )
+
+    def _as_fiscal_user(self, document):
+        return document.with_user(self.fiscal_user)
+
+    def _declared_dates(self, document):
+        """The date of the file (not at midnight) and no date of entry."""
+        document.write({"document_date": "2026-01-10 15:30:00", "date_in_out": False})
+        return document.document_date
+
+    def _open(self, document):
+        """What the web client asks to open the form: the view, then the values of
+        the fields that are in it, for the user."""
+        document = self._as_fiscal_user(document)
+        arch = etree.fromstring(document.get_view(view_type="form")["arch"])
+        names = {
+            node.get("name")
+            for node in arch.xpath("//form//field")
+            if node.get("name") in document._fields
+            and not document._fields[node.get("name")].type.endswith("2many")
+        }
+        return document.read(sorted(names))[0]
+
+    def test_a_fiscal_user_without_accounting_opens_a_received_document(self):
+        values = self._open(self._imported_document())
+
+        self.assertEqual(values["document_number"], "100")
+
+    def test_a_fiscal_user_without_accounting_opens_an_own_document(self):
+        values = self._open(self._own_imported_document())
+
+        self.assertEqual(values["document_number"], "777")
+
+    def test_the_counter_of_invoices_is_not_read_for_that_user(self):
+        document = self._as_fiscal_user(self._imported_document())
+
+        self.assertIn("document_number", document.read(["document_number"])[0])
+        arch = document.get_view(view_type="form")["arch"]
+        self.assertNotIn("move_count", arch)
+
+    def test_a_fiscal_user_without_accounting_confirms_the_document(self):
+        document = self._own_imported_document(confirm=False)
+
+        self._as_fiscal_user(document).action_document_confirm()
+
+        self.assertEqual(document.state_edoc, "autorizada")
+
+    def test_what_belongs_to_the_invoice_is_not_in_the_form_of_that_user(self):
+        document = self._imported_document()
+
+        arch = etree.fromstring(
+            self._as_fiscal_user(document).get_view(view_type="form")["arch"]
+        )
+
+        for name in ("action_generate_invoice", "action_view_invoice"):
+            self.assertFalse(arch.xpath(f"//button[@name='{name}']"))
+        self.assertFalse(arch.xpath("//field[@name='move_ids']"))
+        self.assertFalse(arch.xpath("//field[@name='move_count']"))
