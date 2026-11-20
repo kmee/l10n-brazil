@@ -5,6 +5,8 @@ import io
 import zipfile
 from unittest.mock import patch
 
+from erpbrasil.base.fiscal.cnpj_cpf import formata
+
 from odoo import _
 from odoo.exceptions import AccessError, UserError
 
@@ -164,6 +166,27 @@ class TestDocumentImport(EdiImportCase):
         self.assertFalse(documents)
         self.assertIn("no access to the company", errors[0][1])
         self.assertEqual(self.create_contexts, [])
+
+    def test_a_user_of_another_company_gets_a_clear_refusal_not_an_access_error(self):
+        """The file is for a company that the user does not have: the answer says so
+        and which CNPJ the file is for, instead of the raw access error of Odoo, and
+        it never needs to read the name of a company the user cannot see."""
+        user = self._fiscal_user(
+            "fiscal_user_only_company_2", companies=self.other_company
+        )
+        model = self.Document.with_user(user).with_context(
+            allowed_company_ids=self.other_company.ids
+        )
+        parsed = self._parsed(KEY_1)
+        with self.assertRaises(UserError) as error:
+            model._edi_import_company(parsed)
+        message = str(error.exception)
+        self.assertIn("no access to the company with the CNPJ", message)
+        self.assertIn(self._cnpj(self.company), message)
+        self.assertNotIn(self.company.name, message)
+
+    def _cnpj(self, company):
+        return formata(company.partner_id.cnpj_cpf_stripped)
 
     def test_the_company_is_searched_in_the_order_of_the_roles(self):
         parsed = self._parsed(

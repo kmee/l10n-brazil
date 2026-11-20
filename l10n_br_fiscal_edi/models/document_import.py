@@ -216,7 +216,7 @@ class Document(models.Model):
         checked without it, before anything is created.
         """
         company = self.env["res.company"]
-        role = False
+        role = file_vat = False
         for candidate_role, vat in parsed.company_vats:
             company = (
                 self.env["res.company"]
@@ -224,7 +224,7 @@ class Document(models.Model):
                 .search([("partner_id.cnpj_cpf_stripped", "=", vat)], limit=1)
             )
             if company:
-                role = candidate_role
+                role, file_vat = candidate_role, vat
                 break
         if not company:
             raise UserError(
@@ -233,9 +233,14 @@ class Document(models.Model):
             )
         company = company.sudo(False)
         if not self.env.su and company not in self.env.user.company_ids:
+            # The name of a company the user does not have is not read nor told: the
+            # CNPJ of the file says which one it is
             raise UserError(
-                _("You have no access to the company %s, which the file is for.")
-                % company.display_name
+                _(
+                    "You have no access to the company with the CNPJ %s, which the "
+                    "file is for."
+                )
+                % formata(file_vat)
             )
         if company not in self.env.companies:
             raise UserError(
@@ -243,7 +248,7 @@ class Document(models.Model):
                     "The note is for the company %s, which is not selected in the "
                     "company switcher. Select it and import again."
                 )
-                % company.display_name
+                % company.sudo().display_name
             )
         return company, role
 
