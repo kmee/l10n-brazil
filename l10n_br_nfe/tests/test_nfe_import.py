@@ -1613,3 +1613,41 @@ class TestNfeOwnNoteImport(EdiImportCase):
         document.fiscal_line_ids.action_resolve_line()
 
         self._danfe_without_mail(document)
+
+
+class TestNfeInvoiceOfTheCollection(EdiImportCase):
+    """The ``fat`` of the collection mirrors fields of the document and must not
+    change them: the number of the document is the nNF of the note."""
+
+    def test_the_invoice_number_of_the_collection_does_not_renumber_the_document(self):
+        company = self.env.ref("base.main_company")
+        with open(os.path.join(FIXTURE_DIR, f"NFe{KEY_1}.xml"), "rb") as xml_file:
+            xml = xml_file.read()
+        xml = FIXTURE_DEST.sub(
+            rb"\1<CNPJ>%s</CNPJ>" % company.partner_id.cnpj_cpf_stripped.encode(), xml
+        )
+        cobr = (
+            b"<cobr><fat><nFat>777</nFat><vOrig>150.00</vOrig><vDesc>10.00</vDesc>"
+            b"<vLiq>140.00</vLiq></fat><dup><nDup>001</nDup><dVenc>2026-12-10</dVenc>"
+            b"<vDup>140.00</vDup></dup></cobr><pag>"
+        )
+        xml = xml.replace(b"<pag>", cobr, 1)
+        xml = xml.replace(
+            KEY_1.encode(), b"35200159594315000157550010000000992062777167"
+        )
+        xml = xml.replace(b"<nNF>1</nNF>", b"<nNF>99</nNF>")
+
+        documents, errors, _warnings = self.env[
+            "l10n_br_fiscal.document"
+        ]._edi_import_files([("fat.xml", xml)])
+
+        self.assertFalse(errors)
+        self.assertEqual(documents.document_number, "99")
+        self.assertEqual(documents.document_serie, "1")
+        self.assertEqual(documents.amount_financial_total_gross, 140)
+        self.assertEqual(documents.amount_discount_value, 0)
+        self.assertEqual(documents.fiscal_amount_total, 140)
+        self.assertEqual(
+            documents._edi_get_installments(),
+            [EdiInstallment("001", date(2026, 12, 10), 140.0)],
+        )
