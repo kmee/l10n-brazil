@@ -24,12 +24,12 @@ class TestPureFiscalUser(PurchaseEdiCase):
         )
 
     def _read_everything(self, document):
-        document.get_view(view_type="form")
-        line_model = document.fiscal_line_ids
-        line_view = line_model.get_view(view_type="form")
-        self.assertTrue(etree.fromstring(line_view["arch"]) is not None)
-        document.read(list(document.fields_get()))
-        line_model.read(list(line_model.fields_get()))
+        """The fields of the views, as the form reads them, as the user."""
+        lines = document.fiscal_line_ids
+        for record in (document, lines):
+            arch = etree.fromstring(record.get_view(view_type="form")["arch"])
+            names = {node.get("name") for node in arch.iter("field")}
+            record.read([name for name in names if name in record._fields])
 
     def _open_data(self):
         """An open order of the supplier, the origin suggested and resolved."""
@@ -60,9 +60,16 @@ class TestPureFiscalUser(PurchaseEdiCase):
 
     def test_the_pure_fiscal_user_changes_the_origin_of_a_line(self):
         self._open_data()
+        order_line = self.line.import_purchase_line_id
+        order_line.fiscal_operation_line_id = self.env.ref(
+            "l10n_br_fiscal.fo_compras_compras_uso_consumo"
+        )
+        self.line.write({"import_purchase_line_id": False})
         document = self._as_pure_fiscal(self.document)
 
-        document.fiscal_line_ids.write({"import_purchase_line_id": False})
-        document.fiscal_line_ids._suggest_import_origin()
+        # the destination of the order is applied, which looks for a bill
+        document.fiscal_line_ids.write({"import_purchase_line_id": order_line.id})
         self.env.flush_all()
+
+        self.assertEqual(self.line.import_origin_state, "resolved")
         self._read_everything(document)
