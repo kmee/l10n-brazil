@@ -89,3 +89,13 @@ class TestStockEntry(StockEdiCase):
 
         self.assertTrue(self.line.sudo().import_no_stock_entry)
         self.assertTrue(self.document.action_generate_invoice())
+
+    def test_creating_the_receipt_does_not_write_on_the_partner(self):
+        note = self._no_order()
+        before = (self.supplier.name, self.supplier.write_date)
+
+        action = note.action_create_receipt()
+
+        picking = self.env["stock.picking"].browse(action["res_id"])
+        self.assertEqual(picking.partner_id, self.supplier)
+        self.assertEqual((self.supplier.name, self.supplier.write_date), before)

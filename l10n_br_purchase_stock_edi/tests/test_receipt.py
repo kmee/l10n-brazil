@@ -82,3 +82,16 @@ class TestReceipt(StockEdiCase):
         self._rows(fiscal_document_id=self.document.id).action_no_order()
 
         self.assertFalse(self.line.import_stock_move_id)
+
+    def test_a_document_issued_by_the_company_gets_no_receipt(self):
+        self._order()
+        document = self._imported_document(
+            lines=[{"product_id": self.product.id}],
+            issuer="company",
+            partner_id=self.supplier.id,
+        )
+
+        document._edi_import_suggest()
+
+        self.assertFalse(document.fiscal_line_ids.import_stock_move_id)
+        self.assertFalse(self._rows(fiscal_document_id=document.id))
