@@ -5,4 +5,5 @@ from . import test_document_import_wizard
 from . import test_import_views
 from . import test_document_payment
 from . import test_import_screens
+from . import test_import_header_operation
 from . import test_document_line_lot
