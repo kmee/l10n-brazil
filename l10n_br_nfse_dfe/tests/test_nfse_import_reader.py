@@ -4,6 +4,7 @@
 import base64
 import importlib.util
 import os
+from unittest.mock import patch
 
 from odoo.exceptions import UserError
 from odoo.modules.module import get_module_path
@@ -176,6 +177,30 @@ class TestNfseImportReader(TransactionCase):
         line.action_resolve_line()
         document.action_document_confirm()
         self.assertEqual((self.company.name, registry()), before)
+
+    def test_the_danfse_of_an_imported_nfse_is_printed_from_the_original_xml(self):
+        documents, errors, _warnings = self.Document.with_company(
+            self.company
+        )._edi_import_files([("a.xml", nfse_xml())])
+        self.assertFalse(errors)
+        line = documents.fiscal_line_ids
+        line.product_id = self.env["product.product"].create(
+            {"name": "Reviewed", "type": "service"}
+        )
+        line.action_resolve_line()
+        documents.action_document_confirm()
+        original = documents.original_xml_file_id.raw
+        mails = self.env["mail.mail"].search_count([])
+        self.assertFalse(documents.file_report_id)
+        with patch(
+            "odoo.addons.mail.models.mail_template.MailTemplate.send_mail"
+        ) as send:
+            action = documents.view_pdf()
+        self.assertFalse(send.called)
+        self.assertEqual(action["type"], "ir.actions.act_url")
+        self.assertTrue(documents.file_report_id.raw.startswith(b"%PDF"))
+        self.assertEqual(documents.original_xml_file_id.raw, original)
+        self.assertEqual(self.env["mail.mail"].search_count([]), mails)
 
     def test_the_wizard_records_the_partners_that_the_file_created(self):
         cnpj = "12345678000195"

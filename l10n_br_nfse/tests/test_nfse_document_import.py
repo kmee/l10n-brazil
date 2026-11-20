@@ -7,7 +7,10 @@ import re
 import nfelib
 from erpbrasil.base.fiscal.cnpj_cpf import formata
 
+from odoo.exceptions import UserError
+
 from odoo.addons.l10n_br_fiscal_edi.tests.common import EdiImportCase
+from odoo.addons.l10n_br_nfse.models.document import Document as NfseDocument
 
 NFSE_SAMPLE = os.path.join(
     os.path.dirname(nfelib.__file__), "nfse", "samples", "v1_0", "nfse-ibscbs.xml"
@@ -266,6 +269,12 @@ class TestNfseDocumentImport(EdiImportCase):
         documents, errors, _warnings = self._import(nfse_xml(provider=UNKNOWN_PROVIDER))
         self.assertFalse(errors)
         self.assertEqual(documents.partner_id.cnpj_cpf_stripped, UNKNOWN_PROVIDER)
+
+    def test_an_imported_nfse_without_issuing_gets_a_clear_message_for_the_pdf(self):
+        documents, _errors, _warnings = self._import(nfse_xml())
+        self.assertFalse(documents.file_report_id)
+        with self.assertRaisesRegex(UserError, "printed version of an imported NFS-e"):
+            NfseDocument.make_pdf(documents)
 
     def test_the_service_of_an_nfse_issued_by_the_company_is_never_created(self):
         content = nfse_xml(taker=UNKNOWN_PROVIDER, provider=LUCRO_PRESUMIDO)
