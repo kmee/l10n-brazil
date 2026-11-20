@@ -30,6 +30,11 @@ def tax_authority_date_to_utc(value):
 # CFOP that the file mentions and the database does not have.
 EDI_IMPORT_NO_CREATE = "edi_import_no_create"
 
+# Context key of the creation of the document: a partner is matched by its CNPJ or CPF
+# and never by its name. Only a file that carries neither (final consumer, foreigner)
+# may match by name, and the document says so.
+EDI_IMPORT_PARTNER_BY_VAT = "edi_import_partner_by_vat"
+
 
 @dataclass(frozen=True)
 class EdiParsedFile:
@@ -70,3 +75,19 @@ class EdiLot:
     quantity: float  # in the unit declared by the line
     date_manufacture: date | None
     date_expiry: date | None
+
+
+@dataclass(frozen=True)
+class EdiPartnerData:
+    """What the file declares about a partner (issuer, recipient, taker, carrier)."""
+
+    role: str  # "issuer" | "recipient" | "taker" | "carrier"
+    vat: str = ""  # only digits; "" when the file carries no CNPJ nor CPF
+    name: str = ""  # razao social
+    state_tax_number: str = ""  # inscricao estadual
+    street: str = ""
+    street_number: str = ""
+    district: str = ""
+    zip_code: str = ""
+    city: str = ""
+    state_code: str = ""
