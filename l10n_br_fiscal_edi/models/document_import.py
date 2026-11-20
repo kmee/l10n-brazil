@@ -1,6 +1,8 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+# pylint: disable=consider-merging-classes-inherited
+
 import logging
 import re
 import unicodedata
@@ -390,8 +392,12 @@ class Document(models.Model):
         floor = self.env.context.get(LAST_PARTNER_CONTEXT_KEY)
         lines = []
         for partner, data in self._edi_import_partner_data(parsed):
-            if not partner or (floor is not None and partner.id > floor):
-                continue  # none, or created by the import: it is the file
+            if (
+                not partner
+                or partner == self.company_id.partner_id
+                or (floor is not None and partner.id > floor)
+            ):
+                continue  # none, the company itself, or created by the import
             if not data.vat:
                 lines.append(
                     _(
