@@ -85,3 +85,36 @@ class TestSource(RequestEdiCase):
             (rows | self._rows(purchase_line_id=order.order_line.id)).action_match()
         with self.assertRaisesRegex(UserError, "Create Order from Request"):
             rows.action_create_order()
+
+    def _as(self, user):
+        return self.Match.with_user(user).with_context(
+            allowed_company_ids=user.company_ids.ids,
+            match_document_id=self.document.id,
+        )
+
+    def test_a_user_without_the_request_group_has_no_error_and_no_request(self):
+        self._request()
+        self._order()
+        self._resolve_product()
+        domain = self.document.action_open_origin_match()["domain"]
+        buyer = self._fiscal_user("buyer-no-request")
+        buyer.groups_id |= self.env.ref("purchase.group_purchase_user")
+        fiscal = self._fiscal_user("fiscal-no-request-rows")
+
+        for user in (buyer, fiscal):
+            rows = self._as(user).search(domain)
+            rows.read(list(rows.fields_get()))
+            self.assertEqual(set(rows.mapped("kind")), {"note", "order"})
+            self.assertFalse(self._as(user).search(domain + [("kind", "=", "request")]))
+            with self.assertRaisesRegex(UserError, "no access to the purchase"):
+                rows.action_create_order_from_request()
+
+    def test_a_user_with_the_request_group_sees_the_requests(self):
+        self._request()
+        domain = self.document.action_open_origin_match()["domain"]
+        user = self._fiscal_user("buyer-with-request")
+        user.groups_id |= self.env.ref("purchase_request.group_purchase_request_user")
+
+        rows = self._as(user).search(domain)
+
+        self.assertIn("request", rows.mapped("kind"))
