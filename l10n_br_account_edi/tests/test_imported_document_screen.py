@@ -119,3 +119,21 @@ class TestImportedDocumentScreen(AccountEdiCase):
 
         with self.assertRaisesRegex(UserError, "no partner"):
             document.action_generate_invoice()
+
+    def test_the_dates_of_the_file_survive_the_invoice_of_a_received_document(self):
+        document = self._imported_document()
+        declared = self._declared_dates(document)
+
+        document.action_generate_invoice()
+
+        self.assertEqual(document.document_date, declared)
+        self.assertFalse(document.date_in_out)
+
+    def test_the_dates_of_the_file_survive_the_invoice_of_an_own_document(self):
+        document = self._own_imported_document()
+        declared = self._declared_dates(document)
+
+        document.action_generate_invoice()
+
+        self.assertEqual(document.document_date, declared)
+        self.assertFalse(document.date_in_out)

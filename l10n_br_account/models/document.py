@@ -148,7 +148,12 @@ class FiscalDocument(models.Model):
     @api.depends("issuer", "move_ids.invoice_date")
     def _compute_document_date(self):
         for record in self:
-            if record.move_ids and record.issuer == DOCUMENT_ISSUER_PARTNER:
+            # the dates of a document imported from a file are the ones of the file
+            if (
+                record.move_ids
+                and record.issuer == DOCUMENT_ISSUER_PARTNER
+                and not record.imported_document
+            ):
                 move_id = record.move_ids[0]
                 if move_id.invoice_date:
                     user_tz = timezone(self.env.user.tz or "UTC")
@@ -167,7 +172,11 @@ class FiscalDocument(models.Model):
     @api.depends("issuer", "move_ids.date")
     def _compute_date_in_out(self):
         for record in self:
-            if record.move_ids and record.issuer == DOCUMENT_ISSUER_PARTNER:
+            if (
+                record.move_ids
+                and record.issuer == DOCUMENT_ISSUER_PARTNER
+                and not record.imported_document
+            ):
                 move_id = record.move_ids[0]
                 if move_id.date:
                     user_tz = timezone(self.env.user.tz or "UTC")
