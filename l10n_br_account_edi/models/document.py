@@ -26,6 +26,20 @@ class Document(models.Model):
                     "Billing group. Ask a user that has them."
                 )
             )
+        if not self.fiscal_operation_id:
+            raise UserError(
+                _(
+                    "The document has no fiscal operation. Choose it in the header "
+                    "of the document before generating the invoice."
+                )
+            )
+        if not self.partner_id:
+            raise UserError(
+                _(
+                    "The document has no partner. Choose it before generating the "
+                    "invoice."
+                )
+            )
         pending = self.fiscal_line_ids.filtered(
             lambda line: line.import_state != "resolved"
         )
@@ -35,9 +49,15 @@ class Document(models.Model):
                 % "\n".join(f"- {line.name}" for line in pending)
             )
         self._check_document_import()
-        move_form = self.env["account.move"].import_fiscal_document(
-            self, move_type=f"{self.fiscal_operation_type}_invoice"
-        )
+        try:
+            move_form = self.env["account.move"].import_fiscal_document(
+                self, move_type=f"{self.fiscal_operation_type}_invoice"
+            )
+        except AssertionError as error:
+            # the form of the invoice refuses what it requires or hides
+            raise UserError(
+                _("The invoice could not be created from this document: %s") % error
+            ) from error
         return {
             "name": _("Invoice"),
             "type": "ir.actions.act_window",

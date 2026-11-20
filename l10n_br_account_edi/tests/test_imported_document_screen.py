@@ -1,6 +1,8 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+from unittest import mock
+
 from lxml import etree
 
 from odoo import Command
@@ -89,3 +91,31 @@ class TestImportedDocumentScreen(AccountEdiCase):
             self.assertFalse(arch.xpath(f"//button[@name='{name}']"))
         self.assertFalse(arch.xpath("//field[@name='move_ids']"))
         self.assertFalse(arch.xpath("//field[@name='move_count']"))
+
+    def test_a_document_without_a_fiscal_operation_is_refused_with_a_message(self):
+        document = self._imported_document()
+        document.fiscal_operation_id = False
+
+        with self.assertRaisesRegex(UserError, "no fiscal operation"):
+            document.action_generate_invoice()
+
+    def test_what_the_form_of_the_invoice_refuses_becomes_a_message(self):
+        document = self._imported_document()
+        model = type(self.env["account.move"])
+
+        with (
+            mock.patch.object(
+                model,
+                "import_fiscal_document",
+                side_effect=AssertionError("journal is a required field"),
+            ),
+            self.assertRaisesRegex(UserError, "journal is a required field"),
+        ):
+            document.action_generate_invoice()
+
+    def test_a_document_without_a_partner_is_refused_with_a_message(self):
+        document = self._imported_document()
+        document.partner_id = False
+
+        with self.assertRaisesRegex(UserError, "no partner"):
+            document.action_generate_invoice()
