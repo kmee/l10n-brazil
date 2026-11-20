@@ -608,6 +608,14 @@ class TestCteDocumentImport(EdiImportCase):
         self.assertEqual(documents.cte40_cobr.cte40_fat.cte40_nFat, "987654")
         self.assertEqual(len(documents.cte40_cobr.cte40_dup), 2)
 
+    def test_the_operation_chosen_in_the_header_shows_100_and_100(self):
+        documents, errors, _warnings = self._import(cte_xml(COLLECTION))
+        self.assertFalse(errors)
+        documents.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        self.assertAlmostEqual(documents.fiscal_amount_total, 100.0)
+        self.assertAlmostEqual(documents.amount_financial_total, 100.0)
+        self.assertNotIn("add up", str(documents.edi_payment_summary))
+
     def test_a_cte_with_a_collection_declares_its_installments_in_order(self):
         documents, errors, _warnings = self._import(cte_xml(COLLECTION))
         self.assertFalse(errors)
