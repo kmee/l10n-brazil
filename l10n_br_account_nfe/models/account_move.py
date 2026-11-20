@@ -1,6 +1,8 @@
 # Copyright 2025-TODAY Akretion - Raphaẽl Valyi <raphael.valyi@akretion.com.br>
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
+from dataclasses import replace
+
 from odoo import models
 
 from odoo.addons.l10n_br_nfe.constants.nfe import SEM_PAGAMENTO
@@ -16,6 +18,14 @@ class AccountMove(models.Model):
         if not self.payment_mode_id:
             return SEM_PAGAMENTO
         return self.payment_mode_id.fiscal_payment_mode or ""
+
+    def _edi_payments(self):
+        """An invoice without a payment mode is not paid: the NF-e declares no
+        payment for it, and so does what the invoice shows before it is posted."""
+        payments = super()._edi_payments()
+        if self._edi_payment_means() != SEM_PAGAMENTO:
+            return payments
+        return [replace(payment, amount=0.0, term="cash") for payment in payments]
 
     def _reverse_moves(self, default_values_list=None, cancel=False):
         new_moves = super()._reverse_moves(
