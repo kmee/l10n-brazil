@@ -155,6 +155,24 @@ class TestImportedLineValues(TransactionCase):
         self.assertFalse(line.partner_price_gross)
         self.assertEqual(line.price_gross, 13.32)
 
+    def test_the_operation_line_survives_the_product_of_the_review(self):
+        """The operation line of an imported line is the one of its CFOP: matching a
+        product, for which the operation defines no line, must not take it away, or
+        the line stops adding to the financial total of the document."""
+        operation = self.env.ref("l10n_br_fiscal.fo_venda")
+        operation_line = self.env.ref("l10n_br_fiscal.fo_venda_revenda")
+        document = self._create_document(imported=True)
+        document.fiscal_operation_id = operation
+        line = self._create_line(
+            document,
+            fiscal_operation_id=operation.id,
+            fiscal_operation_line_id=operation_line.id,
+        )
+        self.assertEqual(line.fiscal_operation_line_id, operation_line)
+        line.write({"product_id": self.product.id})
+        self.assertEqual(line.fiscal_operation_line_id, operation_line)
+        self.assertTrue(line.financial_total)
+
     def test_manual_cfop_survives_the_operation_remap(self):
         """A CFOP chosen by a person on an imported line is a decision, not a
         suggestion: recomputing the mapping must not overwrite it."""
