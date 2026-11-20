@@ -142,12 +142,22 @@ class Document(models.Model):
             lists of ``(name, message)``. A note that was already imported is a
             warning, and its document is returned.
         """
+        # The context of a window action may carry ``default_*`` keys meant for the
+        # records of that window: they would fill the fields of the documents and of
+        # the lines the import creates.
+        service = self.with_context(
+            {
+                key: value
+                for key, value in self.env.context.items()
+                if not key.startswith("default_")
+            }
+        )
         documents = self.browse()
         errors, warnings = [], []
-        for name, content in self._edi_import_expand(files):
+        for name, content in service._edi_import_expand(files):
             try:
                 with self.env.cr.savepoint():
-                    document, created = self._edi_import_file(
+                    document, created = service._edi_import_file(
                         name, content, dfe_document=dfe_document
                     )
                 documents |= document

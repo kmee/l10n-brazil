@@ -39,6 +39,7 @@ class TestDocumentImport(EdiImportCase):
             return by_name.get(name)
 
         def create(model_, parsed_file, company, role):
+            self.create_context = dict(model_.env.context)
             created.append(model_.env.context.get(EDI_IMPORT_NO_CREATE))
             self.partner_by_vat.append(
                 model_.env.context.get(EDI_IMPORT_PARTNER_BY_VAT)
@@ -907,6 +908,24 @@ class TestDocumentImport(EdiImportCase):
         self.assertFalse(document.import_warning)
         document.fiscal_operation_id = False
         self.assertIn("No fiscal operation", document.import_warning)
+
+    def test_the_defaults_of_the_window_do_not_reach_the_documents(self):
+        """A window action that calls the import carries ``default_*`` keys for its
+        own records (a type of document, a partner): they must not fill the fields
+        of the documents and lines the import creates."""
+        model = self.Document.with_context(
+            default_fiscal_type="nfe",
+            default_partner_id=self.supplier.id,
+            lang="pt_BR",
+        )
+        _documents, errors, _warnings = self._import(
+            [(f"{KEY_1}.xml", b"<x/>")], parsed=[self._parsed(KEY_1)], model=model
+        )
+        self.assertFalse(errors)
+        self.assertEqual(
+            [key for key in self.create_context if key.startswith("default_")], []
+        )
+        self.assertEqual(self.create_context.get("lang"), "pt_BR")
 
     def test_a_document_without_lines_has_no_operation_to_suggest(self):
         """An MDF-e of the company has no line, so no CFOP to match an operation: the
