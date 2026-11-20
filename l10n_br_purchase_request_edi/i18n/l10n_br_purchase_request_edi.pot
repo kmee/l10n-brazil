@@ -6,14 +6,13 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 22:58+0000\n"
-"PO-Revision-Date: 2026-11-19 22:58+0000\n"
+"POT-Creation-Date: 2026-11-20 12:54+0000\n"
+"PO-Revision-Date: 2026-11-20 12:54+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
-"Language: pt_BR\n"
 "Plural-Forms: \n"
 
 #. module: l10n_br_purchase_request_edi
@@ -161,4 +160,11 @@ msgstr ""
 msgid ""
 "The unit of the line %(line)s does not convert to the unit of the request "
 "line."
+msgstr ""
+
+#. module: l10n_br_purchase_request_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_request_edi/models/document_match.py:0
+#, python-format
+msgid "You have no access to the purchase requests."
 msgstr ""
