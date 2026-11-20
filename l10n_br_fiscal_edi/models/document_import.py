@@ -13,7 +13,7 @@ from erpbrasil.base.fiscal.cnpj_cpf import formata
 
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
-from odoo.tools.misc import format_datetime
+from odoo.tools.misc import file_open, format_datetime
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_ISSUER_COMPANY,
@@ -24,7 +24,11 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
 )
 
 from ..constants.fiscal import DOCUMENT_STATE_AUTHORIZED
-from ..tools import EDI_IMPORT_NO_CREATE, EDI_IMPORT_PARTNER_BY_VAT
+from ..tools import (
+    EDI_IMPORT_NO_CREATE,
+    EDI_IMPORT_PARTNER_BY_VAT,
+    EdiImportConcurrencyError,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -83,6 +87,8 @@ class Document(models.Model):
         "fiscal_operation_id",
         "import_partner_warning",
         "fiscal_amount_total",
+        "fiscal_line_ids.fiscal_operation_id",
+        "fiscal_line_ids.fiscal_operation_line_id",
         "fiscal_line_ids.partner_ncm_code",
         "fiscal_line_ids.ncm_id",
         "fiscal_line_ids.uom_id",
@@ -110,6 +116,14 @@ class Document(models.Model):
                 )
             )
         for line in self.fiscal_line_ids:
+            if line.fiscal_operation_id and not line.fiscal_operation_line_id:
+                messages.append(
+                    _(
+                        "%(line)s: more than one operation line fits the operation: "
+                        "choose the operation line of the line."
+                    )
+                    % {"line": line.name}
+                )
             if line.partner_ncm_code and not line.ncm_id:
                 messages.append(
                     _("%(line)s: the NCM %(ncm)s is not in the registry.")
@@ -174,6 +188,9 @@ class Document(models.Model):
             except UserError as error:
                 _logger.info("Import of %s refused: %s", name, error)
                 errors.append((name, str(error)))
+            except EdiImportConcurrencyError:
+                # not an error of the file: the whole call must run again
+                raise
             except Exception:  # pylint: disable=broad-except
                 _logger.warning("Import of %s failed", name, exc_info=True)
                 errors.append(
@@ -186,6 +203,28 @@ class Document(models.Model):
                     )
                 )
         return documents, errors, warnings
+
+    @api.model
+    def _edi_import_demo_files(self, module, relative_paths):
+        """Import the sample files that a module ships in its demo data.
+
+        Called from the ``demo`` XML of the modules that read a type of file, so that
+        the documents of the demo are imported, reviewed and confirmed by the same
+        service as the ones of a person. A file that fails stops the installation:
+        a broken demo must show up at once.
+
+        :param module: name of the module that holds the files
+        :param relative_paths: paths of the files inside the module
+        :return: the imported documents
+        """
+        files = []
+        for path in relative_paths:
+            with file_open(f"{module}/{path}", "rb") as sample:
+                files.append((path.rsplit("/", 1)[-1], sample.read()))
+        documents, errors, _warnings = self._edi_import_files(files)
+        if errors:
+            raise UserError("\n".join(f"{name}: {message}" for name, message in errors))
+        return documents
 
     @api.model
     def _edi_import_expand(self, files):
@@ -216,6 +255,10 @@ class Document(models.Model):
         existing = self.with_company(company)._edi_import_find_existing(parsed, company)
         if existing:
             return existing, False
+        if self._edi_import_committed_elsewhere(parsed, company):
+            raise EdiImportConcurrencyError(
+                f"The note {name} was imported by a concurrent transaction."
+            )
         self._edi_import_check(parsed, company)
         last_partner = self.env["res.partner"].search([], order="id desc", limit=1)
         try:
@@ -346,6 +389,20 @@ class Document(models.Model):
             raise UserError(_("This note was cancelled by the issuer."))
         if parsed.status == "denied":
             raise UserError(_("This note was denied by the tax authority."))
+
+    @api.model
+    def _edi_import_committed_elsewhere(self, parsed, company):
+        """Whether a transaction that committed after this one began already holds the
+        note. The transaction reads a snapshot taken before it waited for the lock, so
+        the search of the existing document cannot see what that one wrote; a cursor
+        of its own, with a new snapshot, can."""
+        with self.env.registry.cursor() as cursor:
+            cursor.execute(
+                "SELECT 1 FROM l10n_br_fiscal_document "
+                "WHERE document_key = %s AND company_id = %s LIMIT 1",
+                (parsed.access_key, company.id),
+            )
+            return bool(cursor.fetchone())
 
     @api.model
     def _edi_import_find_existing(self, parsed, company):
@@ -563,19 +620,27 @@ class Document(models.Model):
                 operation_line.fiscal_operation_id or self.fiscal_operation_id
             )
             if not operation_line:
-                # No line answers the CFOP of the file (a CT-e, for instance) and
-                # the line has no product to pick one: the best approved line of
-                # the operation stands, or the line would add nothing to the total.
-                operation_line = (
-                    line.fiscal_operation_line_id
-                    or line.fiscal_operation_id._select_best_line(
-                        line.fiscal_operation_id.line_ids.filtered(
-                            lambda op_line: op_line.state == "approved"
-                        )
-                    )
+                # No line answers the CFOP of the file (a CT-e, for instance): the
+                # operation line is applied only when the operation has a single
+                # candidate. With more, the line is left to the person, who is warned.
+                candidates = self._edi_import_operation_line_candidates(
+                    line.fiscal_operation_id
+                )
+                operation_line = line.fiscal_operation_line_id or (
+                    candidates if len(candidates) == 1 else candidates.browse()
                 )
             if operation_line:
                 line.fiscal_operation_line_id = operation_line
+
+    @api.model
+    def _edi_import_operation_line_candidates(self, operation):
+        """The approved lines of the operation, of its type."""
+        return operation.line_ids.filtered(
+            lambda op_line: (
+                op_line.state == "approved"
+                and op_line.fiscal_operation_type == operation.fiscal_operation_type
+            )
+        )
 
     def _edi_import_operation_lines_found(self):
         """The operation line of each line that has none, by the CFOP of the file."""
