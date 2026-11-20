@@ -462,7 +462,10 @@ class TestDocumentImport(EdiImportCase):
                 {"name": "Already there", "default_code": "OWN-4"}
             )
             before += 1
+            self.assertTrue(document.import_missing_products)
             action = document.action_import_create_products()
+            # only the line with an unknown unit is left, and it cannot be created
+            self.assertFalse(document.import_missing_products)
             created = product_model.search([("default_code", "=", "OWN-3")])
             self.assertEqual(len(created), 1)
             self.assertEqual(created.name, "OWN-3 first")

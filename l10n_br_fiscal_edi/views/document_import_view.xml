@@ -20,12 +20,13 @@
             <xpath expr="//form/header" position="inside">
                 <field name="import_can_create_products" invisible="1" />
                 <field name="imported_document" invisible="1" />
+                <field name="import_missing_products" invisible="1" />
                 <button
                     name="action_import_create_products"
                     type="object"
                     string="Create Missing Products"
                     groups="l10n_br_fiscal.group_user"
-                    attrs="{'invisible': ['|', '|', ('imported_document', '=', False), ('fiscal_operation_type', '!=', 'out'), ('import_can_create_products', '=', False)]}"
+                    attrs="{'invisible': ['|', '|', '|', ('imported_document', '=', False), ('fiscal_operation_type', '!=', 'out'), ('import_can_create_products', '=', False), ('import_missing_products', '=', False)]}"
                 />
             </xpath>
             <xpath expr="//form/sheet" position="before">

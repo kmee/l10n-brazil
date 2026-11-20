@@ -54,6 +54,13 @@ class Document(models.Model):
         "documents the company issued needs.",
     )
 
+    import_missing_products = fields.Boolean(
+        compute="_compute_import_missing_products",
+        help="Some line has the code of a product in the file, a confirmed unit and "
+        "no product yet, which the action to create the missing products would "
+        "resolve.",
+    )
+
     import_partner_warning = fields.Text(
         copy=False,
         readonly=True,
@@ -496,6 +503,21 @@ class Document(models.Model):
         )
         for document in self:
             document.import_can_create_products = can_create
+
+    @api.depends(
+        "fiscal_line_ids.product_id",
+        "fiscal_line_ids.uom_id",
+        "fiscal_line_ids.import_uom_id",
+        "fiscal_line_ids.partner_uom_code",
+    )
+    def _compute_import_missing_products(self):
+        for document in self:
+            document.import_missing_products = any(
+                not line.product_id
+                and line._get_partner_product_code()
+                and not line._import_unit_unconfirmed()
+                for line in document.fiscal_line_ids
+            )
 
     def _edi_import_own_product(self, code):
         """The product of the company with this internal code: in a document the
