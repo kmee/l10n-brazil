@@ -20,5 +20,6 @@
         "views/document_view.xml",
         "views/document_match_view.xml",
     ],
+    "demo": ["demo/purchase_request_edi_demo.xml"],
     "auto_install": True,
 }
