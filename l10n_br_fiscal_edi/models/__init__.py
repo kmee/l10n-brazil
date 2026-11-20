@@ -4,4 +4,5 @@ from . import document
 from . import operation_dashboard
 from . import document_import
 from . import document_payment
+from . import document_line_import
 from . import document_line_lot

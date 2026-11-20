@@ -28,18 +28,6 @@ class PurchaseEdiCase(EdiImportCase):
         )
         cls.line = cls.document.fiscal_line_ids
 
-    def setUp(self):
-        super().setUp()
-        # the NF-e reader of the installments does not know a document of another
-        # type: none is declared here
-        patcher = mock.patch.object(
-            type(self.env["l10n_br_fiscal.document"]),
-            "_edi_get_installments",
-            return_value=[],
-        )
-        patcher.start()
-        self.addCleanup(patcher.stop)
-
     def _imported_document(self, **values):
         """Another imported document, of a type no reader of the scope handles."""
         values.setdefault(

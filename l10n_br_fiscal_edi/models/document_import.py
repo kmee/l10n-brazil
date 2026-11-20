@@ -1,12 +1,18 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+# pylint: disable=consider-merging-classes-inherited
+
 import logging
+import re
+import unicodedata
 import zipfile
 from io import BytesIO
 
+from erpbrasil.base.fiscal.cnpj_cpf import formata
+
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_ISSUER_COMPANY,
@@ -16,7 +22,8 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     FISCAL_OUT,
 )
 
-from ..tools import EDI_IMPORT_NO_CREATE
+from ..constants.fiscal import DOCUMENT_STATE_AUTHORIZED
+from ..tools import EDI_IMPORT_NO_CREATE, EDI_IMPORT_PARTNER_BY_VAT
 
 _logger = logging.getLogger(__name__)
 
@@ -41,10 +48,24 @@ class Document(models.Model):
         help="What the imported document still lacks to be reviewed.",
     )
 
+    import_can_create_products = fields.Boolean(
+        compute="_compute_import_can_create_products",
+        help="The user may create products, which the action of the imported "
+        "documents the company issued needs.",
+    )
+
+    import_partner_warning = fields.Text(
+        copy=False,
+        readonly=True,
+        help="Where the data of a partner in the file differ from its registry, "
+        "which the import never changes, and the partners that were matched by name.",
+    )
+
     @api.depends(
         "imported_document",
         "fiscal_operation_id",
-        "amount_financial_total",
+        "import_partner_warning",
+        "fiscal_amount_total",
         "fiscal_line_ids.partner_ncm_code",
         "fiscal_line_ids.ncm_id",
         "fiscal_line_ids.uom_id",
@@ -66,7 +87,7 @@ class Document(models.Model):
         if not self.fiscal_operation_id:
             messages.append(
                 _(
-                    "No fiscal operation matches the CFOP of the issuer: choose the "
+                    "No fiscal operation matches the CFOP of the document: choose the "
                     "fiscal operation of the document and the operation line of "
                     "each line."
                 )
@@ -82,6 +103,8 @@ class Document(models.Model):
                     _("%(line)s: the unit %(uom)s has no match in the units.")
                     % {"line": line.name, "uom": line.partner_uom_code}
                 )
+        if self.import_partner_warning:
+            messages.extend(self.import_partner_warning.splitlines())
         return messages
 
     @api.model
@@ -159,14 +182,22 @@ class Document(models.Model):
             return existing, False
         self._edi_import_check(parsed, company)
         last_partner = self.env["res.partner"].search([], order="id desc", limit=1)
-        document = (
-            self.with_company(company)
-            .with_context(**{EDI_IMPORT_NO_CREATE: True})
-            ._edi_import_create(parsed, company, role)
-        )
+        try:
+            document = (
+                self.with_company(company)
+                .with_context(
+                    **{EDI_IMPORT_NO_CREATE: True, EDI_IMPORT_PARTNER_BY_VAT: True}
+                )
+                ._edi_import_create(parsed, company, role)
+            )
+        except AccessError as error:
+            raise UserError(self._edi_import_access_denied(parsed, error)) from error
         document.with_context(
             **{LAST_PARTNER_CONTEXT_KEY: last_partner.id}
         )._edi_import_after_create(parsed, role)
+        document.with_context(
+            **{LAST_PARTNER_CONTEXT_KEY: last_partner.id}
+        )._edi_import_check_partners(parsed)
         document._edi_import_suggest()
         return document, True
 
@@ -215,6 +246,43 @@ class Document(models.Model):
                 % company.display_name
             )
         return company, role
+
+    @api.model
+    def _edi_import_partner_hint(self, parsed):
+        """Name and CNPJ/CPF of the partner the file needs to be registered, as
+        ``(name, vat)``. A reader that knows the name overrides it; the base knows
+        only the document of the issuer."""
+        return "", parsed.issuer_vat
+
+    @api.model
+    def _edi_import_access_denied(self, parsed, error):
+        """Message for the file of a user who may not do something that the import
+        needs: the registration of a partner has its own, any other says what the
+        system refused (it names the model and the operation) and what to do."""
+        if "res.partner" in str(error) and not self.env[
+            "res.partner"
+        ].check_access_rights("create", raise_exception=False):
+            return self._edi_import_partner_denied(parsed)
+        return _(
+            "The file %(file)s could not be imported because you do not have a "
+            "permission that the import needs: %(error)s Ask for the permission to "
+            "whoever manages the access, and import the file again."
+        ) % {"file": parsed.file_name, "error": error.args[0] if error.args else ""}
+
+    @api.model
+    def _edi_import_partner_denied(self, parsed):
+        """Message for a user who cannot create contacts when the file needs one."""
+        name, vat = self._edi_import_partner_hint(parsed)
+        partner = " ".join(
+            part
+            for part in (name, formata(vat) and f"(CNPJ/CPF {formata(vat)})")
+            if part
+        )
+        return _(
+            "The file %(file)s requires registering the partner %(partner)s, and you "
+            "are not allowed to create contacts. Ask someone who can to register "
+            "it, or ask for the permission, and import the file again."
+        ) % {"file": parsed.file_name, "partner": partner or _("(unknown)")}
 
     @api.model
     def _edi_import_check(self, parsed, company):
@@ -271,9 +339,97 @@ class Document(models.Model):
             .search([("id", ">", floor), ("create_uid", "=", self.env.uid)])
         )
         if new_partners:
-            self.message_post(
+            # A note in the history, sent to nobody: message_post needs the email of
+            # the sender, which a fiscal user may not have
+            self._message_log(
                 body=_("Partners created by the import: %s.")
                 % ", ".join(new_partners.mapped("display_name"))
+            )
+
+    def _edi_import_partner_data(self, parsed):
+        """What the file declares about its partners, as a list of
+        ``(partner, EdiPartnerData)``: the partner of the registry that the document
+        was linked to, and the data of the file. A reader that has them overrides it
+        and calls ``super()``; the base declares nothing."""
+        self.ensure_one()
+        return []
+
+    @api.model
+    def _edi_import_normalize(self, value):
+        """Lower case, only letters and digits (the accents are split off by NFKD and
+        dropped with the punctuation): the comparison of the
+        file with the registry does not report formatting."""
+        value = unicodedata.normalize("NFKD", str(value or ""))
+        return re.sub(r"[^a-z0-9]", "", value.lower())
+
+    def _edi_import_registry_values(self, partner):
+        """Values of the registry to compare with ``EdiPartnerData``, by attribute."""
+        return {
+            "name": partner.legal_name or partner.name,
+            "state_tax_number": partner.l10n_br_ie_code,
+            "street": partner.street_name,
+            "street_number": partner.street_number,
+            "district": partner.district,
+            "zip_code": partner.zip,
+            "city": partner.city_id.name or partner.city,
+            "state_code": partner.state_id.code,
+        }
+
+    def _edi_import_check_partners(self, parsed):
+        """Compare the data of the partners in the file with their registry, once,
+        and keep the differences on the document. The registry is never changed."""
+        self.ensure_one()
+        labels = {
+            "name": _("Name"),
+            "state_tax_number": _("State tax number"),
+            "street": _("Street"),
+            "street_number": _("Number"),
+            "district": _("District"),
+            "zip_code": _("ZIP code"),
+            "city": _("City"),
+            "state_code": _("State"),
+        }
+        floor = self.env.context.get(LAST_PARTNER_CONTEXT_KEY)
+        lines = []
+        for partner, data in self._edi_import_partner_data(parsed):
+            if (
+                not partner
+                or partner == self.company_id.partner_id
+                or (floor is not None and partner.id > floor)
+            ):
+                continue  # none, the company itself, or created by the import
+            if not data.vat:
+                lines.append(
+                    _(
+                        "%(partner)s: the file carries no CNPJ or CPF, so the "
+                        "partner was matched by name. Check that it is the right one."
+                    )
+                    % {"partner": partner.display_name}
+                )
+            registry = self._edi_import_registry_values(partner)
+            for key, label in labels.items():
+                declared = getattr(data, key)
+                if not declared or self._edi_import_normalize(
+                    declared
+                ) == self._edi_import_normalize(registry[key]):
+                    continue
+                lines.append(
+                    _(
+                        '%(partner)s - %(field)s: the file says "%(file)s", the '
+                        'registry says "%(registry)s".'
+                    )
+                    % {
+                        "partner": partner.display_name,
+                        "field": label,
+                        "file": declared,
+                        "registry": registry[key] or "",
+                    }
+                )
+        if lines:
+            self.import_partner_warning = "\n".join(lines)
+            self._message_log(
+                body=_("Partner data that differ from the registry: %s")
+                % "; ".join(lines)
             )
 
     def _edi_import_suggest(self):
@@ -281,9 +437,11 @@ class Document(models.Model):
         decided is never undone."""
         for document in self.filtered("imported_document"):
             document._init_import_states()
+            document._edi_import_suggest_operation()
             if document.fiscal_operation_type == FISCAL_IN:
-                document._edi_import_suggest_operation()
                 document._edi_import_apply_supplier_depara()
+            elif document.fiscal_operation_type == FISCAL_OUT:
+                document._edi_import_apply_own_products()
             for line in document.fiscal_line_ids.filtered(
                 lambda line: line.import_state == "matched"
                 and line._import_unit_unconfirmed()
@@ -292,24 +450,140 @@ class Document(models.Model):
 
     def _edi_import_suggest_operation(self):
         """The operation of the document and of each line that has none, from the
-        CFOP the issuer declared."""
+        CFOP declared in the file: the inverse of the issuer for a document received,
+        the very CFOP for a document the company issued elsewhere. Nothing is
+        assigned when nothing matches: an empty operation would recompute the
+        direction of the document."""
         self.ensure_one()
-        if not self.fiscal_operation_id:
-            self.fiscal_operation_id = self._suggest_fiscal_operation()
-        if not self.fiscal_operation_id:
+        direction = self.fiscal_operation_type
+        if not direction:
             return
         operation_lines = self.env["l10n_br_fiscal.operation.line"]
-        for line in self.fiscal_line_ids.filtered(
-            lambda line: not line.fiscal_operation_line_id
-        ):
-            operation_line = operation_lines._find_by_issuer_cfop(
-                line.partner_cfop_id, self.operation_name, FISCAL_IN
+        found = {
+            line: operation_lines._find_by_issuer_cfop(
+                line.partner_cfop_id, self.partner_operation_name, direction
             )
+            for line in self.fiscal_line_ids.filtered(
+                lambda line: not line.fiscal_operation_line_id
+            )
+        }
+        if not self.fiscal_operation_id:
+            if direction == FISCAL_IN:
+                operation = self._suggest_fiscal_operation()
+            else:
+                votes = [op_line.fiscal_operation_id for op_line in found.values()]
+                votes = [operation for operation in votes if operation]
+                operation = votes and max(set(votes), key=votes.count)
+            if operation:
+                self.fiscal_operation_id = operation
+        if not self.fiscal_operation_id:
+            return
+        for line, operation_line in found.items():
             line.fiscal_operation_id = (
                 operation_line.fiscal_operation_id or self.fiscal_operation_id
             )
             if operation_line:
                 line.fiscal_operation_line_id = operation_line
+
+    def _compute_import_can_create_products(self):
+        can_create = self.env["product.product"].check_access_rights(
+            "create", raise_exception=False
+        )
+        for document in self:
+            document.import_can_create_products = can_create
+
+    def _edi_import_own_product(self, code):
+        """The product of the company with this internal code: in a document the
+        company issued, the code of the product in the file is its own."""
+        self.ensure_one()
+        return self.env["product.product"].search(
+            [
+                ("default_code", "=", code),
+                ("company_id", "in", [False, self.company_id.id]),
+            ],
+            limit=1,
+        )
+
+    def _edi_import_apply_own_products(self):
+        """Resolve the lines of a document the company issued whose code is the
+        internal code of one of its products, when the unit declared is confirmed;
+        otherwise the product is only suggested."""
+        self.ensure_one()
+        for line in self.fiscal_line_ids.filtered(
+            lambda line: line.import_state in (False, "pending", "matched")
+        ):
+            code = line._get_partner_product_code()
+            product = code and self._edi_import_own_product(code)
+            if not product:
+                continue
+            line.product_id = product
+            if line._import_unit_unconfirmed():
+                line.import_state = "pending"
+            else:
+                line._apply_import_depara(product=product, uom=line.uom_id)
+
+    def action_import_create_products(self):
+        """Create the products that a document the company issued lacks: one for each
+        distinct code declared, and resolve the lines. It is an explicit action of
+        who may create products; the import itself never creates one, and a product
+        that already has the code is used, not duplicated. A line whose unit was not
+        confirmed is left for the review."""
+        product_model = self.env["product.product"]
+        if not product_model.check_access_rights("create", raise_exception=False):
+            raise UserError(_("You are not allowed to create products."))
+        blocked = self.env["l10n_br_fiscal.document.line"]
+        for document in self:
+            if not (
+                document.imported_document
+                and document.fiscal_operation_type == FISCAL_OUT
+            ):
+                raise UserError(
+                    _("Products are created only for a document the company issued.")
+                )
+            lines = document.fiscal_line_ids.filtered(
+                lambda line: not line.product_id and line._get_partner_product_code()
+            )
+            blocked |= lines.filtered(lambda line: line._import_unit_unconfirmed())
+            by_code = {}
+            for line in lines - blocked:
+                code = line._get_partner_product_code()
+                by_code[code] = by_code.get(code, blocked.browse()) | line
+            created = product_model
+            for code, group in by_code.items():
+                product = document._edi_import_own_product(code)
+                if not product:
+                    product = product_model.with_company(document.company_id).create(
+                        group[0]._edi_import_product_vals()
+                    )
+                    created |= product
+                for line in group:
+                    line.product_id = product
+                    line._apply_import_depara(product=product, uom=line.uom_id)
+            if created:
+                document._message_log(
+                    body=_("Products created by %(user)s: %(products)s")
+                    % {
+                        "user": self.env.user.display_name,
+                        "products": ", ".join(created.mapped("display_name")),
+                    }
+                )
+        if not blocked:
+            return True
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("Some lines were left for the review"),
+                "message": _(
+                    "%(count)s line(s) have a unit that was not confirmed, and no "
+                    "product was created for them. Choose the unit of each one."
+                )
+                % {"count": len(blocked)},
+                "type": "warning",
+                "sticky": True,
+                "next": {"type": "ir.actions.client", "tag": "reload"},
+            },
+        }
 
     def _edi_import_apply_supplier_depara(self):
         """Resolve the lines whose product the buyer already mapped for this
@@ -372,11 +646,32 @@ class Document(models.Model):
             },
         }
 
+    def get_state_machine_config(self):
+        config = super().get_state_machine_config()
+        config["transitions"].append(
+            {
+                # Imported, issued by the company and authorized in another system
+                # (a migration): only the state changes.
+                "trigger": "action_confirm_imported",
+                "source": DOCUMENT_STATE_DRAFT,
+                "dest": DOCUMENT_STATE_AUTHORIZED,
+            }
+        )
+        return config
+
     def action_document_confirm(self):
-        """An imported document is confirmed only when every line was reviewed."""
-        for document in self.filtered(
+        """An imported document is confirmed only when every line was reviewed.
+
+        One that the company issued in another system is already authorized there:
+        it goes from draft to authorized in a transition of its own, which runs no
+        callback: nothing is checked against the schema of issuing, exported,
+        numbered, sent or turned into an event, and the number, the series, the XML
+        and the protocol are the ones of the file.
+        """
+        drafts = self.filtered(
             lambda doc: doc.imported_document and doc.state_edoc == DOCUMENT_STATE_DRAFT
-        ):
+        )
+        for document in drafts:
             unresolved = document.fiscal_line_ids.filtered(
                 lambda line: line.import_state in ("pending", "matched")
             )
@@ -391,4 +686,7 @@ class Document(models.Model):
                         "lines": "\n".join(unresolved.mapped("name")),
                     }
                 )
-        return super().action_document_confirm()
+        own = drafts.filtered(lambda doc: doc.issuer == DOCUMENT_ISSUER_COMPANY)
+        for document in own:
+            document._trigger_fsm("action_confirm_imported")
+        return super(Document, self - own).action_document_confirm()

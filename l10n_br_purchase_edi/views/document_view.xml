@@ -11,6 +11,7 @@
                 <field name="imported_document" invisible="1" />
                 <field name="has_suggested_import_origin" invisible="1" />
                 <field name="state_edoc" invisible="1" />
+                <field name="issuer" invisible="1" />
                 <button
                     name="action_confirm_import_origins"
                     type="object"
@@ -23,7 +24,7 @@
                     type="object"
                     string="Match with Orders"
                     groups="l10n_br_fiscal.group_user"
-                    attrs="{'invisible': ['|', ('imported_document', '=', False), ('state_edoc', '!=', 'em_digitacao')]}"
+                    attrs="{'invisible': ['|', '|', ('imported_document', '=', False), ('state_edoc', '!=', 'em_digitacao'), ('issuer', '=', 'company')]}"
                 />
             </xpath>
             <xpath

@@ -244,3 +244,15 @@ class TestMatch(PurchaseEdiCase):
             found = self.Match.search(domain)
 
         self.assertIn(2000000003, found.ids)
+
+    def test_creating_an_order_does_not_write_on_the_partner(self):
+        self._resolve_product()
+        partner = self.supplier
+        before = (partner.name, partner.write_date)
+        note = self._rows(fiscal_document_id=self.document.id)
+
+        action = note.action_create_order()
+
+        order = self.env["purchase.order"].browse(action["res_id"])
+        self.assertEqual(order.partner_id, partner)
+        self.assertEqual((partner.name, partner.write_date), before)
