@@ -3,6 +3,8 @@
 
 # pylint: disable=consider-merging-classes-inherited
 
+from dataclasses import replace
+
 from odoo import _, api, fields, models
 
 
@@ -101,11 +103,10 @@ class Document(models.Model):
         return {
             "currency": self.currency_id,
             "installments": installments,
-            "payments": payments,
-            "means_labels": {
-                payment.means: self._edi_payment_means_label(payment.means)
+            "payments": [
+                replace(payment, label=self._edi_payment_means_label(payment.means))
                 for payment in payments
-            },
+            ],
             "totals": [
                 (_("Document total"), gross),
                 (_("Withholdings"), withholding),
