@@ -7,3 +7,4 @@ from . import test_nfe_import
 from . import test_nfe_autxml
 from . import test_other_document_types
 from . import test_own_note_import
+from . import test_pure_fiscal_user

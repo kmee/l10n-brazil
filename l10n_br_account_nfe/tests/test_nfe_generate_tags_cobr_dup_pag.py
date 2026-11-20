@@ -175,7 +175,7 @@ class TestGeneratePaymentInfo(TransactionCase):
             for installment in invoice._edi_installments():
                 self.assertIn(format_date(self.env, installment.date_due), summary)
             self.assertIn("In installments", summary)
-            self.assertIn("15", summary)
+            self.assertIn("15 - Boleto Bancário", summary)
         self.assertEqual(len(invoice._edi_installments()), 3)
 
         invoice.action_post()
