@@ -1539,3 +1539,40 @@ class TestNfeOwnNoteImport(EdiImportCase):
         self.assertFalse(as_user.import_can_create_products)
         with self.assertRaises(UserError):
             as_user.action_import_create_products()
+
+    def _resolved(self, xml):
+        document = self._import(xml)
+        document.action_import_create_products()
+        return document
+
+    def test_the_own_note_keeps_the_protocol_of_the_file_and_sends_nothing(self):
+        xml = self._own_xml(3, protocol="135200000000001")
+        sequences = self.env["ir.sequence"].search([])
+        numbers = sequences.mapped("number_next_actual")
+        sent = []
+        document_model = type(self.Document)
+        document = self._resolved(xml)
+
+        with (
+            mock.patch.object(
+                document_model, "action_document_send", lambda doc: sent.append(doc)
+            ),
+            mock.patch.object(
+                document_model,
+                "_document_export",
+                lambda doc, *a, **k: sent.append(doc),
+            ),
+        ):
+            document.action_document_confirm()
+
+        self.assertEqual(document.state_edoc, "autorizada")
+        self.assertFalse(sent)
+        self.assertEqual(document.authorization_protocol, "135200000000001")
+        self.assertEqual(
+            document.authorization_date.strftime("%Y-%m-%d %H:%M"), "2026-06-10 13:15"
+        )
+        self.assertEqual(document.original_xml_file_id.raw, xml)
+        self.assertEqual(sequences.mapped("number_next_actual"), numbers)
+        self.assertEqual(
+            (document.document_number, document.document_serie), ("3", "1")
+        )

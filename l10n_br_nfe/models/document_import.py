@@ -8,11 +8,14 @@ from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_ISSUER_COMPANY,
+    EVENT_ENV_HML,
+    EVENT_ENV_PROD,
     MODELO_FISCAL_NFE,
 )
 from odoo.addons.l10n_br_fiscal_edi.tools import (
     EdiParsedFile,
     EdiPartnerData,
+    tax_authority_date_to_utc,
 )
 
 PROTOCOL_AUTHORIZED = ("100", "150")
@@ -92,7 +95,55 @@ class Document(models.Model):
             parsed.binding, edoc_type="out" if role == "issuer" else "in"
         )
         document.partner_operation_name = _inf_nfe(parsed.binding).ide.natOp
+        if role == "issuer":
+            document._nfe_import_authorization(parsed)
         return document
+
+    def _nfe_import_authorization(self, parsed):
+        """The protocol of a note the company issued elsewhere: the number, the date
+        and the file with the protocol are the ones the file carries. The event needs
+        the series of the file; when the company has none with that code, the protocol
+        goes to the history of the document instead."""
+        protocol = getattr(parsed.binding, "protNFe", None)
+        if protocol is None or parsed.status != "authorized":
+            return
+        inf_prot = protocol.infProt
+        inf_nfe = _inf_nfe(parsed.binding)
+        protocol_date = tax_authority_date_to_utc(inf_prot.dhRecbto)
+        serie = self.env["l10n_br_fiscal.document.serie"].search(
+            [
+                ("code", "=", str(inf_nfe.ide.serie)),
+                ("company_id", "=", self.company_id.id),
+                ("document_type_id", "=", self.document_type_id.id),
+            ],
+            limit=1,
+        )
+        if not serie:
+            self._message_log(
+                body=_("Authorization protocol of the file: %(protocol)s, %(date)s.")
+                % {"protocol": inf_prot.nProt, "date": protocol_date}
+            )
+            return
+        production = str(_value(inf_nfe.ide.tpAmb)) == "1"
+        event = self.env["l10n_br_fiscal.event"].create(
+            {
+                "company_id": self.company_id.id,
+                "environment": EVENT_ENV_PROD if production else EVENT_ENV_HML,
+                "type": "0",
+                "document_id": self.id,
+                "document_type_id": self.document_type_id.id,
+                "document_serie_id": serie.id,
+                "document_number": self.document_number,
+            }
+        )
+        event.set_done(
+            status_code=str(_value(inf_prot.cStat)),
+            response=inf_prot.xMotivo,
+            protocol_date=protocol_date,
+            protocol_number=inf_prot.nProt,
+            file_response_xml=parsed.content,
+        )
+        self.authorization_event_id = event
 
     @api.model
     def _edi_import_partner_hint(self, parsed):
