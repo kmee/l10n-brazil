@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from odoo.tools import file_open
 
+from odoo.addons.l10n_br_cte.models.document_import import Document as CteReader
 from odoo.addons.l10n_br_fiscal_edi.tests.common import EdiImportCase
 from odoo.addons.l10n_br_fiscal_edi.tools import EdiInstallment
 
@@ -472,18 +473,30 @@ class TestCteDocumentImport(EdiImportCase):
             self.assertFalse(documents)
             self.assertIn("not a valid CT-e", errors[0][1])
 
-    def test_a_file_that_is_not_a_cte_is_not_read_by_the_cte_reader(self):
+    def test_a_file_that_is_not_a_cte_is_left_to_the_next_reader(self):
+        """Only this reader is called: what the others do with the file is theirs."""
+        mro = type(self.Document).__mro__
+        following = next(
+            cls
+            for cls in mro[mro.index(CteReader) + 1 :]
+            if "_edi_import_read" in vars(cls)
+        )
         nfse = (
             '<NFSe xmlns="http://www.sped.fazenda.gov.br/nfse"><infNFSe Id="NFS1"/>'
             "</NFSe>"
         )
         nfe = '<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe"><NFe/></nfeProc>'
         other_namespace = '<cteProc xmlns="http://example.com/other"/>'
-        for content in (nfse, nfe, other_namespace, "not xml at all"):
-            self.assertIsNone(self.Document._edi_import_read("a.xml", content.encode()))
-        documents, errors, _warnings = self._import(nfe.encode())
-        self.assertFalse(documents)
-        self.assertIn("not a fiscal document", errors[0][1])
+        with patch.object(following, "_edi_import_read", return_value="next"):
+            for content in (nfse, nfe, other_namespace, "not xml at all"):
+                self.assertEqual(
+                    CteReader._edi_import_read(
+                        self.Document, "a.xml", content.encode()
+                    ),
+                    "next",
+                )
+            read = CteReader._edi_import_read(self.Document, "a.xml", cte_xml())
+        self.assertEqual(read.reader, "cte")
 
     def test_a_cte_with_a_collection_declares_its_installments_in_order(self):
         documents, errors, _warnings = self._import(cte_xml(COLLECTION))
