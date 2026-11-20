@@ -144,6 +144,39 @@ class TestOwnNoteInvoice(TransactionCase):
         )
         self.assertFalse(move.edi_payment_summary)
 
+    def _without_series(self):
+        series = self.env["l10n_br_fiscal.document.serie"].search(
+            [
+                (
+                    "document_type_id",
+                    "=",
+                    self.env.ref("l10n_br_fiscal.document_55").id,
+                ),
+                ("company_id", "=", self.company.id),
+            ]
+        )
+        series.sudo().active = False
+
+    def test_an_own_note_without_a_serie_record_is_confirmed_and_invoiced(self):
+        self._without_series()
+        xml = self._own_xml()
+        sequences = self.env["ir.sequence"].search([])
+        numbers = sequences.mapped("number_next_actual")
+
+        document = self._confirmed_document(xml)
+        self.assertFalse(document.document_serie_id)
+        move = self.env["account.move"].browse(
+            document.action_generate_invoice()["res_id"]
+        )
+        move.action_post()
+
+        self.assertEqual(move.move_type, "out_invoice")
+        self.assertEqual(
+            (document.document_number, document.document_serie), ("4", "1")
+        )
+        self.assertEqual(document.original_xml_file_id.raw, xml)
+        self.assertEqual(sequences.mapped("number_next_actual"), numbers)
+
     def test_the_danfe_of_the_invoice_and_the_one_of_the_document_do_not_clash(self):
         document = self._confirmed_document(self._own_xml())
         move = self.env["account.move"].browse(
@@ -162,12 +195,12 @@ class TestOwnNoteInvoice(TransactionCase):
         self.assertTrue(invoice_pdf.startswith(b"%PDF"))
         self.assertTrue(document_pdf.startswith(b"%PDF"))
 
-        # the PDF of the document, asked by its button, is kept on the document
-        # and is the same at every view, whatever was printed from the invoice
-        self.assertFalse(document.file_report_id)
-        document.with_context(bin_size=True).view_pdf()
+        # the PDF of the document is kept on the document the first time it is
+        # made and is the same at every view, whatever was printed from the invoice
         pdf = document.file_report_id
         self.assertTrue(pdf)
+        document.with_context(bin_size=True).view_pdf()
+        self.assertEqual(document.file_report_id, pdf)
         content = pdf.with_context(bin_size=False).raw
         report._render_qweb_pdf("main_template_danfe_account", move.ids)
         document.with_context(bin_size=True).view_pdf()

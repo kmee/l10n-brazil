@@ -7,7 +7,7 @@ from lxml import etree
 
 from odoo import Command
 from odoo.exceptions import UserError
-from odoo.tests import tagged
+from odoo.tests import Form, tagged
 
 from .common import AccountEdiCase
 
@@ -169,3 +169,81 @@ class TestImportedDocumentScreen(AccountEdiCase):
         button = arch.xpath("//button[@name='action_generate_invoice']")
 
         self.assertIn("edi_can_generate_invoice", button[0].get("modifiers"))
+
+    def _financial_total_zeroed(self, document):
+        """What the operation does to some imported documents: the financial total
+        of the document is stored as zero, while the lines carry the amounts."""
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE l10n_br_fiscal_document SET amount_financial_total = 0 "
+            "WHERE id = %s",
+            (document.id,),
+        )
+        document.invalidate_recordset(["amount_financial_total"])
+        self.assertFalse(document.amount_financial_total)
+        return document
+
+    def test_the_invoice_is_offered_to_a_received_document_with_an_operation(self):
+        document = self._financial_total_zeroed(self._imported_document())
+
+        self.assertTrue(document.edi_can_generate_invoice)
+
+    def test_the_invoice_is_offered_to_a_received_document_without_an_operation(self):
+        document = self._imported_document()
+        document.fiscal_operation_id = False
+
+        self.assertTrue(document.edi_can_generate_invoice)
+
+    def test_the_invoice_is_offered_to_an_own_document(self):
+        document = self._financial_total_zeroed(self._own_imported_document())
+
+        self.assertTrue(document.edi_can_generate_invoice)
+
+    def test_the_invoice_is_offered_to_an_own_document_without_an_operation(self):
+        document = self._own_imported_document()
+        document.fiscal_operation_id = False
+
+        self.assertTrue(document.edi_can_generate_invoice)
+
+    def _sequences(self):
+        return self.env["ir.sequence"].search([]).mapped("number_next_actual")
+
+    def test_an_own_document_without_a_serie_record_is_invoiced(self):
+        numbers = self._sequences()
+        document = self._own_imported_document(with_serie=False)
+        self.assertFalse(document.document_serie_id)
+
+        move = self.env["account.move"].browse(
+            document.action_generate_invoice()["res_id"]
+        )
+
+        self.assertEqual(move.move_type, "out_invoice")
+        self.assertEqual(
+            (document.document_serie, document.document_number), ("001", "777")
+        )
+        self.assertFalse(document.document_serie_id)
+        self.assertEqual(self._sequences(), numbers)
+
+    def test_an_own_document_without_a_serie_record_is_confirmed(self):
+        numbers = self._sequences()
+        document = self._own_imported_document(confirm=False, with_serie=False)
+
+        document.with_user(self.fiscal_user).action_document_confirm()
+
+        self.assertEqual(document.state_edoc, "autorizada")
+        self.assertEqual(self._sequences(), numbers)
+
+    def test_a_fiscal_user_without_accounting_edits_saves_and_confirms(self):
+        document = self._own_imported_document(confirm=False, with_serie=False)
+        document = document.with_user(self.fiscal_user)
+        self.env.flush_all()
+        self.env.invalidate_all()
+
+        with Form(document) as form:
+            form.date_in_out = "2026-01-11 09:45:00"
+        self.env.flush_all()
+        self.env.invalidate_all()
+        document.action_document_confirm()
+
+        self.assertEqual(document.state_edoc, "autorizada")
+        self.assertEqual(document.date_in_out.hour, 9)

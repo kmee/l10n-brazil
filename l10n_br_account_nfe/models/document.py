@@ -16,7 +16,9 @@ class DocumentNfe(models.Model):
     @api.constrains("nfe40_detPag", "state_edoc")
     def _check_fiscal_payment_mode(self):
         for rec in self:
-            payment_mode = rec.move_ids.payment_mode_id
+            # the check runs when the document is confirmed, by who may have no
+            # right on the invoices
+            payment_mode = rec.sudo().move_ids.payment_mode_id
             if (
                 rec.state_edoc == DOCUMENT_STATE_DRAFT
                 or not rec._need_compute_nfe_tags()

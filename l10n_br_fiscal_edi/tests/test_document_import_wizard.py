@@ -151,11 +151,19 @@ class TestDocumentImportWizard(EdiImportCase):
         self.assertEqual(action["res_model"], "l10n_br_fiscal.document")
         self.assertEqual(self.Document.browse(action["res_id"]).document_key, KEY_1)
 
+    def _menus_of_the_web_client(self, user):
+        """Ids of the menus the web client shows to ``user``: the tree it loads, where
+        a menu under one that the user does not see never shows."""
+        tree = self.env["ir.ui.menu"].with_user(user).load_menus(False)
+        return {menu["id"] for menu in tree.values() if isinstance(menu, dict)}
+
     def test_a_common_fiscal_user_sees_the_menu_and_imports(self):
         user = self._fiscal_user("common_fiscal_user")
-        visible = self.env["ir.ui.menu"].with_user(user)._visible_menu_ids()
         for xmlid in ("document_import_wizard_menu", "imported_document_menu"):
-            self.assertIn(self.env.ref(f"l10n_br_fiscal_edi.{xmlid}").id, visible)
+            self.assertIn(
+                self.env.ref(f"l10n_br_fiscal_edi.{xmlid}").id,
+                self._menus_of_the_web_client(user),
+            )
         parsed = self._parsed(KEY_1)
         action = self._run(self._wizard([parsed.file_name], user=user), [parsed])
         document = self.Document.browse(action["res_id"])
