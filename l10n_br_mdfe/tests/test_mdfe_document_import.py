@@ -7,6 +7,11 @@ from unittest.mock import patch
 import nfelib
 
 from odoo.addons.l10n_br_fiscal_edi.tests.common import EdiImportCase
+from odoo.addons.l10n_br_mdfe.models.document_import import Document as MdfeReader
+from odoo.addons.l10n_br_mdfe.models.res_city import ResCity
+from odoo.addons.l10n_br_mdfe.models.res_company import ResCompany
+from odoo.addons.l10n_br_mdfe.models.res_country_state import ResCountryState
+from odoo.addons.l10n_br_mdfe.models.res_partner import ResPartner
 
 MDFE_SAMPLE = os.path.join(
     os.path.dirname(nfelib.__file__),
@@ -128,29 +133,62 @@ class TestMdfeDocumentImport(EdiImportCase):
         self.assertFalse(documents.authorization_file_id)
         self.assertEqual(self.env["mail.mail"].search_count([]), mails)
 
-    def test_the_emitter_data_that_differ_from_the_registry_are_reported(self):
+    def test_the_emitter_is_the_company_and_the_import_warns_of_nothing(self):
         documents, errors, _warnings = self._import(mdfe_xml(status="100"))
         self.assertFalse(errors)
-        warning = documents.import_partner_warning
-        self.assertIn("State tax number", warning)
-        parsed = self.Document._edi_import_read("a.xml", mdfe_xml(status="100"))
-        ((partner, declared),) = documents._edi_import_partner_data(parsed)
-        self.assertEqual((partner, declared.role), (self.presumed.partner_id, "issuer"))
-        self.assertEqual(declared.vat, LUCRO_PRESUMIDO)
-        partner.write(
-            {
-                "legal_name": declared.name.upper(),
-                "street_name": declared.street.lower(),
-                "street_number": declared.street_number,
-                "district": declared.district,
-                "zip": declared.zip_code,
-            }
+        self.assertFalse(documents.import_partner_warning)
+
+    def test_a_file_that_is_not_an_mdfe_is_left_to_the_next_reader(self):
+        """Only this reader is called: what the others do with the file is theirs."""
+        mro = type(self.Document).__mro__
+        following = next(
+            cls
+            for cls in mro[mro.index(MdfeReader) + 1 :]
+            if "_edi_import_read" in vars(cls)
         )
-        documents.import_partner_warning = False
-        documents._edi_import_check_partners(parsed)
-        self.assertNotIn("Street", documents.import_partner_warning)
-        self.assertNotIn("Name", documents.import_partner_warning)
-        self.assertNotIn("ZIP", documents.import_partner_warning)
+        cte = '<cteProc xmlns="http://www.portalfiscal.inf.br/cte"><CTe/></cteProc>'
+        nfe = '<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe"><NFe/></nfeProc>'
+        other_namespace = '<mdfeProc xmlns="http://example.com/other"/>'
+        event = f'<eventoMDFe xmlns="{MDFE_NAMESPACE}"/>'
+        with patch.object(following, "_edi_import_read", return_value="next"):
+            for content in (cte, nfe, other_namespace, event, "not xml at all"):
+                self.assertEqual(
+                    MdfeReader._edi_import_read(
+                        self.Document, "a.xml", content.encode()
+                    ),
+                    "next",
+                )
+            read = MdfeReader._edi_import_read(self.Document, "a.xml", mdfe_xml())
+        self.assertEqual(read.reader, "mdfe")
+
+    def test_the_overrides_of_the_mdfe_act_only_on_the_mdfe_schema(self):
+        """The import dictionaries of another schema (NF-e, CT-e) go to the next
+        override of the chain, never to the rules of the MDF-e."""
+        cases = (
+            (ResCity, "res.city", "match_or_create_m2o", ({"ibge_code": "1"}, {})),
+            (
+                ResCountryState,
+                "res.country.state",
+                "match_or_create_m2o",
+                ({"code": "SP"}, {}),
+            ),
+            (ResCompany, "res.company", "_prepare_import_dict", ({"x": 1},)),
+            (ResPartner, "res.partner", "_prepare_import_dict", ({"x": 1},)),
+        )
+        checked = 0
+        for cls, model_name, method, args in cases:
+            model = self.env[model_name].with_context(spec_schema="other")
+            mro = type(model).__mro__
+            following = next(
+                (base for base in mro[mro.index(cls) + 1 :] if method in vars(base)),
+                None,
+            )
+            if following is None:
+                continue  # nothing of another schema can reach this override
+            checked += 1
+            with patch.object(following, method, return_value="next"):
+                self.assertEqual(getattr(cls, method)(model, *args), "next", cls)
+        self.assertGreaterEqual(checked, 2)
 
     def test_the_company_is_the_issuer_of_the_mdfe(self):
         parsed = self.Document._edi_import_read("a.xml", mdfe_xml(emitter=LUCRO_REAL))
@@ -203,17 +241,6 @@ class TestMdfeDocumentImport(EdiImportCase):
             documents, errors, _warnings = self._import(content.encode())
             self.assertFalse(documents)
             self.assertIn("not a valid MDF-e", errors[0][1])
-
-    def test_a_file_that_is_not_an_mdfe_is_not_read_by_the_mdfe_reader(self):
-        cte = '<cteProc xmlns="http://www.portalfiscal.inf.br/cte"><CTe/></cteProc>'
-        nfe = '<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe"><NFe/></nfeProc>'
-        other_namespace = '<mdfeProc xmlns="http://example.com/other"/>'
-        event = f'<eventoMDFe xmlns="{MDFE_NAMESPACE}"/>'
-        for content in (cte, nfe, other_namespace, event, "not xml at all"):
-            self.assertIsNone(self.Document._edi_import_read("a.xml", content.encode()))
-        documents, errors, _warnings = self._import(cte.encode())
-        self.assertFalse(documents)
-        self.assertIn("not a fiscal document", errors[0][1])
 
     def test_a_common_fiscal_user_imports_an_mdfe(self):
         user = self._fiscal_user("fiscal_user_mdfe", self.presumed)

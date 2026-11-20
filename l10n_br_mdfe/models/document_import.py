@@ -14,11 +14,7 @@ from odoo import _, api, models
 from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import MODELO_FISCAL_MDFE
-from odoo.addons.l10n_br_fiscal_edi.tools import (
-    EDI_IMPORT_NO_CREATE,
-    EdiParsedFile,
-    EdiPartnerData,
-)
+from odoo.addons.l10n_br_fiscal_edi.tools import EDI_IMPORT_NO_CREATE, EdiParsedFile
 
 MDFE_NAMESPACE = "http://www.portalfiscal.inf.br/mdfe"
 
@@ -69,33 +65,6 @@ class Document(models.Model):
             file_name=name,
             content=content,
         )
-
-    def _edi_import_partner_data(self, parsed):
-        """What the MDF-e declares about its emitter, with the registry of the
-        partner that has the same CNPJ or CPF (the company, for an MDF-e it issued)."""
-        result = super()._edi_import_partner_data(parsed)
-        if parsed.reader != "mdfe":
-            return result
-        mdfe = getattr(parsed.binding, "MDFe", None) or parsed.binding
-        emit = mdfe.infMDFe.emit
-        address = getattr(emit, "enderEmit", None)
-        state = getattr(address, "UF", None)
-        partner = self.env["res.partner"].search(
-            [("cnpj_cpf_stripped", "=", parsed.issuer_vat)], limit=1
-        )
-        data = EdiPartnerData(
-            role="issuer",
-            vat=parsed.issuer_vat,
-            name=emit.xNome or "",
-            state_tax_number=emit.IE or "",
-            street=getattr(address, "xLgr", None) or "",
-            street_number=getattr(address, "nro", None) or "",
-            district=getattr(address, "xBairro", None) or "",
-            zip_code=getattr(address, "CEP", None) or "",
-            city=getattr(address, "xMun", None) or "",
-            state_code=str(getattr(state, "value", state) or ""),
-        )
-        return result + [(partner, data)]
 
     @api.model
     def _mdfe_status(self, status_code):
