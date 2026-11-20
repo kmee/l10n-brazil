@@ -13,7 +13,14 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
 )
 from odoo.addons.l10n_br_fiscal_edi.tools import EdiInstallment, EdiPayment
 
-from ..constants.nfe import A_PRAZO, A_VISTA, NFE_IN, NFE_OUT, SEM_PAGAMENTO
+from ..constants.nfe import (
+    A_PRAZO,
+    A_VISTA,
+    FISCAL_PAYMENT_MODE,
+    NFE_IN,
+    NFE_OUT,
+    SEM_PAGAMENTO,
+)
 
 NFE_MODELS = (MODELO_FISCAL_NFE, MODELO_FISCAL_NFCE)
 
@@ -119,3 +126,11 @@ class Document(models.Model):
         document.nfe40_detPag = [
             Command.delete(det_pag.id) for det_pag in document.nfe40_detPag
         ] + [Command.create(values)]
+
+    def _edi_payment_means_label(self, means):
+        """The name of the tPag of the NF-e and of the NFC-e."""
+        if self.document_type_id.code not in NFE_MODELS:
+            return super()._edi_payment_means_label(means)
+        return dict(FISCAL_PAYMENT_MODE).get(means) or super()._edi_payment_means_label(
+            means
+        )
