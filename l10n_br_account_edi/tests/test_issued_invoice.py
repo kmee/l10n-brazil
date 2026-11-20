@@ -45,6 +45,12 @@ class TestIssuedInvoice(AccountEdiCase):
         )
 
     def test_payment_is_in_installments_when_a_due_date_is_after_the_invoice(self):
+        # the module alone: the means of payment is not known (account_nfe gives it)
+        patcher = mock.patch.object(
+            type(self.move), "_edi_payment_means", return_value=""
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
         self.move.invoice_payment_term_id = self.payment_term
 
         (payment,) = self.move._edi_payments()
@@ -66,6 +72,12 @@ class TestIssuedInvoice(AccountEdiCase):
         self.assertEqual(payment.term, "cash")
 
     def test_the_invoice_previews_the_installments(self):
+        # the module alone: the means of payment is not known (account_nfe gives it)
+        patcher = mock.patch.object(
+            type(self.move), "_edi_payment_means", return_value=""
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
         self.move.invoice_payment_term_id = self.payment_term
 
         summary = self.move.edi_payment_summary
