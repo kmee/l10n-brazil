@@ -1879,6 +1879,11 @@ msgid "Default CT-e Import Product"
 msgstr ""
 
 #. module: l10n_br_cte
+#: model:ir.model.fields,field_description:l10n_br_cte.field_res_company__cte_import_service_product_id
+msgid "Default Transport Service Provided"
+msgstr ""
+
+#. module: l10n_br_cte
 #: model:ir.model.fields,field_description:l10n_br_cte.field_l10n_br_cte_transported_vehicles__cte40_xCor
 msgid "Descrição da cor"
 msgstr ""
@@ -2324,7 +2329,7 @@ msgid ""
 "Freight service suggested on the line of a CT-e that the company receives "
 "when it is imported. The person confirms the suggestion in the review. "
 "Without it the line waits for the choice of the product. The CT-e issued by "
-"the company does not use it."
+"the company does not use it (see the transport service provided)."
 msgstr ""
 
 #. module: l10n_br_cte
@@ -5590,6 +5595,14 @@ msgstr ""
 #. module: l10n_br_cte
 #: model:ir.model.fields,help:l10n_br_cte.field_res_company__dacte_margin_top
 msgid "Top margin in mm for the DACTE layout."
+msgstr ""
+
+#. module: l10n_br_cte
+#: model:ir.model.fields,help:l10n_br_cte.field_res_company__cte_import_service_product_id
+msgid ""
+"Transport service suggested on the line of a CT-e that the company issued in"
+" another system when it is imported. The person confirms the suggestion in "
+"the review. Without it the line waits for the choice of the product."
 msgstr ""
 
 #. module: l10n_br_cte

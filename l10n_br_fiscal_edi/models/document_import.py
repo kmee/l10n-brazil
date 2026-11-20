@@ -142,12 +142,22 @@ class Document(models.Model):
             lists of ``(name, message)``. A note that was already imported is a
             warning, and its document is returned.
         """
+        # The context of a window action may carry ``default_*`` keys meant for the
+        # records of that window: they would fill the fields of the documents and of
+        # the lines the import creates.
+        service = self.with_context(
+            {
+                key: value
+                for key, value in self.env.context.items()
+                if not key.startswith("default_")
+            }
+        )
         documents = self.browse()
         errors, warnings = [], []
-        for name, content in self._edi_import_expand(files):
+        for name, content in service._edi_import_expand(files):
             try:
                 with self.env.cr.savepoint():
-                    document, created = self._edi_import_file(
+                    document, created = service._edi_import_file(
                         name, content, dfe_document=dfe_document
                     )
                 documents |= document
@@ -534,14 +544,48 @@ class Document(models.Model):
                 operation = votes and max(set(votes), key=votes.count)
             if operation:
                 self.fiscal_operation_id = operation
+        self._edi_import_spread_operation(found)
+
+    def _edi_import_spread_operation(self, found=None):
+        """Give the lines that have no operation the one of the document, and the
+        operation line the CFOP of the file points to when it does. Used when the
+        suggestion finds the operation and when a person chooses it on the header:
+        the two end the same. The values and the taxes declared in the file are not
+        touched, and a line that already has an operation keeps it."""
+        self.ensure_one()
         if not self.fiscal_operation_id:
             return
+        if found is None:
+            found = self._edi_import_operation_lines_found()
         for line, operation_line in found.items():
             line.fiscal_operation_id = (
                 operation_line.fiscal_operation_id or self.fiscal_operation_id
             )
             if operation_line:
                 line.fiscal_operation_line_id = operation_line
+
+    def _edi_import_operation_lines_found(self):
+        """The operation line of each line that has none, by the CFOP of the file."""
+        self.ensure_one()
+        operation_lines = self.env["l10n_br_fiscal.operation.line"]
+        return {
+            line: operation_lines._find_by_issuer_cfop(
+                line.partner_cfop_id,
+                self.partner_operation_name,
+                self.fiscal_operation_type,
+            )
+            for line in self.fiscal_line_ids.filtered(
+                lambda line: not line.fiscal_operation_line_id
+                and not line.fiscal_operation_id
+            )
+        }
+
+    def write(self, vals):
+        result = super().write(vals)
+        if "fiscal_operation_id" in vals:
+            for document in self.filtered("imported_document"):
+                document._edi_import_spread_operation()
+        return result
 
     def _compute_import_can_create_products(self):
         can_create = self.env["product.product"].check_access_rights(
