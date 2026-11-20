@@ -158,6 +158,46 @@ class TestCreditOpeningChain(CreditMixin, SpedEntradaCommon):
         # 49.50 of the contribution used 49.50 of the 50.00, 16.50 of own credit
         self.assertAlmostEqual(pis.amount_carried_forward, 17.0, places=2)
 
+    def test_the_opening_balance_is_the_oldest_credit_and_goes_to_the_1100(self):
+        self._openings()
+        self._month(7, "401", sales=3)
+        declaration = self._declaration_month(7)
+        rows = {
+            rec["PER_APU_CRED"]: rec for rec in self._sped_records(declaration, "1100")
+        }
+        self.assertEqual(sorted(rows), ["042026", "052026"])
+        april, may = rows["042026"], rows["052026"]
+        self.assertEqual(april["ORIG_CRED"], "01")
+        self.assertEqual(april["COD_CRED"], "101")
+        self.assertEqual(april["VL_CRED_APU"], "40,00")
+        self.assertEqual(april["VL_CRED_DESC_PA_ANT"], "10,00")
+        self.assertEqual(april["SD_CRED_DISP_EFD"], "30,00")
+        self.assertEqual(april["VL_CRED_DESC_EFD"], "30,00")
+        self.assertEqual(april["SLD_CRED_FIM"], "0")
+        self.assertEqual(may["VL_CRED_DESC_EFD"], "19,50")
+        self.assertEqual(may["SLD_CRED_FIM"], "0,50")
+        m200 = self._sped_records(declaration, "M200")[0]
+        self.assertEqual(m200["VL_TOT_CONT_NC_PER"], "49,50")
+        self.assertEqual(m200["VL_TOT_CRED_DESC_ANT"], "49,50")
+        self.assertEqual(self._number(m200["VL_TOT_CRED_DESC"]), 0.0)
+        self.assertEqual(self._number(m200["VL_TOT_CONT_NC_DEV"]), 0.0)
+        self.assertEqual(len(self._sped_records(declaration, "1500")), 2)
+
+    def test_the_second_month_goes_on_from_what_is_left(self):
+        self._openings()
+        self._month(7, "401", sales=3)
+        self._month(8, "402", sales=1)
+        declaration = self._declaration_month(8)
+        rows = {
+            rec["PER_APU_CRED"]: rec for rec in self._sped_records(declaration, "1100")
+        }
+        self.assertEqual(sorted(rows), ["052026", "072026"])
+        self.assertEqual(rows["052026"]["SD_CRED_DISP_EFD"], "0,50")
+        self.assertEqual(rows["052026"]["VL_CRED_DESC_EFD"], "0,50")
+        self.assertEqual(rows["072026"]["VL_CRED_APU"], "16,50")
+        self.assertEqual(rows["072026"]["VL_CRED_DESC_EFD"], "16,00")
+        self.assertEqual(rows["072026"]["SLD_CRED_FIM"], "0,50")
+
     def test_the_assessment_warns_when_the_account_is_not_the_opening_balance(self):
         """The system books no entry for the opening balance: when the account of
         the tax to recover does not hold it, the assessment says so (and does not
@@ -205,6 +245,18 @@ class TestCreditOpeningChain(CreditMixin, SpedEntradaCommon):
         self.assertEqual(pis.previous_balance, 0.0)
         self.assertFalse(pis.opening_balance_warning)
         self.assertEqual(self._sped_records(self._declaration_month(7), "1100"), [])
+
+    def test_the_stop_of_the_balance_points_to_the_opening_balance(self):
+        """Credit from before the system that is not registered: the message of
+        the stop says where to register it."""
+        self._openings()
+        self._month(7, "401", sales=3)
+        self.env[OPENING].search([]).unlink()
+        self._set_accountant()
+        declaration = self._declaration_month(7)
+        with self.assertRaises(UserError) as error:
+            declaration.button_create_sped_files()
+        self.assertIn("Saldo inicial de crédito de PIS/COFINS", error.exception.args[0])
 
 
 @tagged("post_install", "-at_install")

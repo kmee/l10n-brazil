@@ -93,7 +93,7 @@ def _consolidation_vals(env, declaration, tax_domain):
         "VL_TOT_CRED_DESC": round(
             sum(g["desc"] for g in _credit_groups(env, declaration, tax_domain)), 2
         ),
-        "VL_TOT_CRED_DESC_ANT": _previous_credit_used(non_cumulative),
+        "VL_TOT_CRED_DESC_ANT": _previous_credit(env, declaration, tax_domain)[1],
         "VL_TOT_CONT_NC_DEV": non_cumulative.assessed_balance,
         "VL_RET_NC": non_cumulative.withholding_total,
         "VL_OUT_DED_NC": non_cumulative.deduction_total,
@@ -119,10 +119,127 @@ def _credit_rows(declaration, tax_domain):
     return [row for row in (line._sped_credit(tax_domain) for line in lines) if row]
 
 
-def _previous_credit_used(assessment):
-    """The credit of the earlier periods that the contribution of the period
-    uses: it comes first, up to the contribution."""
-    return round(min(assessment.previous_balance, max(assessment.debit_total, 0.0)), 2)
+def _opening_layers(env, declaration, tax_domain):
+    """The credit of the earlier periods that is still to be used when the period
+    of the declaration begins, one layer by period of origin and type of credit
+    (what the register 1100 and the 1500 control).
+
+    It is replayed from the posted assessments of the non-cumulative regime that
+    come before the period, which is the same chain that carries the credit balance
+    from an assessment to the next (``previous_balance``): each period adds the
+    credit of its documents, by type, and the contribution of the period uses the
+    oldest credit first. The layers that are left are the opening balance, and its
+    total has to be the balance the assessment of the period starts from.
+    """
+    company = declaration.company_id
+    # the credit that came from another system is the oldest: the opening balance
+    # registered by period of origin and type of credit, valid from its cut-off
+    openings = env["l10n_br_pis_cofins.credit.opening"].search(
+        [
+            ("company_id", "=", company.id),
+            ("tax_domain", "=", tax_domain),
+            ("cutoff_date", "<=", declaration.DT_INI),
+        ],
+        order="origin_period, cod_cred, id",
+    )
+    layers = [
+        {
+            "period": opening.origin_period,
+            "cod_cred": opening.cod_cred,
+            "orig_cred": opening.orig_cred,
+            "cnpj_suc": opening.cnpj_suc or "",
+            "original": opening.amount,
+            "used_before": opening.used_before,
+        }
+        for opening in openings
+    ]
+    domain = [
+        ("company_id", "=", company.id),
+        ("tax_domain", "=", tax_domain),
+        ("regime", "=", "non_cumulative"),
+        ("state", "=", "posted"),
+        ("date_to", "<", declaration.DT_INI),
+    ]
+    if openings:
+        # what the system assessed before the cut-off is not part of the chain
+        domain.append(("date_from", ">=", min(openings.mapped("cutoff_date"))))
+    earlier = env["l10n_br_tax.assessment"].search(domain, order="date_from")
+    for assessment in earlier:
+        # the documents of that period, as the declaration of the period would
+        # take them
+        period = env[declaration._name].new(
+            {
+                "company_id": company.id,
+                "DT_INI": assessment.date_from,
+                "DT_FIN": assessment.date_to,
+            }
+        )
+        by_type = {}
+        for row in _credit_rows(period, tax_domain):
+            by_type[row["cod_cred"]] = by_type.get(row["cod_cred"], 0.0) + row["value"]
+        for cod_cred in sorted(by_type):
+            layers.append(
+                {
+                    "period": assessment.date_from,
+                    "cod_cred": cod_cred,
+                    "original": round(by_type[cod_cred], 2),
+                    "used_before": 0.0,
+                }
+            )
+        # the contribution of the period uses the oldest credit first
+        remaining = max(assessment.debit_total, 0.0)
+        for layer in layers:
+            take = round(min(layer["original"] - layer["used_before"], remaining), 2)
+            layer["used_before"] = round(layer["used_before"] + take, 2)
+            remaining = round(remaining - take, 2)
+    return layers
+
+
+def _previous_credit(env, declaration, tax_domain):
+    """The credit of earlier periods for the register 1100 (PIS) or 1500 (COFINS)
+    and for the M200 or the M600: the layers that still have balance when the
+    period begins, each with what the contribution of this period uses of it
+    (``desc_now``, oldest first), and the total used.
+
+    The balance has to be the one the assessment of the period starts from: when
+    the assessments before it do not give it (a period not assessed, or credit
+    from before the system), the file is not generated and the message says so.
+    """
+    assessment = _find_assessment(env, declaration, tax_domain, "non_cumulative")
+    # `_()` finds the language in a `context` of the caller
+    context = env.context  # noqa: F841
+    if not assessment:
+        return [], 0.0
+    # a month with movement that was never assessed breaks the chain of the balance
+    assessment._check_previous_periods()
+    layers = _opening_layers(env, declaration, tax_domain)
+    open_layers = [
+        layer for layer in layers if layer["original"] - layer["used_before"] > 0.004
+    ]
+    opening = round(
+        sum(layer["original"] - layer["used_before"] for layer in open_layers), 2
+    )
+    if abs(opening - assessment.previous_balance) > 0.01:
+        raise UserError(
+            _(
+                "The %(tax)s credit balance that the assessment of the period "
+                "starts from (%(balance)s) is not what the posted assessments of "
+                "the earlier periods give (%(layers)s): assess and post the "
+                "earlier periods, in order, before generating the file. If the "
+                "credit comes from before the system, register it as the opening "
+                "balance (menu Invoicing > Accounting > Actions > Saldo inicial "
+                "de crédito de PIS/COFINS).",
+                tax=tax_domain.upper(),
+                balance=formatLang(env, assessment.previous_balance, digits=2),
+                layers=formatLang(env, opening, digits=2),
+            )
+        )
+    remaining = max(assessment.debit_total, 0.0)
+    for layer in open_layers:
+        available = round(layer["original"] - layer["used_before"], 2)
+        layer["desc_now"] = round(min(available, remaining), 2)
+        remaining = round(remaining - layer["desc_now"], 2)
+    return open_layers, round(sum(layer["desc_now"] for layer in open_layers), 2)
 
 
 def _credit_groups(env, declaration, tax_domain):
@@ -188,7 +305,7 @@ def _credit_groups(env, declaration, tax_domain):
         group["rows"].append(row)
     # the contribution uses the credit of the earlier periods first (oldest
     # first), and the credit of this period only what is left of it
-    used_before = _previous_credit_used(assessment)
+    used_before = _previous_credit(env, declaration, tax_domain)[1]
     remaining = max(
         min(assessment.credit_total, assessment.debit_total - used_before), 0.0
     )
@@ -201,6 +318,26 @@ def _credit_groups(env, declaration, tax_domain):
         remaining = round(remaining - group["desc"], 2)
         result.append(group)
     return result
+
+
+def _previous_credit_vals(layer):
+    """Values of the register 1100 (PIS/PASEP) and of the 1500 (COFINS), which
+    share every field: a layer of credit of an earlier period, with what was used
+    before, what this period uses and what is left."""
+    available = round(layer["original"] - layer["used_before"], 2)
+    return {
+        "PER_APU_CRED": f"{layer['period'].month:02d}{layer['period'].year}",
+        # 01: credit of the operations of the company itself
+        "ORIG_CRED": layer.get("orig_cred", "01"),
+        "CNPJ_SUC": layer.get("cnpj_suc", ""),
+        "COD_CRED": layer["cod_cred"],
+        "VL_CRED_APU": layer["original"],
+        "VL_TOT_CRED_APU": layer["original"],
+        "VL_CRED_DESC_PA_ANT": layer["used_before"],
+        "SD_CRED_DISP_EFD": available,
+        "VL_CRED_DESC_EFD": layer["desc_now"],
+        "SLD_CRED_FIM": round(available - layer["desc_now"], 2),
+    }
 
 
 def _credit_details(group):
@@ -362,6 +499,7 @@ class Registro0000(models.Model):
             declaration = declaration._in_company_context()
             for tax_domain in ("pis", "cofins"):
                 _credit_groups(declaration.env, declaration, tax_domain)
+                _previous_credit(declaration.env, declaration, tax_domain)
         return super().button_create_sped_files()
 
     IND_ATIV = fields.Selection(
@@ -3857,27 +3995,26 @@ class Registro1100(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.1100"
     _inherit = "l10n_br_sped.efd_pis_cofins.6.1100"
 
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "PER_APU_CRED": 0,  # Período de Apuração do Crédito (MM/AAAA)
-    #         "ORIG_CRED": 0,  # Indicador da origem do crédito: 01 – Crédito decor...
-    #         "CNPJ_SUC": 0,  # CNPJ da pessoa jurídica cedente do crédito (se ORIG...
-    #         "COD_CRED": 0,  # Código do Tipo do Crédito, conforme Tabela 4.3.6.
-    #         "VL_CRED_APU": 0,  # Valor total do crédito apurado na Escrituração F...
-    #         "VL_CRED_EXT_APU": 0,  # Valor de Crédito Extemporâneo Apurado (Regis...
-    #         "VL_TOT_CRED_APU": 0,  # Valor Total do Crédito Apurado (06 + 07)
-    #         "VL_CRED_DESC_PA_ANT": 0,  # Valor do Crédito utilizado mediante Desc...
-    #         "VL_CRED_PER_PA_ANT": 0,  # Valor do Crédito utilizado mediante Pedid...
-    #         "VL_CRED_DCOMP_PA_ANT": 0,  # Valor do Crédito utilizado mediante Dec...
-    #         "SD_CRED_DISP_EFD": 0,  # Saldo do Crédito Disponível para Utilização...
-    #         "VL_CRED_DESC_EFD": 0,  # Valor do Crédito descontado neste período d...
-    #         "VL_CRED_PER_EFD": 0,  # Valor do Crédito objeto de Pedido de Ressarc...
-    #         "VL_CRED_DCOMP_EFD": 0,  # Valor do Crédito utilizado mediante Declar...
-    #         "VL_CRED_TRANS": 0,  # Valor do crédito transferido em evento de cisã...
-    #         "VL_CRED_OUT": 0,  # Valor do crédito utilizado por outras formas.
-    #         "SLD_CRED_FIM": 0,  # Saldo de créditos a utilizar em período de apur...
-    #     }
+    # The descriptor marks these values obrigatorio=1: a zero is written "0".
+    VL_CRED_APU = fields.Monetary(out_required=True, currency_field="brl_currency_id")
+    VL_TOT_CRED_APU = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_CRED_DESC_PA_ANT = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    SD_CRED_DISP_EFD = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    SLD_CRED_FIM = fields.Monetary(out_required=True, currency_field="brl_currency_id")
+
+    @api.model
+    def _odoo_records(self, parent_record, declaration):
+        return _previous_credit(self.env, declaration, "pis")[0]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return _previous_credit_vals(record)
 
 
 class Registro1300(models.Model):
@@ -3907,27 +4044,26 @@ class Registro1500(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.1500"
     _inherit = "l10n_br_sped.efd_pis_cofins.6.1500"
 
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "PER_APU_CRED": 0,  # Período de Apuração do Crédito (MM/AAAA)
-    #         "ORIG_CRED": 0,  # Indicador da origem do crédito: 01 – Crédito decor...
-    #         "CNPJ_SUC": 0,  # CNPJ da pessoa jurídica cedente do crédito (se ORIG...
-    #         "COD_CRED": 0,  # Código do Tipo do Crédito, conforme Tabela 4.3.6.
-    #         "VL_CRED_APU": 0,  # Valor Total do crédito apurado na Escrituração F...
-    #         "VL_CRED_EXT_APU": 0,  # Valor de Crédito Extemporâneo Apurado (Regis...
-    #         "VL_TOT_CRED_APU": 0,  # Valor Total do Crédito Apurado (06 + 07)
-    #         "VL_CRED_DESC_PA_ANT": 0,  # Valor do Crédito utilizado mediante Desc...
-    #         "VL_CRED_PER_PA_ANT": 0,  # Valor do Crédito utilizado mediante Pedid...
-    #         "VL_CRED_DCOMP_PA_ANT": 0,  # Valor do Crédito utilizado mediante Dec...
-    #         "SD_CRED_DISP_EFD": 0,  # Saldo do Crédito Disponível para Utilização...
-    #         "VL_CRED_DESC_EFD": 0,  # Valor do Crédito descontado neste período d...
-    #         "VL_CRED_PER_EFD": 0,  # Valor do Crédito objeto de Pedido de Ressarc...
-    #         "VL_CRED_DCOMP_EFD": 0,  # Valor do Crédito utilizado mediante Declar...
-    #         "VL_CRED_TRANS": 0,  # Valor do crédito transferido em evento de cisã...
-    #         "VL_CRED_OUT": 0,  # Valor do crédito utilizado por outras formas
-    #         "SLD_CRED_FIM": 0,  # Saldo de créditos a utilizar em período de apur...
-    #     }
+    # The descriptor marks these values obrigatorio=1: a zero is written "0".
+    VL_CRED_APU = fields.Monetary(out_required=True, currency_field="brl_currency_id")
+    VL_TOT_CRED_APU = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_CRED_DESC_PA_ANT = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    SD_CRED_DISP_EFD = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    SLD_CRED_FIM = fields.Monetary(out_required=True, currency_field="brl_currency_id")
+
+    @api.model
+    def _odoo_records(self, parent_record, declaration):
+        return _previous_credit(self.env, declaration, "cofins")[0]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return _previous_credit_vals(record)
 
 
 class Registro1700(models.Model):
