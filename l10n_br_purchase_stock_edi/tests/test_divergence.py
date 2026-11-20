@@ -49,6 +49,22 @@ class TestDivergence(StockEdiCase):
         self.company.purchase_price_tolerance = 5.0
         self.assertTrue(self.line.import_divergent)
 
+    def test_the_tolerances_are_of_the_company_of_the_document(self):
+        self._divergent_case()
+        other = self.env["res.company"].create({"name": "Other company"})
+        other.write(
+            {"purchase_price_tolerance": 50.0, "purchase_quantity_tolerance": 50.0}
+        )
+        self.assertTrue(self.line.import_divergent)
+
+        self.company.write(
+            {"purchase_price_tolerance": 6.0, "purchase_quantity_tolerance": 30.0}
+        )
+        other.write(
+            {"purchase_price_tolerance": 0.0, "purchase_quantity_tolerance": 0.0}
+        )
+        self.assertFalse(self.line.import_divergent)
+
     def test_a_line_that_matches_is_not_divergent(self):
         order = self._order(quantity=10, price=95.0)
         self._receive(order, 8)
