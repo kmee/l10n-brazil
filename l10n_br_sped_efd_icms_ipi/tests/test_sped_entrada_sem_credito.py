@@ -13,6 +13,10 @@ class TestSpedEfdIcmsIpiEntradaSemCredito(EntradaHelpers, SpedEntradaCommon):
     """An entry without credit right: the CFOP of use and consumption or of the
     fixed asset vetoes the credit, and the books carry the tax out."""
 
+    def setUp(self):
+        super().setUp()
+        self._opt_in()
+
     @staticmethod
     def _line(move):
         return move.fiscal_document_id.fiscal_line_ids

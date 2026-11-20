@@ -665,8 +665,9 @@ class AccountMoveLine(models.Model):
         creditability map of its fiscal line (buyer regime, CFOP, supplier,
         CST). They book no tax line and their value stays in the product line.
 
-        Only for a company that values its stock at the net cost
-        (``stock_valuation_via_stock_price``): any other keeps its ledger.
+        Only for a company that books its entries by the creditability map
+        (``res.company._books_entry_by_creditability``): any other keeps its
+        ledger.
         """
         self.ensure_one()
         fiscal_line = self.fiscal_document_line_id
@@ -675,7 +676,7 @@ class AccountMoveLine(models.Model):
             or not fiscal_line
             or not self.move_id.fiscal_operation_id
             or not self.move_id.is_purchase_document(include_receipts=True)
-            or not getattr(self.company_id, "stock_valuation_via_stock_price", False)
+            or not self.company_id._books_entry_by_creditability()
         ):
             return set()
         return {
