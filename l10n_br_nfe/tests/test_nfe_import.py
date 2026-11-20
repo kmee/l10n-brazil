@@ -621,6 +621,9 @@ class TestNfeDocumentImport(EdiImportCase):
         self.assertEqual(self.env["l10n_br_fiscal.cfop"].search_count([]), cfop)
 
     def test_operation_is_suggested_without_touching_the_values_of_the_file(self):
+        # the issuer of the file is in SP: the CFOP of the entry is 1102 when the
+        # company is too, whatever another module set on the demo company
+        self.company.partner_id.state_id = self.env.ref("base.state_br_sp")
         documents = self._imported(self._xml(KEY_1))
 
         line = documents.fiscal_line_ids
@@ -1301,7 +1304,7 @@ class TestNfeDocumentImport(EdiImportCase):
         self.assertFalse(document.edi_payment_summary)
 
     def test_the_partner_to_register_of_another_reader_is_the_one_of_the_base(self):
-        parsed = self._parsed(KEY_1, reader="cte")
+        parsed = self._parsed(KEY_1, reader="no-module-reads-this")
 
         hint = self.Document._edi_import_partner_hint(parsed)
 
