@@ -41,6 +41,19 @@ class TestViews(EdiImportCase):
         self.assertTrue(views)
         for user in (self._fiscal_user("view-fiscal"), self._buyer()):
             for view in views.filtered(lambda view: view.type in ("form", "tree")):
-                model = self.env[view.model].with_user(user)
+                model = self.env[view.model].with_user(user).with_context(
+                    allowed_company_ids=user.company_ids.ids
+                )
                 arch = model.get_view(view.id)["arch"]
                 self._check_fields(view.model, etree.fromstring(arch))
+
+    def test_the_buttons_of_the_document_are_not_for_one_issued_by_the_company(self):
+        user = self._fiscal_user("button-fiscal")
+        document = self.env["l10n_br_fiscal.document"].with_user(user)
+        arch = document.with_context(allowed_company_ids=user.company_ids.ids).get_view(
+            view_type="form"
+        )["arch"]
+        button = etree.fromstring(arch).xpath(
+            "//button[@name='action_open_origin_match']"
+        )
+        self.assertIn('"issuer", "=", "company"', button[0].get("modifiers"))
