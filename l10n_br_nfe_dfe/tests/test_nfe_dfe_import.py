@@ -2,8 +2,10 @@
 # Copyright 2026 Engenere (<https://engenere.one>).
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
+import ast
 import base64
 import gzip
+import os
 import re
 import zipfile
 from datetime import timedelta
@@ -14,8 +16,11 @@ from unittest import mock
 from xsdata.formats.dataclass.transports import DefaultTransport
 
 from odoo import Command, fields
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
+from odoo.tests import Form
 from odoo.tests.common import TransactionCase
+
+from odoo.addons import l10n_br_nfe
 
 from .test_nfe_dfe import (
     response_sucesso_individual,
@@ -403,3 +408,191 @@ class TestNFeDFeImportByKey(TransactionCase):
         self.assertEqual(dfe_document.manifestations_ids.state, "done")
         self.assertEqual(dfe_document.import_requested_user_id, user)
         self.assertIn("Acknowledgement", dfe_document.message_ids[0].body)
+
+
+class TestNFeDFeInboxAction(TransactionCase):
+    """The import from the inbox as the screen does it: the context of the action
+    of the menu, the button of the record, and each profile."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.company = cls.env.ref("l10n_br_base.empresa_lucro_presumido")
+        cls.env = cls.env(
+            context=dict(cls.env.context, allowed_company_ids=cls.company.ids)
+        )
+        cls.fiscal = cls._user("inbox_fiscal", ["l10n_br_fiscal.group_user"])
+        cls.accountant = cls._user(
+            "inbox_accountant", ["account.group_account_user", "l10n_br_nfe.group_user"]
+        )
+
+    @classmethod
+    def _user(cls, login, groups):
+        return cls.env["res.users"].create(
+            {
+                "name": login,
+                "login": login,
+                "email": f"{login}@example.com",
+                "company_id": cls.company.id,
+                "company_ids": [Command.set(cls.company.ids)],
+                "groups_id": [
+                    Command.set(
+                        [cls.env.ref("base.group_user").id]
+                        + [cls.env.ref(group).id for group in groups]
+                    )
+                ],
+            }
+        )
+
+    def _xml(self):
+        path = os.path.join(
+            l10n_br_nfe.__path__[0],
+            "tests",
+            "nfe",
+            "v4_00",
+            "leiauteNFe",
+            f"NFe{KEY_FIXTURE}.xml",
+        )
+        with open(path, "rb") as xml_file:
+            xml = xml_file.read()
+        xml = re.sub(
+            rb"(<dest>\s*)<(?:CNPJ|CPF)>\d+</(?:CNPJ|CPF)>",
+            rb"\1<CNPJ>%s</CNPJ>" % self.company.partner_id.cnpj_cpf_stripped.encode(),
+            xml,
+        )
+        xml = xml.replace(KEY_FIXTURE.encode(), KEY.encode())
+        return xml.replace(b"<nNF>1</nNF>", b"<nNF>99</nNF>")
+
+    def _record(self, complete):
+        dfe_document = self.env["l10n_br_fiscal_dfe.document"].create(
+            {
+                "access_key": KEY,
+                "company_id": self.company.id,
+                "fiscal_type": "nfe",
+                "document_state": "1",
+            }
+        )
+        dfe = self.env["l10n_br_fiscal_dfe.dfe"].create(
+            {
+                "access_key": KEY,
+                "company_id": self.company.id,
+                "fiscal_type": "nfe",
+                "dfe_document_id": dfe_document.id,
+                "document_type_dfe": "complete" if complete else "summary",
+            }
+        )
+        if complete:
+            dfe.create_xml_attachment(self._xml())
+        return dfe_document
+
+    def _as(self, record, user, action_xmlid="l10n_br_nfe_dfe.action_nfe_dfe_document"):
+        """The record with the context of the action of the menu, for the user."""
+        action = self.env.ref(action_xmlid)
+        context = dict(
+            ast.literal_eval(action.context or "{}"),
+            allowed_company_ids=self.company.ids,
+        )
+        return record.with_user(user).with_context(**context)
+
+    def test_the_inbox_action_carries_the_default_that_used_to_break_the_import(self):
+        action = self.env.ref("l10n_br_nfe_dfe.action_nfe_dfe_document")
+
+        self.assertEqual(ast.literal_eval(action.context)["default_fiscal_type"], "nfe")
+
+    def test_the_complete_record_is_imported_with_the_context_of_the_action(self):
+        for label, user in (
+            ("fiscal", self.fiscal),
+            ("manager", self.env.ref("base.user_admin")),
+        ):
+            with self.subTest(profile=label):
+                record = self._record(complete=True)
+
+                action = self._as(record, user).import_document()
+
+                document = self.env["l10n_br_fiscal.document"].browse(action["res_id"])
+                self.assertEqual(document.document_key, KEY)
+                self.assertNotEqual(document.fiscal_line_ids.fiscal_type, "nfe")
+                self.assertEqual(document.create_uid, user)
+                document.sudo().unlink()
+                record.sudo().unlink()
+
+    def test_the_accountant_without_the_fiscal_group_is_told_who_imports(self):
+        record = self._record(complete=True)
+
+        with self.assertRaisesRegex(UserError, "fiscal users"):
+            self._as(record, self.accountant).import_document()
+
+    def test_the_fiscal_user_sees_the_record_and_its_manifestations(self):
+        record = self._record(complete=False)
+        self.env["l10n_br_nfe.md_event"].create(
+            {
+                "access_key": KEY,
+                "event_type": "ciente",
+                "state": "done",
+                "company_id": self.company.id,
+                "dfe_document_id": record.id,
+            }
+        )
+
+        as_fiscal = self._as(record, self.fiscal)
+
+        Form(as_fiscal)
+        self.assertEqual(as_fiscal.manifestation_status, "ciente")
+        self.assertEqual(len(as_fiscal.manifestations_ids), 1)
+
+    def test_the_summary_asks_the_fiscal_user_to_confirm_the_acknowledgement(self):
+        record = self._record(complete=False)
+
+        action = self._as(record, self.fiscal).import_document()
+
+        wizard = Form(
+            self.env[action["res_model"]]
+            .with_user(self.fiscal)
+            .browse(action["res_id"])
+        )
+        self.assertEqual(wizard.state, "confirm")
+        self.assertIn("ciencia", wizard.confirm_message)
+
+    def test_the_key_typed_is_imported_by_the_fiscal_user_and_not_by_the_accountant(
+        self,
+    ):
+        record = self._record(complete=True)
+
+        for user, allowed in ((self.fiscal, True), (self.accountant, False)):
+            with self.subTest(user=user.login):
+                wizard = self.env["l10n_br_fiscal_edi.document.import.wizard"]
+                wizard = wizard.with_user(user).with_context(
+                    default_fiscal_type="nfe", allowed_company_ids=self.company.ids
+                )
+                if allowed:
+                    action = wizard.create({"access_key": KEY}).action_import()
+                    document = self.env["l10n_br_fiscal.document"].browse(
+                        action["res_id"]
+                    )
+                    self.assertEqual(document.document_key, KEY)
+                    document.sudo().unlink()
+                else:
+                    with self.assertRaises(AccessError):
+                        wizard.create({"access_key": KEY})
+        record.sudo().unlink()
+
+    def test_the_other_inboxes_refuse_a_summary_with_a_message(self):
+        for xmlid, fiscal_type in (
+            ("l10n_br_cte_dfe.action_cte_dfe_document", "cte"),
+            ("l10n_br_nfse_dfe.action_nfse_dfe_document", "nfse"),
+        ):
+            action = self.env.ref(xmlid, raise_if_not_found=False)
+            if not action:
+                continue
+            with self.subTest(inbox=fiscal_type):
+                record = self.env["l10n_br_fiscal_dfe.document"].create(
+                    {
+                        "access_key": "5" * 44,
+                        "company_id": self.company.id,
+                        "fiscal_type": fiscal_type,
+                        "document_state": "1",
+                    }
+                )
+                with self.assertRaises(UserError):
+                    self._as(record, self.fiscal, xmlid).import_document()
+                record.sudo().unlink()
