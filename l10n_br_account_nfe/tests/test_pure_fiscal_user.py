@@ -6,7 +6,7 @@ import re
 
 from lxml import etree
 
-from odoo.tests import tagged
+from odoo.tests import Form, tagged
 
 from odoo.addons import l10n_br_nfe
 from odoo.addons.l10n_br_fiscal_edi.tests.common import KEY_1, EdiImportCase
@@ -73,6 +73,10 @@ class TestPureFiscalUser(EdiImportCase):
         # what the web client does not have in memory it reads again, as the user
         self._reload()
         self._read_the_form(document)
+        self._reload()
+        # edit a field and save, as the form does
+        with Form(document) as form:
+            form.date_in_out = "2026-01-11 09:45:00"
         self._reload()
 
         document.action_document_confirm()
