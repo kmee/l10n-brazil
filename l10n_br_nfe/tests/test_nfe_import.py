@@ -13,6 +13,7 @@ import nfelib
 from nfelib.nfe.bindings.v4_0.leiaute_nfe_v4_00 import TnfeProc
 
 from odoo import fields
+from odoo.exceptions import UserError
 from odoo.models import NewId
 from odoo.tests import TransactionCase
 
@@ -1458,3 +1459,83 @@ class TestNfeOwnNoteImport(EdiImportCase):
 
         self.assertEqual(document.partner_id, issuer)
         self.assertFalse(document.import_partner_warning)
+
+    def test_a_code_that_matches_a_product_enters_resolved_and_a_missing_one_pends(
+        self,
+    ):
+        product = self.env["product.product"].create(
+            {"name": "Registered", "default_code": "ZZ-OWN-1"}
+        )
+
+        document = self._import(self._own_xml())
+
+        matched, missing = document.fiscal_line_ids.sorted("id")
+        self.assertEqual(matched.product_id, product)
+        self.assertEqual(matched.import_state, "resolved")
+        self.assertFalse(missing.product_id)
+        self.assertEqual(missing.import_state, "pending")
+        self.assertEqual(missing._get_partner_product_code(), "ZZ-OWN-2")
+
+    def test_creating_the_missing_products_makes_one_per_code_with_the_file_data(self):
+        product = self.env["product.product"].create(
+            {"name": "Registered", "default_code": "ZZ-OWN-1"}
+        )
+        xml = self._own_xml(
+            replace=[(b"<cEAN>SEM GTIN</cEAN>", b"<cEAN>7891000100103</cEAN>")]
+        )
+        document = self._import(xml)
+        count = self.env["product.product"].search_count([])
+
+        document.action_import_create_products()
+        document.action_import_create_products()
+
+        created = self.env["product.product"].search(
+            [("default_code", "=", "ZZ-OWN-2")]
+        )
+        self.assertEqual(len(created), 1)
+        self.assertEqual(self.env["product.product"].search_count([]), count + 1)
+        self.assertEqual(created.barcode, "7891000100103")
+        self.assertEqual(created.name, "[ZZ-OWN-2] Drawer")
+        self.assertEqual(created.ncm_id.code_unmasked, "94033000")
+        self.assertEqual(created.icms_origin, "5")
+        self.assertEqual(
+            document.fiscal_line_ids.mapped("import_state"), ["resolved", "resolved"]
+        )
+        self.assertIn(product, document.fiscal_line_ids.product_id)
+
+    def test_an_invalid_barcode_of_the_file_is_not_given_to_the_product(self):
+        xml = self._own_xml(
+            replace=[(b"<cEAN>SEM GTIN</cEAN>", b"<cEAN>7891000100104</cEAN>")]
+        )
+        document = self._import(xml)
+
+        document.action_import_create_products()
+
+        created = self.env["product.product"].search(
+            [("default_code", "=", "ZZ-OWN-1")]
+        )
+        self.assertFalse(created.barcode)
+
+    def test_an_unknown_unit_blocks_the_creation_of_the_product(self):
+        xml = self._own_xml(replace=[(b"<uCom>UN</uCom>", b"<uCom>ZZZ</uCom>")])
+        document = self._import(xml)
+
+        result = document.action_import_create_products()
+
+        self.assertEqual(result["tag"], "display_notification")
+        self.assertFalse(document.fiscal_line_ids.product_id)
+        self.assertFalse(
+            self.env["product.product"].search([("default_code", "=", "ZZ-OWN-1")])
+        )
+
+    def test_only_who_can_create_products_is_offered_the_creation(self):
+        user = self._fiscal_user("own_no_product", self.company)
+        document = self._import(self._own_xml())
+
+        as_user = document.with_user(user).with_context(
+            allowed_company_ids=self.company.ids
+        )
+
+        self.assertFalse(as_user.import_can_create_products)
+        with self.assertRaises(UserError):
+            as_user.action_import_create_products()

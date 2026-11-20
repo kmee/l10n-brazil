@@ -3,7 +3,7 @@
 
 # pylint: disable=consider-merging-classes-inherited
 
-from odoo import api, models
+from odoo import api, fields, models
 
 from odoo.addons.l10n_br_fiscal_edi.tools import EDI_IMPORT_NO_CREATE
 
@@ -19,8 +19,27 @@ REGISTRY_MIRROR_KEYS = (
 )
 
 
+def _valid_gtin(code):
+    """A GTIN-8, 12, 13 or 14 whose check digit is right ("SEM GTIN" is not)."""
+    if not code or not code.isdigit() or len(code) not in (8, 12, 13, 14):
+        return False
+    digits = [int(digit) for digit in reversed(code[:-1])]
+    total = sum(
+        digit * (3 if index % 2 == 0 else 1) for index, digit in enumerate(digits)
+    )
+    return (10 - total % 10) % 10 == int(code[-1])
+
+
 class DocumentLine(models.Model):
     _inherit = "l10n_br_fiscal.document.line"
+
+    partner_barcode = fields.Char(
+        string="Barcode Declared by Partner",
+        copy=False,
+        readonly=True,
+        help="Barcode (GTIN) as declared by the counterparty in the imported NF-e, "
+        "when it is a valid one.",
+    )
 
     @api.model
     def _build_attr(self, node, fields, vals, path, attr):
@@ -33,6 +52,8 @@ class DocumentLine(models.Model):
             vals.pop(key, None)
         if key == "nfe40_vProd" and declared is not None:
             vals["partner_price_gross"] = float(declared)
+        elif key in ("nfe40_cEAN", "nfe40_cEANTrib") and _valid_gtin(declared):
+            vals["partner_barcode"] = declared
         elif key == "nfe40_NCM" and declared:
             vals["partner_ncm_code"] = str(declared)
         elif key in ("nfe40_uCom", "nfe40_uTrib") and declared:
@@ -67,6 +88,12 @@ class DocumentLine(models.Model):
 
     def _get_partner_product_name(self):
         return self.nfe40_xProd or super()._get_partner_product_name()
+
+    def _edi_import_product_vals(self):
+        vals = super()._edi_import_product_vals()
+        if self.partner_barcode:
+            vals["barcode"] = self.partner_barcode
+        return vals
 
     def _get_supplierinfo_unit(self, supplierinfo):
         return supplierinfo.partner_uom_id, supplierinfo.partner_uom_factor
