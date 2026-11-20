@@ -1501,7 +1501,7 @@ class TestNfeOwnNoteImport(EdiImportCase):
             {"name": "Registered", "default_code": "ZZ-OWN-1"}
         )
         xml = self._own_xml(
-            replace=[(b"<cEAN>SEM GTIN</cEAN>", b"<cEAN>7891000100103</cEAN>")]
+            replace=[(b"<cEAN>SEM GTIN</cEAN>", b"<cEAN>7891000300121</cEAN>")]
         )
         document = self._import(xml)
         count = self.env["product.product"].search_count([])
@@ -1514,7 +1514,7 @@ class TestNfeOwnNoteImport(EdiImportCase):
         )
         self.assertEqual(len(created), 1)
         self.assertEqual(self.env["product.product"].search_count([]), count + 1)
-        self.assertEqual(created.barcode, "7891000100103")
+        self.assertEqual(created.barcode, "7891000300121")
         self.assertEqual(created.name, "[ZZ-OWN-2] Drawer")
         self.assertEqual(created.ncm_id.code_unmasked, "94033000")
         self.assertEqual(created.icms_origin, "5")
