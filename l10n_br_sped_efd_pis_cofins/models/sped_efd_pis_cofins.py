@@ -7,7 +7,8 @@ import textwrap
 
 from erpbrasil.base import misc
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     SITUACAO_FISCAL_INUTILIZADO,
@@ -106,6 +107,25 @@ def _consolidation_vals(env, declaration, tax_domain):
     }
 
 
+def _check_regime(assessment):
+    """The contribution code (table 4.3.5) and the field of the M200 the detail
+    points at come from the regime of the assessment: without it the register
+    would go out with a blank code, which the PVA refuses."""
+    env = getattr(assessment, "env", None)  # a plain object in a unit test
+    context = env.context if env else {}  # noqa: F841
+    if assessment.regime not in COD_CONT_BY_REGIME:
+        raise UserError(
+            _(
+                "The contribution code (table 4.3.5) of the assessment "
+                "%(assessment)s cannot be determined: its tax group does not "
+                "say the PIS/COFINS regime and the company does not tell it "
+                "(Lucro Real or Presumido). Set the regime in the tax group "
+                "(Accounting > Configuration > Tax groups).",
+                assessment=assessment.display_name,
+            )
+        )
+
+
 def _detail_domain(declaration, tax_domain):
     """Assessed debit lines, which is one per tax and therefore one per rate."""
     return [
@@ -143,8 +163,9 @@ def _detail_vals(record, rate_field, declaration):
     base_amount = (
         round(record.tax_amount / rate * 100, 2) if rate else record.base_amount
     )
+    _check_regime(record.assessment_id)
     vals = {
-        "COD_CONT": COD_CONT_BY_REGIME.get(record.assessment_id.regime, ""),
+        "COD_CONT": COD_CONT_BY_REGIME[record.assessment_id.regime],
         # Gross revenue and tax base are reported as the same amount while the
         # exclusions from the base are not written: inventing a split between
         # them would be worse than stating they were not computed.
@@ -174,6 +195,10 @@ class Registro0000(models.Model):
     _name = "l10n_br_sped.efd_pis_cofins.0000"
     _inherit = ["l10n_br_sped.efd_pis_cofins.6.0000"]
     _odoo_model = "res.company"
+
+    def _get_accountant_required(self):
+        # what the layout marks as mandatory in the 0100 (the descriptor of the PVA)
+        return [("cnpj_cpf", _("CPF")), ("crc_code", _("CRC"))]
 
     IND_ATIV = fields.Selection(
         [
@@ -3001,6 +3026,7 @@ class RegistroM205(models.Model):
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        _check_regime(record)
         return {
             "NUM_CAMPO": NUM_CAMPO_BY_REGIME[record.regime],
             "COD_REC": COD_REC[("pis", record.regime)],
@@ -3367,6 +3393,7 @@ class RegistroM605(models.Model):
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        _check_regime(record)
         return {
             "NUM_CAMPO": NUM_CAMPO_BY_REGIME[record.regime],
             "COD_REC": COD_REC[("cofins", record.regime)],
