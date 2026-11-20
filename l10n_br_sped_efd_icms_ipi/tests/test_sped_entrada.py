@@ -22,6 +22,12 @@ class EntradaHelpers:
         self.assertEqual(len(records), 1)
         return records[0]
 
+    def _opt_in(self, value=True):
+        """The company books its entries by the creditability map."""
+        if "stock_valuation_via_stock_price" not in self.company._fields:
+            self.skipTest("l10n_br_stock_account is not installed")
+        self.company.stock_valuation_via_stock_price = value
+
     def _assess_icms_of_july(self, month=7, post=True):
         """The assessment of the month by the normal path: compute from the ledger,
         post."""

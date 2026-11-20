@@ -152,7 +152,13 @@ class TestDocumentEntryCst(TransactionCase):
         self.assertEqual(tax_map["pis"], "cost")
         self.assertEqual(tax_map["cofins"], "cost")
 
+    def _opt_in(self, company, value=True):
+        if "stock_valuation_via_stock_price" not in company._fields:
+            self.skipTest("l10n_br_stock_account is not installed")
+        company.stock_valuation_via_stock_price = value
+
     def _assert_entry_without_piscofins_credit(self, operation_line, type_move):
+        self._opt_in(self.company_real)
         line = self._document(
             self.company_real,
             fiscal_operation_line_id=self.env.ref(
@@ -174,6 +180,21 @@ class TestDocumentEntryCst(TransactionCase):
         self._assert_entry_without_piscofins_credit(
             "fo_compras_compras_ativo", "purchase_asset"
         )
+
+    def test_entry_cst_of_a_company_that_did_not_opt_in_keeps_the_credit(self):
+        """Its ledger credits PIS and COFINS of use and consumption, so the
+        entry keeps the credit CST and the books match the ledger."""
+        self._opt_in(self.company_real, False)
+        line = self._document(
+            self.company_real,
+            fiscal_operation_line_id=self.env.ref(
+                "l10n_br_fiscal.fo_compras_compras_uso_consumo"
+            ).id,
+        ).fiscal_line_ids
+        self.assertEqual(line.cfop_id.type_move, "purchase_ownuse")
+        self.assertTrue(line.entry_pis_cst_id.default_creditable_tax)
+        self.assertTrue(line.entry_cofins_cst_id.default_creditable_tax)
+        self.assertFalse(line._entry_piscofins_without_credit("pis"))
 
     def test_entry_cst_cumulative_regime_books_70(self):
         line = self._document(self.company_presumed).fiscal_line_ids

@@ -11,10 +11,15 @@ class FiscalDocumentLine(models.Model):
         """An entry without credit right for ``tax_domain``: the CST the books
         carry grants the credit by its nature, but the company may not take it
         (regime, destination by the CFOP, Simples supplier). A CST that already
-        says there is no credit (ICMS 40, IPI 02) is kept as it is."""
+        says there is no credit (ICMS 40, IPI 02) is kept as it is.
+
+        Only for a company whose ledger books the entry the same way
+        (``res.company._books_entry_by_creditability``): any other credits the
+        tax in the ledger, so the books carry the tax of the line."""
         self.ensure_one()
         return (
             bool(cst.default_creditable_tax)
+            and self.company_id._books_entry_by_creditability()
             and self._get_tax_creditability_map()[tax_domain] == "cost"
         )
 

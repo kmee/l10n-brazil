@@ -208,8 +208,9 @@ class DocumentLine(models.Model):
 
     def _get_entry_piscofins_cst(self, tax_domain, tax):
         """Non-cumulative regime: the credit CST of the mapped tax, or 70 when
-        the gates forbid the credit (use and consumption, fixed asset).
-        Cumulative regime (presumed or arbitrated profit): 70. Simples
+        the gates forbid the credit (use and consumption, fixed asset) and the
+        company books its entries by the creditability map, as its ledger
+        does. Cumulative regime (presumed or arbitrated profit): 70. Simples
         Nacional keeps the mapped CST.
 
         It reads the gates, never the creditability map: the map reads this
@@ -221,6 +222,7 @@ class DocumentLine(models.Model):
             return cst
         if company.profit_calculation != PROFIT_CALCULATION_REAL or (
             cst.default_creditable_tax
+            and company._books_entry_by_creditability()
             and self.cfop_id.type_in_out == FISCAL_IN
             and not self._tax_credit_gates_allow(tax_domain)
         ):
