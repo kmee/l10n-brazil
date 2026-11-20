@@ -101,7 +101,7 @@ class Document(models.Model):
         messages = []
         if not self.imported_document:
             return messages
-        if not self.fiscal_operation_id:
+        if self.fiscal_line_ids and not self.fiscal_operation_id:
             messages.append(
                 _(
                     "No fiscal operation matches the CFOP of the document: choose the "

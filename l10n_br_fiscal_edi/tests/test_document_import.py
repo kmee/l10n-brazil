@@ -908,6 +908,13 @@ class TestDocumentImport(EdiImportCase):
         document.fiscal_operation_id = False
         self.assertIn("No fiscal operation", document.import_warning)
 
+    def test_a_document_without_lines_has_no_operation_to_suggest(self):
+        """An MDF-e of the company has no line, so no CFOP to match an operation: the
+        warning that no operation matches the CFOP only makes sense with lines."""
+        document = self._create_imported_document(lines=[], fiscal_operation_id=False)
+        self.assertFalse(document.fiscal_line_ids)
+        self.assertFalse(document.import_warning)
+
     def test_the_review_is_also_a_state_of_the_list(self):
         document = self._create_imported_document()
         self.assertEqual(document.import_state, "pending")
