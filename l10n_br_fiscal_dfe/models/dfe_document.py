@@ -297,8 +297,7 @@ class L10nBrFiscalDfeDocument(models.Model):
         return {
             "type": "ir.actions.act_url",
             "url": (
-                f"/web/content/{zip_attachment.id}"
-                f"/{zip_attachment.name}?download=true"
+                f"/web/content/{zip_attachment.id}/{zip_attachment.name}?download=true"
             ),
             "target": "self",
         }
@@ -326,6 +325,10 @@ class L10nBrFiscalDfeDocument(models.Model):
         """Import the document into the fiscal system: from the complete XML, or,
         when only the summary is here, asking for the XML first."""
         self.ensure_one()
+        if not self.env.user.has_group("l10n_br_fiscal.group_user"):
+            raise UserError(
+                _("Only the fiscal users can import a document from the inbox.")
+            )
         return (
             self.env["l10n_br_fiscal_edi.document.import.wizard"]
             .create({"dfe_document_id": self.id})

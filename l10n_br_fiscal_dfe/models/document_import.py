@@ -9,6 +9,22 @@ class Document(models.Model):
     _inherit = "l10n_br_fiscal.document"
 
     @api.model
+    def _edi_import_files(self, files, dfe_document=None):
+        """The context of the window that asked for the import (the action of the
+        inbox carries default_fiscal_type, a field of the inbox) never reaches the
+        documents and lines that the import creates."""
+        clean = {
+            key: value
+            for key, value in self.env.context.items()
+            if not key.startswith("default_")
+        }
+        # replaces the whole context on purpose: a key cannot be removed otherwise
+        documents = self.with_context(clean)  # pylint: disable=context-overridden
+        return super(Document, documents)._edi_import_files(
+            files, dfe_document=dfe_document
+        )
+
+    @api.model
     def _edi_import_file(self, name, content, dfe_document=None):
         document, created = super()._edi_import_file(
             name, content, dfe_document=dfe_document
