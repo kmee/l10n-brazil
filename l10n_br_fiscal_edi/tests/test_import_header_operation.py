@@ -109,3 +109,14 @@ class TestImportHeaderOperation(EdiImportCase):
         self.assertEqual(document.state_edoc, "autorizada")
         self.assertAlmostEqual(document.amount_financial_total, 100.0)
         self.assertAlmostEqual(document.fiscal_amount_total, 100.0)
+
+    def test_a_line_whose_cfop_matches_no_operation_line_still_adds_to_the_total(self):
+        """A CT-e has a CFOP that no line of the operation answers and no product to
+        pick one: the best approved line of the operation stands."""
+        document = self._declared_document()
+        cfop = self.env["l10n_br_fiscal.cfop"].search([("code", "=", "5352")], limit=1)
+        self.assertTrue(cfop)
+        document.fiscal_line_ids.partner_cfop_id = cfop
+        self._choose_operation(document, self.env.ref("l10n_br_fiscal.fo_compras"))
+        self.assertTrue(document.fiscal_line_ids.fiscal_operation_line_id)
+        self.assertAlmostEqual(document.amount_financial_total, 100.0)

@@ -511,8 +511,9 @@ class Document(models.Model):
             elif document.fiscal_operation_type == FISCAL_OUT:
                 document._edi_import_apply_own_products()
             for line in document.fiscal_line_ids.filtered(
-                lambda line: line.import_state == "matched"
-                and line._import_unit_unconfirmed()
+                lambda line: (
+                    line.import_state == "matched" and line._import_unit_unconfirmed()
+                )
             ):
                 line.import_state = "pending"
 
@@ -561,6 +562,18 @@ class Document(models.Model):
             line.fiscal_operation_id = (
                 operation_line.fiscal_operation_id or self.fiscal_operation_id
             )
+            if not operation_line:
+                # No line answers the CFOP of the file (a CT-e, for instance) and
+                # the line has no product to pick one: the best approved line of
+                # the operation stands, or the line would add nothing to the total.
+                operation_line = (
+                    line.fiscal_operation_line_id
+                    or line.fiscal_operation_id._select_best_line(
+                        line.fiscal_operation_id.line_ids.filtered(
+                            lambda op_line: op_line.state == "approved"
+                        )
+                    )
+                )
             if operation_line:
                 line.fiscal_operation_line_id = operation_line
 
@@ -575,8 +588,9 @@ class Document(models.Model):
                 self.fiscal_operation_type,
             )
             for line in self.fiscal_line_ids.filtered(
-                lambda line: not line.fiscal_operation_line_id
-                and not line.fiscal_operation_id
+                lambda line: (
+                    not line.fiscal_operation_line_id and not line.fiscal_operation_id
+                )
             )
         }
 
