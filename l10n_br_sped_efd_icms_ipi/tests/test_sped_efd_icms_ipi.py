@@ -144,7 +144,7 @@ class SpedTest(common.TransactionCase):
             {
                 "code": "RJ000001",
                 "name": "Desoneracao de teste",
-                "sped_cod_aj": "RJ999999",
+                "sped_cod_aj": "RJ99999999",
             }
         )
         line.icms_relief_id = relief
@@ -160,5 +160,5 @@ class SpedTest(common.TransactionCase):
             [("declaration_id", "=", declaration.id)]
         )
         self.assertTrue(c197, "No C197 register generated for the adjustment")
-        self.assertIn("RJ999999", c197.mapped("COD_AJ"))
+        self.assertIn("RJ99999999", c197.mapped("COD_AJ"))
         self.assertNotIn("SP12345678", c197.mapped("COD_AJ"))
