@@ -11,6 +11,8 @@ class TestAutXml(TransactionCase):
         super().setUpClass()
         cls.partner = cls.env["res.partner"].create({"name": "AutXML Partner"})
         cls.document = cls.env.ref("l10n_br_cte.demo_cte_lc_modal_rodoviario")
+        # each test authorizes its own partners: no demo accountant
+        cls.document.company_id.accountant_id = False
 
     def _authorize(self, document, partner):
         document.cte40_autXML = [Command.create({"partner_id": partner.id})]

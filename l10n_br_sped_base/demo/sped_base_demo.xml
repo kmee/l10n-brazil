@@ -12,7 +12,7 @@
         <field name="name">Contador de Demonstracao</field>
         <field name="is_company" eval="False" />
         <field name="is_accountant" eval="True" />
-        <field name="cnpj_cpf">111.444.777-35</field>
+        <field name="cnpj_cpf">730.144.582-28</field>
         <field name="crc_code">1SP123456/O-0</field>
         <field name="crc_state_id" ref="base.state_br_sp" />
         <field name="zip">01311-000</field>
