@@ -41,6 +41,9 @@ class Document(models.Model):
         """Create the vendor bill of an imported document. The payables are born
         with it, not with the import."""
         self.ensure_one()
+        # the invoice is born in the company of the document, whichever the user
+        # has selected
+        self = self.with_company(self.company_id)
         if not self.env["account.move"].check_access_rights(
             "create", raise_exception=False
         ):

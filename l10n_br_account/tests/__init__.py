@@ -14,3 +14,4 @@ from . import test_deductible_balance
 from . import test_document_line_name
 from . import test_imported_move_terms
 from . import test_fiscal_user_and_imported_dates
+from . import test_payment_term_on_saved_draft

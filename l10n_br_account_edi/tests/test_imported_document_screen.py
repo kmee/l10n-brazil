@@ -247,3 +247,19 @@ class TestImportedDocumentScreen(AccountEdiCase):
 
         self.assertEqual(document.state_edoc, "autorizada")
         self.assertEqual(document.date_in_out.hour, 9)
+
+    def test_the_invoice_is_born_in_the_company_of_the_document(self):
+        other = self.company_data_2["company"]
+        document = self._imported_document()
+        self.assertNotEqual(other, document.company_id)
+
+        # the user has both companies and the other one is the selected
+        document = document.with_context(
+            allowed_company_ids=[other.id, document.company_id.id]
+        )
+        self.assertEqual(document.env.company, other)
+        move = self.env["account.move"].browse(
+            document.action_generate_invoice()["res_id"]
+        )
+
+        self.assertEqual(move.company_id, document.company_id)
