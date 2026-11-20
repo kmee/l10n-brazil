@@ -8,6 +8,10 @@ import nfelib
 
 from odoo.addons.l10n_br_fiscal_edi.tests.common import EdiImportCase
 from odoo.addons.l10n_br_mdfe.models.document_import import Document as MdfeReader
+from odoo.addons.l10n_br_mdfe.models.res_city import ResCity
+from odoo.addons.l10n_br_mdfe.models.res_company import ResCompany
+from odoo.addons.l10n_br_mdfe.models.res_country_state import ResCountryState
+from odoo.addons.l10n_br_mdfe.models.res_partner import ResPartner
 
 MDFE_SAMPLE = os.path.join(
     os.path.dirname(nfelib.__file__),
@@ -156,6 +160,35 @@ class TestMdfeDocumentImport(EdiImportCase):
                 )
             read = MdfeReader._edi_import_read(self.Document, "a.xml", mdfe_xml())
         self.assertEqual(read.reader, "mdfe")
+
+    def test_the_overrides_of_the_mdfe_act_only_on_the_mdfe_schema(self):
+        """The import dictionaries of another schema (NF-e, CT-e) go to the next
+        override of the chain, never to the rules of the MDF-e."""
+        cases = (
+            (ResCity, "res.city", "match_or_create_m2o", ({"ibge_code": "1"}, {})),
+            (
+                ResCountryState,
+                "res.country.state",
+                "match_or_create_m2o",
+                ({"code": "SP"}, {}),
+            ),
+            (ResCompany, "res.company", "_prepare_import_dict", ({"x": 1},)),
+            (ResPartner, "res.partner", "_prepare_import_dict", ({"x": 1},)),
+        )
+        checked = 0
+        for cls, model_name, method, args in cases:
+            model = self.env[model_name].with_context(spec_schema="other")
+            mro = type(model).__mro__
+            following = next(
+                (base for base in mro[mro.index(cls) + 1 :] if method in vars(base)),
+                None,
+            )
+            if following is None:
+                continue  # nothing of another schema can reach this override
+            checked += 1
+            with patch.object(following, method, return_value="next"):
+                self.assertEqual(getattr(cls, method)(model, *args), "next", cls)
+        self.assertGreaterEqual(checked, 2)
 
     def test_the_company_is_the_issuer_of_the_mdfe(self):
         parsed = self.Document._edi_import_read("a.xml", mdfe_xml(emitter=LUCRO_REAL))
