@@ -117,7 +117,7 @@ class FiscalDocumentLine(models.Model):
                     line.price_unit,
                     line.company_id.currency_id,
                     line.document_id.document_date or fields.Date.context_today(line),
-                    line.document_id.move_ids,
+                    line.document_id.sudo().move_ids,
                 )
             line.import_ordered_qty = values["ordered"]
             line.import_received_qty = values["received"]
