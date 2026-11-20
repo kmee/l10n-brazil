@@ -436,6 +436,10 @@ class ResPartner(spec_models.SpecModel):
 
     @api.model
     def match_or_create_m2o(self, rec_dict, parent_dict, model=None):
+        schema = self.env.context.get("spec_schema")
+        if schema and schema != "cte":
+            # another schema (the NF-e, when it is loaded after this module)
+            return super().match_or_create_m2o(rec_dict, parent_dict, model)
         if model is not None and model != self:
             return False
 

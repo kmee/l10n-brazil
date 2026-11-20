@@ -1,6 +1,8 @@
 # Copyright 2024 - TODAY, Marcel Savegnago <marcel.savegnago@escodoo.com.br>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+from unittest import mock
+
 from erpbrasil.base.fiscal import cnpj_cpf
 from erpbrasil.base.misc import format_zipcode
 
@@ -62,3 +64,33 @@ class TestCTeResPartner(TransactionCase):
 
         self.partner_id.cte40_xBairro = "TESTE"
         self.assertEqual(self.partner_id.district, self.partner_id.cte40_xBairro)
+
+
+class TestCTeMatchOfPartner(TransactionCase):
+    """The matching of the CT-e answers only for the CT-e."""
+
+    def test_a_dictionary_of_another_schema_goes_to_the_next_in_the_chain(self):
+        calls = []
+
+        def following(model, rec_dict, parent_dict, model_=None):
+            calls.append((rec_dict, parent_dict))
+            return 42
+
+        partner = self.env["res.partner"].with_context(spec_schema="xyz")
+        chain = type(partner).__mro__
+        mine = next(
+            index
+            for index, cls in enumerate(chain)
+            if cls.__module__ == "odoo.addons.l10n_br_cte.models.res_partner"
+            and "match_or_create_m2o" in cls.__dict__
+        )
+        following_class = next(
+            cls for cls in chain[mine + 1 :] if "match_or_create_m2o" in cls.__dict__
+        )
+        with mock.patch.object(following_class, "match_or_create_m2o", following):
+            result = partner.match_or_create_m2o(
+                {"xyz40_CNPJ": "1"}, {"cte40_CNPJ": "2"}
+            )
+
+        self.assertEqual(result, 42)
+        self.assertEqual(calls, [({"xyz40_CNPJ": "1"}, {"cte40_CNPJ": "2"})])
