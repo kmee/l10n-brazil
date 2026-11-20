@@ -148,8 +148,9 @@ class FiscalDocument(models.Model):
     @api.depends("issuer", "move_ids.invoice_date")
     def _compute_document_date(self):
         for record in self:
-            if record.move_ids and record.issuer == DOCUMENT_ISSUER_PARTNER:
-                move_id = record.move_ids[0]
+            moves = record.sudo().move_ids
+            if record.issuer == DOCUMENT_ISSUER_PARTNER and moves:
+                move_id = moves[0]
                 if move_id.invoice_date:
                     user_tz = timezone(self.env.user.tz or "UTC")
                     doc_date = datetime.combine(move_id.invoice_date, time.min)
@@ -159,16 +160,18 @@ class FiscalDocument(models.Model):
 
     def _inverse_document_date(self):
         for record in self:
-            if record.move_ids and record.issuer == DOCUMENT_ISSUER_PARTNER:
-                move_id = record.move_ids[0]
+            moves = record.sudo().move_ids
+            if record.issuer == DOCUMENT_ISSUER_PARTNER and moves:
+                move_id = moves[0]
                 if record.document_date:
                     move_id.invoice_date = record.document_date.date()
 
     @api.depends("issuer", "move_ids.date")
     def _compute_date_in_out(self):
         for record in self:
-            if record.move_ids and record.issuer == DOCUMENT_ISSUER_PARTNER:
-                move_id = record.move_ids[0]
+            moves = record.sudo().move_ids
+            if record.issuer == DOCUMENT_ISSUER_PARTNER and moves:
+                move_id = moves[0]
                 if move_id.date:
                     user_tz = timezone(self.env.user.tz or "UTC")
                     doc_date = datetime.combine(move_id.date, time.min)
@@ -178,8 +181,9 @@ class FiscalDocument(models.Model):
 
     def _inverse_date_in_out(self):
         for record in self:
-            if record.move_ids and record.issuer == DOCUMENT_ISSUER_PARTNER:
-                move_id = record.move_ids[0]
+            moves = record.sudo().move_ids
+            if record.issuer == DOCUMENT_ISSUER_PARTNER and moves:
+                move_id = moves[0]
                 if record.date_in_out:
                     move_id.date = record.date_in_out.date()
 
@@ -324,9 +328,14 @@ class FiscalDocument(models.Model):
 
     def action_document_confirm(self):
         result = super().action_document_confirm()
-        if not self._context.get("skip_post"):
+        # who has no right on the invoices confirms the document and leaves the
+        # posting of its invoice to who has
+        if not self._context.get("skip_post") and self.env[
+            "account.move"
+        ].check_access_rights("read", raise_exception=False):
             move_ids = self.move_ids.filtered(lambda move: move.state == "draft")
-            move_ids._post()
+            if move_ids:
+                move_ids._post()
         return result
 
     def action_document_back2draft(self):
