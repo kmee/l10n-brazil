@@ -161,3 +161,15 @@ class TestOwnNoteInvoice(TransactionCase):
 
         self.assertTrue(invoice_pdf.startswith(b"%PDF"))
         self.assertTrue(document_pdf.startswith(b"%PDF"))
+
+        # the PDF of the document, asked by its button, is kept on the document
+        # and is the same at every view, whatever was printed from the invoice
+        self.assertFalse(document.file_report_id)
+        document.with_context(bin_size=True).view_pdf()
+        pdf = document.file_report_id
+        self.assertTrue(pdf)
+        content = pdf.with_context(bin_size=False).raw
+        report._render_qweb_pdf("main_template_danfe_account", move.ids)
+        document.with_context(bin_size=True).view_pdf()
+        self.assertEqual(document.file_report_id, pdf)
+        self.assertEqual(pdf.with_context(bin_size=False).raw, content)
