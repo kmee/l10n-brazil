@@ -1,7 +1,7 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import _, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
@@ -12,6 +12,29 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
 
 class Document(models.Model):
     _inherit = "l10n_br_fiscal.document"
+
+    edi_can_generate_invoice = fields.Boolean(
+        compute="_compute_edi_can_generate_invoice",
+        help="An imported document that was reviewed, has lines and an amount to "
+        "pay, and has no invoice yet. It is not stored.",
+    )
+
+    @api.depends(
+        "imported_document",
+        "import_state",
+        "move_ids",
+        "fiscal_line_ids",
+        "amount_financial_total",
+    )
+    def _compute_edi_can_generate_invoice(self):
+        for document in self:
+            document.edi_can_generate_invoice = bool(
+                document.imported_document
+                and document.import_state == "resolved"
+                and document.fiscal_line_ids
+                and document.amount_financial_total
+                and not document.move_ids
+            )
 
     def action_generate_invoice(self):
         """Create the vendor bill of an imported document. The payables are born
@@ -26,6 +49,20 @@ class Document(models.Model):
                     "Billing group. Ask a user that has them."
                 )
             )
+        if not self.fiscal_operation_id:
+            raise UserError(
+                _(
+                    "The document has no fiscal operation. Choose it in the header "
+                    "of the document before generating the invoice."
+                )
+            )
+        if not self.partner_id:
+            raise UserError(
+                _(
+                    "The document has no partner. Choose it before generating the "
+                    "invoice."
+                )
+            )
         pending = self.fiscal_line_ids.filtered(
             lambda line: line.import_state != "resolved"
         )
@@ -35,9 +72,15 @@ class Document(models.Model):
                 % "\n".join(f"- {line.name}" for line in pending)
             )
         self._check_document_import()
-        move_form = self.env["account.move"].import_fiscal_document(
-            self, move_type=f"{self.fiscal_operation_type}_invoice"
-        )
+        try:
+            move_form = self.env["account.move"].import_fiscal_document(
+                self, move_type=f"{self.fiscal_operation_type}_invoice"
+            )
+        except AssertionError as error:
+            # the form of the invoice refuses what it requires or hides
+            raise UserError(
+                _("The invoice could not be created from this document: %s") % error
+            ) from error
         return {
             "name": _("Invoice"),
             "type": "ir.actions.act_window",
@@ -51,6 +94,10 @@ class Document(models.Model):
     def _edi_draft_move(self):
         """The draft invoice that will issue this document, if there is one."""
         self.ensure_one()
+        if not self.env["account.move"].check_access_rights(
+            "read", raise_exception=False
+        ):
+            return self.env["account.move"]
         if (
             self.issuer == DOCUMENT_ISSUER_COMPANY
             and not self.imported_document
