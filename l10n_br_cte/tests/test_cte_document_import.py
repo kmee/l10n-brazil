@@ -3,6 +3,7 @@
 
 import re
 from datetime import date
+from unittest.mock import patch
 
 from odoo.tools import file_open
 
@@ -393,6 +394,45 @@ class TestCteDocumentImport(EdiImportCase):
                 [("partner_id", "=", documents.partner_id.id)]
             )
         )
+
+    def _confirmed(self, content):
+        documents, errors, _warnings = self._import(content, operation=True)
+        self.assertFalse(errors)
+        documents.fiscal_line_ids.write({"product_id": self._freight().id})
+        documents.fiscal_line_ids.action_resolve_line()
+        documents.action_document_confirm()
+        return documents
+
+    def test_the_dacte_of_an_imported_cte_is_printed_from_the_original_xml(self):
+        for content in (
+            cte_xml(recipient="12345678000195", emitter=LUCRO_PRESUMIDO, status="100"),
+            cte_xml(status="100"),
+        ):
+            self.Document.search([("document_key", "=", CTE_KEY)]).write(
+                {"state_edoc": "em_digitacao"}
+            )
+            self.Document.search([("document_key", "=", CTE_KEY)]).unlink()
+            documents = self._confirmed(content)
+            original = documents.original_xml_file_id.raw
+            self.assertFalse(documents.file_report_id)
+            self.assertFalse(documents.authorization_file_id)
+            with patch(
+                "odoo.addons.mail.models.mail_template.MailTemplate.send_mail"
+            ) as send_mail:
+                action = documents.view_pdf()
+            self.assertFalse(send_mail.called)
+            self.assertEqual(action["type"], "ir.actions.act_url")
+            self.assertTrue(documents.file_report_id.raw.startswith(b"%PDF"))
+            self.assertEqual(documents.original_xml_file_id.raw, original)
+            self.assertFalse(documents.authorization_file_id)
+
+    def test_confirming_an_imported_cte_prints_and_sends_nothing(self):
+        mails = self.env["mail.mail"].search_count([])
+        documents = self._confirmed(
+            cte_xml(recipient="12345678000195", emitter=LUCRO_PRESUMIDO, status="100")
+        )
+        self.assertFalse(documents.file_report_id)
+        self.assertEqual(self.env["mail.mail"].search_count([]), mails)
 
     def test_a_cte_where_the_company_is_issuer_and_taker_enters_as_the_taker(self):
         content = cte_xml(taker=LUCRO_PRESUMIDO, emitter=LUCRO_PRESUMIDO)
