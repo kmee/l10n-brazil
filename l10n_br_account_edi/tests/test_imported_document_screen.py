@@ -169,3 +169,38 @@ class TestImportedDocumentScreen(AccountEdiCase):
         button = arch.xpath("//button[@name='action_generate_invoice']")
 
         self.assertIn("edi_can_generate_invoice", button[0].get("modifiers"))
+
+    def _financial_total_zeroed(self, document):
+        """What the operation does to some imported documents: the financial total
+        of the document is stored as zero, while the lines carry the amounts."""
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE l10n_br_fiscal_document SET amount_financial_total = 0 "
+            "WHERE id = %s",
+            (document.id,),
+        )
+        document.invalidate_recordset(["amount_financial_total"])
+        self.assertFalse(document.amount_financial_total)
+        return document
+
+    def test_the_invoice_is_offered_to_a_received_document_with_an_operation(self):
+        document = self._financial_total_zeroed(self._imported_document())
+
+        self.assertTrue(document.edi_can_generate_invoice)
+
+    def test_the_invoice_is_offered_to_a_received_document_without_an_operation(self):
+        document = self._imported_document()
+        document.fiscal_operation_id = False
+
+        self.assertTrue(document.edi_can_generate_invoice)
+
+    def test_the_invoice_is_offered_to_an_own_document(self):
+        document = self._financial_total_zeroed(self._own_imported_document())
+
+        self.assertTrue(document.edi_can_generate_invoice)
+
+    def test_the_invoice_is_offered_to_an_own_document_without_an_operation(self):
+        document = self._own_imported_document()
+        document.fiscal_operation_id = False
+
+        self.assertTrue(document.edi_can_generate_invoice)
