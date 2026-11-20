@@ -19,3 +19,4 @@ from . import test_autxml
 from . import test_nfe_additional_info
 from . import test_nfe_edi_set
 from . import test_nfe_lots
+from . import test_nfe_import_datetime
