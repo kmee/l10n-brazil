@@ -16,15 +16,15 @@
         action="document_import_wizard_action"
         name="Import Fiscal Document"
         groups="l10n_br_fiscal.group_user"
-        parent="l10n_br_fiscal.document_sub_menu"
-        sequence="60"
+        parent="l10n_br_fiscal.document_menu"
+        sequence="30"
     />
     <menuitem
         id="imported_document_menu"
         action="imported_document_action"
         name="Imported Documents"
         groups="l10n_br_fiscal.group_user"
-        parent="l10n_br_fiscal.document_sub_menu"
-        sequence="61"
+        parent="l10n_br_fiscal.document_menu"
+        sequence="31"
     />
 </odoo>

@@ -20,13 +20,24 @@
             <xpath expr="//form/header" position="inside">
                 <field name="import_can_create_products" invisible="1" />
                 <field name="imported_document" invisible="1" />
+                <field name="import_missing_products" invisible="1" />
                 <button
                     name="action_import_create_products"
                     type="object"
                     string="Create Missing Products"
                     groups="l10n_br_fiscal.group_user"
-                    attrs="{'invisible': ['|', '|', ('imported_document', '=', False), ('fiscal_operation_type', '!=', 'out'), ('import_can_create_products', '=', False)]}"
+                    attrs="{'invisible': ['|', '|', '|', ('imported_document', '=', False), ('fiscal_operation_type', '!=', 'out'), ('import_can_create_products', '=', False), ('import_missing_products', '=', False)]}"
                 />
+            </xpath>
+            <xpath expr="//form/header" position="inside">
+                <button
+                    name="action_import_check_partners_again"
+                    type="object"
+                    string="Check Partners Again"
+                    groups="l10n_br_fiscal.group_user"
+                    attrs="{'invisible': [('import_partner_checked', '=', False)]}"
+                />
+                <field name="import_partner_checked" invisible="1" />
             </xpath>
             <xpath expr="//form/sheet" position="before">
                 <div
@@ -68,6 +79,27 @@
                 >
                     <field name="edi_payment_summary" nolabel="1" readonly="1" />
                 </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- A document that was imported is confirmed like any other, once its lines were
+         reviewed. The NF-e hides the button of an imported document, from when the import
+         left the document ready; this view comes after every view of the form (priority) and
+         gives it back, whatever the module that hid it. -->
+    <record id="document_form_import_confirm" model="ir.ui.view">
+        <field name="name">l10n_br_fiscal_edi.document.form.import.confirm</field>
+        <field name="model">l10n_br_fiscal.document</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.document_form" />
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <xpath
+                expr="//header/button[@name='action_document_confirm']"
+                position="attributes"
+            >
+                <attribute
+                    name="attrs"
+                >{'invisible': [('state_edoc', '!=', 'em_digitacao')]}</attribute>
             </xpath>
         </field>
     </record>
