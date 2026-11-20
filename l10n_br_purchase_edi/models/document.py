@@ -5,6 +5,11 @@ from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 from odoo.tools.safe_eval import safe_eval
 
+from odoo.addons.l10n_br_fiscal.constants.fiscal import (
+    DOCUMENT_ISSUER_PARTNER,
+    DOCUMENT_STATE_DRAFT,
+)
+
 
 class FiscalDocument(models.Model):
     _inherit = "l10n_br_fiscal.document"
@@ -14,6 +19,21 @@ class FiscalDocument(models.Model):
         help="Technical: some line of the imported document has an origin "
         "suggestion waiting for confirmation.",
     )
+
+    edi_can_match_orders = fields.Boolean(
+        compute="_compute_edi_can_match_orders",
+        help="Technical: a purchase document imported from a partner and still in "
+        "draft, the only kind that has an origin to choose.",
+    )
+
+    @api.depends("imported_document", "state_edoc", "issuer")
+    def _compute_edi_can_match_orders(self):
+        for document in self:
+            document.edi_can_match_orders = bool(
+                document.imported_document
+                and document.state_edoc == DOCUMENT_STATE_DRAFT
+                and document.issuer == DOCUMENT_ISSUER_PARTNER
+            )
 
     @api.depends("imported_document", "fiscal_line_ids.import_origin_state")
     def _compute_has_suggested_import_origin(self):

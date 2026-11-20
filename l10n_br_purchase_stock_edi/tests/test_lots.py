@@ -102,3 +102,51 @@ class TestLots(StockEdiCase):
         self.assertEqual(
             sorted(self.move.move_line_ids.mapped("lot_name")), ["L-A", "L-B"]
         )
+
+    def _user(self, login, *xmlids):
+        company = self.company
+        return self.env["res.users"].create(
+            {
+                "name": login,
+                "login": login,
+                "company_id": company.id,
+                "company_ids": [(6, 0, company.ids)],
+                "groups_id": [
+                    (6, 0, [self.env.ref(x).id for x in ("base.group_user",) + xmlids])
+                ],
+            }
+        )
+
+    def test_a_storekeeper_without_fiscal_or_nfe_groups_proposes_the_lots(self):
+        self._lots()
+        user = self._user("storekeeper", "stock.group_stock_user")
+        picking = self.order.picking_ids.with_user(user).with_context(
+            allowed_company_ids=user.company_ids.ids
+        )
+
+        self.assertTrue(picking.show_propose_lots_from_import)
+        picking.action_propose_lots_from_import()
+
+        self.assertEqual(
+            sorted(self.move.move_line_ids.mapped("lot_name")), ["L-A", "L-B"]
+        )
+
+    def test_a_buyer_without_fiscal_or_nfe_groups_opens_the_receipt_with_the_lots(
+        self,
+    ):
+        self._lots()
+        user = self._user(
+            "buyer-open-receipt",
+            "purchase.group_purchase_user",
+            "stock.group_stock_user",
+        )
+        rows = self._rows(fiscal_document_id=self.document.id).with_user(user)
+
+        action = rows.with_context(
+            allowed_company_ids=user.company_ids.ids
+        ).action_open_receipt()
+
+        self.assertEqual(action["res_id"], self.order.picking_ids.id)
+        self.assertEqual(
+            sorted(self.move.move_line_ids.mapped("lot_name")), ["L-A", "L-B"]
+        )

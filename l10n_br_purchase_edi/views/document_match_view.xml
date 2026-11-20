@@ -46,10 +46,27 @@
                 <field name="open_quantity" />
                 <field name="price_unit" />
                 <field
+                    name="note_quantity"
+                    attrs="{'invisible': [('kind', '=', 'note')]}"
+                />
+                <field
+                    name="note_price_unit"
+                    attrs="{'invisible': [('kind', '=', 'note')]}"
+                />
+                <field
+                    name="quantity_difference"
+                    attrs="{'invisible': [('kind', '=', 'note')]}"
+                />
+                <field
                     name="price_difference"
-                    attrs="{'invisible': [('kind', '!=', 'quote')]}"
+                    attrs="{'invisible': [('kind', '=', 'note')]}"
+                />
+                <field
+                    name="price_difference_percent"
+                    attrs="{'invisible': [('kind', '=', 'note')]}"
                 />
                 <field name="line_state" widget="badge" />
+                <field name="hint" optional="show" />
                 <field
                     name="suggested_purchase_line_id"
                     groups="purchase.group_purchase_user"

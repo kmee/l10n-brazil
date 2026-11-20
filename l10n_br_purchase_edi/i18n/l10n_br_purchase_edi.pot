@@ -6,14 +6,13 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 21:45+0000\n"
-"PO-Revision-Date: 2026-11-19 21:45+0000\n"
+"POT-Creation-Date: 2026-11-20 10:25+0000\n"
+"PO-Revision-Date: 2026-11-20 10:25+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
-"Language: pt_BR\n"
 "Plural-Forms: \n"
 
 #. module: l10n_br_purchase_edi
@@ -31,6 +30,13 @@ msgstr ""
 #: code:addons/l10n_br_purchase_edi/models/document_match.py:0
 #, python-format
 msgid "%(count)s line(s) marked as without purchase order."
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_edi/models/document_match.py:0
+#, python-format
+msgid "%s possible order lines: choose one"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
@@ -128,6 +134,11 @@ msgid "Has Suggested Import Origin"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__hint
+msgid "Hint"
+msgstr ""
+
+#. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__id
 msgid "ID"
 msgstr ""
@@ -189,6 +200,16 @@ msgstr ""
 msgid ""
 "Not linked to the purchase order, the quantity does not fit in what is left "
 "of the order line: %s"
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__note_price_unit
+msgid "Note Price Unit"
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__note_quantity
+msgid "Note Quantity"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
@@ -275,6 +296,26 @@ msgid "Price Difference"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__price_difference_percent
+msgid "Price Difference Percent"
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model:ir.model.fields,help:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__note_price_unit
+msgid ""
+"Price of the line of the document being matched (context) for the same "
+"product, in the unit of this row."
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model:ir.model.fields,help:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__price_difference
+msgid ""
+"Price of the order line or quotation less the price of the line of the "
+"document being matched (context) for the same product, in the unit of the "
+"row."
+msgstr ""
+
+#. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__product_id
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_search
 msgid "Product"
@@ -313,6 +354,23 @@ msgid "Quantity"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__quantity_difference
+msgid "Quantity Difference"
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model:ir.model.fields,help:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__quantity_difference
+msgid "Quantity of the document less the balance of the order line."
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model:ir.model.fields,help:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__note_quantity
+msgid ""
+"Quantity of the line of the document being matched (context) for the same "
+"product, in the unit of this row."
+msgstr ""
+
+#. module: l10n_br_purchase_edi
 #: model:ir.model.fields.selection,name:l10n_br_purchase_edi.selection__l10n_br_purchase_edi_match__kind__quote
 msgid "Quotation"
 msgstr ""
@@ -320,13 +378,6 @@ msgstr ""
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields.selection,name:l10n_br_purchase_edi.selection__l10n_br_purchase_edi_match__line_state__sent
 msgid "Quotation Sent"
-msgstr ""
-
-#. module: l10n_br_purchase_edi
-#: model:ir.model.fields,help:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__price_difference
-msgid ""
-"Quotation price less the price of the line of the document being matched "
-"(context) for the same product, in the unit of the quotation."
 msgstr ""
 
 #. module: l10n_br_purchase_edi
@@ -492,6 +543,11 @@ msgid "The order line is of another company or of another supplier."
 msgstr ""
 
 #. module: l10n_br_purchase_edi
+#: model:ir.model.fields,help:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__price_difference_percent
+msgid "The price difference as a percentage of the price of the document."
+msgstr ""
+
+#. module: l10n_br_purchase_edi
 #. odoo-python
 #: code:addons/l10n_br_purchase_edi/models/document_match.py:0
 #, python-format
@@ -531,6 +587,11 @@ msgstr ""
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__uom_id
 msgid "Unit"
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model:ir.model.fields,help:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__hint
+msgid "Why the line of the document has no suggestion yet."
 msgstr ""
 
 #. module: l10n_br_purchase_edi
