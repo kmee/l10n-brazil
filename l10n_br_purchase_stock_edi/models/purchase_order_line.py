@@ -14,15 +14,16 @@ class PurchaseOrderLine(models.Model):
         an origin). The done ones count only while what was received is not yet
         invoiced; otherwise the receipt still to come is the candidate."""
         self.ensure_one()
-        moves = self.sudo().move_ids.filtered(
+        line = self.sudo()
+        moves = line.move_ids.filtered(
             lambda move: move.picking_type_id.code == "incoming"
             and move.state != "cancel"
         )
         done = moves.filtered(lambda move: move.state == "done")
         not_invoiced = float_compare(
-            self.qty_received - self.qty_invoiced,
+            line.qty_received - line.qty_invoiced,
             0.0,
-            precision_rounding=self.product_uom.rounding,
+            precision_rounding=line.product_uom.rounding,
         )
         return done if done and not_invoiced > 0 else moves - done
 
