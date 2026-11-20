@@ -294,6 +294,60 @@ class TestDocumentImport(EdiImportCase):
         self._check_partners(document, EdiPartnerData(role="issuer", name="Whoever"))
         self.assertIn("matched by name", document.import_partner_warning)
 
+    def test_the_company_itself_is_not_compared_with_the_file(self):
+        document = self._create_imported_document()
+        own = self.company.partner_id
+        data = EdiPartnerData(role="issuer", vat="1", name="Another name entirely")
+        self._check_partners(document, data, partner=own)
+        self.assertFalse(document.import_partner_warning)
+
+    def test_viewing_the_pdf_again_does_not_regenerate_it(self):
+        """The imported document has only the XML it came with, and an issued one has
+        the authorization file: either way the second click opens the same PDF."""
+        for imported in (True, False):
+            document = self._create_imported_document(imported_document=imported)
+            xml = self.env["ir.attachment"].create({"name": "a.xml", "raw": b"<a/>"})
+            if imported:
+                document.original_xml_file_id = xml
+            else:
+                serie = self.env["l10n_br_fiscal.document.serie"].create(
+                    {
+                        "code": "8",
+                        "name": "Series of the pdf",
+                        "company_id": self.company.id,
+                        "document_type_id": document.document_type_id.id,
+                    }
+                )
+                document.authorization_event_id = self.env[
+                    "l10n_br_fiscal.event"
+                ].create(
+                    {
+                        "type": "0",
+                        "company_id": self.company.id,
+                        "document_id": document.id,
+                        "document_type_id": document.document_type_id.id,
+                        "document_serie_id": serie.id,
+                        "document_number": "1",
+                        "origin": "Test",
+                        "file_response_id": xml.id,
+                    }
+                )
+            calls = []
+            record = calls.append
+
+            def make_pdf(doc, record=record):
+                record(1)
+                doc.file_report_id = self.env["ir.attachment"].create(
+                    {"name": "a.pdf", "raw": b"pdf"}
+                )
+
+            with patch.object(type(self.Document), "make_pdf", make_pdf):
+                document.view_pdf()
+                first = document.file_report_id
+                document.view_pdf()
+            self.assertEqual(document.file_report_id, first)
+            self.assertEqual(len(calls), 1, f"imported={imported}")
+
     def test_a_partner_created_by_the_import_is_not_compared(self):
         document = self._create_imported_document()
         data = EdiPartnerData(role="issuer", vat="1", name="Other name")
