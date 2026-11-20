@@ -44,16 +44,29 @@ class Document(models.Model):
         self.ensure_one()
         return self._edi_get_payments()
 
+    def _edi_payment_totals(self):
+        """Gross total, withholdings and net amount payable, as ``(gross, withholding,
+        net)``. The total of the document is already net of the withholdings and is
+        the same for every type, but it is only computed when the document has a
+        fiscal operation: a CT-e imported without one would show zero, so the lines,
+        which carry the amounts declared in the file, answer instead."""
+        self.ensure_one()
+        if self.fiscal_operation_id:
+            net, withholding = self.fiscal_amount_total, self.amount_tax_withholding
+        else:
+            lines = self.fiscal_line_ids
+            net = sum(lines.mapped("fiscal_amount_total"))
+            withholding = sum(lines.mapped("amount_tax_withholding"))
+        return net + withholding, withholding, net
+
     def _edi_installment_difference(self):
-        """Net amount payable minus the sum of the installments shown. The total of
-        the document (``fiscal_amount_total``) is already net of the withholdings,
-        and it is the same whatever the type of the document."""
+        """Net amount payable minus the sum of the installments shown."""
         self.ensure_one()
         installments = self._edi_display_installments()
         if not installments:
             return 0.0
         declared = sum(installment.amount for installment in installments)
-        return self.currency_id.round(self.fiscal_amount_total - declared)
+        return self.currency_id.round(self._edi_payment_totals()[2] - declared)
 
     def _edi_installment_warning(self):
         """Message when the installments do not add up to the net amount payable."""
@@ -67,7 +80,7 @@ class Document(models.Model):
             "of each installment."
         ) % {
             "declared": f"{declared:.2f}",
-            "net": f"{self.fiscal_amount_total:.2f}",
+            "net": f"{self._edi_payment_totals()[2]:.2f}",
         }
 
     def _edi_payment_summary_values(self):
@@ -76,7 +89,7 @@ class Document(models.Model):
         self.ensure_one()
         installments = self._edi_display_installments()
         payments = self._edi_display_payments()
-        withholding = self.amount_tax_withholding
+        gross, withholding, net = self._edi_payment_totals()
         if not (installments or payments or (self.imported_document and withholding)):
             return {}
         return {
@@ -84,9 +97,9 @@ class Document(models.Model):
             "installments": installments,
             "payments": payments,
             "totals": [
-                (_("Document total"), self.fiscal_amount_total + withholding),
+                (_("Document total"), gross),
                 (_("Withholdings"), withholding),
-                (_("Net amount payable"), self.fiscal_amount_total),
+                (_("Net amount payable"), net),
             ],
             "warning": self._edi_installment_warning(),
         }
@@ -94,8 +107,11 @@ class Document(models.Model):
     @api.depends(
         "imported_document",
         "state_edoc",
+        "fiscal_operation_id",
         "fiscal_amount_total",
         "amount_tax_withholding",
+        "fiscal_line_ids.fiscal_amount_total",
+        "fiscal_line_ids.amount_tax_withholding",
     )
     def _compute_edi_payment_summary(self):
         for document in self:
