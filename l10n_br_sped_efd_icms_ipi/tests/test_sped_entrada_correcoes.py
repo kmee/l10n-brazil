@@ -3,6 +3,7 @@
 
 from datetime import datetime
 
+from odoo.exceptions import ValidationError
 from odoo.tests.common import tagged
 
 from odoo.addons.l10n_br_tax_assessment.tests.common_entrada import SpedEntradaCommon
@@ -115,3 +116,30 @@ class TestSpedEfdIcmsIpiCorrecoes(EntradaHelpers, SpedEntradaCommon):
         self.assertEqual(self._c170(self._declaration_july())["COD_ENQ"], "")
         line.ipi_guideline_id = self.env.ref("l10n_br_fiscal.tax_guideline_001")
         self.assertEqual(self._c170(self._declaration_july())["COD_ENQ"], "001")
+
+    def test_the_sped_adjustment_code_is_on_the_benefit_and_relief_screens(self):
+        for model, view in (
+            ("l10n_br_fiscal.tax.definition", "l10n_br_fiscal.tax_definition_form"),
+            ("l10n_br_fiscal.icms.relief", "l10n_br_fiscal.tax_icms_relief_form"),
+        ):
+            view_id = self.env.ref(view).id
+            arch = self.env[model].get_view(view_id)["arch"]
+            self.assertIn('name="sped_cod_aj"', arch, model)
+
+    def test_c197_only_goes_out_with_a_10_position_code(self):
+        # the C197 hangs from the C195, the observation of the document
+        for note, code in (("Observacao 1", "SP12345678"), ("Observacao 2", "SP123")):
+            _doc, line = self._entry_document(manual_fiscal_additional_data=note)
+            line.partner_icms_tax_benefit_code = code
+        c197 = self._sped_records(self._declaration_july(), "C197")
+        self.assertEqual([rec["COD_AJ"] for rec in c197], ["SP12345678"])
+
+    def test_the_sped_adjustment_code_must_have_10_positions(self):
+        with self.assertRaises(ValidationError):
+            self.env["l10n_br_fiscal.icms.relief"].create(
+                {"code": "99", "name": "Test", "sped_cod_aj": "SP123"}
+            )
+        relief = self.env["l10n_br_fiscal.icms.relief"].create(
+            {"code": "98", "name": "Test 10", "sped_cod_aj": "SP90090101"}
+        )
+        self.assertEqual(relief.sped_cod_aj, "SP90090101")

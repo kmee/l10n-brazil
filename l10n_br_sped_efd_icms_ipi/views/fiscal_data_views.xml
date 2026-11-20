@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 KMEE -->
+<odoo>
+    <record id="tax_definition_form_sped_cod_aj" model="ir.ui.view">
+        <field name="name">l10n_br_fiscal.tax.definition.form.sped_cod_aj</field>
+        <field name="model">l10n_br_fiscal.tax.definition</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.tax_definition_form" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//group[@name='tax_benefit']//field[@name='description']"
+                position="after"
+            >
+                <field name="sped_cod_aj" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="tax_icms_relief_form_sped_cod_aj" model="ir.ui.view">
+        <field name="name">l10n_br_fiscal.icms.relief.form.sped_cod_aj</field>
+        <field name="model">l10n_br_fiscal.icms.relief</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.tax_icms_relief_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="sped_cod_aj" />
+            </xpath>
+        </field>
+    </record>
+</odoo>

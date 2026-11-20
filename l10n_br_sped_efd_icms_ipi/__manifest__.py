@@ -25,6 +25,7 @@
     "data": [
         "security/ir.model.access.csv",
         "views/sped_efd_icms_ipi.xml",
+        "views/fiscal_data_views.xml",
     ],
     "demo": [],
     "application": True,

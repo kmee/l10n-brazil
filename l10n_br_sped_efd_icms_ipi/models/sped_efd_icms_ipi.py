@@ -1839,6 +1839,8 @@ class RegistroC195(models.Model):
         # parent_record is the C100 fiscal document. Emit one C195 observation
         # per document carrying a fiscal observation text (from the XML
         # <infAdic> captured at import into manual_fiscal_additional_data).
+        if parent_record._is_sped_cancelled():
+            return "SELECT NULL WHERE FALSE", []
         query = """
             SELECT id AS document_id, manual_fiscal_additional_data AS txt
             FROM l10n_br_fiscal_document
@@ -1904,6 +1906,9 @@ class RegistroC197(models.Model):
                    OR COALESCE(fdl.partner_icms_tax_benefit_code, '') != ''
                    OR fdl.icms_relief_id IS NOT NULL)
         """
+        # the PVA wants the 10 positions of the adjustment table code: no C197
+        # with any other code
+        query = f"SELECT * FROM ({query}) AS adjustment WHERE length(cod_aj) = 10"
         return query, [parent_record["document_id"]]
 
     @api.model
