@@ -264,6 +264,11 @@ msgid "Cash"
 msgstr "À vista"
 
 #. module: l10n_br_fiscal_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.document_form_import
+msgid "Check Partners Again"
+msgstr "Conferir parceiros de novo"
+
+#. module: l10n_br_fiscal_edi
 #. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
 #, python-format
@@ -645,6 +650,16 @@ msgid "Import Fiscal Documents from Files"
 msgstr "Importar documentos fiscais de arquivos"
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_missing_products
+msgid "Import Missing Products"
+msgstr "Importação: produtos que faltam"
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_partner_checked
+msgid "Import Partner Checked"
+msgstr "Parceiros da importação conferidos em"
+
+#. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_partner_warning
 msgid "Import Partner Warning"
 msgstr "Aviso de parceiro da importação"
@@ -935,6 +950,13 @@ msgstr "Dados do parceiro que diferem do cadastro: %s"
 #. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
 #, python-format
+msgid "Partner data, as compared with the registry on %(date)s:"
+msgstr "Dados dos parceiros, como comparados com o cadastro em %(date)s:"
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
 msgid "Partners created by the import: %s."
 msgstr "Parceiros criados pela importação: %s."
 
@@ -1060,6 +1082,15 @@ msgstr ""
 #, python-format
 msgid "Some files were not imported"
 msgstr "Alguns arquivos não foram importados"
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_missing_products
+msgid ""
+"Some line has the code of a product in the file, a confirmed unit and no "
+"product yet, which the action to create the missing products would resolve."
+msgstr ""
+"Alguma linha tem o código de um produto do arquivo, unidade confirmada e "
+"nenhum produto ainda, que a ação de criar os produtos que faltam resolveria."
 
 #. module: l10n_br_fiscal_edi
 #. odoo-python
@@ -1226,6 +1257,13 @@ msgstr "O arquivo não pôde ser importado por um erro inesperado. Envie-o ao su
 #. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
 #, python-format
+msgid "The file of this document is not available to check."
+msgstr "O arquivo deste documento não está disponível para conferir."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
 msgid ""
 "The note is for the company %s, which is not selected in the company "
 "switcher. Select it and import again."
@@ -1315,13 +1353,26 @@ msgid "What the imported document still lacks to be reviewed."
 msgstr "O que ainda falta no documento importado para ser revisado."
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_partner_checked
+msgid ""
+"When the data of the partners in the file were last compared with their "
+"registry: at the import, or when somebody checked again."
+msgstr ""
+"Quando os dados dos parceiros do arquivo foram comparados com o cadastro "
+"pela última vez: na importação, ou quando alguém conferiu de novo."
+
+#. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_partner_warning
 msgid ""
 "Where the data of a partner in the file differ from its registry, which the "
-"import never changes, and the partners that were matched by name."
+"import never changes, and the partners that were matched by name. It is the "
+"picture of the day it was checked (import_partner_checked), and the button "
+"to check again updates it."
 msgstr ""
-"Onde os dados de um parceiro no arquivo diferem do cadastro, que a "
-"importação nunca altera, e os parceiros que foram casados pelo nome."
+"Onde os dados de um parceiro do arquivo diferem do cadastro, que a "
+"importação nunca altera, e os parceiros casados pelo nome. É a fotografia do "
+"dia em que foi conferido (import_partner_checked), e o botão de conferir de "
+"novo a atualiza."
 
 #. module: l10n_br_fiscal_edi
 #. odoo-python
@@ -1391,8 +1442,10 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
 #, python-format
-msgid "You have no access to the company %s, which the file is for."
-msgstr "Você não tem acesso à empresa %s, a que o arquivo se destina."
+msgid ""
+"You have no access to the company with the CNPJ %s, which the file is for."
+msgstr ""
+"Você não tem acesso à empresa com o CNPJ %s, a que o arquivo se destina."
 
 #. module: l10n_br_fiscal_edi
 #. odoo-python

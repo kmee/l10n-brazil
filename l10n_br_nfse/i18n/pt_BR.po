@@ -3215,3 +3215,16 @@ msgstr ""
 
 #~ msgid "IR(R$)"
 #~ msgstr "IR(R$)"
+
+#. module: l10n_br_nfse
+#. odoo-python
+#: code:addons/l10n_br_nfse/models/document.py:0
+#, python-format
+msgid ""
+"The printed version of an imported NFS-e is not available: the note was "
+"issued elsewhere and the company has no NFS-e issuing set up here. Use the "
+"PDF of the issuer."
+msgstr ""
+"A versão impressa de uma NFS-e importada não está disponível: a nota foi "
+"emitida em outro lugar e a empresa não tem emissão de NFS-e configurada "
+"aqui. Use o PDF do emissor."

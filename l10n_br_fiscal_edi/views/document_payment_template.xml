@@ -44,7 +44,9 @@
                     <tbody>
                         <tr t-foreach="payments" t-as="payment">
                             <td>
-                                <span t-out="payment.means or '-'" />
+                                <span
+                                    t-out="payment.label or payment.means or '-'"
+                                />
                                 <span t-if="payment.description"> (<t
                                         t-out="payment.description"
                                     />)</span>

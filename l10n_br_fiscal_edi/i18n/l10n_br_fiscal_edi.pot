@@ -251,6 +251,11 @@ msgid "Cash"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.document_form_import
+msgid "Check Partners Again"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
 #. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
 #, python-format
@@ -632,6 +637,16 @@ msgid "Import Fiscal Documents from Files"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_missing_products
+msgid "Import Missing Products"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_partner_checked
+msgid "Import Partner Checked"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_partner_warning
 msgid "Import Partner Warning"
 msgstr ""
@@ -920,6 +935,13 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
 #, python-format
+msgid "Partner data, as compared with the registry on %(date)s:"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
 msgid "Partners created by the import: %s."
 msgstr ""
 
@@ -1044,6 +1066,13 @@ msgstr ""
 #: code:addons/l10n_br_fiscal_edi/wizards/document_import_wizard.py:0
 #, python-format
 msgid "Some files were not imported"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_missing_products
+msgid ""
+"Some line has the code of a product in the file, a confirmed unit and no "
+"product yet, which the action to create the missing products would resolve."
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
@@ -1201,6 +1230,13 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
 #, python-format
+msgid "The file of this document is not available to check."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
 msgid ""
 "The note is for the company %s, which is not selected in the company "
 "switcher. Select it and import again."
@@ -1284,10 +1320,19 @@ msgid "What the imported document still lacks to be reviewed."
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_partner_checked
+msgid ""
+"When the data of the partners in the file were last compared with their "
+"registry: at the import, or when somebody checked again."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_partner_warning
 msgid ""
 "Where the data of a partner in the file differ from its registry, which the "
-"import never changes, and the partners that were matched by name."
+"import never changes, and the partners that were matched by name. It is the "
+"picture of the day it was checked (import_partner_checked), and the button "
+"to check again updates it."
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
@@ -1358,7 +1403,8 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
 #, python-format
-msgid "You have no access to the company %s, which the file is for."
+msgid ""
+"You have no access to the company with the CNPJ %s, which the file is for."
 msgstr ""
 
 #. module: l10n_br_fiscal_edi

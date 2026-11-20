@@ -6,6 +6,8 @@ from unittest.mock import patch
 
 import nfelib
 
+from odoo.tests import Form
+
 from odoo.addons.l10n_br_fiscal_edi.tests.common import EdiImportCase
 from odoo.addons.l10n_br_mdfe.models.document_import import Document as MdfeReader
 from odoo.addons.l10n_br_mdfe.models.res_city import ResCity
@@ -189,6 +191,16 @@ class TestMdfeDocumentImport(EdiImportCase):
             with patch.object(following, method, return_value="next"):
                 self.assertEqual(getattr(cls, method)(model, *args), "next", cls)
         self.assertGreaterEqual(checked, 2)
+
+    def test_a_common_fiscal_user_opens_the_imported_mdfe(self):
+        user = self._fiscal_user("fiscal_user_mdfe_form", self.presumed)
+        model = self.Document.with_user(user).with_context(
+            allowed_company_ids=self.presumed.ids
+        )
+        documents, errors, _warnings = self._import(mdfe_xml(status="100"), model)
+        self.assertFalse(errors)
+        with Form(documents.with_user(user)) as form:
+            self.assertEqual(form.document_number, "1131")
 
     def test_the_company_is_the_issuer_of_the_mdfe(self):
         parsed = self.Document._edi_import_read("a.xml", mdfe_xml(emitter=LUCRO_REAL))
