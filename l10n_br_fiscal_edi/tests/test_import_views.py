@@ -53,6 +53,7 @@ class TestImportViews(EdiImportCase):
             )
         )
         self.assertTrue(form.xpath("//field[@name='import_warning']"))
+        self.assertTrue(form.xpath("//button[@name='action_import_create_products']"))
 
     def test_the_line_form_names_existing_fields(self):
         line_model = self.env["l10n_br_fiscal.document.line"]
