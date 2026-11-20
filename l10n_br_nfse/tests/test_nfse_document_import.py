@@ -54,6 +54,8 @@ class TestNfseDocumentImport(EdiImportCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.presumed = cls.env.ref("l10n_br_base.empresa_lucro_presumido")
+        # the demo data sets the default service of this company
+        cls.presumed.nfse_import_product_id = False
         cls.provider = cls.env["res.partner"].search(
             [("cnpj_cpf_stripped", "=", PROVIDER)], limit=1
         )
@@ -370,6 +372,33 @@ class TestNfseDocumentImport(EdiImportCase):
             ),
             before,
         )
+
+    def test_the_demo_documents_show_the_import_and_the_confirmation(self):
+        documents = self.Document.search(
+            [
+                (
+                    "document_key",
+                    "in",
+                    [
+                        "42024042259594315000157000000000000126031234567890",
+                        "42024042281583054000129000000000000226031234567896",
+                    ],
+                )
+            ],
+            order="document_key",
+        )
+        if not documents:
+            self.skipTest("the demo data is not installed")
+        received, issued = documents
+        service = self.env.ref("l10n_br_fiscal.customized_development_sale")
+        self.assertEqual(received.issuer, "partner")
+        self.assertEqual(received.state_edoc, "em_digitacao")
+        self.assertGreater(received.amount_tax_withholding, 0.0)
+        self.assertEqual(received.fiscal_line_ids.product_id, service)
+        self.assertEqual(issued.issuer, "company")
+        self.assertEqual(issued.state_edoc, "autorizada")
+        self.assertEqual(issued.fiscal_line_ids.product_id, service)
+        self.assertTrue(issued.fiscal_line_ids.fiscal_operation_line_id)
 
     def test_the_service_of_an_nfse_issued_by_the_company_is_never_created(self):
         content = nfse_xml(taker=UNKNOWN_PROVIDER, provider=LUCRO_PRESUMIDO)
