@@ -7,6 +7,8 @@ from contextlib import closing
 from unittest.mock import patch
 
 from erpbrasil.base.fiscal.cnpj_cpf import formata
+from psycopg2 import OperationalError
+from psycopg2.errorcodes import SERIALIZATION_FAILURE
 
 from odoo import _
 from odoo.exceptions import AccessError, UserError
@@ -92,6 +94,43 @@ class TestDocumentImport(EdiImportCase):
         self.assertFalse(self._another_transaction_can_lock(self.company, KEY_1))
         self.assertTrue(self._another_transaction_can_lock(self.company, KEY_2))
         self.assertTrue(self._another_transaction_can_lock(self.other_company, KEY_1))
+
+    def test_a_note_committed_by_a_concurrent_transaction_makes_the_call_run_again(
+        self,
+    ):
+        """The transaction that waited for the lock reads a snapshot older than the
+        commit of the first one, so it does not see the document: it must neither
+        create a second one nor report an unexpected error, but ask the framework to
+        run the call again (a serialization failure), where the document exists."""
+        parsed = self._parsed(KEY_1)
+        with patch.object(
+            type(self.Document), "_edi_import_committed_elsewhere", lambda *args: True
+        ), self.assertRaises(OperationalError) as caught:
+            self._import([(parsed.file_name, b"x")], [parsed])
+        self.assertEqual(caught.exception.pgcode, SERIALIZATION_FAILURE)
+        self.assertFalse(self.Document.search([("document_key", "=", KEY_1)]))
+
+    def test_a_note_that_nobody_holds_does_not_ask_to_run_again(self):
+        parsed = self._parsed(KEY_1)
+        documents, errors, _warnings = self._import([(parsed.file_name, b"x")], [parsed])
+        self.assertEqual((len(documents), errors), (1, []))
+
+    def test_the_committed_note_is_looked_for_in_a_transaction_of_its_own(self):
+        """What another transaction committed is seen by a cursor of its own, what
+        this one only wrote is not (it is the snapshot that matters, not the cache)."""
+        committed = self.Document.search(
+            [("document_key", "!=", False), ("company_id", "!=", False)], limit=1
+        )
+        self.assertTrue(committed, "the demo data has documents with a key")
+        found = self.Document._edi_import_committed_elsewhere(
+            self._parsed(committed.document_key), committed.company_id
+        )
+        self.assertTrue(found)
+        self.assertFalse(
+            self.Document._edi_import_committed_elsewhere(
+                self._parsed(KEY_3), self.company
+            )
+        )
 
     def test_the_same_note_twice_opens_the_same_document_with_a_warning(self):
         parsed = self._parsed(KEY_1)

@@ -24,7 +24,11 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
 )
 
 from ..constants.fiscal import DOCUMENT_STATE_AUTHORIZED
-from ..tools import EDI_IMPORT_NO_CREATE, EDI_IMPORT_PARTNER_BY_VAT
+from ..tools import (
+    EDI_IMPORT_NO_CREATE,
+    EDI_IMPORT_PARTNER_BY_VAT,
+    EdiImportConcurrencyError,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -174,6 +178,9 @@ class Document(models.Model):
             except UserError as error:
                 _logger.info("Import of %s refused: %s", name, error)
                 errors.append((name, str(error)))
+            except EdiImportConcurrencyError:
+                # not an error of the file: the whole call must run again
+                raise
             except Exception:  # pylint: disable=broad-except
                 _logger.warning("Import of %s failed", name, exc_info=True)
                 errors.append(
@@ -216,6 +223,10 @@ class Document(models.Model):
         existing = self.with_company(company)._edi_import_find_existing(parsed, company)
         if existing:
             return existing, False
+        if self._edi_import_committed_elsewhere(parsed, company):
+            raise EdiImportConcurrencyError(
+                f"The note {name} was imported by a concurrent transaction."
+            )
         self._edi_import_check(parsed, company)
         last_partner = self.env["res.partner"].search([], order="id desc", limit=1)
         try:
@@ -346,6 +357,20 @@ class Document(models.Model):
             raise UserError(_("This note was cancelled by the issuer."))
         if parsed.status == "denied":
             raise UserError(_("This note was denied by the tax authority."))
+
+    @api.model
+    def _edi_import_committed_elsewhere(self, parsed, company):
+        """Whether a transaction that committed after this one began already holds the
+        note. The transaction reads a snapshot taken before it waited for the lock, so
+        the search of the existing document cannot see what that one wrote; a cursor
+        of its own, with a new snapshot, can."""
+        with self.env.registry.cursor() as cursor:
+            cursor.execute(
+                "SELECT 1 FROM l10n_br_fiscal_document "
+                "WHERE document_key = %s AND company_id = %s LIMIT 1",
+                (parsed.access_key, company.id),
+            )
+            return bool(cursor.fetchone())
 
     @api.model
     def _edi_import_find_existing(self, parsed, company):
