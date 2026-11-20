@@ -1155,9 +1155,8 @@ class RegistroC100(models.Model):
             "VL_DESC": record.amount_discount_value,
             "VL_ABAT_NT": record.amount_financial_discount_value,
             "VL_MERC": record.amount_price_gross,
-            "IND_FRT": str(record.nfe40_modFrete)
-            if hasattr(record, "nfe40_modFrete")
-            else "",
+            # mandatory in the layout: without a freight mode it is 9 (no freight)
+            "IND_FRT": getattr(record, "nfe40_modFrete", False) or "9",
             "VL_FRT": record.amount_freight_value,
             "VL_SEG": record.amount_insurance_value,
             "VL_OUT_DA": record.amount_other_value,
