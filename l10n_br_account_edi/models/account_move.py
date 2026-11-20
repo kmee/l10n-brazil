@@ -1,6 +1,8 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+from dataclasses import replace
+
 from odoo import _, api, fields, models
 from odoo.tools import frozendict
 
@@ -131,7 +133,15 @@ class AccountMove(models.Model):
                 {
                     "currency": move.currency_id,
                     "installments": move._edi_installments(),
-                    "payments": move._edi_payments(),
+                    "payments": [
+                        replace(
+                            payment,
+                            label=move.fiscal_document_id._edi_payment_means_label(
+                                payment.means
+                            ),
+                        )
+                        for payment in move._edi_payments()
+                    ],
                     "totals": [
                         (
                             _("Document total"),
