@@ -195,6 +195,24 @@ class DocumentLine(models.Model):
         self.ensure_one()
         return False
 
+    @api.depends("fiscal_operation_id", "partner_id", "product_id")
+    def _compute_fiscal_operation_line_id(self):
+        """An imported line keeps the operation line it has while it belongs to the
+        operation of the line: the product that the review gives it must not take
+        the operation line away, or the line stops adding to the financial total of
+        the document (and the document has nothing to pay)."""
+        kept = {
+            line: line.fiscal_operation_line_id
+            for line in self
+            if line._is_imported()
+            and line.fiscal_operation_line_id
+            and line.fiscal_operation_line_id.fiscal_operation_id
+            == line.fiscal_operation_id
+        }
+        super()._compute_fiscal_operation_line_id()
+        for line, operation_line in kept.items():
+            line.fiscal_operation_line_id = operation_line
+
     @api.depends("product_id")
     def _compute_name(self):
         for line in self:
