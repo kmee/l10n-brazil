@@ -36,6 +36,11 @@ msgid "<span class=\"o_stat_text\">Invoice</span>"
 msgstr ""
 
 #. module: l10n_br_nfe_dfe
+#: model:ir.model.fields.selection,name:l10n_br_nfe_dfe.selection__res_company__nfe_manifest_on_document_confirm__ciencia
+msgid "Acknowledgement of the operation (210210)"
+msgstr "Ciência da operação (210210)"
+
+#. module: l10n_br_nfe_dfe
 #. odoo-python
 #: code:addons/l10n_br_nfe_dfe/models/dfe_document.py:0
 #, python-format
@@ -92,6 +97,11 @@ msgstr "Empresas"
 #: model:ir.model.fields.selection,name:l10n_br_nfe_dfe.selection__l10n_br_fiscal_dfe_document__manifestation_status__confirmado
 msgid "Confirmada operação"
 msgstr "Confirmada operação"
+
+#. module: l10n_br_nfe_dfe
+#: model:ir.model.fields.selection,name:l10n_br_nfe_dfe.selection__res_company__nfe_manifest_on_document_confirm__confirmacao
+msgid "Confirmation of the operation (210200)"
+msgstr "Confirmação da operação (210200)"
 
 #. module: l10n_br_nfe_dfe
 #: model:ir.actions.server,name:l10n_br_nfe_dfe.ir_cron_search_dfe_documents_ir_actions_server
@@ -154,6 +164,11 @@ msgid "Manifest"
 msgstr "Manifestar"
 
 #. module: l10n_br_nfe_dfe
+#: model:ir.model.fields,field_description:l10n_br_nfe_dfe.field_res_company__nfe_manifest_on_document_confirm
+msgid "Manifest When Confirming an Imported NF-e"
+msgstr "Manifestar ao confirmar uma NF-e importada"
+
+#. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_document_tree
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.view_l10n_br_fiscal_dfe_document_form_nfe
 msgid "Manifestation"
@@ -163,6 +178,13 @@ msgstr "Manifestação"
 #: model:ir.model.fields,field_description:l10n_br_nfe_dfe.field_l10n_br_fiscal_dfe_document__manifestation_status
 msgid "Manifestation Status"
 msgstr "Status da Manifestação"
+
+#. module: l10n_br_nfe_dfe
+#. odoo-python
+#: code:addons/l10n_br_nfe_dfe/models/document.py:0
+#, python-format
+msgid "Manifestation of %s on confirmation"
+msgstr "Manifestação de %s na confirmação"
 
 #. module: l10n_br_nfe_dfe
 #: model:ir.model.fields,field_description:l10n_br_nfe_dfe.field_l10n_br_fiscal_dfe_document__manifestations_ids
@@ -245,6 +267,11 @@ msgid "No complete DF-e found."
 msgstr "Nenhum DF-e completo encontrado."
 
 #. module: l10n_br_nfe_dfe
+#: model:ir.model.fields.selection,name:l10n_br_nfe_dfe.selection__res_company__nfe_manifest_on_document_confirm__none
+msgid "None"
+msgstr "Nenhuma"
+
+#. module: l10n_br_nfe_dfe
 #: model:ir.model.fields.selection,name:l10n_br_nfe_dfe.selection__l10n_br_fiscal_dfe_document__manifestation_status__nao_realizado
 msgid "Não realizado"
 msgstr "Não realizado"
@@ -311,6 +338,17 @@ msgstr ""
 
 #. module: l10n_br_nfe_dfe
 #. odoo-python
+#: code:addons/l10n_br_nfe_dfe/models/document.py:0
+#, python-format
+msgid ""
+"The acknowledgement of the operation was not registered: it is only accepted"
+" until %s days after the authorization."
+msgstr ""
+"A ciência da operação não foi registrada: ela só é aceita até %s dias depois "
+"da autorização."
+
+#. module: l10n_br_nfe_dfe
+#. odoo-python
 #: code:addons/l10n_br_nfe_dfe/models/dfe_document.py:0
 #, python-format
 msgid ""
@@ -321,6 +359,21 @@ msgstr ""
 "O XML completo só é liberado depois da ciência da operação, um evento "
 "registrado na autoridade fiscal que obriga a empresa a registrar depois a "
 "manifestação final. Registrar?"
+
+#. module: l10n_br_nfe_dfe
+#: model:ir.model.fields,help:l10n_br_nfe_dfe.field_res_company__nfe_manifest_on_document_confirm
+msgid ""
+"The manifestation registered at the tax authority when an NF-e received from a supplier is confirmed.\n"
+"- Acknowledgement: it is not a conclusive manifestation, and it obliges the company to register a conclusive one afterwards (confirmation, unawareness or operation not performed). It is only accepted until 10 days after the authorization: later than that it is skipped, with a notice on the document.\n"
+"- Confirmation: it is the conclusive manifestation that matches confirming the document."
+msgstr ""
+"A manifestação registrada na autoridade fiscal quando uma NF-e recebida de "
+"fornecedor é confirmada.\n- Ciência: não é uma manifestação conclusiva e "
+"obriga a empresa a registrar depois uma conclusiva (confirmação, "
+"desconhecimento ou operação não realizada). Só é aceita até 10 dias depois "
+"da autorização: depois disso é pulada, com um aviso no documento.\n- "
+"Confirmação: é a manifestação conclusiva que corresponde a confirmar o "
+"documento."
 
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_document_tree
