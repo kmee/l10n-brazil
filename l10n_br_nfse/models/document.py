@@ -75,7 +75,10 @@ class Document(models.Model):
 
     def make_pdf(self):
         if not self.filtered(filter_processador_edoc_nfse):
-            if self.imported_document:
+            if (
+                self.imported_document
+                and self.document_type_id.code == MODELO_FISCAL_NFSE
+            ):
                 raise UserError(
                     _(
                         "The printed version of an imported NFS-e is not available: "

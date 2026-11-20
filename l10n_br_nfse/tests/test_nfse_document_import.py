@@ -9,6 +9,7 @@ import nfelib
 from erpbrasil.base.fiscal.cnpj_cpf import formata
 
 from odoo.exceptions import UserError
+from odoo.tests import Form
 
 from odoo.addons.l10n_br_fiscal_edi.tests.common import EdiImportCase
 from odoo.addons.l10n_br_nfse.models.document import Document as NfseDocument
@@ -280,6 +281,33 @@ class TestNfseDocumentImport(EdiImportCase):
             lambda record: False,
         ), self.assertRaisesRegex(UserError, "printed version of an imported NFS-e"):
             NfseDocument.make_pdf(documents)
+
+    def test_the_pdf_message_of_the_nfse_is_not_given_for_another_type(self):
+        documents, _errors, _warnings = self._import(nfse_xml())
+        documents.document_type_id = self.env.ref("l10n_br_fiscal.document_55")
+        mro = type(documents).__mro__
+        following = next(
+            cls for cls in mro[mro.index(NfseDocument) + 1 :] if "make_pdf" in vars(cls)
+        )
+        with patch(
+            "odoo.addons.l10n_br_nfse.models.document.filter_processador_edoc_nfse",
+            lambda record: False,
+        ), patch.object(following, "make_pdf", return_value="next"):
+            self.assertEqual(NfseDocument.make_pdf(documents), "next")
+
+    def test_a_common_fiscal_user_opens_the_imported_nfse(self):
+        if "nfe.40.di" in self.env:
+            self.skipTest(
+                "the form reads the NF-e models: their rules are of l10n_br_nfe"
+            )
+        user = self._fiscal_user("fiscal_user_nfse_form", self.presumed)
+        model = self.Document.with_user(user).with_context(
+            allowed_company_ids=self.presumed.ids
+        )
+        documents, errors, _warnings = self._import(nfse_xml(), model)
+        self.assertFalse(errors)
+        with Form(documents.with_user(user)) as form:
+            form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
 
     def test_the_service_of_an_nfse_issued_by_the_company_is_never_created(self):
         content = nfse_xml(taker=UNKNOWN_PROVIDER, provider=LUCRO_PRESUMIDO)
