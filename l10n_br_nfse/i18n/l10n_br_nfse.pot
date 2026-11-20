@@ -3065,3 +3065,13 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcrtctotaltribregular__nfse10_vTribRegIBSMun
 msgid "vTribRegIBSMun"
 msgstr ""
+
+#. module: l10n_br_nfse
+#. odoo-python
+#: code:addons/l10n_br_nfse/models/document.py:0
+#, python-format
+msgid ""
+"The printed version of an imported NFS-e is not available: the note was "
+"issued elsewhere and the company has no NFS-e issuing set up here. Use the "
+"PDF of the issuer."
+msgstr ""
