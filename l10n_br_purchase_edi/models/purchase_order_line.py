@@ -67,5 +67,8 @@ class PurchaseOrderLine(models.Model):
             candidates = order_lines[position - 1 : position] if position else none
         else:
             candidates = order_lines
-        candidates = candidates.filtered(lambda pol: pol.product_id == product)
+        if product is not None:
+            candidates = candidates.filtered(lambda pol: pol.product_id == product)
+        else:
+            candidates = candidates.filtered("product_id")
         return candidates if len(candidates) == 1 else none

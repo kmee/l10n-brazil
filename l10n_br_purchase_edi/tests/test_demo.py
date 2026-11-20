@@ -29,6 +29,8 @@ class TestDemo(TransactionCase):
         line = self._line(KEY_INVOICED)
         order = self.env.ref("l10n_br_purchase_edi.demo_order_confirmed")
 
+        # the supplier has no mapping of the product: it came from the order
+        self.assertEqual(line.product_id, order.order_line.product_id)
         self.assertEqual(line.import_origin_state, "resolved")
         self.assertEqual(line.import_purchase_line_id, order.order_line)
         self.assertEqual(line.document_id.state_edoc, "autorizada")

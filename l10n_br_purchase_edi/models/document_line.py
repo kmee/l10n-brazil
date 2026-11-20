@@ -289,6 +289,32 @@ class FiscalDocumentLine(models.Model):
             )
         )
 
+    def _find_purchase_line_by_declared_item(self):
+        """The only confirmed order line that the file declares by order and item
+        (xPed and nItemPed), whatever the product of the line: the declaration
+        names the item, so it names the product too."""
+        self.ensure_one()
+        document = self.document_id
+        if (
+            not self._import_origin_key()
+            or not (self.partner_order or "").strip()
+            or not "".join(
+                char for char in (self.partner_order_line or "") if char.isdigit()
+            )
+        ):
+            return self.env["purchase.order.line"]
+        return (
+            self.env["purchase.order.line"]
+            .sudo()
+            ._find_by_import_reference(
+                document.company_id,
+                document.partner_id.commercial_partner_id,
+                self.partner_order.strip(),
+                self.partner_order_line,
+                None,
+            )
+        )
+
     def _suggest_import_origin(self):
         """Suggest the origin of an imported line, never replacing a decision.
 
