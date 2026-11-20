@@ -233,6 +233,40 @@ class TestNfseDocumentImport(EdiImportCase):
         content = nfse_xml(taker=UNKNOWN_PROVIDER, provider=LUCRO_PRESUMIDO)
         self._assert_registry_untouched(content, True)
 
+    def test_a_provider_with_other_address_is_reported_and_left_as_it_is(self):
+        provider = self._registered(UNKNOWN_PROVIDER)
+        content = nfse_xml(provider=UNKNOWN_PROVIDER)
+        documents, errors, _warnings = self._import(content)
+        self.assertFalse(errors)
+        self.assertEqual(documents.partner_id, provider)
+        self.assertIn("Name", documents.import_partner_warning)
+        self.assertIn(
+            "EMPRESA PRESTADORA DE TESTE LTDA", documents.import_partner_warning
+        )
+        self.assertIn("Registered legal name", documents.import_partner_warning)
+        self.assertEqual(provider.legal_name, "Registered legal name")
+
+    def test_data_that_differ_only_in_case_and_punctuation_raise_no_warning(self):
+        provider = self._registered(UNKNOWN_PROVIDER)
+        provider.write({"legal_name": "empresa prestadora de teste ltda."})
+        documents, _errors, _warnings = self._import(
+            nfse_xml(provider=UNKNOWN_PROVIDER)
+        )
+        self.assertNotIn(
+            "Registered as is - Name", documents.import_partner_warning or ""
+        )
+
+    def test_a_homonym_with_another_cnpj_is_not_matched(self):
+        self._registered(OTHER_UNKNOWN).write(
+            {
+                "name": "EMPRESA PRESTADORA DE TESTE LTDA",
+                "legal_name": "EMPRESA PRESTADORA DE TESTE LTDA",
+            }
+        )
+        documents, errors, _warnings = self._import(nfse_xml(provider=UNKNOWN_PROVIDER))
+        self.assertFalse(errors)
+        self.assertEqual(documents.partner_id.cnpj_cpf_stripped, UNKNOWN_PROVIDER)
+
     def test_the_company_is_the_taker_of_the_service(self):
         parsed = self.Document._edi_import_read("a.xml", nfse_xml(taker=LUCRO_REAL))
         self.assertEqual(
@@ -285,7 +319,10 @@ class TestNfseDocumentImport(EdiImportCase):
         self.assertEqual(provider.cnpj_cpf_stripped, UNKNOWN_PROVIDER)
         self.assertEqual(provider.legal_name, "EMPRESA PRESTADORA DE TESTE LTDA")
         self.assertTrue(provider.is_company)
-        self.assertIn(provider.display_name, documents.message_ids[0].body)
+        self.assertIn(
+            provider.display_name,
+            " ".join(documents.message_ids.mapped("body")),
+        )
 
     def test_the_service_product_of_the_company_goes_to_the_line(self):
         product = self.env["product.product"].create(

@@ -14,7 +14,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     TAX_BASE_TYPE_PERCENT,
     TAX_DOMAIN_ISSQN,
 )
-from odoo.addons.l10n_br_fiscal_edi.tools import EdiParsedFile
+from odoo.addons.l10n_br_fiscal_edi.tools import EdiParsedFile, EdiPartnerData
 
 from ..constants.nfse import NFSE_ACCESS_KEY_SIZE
 from ..services.nfse_xml import NfseNacionalBinding, parse_nfse_xml
@@ -72,6 +72,39 @@ class Document(models.Model):
         party = binding.taker if role == "issuer" else binding.provider
         name = party.get("legal_name") or party.get("name") or ""
         return name, party.get("cnpj") or party.get("cpf") or ""
+
+    def _edi_import_partner_data(self, parsed):
+        """What the NFS-e declares about the provider and the taker, with the registry
+        of the partner that has the same CNPJ or CPF."""
+        result = super()._edi_import_partner_data(parsed)
+        if parsed.reader != "nfse":
+            return result
+        for role, party in (
+            ("issuer", parsed.binding.provider),
+            ("taker", parsed.binding.taker),
+        ):
+            vat = party.get("cnpj") or party.get("cpf") or ""
+            if not vat:
+                continue
+            city = self.env["res.city"].search(
+                [("ibge_code", "=", party.get("city_ibge"))], limit=1
+            )
+            partner = self.env["res.partner"].search(
+                [("cnpj_cpf_stripped", "=", vat)], limit=1
+            )
+            data = EdiPartnerData(
+                role=role,
+                vat=vat,
+                name=party.get("legal_name") or party.get("name") or "",
+                street=party.get("street_name") or "",
+                street_number=party.get("street_number") or "",
+                district=party.get("district") or "",
+                zip_code=party.get("zip") or "",
+                city=city.name or "",
+                state_code=city.state_id.code or "",
+            )
+            result.append((partner, data))
+        return result
 
     @api.model
     def _nfse_import_create(
