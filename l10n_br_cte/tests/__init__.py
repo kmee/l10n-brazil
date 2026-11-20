@@ -14,3 +14,4 @@ from . import test_cte_protocol_date
 from . import test_cte_document_import
 from . import test_cte_installments
 from . import test_cte_serialize_collection
+from . import test_cte_import_bill
