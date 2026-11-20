@@ -317,7 +317,12 @@ class AccountMove(models.Model):
             res = super(AccountMove, invoices_without_fiscal_op)._compute_needed_terms()
 
         for invoice in invoices_with_fiscal_op:
-            is_draft = invoice.id != invoice._origin.id
+            # the financial total is zero while a line has no operation line (it is
+            # not known yet what the line moves): the amounts of the lines are
+            # the only thing the payment term can be computed from
+            is_draft = invoice.id != invoice._origin.id or not all(
+                line.fiscal_operation_line_id for line in invoice.invoice_line_ids
+            )
             invoice.needed_terms = {}
             invoice.needed_terms_dirty = True
             sign = 1 if invoice.is_inbound(include_receipts=True) else -1
