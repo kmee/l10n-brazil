@@ -49,7 +49,11 @@
         <field name="inherit_id" ref="l10n_br_fiscal_edi.document_line_form_import" />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='import_state']" position="after">
-                <field name="import_origin_candidate_ids" invisible="1" />
+                <field
+                    name="import_origin_candidate_ids"
+                    invisible="1"
+                    groups="purchase.group_purchase_user"
+                />
                 <field
                     name="import_purchase_line_id"
                     options="{'no_create': True}"
