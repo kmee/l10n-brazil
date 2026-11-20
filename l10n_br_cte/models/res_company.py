@@ -144,7 +144,11 @@ class ResCompany(spec_models.SpecModel):
                 rec.cte40_choice_emit = "cte40_CPF"
 
     def _build_attr(self, node, fields, vals, path, attr):
-        if attr[0] == "enderEmit" and self.env.context.get("edoc_type") == "in":
+        if (
+            self.env.context.get("spec_schema", "cte") == "cte"
+            and attr[0] == "enderEmit"
+            and self.env.context.get("edoc_type") == "in"
+        ):
             # we don't want to try build a related partner_id for enderEmit
             # when importing an CTe
             # instead later the emit tag will be imported as the
@@ -157,6 +161,10 @@ class ResCompany(spec_models.SpecModel):
     def _prepare_import_dict(
         self, values, model=None, parent_dict=None, defaults_model=None
     ):
+        if self.env.context.get("spec_schema", "cte") != "cte":
+            return super()._prepare_import_dict(
+                values, model, parent_dict, defaults_model
+            )
         # we disable enderEmit related creation with dry_run=True
         context = self._context.copy()
         context["dry_run"] = True

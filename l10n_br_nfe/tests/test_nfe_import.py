@@ -620,6 +620,9 @@ class TestNfeDocumentImport(EdiImportCase):
         self.assertEqual(self.env["l10n_br_fiscal.cfop"].search_count([]), cfop)
 
     def test_operation_is_suggested_without_touching_the_values_of_the_file(self):
+        # the issuer of the file is in SP: the CFOP of the entry is 1102 when the
+        # company is too, whatever another module set on the demo company
+        self.company.partner_id.state_id = self.env.ref("base.state_br_sp")
         documents = self._imported(self._xml(KEY_1))
 
         line = documents.fiscal_line_ids
@@ -1300,7 +1303,7 @@ class TestNfeDocumentImport(EdiImportCase):
         self.assertFalse(document.edi_payment_summary)
 
     def test_the_partner_to_register_of_another_reader_is_the_one_of_the_base(self):
-        parsed = self._parsed(KEY_1, reader="cte")
+        parsed = self._parsed(KEY_1, reader="no-module-reads-this")
 
         hint = self.Document._edi_import_partner_hint(parsed)
 
@@ -1651,3 +1654,40 @@ class TestNfeInvoiceOfTheCollection(EdiImportCase):
             documents._edi_get_installments(),
             [EdiInstallment("001", date(2026, 12, 10), 140.0)],
         )
+
+
+class TestNfeMatchOfAnotherSchema(EdiImportCase):
+    """The matching of the NF-e answers only for the NF-e: a dictionary of another
+    schema (the CT-e, whose module is loaded after this one) goes to the next
+    override of the chain, whatever modules are installed."""
+
+    def _next_in_chain(self, partner):
+        """The class that the ``super()`` of the NF-e override reaches."""
+        chain = type(partner).__mro__
+        mine = next(
+            index
+            for index, cls in enumerate(chain)
+            if cls.__module__ == "odoo.addons.l10n_br_nfe.models.res_partner"
+            and "match_or_create_m2o" in cls.__dict__
+        )
+        return next(
+            cls for cls in chain[mine + 1 :] if "match_or_create_m2o" in cls.__dict__
+        )
+
+    def test_the_partner_of_another_schema_is_matched_by_the_next_in_the_chain(self):
+        calls = []
+
+        def following(model, rec_dict, parent_dict, model_=None):
+            calls.append((rec_dict, parent_dict))
+            return 42
+
+        partner = self.env["res.partner"].with_context(spec_schema="xyz")
+        with mock.patch.object(
+            self._next_in_chain(partner), "match_or_create_m2o", following
+        ):
+            result = partner.match_or_create_m2o(
+                {"xyz40_CNPJ": "1"}, {"nfe40_CNPJ": "2"}
+            )
+
+        self.assertEqual(result, 42)
+        self.assertEqual(calls, [({"xyz40_CNPJ": "1"}, {"nfe40_CNPJ": "2"})])
