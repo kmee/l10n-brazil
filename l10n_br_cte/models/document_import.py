@@ -144,13 +144,18 @@ class Document(models.Model):
         )
 
     @api.model
-    def _cte_suggest_product(self, document, company):
-        """The freight product of the company, when the user can see it, goes to the
-        line of a received CT-e, which takes the unit of the product: the review
-        then finds a suggestion to confirm. Nothing is created."""
-        product = self.env["product.product"].search(
-            [("id", "=", company.cte_import_product_id.id)]
+    def _cte_suggest_product(self, document, company, issued=False):
+        """The default product of the company, when the user can see it, goes to the
+        line of the CT-e, which takes the unit of the product: the review then finds
+        a suggestion to confirm. It is the freight product for a CT-e that the
+        company received and the transport service provided for one that it issued.
+        Nothing is created."""
+        default = (
+            company.cte_import_service_product_id
+            if issued
+            else company.cte_import_product_id
         )
+        product = self.env["product.product"].search([("id", "=", default.id)])
         if product:
             document.fiscal_line_ids.product_id = product
 
@@ -253,8 +258,7 @@ class Document(models.Model):
         cte = getattr(parsed.binding, "CTe", None) or parsed.binding
         if issued:
             document.partner_id = self._cte_taker_partner(cte.infCte)
-        else:
-            self._cte_suggest_product(document, company)
+        self._cte_suggest_product(document, company, issued=issued)
         document.partner_operation_name = cte.infCte.ide.natOp
         for line in document.fiscal_line_ids:
             line.partner_cfop_id = line.cfop_id
