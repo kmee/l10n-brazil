@@ -235,3 +235,26 @@ class TestIssuedInvoice(AccountEdiCase):
         self.assertEqual(
             (document.document_number, document.document_serie), ("777", "001")
         )
+
+    def test_posting_the_invoice_of_an_imported_document_of_the_company_writes_nothing(
+        self,
+    ):
+        document = self._own_imported_document()
+        model = type(document)
+        with (
+            mock.patch.object(
+                model, "_edi_set_installments", autospec=True
+            ) as set_installments,
+            mock.patch.object(
+                model, "_edi_set_payments", autospec=True
+            ) as set_payments,
+        ):
+            move = self.env["account.move"].browse(
+                document.action_generate_invoice()["res_id"]
+            )
+            self.assertFalse(move.edi_payment_summary)
+            move.action_post()
+
+        set_installments.assert_not_called()
+        set_payments.assert_not_called()
+        self.assertEqual(document.state_edoc, "autorizada")

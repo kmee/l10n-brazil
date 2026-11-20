@@ -122,6 +122,7 @@ class AccountMove(models.Model):
                 move.state != "draft"
                 or not move.document_type_id
                 or move.issuer != DOCUMENT_ISSUER_COMPANY
+                or move.imported_document
             ):
                 move.edi_payment_summary = False
                 continue
@@ -152,7 +153,8 @@ class AccountMove(models.Model):
                 lambda d: (
                     d.document_type_id
                     and d.issuer == DOCUMENT_ISSUER_COMPANY
-                    )
+                    and not d.imported_document
+                )
             ):
                 document._edi_set_installments(move._edi_installments())
                 document._edi_set_payments(move._edi_payments())

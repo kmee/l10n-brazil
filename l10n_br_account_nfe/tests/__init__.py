@@ -6,3 +6,4 @@ from . import test_invoice_refund
 from . import test_nfe_import
 from . import test_nfe_autxml
 from . import test_other_document_types
+from . import test_own_note_import
