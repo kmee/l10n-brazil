@@ -9,6 +9,10 @@ from erpbrasil.base import misc
 
 from odoo import api, fields, models
 
+from odoo.addons.l10n_br_fiscal.constants.fiscal import (
+    SITUACAO_FISCAL_INUTILIZADO,
+    SITUACAO_FISCAL_SPED_CONSIDERA_CANCELADO,
+)
 from odoo.addons.l10n_br_sped_base.models.sped_mixin import LAYOUT_VERSIONS
 
 
@@ -42,11 +46,13 @@ COD_CONT_BY_REGIME = {
 # 6912 (non-cumulative) / 8109 (cumulative), COFINS 5856 / 2172. M205/M605
 # break the amount due by these codes; a company under a special code books
 # it as a manual detail.
+# Table 4.4.1 (PIS/Pasep) and 4.4.2 (Cofins) of the Guia: the six positions of the
+# revenue code (the DARF code and the sequence), not the four of the DARF
 COD_REC = {
-    ("pis", "non_cumulative"): "6912",
-    ("pis", "cumulative"): "8109",
-    ("cofins", "non_cumulative"): "5856",
-    ("cofins", "cumulative"): "2172",
+    ("pis", "non_cumulative"): "691201",
+    ("pis", "cumulative"): "810902",
+    ("cofins", "non_cumulative"): "585601",
+    ("cofins", "cumulative"): "217201",
 }
 # M200/M600 field the M205/M605 detail points at: 08 is the non-cumulative
 # amount due (VL_CONT_NC_REC), 12 the cumulative one (VL_CONT_CUM_REC)
@@ -113,26 +119,43 @@ def _detail_domain(declaration, tax_domain):
     ]
 
 
-def _detail_vals(record, rate_field):
+def _detail_vals(record, rate_field, declaration):
     """Values of M210 (PIS/PASEP) and M610 (COFINS).
 
     The breakdown comes from the assessment for the same reason the
     consolidation does: recomputing it here would let the detail drift away
     from the total right above it.
     """
+    # The rate of the tax (the percent of the fiscal tax of the company's PIS/COFINS
+    # regime: the account tax carries none) and the base that gives the contribution of the
+    # assessment at that rate. The PVA demands VL_CONT_APUR = base x rate, and
+    # the ledger base of the line is not the base the contribution was
+    # computed on (the ICMS and the tax included are taken out of it).
+    pis_cofins = declaration.company_id.piscofins_id
+    fiscal_tax = (
+        pis_cofins.tax_pis_id if rate_field == "ALIQ_PIS" else pis_cofins.tax_cofins_id
+    )
+    rate = (
+        record.tax_id.fiscal_tax_ids[:1].percent_amount
+        or fiscal_tax.percent_amount
+        or record.tax_id.amount
+    )
+    base_amount = (
+        round(record.tax_amount / rate * 100, 2) if rate else record.base_amount
+    )
     vals = {
         "COD_CONT": COD_CONT_BY_REGIME.get(record.assessment_id.regime, ""),
         # Gross revenue and tax base are reported as the same amount while the
         # exclusions from the base are not written: inventing a split between
         # them would be worse than stating they were not computed.
-        "VL_REC_BRT": record.base_amount,
-        "VL_BC_CONT": record.base_amount,
+        "VL_REC_BRT": base_amount,
+        "VL_BC_CONT": base_amount,
         # Base adjustments (fields 5 to 7, layout in force) live in M215/M615,
         # which are not written yet, so the adjusted base equals the base.
         # The validator checks VL_BC_CONT_AJUS = VL_BC_CONT + acres - reduc.
         "VL_AJUS_ACRES_BC": 0.0,
         "VL_AJUS_REDUC_BC": 0.0,
-        "VL_BC_CONT_AJUS": record.base_amount,
+        "VL_BC_CONT_AJUS": base_amount,
         "VL_CONT_APUR": record.tax_amount,
         # Value adjustments live at the assessment level, not at the line:
         # they are reported in M220/M620, which are not written yet.
@@ -140,7 +163,7 @@ def _detail_vals(record, rate_field):
         "VL_AJUS_REDUC": 0.0,
         "VL_CONT_PER": record.tax_amount,
     }
-    vals[rate_field] = record.tax_id.amount
+    vals[rate_field] = rate
     return vals
 
 
@@ -339,7 +362,7 @@ class Registro0150(models.Model):
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         return {
-            "COD_PART": record.id,
+            "COD_PART": record._get_sped_cod_part(),
             "NOME": record.legal_name or record.name,
             "COD_PAIS": record.country_id.ibge_code or "01058",
             "CNPJ": record.is_company
@@ -505,19 +528,35 @@ class Registro0500(models.Model):
     _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.efd_pis_cofins.0500"
     _inherit = "l10n_br_sped.efd_pis_cofins.6.0500"
+    _odoo_model = "account.account"
 
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "DT_ALT": 0,  # Data da inclusão/alteração
-    #         "COD_NAT_CC": 0,  # Código da natureza da conta/grupo de contas: 01 -...
-    #         "IND_CTA": 0,  # Indicador do tipo de conta: S - Sintética (grupo de ...
-    #         "NIVEL": 0,  # Nível da conta analítica/grupo de contas.
-    #         "COD_CTA": 0,  # Código da conta analítica/grupo de contas.
-    #         "NOME_CTA": 0,  # Nome da conta analítica/grupo de contas.
-    #         "COD_CTA_REF": 0,  # Código da conta correlacionada no Plano de Conta...
-    #         "CNPJ_EST": 0,  # CNPJ do estabelecimento, no caso da conta informada...
-    #     }
+    # natureza da conta (tabela do Guia): by the type of the Odoo account
+    _COD_NAT_CC_BY_TYPE = {
+        "asset": "01",
+        "liability": "02",
+        "equity": "03",
+        "income": "04",
+        "expense": "04",
+    }
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        accounts = declaration.fiscal_document_line_ids._get_sped_credit_accounts()
+        return [("id", "in", accounts.ids)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        account_type = (record.account_type or "").split("_")[0]
+        return {
+            "DT_ALT": declaration.DT_INI,
+            "COD_NAT_CC": self._COD_NAT_CC_BY_TYPE.get(account_type, "09"),
+            "IND_CTA": "A",
+            "NIVEL": "1",
+            "COD_CTA": record.code,
+            "NOME_CTA": record.name,
+            "COD_CTA_REF": "",
+            "CNPJ_EST": "",
+        }
 
 
 class Registro0600(models.Model):
@@ -586,13 +625,6 @@ class RegistroA100(models.Model):
 
     _odoo_model = "l10n_br_fiscal.document"
 
-    _STATUS_MAP = {
-        "autorizada": "00",
-        "cancelada": "02",
-        "denegada": "04",
-        "inutilizada": "05",
-    }
-
     @api.model
     def _odoo_domain(self, parent_record, declaration):
         return [
@@ -605,8 +637,8 @@ class RegistroA100(models.Model):
         return {
             "IND_OPER": "0" if record.fiscal_operation_type == "in" else "1",
             "IND_EMIT": "0" if record.issuer == "company" else "1",
-            "COD_PART": record.partner_id.id,
-            "COD_SIT": self._STATUS_MAP.get(record.state_edoc, "00"),
+            "COD_PART": record.partner_id._get_sped_cod_part(),
+            "COD_SIT": record._get_sped_cod_sit(),
             "SER": record.document_serie or "",
             "SUB": "",
             "NUM_DOC": record.document_number or "",
@@ -614,7 +646,7 @@ class RegistroA100(models.Model):
             "DT_DOC": record.document_date,
             "DT_EXE_SERV": record.document_date,
             "VL_DOC": record.fiscal_amount_total or 0,
-            "IND_PGTO": "0",
+            "IND_PGTO": record._get_sped_ind_pgto(),
             "VL_DESC": record.amount_discount_value or 0,
             "VL_BC_PIS": record.amount_pis_base or 0,
             "VL_PIS": record.amount_pis_value or 0,
@@ -737,35 +769,60 @@ class RegistroC100(models.Model):
 
     _odoo_model = "l10n_br_fiscal.document"
 
-    _STATUS_MAP = {
-        "autorizada": "00",
-        "cancelada": "02",
-        "denegada": "04",
-        "inutilizada": "05",
-    }
+    def _write_register_line(self, sped, code, rec, keys, line_count, register_spec):
+        # a cancelled, denied or unused number carries no value, not even a zero
+        blank = self.env.context.get("sped_blank_zero")
+        if not blank and rec.COD_SIT in SITUACAO_FISCAL_SPED_CONSIDERA_CANCELADO:
+            return self.with_context(sped_blank_zero=True)._write_register_line(
+                sped, code, rec, keys, line_count, register_spec
+            )
+        return super()._write_register_line(
+            sped, code, rec, keys, line_count, register_spec
+        )
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):
+        documents = declaration.fiscal_document_ids.filtered(
+            lambda document: document._has_sped_c100()
+        )
         return [
-            ("id", "in", declaration.fiscal_document_ids.ids),
+            ("id", "in", documents.ids),
             ("document_type_id.code", "in", ("01", "1B", "04", "55", "65")),
         ]
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        cod_sit = record._get_sped_cod_sit()
+        if record._is_sped_cancelled():
+            # cancelled, denied and unused numbers only carry what the Guia
+            # Pratico allows: no partner, no dates, no values
+            unused = cod_sit == SITUACAO_FISCAL_INUTILIZADO
+            return {
+                "IND_OPER": "0" if record.fiscal_operation_type == "in" else "1",
+                "IND_EMIT": "0" if record.issuer == "company" else "1",
+                "COD_MOD": record.document_type_id.code or "",
+                "COD_SIT": cod_sit,
+                "SER": "" if unused else record.document_serie or "",
+                "NUM_DOC": record.document_number or "",
+                "CHV_NFE": "" if unused else record.document_key or "",
+            }
         return {
             "IND_OPER": "0" if record.fiscal_operation_type == "in" else "1",
             "IND_EMIT": "0" if record.issuer == "company" else "1",
-            "COD_PART": record.partner_id.id,
+            "COD_PART": record.partner_id._get_sped_cod_part(),
             "COD_MOD": record.document_type_id.code or "",
-            "COD_SIT": self._STATUS_MAP.get(record.state_edoc, "00"),
+            "COD_SIT": cod_sit,
             "SER": record.document_serie or "",
             "NUM_DOC": record.document_number or "",
             "CHV_NFE": record.document_key or "",
             "DT_DOC": record.document_date,
-            "DT_E_S": record.document_date,
+            # an entry comes in on its entry date, not on the emission one;
+            # the outgoing documents keep the emission date
+            "DT_E_S": record._get_sped_entry_date()
+            if record.fiscal_operation_type == "in"
+            else record.document_date,
             "VL_DOC": record.fiscal_amount_total or 0,
-            "IND_PGTO": "0",
+            "IND_PGTO": record._get_sped_ind_pgto(),
             "VL_DESC": record.amount_discount_value or 0,
             "VL_ABAT_NT": 0,
             "VL_MERC": record.amount_price_gross or 0,
@@ -845,10 +902,15 @@ class RegistroC170(models.Model):
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):
+        if parent_record._is_sped_cancelled():
+            # a cancelled document goes out without items
+            return [("id", "=", False)]
         return [("document_id", "=", parent_record.id)]
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        pis_no_credit = record._entry_piscofins_without_credit("pis")
+        cofins_no_credit = record._entry_piscofins_without_credit("cofins")
         return {
             "NUM_ITEM": str(index + 1),
             "COD_ITEM": record.product_id.default_code or str(record.product_id.id),
@@ -880,19 +942,21 @@ class RegistroC170(models.Model):
             "VL_BC_IPI": record.ipi_base or 0,
             "ALIQ_IPI": record.ipi_percent or 0,
             "VL_IPI": record.ipi_value or 0,
-            "CST_PIS": record.pis_cst_code or "",
-            "VL_BC_PIS": record.pis_base or 0,
-            "ALIQ_PIS": record.pis_percent or 0,
+            "CST_PIS": record.entry_pis_cst_id.code or record.pis_cst_code or "",
+            "VL_BC_PIS": 0 if pis_no_credit else record.pis_base or 0,
+            "ALIQ_PIS": 0 if pis_no_credit else record.pis_percent or 0,
             "QUANT_BC_PIS": 0,
             "ALIQ_PIS_QUANT": 0,
-            "VL_PIS": record.pis_value or 0,
-            "CST_COFINS": record.cofins_cst_code or "",
-            "VL_BC_COFINS": record.cofins_base or 0,
-            "ALIQ_COFINS": record.cofins_percent or 0,
+            "VL_PIS": 0 if pis_no_credit else record.pis_value or 0,
+            "CST_COFINS": record.entry_cofins_cst_id.code
+            or record.cofins_cst_code
+            or "",
+            "VL_BC_COFINS": 0 if cofins_no_credit else record.cofins_base or 0,
+            "ALIQ_COFINS": 0 if cofins_no_credit else record.cofins_percent or 0,
             "QUANT_BC_COFINS": 0,
             "ALIQ_COFINS_QUANT": 0,
-            "VL_COFINS": record.cofins_value or 0,
-            "COD_CTA": "",
+            "VL_COFINS": 0 if cofins_no_credit else record.cofins_value or 0,
+            "COD_CTA": record._get_sped_credit_accounts().code or "",
         }
 
 
@@ -1667,13 +1731,6 @@ class RegistroD100(models.Model):
 
     _odoo_model = "l10n_br_fiscal.document"
 
-    _STATUS_MAP = {
-        "autorizada": "00",
-        "cancelada": "02",
-        "denegada": "04",
-        "inutilizada": "05",
-    }
-
     @api.model
     def _odoo_domain(self, parent_record, declaration):
         return [
@@ -1690,9 +1747,9 @@ class RegistroD100(models.Model):
         return {
             "IND_OPER": "0" if record.fiscal_operation_type == "in" else "1",
             "IND_EMIT": "0" if record.issuer == "company" else "1",
-            "COD_PART": record.partner_id.id,
+            "COD_PART": record.partner_id._get_sped_cod_part(),
             "COD_MOD": record.document_type_id.code or "",
-            "COD_SIT": self._STATUS_MAP.get(record.state_edoc, "00"),
+            "COD_SIT": record._get_sped_cod_sit(),
             "SER": record.document_serie or "",
             "SUB": "",
             "NUM_DOC": record.document_number or "",
@@ -2988,7 +3045,7 @@ class RegistroM210(models.Model):
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
-        return _detail_vals(record, "ALIQ_PIS")
+        return _detail_vals(record, "ALIQ_PIS", declaration)
 
 
 class RegistroM211(models.Model):
@@ -3354,7 +3411,7 @@ class RegistroM610(models.Model):
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
-        return _detail_vals(record, "ALIQ_COFINS")
+        return _detail_vals(record, "ALIQ_COFINS", declaration)
 
 
 class RegistroM611(models.Model):
