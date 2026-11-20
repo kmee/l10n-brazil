@@ -28,7 +28,7 @@ class PurchaseOrderLine(models.Model):
         from it), in the order unit, leaving out the lines of ``move``."""
         self.ensure_one()
         total = 0.0
-        for bill_line in self.invoice_lines:
+        for bill_line in self.sudo().invoice_lines:
             bill = bill_line.move_id
             if bill == move or bill.state == "cancel":
                 continue

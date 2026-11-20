@@ -139,7 +139,7 @@ class FiscalDocumentLine(models.Model):
                 not wanted
                 or wanted == line.fiscal_operation_line_id
                 or wanted.fiscal_operation_id != operation
-                or line.document_id.move_ids
+                or line.document_id.sudo().move_ids
             ):
                 continue
             default = operation.line_definition(

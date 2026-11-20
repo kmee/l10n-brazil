@@ -15,8 +15,8 @@ class Document(models.Model):
 
     edi_can_generate_invoice = fields.Boolean(
         compute="_compute_edi_can_generate_invoice",
-        help="An imported document that was reviewed, has lines and an amount to "
-        "pay, and has no invoice yet. It is not stored.",
+        help="An imported document that was reviewed, has lines and an amount "
+        "declared in the file, and has no invoice yet. It is not stored.",
     )
 
     @api.depends(
@@ -24,7 +24,8 @@ class Document(models.Model):
         "import_state",
         "move_ids",
         "fiscal_line_ids",
-        "amount_financial_total",
+        "fiscal_operation_id",
+        "fiscal_line_ids.fiscal_amount_total",
     )
     def _compute_edi_can_generate_invoice(self):
         for document in self:
@@ -32,7 +33,7 @@ class Document(models.Model):
                 document.imported_document
                 and document.import_state == "resolved"
                 and document.fiscal_line_ids
-                and document.amount_financial_total
+                and document._edi_payment_totals()[0]
                 and not document.move_ids
             )
 

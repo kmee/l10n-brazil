@@ -3,10 +3,14 @@
 
 import io
 import zipfile
+from contextlib import closing
 from unittest.mock import patch
+
+from erpbrasil.base.fiscal.cnpj_cpf import formata
 
 from odoo import _
 from odoo.exceptions import AccessError, UserError
+from odoo.sql_db import db_connect
 
 from ..tools import EDI_IMPORT_NO_CREATE, EDI_IMPORT_PARTNER_BY_VAT, EdiPartnerData
 from .common import KEY_1, KEY_2, KEY_3, EdiImportCase
@@ -64,6 +68,29 @@ class TestDocumentImport(EdiImportCase):
         self.assertEqual(self.partner_by_vat, [True])
         self.assertTrue(documents.imported_document)
         self.assertEqual(documents.document_key, KEY_1)
+
+    def _another_transaction_can_lock(self, company, key):
+        """Whether a transaction of its own could take the lock of the note now."""
+        connection = db_connect(self.env.cr.dbname)
+        with closing(connection.cursor()) as cursor:
+            cursor.execute(
+                "SELECT pg_try_advisory_xact_lock(%s, hashtext(%s))", (company.id, key)
+            )
+            free = cursor.fetchone()[0]
+            cursor.rollback()
+        return free
+
+    def test_the_import_of_a_note_holds_its_lock_until_the_transaction_ends(self):
+        """Two imports of the same note at once must end in one document: the second
+        waits for the first, so it finds the document. Another transaction cannot take
+        the lock of the note of that company, but can take the one of another note and
+        the one of the same note in another company."""
+        parsed = self._parsed(KEY_1)
+        self.assertTrue(self._another_transaction_can_lock(self.company, KEY_1))
+        self._import([(parsed.file_name, b"x")], [parsed])
+        self.assertFalse(self._another_transaction_can_lock(self.company, KEY_1))
+        self.assertTrue(self._another_transaction_can_lock(self.company, KEY_2))
+        self.assertTrue(self._another_transaction_can_lock(self.other_company, KEY_1))
 
     def test_the_same_note_twice_opens_the_same_document_with_a_warning(self):
         parsed = self._parsed(KEY_1)
@@ -164,6 +191,27 @@ class TestDocumentImport(EdiImportCase):
         self.assertFalse(documents)
         self.assertIn("no access to the company", errors[0][1])
         self.assertEqual(self.create_contexts, [])
+
+    def test_a_user_of_another_company_gets_a_clear_refusal_not_an_access_error(self):
+        """The file is for a company that the user does not have: the answer says so
+        and which CNPJ the file is for, instead of the raw access error of Odoo, and
+        it never needs to read the name of a company the user cannot see."""
+        user = self._fiscal_user(
+            "fiscal_user_only_company_2", companies=self.other_company
+        )
+        model = self.Document.with_user(user).with_context(
+            allowed_company_ids=self.other_company.ids
+        )
+        parsed = self._parsed(KEY_1)
+        with self.assertRaises(UserError) as error:
+            model._edi_import_company(parsed)
+        message = str(error.exception)
+        self.assertIn("no access to the company with the CNPJ", message)
+        self.assertIn(self._cnpj(self.company), message)
+        self.assertNotIn(self.company.name, message)
+
+    def _cnpj(self, company):
+        return formata(company.partner_id.cnpj_cpf_stripped)
 
     def test_the_company_is_searched_in_the_order_of_the_roles(self):
         parsed = self._parsed(
@@ -267,6 +315,41 @@ class TestDocumentImport(EdiImportCase):
         self.assertEqual(self.supplier.legal_name, "Fornecedor Alfa Ltda")
         self.assertEqual(self.supplier.street_number, "100")
         self.assertIn("differ from the registry", document.message_ids[0].body)
+
+    def test_the_warning_is_the_picture_of_a_day_and_checking_again_updates_it(self):
+        """A registry corrected after the import does not change the warning by itself:
+        it says when it was compared, and the button compares again and clears it."""
+        self.supplier.write({"legal_name": "Fornecedor Alfa Ltda"})
+        document = self._create_imported_document()
+        data = EdiPartnerData(role="issuer", vat="59594315000157", name="Beta Ltda")
+        self._check_partners(document, data)
+        self.assertIn("Beta Ltda", document.import_partner_warning)
+        self.assertTrue(document.import_partner_checked)
+        self.assertIn("as compared with the registry on", document.import_warning)
+        # the registry is corrected: nothing changes until somebody checks again
+        self.supplier.write({"legal_name": "Beta Ltda"})
+        document.invalidate_recordset()
+        self.assertIn("Beta Ltda", document.import_partner_warning)
+        document.original_xml_file_id = self.env["ir.attachment"].create(
+            {"name": "a.xml", "raw": b"<a/>"}
+        )
+        model = type(self.Document)
+        with patch.object(
+            model, "_edi_import_read", lambda doc, name, content: self._parsed(KEY_1)
+        ), patch.object(
+            model,
+            "_edi_import_partner_data",
+            lambda doc, parsed: [(doc.partner_id, data)],
+        ):
+            document.action_import_check_partners_again()
+        self.assertFalse(document.import_partner_warning)
+        self.assertNotIn(
+            "as compared with the registry on", document.import_warning or ""
+        )
+        # a document whose file is gone says so
+        document.original_xml_file_id = False
+        with self.assertRaises(UserError):
+            document.action_import_check_partners_again()
 
     def test_the_same_data_written_differently_is_not_reported(self):
         self.supplier.write(
@@ -439,7 +522,10 @@ class TestDocumentImport(EdiImportCase):
                 {"name": "Already there", "default_code": "OWN-4"}
             )
             before += 1
+            self.assertTrue(document.import_missing_products)
             action = document.action_import_create_products()
+            # only the line with an unknown unit is left, and it cannot be created
+            self.assertFalse(document.import_missing_products)
             created = product_model.search([("default_code", "=", "OWN-3")])
             self.assertEqual(len(created), 1)
             self.assertEqual(created.name, "OWN-3 first")
@@ -821,6 +907,13 @@ class TestDocumentImport(EdiImportCase):
         self.assertFalse(document.import_warning)
         document.fiscal_operation_id = False
         self.assertIn("No fiscal operation", document.import_warning)
+
+    def test_a_document_without_lines_has_no_operation_to_suggest(self):
+        """An MDF-e of the company has no line, so no CFOP to match an operation: the
+        warning that no operation matches the CFOP only makes sense with lines."""
+        document = self._create_imported_document(lines=[], fiscal_operation_id=False)
+        self.assertFalse(document.fiscal_line_ids)
+        self.assertFalse(document.import_warning)
 
     def test_the_review_is_also_a_state_of_the_list(self):
         document = self._create_imported_document()

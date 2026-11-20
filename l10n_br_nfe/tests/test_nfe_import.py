@@ -10,12 +10,13 @@ from datetime import date
 from unittest import mock
 
 import nfelib
+from lxml import etree
 from nfelib.nfe.bindings.v4_0.leiaute_nfe_v4_00 import TnfeProc
 
 from odoo import fields
 from odoo.exceptions import UserError
 from odoo.models import NewId
-from odoo.tests import TransactionCase
+from odoo.tests import Form, TransactionCase
 
 from odoo.addons import l10n_br_nfe
 from odoo.addons.l10n_br_fiscal_edi.tests.common import (
@@ -1289,6 +1290,22 @@ class TestNfeDocumentImport(EdiImportCase):
 
     # The NF-e module answers only for the NF-e: the other types go to the base.
 
+    def test_the_page_of_installments_shows_the_name_of_the_means_of_payment(self):
+        document = self._imported(self._xml(KEY_1))
+
+        self.assertEqual(
+            document._edi_payment_means_label("15"), "15 - Boleto Bancário"
+        )
+        self.assertEqual(document._edi_payment_means_label("77"), "77")
+        self.assertIn("01 - Dinheiro", str(document.edi_payment_summary))
+
+    def test_a_document_of_another_type_shows_the_code_of_the_means(self):
+        document = self._create_imported_document(
+            document_type_id=self.env.ref("l10n_br_fiscal.document_SE").id
+        )
+
+        self.assertEqual(document._edi_payment_means_label("15"), "15")
+
     def test_a_document_of_another_type_declares_nothing_and_does_not_fail(self):
         document = self._create_imported_document(
             document_type_id=self.env.ref("l10n_br_fiscal.document_SE").id
@@ -1617,6 +1634,52 @@ class TestNfeOwnNoteImport(EdiImportCase):
 
         self._danfe_without_mail(document)
 
+    def _print_action_pdf(self, document):
+        report = self.env.ref("l10n_br_nfe.report_danfe")
+        return report._render_qweb_pdf("main_template_danfe", document.ids)[0]
+
+    def _same_file_by_both_paths(self, document):
+        document.action_document_confirm()
+        self.assertFalse(document.file_report_id)
+
+        printed = self._print_action_pdf(document)
+
+        stored = document.file_report_id
+        self.assertEqual(stored.with_context(bin_size=False).raw, printed)
+        self.assertEqual(self._print_action_pdf(document), printed)
+        action = document.view_pdf()
+        self.assertEqual(document.file_report_id, stored)
+        self.assertIn(str(stored.id), action["url"])
+
+    def test_the_print_action_and_the_view_of_the_own_note_give_the_same_stored_file(
+        self,
+    ):
+        document = self._resolved(self._own_xml(3, protocol="135200000000003"))
+
+        self._same_file_by_both_paths(document)
+
+    def test_the_print_action_and_the_view_of_a_received_note_give_the_same_file(self):
+        document = self._import(self._received_xml())
+        product = self.env["product.product"].create({"name": "Received product"})
+        document.fiscal_line_ids.product_id = product
+        document.fiscal_line_ids.action_resolve_line()
+
+        self._same_file_by_both_paths(document)
+
+    def test_the_confirm_button_is_shown_on_an_imported_document(self):
+        user = self._fiscal_user("confirm_button", self.company)
+        received = self._import(self._received_xml())
+        own = self._import(self._own_xml(4))
+        for label, document in (("received", received), ("own", own)):
+            with self.subTest(note=label):
+                arch = document.with_user(user).get_view(view_type="form")["arch"]
+                buttons = etree.fromstring(arch).xpath(
+                    "//button[@name='action_document_confirm']"
+                )
+
+                self.assertEqual(len(buttons), 1)
+                self.assertNotIn("imported_document", buttons[0].get("modifiers"))
+
 
 class TestNfeInvoiceOfTheCollection(EdiImportCase):
     """The ``fat`` of the collection mirrors fields of the document and must not
@@ -1691,3 +1754,180 @@ class TestNfeMatchOfAnotherSchema(EdiImportCase):
 
         self.assertEqual(result, 42)
         self.assertEqual(calls, [({"xyz40_CNPJ": "1"}, {"nfe40_CNPJ": "2"})])
+
+
+class TestNfeImportAccess(EdiImportCase):
+    """The common fiscal user (no NF-e group) imports a purchase note whatever
+    optional groups of the layout it carries, and opens the document and its
+    lines: the spec models are read, and created only where the import creates."""
+
+    PROD_END = b"</prod>"
+    OPTIONAL_GROUPS = {
+        "rastro": (
+            PROD_END,
+            b"<rastro><nLote>L1</nLote><qLote>1.000</qLote><dFab>2026-01-01</dFab>"
+            b"<dVal>2027-01-01</dVal></rastro>",
+        ),
+        "med": (
+            PROD_END,
+            b"<med><cProdANVISA>1234567890123</cProdANVISA><vPMC>10.00</vPMC></med>",
+        ),
+        "veicProd": (
+            PROD_END,
+            b"<veicProd><tpOp>1</tpOp><chassi>9BWZZZ377VT004251</chassi><cCor>01</cCor>"
+            b"<xCor>Branca</xCor><pot>100</pot><cilin>1000</cilin><pesoL>1000</pesoL>"
+            b"<pesoB>1100</pesoB><nSerie>1</nSerie><tpComb>01</tpComb><nMotor>1</nMotor>"
+            b"<CMT>1</CMT><dist>1</dist><anoMod>2025</anoMod><anoFab>2025</anoFab>"
+            b"<tpPint>M</tpPint><tpVeic>06</tpVeic><espVeic>1</espVeic><VIN>N</VIN>"
+            b"<condVeic>1</condVeic><cMod>1</cMod><cCorDENATRAN>1</cCorDENATRAN>"
+            b"<lota>1</lota><tpRest>0</tpRest></veicProd>",
+        ),
+        "arma": (
+            PROD_END,
+            b"<arma><tpArma>0</tpArma><nSerie>1</nSerie><nCano>1</nCano>"
+            b"<descr>Arma</descr></arma>",
+        ),
+        "comb": (
+            PROD_END,
+            b"<comb><cProdANP>210203001</cProdANP><descANP>GLP</descANP>"
+            b"<UFCons>SP</UFCons></comb>",
+        ),
+        "DI": (
+            PROD_END,
+            b"<DI><nDI>123</nDI><dDI>2026-01-01</dDI><xLocDesemb>Santos</xLocDesemb>"
+            b"<UFDesemb>SP</UFDesemb><dDesemb>2026-01-02</dDesemb>"
+            b"<tpViaTransp>1</tpViaTransp><tpIntermedio>1</tpIntermedio>"
+            b"<cExportador>E1</cExportador><adi><nAdicao>1</nAdicao>"
+            b"<nSeqAdic>1</nSeqAdic><cFabricante>F1</cFabricante></adi></DI>",
+        ),
+        "detExport": (PROD_END, b"<detExport><nDraw>1</nDraw></detExport>"),
+        "obsItem": (
+            b"</det>",
+            b'<obsItem><obsCont xCampo="a"><xTexto>b</xTexto></obsCont></obsItem>',
+        ),
+        "impostoDevol": (
+            b"</imposto>",
+            b"</imposto><impostoDevol><pDevol>10.00</pDevol><IPI>"
+            b"<vIPIDevol>1.00</vIPIDevol></IPI></impostoDevol>",
+        ),
+        "obsCont": (
+            b"</infAdic>",
+            b'<obsCont xCampo="c"><xTexto>t</xTexto></obsCont></infAdic>',
+        ),
+        "procRef": (
+            b"</infAdic>",
+            b"<procRef><nProc>1</nProc><indProc>0</indProc></procRef></infAdic>",
+        ),
+        "veicTransp": (
+            b"</transp>",
+            b"<veicTransp><placa>ABC1234</placa><UF>SP</UF></veicTransp></transp>",
+        ),
+        "reboque": (
+            b"</transp>",
+            b"<reboque><placa>ABC1235</placa><UF>SP</UF></reboque></transp>",
+        ),
+        "lacres": (
+            b"</transp>",
+            b"<vol><qVol>2</qVol><lacres><nLacre>1</nLacre></lacres></vol></transp>",
+        ),
+        "retTransp": (
+            b"</transp>",
+            b"<retTransp><vServ>1.00</vServ><vBCRet>1.00</vBCRet><pICMSRet>1.00"
+            b"</pICMSRet><vICMSRet>0.01</vICMSRet><CFOP>5353</CFOP>"
+            b"<cMunFG>3550308</cMunFG></retTransp></transp>",
+        ),
+        "compra": (
+            b"</infNFe>",
+            b"<compra><xNEmp>1</xNEmp><xPed>2</xPed><xCont>3</xCont></compra></infNFe>",
+        ),
+        "exporta": (
+            b"</infNFe>",
+            b"<exporta><UFSaidaPais>SP</UFSaidaPais><xLocExporta>X</xLocExporta>"
+            b"</exporta></infNFe>",
+        ),
+        "infIntermed": (
+            b"</infNFe>",
+            b"<infIntermed><CNPJ>11222333000181</CNPJ><idCadIntTran>1</idCadIntTran>"
+            b"</infIntermed></infNFe>",
+        ),
+        "avulsa": (
+            b"</infNFe>",
+            b"<avulsa><CNPJ>11222333000181</CNPJ><xOrgao>O</xOrgao><matr>1</matr>"
+            b"<xAgente>A</xAgente><UF>SP</UF></avulsa></infNFe>",
+        ),
+        "retirada": (
+            b"</infNFe>",
+            b"<retirada><CNPJ>11222333000181</CNPJ><xLgr>R</xLgr><nro>1</nro>"
+            b"<xBairro>B</xBairro><cMun>3550308</cMun><xMun>SP</xMun><UF>SP</UF>"
+            b"</retirada></infNFe>",
+        ),
+        "autXML": (
+            b"</infNFe>",
+            b"<autXML><CNPJ>11222333000181</CNPJ></autXML></infNFe>",
+        ),
+        "NFref": (
+            b"</ide>",
+            b"<NFref><refNFe>35200181583054000129550010000000052062777166</refNFe>"
+            b"</NFref></ide>",
+        ),
+    }
+
+    def setUp(self):
+        super().setUp()
+        self.env["res.partner"].create(
+            {
+                "name": "Registered by someone else",
+                "cnpj_cpf": "11.222.333/0001-81",
+                "country_id": self.env.ref("base.br").id,
+            }
+        )
+        self.user = self._fiscal_user("fiscal_without_nfe_group")
+        self.assertNotIn(self.env.ref("l10n_br_nfe.group_user"), self.user.groups_id)
+        self.service = self.Document.with_user(self.user).with_context(
+            allowed_company_ids=self.company.ids
+        )
+
+    def _xml(self, anchor=None, snippet=b""):
+        with open(os.path.join(FIXTURE_DIR, f"NFe{KEY_1}.xml"), "rb") as xml_file:
+            xml = xml_file.read()
+        xml = FIXTURE_DEST.sub(
+            rb"\1<CNPJ>%s</CNPJ>" % self.company.partner_id.cnpj_cpf_stripped.encode(),
+            xml,
+        )
+        if anchor:
+            xml = xml.replace(anchor, snippet, 1)
+        return xml
+
+    def test_each_optional_group_of_the_layout_is_imported_by_the_fiscal_user(self):
+        # the issuer is registered too: the user creates no contact
+        for label, (anchor, snippet) in self.OPTIONAL_GROUPS.items():
+            with self.subTest(group=label):
+                if anchor in (self.PROD_END, b"</det>"):
+                    snippet += anchor
+                documents, errors, _warnings = self.service._edi_import_files(
+                    [("group.xml", self._xml(anchor, snippet))]
+                )
+                self.assertFalse(errors)
+                self.assertTrue(documents)
+                documents.sudo().unlink()
+
+    def test_the_fiscal_user_opens_the_document_and_the_lines_that_have_groups(self):
+        for label in ("DI", "lacres"):
+            with self.subTest(group=label):
+                anchor, snippet = self.OPTIONAL_GROUPS[label]
+                if anchor in (self.PROD_END, b"</det>"):
+                    snippet += anchor
+                documents, errors, _warnings = self.service._edi_import_files(
+                    [("form.xml", self._xml(anchor, snippet))]
+                )
+                self.assertFalse(errors)
+                document = documents.with_user(self.user)
+
+                Form(document)
+                line_form = Form(document.fiscal_line_ids)
+
+                if label == "DI":
+                    self.assertEqual(len(line_form.nfe40_DI), 1)
+                    adi = document.fiscal_line_ids.nfe40_DI.nfe40_adi
+                    self.assertEqual(adi.nfe40_nAdicao, "1")
+                documents.sudo().unlink()

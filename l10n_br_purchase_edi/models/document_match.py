@@ -359,8 +359,9 @@ class DocumentMatch(models.Model):
         document = lines.document_id
         if len(document) != 1:
             raise UserError(_("Select the lines of one document at a time."))
-        if document.state_edoc != DOCUMENT_STATE_DRAFT or document.move_ids.filtered(
-            lambda move: move.state != "cancel"
+        if (
+            document.state_edoc != DOCUMENT_STATE_DRAFT
+            or document.sudo().move_ids.filtered(lambda move: move.state != "cancel")
         ):
             raise UserError(
                 _("The document %s is not in draft or already has a bill.")
