@@ -3,6 +3,7 @@
 
 import os
 import re
+from unittest.mock import patch
 
 import nfelib
 from erpbrasil.base.fiscal.cnpj_cpf import formata
@@ -273,7 +274,10 @@ class TestNfseDocumentImport(EdiImportCase):
     def test_an_imported_nfse_without_issuing_gets_a_clear_message_for_the_pdf(self):
         documents, _errors, _warnings = self._import(nfse_xml())
         self.assertFalse(documents.file_report_id)
-        with self.assertRaisesRegex(UserError, "printed version of an imported NFS-e"):
+        with patch(
+            "odoo.addons.l10n_br_nfse.models.document.filter_processador_edoc_nfse",
+            lambda record: False,
+        ), self.assertRaisesRegex(UserError, "printed version of an imported NFS-e"):
             NfseDocument.make_pdf(documents)
 
     def test_the_service_of_an_nfse_issued_by_the_company_is_never_created(self):
