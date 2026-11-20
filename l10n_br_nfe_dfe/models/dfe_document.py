@@ -4,6 +4,7 @@
 import base64
 import binascii
 import logging
+from datetime import timedelta
 from io import BytesIO
 
 from lxml import objectify
@@ -12,7 +13,7 @@ from lxml.etree import XMLSyntaxError
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
-from ..constants.nfe_dfe import SITUACAO_NFE
+from ..constants.nfe_dfe import ACKNOWLEDGEMENT_DAYS, SITUACAO_NFE
 
 try:
     from brazilfiscalreport.danfe import Danfe
@@ -136,26 +137,69 @@ class L10nBrFiscalDfeDocument(models.Model):
             "view_mode": "form",
         }
 
-    def import_document(self):
-        if self.fiscal_type != "nfe":
-            return super().import_document()
-        complete = self._get_complete_dfe()
-        if not complete or not complete.attachment_id:
+    def _check_acknowledgement_period(self):
+        self.ensure_one()
+        emission = self.document_emission_date
+        if emission and fields.Datetime.now() - emission > timedelta(
+            days=ACKNOWLEDGEMENT_DAYS
+        ):
             raise UserError(
-                _("You can only import the NF-e when the DF-e is completed.")
+                _(
+                    "The acknowledgement is only possible until %s days after the "
+                    "authorization. Upload the XML file instead."
+                )
+                % ACKNOWLEDGEMENT_DAYS
             )
-        return {
-            "name": _("Import NF-e XML"),
-            "type": "ir.actions.act_window",
-            "res_model": "l10n_br_fiscal.document.import.wizard",
-            "view_mode": "form",
-            "target": "new",
-            "context": {
-                "default_file": complete.attachment_id.with_context(
-                    bin_size=False
-                ).datas,
-            },
-        }
+
+    def _dfe_import_confirmation_message(self):
+        if self.fiscal_type != "nfe":
+            return super()._dfe_import_confirmation_message()
+        self.ensure_one()
+        if self.manifestation_status != "sem_manifestacao":
+            return False
+        self._check_acknowledgement_period()
+        return _(
+            "The complete XML is only released after the acknowledgement of the "
+            "operation (ciencia), an event registered at the tax authority that "
+            "obliges the company to register the final manifestation afterwards. "
+            "Register it?"
+        )
+
+    def _dfe_import_request(self):
+        """Register the acknowledgement (ciencia, event 210210) that releases the
+        complete XML. The fiscal document is created when the XML arrives."""
+        if self.fiscal_type != "nfe":
+            return super()._dfe_import_request()
+        self.ensure_one()
+        if self.manifestation_status == "sem_manifestacao":
+            self._check_acknowledgement_period()
+            event = (
+                self.env["l10n_br_nfe.md_event"]
+                .sudo()
+                .create(
+                    {
+                        "access_key": self.access_key,
+                        "event_type": "ciente",
+                        "company_id": self.company_id.id,
+                        "document_type": "nfe",
+                        "dfe_document_id": self.id,
+                    }
+                )
+            )
+            event.with_company(self.company_id).action_confirm()
+            message = _(
+                "Acknowledgement of the operation registered by %s. The final "
+                "manifestation of the recipient is now mandatory, and the fiscal "
+                "document is created when the complete XML arrives."
+            )
+        else:
+            message = _(
+                "%s asked to import this NF-e. The acknowledgement was already "
+                "registered: the fiscal document is created when the complete "
+                "XML arrives."
+            )
+        self.sudo().import_requested_user_id = self.env.user
+        self.sudo()._message_log(body=message % self.env.user.name)
 
     def make_pdf(self):
         """Generate the DANFE PDF from the complete NF-e XML."""
