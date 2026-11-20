@@ -256,3 +256,48 @@ class TestMatch(PurchaseEdiCase):
         order = self.env["purchase.order"].browse(action["res_id"])
         self.assertEqual(order.partner_id, partner)
         self.assertEqual((partner.name, partner.write_date), before)
+
+    def test_the_order_row_shows_the_note_and_the_difference_side_by_side(self):
+        order = self._order(quantity=10, price=4.0)
+        self.line.write({"quantity": 8, "price_unit": 4.5, "uom_id": self.unit.id})
+        self._resolve_product()
+
+        rows = self._open().with_context(match_document_id=self.document.id)
+
+        row = rows.filtered(lambda row: row.purchase_line_id == order.order_line)
+        self.assertEqual((row.note_quantity, row.note_price_unit), (8, 4.5))
+        self.assertEqual(row.quantity_difference, -2)
+        self.assertAlmostEqual(row.price_difference, -0.5)
+        self.assertAlmostEqual(row.price_difference_percent, -100 * 0.5 / 4.5)
+        note = rows.filtered(lambda row: row.kind == "note")
+        self.assertEqual(note.price_difference, 0)
+
+    def test_the_tela_says_why_nothing_was_suggested(self):
+        first = self._order()
+        second = self._order()
+        self._resolve_product()
+        self.assertEqual(self.line.import_origin_state, "pending")
+
+        rows = self._open().with_context(match_document_id=self.document.id)
+
+        note = rows.filtered(lambda row: row.kind == "note")
+        orders = rows.filtered(lambda row: row.kind == "order")
+        self.assertEqual(note.hint, "2 possible order lines: choose one")
+        self.assertEqual(orders.purchase_line_id, first.order_line | second.order_line)
+
+    def test_a_fully_invoiced_order_is_not_a_candidate(self):
+        order = self._order(quantity=1)
+        other = self._imported_document(lines=[{"quantity": 1}])
+        other_line = other.fiscal_line_ids
+        self._resolve_product(other_line)
+        other_line.import_purchase_line_id = order.order_line
+        other.action_generate_invoice()
+        self.assertEqual(order.order_line.qty_invoiced, 1)
+
+        self._resolve_product()
+
+        self.assertFalse(self._rows(purchase_line_id=order.order_line.id))
+        self.assertFalse(self.line.import_purchase_line_id)
+        # nothing to choose from: it does not hold the invoice
+        self.assertFalse(self.line.import_origin_candidate_ids)
+        self.assertFalse(self.document._import_undecided_origin_lines())

@@ -87,11 +87,37 @@ class DocumentMatch(models.Model):
         "documents that have no bill yet.",
     )
     price_unit = fields.Float(string="Price", readonly=True, digits="Product Price")
-    price_difference = fields.Float(
-        compute="_compute_price_difference",
+    note_quantity = fields.Float(
+        compute="_compute_note_comparison",
+        digits="Product Unit of Measure",
+        help="Quantity of the line of the document being matched (context) for "
+        "the same product, in the unit of this row.",
+    )
+    note_price_unit = fields.Float(
+        compute="_compute_note_comparison",
         digits="Product Price",
-        help="Quotation price less the price of the line of the document being "
-        "matched (context) for the same product, in the unit of the quotation.",
+        help="Price of the line of the document being matched (context) for the "
+        "same product, in the unit of this row.",
+    )
+    quantity_difference = fields.Float(
+        compute="_compute_note_comparison",
+        digits="Product Unit of Measure",
+        help="Quantity of the document less the balance of the order line.",
+    )
+    price_difference = fields.Float(
+        compute="_compute_note_comparison",
+        digits="Product Price",
+        help="Price of the order line or quotation less the price of the line of "
+        "the document being matched (context) for the same product, in the "
+        "unit of the row.",
+    )
+    price_difference_percent = fields.Float(
+        compute="_compute_note_comparison",
+        help="The price difference as a percentage of the price of the document.",
+    )
+    hint = fields.Char(
+        compute="_compute_note_comparison",
+        help="Why the line of the document has no suggestion yet.",
     )
     currency_id = fields.Many2one(comodel_name="res.currency", readonly=True)
     reference = fields.Char(readonly=True)
@@ -264,8 +290,8 @@ class DocumentMatch(models.Model):
         """
 
     @api.depends_context("match_document_id")
-    @api.depends("kind", "price_unit", "uom_id", "product_id")
-    def _compute_price_difference(self):
+    @api.depends("kind", "price_unit", "uom_id", "product_id", "line_state")
+    def _compute_note_comparison(self):
         document_id = self.env.context.get("match_document_id")
         notes = self.browse()
         if document_id:
@@ -273,16 +299,46 @@ class DocumentMatch(models.Model):
                 [("kind", "=", "note"), ("fiscal_document_id", "=", document_id)]
             )
         for row in self:
-            row.price_difference = 0.0
-            if row.kind != "quote":
+            row.note_quantity = row.note_price_unit = 0.0
+            row.quantity_difference = row.price_difference = 0.0
+            row.price_difference_percent = 0.0
+            row.hint = False
+            if row.kind == "note":
+                row.hint = row._note_hint()
                 continue
             same = notes.filtered(
                 lambda note, row=row: note.product_id == row.product_id
             )
-            if len(same) != 1:
+            if len(same) != 1 or not row.uom_id:
                 continue
+            quantity = same.uom_id._compute_quantity(
+                same.quantity, row.uom_id, raise_if_failure=False
+            )
             price = same.uom_id._compute_price(same.price_unit, row.uom_id)
+            row.note_quantity = quantity
+            row.note_price_unit = price
+            row.quantity_difference = quantity - row.open_quantity
             row.price_difference = row.price_unit - price
+            if price:
+                row.price_difference_percent = 100 * (row.price_unit - price) / price
+
+    def _note_hint(self):
+        """Why a line of the document waits for a choice: the order lines that
+        could be its origin."""
+        self.ensure_one()
+        if self.line_state != "pending":
+            return False
+        count = self.search_count(
+            [
+                ("kind", "=", "order"),
+                ("company_id", "=", self.company_id.id),
+                ("partner_id", "=", self.partner_id.id),
+                ("product_id", "=", self.product_id.id),
+            ]
+        )
+        if count < 2:
+            return False
+        return _("%s possible order lines: choose one", count)
 
     # Actions ---------------------------------------------------------------
 
