@@ -24,14 +24,14 @@ msgid ""
 "%(count)s line(s) have the origin (purchase order line) not decided yet. Use "
 "Confirm Origins to accept the suggestions, or Match with Orders to choose "
 "the order line of each one or to mark the line as without order. A line "
-"whose product is still a suggestion only gets its origin after Confirm "
-"Suggestions."
+"whose product is only a suggestion and that declares no order in the file "
+"gets its origin after Confirm Suggestions."
 msgstr ""
 "%(count)s linha(s) com a origem (linha do pedido de compra) ainda não "
 "decidida. Use Confirmar origens para aceitar as sugestões, ou Conciliar com "
 "pedidos para escolher a linha do pedido de cada uma ou marcar a linha como "
-"sem pedido. Uma linha cujo produto ainda é sugestão só recebe a origem depois "
-"de Confirmar sugestões."
+"sem pedido. Uma linha cujo produto é só uma sugestão e que não declara pedido no "
+"arquivo recebe a origem depois de Confirmar sugestões."
 
 #. module: l10n_br_purchase_edi
 #. odoo-python

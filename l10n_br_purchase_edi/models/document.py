@@ -46,10 +46,59 @@ class FiscalDocument(models.Model):
 
     def _edi_import_suggest(self):
         result = super()._edi_import_suggest()
+        documents = self.filtered("imported_document")
+        # the order the file declares is a decision of the supplier: it gives the
+        # product of the line
+        documents._edi_import_apply_order_reference()
         # the operation was suggested by the base: an origin resolved now takes
         # the destination of its order along
-        self.filtered("imported_document").fiscal_line_ids._suggest_import_origin()
+        documents.fiscal_line_ids._suggest_import_origin()
         return result
+
+    def _edi_import_apply_order_reference(self):
+        """Resolve the lines whose file declares one confirmed order line (xPed
+        and nItemPed) of this supplier and company: the product is the one of the
+        order line, and so is the unit when the file declares none that the
+        company knows. A unit the file declares and nothing explains leaves the
+        line for the review, as before."""
+        uom_model = self.env["uom.uom"]
+        supplierinfo_model = self.env["product.supplierinfo"].sudo()
+        for line in self.fiscal_line_ids.filtered(
+            lambda line: line.import_state in (False, "pending", "matched")
+        ):
+            order_line = line._find_purchase_line_by_declared_item()
+            if not order_line:
+                continue
+            product = order_line.product_id
+            if line.product_id and line.product_id != product:
+                continue  # another product was already chosen for the line
+            declared = uom_model._match_by_fiscal_code(line.partner_uom_code)
+            code = line._get_partner_product_code()
+            info = code and supplierinfo_model.search(
+                [
+                    ("partner_id", "=", self.partner_id.id),
+                    ("product_code", "=", code),
+                    "|",
+                    ("product_id", "=", product.id),
+                    ("product_tmpl_id", "=", product.product_tmpl_id.id),
+                ],
+                limit=1,
+            )
+            learned_uom, learned_factor = (
+                line._get_supplierinfo_unit(info) if info else (uom_model, 1.0)
+            )
+            if declared and learned_uom == declared:
+                line._apply_import_depara(
+                    product=product, uom=product.uom_po_id, factor=learned_factor
+                )
+            elif not declared or declared == order_line.product_uom:
+                line._apply_import_depara(
+                    product=product, uom=order_line.product_uom, factor=1.0
+                )
+            else:
+                # a unit that the order does not explain: the person decides
+                line.product_id = product
+                line.import_state = "matched"
 
     def action_confirm_import_origins(self):
         """Confirm, in one step, the origins suggested on the lines."""
@@ -81,8 +130,8 @@ class FiscalDocument(models.Model):
                     "not decided yet. Use Confirm Origins to accept the "
                     "suggestions, or Match with Orders to choose the order line "
                     "of each one or to mark the line as without order. A line whose "
-                    "product is still a suggestion only gets its origin after Confirm "
-                    "Suggestions.",
+                    "product is only a suggestion and that declares no order in the "
+                    "file gets its origin after Confirm Suggestions.",
                     count=len(undecided),
                 )
             )
