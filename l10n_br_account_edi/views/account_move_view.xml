@@ -7,6 +7,19 @@
         <field name="model">account.move</field>
         <field name="inherit_id" ref="l10n_br_account.invoice_form" />
         <field name="arch" type="xml">
+            <field name="document_serie_id" position="attributes">
+                <attribute
+                    name="attrs"
+                >{'invisible': ['|', '|', ('document_type_id', '=', False), ('issuer', '=', 'partner'), ('imported_document', '=', True)], 'required': [('issuer', '=', 'company'), ('document_type_id', '!=', False), ('imported_document', '=', False)], 'readonly': [('state', '!=', 'draft')]}</attribute>
+            </field>
+            <field name="document_serie" position="attributes">
+                <attribute
+                    name="attrs"
+                >{'invisible': ['|', ('document_type_id', '=', False), '&amp;', ('issuer', '=', 'company'), ('imported_document', '=', False)], 'required': [('issuer', '=', 'partner'), ('document_type_id', '!=', False), ('state', '=', 'draft')], 'readonly': [('state', '!=', 'draft')]}</attribute>
+            </field>
+            <field name="document_serie_id" position="before">
+                <field name="imported_document" invisible="1" />
+            </field>
             <xpath expr="//page[@id='other_tab']" position="after">
                 <page
                     name="edi_payment"
