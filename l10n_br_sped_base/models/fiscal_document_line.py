@@ -13,7 +13,10 @@ class FiscalDocumentLine(models.Model):
         (regime, destination by the CFOP, Simples supplier). A CST that already
         says there is no credit (ICMS 40, IPI 02) is kept as it is."""
         self.ensure_one()
-        return bool(cst.default_creditable_tax) and self._tax_credit_vetoed(tax_domain)
+        return (
+            bool(cst.default_creditable_tax)
+            and self._get_tax_creditability_map()[tax_domain] == "cost"
+        )
 
     def _get_sped_ipi_cst(self):
         """The IPI CST the books carry: the one of the entry when there is one,

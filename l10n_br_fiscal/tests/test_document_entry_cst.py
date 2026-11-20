@@ -126,6 +126,32 @@ class TestDocumentEntryCst(TransactionCase):
         self.assertFalse(line._entry_piscofins_without_credit("pis"))
         self.assertFalse(line._entry_piscofins_without_credit("cofins"))
 
+    def test_creditability_map_reads_the_entry_cst_of_an_imported_line(self):
+        self.company_real.is_industry = True
+        line = self._document(
+            self.company_real,
+            ipi_cst_id=self.env.ref("l10n_br_fiscal.cst_ipi_50").id,
+        ).fiscal_line_ids
+        self.assertEqual(line.ipi_cst_id.code, "50", "the CST of the file stays")
+        tax_map = line._get_tax_creditability_map()
+        self.assertEqual(tax_map["ipi"], "credit")
+        self.assertEqual(tax_map["pis"], "credit")
+        self.assertEqual(tax_map["cofins"], "credit")
+
+    def test_creditability_map_of_an_imported_use_and_consumption(self):
+        self.company_real.is_industry = True
+        line = self._document(
+            self.company_real,
+            fiscal_operation_line_id=self.env.ref(
+                "l10n_br_fiscal.fo_compras_compras_uso_consumo"
+            ).id,
+            ipi_cst_id=self.env.ref("l10n_br_fiscal.cst_ipi_50").id,
+        ).fiscal_line_ids
+        tax_map = line._get_tax_creditability_map()
+        self.assertEqual(tax_map["ipi"], "cost")
+        self.assertEqual(tax_map["pis"], "cost")
+        self.assertEqual(tax_map["cofins"], "cost")
+
     def _assert_entry_without_piscofins_credit(self, operation_line, type_move):
         line = self._document(
             self.company_real,

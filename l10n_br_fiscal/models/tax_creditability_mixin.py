@@ -90,27 +90,38 @@ class TaxCreditabilityMixin(models.AbstractModel):
             return False
         return not self.icmssn_credit_value
 
+    def _tax_credit_gates_allow(self, tax_domain):
+        """Whether the BUYER regime, the DESTINATION of the goods (CFOP) and
+        a Simples supplier allow the credit of ``tax_domain``, whatever the
+        CST. The CST of an entry is derived from these gates, so they never
+        read it.
+        """
+        self.ensure_one()
+        if not self._creditable_tax_regime_gates().get(tax_domain):
+            return False
+        if not self._creditable_tax_destination_gates().get(tax_domain, True):
+            return False
+        if tax_domain == "icms":
+            return not self._is_simples_supplier_without_credit()
+        return True
+
+    def _get_creditability_cst(self, tax_domain):
+        """The CST whose nature decides the credit of ``tax_domain``."""
+        self.ensure_one()
+        return self[f"{tax_domain}_cst_id"]
+
     def _resolve_tax_creditability(self, tax_domain):
         """Whether this line may credit ``tax_domain``.
 
         All three gates must allow it: the BUYER regime, the DESTINATION
-        of the goods (CFOP) and the NATURE of the operation (line CST).
+        of the goods (CFOP) and the NATURE of the operation (the CST).
         """
         self.ensure_one()
         if tax_domain not in CREDITABLE_TAX_DOMAINS:
             return False
-
-        if not self._creditable_tax_regime_gates().get(tax_domain):
+        if not self._tax_credit_gates_allow(tax_domain):
             return False
-
-        destination = self._creditable_tax_destination_gates()
-        if tax_domain in destination and not destination[tax_domain]:
-            return False
-
-        if tax_domain == "icms" and self._is_simples_supplier_without_credit():
-            return False
-
-        return bool(self[f"{tax_domain}_cst_id"].default_creditable_tax)
+        return bool(self._get_creditability_cst(tax_domain).default_creditable_tax)
 
     def _get_tax_creditability_map(self):
         """Which taxes of an incoming line are a credit and which a cost,
