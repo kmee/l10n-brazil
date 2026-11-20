@@ -157,7 +157,11 @@ class Registro0000(models.Model):
             ("1", "Outros"),
         ],
         string="Indicador tipo atividade",
-        default="0",
+        default=lambda self: self._default_ind_ativ(),
+        help="Industrial or equivalent (0) only for the company that is an IPI "
+        "taxpayer: it then needs the IPI assessment (E500) and the "
+        "classification of the establishment (0002). Any other company is "
+        "Outros (1).",
     )
 
     CLAS_ESTAB_IND = fields.Selection(
@@ -175,8 +179,43 @@ class Registro0000(models.Model):
         ],
         string="classificação do estabelecimento conforme tabela 4",
         help="classificação do estabelecimento conforme tabela 4.5.5",
-        # required=True,
+        default=lambda self: self._default_clas_estab_ind(),
     )
+
+    @api.model
+    def _is_ipi_taxpayer(self, company):
+        return bool(company.is_industry or company.ripi)
+
+    @api.model
+    def _default_ind_ativ(self):
+        return "0" if self._is_ipi_taxpayer(self.env.company) else "1"
+
+    @api.model
+    def _default_clas_estab_ind(self):
+        company = self.env.company
+        return company.industry_type if self._is_ipi_taxpayer(company) else False
+
+    @api.onchange("company_id")
+    def _onchange_company_activity(self):
+        """The activity indicator and the classification follow the company."""
+        for declaration in self:
+            company = declaration.company_id
+            taxpayer = self._is_ipi_taxpayer(company)
+            declaration.IND_ATIV = "0" if taxpayer else "1"
+            declaration.CLAS_ESTAB_IND = company.industry_type if taxpayer else False
+
+    def _get_posted_ipi_assessments(self):
+        """The IPI assessments of the period the E500 is made from."""
+        self.ensure_one()
+        return self.env["l10n_br_tax.assessment"].search(
+            [
+                ("company_id", "=", self.company_id.id),
+                ("tax_domain", "=", "ipi"),
+                ("date_from", ">=", self.DT_INI),
+                ("date_to", "<=", self.DT_FIN),
+                ("state", "=", "posted"),
+            ]
+        )
 
     @api.model
     def _append_top_view_elements(self, group, inline=False):
@@ -198,6 +237,67 @@ class Registro0000(models.Model):
             E.field(name="ind_tp_leiaute", required="1", attrs=EDITABLE_ON_DRAFT)
         )
         return res
+
+    def _get_posted_icms_assessments(self):
+        """The ICMS assessments of the period the E110 is made from. Only a
+        posted one enters the file: a computed draft is a number nobody
+        reviewed."""
+        self.ensure_one()
+        return self.env["l10n_br_tax.assessment"].search(
+            [
+                ("company_id", "=", self.company_id.id),
+                ("tax_domain", "=", "icms"),
+                ("date_from", ">=", self.DT_INI),
+                ("date_to", "<=", self.DT_FIN),
+                ("state", "=", "posted"),
+            ]
+        )
+
+    def _get_accountant_required(self):
+        # what the layout marks as mandatory in the 0100 (the descriptor of the PVA)
+        return [
+            ("cnpj_cpf", _("CPF")),
+            ("crc_code", _("CRC")),
+            ("email", _("e-mail")),
+            ("city_id", _("city")),
+        ]
+
+    def button_create_sped_files(self):
+        """Without the ICMS assessment of the period posted the E110 does not
+        exist and the PVA refuses the file, so the generation stops here."""
+        for declaration in self:
+            declaration._check_accountant()
+            if not declaration.debug and not declaration._get_posted_icms_assessments():
+                raise UserError(
+                    _(
+                        "Assess and post the ICMS of the period before generating "
+                        "the file (ICMS assessment of %(start)s to %(end)s).",
+                        start=format_date(self.env, declaration.DT_INI),
+                        end=format_date(self.env, declaration.DT_FIN),
+                    )
+                )
+            if not declaration.debug:
+                # the credit balance of the earlier months has to be the real one
+                declaration._get_posted_icms_assessments()._check_previous_periods()
+            if declaration.debug or declaration.IND_ATIV != "0":
+                continue
+            if not declaration.CLAS_ESTAB_IND:
+                raise UserError(
+                    _(
+                        "Set the classification of the establishment: the "
+                        "industrial activity needs it (record 0002)."
+                    )
+                )
+            if not declaration._get_posted_ipi_assessments():
+                raise UserError(
+                    _(
+                        "Assess and post the IPI of the period before generating "
+                        "the file, or set the activity to Outros if the company "
+                        "is not an IPI taxpayer."
+                    )
+                )
+            declaration._get_posted_ipi_assessments()._check_previous_periods()
+        return super().button_create_sped_files()
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):
@@ -319,25 +419,26 @@ class Registro0100(models.Model):
                 "Cadastre o contador responsável dentro das configurações da Empresa."
             )
             raise UserError(msg_err)
-        # TODO melhorar isso
-        phone = record.phone.split(",")[0].strip()
+        # the phone is optional in the layout: an accountant without one has to
+        # keep the record, not break the mapping (which left the 0100 out)
+        phone = (record.phone or "").split(",")[0].strip()
         phone = misc.punctuation_rm(phone).replace(" ", "")
         if len(phone) == 13:
             phone = phone[2:]
         return {
             "NOME": record.name,
-            "CPF": misc.punctuation_rm(record.cnpj_cpf),
-            "CRC": misc.punctuation_rm(record.crc_code),
-            "CNPJ": misc.punctuation_rm(record.parent_id.cnpj_cpf),
-            "CEP": misc.punctuation_rm(record.zip),
-            "END": record.street_name,
-            "NUM": misc.punctuation_rm(record.street_number),
-            "COMPL": record.street2,
-            "BAIRRO": record.district,
+            "CPF": misc.punctuation_rm(record.cnpj_cpf or ""),
+            "CRC": misc.punctuation_rm(record.crc_code or ""),
+            "CNPJ": misc.punctuation_rm(record.parent_id.cnpj_cpf or ""),
+            "CEP": misc.punctuation_rm(record.zip or ""),
+            "END": record.street_name or "",
+            "NUM": misc.punctuation_rm(record.street_number or ""),
+            "COMPL": record.street2 or "",
+            "BAIRRO": record.district or "",
             "FONE": phone,
             # "FAX": 0,  # Número do fax.
-            "EMAIL": record.email,
-            "COD_MUN": record.city_id.ibge_code,
+            "EMAIL": record.email or "",
+            "COD_MUN": record.city_id.ibge_code or "",
         }
 
 
@@ -407,9 +508,11 @@ class Registro0190(models.Model):
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):
-        return [
-            ("id", "in", declaration.fiscal_uom_ids.ids),
-        ]
+        k200 = self.env["l10n_br_sped.efd_icms_ipi.k200"]
+        units = declaration.fiscal_uom_ids | k200._get_k200_products(
+            declaration
+        ).mapped("uom_id")
+        return [("id", "in", units.ids)]
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
@@ -432,9 +535,9 @@ class Registro0200(models.Model):
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):
-        return [
-            ("id", "in", declaration.fiscal_product_ids.ids),
-        ]
+        k200 = self.env["l10n_br_sped.efd_icms_ipi.k200"]
+        products = declaration.fiscal_product_ids | k200._get_k200_products(declaration)
+        return [("id", "in", products.ids)]
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
@@ -4092,15 +4195,9 @@ class RegistroE110(models.Model):
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):
-        return [
-            ("company_id", "=", declaration.company_id.id),
-            ("tax_domain", "=", "icms"),
-            ("date_from", ">=", declaration.DT_INI),
-            ("date_to", "<=", declaration.DT_FIN),
-            # only a CLOSED assessment enters a delivered file: a computed
-            # draft is a number nobody reviewed (council F9)
-            ("state", "=", "posted"),
-        ]
+        # only a CLOSED assessment enters a delivered file: a computed draft is
+        # a number nobody reviewed (council F9)
+        return [("id", "in", declaration._get_posted_icms_assessments().ids)]
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
@@ -4515,12 +4612,21 @@ class RegistroE510(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.e510"
     _inherit = "l10n_br_sped.efd_icms_ipi.20.e510"
 
+    # The descriptor marks the three values obrigatorio=1: a zero is written "0",
+    # never blank.
+    VL_CONT_IPI = fields.Monetary(out_required=True, currency_field="brl_currency_id")
+    VL_BC_IPI = fields.Monetary(out_required=True, currency_field="brl_currency_id")
+    VL_IPI = fields.Monetary(out_required=True, currency_field="brl_currency_id")
+
     @api.model
     def _odoo_query(self, parent_record, declaration):
         # Consolidation of the period documents by CFOP and CST_IPI. It reads
         # the same lines and amounts as the C190 family, because the PVA cross
         # checks this record against the documents: any line with an IPI tax
         # situation belongs here, taxed or not.
+        documents = declaration.fiscal_document_ids.filtered(
+            lambda doc: not doc._is_sped_cancelled()
+        )
         query = """
             SELECT
                 cfop.code AS cfop,
@@ -4535,14 +4641,31 @@ class RegistroE510(models.Model):
             GROUP BY cfop.code, cst.code
             ORDER BY cfop.code, cst.code
         """
-        return query, [tuple(declaration.fiscal_document_ids.ids) or (0,)]
+        return query, [tuple(documents.ids) or (0,)]
+
+    @api.model
+    def _get_operation_total(self, record, declaration):
+        """VL_CONT_IPI: the total of the operation of the lines of the group
+        (CFOP and CST), not a stored column, so summed here."""
+        total = 0.0
+        for document in declaration.fiscal_document_ids:
+            if document._is_sped_cancelled():
+                continue
+            for line in document.fiscal_line_ids:
+                if (
+                    line.ipi_cst_id
+                    and (line.cfop_id.code or None) == record.get("cfop")
+                    and line.ipi_cst_code == record.get("cst_ipi")
+                ):
+                    total += line.fiscal_amount_total
+        return total
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         return {
             "CFOP": record.get("cfop") or "",
             "CST_IPI": record.get("cst_ipi") or "",
-            "VL_CONT_IPI": record.get("vl_cont_ipi") or 0.0,
+            "VL_CONT_IPI": self._get_operation_total(record, declaration),
             "VL_BC_IPI": record.get("vl_bc_ipi") or 0.0,
             "VL_IPI": record.get("vl_ipi") or 0.0,
         }
@@ -4941,12 +5064,29 @@ class RegistroK200(models.Model):
         )
 
     @api.model
-    def _odoo_domain(self, parent_record, declaration):
+    def _k200_domain(self):
         return [
             ("type", "=", "product"),
             ("ncm_id", "!=", False),
             ("qty_available", ">", 0.0),
         ]
+
+    @api.model
+    def _get_k200_products(self, declaration):
+        """The items of the inventory block, the ones the 0200 must also
+        declare: a K200 item missing in the 0200 is refused by the PVA."""
+        if declaration.IND_ATIV != "0":
+            return self.env["product.product"]
+        dt_fin_end = datetime.combine(declaration.DT_FIN, time(23, 59, 59))
+        return (
+            self.env["product.product"]
+            .with_context(to_date=fields.Datetime.to_string(dt_fin_end))
+            .search(self._k200_domain())
+        )
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        return self._k200_domain()
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
