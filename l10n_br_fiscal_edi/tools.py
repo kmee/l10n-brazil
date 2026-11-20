@@ -67,6 +67,7 @@ class EdiPayment:
     amount: float
     term: str  # "cash" | "installments"  (indPag 0 / 1)
     description: str = ""  # xPag when tPag = "99"
+    label: str = ""  # name of the means, for the page of the payments
 
 
 @dataclass(frozen=True)
