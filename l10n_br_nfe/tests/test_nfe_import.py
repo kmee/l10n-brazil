@@ -1576,3 +1576,40 @@ class TestNfeOwnNoteImport(EdiImportCase):
         self.assertEqual(
             (document.document_number, document.document_serie), ("3", "1")
         )
+
+    def _danfe_without_mail(self, document):
+        mails = self.env["mail.mail"].search_count([])
+        original = document.original_xml_file_id.raw
+        document.action_document_confirm()
+        self.assertFalse(document.file_report_id)
+        self.assertEqual(self.env["mail.mail"].search_count([]), mails)
+
+        action = document.with_context(bin_size=True).view_pdf()
+
+        self.assertEqual(action["type"], "ir.actions.act_url")
+        pdf = document.file_report_id
+        self.assertTrue(pdf.with_context(bin_size=False).raw.startswith(b"%PDF"))
+        self.assertEqual(document.original_xml_file_id.raw, original)
+        document.view_pdf()
+        self.assertEqual(document.file_report_id, pdf)
+        self.assertEqual(self.env["mail.mail"].search_count([]), mails)
+
+    def test_the_danfe_of_the_own_note_is_made_on_demand_from_the_original_xml(self):
+        document = self._resolved(self._own_xml(4, protocol="135200000000002"))
+
+        self._danfe_without_mail(document)
+
+    def test_the_danfe_of_the_own_note_without_protocol_is_also_made_on_demand(self):
+        document = self._resolved(self._own_xml(2))
+
+        self._danfe_without_mail(document)
+
+    def test_the_danfe_of_a_received_note_is_made_on_demand_from_the_original_xml(
+        self,
+    ):
+        document = self._import(self._received_xml())
+        product = self.env["product.product"].create({"name": "Received product"})
+        document.fiscal_line_ids.product_id = product
+        document.fiscal_line_ids.action_resolve_line()
+
+        self._danfe_without_mail(document)
