@@ -596,3 +596,34 @@ class TestNFeDFeInboxAction(TransactionCase):
                 with self.assertRaises(UserError):
                     self._as(record, self.fiscal, xmlid).import_document()
                 record.sudo().unlink()
+
+
+class TestNFeDFeDemo(TransactionCase):
+    """The two notes of the demo inbox: one imports, the other asks the ciencia."""
+
+    def _record(self, xmlid):
+        record = self.env.ref(f"l10n_br_nfe_dfe.{xmlid}", raise_if_not_found=False)
+        if not record:
+            self.skipTest("No demo data")
+        company = record.company_id
+        return record.with_context(allowed_company_ids=company.ids)
+
+    def test_the_complete_note_of_the_inbox_is_imported_by_the_button(self):
+        record = self._record("demo_dfe_document_complete")
+
+        action = record.import_document()
+
+        document = self.env["l10n_br_fiscal.document"].browse(action["res_id"])
+        self.assertEqual(document.document_key, record.access_key)
+        self.assertEqual(document.company_id, record.company_id)
+        self.assertEqual(document.state_edoc, "em_digitacao")
+        self.assertEqual(record.fiscal_document_id, document)
+
+    def test_the_summary_of_the_inbox_asks_the_acknowledgement(self):
+        record = self._record("demo_dfe_document_summary")
+
+        action = record.import_document()
+
+        wizard = self.env[action["res_model"]].browse(action["res_id"])
+        self.assertEqual(wizard.state, "confirm")
+        self.assertIn("ciencia", wizard.confirm_message)
