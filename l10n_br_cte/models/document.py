@@ -1544,6 +1544,8 @@ class CTe(spec_models.StackedModel):
         self, values, model=None, parent_dict=None, defaults_model=None
     ):
         res = super()._prepare_import_dict(values, model, parent_dict, defaults_model)
+        if self.env.context.get("spec_schema", "cte") != "cte":
+            return res
         res["imported_document"] = True
         if "cte40_mod" in values:
             res["document_type_id"] = (
