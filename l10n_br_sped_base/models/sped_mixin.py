@@ -381,8 +381,12 @@ class SpedMixin(models.AbstractModel):
         """Delete what a previous pull from Odoo created in the declaration.
 
         Only the registers flagged ``is_generated_from_odoo`` go: the ones typed
-        by hand or imported from a file are kept. Registers pulled before the
-        flag was written are not flagged: they stay until a ``Flush Registers``.
+        by hand or imported from a file are kept. Pulling twice then gives the
+        same registers instead of duplicating them. Registers pulled before the
+        flag existed are not flagged: they stay until a ``Flush Registers``.
+
+        :param kind: Type of SPED register
+        :param declaration_id: Declaration ID
         """
         prefix = f"l10n_br_sped.{kind}."
         for name, model in self.env.registry.items():
@@ -712,6 +716,13 @@ class SpedMixin(models.AbstractModel):
             self._cr.execute(*self._odoo_query(parent_record, declaration))
             records = self._cr.dictfetchall()
 
+        elif hasattr(self, "_odoo_records"):
+            # the records are built in Python (an aggregation that the SQL of
+            # `_odoo_query` cannot express, such as the credit of the PIS/COFINS
+            # that follows the C170 line by line): any list of dict, and each one
+            # is the `parent_record` of the registers below
+            records = self._odoo_records(parent_record, declaration)
+
         elif hasattr(self, "_map_from_odoo"):
             # in this case we will generate a register without any
             # specific Odoo record. Example: ECD I010
@@ -773,8 +784,11 @@ class SpedMixin(models.AbstractModel):
 
     @api.model
     def _log_chatter_sped_item(self, log_msg, level, records=None):
-        action = self.env["ir.actions.act_window"].search(
-            [("res_model", "=", self._name)], limit=1
+        # only the link of the history: a fiscal user cannot read the actions
+        action = (
+            self.env["ir.actions.act_window"]
+            .sudo()
+            .search([("res_model", "=", self._name)], limit=1)
         )
         if action:
             record_count = f" ({len(records)} records)" if records else ""
