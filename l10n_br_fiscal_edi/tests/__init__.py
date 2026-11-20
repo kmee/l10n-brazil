@@ -4,3 +4,4 @@ from . import test_document_import
 from . import test_document_import_wizard
 from . import test_import_views
 from . import test_document_payment
+from . import test_import_screens
