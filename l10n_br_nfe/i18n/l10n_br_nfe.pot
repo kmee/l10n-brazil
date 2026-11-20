@@ -314,6 +314,13 @@ msgid ""
 msgstr ""
 
 #. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/document_import.py:0
+#, python-format
+msgid "Authorization protocol of the file: %(protocol)s, %(date)s."
+msgstr ""
+
+#. module: l10n_br_nfe
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_nfe_autxml__partner_id
 msgid "Authorized Partner"
 msgstr ""

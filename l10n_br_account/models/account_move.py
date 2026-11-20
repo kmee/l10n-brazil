@@ -344,8 +344,13 @@ class AccountMove(models.Model):
                         tax_amount = tax_amount_currency
                     else:
                         tax_amount_currency = tax_amount = 0.0
-                        untaxed_amount_currency = invoice.amount_financial_total * sign
-                        untaxed_amount = invoice.amount_financial_total * sign
+                        amount_to_pay = invoice.amount_financial_total + sum(
+                            invoice.invoice_line_ids.mapped(
+                                lambda line: line._get_imported_unbilled_withholding()
+                            )
+                        )
+                        untaxed_amount_currency = amount_to_pay * sign
+                        untaxed_amount = amount_to_pay * sign
                     invoice_payment_terms = (
                         invoice.invoice_payment_term_id._compute_terms(
                             date_ref=invoice.invoice_date
@@ -714,11 +719,14 @@ class AccountMove(models.Model):
         if not move_id or not move.fiscal_document_id:
             move_form.partner_id = fiscal_document.partner_id
             move_form.invoice_date = fiscal_document.document_date
-            move_form.date = fiscal_document.document_date
+            if not move_type.startswith("out_"):
+                # the accounting date of a customer invoice follows its date
+                move_form.date = fiscal_document.document_date
             move_form.document_type_id = fiscal_document.document_type_id
             move_form.fiscal_document_id = fiscal_document
             move_form.fiscal_operation_id = fiscal_document.fiscal_operation_id
-            move_form.document_serie = fiscal_document.document_serie
+            if fiscal_document.issuer == DOCUMENT_ISSUER_PARTNER:
+                move_form.document_serie = fiscal_document.document_serie
 
         unit_and_prices = []
         for line in fiscal_document.fiscal_line_ids:

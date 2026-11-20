@@ -5,9 +5,10 @@ import io
 import zipfile
 from unittest.mock import patch
 
-from odoo.exceptions import UserError
+from odoo import _
+from odoo.exceptions import AccessError, UserError
 
-from ..tools import EDI_IMPORT_NO_CREATE
+from ..tools import EDI_IMPORT_NO_CREATE, EDI_IMPORT_PARTNER_BY_VAT, EdiPartnerData
 from .common import KEY_1, KEY_2, KEY_3, EdiImportCase
 
 
@@ -28,12 +29,16 @@ class TestDocumentImport(EdiImportCase):
         by_name = {parsed_file.file_name: parsed_file for parsed_file in parsed}
         test = self
         created = []
+        self.partner_by_vat = []
 
         def read(model_, name, content):
             return by_name.get(name)
 
         def create(model_, parsed_file, company, role):
             created.append(model_.env.context.get(EDI_IMPORT_NO_CREATE))
+            self.partner_by_vat.append(
+                model_.env.context.get(EDI_IMPORT_PARTNER_BY_VAT)
+            )
             return test._create_imported_document(
                 company=company,
                 model=model_,
@@ -56,6 +61,7 @@ class TestDocumentImport(EdiImportCase):
         documents, errors, warnings = self._import([(parsed.file_name, b"x")], [parsed])
         self.assertEqual((len(documents), errors, warnings), (1, [], []))
         self.assertEqual(self.create_contexts, [True])
+        self.assertEqual(self.partner_by_vat, [True])
         self.assertTrue(documents.imported_document)
         self.assertEqual(documents.document_key, KEY_1)
 
@@ -197,6 +203,283 @@ class TestDocumentImport(EdiImportCase):
         )
         self.assertIn(created.display_name, document.message_ids[0].body)
 
+    def test_a_user_with_no_email_imports_and_the_partners_are_recorded(self):
+        """The history of the import is a note that is sent to nobody, so a fiscal
+        user without an email address can import."""
+        user = self._fiscal_user("fiscal_user_no_email")
+        user.partner_id.email = False
+        self.assertFalse(user.partner_id.email)
+        document = self._create_imported_document()
+        last = self.env["res.partner"].search([], order="id desc", limit=1)
+        created = (
+            self.env["res.partner"]
+            .with_user(user)
+            .sudo()
+            .create({"name": "Born from the file of a user"})
+        )
+        self.assertEqual(created.create_uid, user)
+        document.with_user(user).with_context(
+            allowed_company_ids=self.company.ids, edi_import_last_partner_id=last.id
+        )._edi_import_after_create(self._parsed(KEY_1), "recipient")
+        self.assertIn(created.display_name, document.message_ids[0].body)
+
+    def _check_partners(self, document, data, partner=None, **context):
+        """Run the comparison with a reader that declares ``data`` for the partner."""
+        partner = partner or document.partner_id
+        with patch.object(
+            type(self.Document),
+            "_edi_import_partner_data",
+            lambda doc, parsed: [(partner, data)],
+        ):
+            document.with_context(**context)._edi_import_check_partners(
+                self._parsed(KEY_1)
+            )
+
+    def test_data_of_the_file_that_differ_from_the_registry_are_listed(self):
+        """Name and address of the file against the registry: the document says what
+        differs, with the value of each side, and the registry is not touched."""
+        self.supplier.write(
+            {
+                "legal_name": "Fornecedor Alfa Ltda",
+                "street_name": "Avenida Afonso Pena",
+                "street_number": "100",
+                "zip": "30130-010",
+            }
+        )
+        document = self._create_imported_document()
+        data = EdiPartnerData(
+            role="issuer",
+            vat="59594315000157",
+            name="FORNECEDOR BETA LTDA",
+            street="AVENIDA AFONSO PENA",
+            street_number="200",
+            zip_code="30130010",
+        )
+        self._check_partners(document, data)
+        warning = document.import_partner_warning
+        self.assertIn("FORNECEDOR BETA LTDA", warning)
+        self.assertIn("Fornecedor Alfa Ltda", warning)
+        self.assertIn('"200"', warning)
+        self.assertIn('"100"', warning)
+        self.assertNotIn("ZIP code", warning)
+        self.assertNotIn("Street", warning)
+        self.assertEqual(document.import_warning.count("FORNECEDOR BETA"), 1)
+        self.assertEqual(self.supplier.legal_name, "Fornecedor Alfa Ltda")
+        self.assertEqual(self.supplier.street_number, "100")
+        self.assertIn("differ from the registry", document.message_ids[0].body)
+
+    def test_the_same_data_written_differently_is_not_reported(self):
+        self.supplier.write(
+            {
+                "legal_name": "Fornecedor Alfa Ltda.",
+                "street_name": "Avenida Afonso Pena",
+                "district": "Funcionarios",
+                "zip": "30130-010",
+            }
+        )
+        document = self._create_imported_document()
+        data = EdiPartnerData(
+            role="issuer",
+            vat="59594315000157",
+            name="FORNECEDOR ALFA LTDA",
+            street="Avenida  Afonso-Pena",
+            district="FUNCIONÁRIOS",
+            zip_code="30130010",
+        )
+        self._check_partners(document, data)
+        self.assertFalse(document.import_partner_warning)
+
+    def test_a_partner_matched_by_name_because_the_file_has_no_vat_is_reported(self):
+        document = self._create_imported_document()
+        self._check_partners(document, EdiPartnerData(role="issuer", name="Whoever"))
+        self.assertIn("matched by name", document.import_partner_warning)
+
+    def test_the_company_itself_is_not_compared_with_the_file(self):
+        document = self._create_imported_document()
+        own = self.company.partner_id
+        data = EdiPartnerData(role="issuer", vat="1", name="Another name entirely")
+        self._check_partners(document, data, partner=own)
+        self.assertFalse(document.import_partner_warning)
+
+    def test_viewing_the_pdf_again_does_not_regenerate_it(self):
+        """The imported document has only the XML it came with, and an issued one has
+        the authorization file: either way the second click opens the same PDF."""
+        for imported in (True, False):
+            document = self._create_imported_document(imported_document=imported)
+            xml = self.env["ir.attachment"].create({"name": "a.xml", "raw": b"<a/>"})
+            if imported:
+                document.original_xml_file_id = xml
+            else:
+                serie = self.env["l10n_br_fiscal.document.serie"].create(
+                    {
+                        "code": "8",
+                        "name": "Series of the pdf",
+                        "company_id": self.company.id,
+                        "document_type_id": document.document_type_id.id,
+                    }
+                )
+                document.authorization_event_id = self.env[
+                    "l10n_br_fiscal.event"
+                ].create(
+                    {
+                        "type": "0",
+                        "company_id": self.company.id,
+                        "document_id": document.id,
+                        "document_type_id": document.document_type_id.id,
+                        "document_serie_id": serie.id,
+                        "document_number": "1",
+                        "origin": "Test",
+                        "file_response_id": xml.id,
+                    }
+                )
+            calls = []
+            record = calls.append
+
+            def make_pdf(doc, record=record):
+                record(1)
+                doc.file_report_id = self.env["ir.attachment"].create(
+                    {"name": "a.pdf", "raw": b"pdf"}
+                )
+
+            with patch.object(type(self.Document), "make_pdf", make_pdf):
+                document.view_pdf()
+                first = document.file_report_id
+                document.view_pdf()
+            self.assertEqual(document.file_report_id, first)
+            self.assertEqual(len(calls), 1, f"imported={imported}")
+
+    def test_a_partner_created_by_the_import_is_not_compared(self):
+        document = self._create_imported_document()
+        data = EdiPartnerData(role="issuer", vat="1", name="Other name")
+        self._check_partners(
+            document, data, edi_import_last_partner_id=document.partner_id.id - 1
+        )
+        self.assertFalse(document.import_partner_warning)
+
+    def test_a_reader_with_no_partner_data_reports_nothing(self):
+        document = self._create_imported_document()
+        document._edi_import_check_partners(self._parsed(KEY_1))
+        self.assertFalse(document.import_partner_warning)
+
+    def _own_document(self, lines, direction="out", **values):
+        """Imported document, issued by the company when ``direction`` is out, whose
+        lines declare the code of their product."""
+        document = self._create_imported_document(
+            issuer="company" if direction == "out" else "partner",
+            fiscal_operation_id=False,
+            lines=lines,
+            **values,
+        )
+        document.fiscal_operation_type = direction
+        return document
+
+    def _declared_codes(self):
+        return patch.object(
+            type(self.env["l10n_br_fiscal.document.line"]),
+            "_get_partner_product_code",
+            lambda line: line.name.split()[0],
+        )
+
+    def test_a_line_of_a_document_the_company_issued_resolves_by_its_own_code(self):
+        """In a document the company issued the code of the file is the internal
+        code: the line enters resolved. In a document received it is only a
+        suggestion, as before."""
+        product = self.env["product.product"].create(
+            {"name": "Own product", "default_code": "OWN-1"}
+        )
+        for direction, state in (("out", "resolved"), ("in", "matched")):
+            document = self._own_document(
+                [{"name": "OWN-1 sold item"}], direction=direction
+            )
+            with self._declared_codes():
+                document._edi_import_suggest()
+            line = document.fiscal_line_ids
+            if direction == "out":
+                self.assertEqual(line.product_id, product)
+                self.assertEqual(line.import_state, state)
+                self.assertFalse(line.import_supplierinfo_id)
+            else:
+                self.assertNotEqual(line.import_state, "resolved")
+
+    def test_a_declared_unit_that_is_not_confirmed_blocks_the_own_product(self):
+        product = self.env["product.product"].create(
+            {"name": "Own product", "default_code": "OWN-2"}
+        )
+        document = self._own_document(
+            [{"name": "OWN-2 sold item", "partner_uom_code": "ZZZ"}]
+        )
+        with self._declared_codes():
+            document._edi_import_suggest()
+        line = document.fiscal_line_ids
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(line.import_state, "pending")
+
+    def test_the_missing_products_are_created_by_an_explicit_action(self):
+        ncm = self.env["l10n_br_fiscal.ncm"].create(
+            {"name": "NCM of the file", "code": "9999.99.99"}
+        )
+        document = self._own_document(
+            [
+                {"name": "OWN-3 first", "ncm_id": ncm.id, "icms_origin": "1"},
+                {"name": "OWN-3 again"},
+                {"name": "OWN-4 known", "product_id": False},
+                {"name": "OWN-5 odd unit", "partner_uom_code": "ZZZ"},
+            ]
+        )
+        product_model = self.env["product.product"]
+        with self._declared_codes():
+            before = product_model.search_count([])
+            # the import never creates a product
+            document._edi_import_suggest()
+            self.assertEqual(
+                product_model.search([("default_code", "=", "OWN-3")]).ids, []
+            )
+            # a product with a code of the file appears before the action is run
+            existing = product_model.create(
+                {"name": "Already there", "default_code": "OWN-4"}
+            )
+            before += 1
+            action = document.action_import_create_products()
+            created = product_model.search([("default_code", "=", "OWN-3")])
+            self.assertEqual(len(created), 1)
+            self.assertEqual(created.name, "OWN-3 first")
+            self.assertEqual(created.ncm_id, ncm)
+            self.assertEqual(created.icms_origin, "1")
+            self.assertEqual(created.uom_id, self.uom_unit)
+            self.assertEqual(product_model.search_count([]), before + 1)
+            lines = document.fiscal_line_ids
+            self.assertEqual(lines[0].product_id, created)
+            self.assertEqual(lines[1].product_id, created)
+            self.assertEqual(lines[2].product_id, existing)
+            self.assertEqual(lines.mapped("import_state")[:3], ["resolved"] * 3)
+            # the unit that matched nothing blocks: no product, no unit created
+            self.assertFalse(lines[3].product_id)
+            self.assertFalse(product_model.search([("default_code", "=", "OWN-5")]))
+            self.assertEqual(action["tag"], "display_notification")
+            self.assertIn("Products created by", document.message_ids[0].body)
+            self.assertIn("OWN-3", document.message_ids[0].body)
+            # the second time creates nothing
+            document.action_import_create_products()
+            self.assertEqual(product_model.search_count([]), before + 1)
+
+    def test_products_are_not_created_for_a_document_received(self):
+        document = self._own_document([{"name": "REC-1 item"}], direction="in")
+        with self.assertRaises(UserError):
+            document.action_import_create_products()
+
+    def test_a_user_who_cannot_create_products_cannot_run_the_action(self):
+        user = self._fiscal_user("fiscal_user_no_product")
+        document = self._own_document([{"name": "NOP-1 item"}])
+        model = document.with_user(user).with_context(
+            allowed_company_ids=self.company.ids
+        )
+        self.assertFalse(model.import_can_create_products)
+        with self.assertRaises(UserError):
+            model.action_import_create_products()
+        self.assertFalse(
+            self.env["product.product"].search([("default_code", "=", "NOP-1")])
+        )
+
     def test_a_reader_that_is_not_installed_refuses_the_file(self):
         parsed = self._parsed(KEY_1, reader="cte")
         with patch.object(
@@ -227,6 +510,90 @@ class TestDocumentImport(EdiImportCase):
         self.assertEqual(line.fiscal_operation_id, document.fiscal_operation_id)
         self.assertEqual((line.quantity, line.price_unit), (3.0, 7.5))
         self.assertEqual(line.partner_cfop_id.code, "5102")
+
+    def test_a_document_with_no_matching_operation_keeps_its_direction(self):
+        """Nothing matches the CFOP: the operation stays empty, and the direction
+        that the import gave the document is not recomputed away."""
+        cfop = self.env.ref("l10n_br_fiscal.cfop_6102")
+        for role, direction in (("recipient", "in"), ("issuer", "out")):
+            document = self._create_imported_document(
+                fiscal_operation_id=False,
+                lines=[{"partner_cfop_id": cfop.id}],
+            )
+            document._edi_import_after_create(self._parsed(KEY_1), role)
+            with patch.object(
+                type(self.env["l10n_br_fiscal.operation.line"]),
+                "_find_by_issuer_cfop",
+                lambda *args: self.env["l10n_br_fiscal.operation.line"],
+            ):
+                document._edi_import_suggest()
+            self.assertFalse(document.fiscal_operation_id)
+            self.assertEqual(document.fiscal_operation_type, direction)
+
+    def test_a_document_the_company_issued_gets_its_operation_as_an_output(self):
+        """A document the company issued in another system is reviewed like any
+        other: its operation is the one of its own CFOP, in the direction of out."""
+        operation = self.env["l10n_br_fiscal.operation"].create(
+            {
+                "code": "TST-OUT",
+                "name": "Own sale (test)",
+                "fiscal_operation_type": "out",
+                "fiscal_type": "sale",
+            }
+        )
+        self.env["l10n_br_fiscal.operation.line"].create(
+            {
+                "fiscal_operation_id": operation.id,
+                "name": "Own sale (test)",
+                "cfop_internal_id": self.env.ref("l10n_br_fiscal.cfop_5102").id,
+            }
+        )
+        operation.action_approve()
+        document = self._create_imported_document(
+            fiscal_operation_id=False,
+            lines=[{"partner_cfop_id": self.env.ref("l10n_br_fiscal.cfop_5102").id}],
+        )
+        document._edi_import_after_create(self._parsed(KEY_1), "issuer")
+        document.partner_operation_name = operation.name
+        document._edi_import_suggest()
+        self.assertEqual(document.fiscal_operation_id, operation)
+        self.assertEqual(document.fiscal_operation_type, "out")
+        self.assertEqual(document.fiscal_line_ids.fiscal_operation_id, operation)
+        self.assertEqual(document.fiscal_line_ids.import_state, "pending")
+
+    def test_the_nature_declared_by_the_file_breaks_a_tie_in_the_suggestion(self):
+        """Two operations answer the CFOP of the line: the one named like the nature
+        that the reader stored on the document is suggested."""
+        operation = self.env["l10n_br_fiscal.operation"].create(
+            {
+                "code": "TST-NAT",
+                "name": "Nature declared by the issuer (test)",
+                "fiscal_operation_type": "in",
+                "fiscal_type": "purchase",
+            }
+        )
+        self.env["l10n_br_fiscal.operation.line"].create(
+            {
+                "fiscal_operation_id": operation.id,
+                "name": "Nature declared by the issuer (test)",
+                "cfop_internal_id": self.env.ref("l10n_br_fiscal.cfop_1102").id,
+            }
+        )
+        operation.action_approve()
+        cfop = self.env.ref("l10n_br_fiscal.cfop_5102")
+        for declared, expected in ((operation.name, operation), (False, False)):
+            document = self._create_imported_document(
+                fiscal_operation_id=False,
+                partner_operation_name=declared,
+                lines=[{"partner_cfop_id": cfop.id}],
+            )
+            document._edi_import_after_create(self._parsed(KEY_1), "recipient")
+            document._edi_import_suggest()
+            if expected:
+                self.assertEqual(document.fiscal_operation_id, expected)
+                self.assertEqual(document.fiscal_line_ids.fiscal_operation_id, expected)
+            else:
+                self.assertNotEqual(document.fiscal_operation_id, operation)
 
     def test_the_suggestion_can_run_again_without_undoing_a_decision(self):
         product = self.env["product.product"].create({"name": "Chosen by a person"})
@@ -287,6 +654,24 @@ class TestDocumentImport(EdiImportCase):
         line = document.fiscal_line_ids
         self.assertEqual(line.product_id, product)
         self.assertEqual(line.import_state, "pending")
+
+    def test_the_review_of_a_document_the_company_issued_learns_no_supplier(self):
+        product = self.env["product.product"].create({"name": "Sold product"})
+        customer = self.env["res.partner"].create({"name": "Customer of the sale"})
+        for direction, learned in (("out", 0), ("in", 1)):
+            document = self._create_imported_document(
+                partner=customer,
+                fiscal_operation_type=direction,
+                lines=[{"product_id": product.id}],
+            )
+            document.fiscal_operation_type = direction
+            document.fiscal_line_ids.action_resolve_line()
+            self.assertEqual(
+                self.env["product.supplierinfo"].search_count(
+                    [("partner_id", "=", customer.id)]
+                ),
+                learned,
+            )
 
     def test_a_product_mapped_for_another_supplier_is_not_resolved(self):
         product = self.env["product.product"].create({"name": "Mapped elsewhere"})
@@ -364,6 +749,73 @@ class TestDocumentImport(EdiImportCase):
             document.action_document_confirm()
         trigger.assert_called_once()
 
+    def test_a_document_the_company_issued_is_confirmed_as_authorized(self):
+        """Issued and authorized in another system, it goes straight to authorized:
+        nothing is checked, exported, numbered, sent or turned into an event, and
+        the protocol of the file stays."""
+        product = self.env["product.product"].create({"name": "Matched product"})
+        document = self._create_imported_document(
+            issuer="company", lines=[{"product_id": product.id}]
+        )
+        number = (document.document_number, document.document_serie)
+        serie = self.env["l10n_br_fiscal.document.serie"].create(
+            {
+                "code": "9",
+                "name": "Series of the file",
+                "company_id": self.company.id,
+                "document_type_id": document.document_type_id.id,
+            }
+        )
+        event = self.env["l10n_br_fiscal.event"].create(
+            {
+                "type": "0",
+                "company_id": self.company.id,
+                "document_id": document.id,
+                "document_type_id": document.document_type_id.id,
+                "document_serie_id": serie.id,
+                "document_number": "1",
+                "protocol_number": "135200000000001",
+                "origin": "Imported",
+                "status_code": "100",
+            }
+        )
+        document.authorization_event_id = event
+        document.action_import_confirm_suggestions()
+        model = type(self.Document)
+
+        def forbidden(name):
+            def fail(*args, **kwargs):
+                raise AssertionError(f"{name} must not run")
+
+            return fail
+
+        patchers = [
+            patch.object(model, name, forbidden(name))
+            for name in (
+                "_before_document_validate",
+                "_after_document_authorize",
+                "_document_check",
+                "_document_export",
+                "_document_number",
+                "_document_send_logic",
+                "action_document_send",
+            )
+        ]
+        for patcher in patchers:
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        document.action_document_confirm()
+        self.assertEqual(document.state_edoc, "autorizada")
+        self.assertEqual((document.document_number, document.document_serie), number)
+        self.assertEqual(document.authorization_protocol, "135200000000001")
+        self.assertEqual(document.authorization_event_id, event)
+        self.assertEqual(len(document.event_ids), 1)
+
+    def test_a_document_the_company_issued_is_also_refused_with_lines_to_review(self):
+        document = self._create_imported_document(issuer="company")
+        with self.assertRaises(UserError):
+            document.action_document_confirm()
+
     def test_the_warning_is_unset_when_there_is_nothing_to_say(self):
         document = self._create_imported_document()
         self.assertFalse(document.import_warning)
@@ -391,6 +843,80 @@ class TestDocumentImport(EdiImportCase):
                 self._parsed(KEY_3), self.other_company
             )
         )
+
+    def test_a_user_who_cannot_create_contacts_gets_a_clear_message_per_file(self):
+        """The file needs a partner to be registered and the user may not create
+        contacts: that file is refused saying so, nothing is created for it, and
+        the others of the batch enter."""
+        user = self._fiscal_user("fiscal_user_no_partner")
+        self.assertFalse(
+            self.env["res.partner"]
+            .with_user(user)
+            .check_access_rights("create", raise_exception=False)
+        )
+        needs, plain = self._parsed(KEY_1), self._parsed(KEY_2)
+        test = self
+        document_model = type(self.Document)
+        by_name = {needs.file_name: needs, plain.file_name: plain}
+
+        def read(model, name, content):
+            return by_name.get(name)
+
+        def create(model, parsed_file, company, role):
+            if parsed_file is needs:
+                model.env["res.partner"].create({"name": "Needed issuer"})
+            return test._create_imported_document(
+                company=company, model=model, document_key=parsed_file.access_key
+            )
+
+        model = self.Document.with_user(user).with_context(
+            allowed_company_ids=self.company.ids
+        )
+        with patch.object(document_model, "_edi_import_read", read), patch.object(
+            document_model, "_edi_import_create", create
+        ):
+            documents, errors, _warnings = model._edi_import_files(
+                [(needs.file_name, b"x"), (plain.file_name, b"x")]
+            )
+        self.assertEqual(documents.mapped("document_key"), [KEY_2])
+        self.assertEqual([name for name, _msg in errors], [needs.file_name])
+        message = errors[0][1]
+        self.assertIn("59.594.315/0001-57", message)
+        self.assertIn("not allowed to create contacts", message)
+        self.assertIn("import the file again", message)
+        self.assertFalse(
+            self.env["res.partner"].search([("name", "=", "Needed issuer")])
+        )
+
+    def test_any_other_refusal_of_access_is_explained_for_the_file(self):
+        """A refusal that is not about contacts is explained too, with what the
+        system said, instead of the raw error, and the batch goes on."""
+        denied, plain = self._parsed(KEY_1), self._parsed(KEY_2)
+        document_model = type(self.Document)
+        by_name = {denied.file_name: denied, plain.file_name: plain}
+        test = self
+
+        def create(model, parsed_file, company, role):
+            if parsed_file is denied:
+                raise AccessError(
+                    _("You may not create 'Product' (product.product) records.")
+                )
+            return test._create_imported_document(
+                company=company, model=model, document_key=parsed_file.access_key
+            )
+
+        with patch.object(
+            document_model, "_edi_import_read", lambda m, n, c: by_name.get(n)
+        ), patch.object(document_model, "_edi_import_create", create):
+            documents, errors, _warnings = self.Document._edi_import_files(
+                [(denied.file_name, b"x"), (plain.file_name, b"x")]
+            )
+        self.assertEqual(documents.mapped("document_key"), [KEY_2])
+        message = errors[0][1]
+        self.assertIn("product.product", message)
+        self.assertIn("you do not have a permission", message)
+        self.assertIn(denied.file_name, message)
+        self.assertNotIn("contacts", message)
 
     def test_a_common_fiscal_user_imports_and_learns_as_the_author(self):
         """The fiscal user is not a manager and has no right on purchases: the

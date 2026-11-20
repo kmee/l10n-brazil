@@ -7495,6 +7495,15 @@ msgid "National Taxation Codes"
 msgstr "Códigos de Tributação Nacional"
 
 #. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal.field_l10n_br_fiscal_document__partner_operation_name
+msgid ""
+"Nature of the operation as declared by the counterparty in the imported "
+"document. It breaks the tie between operations that have the same CFOP."
+msgstr ""
+"Natureza da operação como declarada pela contraparte no documento importado. "
+"Desempata operações que têm o mesmo CFOP."
+
+#. module: l10n_br_fiscal
 #. odoo-python
 #: code:addons/l10n_br_fiscal/models/document_mixin.py:0
 #, python-format
@@ -7892,6 +7901,11 @@ msgstr "Operação"
 #: model:ir.actions.act_window,name:l10n_br_fiscal.operation_dashboard_action
 msgid "Operation Dashboard"
 msgstr "Painel de Operação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal.field_l10n_br_fiscal_document__partner_operation_name
+msgid "Operation Declared by Partner"
+msgstr "Operação declarada pelo parceiro"
 
 #. module: l10n_br_fiscal
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal.operation_indicator_form

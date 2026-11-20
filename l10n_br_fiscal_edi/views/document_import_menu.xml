@@ -9,7 +9,6 @@
         <field name="search_view_id" ref="document_import_search" />
         <field name="view_id" ref="document_import_tree" />
         <field name="domain">[('imported_document', '=', True)]</field>
-        <field name="context">{'default_fiscal_operation_type': 'in'}</field>
     </record>
 
     <menuitem

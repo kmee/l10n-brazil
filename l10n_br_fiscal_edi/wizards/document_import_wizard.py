@@ -1,7 +1,7 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import _, fields, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 
@@ -23,15 +23,28 @@ class DocumentImportWizard(models.TransientModel):
         # it the web client asks for the size, and the binary fields answer the
         # size of the file instead of its content (raw included).
         attachments = self.attachment_ids.with_context(bin_size=False)
-        documents, errors, warnings = self.env[
-            "l10n_br_fiscal.document"
-        ]._edi_import_files(
+        action = self._import_files(
             [(attachment.name, attachment.raw) for attachment in attachments]
         )
+        self.attachment_ids.filtered(lambda att: att.res_model == self._name).unlink()
+        return action
+
+    @api.model
+    def _import_files(self, files, dfe_document=None):
+        """Import the files and answer what the web client opens: the document, the
+        list when there are several, or a notice with what failed or was already
+        imported. Raises when no file was imported. It is what the window and the
+        inbox of the DF-e call.
+
+        :param files: list of ``(name, bytes)``
+        :param dfe_document: ``l10n_br_fiscal_dfe.document`` the files came from
+        """
+        documents, errors, warnings = self.env[
+            "l10n_br_fiscal.document"
+        ]._edi_import_files(files, dfe_document=dfe_document)
         messages = "\n".join(f"{name}: {message}" for name, message in errors)
         if not documents:
             raise UserError(_("No file was imported:\n%s") % messages)
-        self.attachment_ids.filtered(lambda att: att.res_model == self._name).unlink()
         action = self._documents_action(documents)
         if errors:
             return self._notification(

@@ -45,13 +45,15 @@ class Document(models.Model):
         return self._edi_get_payments()
 
     def _edi_installment_difference(self):
-        """Net amount payable minus the sum of the installments shown."""
+        """Net amount payable minus the sum of the installments shown. The total of
+        the document (``fiscal_amount_total``) is already net of the withholdings,
+        and it is the same whatever the type of the document."""
         self.ensure_one()
         installments = self._edi_display_installments()
         if not installments:
             return 0.0
         declared = sum(installment.amount for installment in installments)
-        return self.currency_id.round(self.amount_financial_total - declared)
+        return self.currency_id.round(self.fiscal_amount_total - declared)
 
     def _edi_installment_warning(self):
         """Message when the installments do not add up to the net amount payable."""
@@ -65,7 +67,7 @@ class Document(models.Model):
             "of each installment."
         ) % {
             "declared": f"{declared:.2f}",
-            "net": f"{self.amount_financial_total:.2f}",
+            "net": f"{self.fiscal_amount_total:.2f}",
         }
 
     def _edi_payment_summary_values(self):
@@ -82,9 +84,9 @@ class Document(models.Model):
             "installments": installments,
             "payments": payments,
             "totals": [
-                (_("Document total"), self.fiscal_amount_total),
+                (_("Document total"), self.fiscal_amount_total + withholding),
                 (_("Withholdings"), withholding),
-                (_("Net amount payable"), self.amount_financial_total),
+                (_("Net amount payable"), self.fiscal_amount_total),
             ],
             "warning": self._edi_installment_warning(),
         }
@@ -94,7 +96,6 @@ class Document(models.Model):
         "state_edoc",
         "fiscal_amount_total",
         "amount_tax_withholding",
-        "amount_financial_total",
     )
     def _compute_edi_payment_summary(self):
         for document in self:
