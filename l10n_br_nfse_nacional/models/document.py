@@ -37,6 +37,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     SITUACAO_EDOC_CANCELADA,
     SITUACAO_EDOC_REJEITADA,
 )
+from odoo.addons.l10n_br_nfse.constants.currency import CURRENCY_BACEN_CODE
 from odoo.addons.spec_driven_model.models import spec_models
 from odoo.addons.spec_driven_model.models.spec_export import SpecMixinExport
 
@@ -400,10 +401,17 @@ class L10nBrFiscalDocument(spec_models.StackedModel):
         self.nfse10_cNBS = codes["cNBS"]
         self.nfse10_cLocPrestacao = codes["cLocPrestacao"]
         self.nfse10_xDescServ = self._nfse10_service_description()
-        # valores/vServPrest and valores/vDescCondIncond
-        self.nfse10_vServ = _nfse10_amount(amounts["price_gross"])
-        self.nfse10_vDescIncond = _nfse10_amount(amounts["discount_value"])
-        self.nfse10_vDescCond = _nfse10_amount(amounts["issqn_desc_cond_amount"])
+        # valores/vServPrest and valores/vDescCondIncond. The DPS is always
+        # in reais: the amounts of an invoice in foreign currency are
+        # converted, and the original amount goes to comExt/vServMoeda.
+        _currency, rate = self._nfse_foreign_currency_rate()
+        self.nfse10_vServ = _nfse10_amount(round(amounts["price_gross"] * rate, 2))
+        self.nfse10_vDescIncond = _nfse10_amount(
+            round(amounts["discount_value"] * rate, 2)
+        )
+        self.nfse10_vDescCond = _nfse10_amount(
+            round(amounts["issqn_desc_cond_amount"] * rate, 2)
+        )
         # valores/trib/tribMun
         self._prepare_nfse10_trib_mun(codes, amounts)
         # valores/trib/tribFed
@@ -510,6 +518,46 @@ class L10nBrFiscalDocument(spec_models.StackedModel):
             return False
         return SpecMixinExport._export_many2one(
             self, field_name, xsd_required, class_obj
+        )
+
+    ##########################
+    # NFS-e tag: comExt
+    ##########################
+
+    def _nfse10_needs_foreign_trade(self):
+        """The DPS must carry the comExt group (rule E0330) when the ISSQN is
+        declared as export of service (tribISSQN 3) or when the taker is
+        abroad."""
+        self.ensure_one()
+        partner = self.partner_id
+        return self.nfse10_tribISSQN == "3" or bool(
+            partner and partner._nfse10_is_abroad()
+        )
+
+    def _export_tag_nfse_10_comext(self, xsd_fields, class_obj, export_dict):
+        """Export the comExt group of the single service of the DPS.
+
+        Mode, link and support mechanisms come from the document fields of
+        l10n_br_nfse (nfse_foreign_trade_*), the currency is the BACEN code of
+        the invoice currency (790 for an invoice in reais) and vServMoeda is
+        the amount in that currency. Temporary movement of goods goes as "no"
+        and the MDIC as "not sent".
+        """
+        if not self._nfse10_needs_foreign_trade():
+            return
+        currency, _rate = self._nfse_foreign_currency_rate()
+        code = CURRENCY_BACEN_CODE.get(currency.name if currency else "BRL")
+        amount = self._nfse10_service_amounts()["price_gross"]
+        export_dict.update(
+            mdPrestacao=self.nfse_foreign_trade_mode or "1",
+            vincPrest=self.nfse_foreign_trade_link or "0",
+            tpMoeda=code,
+            vServMoeda=f"{round(amount, 2):.2f}",
+            mecAFComexP=self.nfse_foreign_trade_support_provider or "01",
+            mecAFComexT=self.nfse_foreign_trade_support_recipient or "01",
+            # 1 = not linked to temporary movement of goods, 0 = not sent to MDIC
+            movTempBens="1",
+            mdic="0",
         )
 
     ##########################
