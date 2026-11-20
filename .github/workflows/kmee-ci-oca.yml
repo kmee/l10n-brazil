@@ -87,7 +87,7 @@ jobs:
         with:
           ref: ${{ github.event.inputs.branch }}
           persist-credentials: false
-      - name: Passos extras do test.yml da serie (ex.: vcrpy na 16.0)
+      - name: "Passos extras do test.yml da serie (vcrpy na 16.0)"
         run: |
           grep -E '^\s*run: pip install vcrpy' .github/workflows/test.yml | sed -E 's/^\s*run:\s*//' | sort -u | while read -r c; do echo "+ $c"; eval "$c"; done
       - name: Install addons and dependencies
