@@ -4,8 +4,10 @@
 
     Three NF-e of one supplier, each in a different step of the life cycle:
     - 35261011222333000181550010000020011200100018: declares order
-      PO-DEMO-EDI-001 and its item 1. The line enters resolved, the order is
-      invoiced by the bill generated from the note and the bill is posted.
+      PO-DEMO-EDI-001 and its item 1, and the supplier has no mapping of the
+      product: the product comes from the order line and the line enters
+      resolved. The order is invoiced by the bill generated from the note and
+      the bill is posted.
     - 35261011222333000181550010000020021200200028: no order reference. The
       supplier has a quotation (PO-DEMO-EDI-002) for the product, so the note
       is waiting for the review in "Match with Orders".
@@ -53,17 +55,8 @@
         <field name="ncm_id" ref="l10n_br_fiscal.ncm_00000000" />
     </record>
 
-    <!-- what the supplier calls the products: the notes enter with them chosen -->
-    <record id="demo_supplierinfo_a" model="product.supplierinfo">
-        <field name="partner_id" ref="demo_supplier" />
-        <field name="product_tmpl_id" ref="demo_product_a" />
-        <field
-            name="product_id"
-            search="[('product_tmpl_id', '=', ref('demo_product_a'))]"
-        />
-        <field name="product_code">DEMO-EDI-A</field>
-        <field name="price">140.0</field>
-    </record>
+    <!-- what the supplier calls the products B and C: the notes enter with them chosen.
+         Product A has no mapping: the order that note 1 declares gives it. -->
     <record id="demo_supplierinfo_b" model="product.supplierinfo">
         <field name="partner_id" ref="demo_supplier" />
         <field name="product_tmpl_id" ref="demo_product_b" />
