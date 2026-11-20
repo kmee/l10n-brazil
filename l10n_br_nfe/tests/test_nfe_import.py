@@ -12,6 +12,8 @@ from unittest import mock
 import nfelib
 from nfelib.nfe.bindings.v4_0.leiaute_nfe_v4_00 import TnfeProc
 
+from odoo import fields
+from odoo.exceptions import UserError
 from odoo.models import NewId
 from odoo.tests import TransactionCase
 
@@ -1281,3 +1283,333 @@ class TestNfeDocumentImport(EdiImportCase):
         self.assertEqual(document.partner_id, customer)
         self.assertEqual(self._snapshot(records), before)
         self.assertEqual(self._snapshot(company), company_before)
+
+    # The NF-e module answers only for the NF-e: the other types go to the base.
+
+    def test_a_document_of_another_type_declares_nothing_and_does_not_fail(self):
+        document = self._create_imported_document(
+            document_type_id=self.env.ref("l10n_br_fiscal.document_SE").id
+        )
+
+        # the duplicates and payments of the NF-e are not even read
+        with mock.patch.object(
+            fields.One2many, "__get__", autospec=True, side_effect=AssertionError
+        ):
+            self.assertEqual(document._edi_get_installments(), [])
+            self.assertEqual(document._edi_get_payments(), [])
+        self.assertFalse(document.edi_payment_summary)
+
+    def test_the_partner_to_register_of_another_reader_is_the_one_of_the_base(self):
+        parsed = self._parsed(KEY_1, reader="cte")
+
+        hint = self.Document._edi_import_partner_hint(parsed)
+
+        self.assertEqual(hint, ("", parsed.issuer_vat))
+
+
+class TestNfeOwnNoteImport(EdiImportCase):
+    """The import of what is registered in the database, with XML files of the module:
+    the partners it matches and warns about, the products of a note the company issued
+    elsewhere, its confirmation and its DANFE."""
+
+    OWN_FILE = "NFe35200681583054000129550010000000012760018057-nf-e.xml"
+    OWN_KEYS = {
+        2: "35200681583054000129550010000000022760018054",
+        3: "35200681583054000129550010000000032760018051",
+        4: "35200681583054000129550010000000042760018059",
+    }
+
+    def setUp(self):
+        super().setUp()
+        self.company = self.env.ref("l10n_br_base.empresa_lucro_presumido")
+        self.env = self.env(
+            context=dict(self.env.context, allowed_company_ids=self.company.ids)
+        )
+        self.Document = self.env["l10n_br_fiscal.document"]
+
+    def _own_xml(self, number=2, replace=(), protocol=None):
+        """The real NF-e the company issued elsewhere, with another number (so the
+        key stays valid and the files do not collide), and, when asked, the
+        protocol of its authorization (``nfeProc``)."""
+        with open(os.path.join(FIXTURE_DIR, self.OWN_FILE), "rb") as xml_file:
+            xml = xml_file.read()
+        key = self.OWN_KEYS[number]
+        xml = xml.replace(self.OWN_FILE[3:47].encode(), key.encode())
+        xml = xml.replace(b"<nNF>1</nNF>", b"<nNF>%d</nNF>" % number)
+        xml = xml.replace(b"81493979000189", b"84148732000113")
+        xml = xml.replace(b"E-COM07", b"ZZ-OWN-1").replace(b"FURN_8855", b"ZZ-OWN-2")
+        for old, new in replace:
+            xml = xml.replace(old, new)
+        if protocol:
+            body = xml.decode().split("?>", 1)[1].strip()
+            prot = (
+                '<protNFe versao="4.00"><infProt><tpAmb>2</tpAmb>'
+                "<verAplic>SVRS</verAplic>"
+                f"<chNFe>{key}</chNFe><dhRecbto>2026-06-10T10:15:00-03:00</dhRecbto>"
+                f"<nProt>{protocol}</nProt><digVal>abc=</digVal>"
+                "<cStat>100</cStat><xMotivo>Autorizado o uso da NF-e</xMotivo>"
+                "</infProt></protNFe>"
+            )
+            xml = (
+                f'<nfeProc xmlns="{NFE_NS}" versao="4.00">'
+                f"{body.replace('</NFe>', '</NFe>' + prot)}</nfeProc>"
+            ).encode()
+        return xml
+
+    def _received_xml(self):
+        """The real NF-e of a supplier, addressed to the company."""
+        with open(os.path.join(FIXTURE_DIR, f"NFe{KEY_1}.xml"), "rb") as xml_file:
+            xml = xml_file.read()
+        return FIXTURE_DEST.sub(
+            rb"\1<CNPJ>%s</CNPJ>" % self.company.partner_id.cnpj_cpf_stripped.encode(),
+            xml,
+        )
+
+    def _import(self, xml, model=None):
+        documents, errors, _warnings = (
+            self.Document if model is None else model
+        )._edi_import_files([("own.xml", xml)])
+        self.assertFalse(errors)
+        return documents
+
+    def _customer(self):
+        return self.env["res.partner"].search(
+            [("cnpj_cpf_stripped", "=", "84148732000113")], limit=1
+        )
+
+    def test_a_homonym_with_another_cnpj_is_not_the_partner_of_the_file(self):
+        homonym = self.env["res.partner"].create(
+            {
+                "name": "Empresa Simples Nacional",
+                "legal_name": "Empresa Simples Nacional",
+                "cnpj_cpf": "11.444.777/0001-61",
+                "country_id": self.env.ref("base.br").id,
+            }
+        )
+        before = homonym.read(["name", "legal_name", "cnpj_cpf", "phone", "email"])
+        xml = self._received_xml().replace(
+            b"<CNPJ>59594315000157</CNPJ>", b"<CNPJ>11222333000181</CNPJ>"
+        )
+
+        document = self._import(xml)
+
+        self.assertNotEqual(document.partner_id, homonym)
+        self.assertEqual(document.partner_id.cnpj_cpf_stripped, "11222333000181")
+        self.assertEqual(
+            homonym.read(["name", "legal_name", "cnpj_cpf", "phone", "email"]), before
+        )
+
+    def test_the_tax_regime_declared_in_the_file_is_not_written_in_the_registry(self):
+        issuer = self._register_issuer()
+        issuer.tax_framework = "3"
+
+        document = self._import(self._received_xml())
+
+        self.assertEqual(document.partner_id, issuer)
+        self.assertEqual(issuer.tax_framework, "3")
+
+    def _register_issuer(self, **values):
+        """The demo partner of the issuer, registered as the file declares it."""
+        city = self.env["res.city"].search(
+            [("state_id.code", "=", "SP"), ("name", "=", "Alumínio")], limit=1
+        )
+        issuer = self.env["res.partner"].search(
+            [("cnpj_cpf_stripped", "=", "59594315000157")], limit=1
+        )
+        vals = {
+            "name": "Empresa Simples Nacional",
+            "legal_name": "Empresa Simples Nacional",
+            "state_id": city.state_id.id,
+            "city_id": city.id,
+            "street_name": "Rua Paulo Dias",
+            "street_number": "586",
+            "district": "Vila Santa Luzia",
+            "zip": "18125-000",
+            "inscr_est": "755338250133",
+        }
+        vals.update(values)
+        issuer.write(vals)
+        return issuer
+
+    def test_a_registry_that_differs_from_the_file_is_warned_and_left_as_it_is(self):
+        issuer = self._register_issuer(
+            street_name="Rua Outra", street_number="1", inscr_est="110042490114"
+        )
+        before = issuer.read(["street_name", "street_number", "inscr_est", "zip"])
+
+        document = self._import(self._received_xml())
+
+        self.assertEqual(document.partner_id, issuer)
+        warning = document.import_partner_warning
+        self.assertIn("Rua Paulo Dias", warning)
+        self.assertIn("755338250133", warning)
+        self.assertIn("Rua Outra", warning)
+        self.assertEqual(
+            issuer.read(["street_name", "street_number", "inscr_est", "zip"]), before
+        )
+
+    def test_a_difference_only_of_case_accent_or_punctuation_is_not_warned(self):
+        issuer = self._register_issuer(
+            legal_name="EMPRESA SIMPLES NACIONAL",
+            street_name="RUA PAULO DIAS.",
+            district="vila santa luzia",
+        )
+
+        document = self._import(self._received_xml())
+
+        self.assertEqual(document.partner_id, issuer)
+        self.assertFalse(document.import_partner_warning)
+
+    def test_a_code_that_matches_a_product_enters_resolved_and_a_missing_one_pends(
+        self,
+    ):
+        product = self.env["product.product"].create(
+            {"name": "Registered", "default_code": "ZZ-OWN-1"}
+        )
+
+        document = self._import(self._own_xml())
+
+        matched, missing = document.fiscal_line_ids.sorted("id")
+        self.assertEqual(matched.product_id, product)
+        self.assertEqual(matched.import_state, "resolved")
+        self.assertFalse(missing.product_id)
+        self.assertEqual(missing.import_state, "pending")
+        self.assertEqual(missing._get_partner_product_code(), "ZZ-OWN-2")
+
+    def test_creating_the_missing_products_makes_one_per_code_with_the_file_data(self):
+        product = self.env["product.product"].create(
+            {"name": "Registered", "default_code": "ZZ-OWN-1"}
+        )
+        xml = self._own_xml(
+            replace=[(b"<cEAN>SEM GTIN</cEAN>", b"<cEAN>7891000100103</cEAN>")]
+        )
+        document = self._import(xml)
+        count = self.env["product.product"].search_count([])
+
+        document.action_import_create_products()
+        document.action_import_create_products()
+
+        created = self.env["product.product"].search(
+            [("default_code", "=", "ZZ-OWN-2")]
+        )
+        self.assertEqual(len(created), 1)
+        self.assertEqual(self.env["product.product"].search_count([]), count + 1)
+        self.assertEqual(created.barcode, "7891000100103")
+        self.assertEqual(created.name, "[ZZ-OWN-2] Drawer")
+        self.assertEqual(created.ncm_id.code_unmasked, "94033000")
+        self.assertEqual(created.icms_origin, "5")
+        self.assertEqual(
+            document.fiscal_line_ids.mapped("import_state"), ["resolved", "resolved"]
+        )
+        self.assertIn(product, document.fiscal_line_ids.product_id)
+
+    def test_an_invalid_barcode_of_the_file_is_not_given_to_the_product(self):
+        xml = self._own_xml(
+            replace=[(b"<cEAN>SEM GTIN</cEAN>", b"<cEAN>7891000100104</cEAN>")]
+        )
+        document = self._import(xml)
+
+        document.action_import_create_products()
+
+        created = self.env["product.product"].search(
+            [("default_code", "=", "ZZ-OWN-1")]
+        )
+        self.assertFalse(created.barcode)
+
+    def test_an_unknown_unit_blocks_the_creation_of_the_product(self):
+        xml = self._own_xml(replace=[(b"<uCom>UN</uCom>", b"<uCom>ZZZ</uCom>")])
+        document = self._import(xml)
+
+        result = document.action_import_create_products()
+
+        self.assertEqual(result["tag"], "display_notification")
+        self.assertFalse(document.fiscal_line_ids.product_id)
+        self.assertFalse(
+            self.env["product.product"].search([("default_code", "=", "ZZ-OWN-1")])
+        )
+
+    def test_only_who_can_create_products_is_offered_the_creation(self):
+        user = self._fiscal_user("own_no_product", self.company)
+        document = self._import(self._own_xml())
+
+        as_user = document.with_user(user).with_context(
+            allowed_company_ids=self.company.ids
+        )
+
+        self.assertFalse(as_user.import_can_create_products)
+        with self.assertRaises(UserError):
+            as_user.action_import_create_products()
+
+    def _resolved(self, xml):
+        document = self._import(xml)
+        document.action_import_create_products()
+        return document
+
+    def test_the_own_note_keeps_the_protocol_of_the_file_and_sends_nothing(self):
+        xml = self._own_xml(3, protocol="135200000000001")
+        sequences = self.env["ir.sequence"].search([])
+        numbers = sequences.mapped("number_next_actual")
+        sent = []
+        document_model = type(self.Document)
+        document = self._resolved(xml)
+
+        with (
+            mock.patch.object(
+                document_model, "action_document_send", lambda doc: sent.append(doc)
+            ),
+            mock.patch.object(
+                document_model,
+                "_document_export",
+                lambda doc, *a, **k: sent.append(doc),
+            ),
+        ):
+            document.action_document_confirm()
+
+        self.assertEqual(document.state_edoc, "autorizada")
+        self.assertFalse(sent)
+        self.assertEqual(document.authorization_protocol, "135200000000001")
+        self.assertEqual(
+            document.authorization_date.strftime("%Y-%m-%d %H:%M"), "2026-06-10 13:15"
+        )
+        self.assertEqual(document.original_xml_file_id.raw, xml)
+        self.assertEqual(sequences.mapped("number_next_actual"), numbers)
+        self.assertEqual(
+            (document.document_number, document.document_serie), ("3", "1")
+        )
+
+    def _danfe_without_mail(self, document):
+        mails = self.env["mail.mail"].search_count([])
+        original = document.original_xml_file_id.raw
+        document.action_document_confirm()
+        self.assertFalse(document.file_report_id)
+        self.assertEqual(self.env["mail.mail"].search_count([]), mails)
+
+        action = document.with_context(bin_size=True).view_pdf()
+
+        self.assertEqual(action["type"], "ir.actions.act_url")
+        pdf = document.file_report_id
+        self.assertTrue(pdf.with_context(bin_size=False).raw.startswith(b"%PDF"))
+        self.assertEqual(document.original_xml_file_id.raw, original)
+        document.view_pdf()
+        self.assertEqual(document.file_report_id, pdf)
+        self.assertEqual(self.env["mail.mail"].search_count([]), mails)
+
+    def test_the_danfe_of_the_own_note_is_made_on_demand_from_the_original_xml(self):
+        document = self._resolved(self._own_xml(4, protocol="135200000000002"))
+
+        self._danfe_without_mail(document)
+
+    def test_the_danfe_of_the_own_note_without_protocol_is_also_made_on_demand(self):
+        document = self._resolved(self._own_xml(2))
+
+        self._danfe_without_mail(document)
+
+    def test_the_danfe_of_a_received_note_is_made_on_demand_from_the_original_xml(
+        self,
+    ):
+        document = self._import(self._received_xml())
+        product = self.env["product.product"].create({"name": "Received product"})
+        document.fiscal_line_ids.product_id = product
+        document.fiscal_line_ids.action_resolve_line()
+
+        self._danfe_without_mail(document)
