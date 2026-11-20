@@ -1289,6 +1289,22 @@ class TestNfeDocumentImport(EdiImportCase):
 
     # The NF-e module answers only for the NF-e: the other types go to the base.
 
+    def test_the_page_of_installments_shows_the_name_of_the_means_of_payment(self):
+        document = self._imported(self._xml(KEY_1))
+
+        self.assertEqual(
+            document._edi_payment_means_label("15"), "15 - Boleto Bancário"
+        )
+        self.assertEqual(document._edi_payment_means_label("77"), "77")
+        self.assertIn("01 - Dinheiro", str(document.edi_payment_summary))
+
+    def test_a_document_of_another_type_shows_the_code_of_the_means(self):
+        document = self._create_imported_document(
+            document_type_id=self.env.ref("l10n_br_fiscal.document_SE").id
+        )
+
+        self.assertEqual(document._edi_payment_means_label("15"), "15")
+
     def test_a_document_of_another_type_declares_nothing_and_does_not_fail(self):
         document = self._create_imported_document(
             document_type_id=self.env.ref("l10n_br_fiscal.document_SE").id
