@@ -110,6 +110,30 @@ class TestMdfeDocumentImport(EdiImportCase):
             sequences,
         )
 
+    def test_the_emitter_data_that_differ_from_the_registry_are_reported(self):
+        documents, errors, _warnings = self._import(mdfe_xml(status="100"))
+        self.assertFalse(errors)
+        warning = documents.import_partner_warning
+        self.assertIn("State tax number", warning)
+        parsed = self.Document._edi_import_read("a.xml", mdfe_xml(status="100"))
+        ((partner, declared),) = documents._edi_import_partner_data(parsed)
+        self.assertEqual((partner, declared.role), (self.presumed.partner_id, "issuer"))
+        self.assertEqual(declared.vat, LUCRO_PRESUMIDO)
+        partner.write(
+            {
+                "legal_name": declared.name.upper(),
+                "street_name": declared.street.lower(),
+                "street_number": declared.street_number,
+                "district": declared.district,
+                "zip": declared.zip_code,
+            }
+        )
+        documents.import_partner_warning = False
+        documents._edi_import_check_partners(parsed)
+        self.assertNotIn("Street", documents.import_partner_warning)
+        self.assertNotIn("Name", documents.import_partner_warning)
+        self.assertNotIn("ZIP", documents.import_partner_warning)
+
     def test_the_company_is_the_issuer_of_the_mdfe(self):
         parsed = self.Document._edi_import_read("a.xml", mdfe_xml(emitter=LUCRO_REAL))
         self.assertEqual(parsed.company_vats, (("issuer", LUCRO_REAL),))
