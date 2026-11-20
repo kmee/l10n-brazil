@@ -44,6 +44,15 @@ class TestSpedEfdIcmsIpiCorrecoes(EntradaHelpers, SpedEntradaCommon):
         self.assertEqual(self._number(c101[0]["VL_FCP_UF_DEST"]), 3.0)
         self.assertEqual(self._number(c101[0]["VL_ICMS_UF_DEST"]), 5.0)
 
+    def test_ind_frt_is_9_without_a_freight_mode(self):
+        """IND_FRT is mandatory: a document without the freight mode (no NF-e
+        module, or the field empty) goes out as 9, no freight."""
+        doc, _line = self._entry_document()
+        if "nfe40_modFrete" in doc._fields:
+            doc.nfe40_modFrete = False
+        rec = self._c100(self._declaration_july())[doc.document_number]
+        self.assertEqual(rec["IND_FRT"], "9")
+
     def test_ind_pgto_comes_from_the_installments_of_the_bill(self):
         """On the spot, on terms, without payment: one rule from the
         installments, the same in both SPED."""
