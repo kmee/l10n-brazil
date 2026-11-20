@@ -238,6 +238,59 @@ class TestCteDocumentImport(EdiImportCase):
         content = cte_xml(recipient="12345678000195", emitter=LUCRO_PRESUMIDO)
         self._assert_registry_untouched(content, self.presumed, True)
 
+    def test_a_homonym_with_another_cnpj_is_not_matched(self):
+        self._registered("11444777000161").write(
+            {
+                "name": "Empresa Simples Nacional",
+                "legal_name": "Empresa Simples Nacional",
+            }
+        )
+        documents, errors, _warnings = self._import(cte_xml(emitter="12345678000195"))
+        self.assertFalse(errors)
+        self.assertEqual(documents.partner_id.cnpj_cpf_stripped, "12345678000195")
+
+    def test_a_partner_with_other_address_and_state_tax_number_is_reported(self):
+        partner = self._registered("12345678000195")
+        documents, errors, _warnings = self._import(cte_xml(emitter="12345678000195"))
+        self.assertFalse(errors)
+        self.assertEqual(documents.partner_id, partner)
+        warning = documents.import_partner_warning
+        self.assertIn("Street", warning)
+        self.assertIn("Registered street", warning)
+        self.assertIn("State tax number", warning)
+        self.assertEqual(partner.street_name, "Registered street")
+
+    def test_data_that_differ_only_in_case_accent_and_punctuation_raise_no_warning(
+        self
+    ):
+        content = cte_xml(emitter="12345678000195")
+        partner = self._registered("12345678000195")
+        parsed = self.Document._edi_import_read("a.xml", content)
+        documents, _errors, _warnings = self._import(content)
+        declared = {p: d for p, d in documents._edi_import_partner_data(parsed)}[
+            partner
+        ]
+        city = self.env["res.city"].search([("name", "=ilike", declared.city)], limit=1)
+        state = self.env["res.country.state"].search(
+            [("code", "=", declared.state_code), ("country_id.code", "=", "BR")],
+            limit=1,
+        )
+        partner.write(
+            {
+                "legal_name": declared.name.upper(),
+                "street_name": declared.street.lower(),
+                "street_number": declared.street_number,
+                "district": declared.district,
+                "zip": declared.zip_code,
+                "l10n_br_ie_code": declared.state_tax_number,
+                "city_id": city.id,
+                "state_id": state.id,
+            }
+        )
+        documents.import_partner_warning = False
+        documents._edi_import_check_partners(parsed)
+        self.assertNotIn("Registered as is", documents.import_partner_warning or "")
+
     def test_a_cte_is_read_and_becomes_a_document_of_the_recipient(self):
         documents, errors, _warnings = self._import(cte_xml(status="100"))
         self.assertFalse(errors)

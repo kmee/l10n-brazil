@@ -15,7 +15,7 @@ from odoo import _, api, models
 from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import MODELO_FISCAL_CTE
-from odoo.addons.l10n_br_fiscal_edi.tools import EdiParsedFile
+from odoo.addons.l10n_br_fiscal_edi.tools import EdiParsedFile, EdiPartnerData
 
 CTE_NAMESPACE = "http://www.portalfiscal.inf.br/cte"
 
@@ -167,6 +167,62 @@ class Document(models.Model):
         cte = getattr(parsed.binding, "CTe", None) or parsed.binding
         party = self._cte_taker(cte.infCte) if role == "issuer" else cte.infCte.emit
         return party.xNome or "", _vat(party)
+
+    def _edi_import_partner_data(self, parsed):
+        """What the CT-e declares about the emitter, the sender, the recipient and the
+        taker, with the partner of the registry that has the same CNPJ or CPF."""
+        result = super()._edi_import_partner_data(parsed)
+        if parsed.reader != "cte":
+            return result
+        cte = getattr(parsed.binding, "CTe", None) or parsed.binding
+        infcte = cte.infCte
+        taker = self._cte_taker(infcte)
+        for role, party, address in (
+            ("issuer", infcte.emit, "enderEmit"),
+            ("sender", getattr(infcte, "rem", None), "enderReme"),
+            ("recipient", getattr(infcte, "dest", None), "enderDest"),
+            ("taker", taker, "enderToma"),
+        ):
+            if party is None:
+                continue
+            address = getattr(party, address, None) or self._cte_taker_address(
+                infcte, party
+            )
+            result.append(self._cte_partner_data(role, party, address))
+        return result
+
+    @api.model
+    def _cte_taker_address(self, infcte, party):
+        """The address of a taker that is one of the parties of the CT-e (toma3)."""
+        for name, address in (
+            ("rem", "enderReme"),
+            ("exped", "enderExped"),
+            ("receb", "enderReceb"),
+            ("dest", "enderDest"),
+        ):
+            if getattr(infcte, name, None) is party:
+                return getattr(party, address, None)
+        return None
+
+    def _cte_partner_data(self, role, party, address):
+        vat = _vat(party) or ""
+        partner = self.env["res.partner"]
+        if vat:
+            partner = partner.search([("cnpj_cpf_stripped", "=", vat)], limit=1)
+        city = getattr(address, "xMun", None) or ""
+        state = _value(getattr(address, "UF", None)) or ""
+        return partner, EdiPartnerData(
+            role=role,
+            vat=vat,
+            name=party.xNome or "",
+            state_tax_number=getattr(party, "IE", None) or "",
+            street=getattr(address, "xLgr", None) or "",
+            street_number=getattr(address, "nro", None) or "",
+            district=getattr(address, "xBairro", None) or "",
+            zip_code=getattr(address, "CEP", None) or "",
+            city=city,
+            state_code=str(state),
+        )
 
     @api.model
     def _cte_status(self, status_code):
