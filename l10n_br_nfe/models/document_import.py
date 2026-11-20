@@ -13,6 +13,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     MODELO_FISCAL_NFE,
 )
 from odoo.addons.l10n_br_fiscal_edi.tools import (
+    EDI_IMPORT_NO_CREATE,
     EdiParsedFile,
     EdiPartnerData,
     tax_authority_date_to_utc,
@@ -68,6 +69,16 @@ class Document(models.Model):
             file_name=name,
             content=content,
         )
+
+    @api.model
+    def _build_attr(self, node, fields, vals, path, attr):
+        """The invoice (``fat``) of the collection is a mirror of fields that the
+        document already has: its number (nFat) would renumber the document, and its
+        original, discount and net values would overwrite the totals. What the file
+        declares of the collection is read from the duplicates, not from here."""
+        if self.env.context.get(EDI_IMPORT_NO_CREATE) and type(node).__name__ == "Fat":
+            return False
+        return super()._build_attr(node, fields, vals, path, attr)
 
     @api.model
     def _nfe_import_status(self, status_code):
