@@ -5,6 +5,7 @@ import re
 from datetime import date
 from unittest.mock import patch
 
+from odoo.tests import Form
 from odoo.tools import file_open
 
 from odoo.addons.l10n_br_cte.models.document import CTe as CteDocument
@@ -298,6 +299,22 @@ class TestCteDocumentImport(EdiImportCase):
         documents.import_partner_warning = False
         documents._edi_import_check_partners(parsed)
         self.assertNotIn("Registered as is", documents.import_partner_warning or "")
+
+    def test_a_common_fiscal_user_sees_and_chooses_the_operation_of_the_imported_cte(
+        self,
+    ):
+        user = self._fiscal_user("fiscal_user_cte_form", self.other_company)
+        model = self.Document.with_user(user).with_context(
+            allowed_company_ids=self.other_company.ids
+        )
+        documents, errors, _warnings = self._import(cte_xml(COLLECTION), model)
+        self.assertFalse(errors)
+        operation = self.env.ref("l10n_br_fiscal.fo_compras")
+        with Form(documents.with_user(user)) as form:
+            form.fiscal_operation_id = operation
+        self.assertEqual(documents.fiscal_operation_id, operation)
+        with Form(documents.fiscal_line_ids.with_user(user)) as line_form:
+            self.assertEqual(line_form.name, "Frete")
 
     def test_a_cte_is_read_and_becomes_a_document_of_the_recipient(self):
         documents, errors, _warnings = self._import(cte_xml(status="100"))
