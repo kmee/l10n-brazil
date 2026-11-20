@@ -25,6 +25,7 @@ from odoo.addons.l10n_br_fiscal_edi.tests.common import (
     EdiImportCase,
 )
 from odoo.addons.l10n_br_fiscal_edi.tools import EdiInstallment, EdiPayment
+from odoo.addons.spec_driven_model.models.spec_import import SpecMixinImport
 
 FIXTURE_DIR = os.path.join(
     l10n_br_nfe.__path__[0], "tests", "nfe", "v4_00", "leiauteNFe"
@@ -1651,3 +1652,22 @@ class TestNfeInvoiceOfTheCollection(EdiImportCase):
             documents._edi_get_installments(),
             [EdiInstallment("001", date(2026, 12, 10), 140.0)],
         )
+
+
+class TestNfeMatchOfAnotherSchema(EdiImportCase):
+    """The matching of the NF-e answers only for the NF-e: a dictionary of another
+    schema (the CT-e, whose module is loaded after this one) goes to the base."""
+
+    def test_the_partner_of_another_schema_is_matched_by_the_base(self):
+        calls = []
+
+        def base(model, rec_dict, parent_dict, model_=None):
+            calls.append(rec_dict)
+            return 42
+
+        partner = self.env["res.partner"].with_context(spec_schema="xyz")
+        with mock.patch.object(SpecMixinImport, "match_or_create_m2o", base):
+            result = partner.match_or_create_m2o({"xyz40_CNPJ": "1"}, {})
+
+        self.assertEqual(result, 42)
+        self.assertEqual(calls, [{"xyz40_CNPJ": "1"}])
