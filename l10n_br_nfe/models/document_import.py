@@ -93,6 +93,8 @@ class Document(models.Model):
         """The partner that the NF-e needs registered and the database lacks: the
         issuer of a note received, the recipient of one the company issued, and
         then the carrier, whichever is missing first."""
+        if parsed.reader != "nfe":
+            return super()._edi_import_partner_hint(parsed)
         inf_nfe = _inf_nfe(parsed.binding)
         companies = self.env["res.company"].sudo()
         issued_by_company = False

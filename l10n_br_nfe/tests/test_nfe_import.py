@@ -12,6 +12,7 @@ from unittest import mock
 import nfelib
 from nfelib.nfe.bindings.v4_0.leiaute_nfe_v4_00 import TnfeProc
 
+from odoo import fields
 from odoo.models import NewId
 from odoo.tests import TransactionCase
 
@@ -1281,3 +1282,25 @@ class TestNfeDocumentImport(EdiImportCase):
         self.assertEqual(document.partner_id, customer)
         self.assertEqual(self._snapshot(records), before)
         self.assertEqual(self._snapshot(company), company_before)
+
+    # The NF-e module answers only for the NF-e: the other types go to the base.
+
+    def test_a_document_of_another_type_declares_nothing_and_does_not_fail(self):
+        document = self._create_imported_document(
+            document_type_id=self.env.ref("l10n_br_fiscal.document_SE").id
+        )
+
+        # the duplicates and payments of the NF-e are not even read
+        with mock.patch.object(
+            fields.One2many, "__get__", autospec=True, side_effect=AssertionError
+        ):
+            self.assertEqual(document._edi_get_installments(), [])
+            self.assertEqual(document._edi_get_payments(), [])
+        self.assertFalse(document.edi_payment_summary)
+
+    def test_the_partner_to_register_of_another_reader_is_the_one_of_the_base(self):
+        parsed = self._parsed(KEY_1, reader="cte")
+
+        hint = self.Document._edi_import_partner_hint(parsed)
+
+        self.assertEqual(hint, ("", parsed.issuer_vat))

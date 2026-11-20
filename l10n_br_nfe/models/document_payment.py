@@ -5,7 +5,13 @@
 
 from odoo import models
 
+from odoo.addons.l10n_br_fiscal.constants.fiscal import (
+    MODELO_FISCAL_NFCE,
+    MODELO_FISCAL_NFE,
+)
 from odoo.addons.l10n_br_fiscal_edi.tools import EdiInstallment, EdiPayment
+
+NFE_MODELS = (MODELO_FISCAL_NFE, MODELO_FISCAL_NFCE)
 
 
 class Document(models.Model):
@@ -14,6 +20,8 @@ class Document(models.Model):
     def _edi_get_installments(self):
         """The duplicates (``dup``) declared in the collection of the NF-e."""
         self.ensure_one()
+        if self.document_type_id.code not in NFE_MODELS:
+            return super()._edi_get_installments()
         installments = [
             EdiInstallment(
                 number=dup.nfe40_nDup or "",
@@ -27,6 +35,8 @@ class Document(models.Model):
     def _edi_get_payments(self):
         """The payments (``detPag``) declared in the NF-e."""
         self.ensure_one()
+        if self.document_type_id.code not in NFE_MODELS:
+            return super()._edi_get_payments()
         payments = [
             EdiPayment(
                 means=payment.nfe40_tPag or "",
