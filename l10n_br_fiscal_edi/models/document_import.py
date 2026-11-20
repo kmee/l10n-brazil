@@ -13,6 +13,7 @@ from erpbrasil.base.fiscal.cnpj_cpf import formata
 
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
+from odoo.tools.misc import format_datetime
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_ISSUER_COMPANY,
@@ -54,11 +55,27 @@ class Document(models.Model):
         "documents the company issued needs.",
     )
 
+    import_missing_products = fields.Boolean(
+        compute="_compute_import_missing_products",
+        help="Some line has the code of a product in the file, a confirmed unit and "
+        "no product yet, which the action to create the missing products would "
+        "resolve.",
+    )
+
     import_partner_warning = fields.Text(
         copy=False,
         readonly=True,
         help="Where the data of a partner in the file differ from its registry, "
-        "which the import never changes, and the partners that were matched by name.",
+        "which the import never changes, and the partners that were matched by name. "
+        "It is the picture of the day it was checked (import_partner_checked), and "
+        "the button to check again updates it.",
+    )
+
+    import_partner_checked = fields.Datetime(
+        copy=False,
+        readonly=True,
+        help="When the data of the partners in the file were last compared with "
+        "their registry: at the import, or when somebody checked again.",
     )
 
     @api.depends(
@@ -84,7 +101,7 @@ class Document(models.Model):
         messages = []
         if not self.imported_document:
             return messages
-        if not self.fiscal_operation_id:
+        if self.fiscal_line_ids and not self.fiscal_operation_id:
             messages.append(
                 _(
                     "No fiscal operation matches the CFOP of the document: choose the "
@@ -104,6 +121,14 @@ class Document(models.Model):
                     % {"line": line.name, "uom": line.partner_uom_code}
                 )
         if self.import_partner_warning:
+            messages.append(
+                _("Partner data, as compared with the registry on %(date)s:")
+                % {
+                    "date": format_datetime(
+                        self.env, self.import_partner_checked or self.create_date
+                    )
+                }
+            )
             messages.extend(self.import_partner_warning.splitlines())
         return messages
 
@@ -117,12 +142,22 @@ class Document(models.Model):
             lists of ``(name, message)``. A note that was already imported is a
             warning, and its document is returned.
         """
+        # The context of a window action may carry ``default_*`` keys meant for the
+        # records of that window: they would fill the fields of the documents and of
+        # the lines the import creates.
+        service = self.with_context(
+            {
+                key: value
+                for key, value in self.env.context.items()
+                if not key.startswith("default_")
+            }
+        )
         documents = self.browse()
         errors, warnings = [], []
-        for name, content in self._edi_import_expand(files):
+        for name, content in service._edi_import_expand(files):
             try:
                 with self.env.cr.savepoint():
-                    document, created = self._edi_import_file(
+                    document, created = service._edi_import_file(
                         name, content, dfe_document=dfe_document
                     )
                 documents |= document
@@ -177,6 +212,7 @@ class Document(models.Model):
                 _("The file %s is not a fiscal document that can be imported.") % name
             )
         company, role = self._edi_import_company(parsed)
+        self._edi_import_lock(company, parsed.access_key)
         existing = self.with_company(company)._edi_import_find_existing(parsed, company)
         if existing:
             return existing, False
@@ -216,7 +252,7 @@ class Document(models.Model):
         checked without it, before anything is created.
         """
         company = self.env["res.company"]
-        role = False
+        role = file_vat = False
         for candidate_role, vat in parsed.company_vats:
             company = (
                 self.env["res.company"]
@@ -224,7 +260,7 @@ class Document(models.Model):
                 .search([("partner_id.cnpj_cpf_stripped", "=", vat)], limit=1)
             )
             if company:
-                role = candidate_role
+                role, file_vat = candidate_role, vat
                 break
         if not company:
             raise UserError(
@@ -233,9 +269,14 @@ class Document(models.Model):
             )
         company = company.sudo(False)
         if not self.env.su and company not in self.env.user.company_ids:
+            # The name of a company the user does not have is not read nor told: the
+            # CNPJ of the file says which one it is
             raise UserError(
-                _("You have no access to the company %s, which the file is for.")
-                % company.display_name
+                _(
+                    "You have no access to the company with the CNPJ %s, which the "
+                    "file is for."
+                )
+                % formata(file_vat)
             )
         if company not in self.env.companies:
             raise UserError(
@@ -243,7 +284,7 @@ class Document(models.Model):
                     "The note is for the company %s, which is not selected in the "
                     "company switcher. Select it and import again."
                 )
-                % company.display_name
+                % company.sudo().display_name
             )
         return company, role
 
@@ -283,6 +324,20 @@ class Document(models.Model):
             "are not allowed to create contacts. Ask someone who can to register "
             "it, or ask for the permission, and import the file again."
         ) % {"file": parsed.file_name, "partner": partner or _("(unknown)")}
+
+    @api.model
+    def _edi_import_lock(self, company, access_key):
+        """Take, until the end of the transaction, the lock of the note of this company.
+
+        Two imports of the same note that run together would both find that it does
+        not exist and both create it, and nothing in the database forbids it (an
+        existing database may have duplicates, so there is no unique index). The second
+        waits here until the first commits, and then finds the document and answers
+        that the note was already imported."""
+        self.env.cr.execute(
+            "SELECT pg_advisory_xact_lock(%s, hashtext(%s))",
+            (company.id, access_key),
+        )
 
     @api.model
     def _edi_import_check(self, parsed, company):
@@ -425,12 +480,25 @@ class Document(models.Model):
                         "registry": registry[key] or "",
                     }
                 )
+        self.import_partner_checked = fields.Datetime.now()
+        self.import_partner_warning = "\n".join(lines) or False
         if lines:
-            self.import_partner_warning = "\n".join(lines)
             self._message_log(
                 body=_("Partner data that differ from the registry: %s")
                 % "; ".join(lines)
             )
+
+    def action_import_check_partners_again(self):
+        """Compare the data of the partners in the file with the registry again, now:
+        the warning is the picture of when it was last checked, and a registry that was
+        corrected since clears it."""
+        self.ensure_one()
+        attachment = self.original_xml_file_id.with_context(bin_size=False)
+        parsed = attachment and self._edi_import_read(attachment.name, attachment.raw)
+        if not parsed:
+            raise UserError(_("The file of this document is not available to check."))
+        self._edi_import_check_partners(parsed)
+        return True
 
     def _edi_import_suggest(self):
         """Suggest the review of the document. Safe to run again: what a person
@@ -443,8 +511,9 @@ class Document(models.Model):
             elif document.fiscal_operation_type == FISCAL_OUT:
                 document._edi_import_apply_own_products()
             for line in document.fiscal_line_ids.filtered(
-                lambda line: line.import_state == "matched"
-                and line._import_unit_unconfirmed()
+                lambda line: (
+                    line.import_state == "matched" and line._import_unit_unconfirmed()
+                )
             ):
                 line.import_state = "pending"
 
@@ -476,14 +545,61 @@ class Document(models.Model):
                 operation = votes and max(set(votes), key=votes.count)
             if operation:
                 self.fiscal_operation_id = operation
+        self._edi_import_spread_operation(found)
+
+    def _edi_import_spread_operation(self, found=None):
+        """Give the lines that have no operation the one of the document, and the
+        operation line the CFOP of the file points to when it does. Used when the
+        suggestion finds the operation and when a person chooses it on the header:
+        the two end the same. The values and the taxes declared in the file are not
+        touched, and a line that already has an operation keeps it."""
+        self.ensure_one()
         if not self.fiscal_operation_id:
             return
+        if found is None:
+            found = self._edi_import_operation_lines_found()
         for line, operation_line in found.items():
             line.fiscal_operation_id = (
                 operation_line.fiscal_operation_id or self.fiscal_operation_id
             )
+            if not operation_line:
+                # No line answers the CFOP of the file (a CT-e, for instance) and
+                # the line has no product to pick one: the best approved line of
+                # the operation stands, or the line would add nothing to the total.
+                operation_line = (
+                    line.fiscal_operation_line_id
+                    or line.fiscal_operation_id._select_best_line(
+                        line.fiscal_operation_id.line_ids.filtered(
+                            lambda op_line: op_line.state == "approved"
+                        )
+                    )
+                )
             if operation_line:
                 line.fiscal_operation_line_id = operation_line
+
+    def _edi_import_operation_lines_found(self):
+        """The operation line of each line that has none, by the CFOP of the file."""
+        self.ensure_one()
+        operation_lines = self.env["l10n_br_fiscal.operation.line"]
+        return {
+            line: operation_lines._find_by_issuer_cfop(
+                line.partner_cfop_id,
+                self.partner_operation_name,
+                self.fiscal_operation_type,
+            )
+            for line in self.fiscal_line_ids.filtered(
+                lambda line: (
+                    not line.fiscal_operation_line_id and not line.fiscal_operation_id
+                )
+            )
+        }
+
+    def write(self, vals):
+        result = super().write(vals)
+        if "fiscal_operation_id" in vals:
+            for document in self.filtered("imported_document"):
+                document._edi_import_spread_operation()
+        return result
 
     def _compute_import_can_create_products(self):
         can_create = self.env["product.product"].check_access_rights(
@@ -491,6 +607,21 @@ class Document(models.Model):
         )
         for document in self:
             document.import_can_create_products = can_create
+
+    @api.depends(
+        "fiscal_line_ids.product_id",
+        "fiscal_line_ids.uom_id",
+        "fiscal_line_ids.import_uom_id",
+        "fiscal_line_ids.partner_uom_code",
+    )
+    def _compute_import_missing_products(self):
+        for document in self:
+            document.import_missing_products = any(
+                not line.product_id
+                and line._get_partner_product_code()
+                and not line._import_unit_unconfirmed()
+                for line in document.fiscal_line_ids
+            )
 
     def _edi_import_own_product(self, code):
         """The product of the company with this internal code: in a document the
