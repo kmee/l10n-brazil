@@ -12,6 +12,7 @@ from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal_edi.tests.common import EdiImportCase
 from odoo.addons.l10n_br_nfse.models.document import Document as NfseDocument
+from odoo.addons.l10n_br_nfse.models.document_import import Document as NfseReader
 
 NFSE_SAMPLE = os.path.join(
     os.path.dirname(nfelib.__file__), "nfse", "samples", "v1_0", "nfse-ibscbs.xml"
@@ -320,14 +321,26 @@ class TestNfseDocumentImport(EdiImportCase):
         self.assertFalse(documents)
         self.assertIn("50-digit access key", errors[0][1])
 
-    def test_a_file_that_is_not_a_nfse_is_not_read_by_the_nfse_reader(self):
+    def test_a_file_that_is_not_a_nfse_is_left_to_the_next_reader(self):
+        """Only this reader is called: what the others do with the file is theirs."""
+        mro = type(self.Document).__mro__
+        following = next(
+            cls
+            for cls in mro[mro.index(NfseReader) + 1 :]
+            if "_edi_import_read" in vars(cls)
+        )
         nfe = '<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe"><NFe/></nfeProc>'
         cte = '<cteProc xmlns="http://www.portalfiscal.inf.br/cte"><CTe/></cteProc>'
-        for content in (nfe, cte, "<root/>", "not xml at all"):
-            self.assertIsNone(self.Document._edi_import_read("a.xml", content.encode()))
-        documents, errors, _warnings = self._import(nfe.encode())
-        self.assertFalse(documents)
-        self.assertIn("not a fiscal document", errors[0][1])
+        with patch.object(following, "_edi_import_read", return_value="next"):
+            for content in (nfe, cte, "<root/>", "not xml at all"):
+                self.assertEqual(
+                    NfseReader._edi_import_read(
+                        self.Document, "a.xml", content.encode()
+                    ),
+                    "next",
+                )
+            read = NfseReader._edi_import_read(self.Document, "a.xml", nfse_xml())
+        self.assertEqual(read.reader, "nfse")
 
     def test_the_same_nfse_twice_opens_the_same_document(self):
         documents, _errors, _warnings = self._import(nfse_xml())
