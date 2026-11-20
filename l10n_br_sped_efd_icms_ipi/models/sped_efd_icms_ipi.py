@@ -1117,6 +1117,8 @@ class RegistroC100(models.Model):
 
         ind_pgto = record._get_sped_ind_pgto()
 
+        # the PIS and the COFINS of the items, as the C170 carry them
+        pis_value, cofins_value = record._get_sped_pis_cofins_values()
         cod_sit = record._get_sped_cod_sit()
         if record._is_sped_cancelled():
             # cancelled, denied and unused numbers only carry what the Guia
@@ -1164,8 +1166,8 @@ class RegistroC100(models.Model):
             "VL_BC_ICMS_ST": record.amount_icmsst_base,
             "VL_ICMS_ST": record.amount_icmsst_value,
             "VL_IPI": record.amount_ipi_value,
-            "VL_PIS": record.amount_pis_value,
-            "VL_COFINS": record.amount_cofins_value,
+            "VL_PIS": pis_value,
+            "VL_COFINS": cofins_value,
             # "VL_PIS_ST": record.amount_pisst_value,  # don't we have a field?
             # "VL_COFINS_ST": record.amount_cofinsst_value,  # idem
         }
@@ -1504,6 +1506,10 @@ class RegistroC170(models.Model):
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         # Format the 3-digit CST (Origin + CST code)
         cst_icms = f"{record.icms_origin or '0'}{record.icms_cst_code or '00'}"
+        # an entry booked without PIS/COFINS credit right carries no base, rate
+        # or value for the tax
+        pis_no_credit = record._entry_piscofins_without_credit("pis")
+        cofins_no_credit = record._entry_piscofins_without_credit("cofins")
 
         return {
             "NUM_ITEM": index + 1,
@@ -1539,21 +1545,21 @@ class RegistroC170(models.Model):
             "ALIQ_IPI": record.ipi_percent,
             "VL_IPI": record.ipi_value,
             "CST_PIS": record.entry_pis_cst_id.code or record.pis_cst_code,
-            "VL_BC_PIS": record.pis_base,
-            "ALIQ_PIS": record.pis_percent,
+            "VL_BC_PIS": 0.0 if pis_no_credit else record.pis_base,
+            "ALIQ_PIS": 0.0 if pis_no_credit else record.pis_percent,
             "QUANT_BC_PIS": record.qBCProd
             if hasattr(record, "qBCProd")
             else record.fiscal_quantity,  # TODO sure?
             # "ALIQ_PIS_INDEX_29": 0,  # Alíquota do PIS (em reais)
-            "VL_PIS": record.pis_value,
+            "VL_PIS": 0.0 if pis_no_credit else record.pis_value,
             "CST_COFINS": record.entry_cofins_cst_id.code or record.cofins_cst_code,
-            "VL_BC_COFINS": record.cofins_base,
-            "ALIQ_COFINS": record.cofins_percent,
+            "VL_BC_COFINS": 0.0 if cofins_no_credit else record.cofins_base,
+            "ALIQ_COFINS": 0.0 if cofins_no_credit else record.cofins_percent,
             "QUANT_BC_COFINS": record.qBCProd
             if hasattr(record, "qBCProd")
             else record.fiscal_quantity,  # TODO sure?
             # "ALIQ_COFINS_INDEX_35": 0,  # Alíquota da COFINS (em reais)
-            "VL_COFINS": record.cofins_value,
+            "VL_COFINS": 0.0 if cofins_no_credit else record.cofins_value,
             "COD_CTA": "",  # TODO Código da conta analítica contábil debitada/creditad...
             "VL_ABAT_NT": record.financial_discount_value,
         }
