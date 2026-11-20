@@ -62,6 +62,19 @@ class TestDocumentPayment(EdiImportCase):
         self.assertIn("01", summary)
         self.assertIn("In installments", summary)
 
+    def test_the_means_of_payment_is_shown_by_its_name_when_the_type_knows_it(self):
+        document = self._document(payments=[EdiPayment("15", 100.0, "installments")])
+        self.assertIn(">15<", str(document.edi_payment_summary).replace(" ", ""))
+        with patch.object(
+            type(self.Document),
+            "_edi_payment_means_label",
+            lambda doc, means: {"15": "Bank slip"}.get(means, means),
+        ):
+            document.invalidate_recordset()
+            summary = str(document.edi_payment_summary)
+        self.assertIn("Bank slip", summary)
+        self.assertNotIn(">15<", summary.replace(" ", ""))
+
     def test_a_payment_that_is_other_says_what_it_is(self):
         document = self._document(
             payments=[EdiPayment("99", 100.0, "cash", description="Barter")]

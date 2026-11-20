@@ -44,6 +44,12 @@ class Document(models.Model):
         self.ensure_one()
         return self._edi_get_payments()
 
+    def _edi_payment_means_label(self, means):
+        """Name of a means of payment (tPag), to show instead of its code. The module
+        that knows the selection of the means answers; the base shows the code."""
+        self.ensure_one()
+        return means
+
     def _edi_payment_totals(self):
         """Gross total, withholdings and net amount payable, as ``(gross, withholding,
         net)``. The total of the document is already net of the withholdings and is
@@ -96,6 +102,10 @@ class Document(models.Model):
             "currency": self.currency_id,
             "installments": installments,
             "payments": payments,
+            "means_labels": {
+                payment.means: self._edi_payment_means_label(payment.means)
+                for payment in payments
+            },
             "totals": [
                 (_("Document total"), gross),
                 (_("Withholdings"), withholding),
