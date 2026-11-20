@@ -170,6 +170,28 @@ class TestCteDocumentImport(EdiImportCase):
         self.assertFalse(errors)
         self.assertFalse(documents.fiscal_line_ids.product_id)
 
+    def test_the_transport_service_provided_is_suggested_for_a_cte_issued_by_the_company(
+        self,
+    ):
+        content = cte_xml(recipient="12345678000195", emitter=LUCRO_PRESUMIDO)
+        documents, _errors, _warnings = self._import(content)
+        self.assertFalse(documents.fiscal_line_ids.product_id)
+        self.assertEqual(documents.fiscal_line_ids.import_state, "pending")
+        service = self._freight(name="Transport provided")
+        self.presumed.cte_import_service_product_id = service
+        self.Document.search([("document_key", "=", CTE_KEY)]).unlink()
+        documents, errors, _warnings = self._import(content)
+        self.assertFalse(errors)
+        line = documents.fiscal_line_ids
+        self.assertEqual((line.product_id, line.import_state), (service, "matched"))
+        documents.action_import_confirm_suggestions()
+        self.assertEqual(line.import_state, "resolved")
+
+    def test_the_freight_bought_does_not_use_the_service_provided(self):
+        self.other_company.cte_import_service_product_id = self._freight()
+        documents, _errors, _warnings = self._import(cte_xml())
+        self.assertFalse(documents.fiscal_line_ids.product_id)
+
     def test_a_user_who_cannot_create_contacts_is_told_which_partner_is_missing(self):
         user = self._fiscal_user("fiscal_user_cte_partner", self.other_company)
         model = self.Document.with_user(user).with_context(

@@ -21,6 +21,7 @@
                     </group>
                     <group name="cte_import_settings" string="Import">
                         <field name="cte_import_product_id" />
+                        <field name="cte_import_service_product_id" />
                     </group>
                     <group name="dacte_settings" string="DACTE Settings">
                         <group>

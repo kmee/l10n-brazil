@@ -43,7 +43,19 @@ class ResCompany(spec_models.SpecModel):
         help="Freight service suggested on the line of a CT-e that the company "
         "receives when it is imported. The person confirms the suggestion in the "
         "review. Without it the line waits for the choice of the product. The "
-        "CT-e issued by the company does not use it.",
+        "CT-e issued by the company does not use it (see the transport service "
+        "provided).",
+    )
+
+    cte_import_service_product_id = fields.Many2one(
+        comodel_name="product.product",
+        string="Default Transport Service Provided",
+        domain="[('type', '=', 'service'), '|', ('company_id', '=', False),"
+        " ('company_id', '=', id)]",
+        help="Transport service suggested on the line of a CT-e that the company "
+        "issued in another system when it is imported. The person confirms the "
+        "suggestion in the review. Without it the line waits for the choice of the "
+        "product.",
     )
 
     cte_dacte_layout = fields.Selection(
