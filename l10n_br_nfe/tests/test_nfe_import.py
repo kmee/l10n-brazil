@@ -10,6 +10,7 @@ from datetime import date
 from unittest import mock
 
 import nfelib
+from lxml import etree
 from nfelib.nfe.bindings.v4_0.leiaute_nfe_v4_00 import TnfeProc
 
 from odoo import fields
@@ -1648,6 +1649,17 @@ class TestNfeOwnNoteImport(EdiImportCase):
         document.fiscal_line_ids.action_resolve_line()
 
         self._same_file_by_both_paths(document)
+
+    def test_the_confirm_button_is_shown_on_an_imported_document(self):
+        user = self._fiscal_user("confirm_button", self.company)
+        document = self._import(self._received_xml()).with_user(user)
+        arch = document.get_view(view_type="form")["arch"]
+        buttons = etree.fromstring(arch).xpath(
+            "//button[@name='action_document_confirm']"
+        )
+
+        self.assertEqual(len(buttons), 1)
+        self.assertNotIn("imported_document", buttons[0].get("modifiers"))
 
 
 class TestNfeInvoiceOfTheCollection(EdiImportCase):

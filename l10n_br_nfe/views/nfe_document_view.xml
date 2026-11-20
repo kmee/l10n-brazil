@@ -84,7 +84,7 @@
                     </group>
                 </group>
             </page>
-            <!-- Hide confirm button for imported documents -->
+            <!-- The confirm button stays for imported documents: it is how they are reviewed and authorized -->
             <xpath expr="//form/field[@name='document_type']" position="after">
                 <field name="imported_document" invisible="1" />
             </xpath>
@@ -94,7 +94,7 @@
             >
                 <attribute
                     name="attrs"
-                >{'invisible': ['|', ('state_edoc', '!=', 'em_digitacao'), ('imported_document', '=', True)]}</attribute>
+                >{'invisible': [('state_edoc', '!=', 'em_digitacao')]}</attribute>
             </xpath>
             <!-- Hide buttons for imported documents -->
             <xpath
