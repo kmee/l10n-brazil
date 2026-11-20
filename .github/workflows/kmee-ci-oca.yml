@@ -1,0 +1,102 @@
+# Paridade com o CI da OCA, no runner de casa (modo completo, repo inteiro).
+# Le do PROPRIO branch testado o .github/workflows/test.yml da OCA e repete os
+# mesmos jobs: imagens oca-ci da serie (Odoo e OCB), postgres, boleto, checklog e os
+# mesmos passos. Fora de proposito: codecov e atualizacao do .pot (exigem segredos
+# da OCA e nao reprovam PR). Pre-commit NAO esta aqui (ver ESTADO_RUNNER).
+#
+#   gh workflow run kmee-ci-oca.yml -R kmee/l10n-brazil --ref kmee-ci -f branch=<branch>
+name: kmee-ci-oca
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "branch do kmee/l10n-brazil a testar"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kmee-ci-oca-${{ github.event.inputs.branch }}
+  cancel-in-progress: true
+
+jobs:
+  prep:
+    runs-on: [kmee-l10n-br]
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.p.outputs.matrix }}
+      pg: ${{ steps.p.outputs.pg }}
+      checklog: ${{ steps.p.outputs.checklog }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+          persist-credentials: false
+      - id: p
+        run: |
+          set -euo pipefail
+          T=.github/workflows/test.yml
+          [ -f "$T" ] || { echo "sem $T neste branch"; exit 1; }
+          M=$(grep -oE 'container: ghcr.io/oca/oca-ci/[^ ]+' "$T" | sed 's/container: //' | sort -u \
+            | jq -R '{container: ., name: (if test("-ocb") then "test with OCB" else "test with Odoo" end)}' | jq -sc .)
+          [ "$M" != "[]" ] || { echo "nenhuma imagem oca-ci em $T"; exit 1; }
+          PG=$(grep -oE 'image: postgres:[0-9.]+' "$T" | head -1 | sed 's/image: //')
+          CL=""; grep -q 'OCA_ENABLE_CHECKLOG_ODOO: "1"' "$T" && CL=1
+          echo "matrix=$M" >> "$GITHUB_OUTPUT"
+          echo "pg=${PG:-postgres:12}" >> "$GITHUB_OUTPUT"
+          echo "checklog=$CL" >> "$GITHUB_OUTPUT"
+          echo "matrix=$M pg=$PG checklog=$CL"
+      - name: Unreleased dependencies (como o job da OCA)
+        run: |
+          set -euo pipefail
+          FATAL=1; grep -qE '^\s*#\s*exit 1' .github/workflows/test.yml && FATAL=0
+          for f in requirements.txt test-requirements.txt; do
+            [ -f "$f" ] || continue
+            if grep -q '^[^#].*/' "$f"; then
+              echo "Unreleased dependencies found in $f."
+              [ "$FATAL" = 1 ] && exit 1
+            fi
+          done
+
+  test:
+    needs: prep
+    runs-on: [kmee-l10n-br]
+    timeout-minutes: 180
+    container: ${{ matrix.container }}
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.prep.outputs.matrix) }}
+    services:
+      postgres:
+        image: ${{ needs.prep.outputs.pg }}
+        env:
+          POSTGRES_USER: odoo
+          POSTGRES_PASSWORD: odoo
+          POSTGRES_DB: odoo
+      boleto_cnab_api:
+        image: ghcr.io/akretion/boleto_cnab_api:latest
+    env:
+      OCA_ENABLE_CHECKLOG_ODOO: ${{ needs.prep.outputs.checklog }}
+      BRCOBRANCA_API_URL: http://boleto_cnab_api:9292
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+          persist-credentials: false
+      - name: Passos extras do test.yml da serie (ex.: vcrpy na 16.0)
+        run: |
+          grep -E '^\s*run: pip install vcrpy' .github/workflows/test.yml | sed -E 's/^\s*run:\s*//' | sort -u | while read -r c; do echo "+ $c"; eval "$c"; done
+      - name: Install addons and dependencies
+        run: oca_install_addons
+      - name: Check licenses
+        run: manifestoo -d . check-licenses
+      - name: Check development status
+        run: manifestoo -d . check-dev-status --default-dev-status=Beta
+      - name: Initialize test db
+        run: oca_init_test_database
+      - name: Run tests
+        run: oca_run_tests
