@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 import os
+from unittest.mock import patch
 
 import nfelib
 
@@ -109,6 +110,23 @@ class TestMdfeDocumentImport(EdiImportCase):
             self.env["ir.sequence"].search([]).read(["id", "number_next_actual"]),
             sequences,
         )
+
+    def test_the_damdfe_of_an_imported_mdfe_is_printed_from_the_original_xml(self):
+        documents, _errors, _warnings = self._import(mdfe_xml(status="100"))
+        documents.action_document_confirm()
+        original = documents.original_xml_file_id.raw
+        mails = self.env["mail.mail"].search_count([])
+        self.assertFalse(documents.file_report_id)
+        with patch(
+            "odoo.addons.mail.models.mail_template.MailTemplate.send_mail"
+        ) as send:
+            action = documents.view_pdf()
+        self.assertFalse(send.called)
+        self.assertEqual(action["type"], "ir.actions.act_url")
+        self.assertTrue(documents.file_report_id.raw.startswith(b"%PDF"))
+        self.assertEqual(documents.original_xml_file_id.raw, original)
+        self.assertFalse(documents.authorization_file_id)
+        self.assertEqual(self.env["mail.mail"].search_count([]), mails)
 
     def test_the_emitter_data_that_differ_from_the_registry_are_reported(self):
         documents, errors, _warnings = self._import(mdfe_xml(status="100"))
