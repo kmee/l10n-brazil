@@ -1931,3 +1931,53 @@ class TestNfeImportAccess(EdiImportCase):
                     adi = document.fiscal_line_ids.nfe40_DI.nfe40_adi
                     self.assertEqual(adi.nfe40_nAdicao, "1")
                 documents.sudo().unlink()
+
+
+class TestNfeImportDemo(TransactionCase):
+    """The demo documents of the import are in the states that the demo explains."""
+
+    def _demo(self, number):
+        document = self.env["l10n_br_fiscal.document"].search(
+            [
+                ("document_number", "=", number),
+                (
+                    "company_id",
+                    "=",
+                    self.env.ref("l10n_br_base.empresa_lucro_presumido").id,
+                ),
+            ]
+        )
+        if not document:
+            self.skipTest("No demo data")
+        return document
+
+    def test_the_note_with_installments_comes_in_resolved(self):
+        document = self._demo("4101")
+
+        self.assertEqual(document.state_edoc, "em_digitacao")
+        self.assertEqual(document.import_state, "resolved")
+        self.assertEqual(len(document._edi_get_installments()), 2)
+        self.assertEqual(document.fiscal_line_ids.product_id.default_code, "ARM-DEMO")
+
+    def test_the_note_in_an_unknown_unit_is_pending(self):
+        document = self._demo("4102")
+
+        self.assertEqual(document.import_state, "pending")
+        self.assertFalse(document.fiscal_line_ids.uom_id)
+        self.assertEqual(document.fiscal_line_ids.partner_uom_code, "CXA")
+
+    def test_the_note_with_a_barcode_only_has_a_suggestion(self):
+        document = self._demo("4103")
+
+        line = document.fiscal_line_ids
+        self.assertEqual(line.import_state, "matched")
+        self.assertEqual(line.product_id.default_code, "BAR-DEMO")
+
+    def test_the_note_the_company_issued_elsewhere_is_authorized_with_its_protocol(
+        self,
+    ):
+        document = self._demo("9001")
+
+        self.assertEqual(document.state_edoc, "autorizada")
+        self.assertEqual(document.fiscal_operation_type, "out")
+        self.assertEqual(document.authorization_protocol, "135260000000901")
