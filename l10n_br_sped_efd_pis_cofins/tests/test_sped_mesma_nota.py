@@ -30,6 +30,10 @@ class TestSpedTheSameNoteInTheTwoFiles(CreditMixin, SpedEntradaCommon):
 
     profit_calculation = "real"
 
+    def setUp(self):
+        super().setUp()
+        self._opt_in_entry_without_credit()
+
     def _both(self, operation_line, number):
         if "l10n_br_sped.efd_icms_ipi.0000" not in self.env:
             self.skipTest("the EFD ICMS/IPI is not installed")

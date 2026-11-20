@@ -35,6 +35,15 @@ class CreditMixin(SpedPisCofinsEntradaMixin):
             }
         )
 
+    def _opt_in_entry_without_credit(self):
+        """The company books the tax it may not credit in the cost: the ledger
+        and the books leave use and consumption and fixed asset out of the
+        credit."""
+        if "stock_valuation_via_stock_price" not in self.company._fields:
+            self.skipTest("l10n_br_stock_account is not installed")
+        self.company.stock_valuation_via_stock_price = True
+        self.assertTrue(self.company._books_entry_by_creditability())
+
     def _entry(self, operation_line, number, invoice_date=None):
         """A posted supplier bill whose fiscal document the import left."""
         bill = self._purchase_move(operation_line, number, invoice_date=invoice_date)
@@ -139,11 +148,7 @@ class TestSpedPisCofinsCredit(CreditMixin, SpedEntradaCommon):
 
     def setUp(self):
         super().setUp()
-        # the ledger leaves out the PIS/COFINS of use and consumption and of the
-        # fixed asset only for a company that values its stock at the net cost
-        if "stock_valuation_via_stock_price" not in self.company._fields:
-            self.skipTest("l10n_br_stock_account is not installed")
-        self.company.stock_valuation_via_stock_price = True
+        self._opt_in_entry_without_credit()
 
     def test_the_company_of_the_fixture_pays_the_basic_rates(self):
         """The non-cumulative regime has PIS 1.65% and COFINS 7.6%: the

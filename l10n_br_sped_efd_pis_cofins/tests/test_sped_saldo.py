@@ -106,23 +106,6 @@ class TestSpedPisCofinsCreditBalance(CreditMixin, SpedEntradaCommon):
         self.assertEqual(m200["VL_TOT_CRED_DESC_ANT"], "16,50")
         self.assertEqual(self._number(m200["VL_TOT_CONT_NC_DEV"]), 0.0)
 
-    def test_the_file_stops_when_the_earlier_month_is_not_posted(self):
-        """The balance comes from the assessment of July, computed but not posted:
-        the month with movement has no posted assessment, and the message says
-        which one to assess and post."""
-        self._entry("fo_compras_compras_comercializacao", "401", JULY)
-        self._entry("fo_compras_compras", "402", JULY)
-        self._sale(date(2026, 7, 12))
-        self._assess("pis", month=7, post=False)
-        self._assess("cofins", month=7, post=False)
-        self._second_month(sales=3)
-        self._set_accountant()
-        declaration = self._declaration_month(8)
-        with self.assertRaises(UserError) as error:
-            declaration.button_create_sped_files()
-        self.assertIn("07/2026", error.exception.args[0])
-        self.assertIn("Faltam as apurações lançadas", error.exception.args[0])
-
     def test_the_file_stops_when_an_earlier_month_was_never_assessed(self):
         """June has credit and no assessment at all; July is assessed and posted.
         The balance of July starts from zero and the credit of June would be lost

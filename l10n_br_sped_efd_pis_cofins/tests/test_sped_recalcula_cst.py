@@ -8,13 +8,19 @@ from odoo.tests.common import tagged
 
 from odoo.addons.l10n_br_tax_assessment.tests.common_entrada import SpedEntradaCommon
 
+from .test_sped_credito import CreditMixin
+
 
 @tagged("post_install", "-at_install")
-class TestRecomputeEntryCst(SpedEntradaCommon):
+class TestRecomputeEntryCst(CreditMixin, SpedEntradaCommon):
     """The entry CST of an imported document still being typed can be recalculated
     by the current rule; a confirmed document is never touched."""
 
     profit_calculation = "real"
+
+    def setUp(self):
+        super().setUp()
+        self._opt_in_entry_without_credit()
 
     def _old_entry(self, state_edoc="em_digitacao"):
         """An entry of use and consumption as the import left it before the rule
