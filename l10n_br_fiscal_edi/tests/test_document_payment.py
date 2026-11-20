@@ -75,6 +75,22 @@ class TestDocumentPayment(EdiImportCase):
         self.assertIn("Bank slip", summary)
         self.assertNotIn(">15<", summary.replace(" ", ""))
 
+    def test_the_page_renders_for_a_caller_that_gives_no_names_of_means(self):
+        """The invoice of a document it issues builds the values of the page itself,
+        and does not have to know the names of the means of payment."""
+        document = self._document(
+            installments=self._installments([100.0]),
+            payments=[EdiPayment("01", 100.0, "installments")],
+        )
+        values = document._edi_payment_summary_values()
+        values["payments"] = document._edi_display_payments()
+        summary = str(
+            self.env["ir.qweb"]._render(
+                "l10n_br_fiscal_edi.document_payment_summary", values
+            )
+        )
+        self.assertIn("01", summary)
+
     def test_a_payment_that_is_other_says_what_it_is(self):
         document = self._document(
             payments=[EdiPayment("99", 100.0, "cash", description="Barter")]
