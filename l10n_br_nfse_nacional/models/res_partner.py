@@ -119,6 +119,7 @@ class ResPartner(spec_models.SpecModel):
         "city",
         "zip",
         "country_id",
+        "state_id",
     )
     def _compute_nfse10_end(self):
         for rec in self:
