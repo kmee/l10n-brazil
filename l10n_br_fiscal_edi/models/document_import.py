@@ -13,6 +13,7 @@ from erpbrasil.base.fiscal.cnpj_cpf import formata
 
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
+from odoo.tools.misc import format_datetime
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_ISSUER_COMPANY,
@@ -65,7 +66,16 @@ class Document(models.Model):
         copy=False,
         readonly=True,
         help="Where the data of a partner in the file differ from its registry, "
-        "which the import never changes, and the partners that were matched by name.",
+        "which the import never changes, and the partners that were matched by name. "
+        "It is the picture of the day it was checked (import_partner_checked), and "
+        "the button to check again updates it.",
+    )
+
+    import_partner_checked = fields.Datetime(
+        copy=False,
+        readonly=True,
+        help="When the data of the partners in the file were last compared with "
+        "their registry: at the import, or when somebody checked again.",
     )
 
     @api.depends(
@@ -111,6 +121,14 @@ class Document(models.Model):
                     % {"line": line.name, "uom": line.partner_uom_code}
                 )
         if self.import_partner_warning:
+            messages.append(
+                _("Partner data, as compared with the registry on %(date)s:")
+                % {
+                    "date": format_datetime(
+                        self.env, self.import_partner_checked or self.create_date
+                    )
+                }
+            )
             messages.extend(self.import_partner_warning.splitlines())
         return messages
 
@@ -437,12 +455,25 @@ class Document(models.Model):
                         "registry": registry[key] or "",
                     }
                 )
+        self.import_partner_checked = fields.Datetime.now()
+        self.import_partner_warning = "\n".join(lines) or False
         if lines:
-            self.import_partner_warning = "\n".join(lines)
             self._message_log(
                 body=_("Partner data that differ from the registry: %s")
                 % "; ".join(lines)
             )
+
+    def action_import_check_partners_again(self):
+        """Compare the data of the partners in the file with the registry again, now:
+        the warning is the picture of when it was last checked, and a registry that was
+        corrected since clears it."""
+        self.ensure_one()
+        attachment = self.original_xml_file_id.with_context(bin_size=False)
+        parsed = attachment and self._edi_import_read(attachment.name, attachment.raw)
+        if not parsed:
+            raise UserError(_("The file of this document is not available to check."))
+        self._edi_import_check_partners(parsed)
+        return True
 
     def _edi_import_suggest(self):
         """Suggest the review of the document. Safe to run again: what a person

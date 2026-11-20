@@ -53,6 +53,9 @@ class TestImportViews(EdiImportCase):
             )
         )
         self.assertTrue(form.xpath("//field[@name='import_warning']"))
+        self.assertTrue(
+            form.xpath("//button[@name='action_import_check_partners_again']")
+        )
         create = form.xpath("//button[@name='action_import_create_products']")
         self.assertTrue(create)
         # offered only while there is a product to create

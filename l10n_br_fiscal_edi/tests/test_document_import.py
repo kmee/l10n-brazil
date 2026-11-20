@@ -291,6 +291,41 @@ class TestDocumentImport(EdiImportCase):
         self.assertEqual(self.supplier.street_number, "100")
         self.assertIn("differ from the registry", document.message_ids[0].body)
 
+    def test_the_warning_is_the_picture_of_a_day_and_checking_again_updates_it(self):
+        """A registry corrected after the import does not change the warning by itself:
+        it says when it was compared, and the button compares again and clears it."""
+        self.supplier.write({"legal_name": "Fornecedor Alfa Ltda"})
+        document = self._create_imported_document()
+        data = EdiPartnerData(role="issuer", vat="59594315000157", name="Beta Ltda")
+        self._check_partners(document, data)
+        self.assertIn("Beta Ltda", document.import_partner_warning)
+        self.assertTrue(document.import_partner_checked)
+        self.assertIn("as compared with the registry on", document.import_warning)
+        # the registry is corrected: nothing changes until somebody checks again
+        self.supplier.write({"legal_name": "Beta Ltda"})
+        document.invalidate_recordset()
+        self.assertIn("Beta Ltda", document.import_partner_warning)
+        document.original_xml_file_id = self.env["ir.attachment"].create(
+            {"name": "a.xml", "raw": b"<a/>"}
+        )
+        model = type(self.Document)
+        with patch.object(
+            model, "_edi_import_read", lambda doc, name, content: self._parsed(KEY_1)
+        ), patch.object(
+            model,
+            "_edi_import_partner_data",
+            lambda doc, parsed: [(doc.partner_id, data)],
+        ):
+            document.action_import_check_partners_again()
+        self.assertFalse(document.import_partner_warning)
+        self.assertNotIn(
+            "as compared with the registry on", document.import_warning or ""
+        )
+        # a document whose file is gone says so
+        document.original_xml_file_id = False
+        with self.assertRaises(UserError):
+            document.action_import_check_partners_again()
+
     def test_the_same_data_written_differently_is_not_reported(self):
         self.supplier.write(
             {

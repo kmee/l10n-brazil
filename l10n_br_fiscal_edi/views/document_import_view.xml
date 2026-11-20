@@ -29,6 +29,16 @@
                     attrs="{'invisible': ['|', '|', '|', ('imported_document', '=', False), ('fiscal_operation_type', '!=', 'out'), ('import_can_create_products', '=', False), ('import_missing_products', '=', False)]}"
                 />
             </xpath>
+            <xpath expr="//form/header" position="inside">
+                <button
+                    name="action_import_check_partners_again"
+                    type="object"
+                    string="Check Partners Again"
+                    groups="l10n_br_fiscal.group_user"
+                    attrs="{'invisible': [('import_partner_checked', '=', False)]}"
+                />
+                <field name="import_partner_checked" invisible="1" />
+            </xpath>
             <xpath expr="//form/sheet" position="before">
                 <div
                     class="alert alert-info"
