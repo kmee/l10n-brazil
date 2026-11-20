@@ -2,9 +2,10 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import fields
-from odoo.tests import TransactionCase
+from odoo.tests import TransactionCase, tagged
 
 
+@tagged("post_install", "-at_install")
 class TestNetCostSurvivesInvoice(TransactionCase):
     """Posting the vendor bill must not revert the net cost of the layer."""
 
@@ -93,28 +94,40 @@ class TestNetCostSurvivesInvoice(TransactionCase):
             )
         )
 
-    def test_net_cost_survives_the_vendor_bill(self):
+    def _receive(self):
         order = self._make_order()
         order.button_confirm()
-
         picking = order.picking_ids[0]
         picking.action_confirm()
         picking.action_assign()
         for line in picking.move_ids.move_line_ids:
             line.qty_done = line.reserved_uom_qty
         picking.with_context(skip_immediate=True, skip_backorder=True).button_validate()
+        return order, picking.move_ids[0]
 
-        move = picking.move_ids[0]
-        value_on_receipt = sum(move.stock_valuation_layer_ids.mapped("value"))
+    def _bill(self, order):
+        invoice = self.env["account.move"].browse(
+            order.action_create_invoice()["res_id"]
+        )
+        invoice.invoice_date = fields.Date.today()
+        return invoice
+
+    def _product_layers(self):
+        # The price difference layer hangs from the receipt layer and has no
+        # stock move, so move.stock_valuation_layer_ids never shows it.
+        return self.env["stock.valuation.layer"].search(
+            [("product_id", "=", self.product.id)], order="id"
+        )
+
+    def test_net_cost_survives_the_vendor_bill(self):
+        order, move = self._receive()
+        value_on_receipt = sum(self._product_layers().mapped("value"))
         self.assertAlmostEqual(value_on_receipt, move.cost_unit, places=2)
         self.assertGreater(move.icms_value, 0)
         # The layer is net, so it differs from what the bill will charge.
         self.assertLess(value_on_receipt, move.price_unit)
 
-        invoice = self.env["account.move"].browse(
-            order.action_create_invoice()["res_id"]
-        )
-        invoice.invoice_date = fields.Date.today()
+        invoice = self._bill(order)
         invoice_line = invoice.invoice_line_ids[0]
         # Every condition for a price difference is met.
         self.assertTrue(invoice_line.purchase_line_id)
@@ -123,8 +136,38 @@ class TestNetCostSurvivesInvoice(TransactionCase):
 
         invoice.action_post()
 
-        layers = move.stock_valuation_layer_ids
         self.assertEqual(
-            len(layers), 1, "the vendor bill must not add a correction layer"
+            self._product_layers().mapped("value"),
+            [value_on_receipt],
+            "the vendor bill must not add a correction layer",
         )
-        self.assertAlmostEqual(sum(layers.mapped("value")), value_on_receipt, places=2)
+
+    def test_price_difference_is_net_of_recoverable_taxes(self):
+        """A bill above the order price corrects only the net difference."""
+        order, move = self._receive()
+        receipt_layer = self._product_layers()
+        self.assertEqual(len(receipt_layer), 1)
+
+        invoice = self._bill(order)
+        invoice_line = invoice.invoice_line_ids[0]
+        invoice_line.price_unit = move.price_unit + 50.0
+        self.assertAlmostEqual(
+            invoice_line.price_subtotal, move.price_unit + 50.0, places=2
+        )
+
+        invoice.action_post()
+
+        layers = self._product_layers()
+        self.assertEqual(len(layers), 2, layers.mapped("value"))
+        correction = layers - receipt_layer
+        self.assertEqual(correction.stock_valuation_layer_id, receipt_layer)
+        # The 50.00 carry their own recoverable taxes: on 800.00 with 96.00 of
+        # ICMS the net cost keeps 704.00 / 800.00, so 44.00 reach the stock,
+        # not the 50.00 and certainly not 96.00 + 50.00.
+        net_difference = 50.0 * move.cost_unit / move.price_unit
+        self.assertAlmostEqual(correction.value, net_difference, places=2)
+        self.assertAlmostEqual(
+            sum(layers.mapped("value")),
+            move.cost_unit + net_difference,
+            places=2,
+        )
