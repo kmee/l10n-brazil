@@ -831,6 +831,8 @@ class RegistroC100(models.Model):
                 "NUM_DOC": record.document_number or "",
                 "CHV_NFE": "" if unused else record.document_key or "",
             }
+        # the PIS and the COFINS of the items, as the C170 carry them
+        pis_value, cofins_value = record._get_sped_pis_cofins_values()
         return {
             "IND_OPER": "0" if record.fiscal_operation_type == "in" else "1",
             "IND_EMIT": "0" if record.issuer == "company" else "1",
@@ -861,8 +863,8 @@ class RegistroC100(models.Model):
             "VL_BC_ICMS_ST": record.amount_icmsst_base or 0,
             "VL_ICMS_ST": record.amount_icmsst_value or 0,
             "VL_IPI": record.amount_ipi_value or 0,
-            "VL_PIS": record.amount_pis_value or 0,
-            "VL_COFINS": record.amount_cofins_value or 0,
+            "VL_PIS": pis_value,
+            "VL_COFINS": cofins_value,
             "VL_PIS_ST": record.amount_pis_wh_value or 0,
             "VL_COFINS_ST": record.amount_cofins_wh_value or 0,
         }

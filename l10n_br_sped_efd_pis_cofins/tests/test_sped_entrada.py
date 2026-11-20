@@ -136,6 +136,18 @@ class TestSpedPisCofinsEntrada(SpedPisCofinsEntradaMixin, SpedEntradaCommon):
             self.assertEqual(self._number(c170[name]), 0.0, name)
         self.assertEqual(line.pis_cst_id.code, "01", "the file's CST is not touched")
 
+    def test_the_c100_carries_the_pis_and_cofins_of_its_c170(self):
+        """Lucro presumido: the header is what the items carry (no PIS or COFINS
+        without credit right), not the PIS and COFINS of the supplier's note."""
+        document, _line = self._entry_document()
+        self.assertEqual(document.amount_pis_value, 16.5)
+        declaration = self._declaration_july()
+        c100 = self._c100(declaration)[document.document_number]
+        c170 = self._c170(declaration)
+        for name in ("VL_PIS", "VL_COFINS"):
+            self.assertEqual(self._number(c100[name]), self._number(c170[name]), name)
+            self.assertEqual(self._number(c100[name]), 0.0, name)
+
 
 @tagged("post_install", "-at_install")
 class TestSpedPisCofinsEntradaNonCumulative(
