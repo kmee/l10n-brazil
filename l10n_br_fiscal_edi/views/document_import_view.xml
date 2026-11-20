@@ -83,6 +83,27 @@
         </field>
     </record>
 
+    <!-- A document that was imported is confirmed like any other, once its lines were
+         reviewed. The NF-e hides the button of an imported document, from when the import
+         left the document ready; this view comes after every view of the form (priority) and
+         gives it back, whatever the module that hid it. -->
+    <record id="document_form_import_confirm" model="ir.ui.view">
+        <field name="name">l10n_br_fiscal_edi.document.form.import.confirm</field>
+        <field name="model">l10n_br_fiscal.document</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.document_form" />
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <xpath
+                expr="//header/button[@name='action_document_confirm']"
+                position="attributes"
+            >
+                <attribute
+                    name="attrs"
+                >{'invisible': [('state_edoc', '!=', 'em_digitacao')]}</attribute>
+            </xpath>
+        </field>
+    </record>
+
     <record id="document_line_form_import" model="ir.ui.view">
         <field name="name">l10n_br_fiscal_edi.document.line.form.import</field>
         <field name="model">l10n_br_fiscal.document.line</field>
