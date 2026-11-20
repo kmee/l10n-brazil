@@ -1304,3 +1304,105 @@ class TestNfeDocumentImport(EdiImportCase):
         hint = self.Document._edi_import_partner_hint(parsed)
 
         self.assertEqual(hint, ("", parsed.issuer_vat))
+
+
+class TestNfeOwnNoteImport(EdiImportCase):
+    """The import of what is registered in the database, with XML files of the module:
+    the partners it matches and warns about, the products of a note the company issued
+    elsewhere, its confirmation and its DANFE."""
+
+    OWN_FILE = "NFe35200681583054000129550010000000012760018057-nf-e.xml"
+    OWN_KEYS = {
+        2: "35200681583054000129550010000000022760018054",
+        3: "35200681583054000129550010000000032760018051",
+        4: "35200681583054000129550010000000042760018059",
+    }
+
+    def setUp(self):
+        super().setUp()
+        self.company = self.env.ref("l10n_br_base.empresa_lucro_presumido")
+        self.env = self.env(
+            context=dict(self.env.context, allowed_company_ids=self.company.ids)
+        )
+        self.Document = self.env["l10n_br_fiscal.document"]
+
+    def _own_xml(self, number=2, replace=(), protocol=None):
+        """The real NF-e the company issued elsewhere, with another number (so the
+        key stays valid and the files do not collide), and, when asked, the
+        protocol of its authorization (``nfeProc``)."""
+        with open(os.path.join(FIXTURE_DIR, self.OWN_FILE), "rb") as xml_file:
+            xml = xml_file.read()
+        key = self.OWN_KEYS[number]
+        xml = xml.replace(self.OWN_FILE[3:47].encode(), key.encode())
+        xml = xml.replace(b"<nNF>1</nNF>", b"<nNF>%d</nNF>" % number)
+        xml = xml.replace(b"81493979000189", b"84148732000113")
+        xml = xml.replace(b"E-COM07", b"ZZ-OWN-1").replace(b"FURN_8855", b"ZZ-OWN-2")
+        for old, new in replace:
+            xml = xml.replace(old, new)
+        if protocol:
+            body = xml.decode().split("?>", 1)[1].strip()
+            prot = (
+                '<protNFe versao="4.00"><infProt><tpAmb>2</tpAmb>'
+                "<verAplic>SVRS</verAplic>"
+                f"<chNFe>{key}</chNFe><dhRecbto>2026-06-10T10:15:00-03:00</dhRecbto>"
+                f"<nProt>{protocol}</nProt><digVal>abc=</digVal>"
+                "<cStat>100</cStat><xMotivo>Autorizado o uso da NF-e</xMotivo>"
+                "</infProt></protNFe>"
+            )
+            xml = (
+                f'<nfeProc xmlns="{NFE_NS}" versao="4.00">'
+                f"{body.replace('</NFe>', '</NFe>' + prot)}</nfeProc>"
+            ).encode()
+        return xml
+
+    def _received_xml(self):
+        """The real NF-e of a supplier, addressed to the company."""
+        with open(os.path.join(FIXTURE_DIR, f"NFe{KEY_1}.xml"), "rb") as xml_file:
+            xml = xml_file.read()
+        return FIXTURE_DEST.sub(
+            rb"\1<CNPJ>%s</CNPJ>" % self.company.partner_id.cnpj_cpf_stripped.encode(),
+            xml,
+        )
+
+    def _import(self, xml, model=None):
+        documents, errors, _warnings = (
+            self.Document if model is None else model
+        )._edi_import_files([("own.xml", xml)])
+        self.assertFalse(errors)
+        return documents
+
+    def _customer(self):
+        return self.env["res.partner"].search(
+            [("cnpj_cpf_stripped", "=", "84148732000113")], limit=1
+        )
+
+    def test_a_homonym_with_another_cnpj_is_not_the_partner_of_the_file(self):
+        homonym = self.env["res.partner"].create(
+            {
+                "name": "Empresa Simples Nacional",
+                "legal_name": "Empresa Simples Nacional",
+                "cnpj_cpf": "11.444.777/0001-61",
+                "country_id": self.env.ref("base.br").id,
+            }
+        )
+        before = homonym.read(["name", "legal_name", "cnpj_cpf", "phone", "email"])
+        xml = self._received_xml().replace(
+            b"<CNPJ>59594315000157</CNPJ>", b"<CNPJ>11222333000181</CNPJ>"
+        )
+
+        document = self._import(xml)
+
+        self.assertNotEqual(document.partner_id, homonym)
+        self.assertEqual(document.partner_id.cnpj_cpf_stripped, "11222333000181")
+        self.assertEqual(
+            homonym.read(["name", "legal_name", "cnpj_cpf", "phone", "email"]), before
+        )
+
+    def test_the_tax_regime_declared_in_the_file_is_not_written_in_the_registry(self):
+        issuer = self._register_issuer()
+        issuer.tax_framework = "3"
+
+        document = self._import(self._received_xml())
+
+        self.assertEqual(document.partner_id, issuer)
+        self.assertEqual(issuer.tax_framework, "3")
