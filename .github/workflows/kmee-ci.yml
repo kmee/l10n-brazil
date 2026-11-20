@@ -1,0 +1,59 @@
+# Workflow do runner self-hosted da KMEE. Vive SO no branch orfao `kmee-ci` do
+# fork kmee/l10n-brazil (que precisa ser o default branch do fork para o
+# workflow_dispatch funcionar). Nunca vai para branch de PR da OCA.
+#
+# Disparo (mesmos argumentos do port_bot/ci_local.sh):
+#   gh workflow run kmee-ci.yml -R kmee/l10n-brazil --ref kmee-ci \
+#     -f branch=16.0-fix-xyz -f serie=16.0 -f addons=l10n_br_fiscal
+#
+# So quem tem permissao de escrita no fork consegue disparar workflow_dispatch:
+# nao ha gatilho de pull_request aqui, entao codigo de terceiros nao chega no runner.
+name: kmee-ci
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "branch do kmee/l10n-brazil a testar"
+        required: true
+      serie:
+        description: "serie do Odoo (16.0, 18.0, ...)"
+        required: true
+      addons:
+        description: "addons separados por virgula"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kmee-ci-${{ github.event.inputs.branch }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    # label propria; o runner e registrado com --no-default-labels, entao um
+    # workflow que peca so `self-hosted` nao cai nele
+    runs-on: [kmee-l10n-br]
+    timeout-minutes: 180
+    name: ${{ github.event.inputs.branch }} (${{ github.event.inputs.addons }})
+    steps:
+      - name: Script de CI (este branch)
+        uses: actions/checkout@v4
+        with:
+          ref: kmee-ci
+          path: ci
+          persist-credentials: false
+      - name: Branch a testar
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+          path: repo
+          persist-credentials: false
+      - name: CI da OCA (oca-ci + postgres, so os addons pedidos)
+        # inputs via env (nunca interpolados no script) contra injecao de shell
+        env:
+          IN_SERIE: ${{ github.event.inputs.serie }}
+          IN_ADDONS: ${{ github.event.inputs.addons }}
+          REPO_GIT: ${{ github.workspace }}/repo
+        run: zsh ci/ci_local.sh HEAD "$IN_SERIE" "$IN_ADDONS"
