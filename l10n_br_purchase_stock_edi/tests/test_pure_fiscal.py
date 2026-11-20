@@ -1,6 +1,8 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+from lxml import etree
+
 from odoo.tests import tagged
 
 from .common import StockEdiCase
@@ -21,11 +23,12 @@ class TestPureFiscalUser(StockEdiCase):
         )
 
     def _read_everything(self, document):
-        document.get_view(view_type="form")
+        """The fields of the views, as the form reads them, as the user."""
         lines = document.fiscal_line_ids
-        lines.get_view(view_type="form")
-        document.read(list(document.fields_get()))
-        lines.read(list(lines.fields_get()))
+        for record in (document, lines):
+            arch = etree.fromstring(record.get_view(view_type="form")["arch"])
+            names = {node.get("name") for node in arch.iter("field")}
+            record.read([name for name in names if name in record._fields])
 
     def test_the_pure_fiscal_user_with_an_order_and_a_receipt(self):
         order = self._order(quantity=10)
