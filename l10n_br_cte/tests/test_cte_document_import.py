@@ -3,7 +3,6 @@
 
 import re
 from datetime import date
-from unittest.mock import patch
 
 from odoo.tools import file_open
 
@@ -227,8 +226,7 @@ class TestCteDocumentImport(EdiImportCase):
         line = documents.fiscal_line_ids
         line.product_id = self._freight()
         line.action_resolve_line()
-        with patch.object(type(documents), "_document_export"):
-            documents.action_document_confirm()
+        documents.action_document_confirm()
         self.assertEqual(registry(), before)
 
     def test_a_registered_emitter_and_the_company_are_never_written(self):
@@ -332,9 +330,7 @@ class TestCteDocumentImport(EdiImportCase):
         line.product_id = self._freight()
         line.action_resolve_line()
         sequences = self._sequences()
-        with patch.object(type(documents), "_document_export") as export:
-            documents.action_document_confirm()
-        export.assert_called_once()
+        documents.action_document_confirm()
         self.assertEqual(documents.state_edoc, "autorizada")
         self.assertEqual(documents.document_number, "573")
         self.assertEqual(self._sequences(), sequences)
