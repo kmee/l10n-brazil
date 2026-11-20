@@ -89,6 +89,9 @@ class TestCteDocumentImport(EdiImportCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.presumed = cls.env.ref("l10n_br_base.empresa_lucro_presumido")
+        # the demo data sets the default products of this company
+        cls.presumed.cte_import_product_id = False
+        cls.presumed.cte_import_service_product_id = False
         # the demo CT-e of the Simples Nacional company has this key
         cls.Document.search([("document_key", "=", CTE_KEY)]).unlink()
         # and the demo CT-e of the company that issues the number of the file
@@ -118,6 +121,25 @@ class TestCteDocumentImport(EdiImportCase):
         return self.env["product.product"].create(
             dict({"name": "Freight service", "type": "service"}, **values)
         )
+
+    def test_the_demo_documents_show_the_import(self):
+        received = self.Document.search(
+            [("document_key", "=", "35240759594315000157570010000070011570007018")]
+        )
+        issued = self.Document.search(
+            [("document_key", "=", "35240781583054000129570010000070021570007029")]
+        )
+        if not received:
+            self.skipTest("the demo data is not installed")
+        freight = self.env.ref("l10n_br_cte.product_freight_purchased")
+        transport = self.env.ref("l10n_br_cte.product_transport_provided")
+        self.assertEqual(received.issuer, "partner")
+        self.assertEqual(received.fiscal_line_ids.product_id, freight)
+        self.assertEqual(len(received.cte40_cobr.cte40_dup), 2)
+        self.assertEqual(len(received._edi_get_installments()), 2)
+        self.assertEqual(issued.issuer, "company")
+        self.assertEqual(issued.state_edoc, "autorizada")
+        self.assertEqual(issued.fiscal_line_ids.product_id, transport)
 
     def test_the_nature_of_the_operation_of_the_file_is_kept(self):
         documents, _errors, _warnings = self._import(cte_xml())
