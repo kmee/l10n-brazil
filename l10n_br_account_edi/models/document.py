@@ -1,7 +1,7 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import _, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
@@ -12,6 +12,29 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
 
 class Document(models.Model):
     _inherit = "l10n_br_fiscal.document"
+
+    edi_can_generate_invoice = fields.Boolean(
+        compute="_compute_edi_can_generate_invoice",
+        help="An imported document that was reviewed, has lines and an amount to "
+        "pay, and has no invoice yet. It is not stored.",
+    )
+
+    @api.depends(
+        "imported_document",
+        "import_state",
+        "move_ids",
+        "fiscal_line_ids",
+        "amount_financial_total",
+    )
+    def _compute_edi_can_generate_invoice(self):
+        for document in self:
+            document.edi_can_generate_invoice = bool(
+                document.imported_document
+                and document.import_state == "resolved"
+                and document.fiscal_line_ids
+                and document.amount_financial_total
+                and not document.move_ids
+            )
 
     def action_generate_invoice(self):
         """Create the vendor bill of an imported document. The payables are born

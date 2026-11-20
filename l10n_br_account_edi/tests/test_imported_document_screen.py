@@ -137,3 +137,35 @@ class TestImportedDocumentScreen(AccountEdiCase):
 
         self.assertEqual(document.document_date, declared)
         self.assertFalse(document.date_in_out)
+
+    def test_the_invoice_is_offered_only_to_a_document_with_something_to_pay(self):
+        document = self._imported_document()
+        self.assertTrue(document.edi_can_generate_invoice)
+
+        document.fiscal_line_ids.unlink()
+
+        self.assertFalse(document.edi_can_generate_invoice)
+
+    def test_the_invoice_is_not_offered_again_once_it_exists(self):
+        document = self._imported_document()
+        document.action_generate_invoice()
+
+        self.assertFalse(document.edi_can_generate_invoice)
+
+    def test_the_page_of_installments_is_empty_when_nothing_is_declared(self):
+        document = self._imported_document()
+
+        self.assertFalse(document._edi_get_installments())
+        self.assertFalse(document.edi_payment_summary)
+
+    def test_the_button_follows_the_computed_flag(self):
+        document = self._imported_document()
+        arch = etree.fromstring(
+            document.with_user(self.env.ref("base.user_admin")).get_view(
+                view_type="form"
+            )["arch"]
+        )
+
+        button = arch.xpath("//button[@name='action_generate_invoice']")
+
+        self.assertIn("edi_can_generate_invoice", button[0].get("modifiers"))
