@@ -25,7 +25,6 @@ from odoo.addons.l10n_br_fiscal_edi.tests.common import (
     EdiImportCase,
 )
 from odoo.addons.l10n_br_fiscal_edi.tools import EdiInstallment, EdiPayment
-from odoo.addons.spec_driven_model.models.spec_import import SpecMixinImport
 
 FIXTURE_DIR = os.path.join(
     l10n_br_nfe.__path__[0], "tests", "nfe", "v4_00", "leiauteNFe"
@@ -1659,18 +1658,36 @@ class TestNfeInvoiceOfTheCollection(EdiImportCase):
 
 class TestNfeMatchOfAnotherSchema(EdiImportCase):
     """The matching of the NF-e answers only for the NF-e: a dictionary of another
-    schema (the CT-e, whose module is loaded after this one) goes to the base."""
+    schema (the CT-e, whose module is loaded after this one) goes to the next
+    override of the chain, whatever modules are installed."""
 
-    def test_the_partner_of_another_schema_is_matched_by_the_base(self):
+    def _next_in_chain(self, partner):
+        """The class that the ``super()`` of the NF-e override reaches."""
+        chain = type(partner).__mro__
+        mine = next(
+            index
+            for index, cls in enumerate(chain)
+            if cls.__module__ == "odoo.addons.l10n_br_nfe.models.res_partner"
+            and "match_or_create_m2o" in cls.__dict__
+        )
+        return next(
+            cls for cls in chain[mine + 1 :] if "match_or_create_m2o" in cls.__dict__
+        )
+
+    def test_the_partner_of_another_schema_is_matched_by_the_next_in_the_chain(self):
         calls = []
 
-        def base(model, rec_dict, parent_dict, model_=None):
-            calls.append(rec_dict)
+        def following(model, rec_dict, parent_dict, model_=None):
+            calls.append((rec_dict, parent_dict))
             return 42
 
         partner = self.env["res.partner"].with_context(spec_schema="xyz")
-        with mock.patch.object(SpecMixinImport, "match_or_create_m2o", base):
-            result = partner.match_or_create_m2o({"xyz40_CNPJ": "1"}, {})
+        with mock.patch.object(
+            self._next_in_chain(partner), "match_or_create_m2o", following
+        ):
+            result = partner.match_or_create_m2o(
+                {"xyz40_CNPJ": "1"}, {"nfe40_CNPJ": "2"}
+            )
 
         self.assertEqual(result, 42)
-        self.assertEqual(calls, [{"xyz40_CNPJ": "1"}])
+        self.assertEqual(calls, [({"xyz40_CNPJ": "1"}, {"nfe40_CNPJ": "2"})])
