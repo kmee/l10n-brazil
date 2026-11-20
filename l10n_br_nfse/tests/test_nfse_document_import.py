@@ -267,6 +267,22 @@ class TestNfseDocumentImport(EdiImportCase):
         self.assertFalse(errors)
         self.assertEqual(documents.partner_id.cnpj_cpf_stripped, UNKNOWN_PROVIDER)
 
+    def test_the_service_of_an_nfse_issued_by_the_company_is_never_created(self):
+        content = nfse_xml(taker=UNKNOWN_PROVIDER, provider=LUCRO_PRESUMIDO)
+        products = self.env["product.product"].search_count([])
+        documents, _errors, _warnings = self._import(content)
+        line = documents.fiscal_line_ids
+        self.assertFalse(line.product_id)
+        self.assertEqual(line.import_state, "pending")
+        self.presumed.nfse_import_product_id = self.env["product.product"].create(
+            {"name": "Default service", "type": "service"}
+        )
+        products += 1
+        documents.unlink()
+        documents, _errors, _warnings = self._import(content)
+        self.assertEqual(documents.fiscal_line_ids.import_state, "matched")
+        self.assertEqual(self.env["product.product"].search_count([]), products)
+
     def test_the_company_is_the_taker_of_the_service(self):
         parsed = self.Document._edi_import_read("a.xml", nfse_xml(taker=LUCRO_REAL))
         self.assertEqual(
