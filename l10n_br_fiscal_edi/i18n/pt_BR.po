@@ -21,6 +21,17 @@ msgstr ""
 #: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
 #, python-format
 msgid ""
+"%(count)s line(s) have a unit that was not confirmed, and no product was "
+"created for them. Choose the unit of each one."
+msgstr ""
+"%(count)s linha(s) têm uma unidade que não foi confirmada, e nenhum produto "
+"foi criado para elas. Escolha a unidade de cada uma."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid ""
 "%(count)s line(s) kept for the review: the unit declared by the supplier has"
 " no match. Choose the unit of each one."
 msgstr "%(count)s linha(s) ficaram para a revisão: a unidade declarada pelo fornecedor não tem correspondência. Escolha a unidade de cada uma."
@@ -38,6 +49,26 @@ msgstr "%(line)s: o NCM %(ncm)s não está no cadastro."
 #, python-format
 msgid "%(line)s: the unit %(uom)s has no match in the units."
 msgstr "%(line)s: a unidade %(uom)s não corresponde a nenhuma unidade de medida."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid ""
+"%(partner)s - %(field)s: the file says \"%(file)s\", the registry says "
+"\"%(registry)s\"."
+msgstr "%(partner)s - %(field)s: o arquivo diz \"%(file)s\", o cadastro diz \"%(registry)s\"."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid ""
+"%(partner)s: the file carries no CNPJ or CPF, so the partner was matched by "
+"name. Check that it is the right one."
+msgstr ""
+"%(partner)s: o arquivo não traz CNPJ nem CPF, então o parceiro foi casado "
+"pelo nome. Confira se é o parceiro certo."
 
 #. module: l10n_br_fiscal_edi
 #. odoo-python
@@ -233,6 +264,13 @@ msgid "Cash"
 msgstr "À vista"
 
 #. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid "City"
+msgstr "Cidade"
+
+#. module: l10n_br_fiscal_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.wizard_document_status_form
 msgid "Close"
 msgstr ""
@@ -301,6 +339,11 @@ msgid "Create Date"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.document_form_import
+msgid "Create Missing Products"
+msgstr "Criar produtos que faltam"
+
+#. module: l10n_br_fiscal_edi
 #: model_terms:ir.actions.act_window,help:l10n_br_fiscal_edi.event_action
 msgid "Create a new Event"
 msgstr ""
@@ -354,6 +397,13 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_event__type__12
 msgid "Distribuição DFe"
 msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid "District"
+msgstr "Bairro"
 
 #. module: l10n_br_fiscal_edi
 #: model:ir.actions.report,name:l10n_br_fiscal_edi.action_report_document_event
@@ -523,6 +573,11 @@ msgid "Fiscal Document Event Sequence"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model,name:l10n_br_fiscal_edi.model_l10n_br_fiscal_document_line
+msgid "Fiscal Document Line"
+msgstr "Linha de documento fiscal"
+
+#. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_event__document_type_id
 msgid "Fiscal Document Type"
 msgstr ""
@@ -570,6 +625,11 @@ msgid "Import"
 msgstr "Importar"
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_can_create_products
+msgid "Import Can Create Products"
+msgstr "Importação pode criar produtos"
+
+#. module: l10n_br_fiscal_edi
 #: model:ir.ui.menu,name:l10n_br_fiscal_edi.document_import_wizard_menu
 msgid "Import Fiscal Document"
 msgstr "Importar documento fiscal"
@@ -584,6 +644,11 @@ msgstr "Importar documentos fiscais"
 #: model:ir.model,name:l10n_br_fiscal_edi.model_l10n_br_fiscal_edi_document_import_wizard
 msgid "Import Fiscal Documents from Files"
 msgstr "Importar documentos fiscais de arquivos"
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_partner_warning
+msgid "Import Partner Warning"
+msgstr "Aviso de parceiro da importação"
 
 #. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_warning
@@ -751,6 +816,13 @@ msgstr ""
 
 #. module: l10n_br_fiscal_edi
 #. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid "Name"
+msgstr "Nome"
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document_payment.py:0
 #, python-format
 msgid "Net amount payable"
@@ -803,7 +875,10 @@ msgid "Note already imported"
 msgstr "Nota já importada"
 
 #. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.document_payment_summary
+#, python-format
 msgid "Number"
 msgstr "Número"
 
@@ -854,6 +929,13 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
 #, python-format
+msgid "Partner data that differ from the registry: %s"
+msgstr "Dados do parceiro que diferem do cadastro: %s"
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
 msgid "Partners created by the import: %s."
 msgstr "Parceiros criados pela importação: %s."
 
@@ -871,6 +953,20 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_event__environment__prod
 msgid "Production"
 msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid "Products are created only for a document the company issued."
+msgstr "Produtos são criados apenas para um documento emitido pela empresa."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid "Products created by %(user)s: %(products)s"
+msgstr "Produtos criados por %(user)s: %(products)s"
 
 #. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_event__protocol_date
@@ -970,6 +1066,13 @@ msgstr "Alguns arquivos não foram importados"
 #. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
 #, python-format
+msgid "Some lines were left for the review"
+msgstr "Algumas linhas ficaram para a revisão"
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
 msgid "Some lines were not confirmed"
 msgstr "Algumas linhas não foram confirmadas"
 
@@ -979,11 +1082,21 @@ msgid "Source Document"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_cancel_wizard__state
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_correction_wizard__state
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_invalidate_number_wizard__state
+#, python-format
 msgid "State"
 msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid "State tax number"
+msgstr "Inscrição estadual"
 
 #. module: l10n_br_fiscal_edi
 #. odoo-python
@@ -1015,6 +1128,13 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__status_name
 msgid "Status Name"
 msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid "Street"
+msgstr "Rua"
 
 #. module: l10n_br_fiscal_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.document_payment_summary
@@ -1066,6 +1186,19 @@ msgstr ""
 #: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
 #, python-format
 msgid ""
+"The file %(file)s could not be imported because you do not have a permission"
+" that the import needs: %(error)s Ask for the permission to whoever manages "
+"the access, and import the file again."
+msgstr ""
+"O arquivo %(file)s não pôde ser importado porque você não tem uma permissão "
+"de que a importação precisa: %(error)s Peça a permissão a quem administra os "
+"acessos e importe o arquivo de novo."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid ""
 "The file %(file)s requires registering the partner %(partner)s, and you are "
 "not allowed to create contacts. Ask someone who can to register it, or ask "
 "for the permission, and import the file again."
@@ -1100,6 +1233,15 @@ msgid ""
 msgstr ""
 "A nota é da empresa %s, que não está selecionada no seletor de empresas. "
 "Selecione-a e importe de novo."
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_can_create_products
+msgid ""
+"The user may create products, which the action of the imported documents the"
+" company issued needs."
+msgstr ""
+"O usuário pode criar produtos, de que a ação dos documentos importados "
+"emitidos pela empresa precisa."
 
 #. module: l10n_br_fiscal_edi
 #. odoo-python
@@ -1174,6 +1316,15 @@ msgid "What the imported document still lacks to be reviewed."
 msgstr "O que ainda falta no documento importado para ser revisado."
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_partner_warning
+msgid ""
+"Where the data of a partner in the file differ from its registry, which the "
+"import never changes, and the partners that were matched by name."
+msgstr ""
+"Onde os dados de um parceiro no arquivo diferem do cadastro, que a "
+"importação nunca altera, e os parceiros que foram casados pelo nome."
+
+#. module: l10n_br_fiscal_edi
 #. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document_payment.py:0
 #, python-format
@@ -1201,6 +1352,13 @@ msgid ""
 "XML of a document issued by a third party, kept as received when the "
 "document is imported. It is not an authorization event."
 msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid "You are not allowed to create products."
+msgstr "Você não tem permissão para criar produtos."
 
 #. module: l10n_br_fiscal_edi
 #. odoo-python
@@ -1236,6 +1394,13 @@ msgstr ""
 #, python-format
 msgid "You have no access to the company %s, which the file is for."
 msgstr "Você não tem acesso à empresa %s, a que o arquivo se destina."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid "ZIP code"
+msgstr "CEP"
 
 #. module: l10n_br_fiscal_edi
 #: model:ir.actions.report,print_report_name:l10n_br_fiscal_edi.action_report_document_event
