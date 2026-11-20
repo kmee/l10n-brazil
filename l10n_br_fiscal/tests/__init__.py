@@ -25,4 +25,5 @@ from . import (
     test_icmssn,
     test_simplified_tax,
     test_stock_price_mixin,
+    test_tax_creditability,
 )
