@@ -2,11 +2,14 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 import io
+import threading
 import zipfile
 from contextlib import closing
 from unittest.mock import patch
 
 from erpbrasil.base.fiscal.cnpj_cpf import formata
+from psycopg2 import OperationalError
+from psycopg2.errorcodes import SERIALIZATION_FAILURE
 
 from odoo import _
 from odoo.exceptions import AccessError, UserError
@@ -92,6 +95,95 @@ class TestDocumentImport(EdiImportCase):
         self.assertFalse(self._another_transaction_can_lock(self.company, KEY_1))
         self.assertTrue(self._another_transaction_can_lock(self.company, KEY_2))
         self.assertTrue(self._another_transaction_can_lock(self.other_company, KEY_1))
+
+    def test_a_note_committed_by_a_concurrent_transaction_makes_the_call_run_again(
+        self,
+    ):
+        """The transaction that waited for the lock reads a snapshot older than the
+        commit of the first one, so it does not see the document: it must neither
+        create a second one nor report an unexpected error, but ask the framework to
+        run the call again (a serialization failure), where the document exists."""
+        parsed = self._parsed(KEY_1)
+        with patch.object(
+            type(self.Document), "_edi_import_lock", lambda *args: True
+        ), patch.object(
+            type(self.Document), "_edi_import_committed_elsewhere", lambda *args: True
+        ), self.assertRaises(OperationalError) as caught:
+            self._import([(parsed.file_name, b"x")], [parsed])
+        self.assertEqual(caught.exception.pgcode, SERIALIZATION_FAILURE)
+        self.assertFalse(self.Document.search([("document_key", "=", KEY_1)]))
+
+    def test_a_note_that_nobody_holds_does_not_open_a_second_cursor(self):
+        """The check by a cursor of its own waits for the locks of the transaction
+        that holds the tables (the installation with demo data): it is made only
+        when the lock of the note was contested."""
+        parsed = self._parsed(KEY_1)
+
+        def forbidden(*args):
+            raise AssertionError("a second cursor was opened without a contest")
+
+        with patch.object(
+            type(self.Document), "_edi_import_committed_elsewhere", forbidden
+        ):
+            documents, errors, _warnings = self._import(
+                [(parsed.file_name, b"x")], [parsed]
+            )
+        self.assertEqual((len(documents), errors), (1, []))
+
+    def test_the_lock_tells_whether_it_had_to_wait(self):
+        self.assertFalse(self.Document._edi_import_lock(self.company, KEY_2))
+        connection = db_connect(self.env.cr.dbname)
+        with closing(connection.cursor()) as other:
+            other.execute(
+                "SELECT pg_advisory_xact_lock(%s, hashtext(%s))",
+                (self.company.id, KEY_3),
+            )
+            release = threading.Timer(1.0, other.rollback)
+            release.start()
+            try:
+                contested = self.Document._edi_import_lock(self.company, KEY_3)
+            finally:
+                release.join()
+        self.assertTrue(contested)
+
+    def test_the_committed_note_is_looked_for_in_a_transaction_of_its_own(self):
+        """What another transaction committed is seen by a cursor of its own, what
+        this one only wrote is not (it is the snapshot that matters, not the cache)."""
+        committed = self.Document.search(
+            [("document_key", "!=", False), ("company_id", "!=", False)], limit=1
+        )
+        self.assertTrue(committed, "the demo data has documents with a key")
+        found = self.Document._edi_import_committed_elsewhere(
+            self._parsed(committed.document_key), committed.company_id
+        )
+        self.assertTrue(found)
+        self.assertFalse(
+            self.Document._edi_import_committed_elsewhere(
+                self._parsed(KEY_3), self.company
+            )
+        )
+
+    def test_the_demo_files_of_a_module_are_imported_by_the_service(self):
+        document = self._create_imported_document(document_key=KEY_1)
+        calls = []
+
+        def service(model, files, **kwargs):
+            calls.append(files)
+            return document, [], []
+
+        with patch.object(type(self.Document), "_edi_import_files", service):
+            documents = self.Document._edi_import_demo_files(
+                "l10n_br_fiscal_edi", ["__manifest__.py"]
+            )
+        self.assertEqual(documents, document)
+        self.assertEqual([name for name, _content in calls[0]], ["__manifest__.py"])
+        self.assertIn(b"Common EDI fiscal features", calls[0][0][1])
+
+    def test_a_demo_file_that_fails_stops_the_installation(self):
+        with self.assertRaises(UserError):
+            self.Document._edi_import_demo_files(
+                "l10n_br_fiscal_edi", ["__manifest__.py"]
+            )
 
     def test_the_same_note_twice_opens_the_same_document_with_a_warning(self):
         parsed = self._parsed(KEY_1)
