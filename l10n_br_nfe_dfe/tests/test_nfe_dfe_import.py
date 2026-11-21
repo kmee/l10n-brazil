@@ -608,6 +608,11 @@ class TestNFeDFeDemo(TransactionCase):
         company = record.company_id
         return record.with_context(allowed_company_ids=company.ids)
 
+    def test_the_amount_of_the_demo_notes_is_in_the_currency_of_the_company(self):
+        for xmlid in ("demo_dfe_document_complete", "demo_dfe_document_summary"):
+            record = self._record(xmlid)
+            self.assertEqual(record.currency_id, record.company_id.currency_id)
+
     def test_the_complete_note_of_the_inbox_is_imported_by_the_button(self):
         record = self._record("demo_dfe_document_complete")
 
