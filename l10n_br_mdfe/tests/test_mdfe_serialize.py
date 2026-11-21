@@ -26,7 +26,10 @@ class TestMDFeSerialize(TransactionCase):
         cls.mdfe_list = mdfe_list
         for mdfe_data in cls.mdfe_list:
             mdfe = cls.env.ref(mdfe_data["record_ref"])
-            # the expected XML has no autXML: a demo accountant would add one
+            # the expected XML has no autXML: a demo accountant adds one
+            # when the document is created
+            accountant = mdfe.company_id.accountant_id
+            mdfe.mdfe30_autXML.filtered(lambda a: a.partner_id == accountant).unlink()
             mdfe.company_id.accountant_id = False
             mdfe_data["mdfe"] = mdfe
             cls.prepare_test_mdfe(mdfe)

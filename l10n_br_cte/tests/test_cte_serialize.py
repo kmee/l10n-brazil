@@ -27,7 +27,10 @@ class TestCTeSerialize(TransactionCase):
         cls._set_fake_certificate()
         for cte_data in cls.cte_list:
             cte = cls.env.ref(cte_data["record_ref"])
-            # the expected XML has no autXML: a demo accountant would add one
+            # the expected XML has no autXML: a demo accountant adds one
+            # when the document is created
+            accountant = cte.company_id.accountant_id
+            cte.cte40_autXML.filtered(lambda a: a.partner_id == accountant).unlink()
             cte.company_id.accountant_id = False
             cte_data["cte"] = cte
             cls.prepare_test_cte(cte)
