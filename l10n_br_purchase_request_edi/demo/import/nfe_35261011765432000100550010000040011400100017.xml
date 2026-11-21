@@ -68,18 +68,17 @@
         <CFOP>6102</CFOP>
         <uCom>UN</uCom>
         <qCom>8.0000</qCom>
-        <vUnCom>1120.0000000000</vUnCom>
+        <vUnCom>140.0000000000</vUnCom>
         <vProd>1120.00</vProd>
         <cEANTrib>SEM GTIN</cEANTrib>
         <uTrib>UN</uTrib>
         <qTrib>8.0000</qTrib>
-        <vUnTrib>1120.0000000000</vUnTrib>
+        <vUnTrib>140.0000000000</vUnTrib>
         <indTot>1</indTot>
       </prod>
       <imposto>
         <ICMS>
-          <ICMS00><orig>0</orig><CST>00</CST><modBC>3</modBC><vBC>1120.00</vBC><pICMS
-                        >12.0000</pICMS><vICMS>134.40</vICMS></ICMS00>
+          <ICMS00><orig>0</orig><CST>00</CST><modBC>3</modBC><vBC>1120.00</vBC><pICMS>12.0000</pICMS><vICMS>134.40</vICMS></ICMS00>
         </ICMS>
         <IPI>
           <cEnq>999</cEnq>
