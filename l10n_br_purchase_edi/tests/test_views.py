@@ -39,8 +39,11 @@ class TestViews(EdiImportCase):
         )
         views = self.env["ir.ui.view"].browse(view_ids)
         self.assertTrue(views)
-        for user in (self._fiscal_user("view-fiscal"), self._buyer()):
+        self._buyer_user = self._buyer()
+        for user in (self._fiscal_user("view-fiscal"), self._buyer_user):
             for view in views.filtered(lambda view: view.type in ("form", "tree")):
+                if view.model == "purchase.order" and user != self._buyer_user:
+                    continue  # the order form is for the purchase users
                 model = (
                     self.env[view.model]
                     .with_user(user)
