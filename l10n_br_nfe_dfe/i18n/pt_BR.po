@@ -32,8 +32,8 @@ msgstr "1.01"
 
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.view_l10n_br_fiscal_dfe_document_form_nfe
-msgid "<span class=\"o_stat_text\">Invoice</span>"
-msgstr ""
+msgid "<span class=\"o_stat_text\">Fiscal Document</span>"
+msgstr "<span class=\"o_stat_text\">Documento fiscal</span>"
 
 #. module: l10n_br_nfe_dfe
 #. odoo-python
@@ -139,8 +139,8 @@ msgstr ""
 
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_document_tree
-msgid "Invoice"
-msgstr ""
+msgid "Fiscal Document"
+msgstr "Documento fiscal"
 
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_res_company_form
