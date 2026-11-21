@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
-  <infNFe versao="4.00" Id="NFe35261011222333000181550010000020031200300038">
+  <infNFe versao="4.00" Id="NFe35261011765432000100550010000020011200100014">
     <ide>
       <cUF>35</cUF>
-      <cNF>20030003</cNF>
+      <cNF>20010001</cNF>
       <natOp>Venda de mercadoria</natOp>
       <mod>55</mod>
       <serie>1</serie>
-      <nNF>2003</nNF>
+      <nNF>2001</nNF>
       <dhEmi>2026-10-05T12:00:00-03:00</dhEmi>
       <dhSaiEnt>2026-10-05T12:00:00-03:00</dhSaiEnt>
       <tpNF>1</tpNF>
@@ -15,7 +15,7 @@
       <cMunFG>3501152</cMunFG>
       <tpImp>1</tpImp>
       <tpEmis>1</tpEmis>
-      <cDV>8</cDV>
+      <cDV>4</cDV>
       <tpAmb>1</tpAmb>
       <finNFe>1</finNFe>
       <indFinal>0</indFinal>
@@ -24,7 +24,7 @@
       <verProc>Demo</verProc>
     </ide>
     <emit>
-      <CNPJ>11222333000181</CNPJ>
+      <CNPJ>11765432000100</CNPJ>
       <xNome>Fornecedor Demo EDI Ltda</xNome>
       <xFant>Fornecedor Demo EDI</xFant>
       <enderEmit>
@@ -61,9 +61,9 @@
     </dest>
     <det nItem="1">
       <prod>
-        <cProd>DEMO-EDI-C</cProd>
+        <cProd>DEMO-EDI-A</cProd>
         <cEAN>SEM GTIN</cEAN>
-        <xProd>Porca autotravante demo</xProd>
+        <xProd>Parafuso sextavado demo</xProd>
         <NCM>94033000</NCM>
         <CFOP>6102</CFOP>
         <uCom>UN</uCom>
@@ -75,6 +75,8 @@
         <qTrib>5.0000</qTrib>
         <vUnTrib>700.0000000000</vUnTrib>
         <indTot>1</indTot>
+        <xPed>PO-DEMO-EDI-001</xPed>
+        <nItemPed>1</nItemPed>
       </prod>
       <imposto>
         <ICMS>
