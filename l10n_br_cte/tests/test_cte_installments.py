@@ -1,6 +1,7 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+from unittest import SkipTest
 from unittest.mock import patch
 
 from odoo import Command
@@ -14,13 +15,16 @@ class TestCteInstallments(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        group = cls.env.ref(
+            "l10n_br_account.group_line_fiscal_detail", raise_if_not_found=False
+        )
+        if not group:
+            raise SkipTest("l10n_br_account is not installed")
         cls.company = cls.env.ref("l10n_br_base.empresa_lucro_presumido")
         companies = cls.env["res.company"].search([])
         cls.env.user.company_ids = [Command.set(companies.ids)]
         cls.env.user.company_id = cls.company
-        cls.env.user.groups_id |= cls.env.ref(
-            "l10n_br_account.group_line_fiscal_detail"
-        )
+        cls.env.user.groups_id |= group
         cls.env = cls.env(
             context=dict(
                 cls.env.context,
