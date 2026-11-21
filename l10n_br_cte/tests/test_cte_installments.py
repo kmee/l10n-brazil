@@ -122,10 +122,17 @@ class TestCteInstallments(TransactionCase):
         move = self._invoice()
         document = move.fiscal_document_id
         document._edi_set_installments(move._edi_installments())
+        # the demo data of the module has collections of its own: what counts is
+        # that writing again creates nothing
+        cobr_model = self.env["cte.40.tcte_cobr"]
+        fat_model = self.env["cte.40.tcte_fat"]
+        counts = (cobr_model.search_count([]), fat_model.search_count([]))
         document._edi_set_installments(move._edi_installments())
         self.assertEqual(len(document.cte40_cobr.cte40_dup), 2)
-        self.assertEqual(self.env["cte.40.tcte_cobr"].search_count([]), 1)
-        self.assertEqual(self.env["cte.40.tcte_fat"].search_count([]), 1)
+        self.assertEqual(len(document.cte40_cobr), 1)
+        self.assertEqual(
+            (cobr_model.search_count([]), fat_model.search_count([])), counts
+        )
 
     def test_the_invoice_of_the_collection_takes_the_number_of_the_cte(self):
         move = self._invoice()
