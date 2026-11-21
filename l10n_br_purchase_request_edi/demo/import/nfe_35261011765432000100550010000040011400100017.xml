@@ -63,7 +63,7 @@
       <prod>
         <cProd>DEMO-REQ-E</cProd>
         <cEAN>SEM GTIN</cEAN>
-        <xProd>Luva de protecao demo</xProd>
+        <xProd>Luva de proteção demo</xProd>
         <NCM>94033000</NCM>
         <CFOP>6102</CFOP>
         <uCom>UN</uCom>
@@ -78,7 +78,8 @@
       </prod>
       <imposto>
         <ICMS>
-          <ICMS00><orig>0</orig><CST>00</CST><modBC>3</modBC><vBC>1120.00</vBC><pICMS>12.0000</pICMS><vICMS>134.40</vICMS></ICMS00>
+          <ICMS00><orig>0</orig><CST>00</CST><modBC>3</modBC><vBC>1120.00</vBC><pICMS
+                        >12.0000</pICMS><vICMS>134.40</vICMS></ICMS00>
         </ICMS>
         <IPI>
           <cEnq>999</cEnq>
