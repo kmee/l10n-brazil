@@ -216,6 +216,16 @@ class TestMdfeDocumentImport(EdiImportCase):
         self.assertFalse(documents)
         self.assertIn("No company of this database", errors[0][1])
 
+    def test_the_demo_mdfe_is_imported_as_authorized(self):
+        document = self.Document.search(
+            [("document_key", "=", "50170881583054000129580010000091311421039562")]
+        )
+        if not document:
+            self.skipTest("the demo data is not installed")
+        self.assertEqual(document.issuer, "company")
+        self.assertEqual(document.state_edoc, "autorizada")
+        self.assertTrue(document.imported_document)
+
     def test_the_status_comes_from_the_protocol_of_the_mdfe(self):
         for status, expected in (
             ("100", "authorized"),
