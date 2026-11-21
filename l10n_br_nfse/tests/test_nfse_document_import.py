@@ -400,6 +400,64 @@ class TestNfseDocumentImport(EdiImportCase):
         self.assertEqual(issued.fiscal_line_ids.product_id, service)
         self.assertTrue(issued.fiscal_line_ids.fiscal_operation_line_id)
 
+    def test_choosing_the_product_and_resolving_keeps_the_taxes_of_the_file(self):
+        if "nfe.40.di" in self.env:
+            self.skipTest(
+                "the form reads the NF-e models: their rules are of l10n_br_nfe"
+            )
+        self.presumed.nfse_import_product_id = False
+        user = self._fiscal_user("fiscal_user_nfse_product", self.presumed)
+        documents, errors, _warnings = self._import(
+            nfse_xml(
+                taker=UNKNOWN_PROVIDER, provider=LUCRO_PRESUMIDO, withholdings=True
+            )
+        )
+        self.assertFalse(errors)
+        documents.document_serie_id = self.env["l10n_br_fiscal.document.serie"].create(
+            {
+                "code": "7",
+                "name": "7",
+                "document_type_id": documents.document_type_id.id,
+                "company_id": self.presumed.id,
+            }
+        )
+        line = documents.fiscal_line_ids
+        before = (
+            line.fiscal_tax_ids,
+            line.issqn_value,
+            line.pis_wh_value,
+            line.fiscal_amount_total,
+            line.tax_icms_or_issqn,
+            line.service_type_id,
+        )
+        self.assertTrue(before[0])
+        self.assertEqual(before[4], "issqn")
+        product = self.env["product.product"].create(
+            {"name": "Service", "type": "service"}
+        )
+        documents = documents.with_user(user).with_context(
+            allowed_company_ids=self.presumed.ids
+        )
+        with Form(documents) as form:
+            with form.fiscal_line_ids.edit(0) as line_form:
+                line_form.product_id = product
+        documents.fiscal_line_ids.action_resolve_line()
+        self.env.flush_all()
+        self.env.invalidate_all()
+        line = documents.fiscal_line_ids
+        self.assertEqual(line.product_id, product)
+        self.assertEqual(
+            (
+                line.fiscal_tax_ids,
+                line.issqn_value,
+                line.pis_wh_value,
+                line.fiscal_amount_total,
+                line.tax_icms_or_issqn,
+                line.service_type_id,
+            ),
+            before,
+        )
+
     def test_the_service_of_an_nfse_issued_by_the_company_is_never_created(self):
         content = nfse_xml(taker=UNKNOWN_PROVIDER, provider=LUCRO_PRESUMIDO)
         products = self.env["product.product"].search_count([])
