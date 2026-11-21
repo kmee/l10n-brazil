@@ -10,26 +10,44 @@ class TestAccountMoveDefaultOperation(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
-        cls.operation = cls.env.ref("l10n_br_fiscal.fo_venda")
-        cls.env.company.sale_fiscal_operation_id = cls.operation
-
-    def test_customer_invoice_suggests_the_sale_operation_of_the_company(self):
-        invoice = Form(
-            self.env["account.move"].with_context(default_move_type="out_invoice")
+        # an operation whose lines lead to a single document type (service)
+        cls.service_operation = cls.env.ref("l10n_br_fiscal.fo_venda").copy(
+            {"name": "Test - Service Sale"}
         )
-        self.assertEqual(invoice.fiscal_operation_id, self.operation)
+        service_line = cls.service_operation.line_ids.filtered(
+            lambda line: line.document_type_id.code == "SE"
+        )
+        (cls.service_operation.line_ids - service_line).unlink()
+        cls.service_document_type = service_line.document_type_id
+        cls.env.company.sale_fiscal_operation_id = cls.service_operation
+
+    def _new_invoice(self, **context):
+        return Form(
+            self.env["account.move"].with_context(
+                default_move_type="out_invoice", **context
+            )
+        )
+
+    def test_customer_invoice_suggests_the_operation_and_its_document_type(self):
+        invoice = self._new_invoice()
+        self.assertEqual(invoice.fiscal_operation_id, self.service_operation)
+        self.assertEqual(invoice.document_type_id, self.service_document_type)
+
+    def test_no_suggestion_when_the_operation_has_several_document_types(self):
+        self.env.company.sale_fiscal_operation_id = self.env.ref(
+            "l10n_br_fiscal.fo_venda"
+        )
+        invoice = self._new_invoice()
+        self.assertFalse(invoice.fiscal_operation_id)
+        self.assertFalse(invoice.document_type_id)
 
     def test_vendor_bill_does_not_take_the_sale_operation(self):
         bill = Form(
             self.env["account.move"].with_context(default_move_type="in_invoice")
         )
-        self.assertNotEqual(bill.fiscal_operation_id, self.operation)
+        self.assertFalse(bill.fiscal_operation_id)
 
     def test_an_operation_given_by_the_caller_is_kept(self):
         other = self.env.ref("l10n_br_fiscal.fo_devolucao_venda")
-        invoice = Form(
-            self.env["account.move"].with_context(
-                default_move_type="out_invoice", default_fiscal_operation_id=other.id
-            )
-        )
+        invoice = self._new_invoice(default_fiscal_operation_id=other.id)
         self.assertEqual(invoice.fiscal_operation_id, other)
