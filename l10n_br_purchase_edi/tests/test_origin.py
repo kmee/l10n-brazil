@@ -161,9 +161,11 @@ class TestOrigin(PurchaseEdiCase):
         self.assertEqual(line.import_purchase_line_id, order.order_line)
         self.assertEqual(line.import_origin_state, "resolved")
 
-    def test_a_line_matched_by_the_supplier_code_gets_its_origin(self):
+    def test_a_line_matched_by_the_supplier_code_and_declared_by_the_order_resolves(
+        self,
+    ):
         # the buyer mapped the code of the supplier, in a unit that is not the
-        # declared one: the line only matches
+        # declared one: the order the file declares explains the unit
         self.product.uom_po_id = self.env.ref("uom.product_uom_dozen")
         self.env["product.supplierinfo"].create(
             {
@@ -183,8 +185,29 @@ class TestOrigin(PurchaseEdiCase):
 
         line = document.fiscal_line_ids
         self.assertEqual(line.product_id, self.product)
-        self.assertEqual(line.import_state, "matched")
+        self.assertEqual(line.import_state, "resolved")
         self.assertEqual(line.import_purchase_line_id, order.order_line)
+
+    def test_a_line_matched_by_the_supplier_code_without_the_order_only_matches(
+        self,
+    ):
+        self.product.uom_po_id = self.env.ref("uom.product_uom_dozen")
+        self.env["product.supplierinfo"].create(
+            {
+                "partner_id": self.supplier.id,
+                "product_tmpl_id": self.product.product_tmpl_id.id,
+                "product_code": "SUP-1",
+            }
+        )
+        self._order()
+        document = self._imported_document(lines=[{}])
+
+        with self._supplier_code("SUP-1"):
+            document._edi_import_suggest()
+
+        line = document.fiscal_line_ids
+        self.assertEqual(line.product_id, self.product)
+        self.assertEqual(line.import_state, "matched")
 
     def test_the_position_of_nitemped_ignores_sections_and_notes(self):
         order = self.env["purchase.order"].create(
@@ -238,6 +261,104 @@ class TestOrigin(PurchaseEdiCase):
         self._resolve_product()
 
         self.assertNotEqual(self.line.import_origin_state, "resolved")
+
+    def _declared(self, order_name, item="1", **values):
+        """A document whose line declares the order and the item and has no
+        product: the reader found none that the company knows."""
+        line = {"partner_order": order_name, "partner_order_line": item}
+        line.update(values)
+        document = self._imported_document(lines=[line])
+        document.fiscal_line_ids.write({"product_id": False})
+        return document
+
+    def test_the_declared_item_gives_the_product_and_resolves_the_line(self):
+        order = self._order()
+        document = self._declared(order.name)
+
+        document._edi_import_suggest()
+
+        line = document.fiscal_line_ids
+        self.assertEqual(line.product_id, self.product)
+        self.assertEqual(line.import_state, "resolved")
+        self.assertEqual(line.import_origin_state, "resolved")
+        self.assertEqual(line.import_purchase_line_id, order.order_line)
+
+    def test_the_unit_of_the_order_is_used_when_the_file_declares_an_unknown_one(
+        self,
+    ):
+        order = self._order()
+        document = self._declared(order.name, partner_uom_code="ZZZ")
+
+        document._edi_import_suggest()
+
+        line = document.fiscal_line_ids
+        self.assertEqual(line.import_state, "resolved")
+        self.assertEqual(line.uom_id, order.order_line.product_uom)
+
+    def test_a_declared_unit_that_the_order_does_not_explain_stays_for_the_review(
+        self,
+    ):
+        self.env.ref("uom.product_uom_dozen").code = "DZ"
+        order = self._order()
+        document = self._declared(order.name, partner_uom_code="DZ")
+
+        document._edi_import_suggest()
+
+        line = document.fiscal_line_ids
+        self.assertEqual(line.product_id, self.product)
+        self.assertNotEqual(line.import_state, "resolved")
+
+    def test_two_candidates_do_not_give_the_product(self):
+        first = self._order()
+        second = self._order()
+        first.name = "PO-TRUNCATED-01"
+        second.name = "PO-TRUNCATED-012"
+        document = self._declared("PO-TRUNCATED-01")
+
+        document._edi_import_suggest()
+
+        line = document.fiscal_line_ids
+        self.assertFalse(line.product_id)
+        self.assertNotEqual(line.import_state, "resolved")
+
+    def test_an_order_of_another_supplier_does_not_give_the_product(self):
+        other = self.env["res.partner"].create({"name": "Other supplier"})
+        order = self._order(partner=other)
+        document = self._declared(order.name)
+
+        document._edi_import_suggest()
+
+        line = document.fiscal_line_ids
+        self.assertFalse(line.product_id)
+        self.assertFalse(line.import_purchase_line_id)
+
+    def test_a_quotation_does_not_give_the_product(self):
+        order = self._order(confirm=False)
+        document = self._declared(order.name)
+
+        document._edi_import_suggest()
+
+        line = document.fiscal_line_ids
+        self.assertFalse(line.product_id)
+        self.assertFalse(line.import_purchase_line_id)
+
+    def test_an_order_without_the_item_does_not_give_the_product(self):
+        order = self._order()
+        document = self._declared(order.name, item="")
+
+        document._edi_import_suggest()
+
+        self.assertFalse(document.fiscal_line_ids.product_id)
+
+    def test_another_product_chosen_for_the_line_is_kept(self):
+        order = self._order()
+        other = self.env["product.product"].create({"name": "Chosen product"})
+        document = self._declared(order.name)
+        document.fiscal_line_ids.product_id = other
+
+        document._edi_import_suggest()
+
+        self.assertEqual(document.fiscal_line_ids.product_id, other)
 
     def test_the_server_validates_the_origin_the_client_only_suggests(self):
         other_supplier = self._order(partner=self.company.partner_id)
@@ -335,5 +456,5 @@ class TestOrigin(PurchaseEdiCase):
         self._order()
         self._resolve_product()
 
-        with self.assertRaisesRegex(UserError, "not decided"):
+        with self.assertRaisesRegex(UserError, "Confirm Suggestions"):
             self.document.action_generate_invoice()

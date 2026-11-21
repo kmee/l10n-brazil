@@ -172,8 +172,9 @@ class TestMatch(PurchaseEdiCase):
             note.action_create_order()
 
     def test_the_tela_follows_the_company_rule(self):
-        rule = self.env["ir.rule"].search([("model_id.model", "=", self.Match._name)])
-        self.assertIn("company_ids", rule.domain_force)
+        # a link module may add its own rule for its source
+        rules = self.env["ir.rule"].search([("model_id.model", "=", self.Match._name)])
+        self.assertTrue(any("company_ids" in rule.domain_force for rule in rules))
 
     def _extra_source(self, kind="note", **columns):
         """One row of a source of another module, with the extra column."""
