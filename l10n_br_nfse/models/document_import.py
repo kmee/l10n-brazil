@@ -128,16 +128,61 @@ class Document(models.Model):
         product = product or self.env.company.nfse_import_product_id
         operation = operation or self._nfse_default_operation("out" if issued else "in")
         document = self.create(self._nfse_document_vals(binding, partner, operation))
-        line = self.env["l10n_br_fiscal.document.line"].create(
-            {
-                "document_id": document.id,
-                "product_id": product.id,
-                "quantity": 1.0,
-                "fiscal_operation_id": operation.id,
-            }
+        line_vals = {
+            "document_id": document.id,
+            "product_id": product.id,
+            "quantity": 1.0,
+            "fiscal_operation_id": operation.id,
+        }
+        operation_line = self._nfse_service_operation_line(
+            operation, document.company_id, partner
         )
+        if operation_line:
+            line_vals["fiscal_operation_line_id"] = operation_line.id
+        line = self.env["l10n_br_fiscal.document.line"].create(line_vals)
         line.write(self._nfse_line_vals(binding))
         return document
+
+    @api.model
+    def _nfse_service_operation_line(self, operation, company, partner):
+        """The operation line of the services of the operation.
+
+        A service has no CFOP to find it by, and the line has no product when the
+        company did not choose a default service, so the standard search by
+        product finds nothing. The line is the approved one that taxes ISSQN
+        and is meant for the NFS-e, the most specific for the company and the
+        partner. Nothing is returned when the operation has none: the line then
+        stays pending for a person to choose.
+        """
+        nfse = self.env.ref("l10n_br_fiscal.document_SE")
+        lines = operation.line_ids.filtered(
+            lambda line: line.state == "approved"
+            and line.tax_icms_or_issqn == TAX_DOMAIN_ISSQN
+            and line.document_type_id in (nfse, nfse.browse())
+            and line.company_tax_framework in (False, company.tax_framework)
+            and line.partner_tax_framework in (False, partner.tax_framework)
+            and line.ind_ie_dest in (False, partner.ind_ie_dest)
+        )
+        return operation._select_best_line(lines)
+
+    def _edi_import_warnings(self):
+        messages = super()._edi_import_warnings()
+        if (
+            self.imported_document
+            and self.fiscal_operation_id
+            and self.document_type_id == self.env.ref("l10n_br_fiscal.document_SE")
+        ):
+            for line in self.fiscal_line_ids.filtered(
+                lambda line: not line.fiscal_operation_line_id
+            ):
+                messages.append(
+                    _(
+                        "%(line)s: the operation has no operation line for services "
+                        "that matches this NFS-e: choose the operation line."
+                    )
+                    % {"line": line.name}
+                )
+        return messages
 
     @api.model
     def _nfse_find_partner(self, party):

@@ -159,6 +159,9 @@ class AccountMove(models.Model):
         pays, before the document is confirmed. Until then the page of the
         installments is only a preview."""
         for move in self.filtered(lambda m: m.state == "draft"):
+            if not move.invoice_date and move.is_sale_document(include_receipts=True):
+                # the date that the posting would give: the due dates follow it
+                move.invoice_date = fields.Date.context_today(move)
             for document in move.fiscal_document_ids.filtered(
                 lambda d: (
                     d.document_type_id
