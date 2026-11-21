@@ -3,15 +3,15 @@
     Demo of the purchases link, in the company "Empresa Lucro Presumido".
 
     Three NF-e of one supplier, each in a different step of the life cycle:
-    - 35261011222333000181550010000020011200100018: declares order
+    - 35261011765432000100550010000020011200100014: declares order
       PO-DEMO-EDI-001 and its item 1, and the supplier has no mapping of the
       product: the product comes from the order line and the line enters
       resolved. The order is invoiced by the bill generated from the note and
       the bill is posted.
-    - 35261011222333000181550010000020021200200028: no order reference. The
+    - 35261011765432000100550010000020021200200024: no order reference. The
       supplier has a quotation (PO-DEMO-EDI-002) for the product, so the note
       is waiting for the review in "Match with Orders".
-    - 35261011222333000181550010000020031200300038: product with no order
+    - 35261011765432000100550010000020031200300034: product with no order
       and no quotation, to be marked as without order.
 -->
 <odoo noupdate="1">
@@ -29,7 +29,7 @@
         <field name="state_id" ref="base.state_br_sp" />
         <field name="city_id" ref="l10n_br_base.city_3550308" />
         <field name="country_id" ref="base.br" />
-        <field name="vat">11.222.333/0001-81</field>
+        <field name="vat">11.765.432/0001-00</field>
         <field name="l10n_br_ie_code">110042490114</field>
     </record>
 
@@ -123,9 +123,9 @@
         <value>l10n_br_purchase_edi</value>
         <value
             eval="[
-                'demo/import/nfe_35261011222333000181550010000020011200100018.xml',
-                'demo/import/nfe_35261011222333000181550010000020021200200028.xml',
-                'demo/import/nfe_35261011222333000181550010000020031200300038.xml',
+                'demo/import/nfe_35261011765432000100550010000020011200100014.xml',
+                'demo/import/nfe_35261011765432000100550010000020021200200024.xml',
+                'demo/import/nfe_35261011765432000100550010000020031200300034.xml',
             ]"
         />
     </function>
@@ -135,13 +135,13 @@
     <function model="l10n_br_fiscal.document" name="action_generate_invoice">
         <value
             model="l10n_br_fiscal.document"
-            search="[('document_key', '=', '35261011222333000181550010000020011200100018')]"
+            search="[('document_key', '=', '35261011765432000100550010000020011200100014')]"
         />
     </function>
     <function model="account.move" name="action_post">
         <value
             model="account.move"
-            search="[('fiscal_document_id.document_key', '=', '35261011222333000181550010000020011200100018')]"
+            search="[('fiscal_document_id.document_key', '=', '35261011765432000100550010000020011200100014')]"
         />
     </function>
 
@@ -149,7 +149,7 @@
     <function model="l10n_br_fiscal.document.line" name="write">
         <value
             model="l10n_br_fiscal.document.line"
-            search="[('document_id.document_key', '=', '35261011222333000181550010000020031200300038')]"
+            search="[('document_id.document_key', '=', '35261011765432000100550010000020031200300034')]"
         />
         <value eval="{'import_origin_state': 'no_order'}" />
     </function>

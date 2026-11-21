@@ -1,84 +1,92 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
-  <infNFe versao="4.00" Id="NFe35261011222333000181550010000020021200200028">
+  <infNFe versao="4.00" Id="NFe35261162228384000151550010000041031062777185">
     <ide>
       <cUF>35</cUF>
-      <cNF>20020002</cNF>
-      <natOp>Venda de mercadoria</natOp>
+      <cNF>06277718</cNF>
+      <natOp>Venda</natOp>
       <mod>55</mod>
       <serie>1</serie>
-      <nNF>2002</nNF>
-      <dhEmi>2026-10-05T12:00:00-03:00</dhEmi>
-      <dhSaiEnt>2026-10-05T12:00:00-03:00</dhSaiEnt>
+      <nNF>4103</nNF>
+      <dhEmi>2026-11-12T10:00:00-03:00</dhEmi>
+      <dhSaiEnt>2026-11-12T10:00:00-03:00</dhSaiEnt>
       <tpNF>1</tpNF>
       <idDest>1</idDest>
       <cMunFG>3501152</cMunFG>
       <tpImp>1</tpImp>
       <tpEmis>1</tpEmis>
-      <cDV>8</cDV>
-      <tpAmb>1</tpAmb>
+      <cDV>5</cDV>
+      <tpAmb>2</tpAmb>
       <finNFe>1</finNFe>
       <indFinal>0</indFinal>
       <indPres>0</indPres>
       <procEmi>0</procEmi>
-      <verProc>Demo</verProc>
+      <verProc>Odoo Brasil OCA v14</verProc>
     </ide>
     <emit>
-      <CNPJ>11222333000181</CNPJ>
-      <xNome>Fornecedor Demo EDI Ltda</xNome>
-      <xFant>Fornecedor Demo EDI</xFant>
+      <CNPJ>62228384000151</CNPJ>
+      <xNome>AMD South America Ltda</xNome>
+      <xFant>AMD South America Ltda</xFant>
       <enderEmit>
-        <xLgr>Rua do Fornecedor</xLgr>
-        <nro>100</nro>
-        <xBairro>Centro</xBairro>
+        <xLgr>Rua Samuel Morse</xLgr>
+        <nro>134</nro>
+        <xBairro>Brooklin</xBairro>
         <cMun>3550308</cMun>
         <xMun>São Paulo</xMun>
         <UF>SP</UF>
-        <CEP>01001000</CEP>
+        <CEP>04576060</CEP>
         <cPais>1058</cPais>
         <xPais>Brasil</xPais>
-        <fone>1130000000</fone>
+        <fone>2130109965</fone>
       </enderEmit>
-      <IE>110042490114</IE>
-      <CRT>3</CRT>
+      <IE>621240850633</IE>
+      <CRT>1</CRT>
     </emit>
     <dest>
       <CNPJ>81583054000129</CNPJ>
-      <xNome>Empresa Lucro Presumido Ltda</xNome>
+      <xNome>NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL</xNome>
       <enderDest>
-        <xLgr>Avenida Paulista</xLgr>
-        <nro>1</nro>
-        <xBairro>Bela Vista</xBairro>
+        <xLgr>Rua Samuel Morse</xLgr>
+        <nro>135</nro>
+        <xCpl>20º andar - Conjunto 151</xCpl>
+        <xBairro>Brooklin</xBairro>
         <cMun>3550308</cMun>
         <xMun>São Paulo</xMun>
         <UF>SP</UF>
-        <CEP>01311000</CEP>
+        <CEP>04576060</CEP>
         <cPais>1058</cPais>
         <xPais>Brasil</xPais>
+        <fone>551134782150</fone>
       </enderDest>
       <indIEDest>1</indIEDest>
-      <IE>078016350838</IE>
+      <IE>460429771334</IE>
+      <email>cliente1@cliente1.com.br</email>
     </dest>
     <det nItem="1">
       <prod>
-        <cProd>DEMO-EDI-B</cProd>
-        <cEAN>SEM GTIN</cEAN>
-        <xProd>Arruela lisa demo</xProd>
+        <cProd>AMD-77</cProd>
+        <cEAN>7891000100103</cEAN>
+        <xProd>Item sem cadastro do fornecedor</xProd>
         <NCM>94033000</NCM>
-        <CFOP>6102</CFOP>
+        <CFOP>5102</CFOP>
         <uCom>UN</uCom>
-        <qCom>5.0000</qCom>
-        <vUnCom>700.0000000000</vUnCom>
-        <vProd>700.00</vProd>
-        <cEANTrib>SEM GTIN</cEANTrib>
+        <qCom>1.0000</qCom>
+        <vUnCom>140.0000000000</vUnCom>
+        <vProd>140.00</vProd>
+        <cEANTrib>7891000100103</cEANTrib>
         <uTrib>UN</uTrib>
-        <qTrib>5.0000</qTrib>
-        <vUnTrib>700.0000000000</vUnTrib>
+        <qTrib>1.0000</qTrib>
+        <vUnTrib>140.0000000000</vUnTrib>
         <indTot>1</indTot>
       </prod>
       <imposto>
         <ICMS>
-          <ICMS00><orig>0</orig><CST>00</CST><modBC>3</modBC><vBC>700.00</vBC><pICMS>12.0000</pICMS><vICMS>84.00</vICMS></ICMS00>
+          <ICMSSN101>
+            <orig>0</orig>
+            <CSOSN>101</CSOSN>
+            <pCredSN>2.6597</pCredSN>
+            <vCredICMSSN>3.72</vCredICMSSN>
+          </ICMSSN101>
         </ICMS>
         <IPI>
           <cEnq>999</cEnq>
@@ -106,7 +114,7 @@
           <CST>000</CST>
           <cClassTrib>000001</cClassTrib>
           <gIBSCBS>
-            <vBC>700.00</vBC>
+            <vBC>140.00</vBC>
             <gIBSUF>
               <pIBSUF>0.1000</pIBSUF>
               <vIBSUF>0.14</vIBSUF>
@@ -123,7 +131,7 @@
             </gIBSCBS>
         </IBSCBS>
       </imposto>
-      <vItem>700.00</vItem>
+      <vItem>140.00</vItem>
     </det>
     <total>
       <ICMSTot>
@@ -135,7 +143,7 @@
         <vST>0.00</vST>
         <vFCPST>0.00</vFCPST>
         <vFCPSTRet>0.00</vFCPSTRet>
-        <vProd>700.00</vProd>
+        <vProd>140.00</vProd>
         <vFrete>0.00</vFrete>
         <vSeg>0.00</vSeg>
         <vDesc>0.00</vDesc>
@@ -145,10 +153,10 @@
         <vPIS>0.00</vPIS>
         <vCOFINS>0.00</vCOFINS>
         <vOutro>0.00</vOutro>
-        <vNF>700.00</vNF>
+        <vNF>140.00</vNF>
       </ICMSTot>
       <IBSCBSTot>
-        <vBCIBSCBS>700.00</vBCIBSCBS>
+        <vBCIBSCBS>140.00</vBCIBSCBS>
         <gIBS>
           <gIBSUF>
             <vDif>0.00</vDif>
@@ -172,7 +180,7 @@
           <vCredPresCondSus>0.00</vCredPresCondSus>
         </gCBS>
       </IBSCBSTot>
-      <vNFTot>700.00</vNFTot>
+      <vNFTot>140.00</vNFTot>
     </total>
     <transp>
       <modFrete>9</modFrete>
@@ -181,11 +189,11 @@
       <detPag>
         <indPag>0</indPag>
         <tPag>01</tPag>
-        <vPag>700.00</vPag>
+        <vPag>140.00</vPag>
       </detPag>
     </pag>
     <infAdic>
-      <infAdFisco>Documento de demonstracao</infAdFisco>
+      <infAdFisco>Documento emitido por: Marc Demo</infAdFisco>
     </infAdic>
   </infNFe>
 </NFe>
