@@ -22,6 +22,9 @@
         "views/nfe_dfe_views.xml",
         "views/res_company_view.xml",
     ],
+    "demo": [
+        "demo/dfe_demo.xml",
+    ],
     "external_dependencies": {
         "python": [
             "nfelib",
