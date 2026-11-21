@@ -2,7 +2,6 @@
 <!-- Copyright 2020 - TODAY, Marcel Savegnago - Escodoo - https://www.escodoo.com.br
      License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
 <odoo>
-
     <!-- Recurrency Service -->
     <record id="recurrency_service_product" model="product.product">
         <field name="name">Recurrency Service</field>
@@ -22,7 +21,5 @@
             name="property_contract_template_id"
             ref="l10n_br_product_contract.main_contract_template_sale"
         />
-
     </record>
-
 </odoo>
