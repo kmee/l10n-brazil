@@ -630,10 +630,20 @@ class TestCteDocumentImport(EdiImportCase):
         self.assertEqual(documents.cte40_cobr.cte40_fat.cte40_nFat, "987654")
         self.assertEqual(len(documents.cte40_cobr.cte40_dup), 2)
 
-    def test_the_operation_chosen_in_the_header_shows_100_and_100(self):
+    def test_the_operation_chosen_in_the_header_waits_for_the_operation_line(self):
+        """The CFOP of the CT-e matches no line of the operation and the operation has
+        several candidates: the line is left to the person, with a warning; once the
+        person chooses the operation line, the amounts are the ones of the file."""
         documents, errors, _warnings = self._import(cte_xml(COLLECTION))
         self.assertFalse(errors)
-        documents.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        operation = self.env.ref("l10n_br_fiscal.fo_compras")
+        documents.fiscal_operation_id = operation
+        line = documents.fiscal_line_ids
+        self.assertFalse(line.fiscal_operation_line_id)
+        self.assertIn("choose the operation line", documents.import_warning)
+        line.fiscal_operation_line_id = self.env.ref(
+            "l10n_br_fiscal.fo_compras_compras"
+        )
         self.assertAlmostEqual(documents.fiscal_amount_total, 100.0)
         self.assertAlmostEqual(documents.amount_financial_total, 100.0)
         self.assertNotIn("add up", str(documents.edi_payment_summary))
