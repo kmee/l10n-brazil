@@ -12,9 +12,12 @@
     "depends": ["l10n_br_fiscal"],
     "maintainers": ["rvalyi"],
     "development_status": "Alpha",
+    "demo": ["demo/sped_base_demo.xml"],
     "data": [
         "security/ir.model.access.csv",
         "views/sped_base.xml",
         "views/res_partner_view.xml",
+        "views/sped_signer_view.xml",
+        "views/res_company_view.xml",
     ],
 }
