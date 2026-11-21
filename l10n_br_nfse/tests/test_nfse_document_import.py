@@ -441,7 +441,8 @@ class TestNfseDocumentImport(EdiImportCase):
         with Form(documents) as form:
             with form.fiscal_line_ids.edit(0) as line_form:
                 line_form.product_id = product
-        documents.fiscal_line_ids.action_resolve_line()
+        action = documents.fiscal_line_ids.action_resolve_line()
+        self.assertEqual(action, {"type": "ir.actions.client", "tag": "reload"})
         self.env.flush_all()
         self.env.invalidate_all()
         line = documents.fiscal_line_ids
