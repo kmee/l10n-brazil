@@ -58,6 +58,7 @@
                 />
                 <field
                     name="import_origin_state"
+                    string="Origin"
                     widget="badge"
                     decoration-warning="import_origin_state == 'pending'"
                     decoration-info="import_origin_state == 'suggested'"

@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-21 19:37+0000\n"
-"PO-Revision-Date: 2026-11-21 19:37+0000\n"
+"POT-Creation-Date: 2026-11-21 20:12+0000\n"
+"PO-Revision-Date: 2026-11-21 20:12+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -273,6 +273,11 @@ msgstr ""
 #. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_search
 msgid "Orders"
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_form
+msgid "Origin"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
