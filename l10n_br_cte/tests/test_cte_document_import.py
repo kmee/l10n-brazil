@@ -679,6 +679,22 @@ class TestCteDocumentImport(EdiImportCase):
         self.assertIn("add up", str(documents.edi_payment_summary))
         self.assertIn("add up", documents.import_warning)
 
+    def test_the_installments_of_a_cte_are_never_taken_from_another_one(self):
+        first, errors, _warnings = self._import(cte_xml(COLLECTION))
+        self.assertFalse(errors)
+        other = COLLECTION.replace("60.00", "90.00")
+        second, errors, _warnings = self._import(
+            cte_xml(other, emitter=LUCRO_PRESUMIDO, recipient="12345678000195")
+        )
+        self.assertFalse(errors)
+        self.assertNotEqual(first, second)
+        self.assertEqual(
+            sorted(first.cte40_cobr.cte40_dup.mapped("cte40_vDup")), [40.0, 60.0]
+        )
+        self.assertEqual(
+            sorted(second.cte40_cobr.cte40_dup.mapped("cte40_vDup")), [40.0, 90.0]
+        )
+
     def test_a_cte_without_a_collection_declares_no_installment(self):
         documents, errors, _warnings = self._import(cte_xml())
         self.assertFalse(errors)
