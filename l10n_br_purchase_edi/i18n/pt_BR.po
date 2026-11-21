@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-21 19:37+0000\n"
+"POT-Creation-Date: 2026-11-21 20:12+0000\n"
 "PO-Revision-Date: 2026-11-19 21:45+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -286,6 +286,12 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_search
 msgid "Orders"
 msgstr "Pedidos"
+
+#. module: l10n_br_purchase_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_form
+msgid "Origin"
+msgstr ""
+"Origem"
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__suggested_purchase_line_id
@@ -574,8 +580,8 @@ msgid ""
 "Technical: a purchase document imported from a partner and still in draft, "
 "the only kind that has an origin to choose."
 msgstr ""
-"Técnico: um documento de compra importado de um parceiro e ainda em di"
-"gitação, o único que tem origem para escolher."
+"Técnico: um documento de compra importado de um parceiro e ainda em "
+"digitação, o único que tem origem para escolher."
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,help:l10n_br_purchase_edi.field_account_bank_statement_line__has_suggested_import_origin
@@ -595,8 +601,8 @@ msgid ""
 "Technical: the imported fiscal documents whose lines point to a line of this "
 "order."
 msgstr ""
-"Técnico: os documentos fiscais importados cujas linhas apontam para um"
-"a linha deste pedido."
+"Técnico: os documentos fiscais importados cujas linhas apontam para uma "
+"linha deste pedido."
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,help:l10n_br_purchase_edi.field_account_move_line__import_origin_candidate_ids
@@ -619,8 +625,8 @@ msgid ""
 "Technical: the purchase orders that the lines of the document point to, as "
 "resolved or as suggested."
 msgstr ""
-"Técnico: os pedidos de compra para os quais as linhas do documento apo"
-"ntam, como resolvidos ou como sugeridos."
+"Técnico: os pedidos de compra para os quais as linhas do documento apontam, "
+"como resolvidos ou como sugeridos."
 
 #. module: l10n_br_purchase_edi
 #. odoo-python

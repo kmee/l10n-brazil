@@ -31,6 +31,9 @@ class TestDemo(TransactionCase):
 
         # the supplier has no mapping of the product: it came from the order
         self.assertEqual(line.product_id, order.order_line.product_id)
+        # the note says what the order says
+        self.assertEqual(line.price_unit, order.order_line.price_unit)
+        self.assertEqual(line.quantity, order.order_line.product_qty)
         self.assertEqual(line.import_origin_state, "resolved")
         self.assertEqual(line.import_purchase_line_id, order.order_line)
         self.assertEqual(line.document_id.state_edoc, "autorizada")
