@@ -81,12 +81,10 @@
       </prod>
       <imposto>
         <ICMS>
-          <ICMSSN101>
+          <ICMSSN102>
             <orig>0</orig>
-            <CSOSN>101</CSOSN>
-            <pCredSN>2.6597</pCredSN>
-            <vCredICMSSN>3.72</vCredICMSSN>
-          </ICMSSN101>
+            <CSOSN>102</CSOSN>
+          </ICMSSN102>
         </ICMS>
         <IPI>
           <cEnq>999</cEnq>

@@ -95,6 +95,13 @@ class Document(models.Model):
             "target": "current",
         }
 
+    def _edi_demo_post_invoice(self):
+        """Demo data: the invoice of a reviewed imported document, generated and
+        posted, to show the whole cycle of life of the import."""
+        for document in self:
+            action = document.action_generate_invoice()
+            self.env["account.move"].browse(action["res_id"]).action_post()
+
     def _edi_draft_move(self):
         """The draft invoice that will issue this document, if there is one."""
         self.ensure_one()
