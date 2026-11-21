@@ -63,17 +63,17 @@
       <prod>
         <cProd>DEMO-STK-D</cProd>
         <cEAN>SEM GTIN</cEAN>
-        <xProd>Cabo de aco rastreado demo</xProd>
+        <xProd>Cabo de aço rastreado demo</xProd>
         <NCM>94033000</NCM>
         <CFOP>6102</CFOP>
         <uCom>UN</uCom>
         <qCom>10.0000</qCom>
-        <vUnCom>1400.0000000000</vUnCom>
+        <vUnCom>140.0000000000</vUnCom>
         <vProd>1400.00</vProd>
         <cEANTrib>SEM GTIN</cEANTrib>
         <uTrib>UN</uTrib>
         <qTrib>10.0000</qTrib>
-        <vUnTrib>1400.0000000000</vUnTrib>
+        <vUnTrib>140.0000000000</vUnTrib>
         <indTot>1</indTot>
         <xPed>PO-DEMO-STK-001</xPed>
         <nItemPed>1</nItemPed>

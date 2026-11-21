@@ -32,6 +32,10 @@ class TestDemo(TransactionCase):
         }
         self.assertEqual(lots, {"L-DEMO-01": 6.0, "L-DEMO-02": 4.0})
         self.assertEqual(order.order_line.qty_received, 10.0)
+        # the note says what the order and the receipt say: nothing diverges
+        self.assertFalse(line.import_divergent)
+        self.assertEqual(line.import_price_difference, 0)
+        self.assertEqual(line.import_qty_difference, 0)
         # the smart buttons of the document and of the receipt
         self.assertEqual(document.import_picking_ids, picking)
         self.assertEqual(picking.import_document_ids, document)

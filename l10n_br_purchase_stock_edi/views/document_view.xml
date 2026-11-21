@@ -47,7 +47,7 @@
                     name="import_stock_move_id"
                     options="{'no_create': True}"
                     groups="purchase.group_purchase_user"
-                    optional="show"
+                    optional="hide"
                     attrs="{'column_invisible': [('parent.imported_document', '=', False)]}"
                 />
                 <field name="import_ordered_qty" optional="hide" />
@@ -57,6 +57,7 @@
                 <field name="import_price_difference" optional="hide" />
                 <field
                     name="import_divergent"
+                    string="Divergent"
                     optional="show"
                     attrs="{'column_invisible': [('parent.imported_document', '=', False)]}"
                 />
