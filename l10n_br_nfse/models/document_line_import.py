@@ -44,3 +44,14 @@ class DocumentLine(models.Model):
             line.tax_icms_or_issqn = domain
             line.service_type_id = service_type
             line.nbs_id = nbs
+
+    def action_resolve_line(self):
+        """Reload the form after the review of a line of an imported NFS-e.
+
+        The button sits in the dialog of the line: the form behind it keeps the
+        taxes it had read and shows an empty column until the page is reloaded.
+        """
+        super().action_resolve_line()
+        if self.filtered(lambda line: line.document_id._is_national_nfse_key()):
+            return {"type": "ir.actions.client", "tag": "reload"}
+        return None
