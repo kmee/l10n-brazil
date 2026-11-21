@@ -32,3 +32,7 @@ class TestDemo(TransactionCase):
         }
         self.assertEqual(lots, {"L-DEMO-01": 6.0, "L-DEMO-02": 4.0})
         self.assertEqual(order.order_line.qty_received, 10.0)
+        # the smart buttons of the document and of the receipt
+        self.assertEqual(document.import_picking_ids, picking)
+        self.assertEqual(picking.import_document_ids, document)
+        self.assertEqual(document.import_purchase_order_ids, order)

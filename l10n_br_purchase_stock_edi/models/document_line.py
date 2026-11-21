@@ -126,6 +126,21 @@ class FiscalDocumentLine(models.Model):
             line.import_price_difference = values["price_difference"]
             line.import_divergent = values["divergent"]
 
+    def action_open_import_origin(self):
+        """The receipt of the line comes first (it is what arrives at the
+        warehouse); without one, the order of the base module."""
+        self.ensure_one()
+        picking = self.sudo().import_stock_move_id.picking_id
+        if not picking:
+            return super().action_open_import_origin()
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": "stock.picking",
+            "res_id": picking.id,
+            "views": [(False, "form")],
+            "target": "current",
+        }
+
     def write(self, vals):
         if "import_stock_move_id" in vals and "import_purchase_line_id" not in vals:
             move = self.env["stock.move"].browse(vals["import_stock_move_id"])

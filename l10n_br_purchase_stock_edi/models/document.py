@@ -34,6 +34,41 @@ class FiscalDocument(models.Model):
             return [("id", "in", found.document_id.ids)]
         return [("id", "not in", found.document_id.ids)]
 
+    import_picking_ids = fields.Many2many(
+        comodel_name="stock.picking",
+        compute="_compute_import_pickings",
+        string="Receipts",
+        groups="purchase.group_purchase_user,stock.group_stock_user",
+        help="Technical: the receipts that the lines of the document point to, "
+        "as resolved or as suggested, or that were created from the document.",
+    )
+    import_picking_count = fields.Integer(
+        compute="_compute_import_pickings",
+        string="Receipts Count",
+        groups="purchase.group_purchase_user,stock.group_stock_user",
+    )
+
+    @api.depends("fiscal_line_ids.import_stock_move_id")
+    def _compute_import_pickings(self):
+        for document in self:
+            pickings = document.sudo().fiscal_line_ids.import_stock_move_id.picking_id
+            document.import_picking_ids = pickings
+            document.import_picking_count = len(pickings)
+
+    def action_view_import_pickings(self):
+        """The receipt of the document, or the list when there are several."""
+        self.ensure_one()
+        pickings = self.sudo().fiscal_line_ids.import_stock_move_id.picking_id
+        action = self.env["ir.actions.act_window"]._for_xml_id(
+            "stock.action_picking_tree_all"
+        )
+        if len(pickings) == 1:
+            action["views"] = [(False, "form")]
+            action["res_id"] = pickings.id
+        else:
+            action["domain"] = [("id", "in", pickings.ids)]
+        return action
+
     def action_generate_invoice(self):
         self.ensure_one()
         without_entry = self.fiscal_line_ids.filtered(
