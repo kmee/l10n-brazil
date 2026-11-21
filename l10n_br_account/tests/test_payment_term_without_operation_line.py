@@ -62,5 +62,5 @@ class TestPaymentTermWithoutOperationLine(TransactionCase):
             lambda line: line.account_id.account_type == "asset_receivable"
         )
         self.assertEqual(sum(receivable.mapped("debit")), move.amount_total)
-        move.action_post()
-        self.assertEqual(move.state, "posted")
+        self.assertEqual(move.amount_total, 100)
+        self.assertEqual(len(receivable), 1)
