@@ -107,9 +107,12 @@ class TestImportScreens(EdiImportCase):
         operation, so the page is not left at zero and warns of nothing."""
         if not self._installed("l10n_br_cte"):
             self.skipTest("l10n_br_cte is not installed")
-        module = importlib.import_module(
-            "odoo.addons.l10n_br_cte.tests.test_cte_document_import"
-        )
+        try:
+            module = importlib.import_module(
+                "odoo.addons.l10n_br_cte.tests.test_cte_document_import"
+            )
+        except ImportError:
+            self.skipTest("l10n_br_cte has no import tests to take the sample from")
         documents, errors, _warnings = self.Document._edi_import_files(
             [("cte.xml", module.cte_xml(module.COLLECTION))]
         )
