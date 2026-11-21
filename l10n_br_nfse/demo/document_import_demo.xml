@@ -27,6 +27,12 @@
             ]"
         />
     </function>
+    <function model="l10n_br_fiscal.document.line" name="action_resolve_line">
+        <value
+            model="l10n_br_fiscal.document.line"
+            search="[('document_id.document_key', '=', '42024042281583054000129000000000000226031234567896')]"
+        />
+    </function>
     <function model="l10n_br_fiscal.document" name="action_document_confirm">
         <value
             model="l10n_br_fiscal.document"
