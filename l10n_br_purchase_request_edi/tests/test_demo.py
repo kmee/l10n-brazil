@@ -3,7 +3,7 @@
 
 from odoo.tests import TransactionCase, tagged
 
-KEY_REQUEST = "35261011222333000181550010000040011400100010"
+KEY_REQUEST = "35261011765432000100550010000040011400100017"
 
 
 @tagged("post_install", "-at_install")

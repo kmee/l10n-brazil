@@ -4,7 +4,7 @@
     with the supplier of the purchases link.
 
     An approved purchase request for 10 units of a product, and the note
-    35261011222333000181550010000040011400100010 of the supplier for 8 units of
+    35261011765432000100550010000040011400100017 of the supplier for 8 units of
     it, with no order. The reviewer opens the note, "Match with Orders", selects
     the request line and uses "Create order from request".
 -->
@@ -59,7 +59,7 @@
     <function model="l10n_br_fiscal.document" name="_edi_import_demo_files">
         <value>l10n_br_purchase_request_edi</value>
         <value
-            eval="['demo/import/nfe_35261011222333000181550010000040011400100010.xml']"
+            eval="['demo/import/nfe_35261011765432000100550010000040011400100017.xml']"
         />
     </function>
 
