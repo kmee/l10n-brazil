@@ -17,6 +17,31 @@ class FiscalDocument(models.Model):
         "blocked.",
     )
 
+    import_awaiting_receipt = fields.Boolean(
+        string="Awaiting Receipt",
+        compute="_compute_import_awaiting_receipt",
+        search="_search_import_awaiting_receipt",
+        help="Some line waits for the receipt of its order line. It only informs: "
+        "nothing is blocked and it is not a divergence.",
+    )
+
+    @api.depends("fiscal_line_ids.import_awaiting_receipt")
+    def _compute_import_awaiting_receipt(self):
+        for document in self:
+            document.import_awaiting_receipt = any(
+                document.fiscal_line_ids.mapped("import_awaiting_receipt")
+            )
+
+    @api.model
+    def _search_import_awaiting_receipt(self, operator, value):
+        if operator not in ("=", "!="):
+            raise NotImplementedError("Only = and != are supported.")
+        lines = self.env["l10n_br_fiscal.document.line"]
+        found = lines.search(lines._search_import_awaiting_receipt("=", True))
+        if (operator == "=") == bool(value):
+            return [("id", "in", found.document_id.ids)]
+        return [("id", "not in", found.document_id.ids)]
+
     @api.depends("fiscal_line_ids.import_divergent")
     def _compute_import_divergent(self):
         for document in self:

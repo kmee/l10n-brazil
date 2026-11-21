@@ -26,6 +26,7 @@
             </xpath>
             <xpath expr="//form/sheet" position="before">
                 <field name="import_divergent" invisible="1" />
+                <field name="import_awaiting_receipt" invisible="1" />
                 <div
                     class="alert alert-warning"
                     role="alert"
@@ -35,9 +36,21 @@
                     Some line differs from the order or the receipt by more than
                     the tolerance of the company.
                 </div>
+                <div
+                    class="alert alert-info"
+                    role="status"
+                    attrs="{'invisible': ['|', ('import_divergent', '=', True), ('import_awaiting_receipt', '=', False)]}"
+                >
+                    <span class="badge text-bg-info">Awaiting receipt</span>
+                    Some line waits for the receipt of its order. Nothing is
+                    blocked.
+                </div>
             </xpath>
             <xpath expr="//field[@name='fiscal_line_ids']/tree" position="attributes">
                 <attribute name="decoration-warning">import_divergent</attribute>
+                <attribute
+                    name="decoration-info"
+                >import_awaiting_receipt and not import_divergent</attribute>
             </xpath>
             <xpath
                 expr="//field[@name='fiscal_line_ids']/tree/field[@name='import_origin_state']"
@@ -55,6 +68,12 @@
                 <field name="import_qty_difference" optional="hide" />
                 <field name="import_order_price_unit" optional="hide" />
                 <field name="import_price_difference" optional="hide" />
+                <field
+                    name="import_awaiting_receipt"
+                    string="Awaiting"
+                    optional="show"
+                    attrs="{'column_invisible': [('parent.imported_document', '=', False)]}"
+                />
                 <field
                     name="import_divergent"
                     string="Divergent"
@@ -107,6 +126,11 @@
                     attrs="{'invisible': [('import_purchase_line_id', '=', False)]}"
                 />
                 <field name="import_divergent" invisible="1" />
+                <field
+                    name="import_awaiting_receipt"
+                    groups="purchase.group_purchase_user"
+                    attrs="{'invisible': [('import_purchase_line_id', '=', False)]}"
+                />
             </xpath>
         </field>
     </record>
@@ -122,6 +146,11 @@
                     name="import_divergent"
                     string="Divergent from the Order"
                     domain="[('import_divergent', '=', True)]"
+                />
+                <filter
+                    name="import_awaiting_receipt"
+                    string="Awaiting Receipt"
+                    domain="[('import_awaiting_receipt', '=', True)]"
                 />
             </xpath>
         </field>

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-21 19:48+0000\n"
+"POT-Creation-Date: 2026-11-21 21:16+0000\n"
 "PO-Revision-Date: 2026-11-19 22:30+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -49,6 +49,18 @@ msgstr "%s linha(s) marcada(s) como sem entrada em estoque."
 #, python-format
 msgid "%s move(s) received the lots of the document."
 msgstr "%s movimento(s) receberam os lotes do documento."
+
+#. module: l10n_br_purchase_stock_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_form
+msgid ""
+"<span class=\"badge text-bg-info\">Awaiting receipt</span>\n"
+"                    Some line waits for the receipt of its order. Nothing "
+"is\n"
+"                    blocked."
+msgstr ""
+"<span class=\"badge text-bg-info\">Aguardando recebimento</span>\n    "
+"                Alguma linha aguarda o recebimento do pedido. Nada é b"
+"loqueado."
 
 #. module: l10n_br_purchase_stock_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_form
@@ -107,6 +119,34 @@ msgstr ""
 "pedido e ainda sem recebimento."
 
 #. module: l10n_br_purchase_stock_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_form
+msgid "Awaiting"
+msgstr ""
+"Aguardando"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_bank_statement_line__import_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_bank_statement_line__purchase_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move__import_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move__purchase_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__import_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__purchase_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_payment__import_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_payment__purchase_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document__import_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_awaiting_receipt
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_search
+msgid "Awaiting Receipt"
+msgstr ""
+"Aguardando recebimento"
+
+#. module: l10n_br_purchase_stock_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.invoice_form_purchase_divergence
+msgid "Awaiting receipt"
+msgstr ""
+"Aguardando recebimento"
+
+#. module: l10n_br_purchase_stock_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_res_company__purchase_price_tolerance
 msgid "Bill Price Tolerance (%)"
 msgstr "Tolerância de preço da fatura (%)"
@@ -141,6 +181,7 @@ msgstr "Criar recebimento"
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move__purchase_divergent
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__purchase_divergent
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_payment__purchase_divergent
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_form
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.invoice_form_purchase_divergence
 msgid "Divergent"
 msgstr "Divergente"
@@ -169,14 +210,12 @@ msgstr "Divergente do pedido"
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_stock_picking__import_document_ids
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.view_picking_form
 msgid "Fiscal Documents"
-msgstr ""
-"Documentos fiscais"
+msgstr "Documentos fiscais"
 
 #. module: l10n_br_purchase_stock_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_stock_picking__import_document_count
 msgid "Fiscal Documents Count"
-msgstr ""
-"Quantidade de documentos fiscais"
+msgstr "Quantidade de documentos fiscais"
 
 #. module: l10n_br_purchase_stock_edi
 #. odoo-python
@@ -391,8 +430,7 @@ msgstr "Recebimentos"
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_payment__import_picking_count
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document__import_picking_count
 msgid "Receipts Count"
-msgstr ""
-"Quantidade de recebimentos"
+msgstr "Quantidade de recebimentos"
 
 #. module: l10n_br_purchase_stock_edi
 #: model:ir.model.fields.selection,name:l10n_br_purchase_stock_edi.selection__l10n_br_purchase_edi_match__line_state__receipt_done
@@ -447,14 +485,12 @@ msgstr "Mostrar propor lotes do documento"
 #. module: l10n_br_purchase_stock_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.view_picking_form
 msgid "Show the imported fiscal documents of this receipt"
-msgstr ""
-"Mostrar os documentos fiscais importados deste recebimento"
+msgstr "Mostrar os documentos fiscais importados deste recebimento"
 
 #. module: l10n_br_purchase_stock_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_form
 msgid "Show the receipts of the lines"
-msgstr ""
-"Mostrar os recebimentos das linhas"
+msgstr "Mostrar os recebimentos das linhas"
 
 #. module: l10n_br_purchase_stock_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_purchase_edi_match__line_state
@@ -493,6 +529,35 @@ msgstr ""
 "bloqueado."
 
 #. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_bank_statement_line__purchase_awaiting_receipt
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move__purchase_awaiting_receipt
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_payment__purchase_awaiting_receipt
+msgid ""
+"Some line of the bill waits for the receipt of its order line. It only "
+"informs: nothing is blocked and it is not a divergence."
+msgstr ""
+"Alguma linha da fatura aguarda o recebimento da sua linha de pedido. S"
+"ó informa: nada é bloqueado e não é uma divergência."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_bank_statement_line__import_awaiting_receipt
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move__import_awaiting_receipt
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_payment__import_awaiting_receipt
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document__import_awaiting_receipt
+msgid ""
+"Some line waits for the receipt of its order line. It only informs: nothing "
+"is blocked and it is not a divergence."
+msgstr ""
+"Alguma linha aguarda o recebimento da sua linha de pedido. Só informa:"
+" nada é bloqueado e não é uma divergência."
+
+#. module: l10n_br_purchase_stock_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.invoice_form_purchase_divergence
+msgid "Some line waits for the receipt of its order. Nothing is blocked."
+msgstr ""
+"Alguma linha aguarda o recebimento do pedido. Nada é bloqueado."
+
+#. module: l10n_br_purchase_stock_edi
 #: model:ir.model,name:l10n_br_purchase_stock_edi.model_stock_move
 msgid "Stock Move"
 msgstr "Movimento de estoque"
@@ -512,8 +577,8 @@ msgid ""
 "Technical: the imported fiscal documents whose lines point to a move of this "
 "receipt."
 msgstr ""
-"Técnico: os documentos fiscais importados cujas linhas apontam para um"
-" movimento deste recebimento."
+"Técnico: os documentos fiscais importados cujas linhas apontam para um "
+"movimento deste recebimento."
 
 #. module: l10n_br_purchase_stock_edi
 #: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_bank_statement_line__import_picking_ids
@@ -524,9 +589,8 @@ msgid ""
 "Technical: the receipts that the lines of the document point to, as resolved "
 "or as suggested, or that were created from the document."
 msgstr ""
-"Técnico: os recebimentos para os quais as linhas do documento apontam,"
-" como resolvidos ou como sugeridos, ou que foram criados a partir do d"
-"ocumento."
+"Técnico: os recebimentos para os quais as linhas do documento apontam, como "
+"resolvidos ou como sugeridos, ou que foram criados a partir do documento."
 
 #. module: l10n_br_purchase_stock_edi
 #: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move_line__purchase_divergent
@@ -536,6 +600,15 @@ msgid ""
 msgstr ""
 "A linha da fatura difere do pedido e do recebimento por mais que as "
 "tolerâncias da empresa. Só avisa: nada é bloqueado."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move_line__purchase_awaiting_receipt
+msgid ""
+"The bill line is for an item that goes to the stock and nothing was received "
+"yet. It only informs: it is not a divergence."
+msgstr ""
+"A linha da fatura é de um item que vai ao estoque e nada foi recebido "
+"ainda. Só informa: não é uma divergência."
 
 #. module: l10n_br_purchase_stock_edi
 #. odoo-python
@@ -560,6 +633,16 @@ msgid ""
 msgstr ""
 "A linha difere do pedido e do recebimento por mais que as tolerâncias da "
 "empresa. Só avisa: nada é bloqueado."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move_line__import_awaiting_receipt
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_awaiting_receipt
+msgid ""
+"The line is matched to an order line of a product that goes to the stock and "
+"nothing was received yet. It only informs: it is not a divergence."
+msgstr ""
+"A linha está casada com uma linha de pedido de um produto que vai ao e"
+"stoque e nada foi recebido ainda. Só informa: não é uma divergência."
 
 #. module: l10n_br_purchase_stock_edi
 #: model:ir.model.constraint,message:l10n_br_purchase_stock_edi.constraint_res_company_purchase_price_tolerance_positive

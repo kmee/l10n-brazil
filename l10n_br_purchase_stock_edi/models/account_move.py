@@ -16,6 +16,20 @@ class AccountMove(models.Model):
         "nothing is blocked.",
     )
 
+    purchase_awaiting_receipt = fields.Boolean(
+        string="Awaiting Receipt",
+        compute="_compute_purchase_awaiting_receipt",
+        help="Some line of the bill waits for the receipt of its order line. It "
+        "only informs: nothing is blocked and it is not a divergence.",
+    )
+
+    @api.depends("invoice_line_ids.purchase_awaiting_receipt")
+    def _compute_purchase_awaiting_receipt(self):
+        for move in self:
+            move.purchase_awaiting_receipt = any(
+                move.invoice_line_ids.mapped("purchase_awaiting_receipt")
+            )
+
     @api.depends("invoice_line_ids.purchase_divergent")
     def _compute_purchase_divergent(self):
         for move in self:

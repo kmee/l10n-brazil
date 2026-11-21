@@ -64,6 +64,14 @@ class FiscalDocumentLine(models.Model):
         digits="Product Price",
         help="Unit price of the line minus the unit price of the order line.",
     )
+    import_awaiting_receipt = fields.Boolean(
+        string="Awaiting Receipt",
+        compute="_compute_import_comparison",
+        search="_search_import_awaiting_receipt",
+        help="The line is matched to an order line of a product that goes to the "
+        "stock and nothing was received yet. It only informs: it is not a "
+        "divergence.",
+    )
     import_divergent = fields.Boolean(
         string="Divergent Line",
         compute="_compute_import_comparison",
@@ -95,6 +103,7 @@ class FiscalDocumentLine(models.Model):
                 "qty_difference": 0.0,
                 "price_difference": 0.0,
                 "divergent": False,
+                "awaiting": False,
             }
             order_line = line.import_purchase_line_id
             if order_line and line._is_imported():
@@ -125,6 +134,7 @@ class FiscalDocumentLine(models.Model):
             line.import_qty_difference = values["qty_difference"]
             line.import_price_difference = values["price_difference"]
             line.import_divergent = values["divergent"]
+            line.import_awaiting_receipt = values["awaiting"]
 
     def action_open_import_origin(self):
         """The receipt of the line comes first (it is what arrives at the
@@ -172,6 +182,24 @@ class FiscalDocumentLine(models.Model):
             and not line.import_stock_move_id
             and not line.import_no_stock_entry
         )
+
+    @api.model
+    def _search_import_awaiting_receipt(self, operator, value):
+        """Same reading of the divergence: the receipts move after the document
+        is typed, so nothing is stored."""
+        if operator not in ("=", "!="):
+            raise NotImplementedError("Only = and != are supported.")
+        lines = self.sudo().search(
+            [
+                ("import_purchase_line_id", "!=", False),
+                ("document_id.imported_document", "=", True),
+                ("document_id.state_edoc", "=", DOCUMENT_STATE_DRAFT),
+            ]
+        )
+        awaiting = lines.filtered("import_awaiting_receipt")
+        if (operator == "=") == bool(value):
+            return [("id", "in", awaiting.ids)]
+        return [("id", "not in", awaiting.ids)]
 
     @api.model
     def _search_import_divergent(self, operator, value):

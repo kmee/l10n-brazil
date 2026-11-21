@@ -50,10 +50,36 @@
         <value eval="[ref('demo_order_lot')]" />
     </function>
 
+    <!-- a second order, not received yet: its note shows Awaiting receipt, which
+         is not a divergence -->
+    <record id="demo_order_waiting" model="purchase.order">
+        <field name="name">PO-DEMO-STK-002</field>
+        <field name="partner_id" ref="l10n_br_purchase_edi.demo_supplier" />
+        <field name="company_id" ref="l10n_br_base.empresa_lucro_presumido" />
+    </record>
+    <record id="demo_order_waiting_line" model="purchase.order.line">
+        <field name="order_id" ref="demo_order_waiting" />
+        <field
+            name="product_id"
+            search="[('product_tmpl_id', '=', ref('demo_product_lot'))]"
+        />
+        <field name="name">Cabo de aço rastreado demo</field>
+        <field name="product_qty">5</field>
+        <field name="product_uom" ref="uom.product_uom_unit" />
+        <field name="price_unit">140.0</field>
+        <field name="date_planned" eval="DateTime.now()" />
+    </record>
+    <function model="purchase.order" name="button_confirm">
+        <value eval="[ref('demo_order_waiting')]" />
+    </function>
+
     <function model="l10n_br_fiscal.document" name="_edi_import_demo_files">
         <value>l10n_br_purchase_stock_edi</value>
         <value
-            eval="['demo/import/nfe_35261011765432000100550010000030011300100010.xml']"
+            eval="[
+                'demo/import/nfe_35261011765432000100550010000030011300100010.xml',
+                'demo/import/nfe_35261011765432000100550010000030021300200020.xml',
+            ]"
         />
     </function>
 
