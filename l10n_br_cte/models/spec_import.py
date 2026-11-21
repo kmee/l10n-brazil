@@ -4,8 +4,13 @@
 from odoo import api, models
 
 
-class SpecMixinImport(models.AbstractModel):
-    _inherit = "spec.mixin_import"
+class SpecMixinCte(models.AbstractModel):
+    """Extension of the mixin of the CT-e, not of the generic one: the models of the
+    schema are rebuilt from their own mixin, and an override placed on the generic
+    ``spec.mixin_import`` is lost when the registry is rebuilt (the tests of
+    ``spec_driven_model`` do it), so the groups of a CT-e would be matched again."""
+
+    _inherit = "spec.mixin.cte"
 
     @api.model
     def match_record(self, rec_dict, parent_dict, model=None):
