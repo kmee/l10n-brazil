@@ -7,6 +7,23 @@
         <field name="model">l10n_br_fiscal.document</field>
         <field name="inherit_id" ref="l10n_br_fiscal_edi.document_form_import" />
         <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
+                <button
+                    class="oe_stat_button"
+                    name="action_view_import_purchase_orders"
+                    type="object"
+                    help="Show the purchase orders of the lines"
+                    groups="purchase.group_purchase_user"
+                    attrs="{'invisible': [('import_purchase_order_count', '=', 0)]}"
+                    icon="fa-shopping-cart"
+                >
+                    <field
+                        name="import_purchase_order_count"
+                        widget="statinfo"
+                        string="Purchase Orders"
+                    />
+                </button>
+            </xpath>
             <xpath expr="//form/header" position="inside">
                 <field name="has_suggested_import_origin" invisible="1" />
                 <field name="imported_document" invisible="1" />
@@ -30,6 +47,15 @@
                 expr="//field[@name='fiscal_line_ids']/tree/field[@name='import_state']"
                 position="after"
             >
+                <button
+                    name="action_open_import_origin"
+                    type="object"
+                    icon="fa-external-link"
+                    string="Open origin"
+                    title="Open origin"
+                    groups="purchase.group_purchase_user"
+                    attrs="{'invisible': [('import_origin_state', 'not in', ['suggested', 'resolved'])]}"
+                />
                 <field
                     name="import_origin_state"
                     widget="badge"
