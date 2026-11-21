@@ -274,8 +274,10 @@ class FiscalDocumentLineMixin(models.AbstractModel):
 
             # Valor financeiro
             if (
-                record.fiscal_operation_line_id
-                and record.fiscal_operation_line_id.add_to_amount
+                (
+                    not record.fiscal_operation_line_id
+                    or record.fiscal_operation_line_id.add_to_amount
+                )
                 and (not record.cfop_id or record.cfop_id.finance_move)
             ):
                 record.financial_total = record.amount_taxed
