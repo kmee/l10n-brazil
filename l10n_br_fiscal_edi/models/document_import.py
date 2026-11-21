@@ -13,6 +13,7 @@ from erpbrasil.base.fiscal.cnpj_cpf import formata
 
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
+from odoo.tools.misc import file_open, format_datetime
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_ISSUER_COMPANY,
@@ -23,7 +24,11 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
 )
 
 from ..constants.fiscal import DOCUMENT_STATE_AUTHORIZED
-from ..tools import EDI_IMPORT_NO_CREATE, EDI_IMPORT_PARTNER_BY_VAT
+from ..tools import (
+    EDI_IMPORT_NO_CREATE,
+    EDI_IMPORT_PARTNER_BY_VAT,
+    EdiImportConcurrencyError,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -54,11 +59,27 @@ class Document(models.Model):
         "documents the company issued needs.",
     )
 
+    import_missing_products = fields.Boolean(
+        compute="_compute_import_missing_products",
+        help="Some line has the code of a product in the file, a confirmed unit and "
+        "no product yet, which the action to create the missing products would "
+        "resolve.",
+    )
+
     import_partner_warning = fields.Text(
         copy=False,
         readonly=True,
         help="Where the data of a partner in the file differ from its registry, "
-        "which the import never changes, and the partners that were matched by name.",
+        "which the import never changes, and the partners that were matched by name. "
+        "It is the picture of the day it was checked (import_partner_checked), and "
+        "the button to check again updates it.",
+    )
+
+    import_partner_checked = fields.Datetime(
+        copy=False,
+        readonly=True,
+        help="When the data of the partners in the file were last compared with "
+        "their registry: at the import, or when somebody checked again.",
     )
 
     @api.depends(
@@ -66,6 +87,8 @@ class Document(models.Model):
         "fiscal_operation_id",
         "import_partner_warning",
         "fiscal_amount_total",
+        "fiscal_line_ids.fiscal_operation_id",
+        "fiscal_line_ids.fiscal_operation_line_id",
         "fiscal_line_ids.partner_ncm_code",
         "fiscal_line_ids.ncm_id",
         "fiscal_line_ids.uom_id",
@@ -84,7 +107,7 @@ class Document(models.Model):
         messages = []
         if not self.imported_document:
             return messages
-        if not self.fiscal_operation_id:
+        if self.fiscal_line_ids and not self.fiscal_operation_id:
             messages.append(
                 _(
                     "No fiscal operation matches the CFOP of the document: choose the "
@@ -93,6 +116,14 @@ class Document(models.Model):
                 )
             )
         for line in self.fiscal_line_ids:
+            if line.fiscal_operation_id and not line.fiscal_operation_line_id:
+                messages.append(
+                    _(
+                        "%(line)s: more than one operation line fits the operation: "
+                        "choose the operation line of the line."
+                    )
+                    % {"line": line.name}
+                )
             if line.partner_ncm_code and not line.ncm_id:
                 messages.append(
                     _("%(line)s: the NCM %(ncm)s is not in the registry.")
@@ -104,6 +135,14 @@ class Document(models.Model):
                     % {"line": line.name, "uom": line.partner_uom_code}
                 )
         if self.import_partner_warning:
+            messages.append(
+                _("Partner data, as compared with the registry on %(date)s:")
+                % {
+                    "date": format_datetime(
+                        self.env, self.import_partner_checked or self.create_date
+                    )
+                }
+            )
             messages.extend(self.import_partner_warning.splitlines())
         return messages
 
@@ -117,12 +156,22 @@ class Document(models.Model):
             lists of ``(name, message)``. A note that was already imported is a
             warning, and its document is returned.
         """
+        # The context of a window action may carry ``default_*`` keys meant for the
+        # records of that window: they would fill the fields of the documents and of
+        # the lines the import creates.
+        service = self.with_context(
+            {
+                key: value
+                for key, value in self.env.context.items()
+                if not key.startswith("default_")
+            }
+        )
         documents = self.browse()
         errors, warnings = [], []
-        for name, content in self._edi_import_expand(files):
+        for name, content in service._edi_import_expand(files):
             try:
                 with self.env.cr.savepoint():
-                    document, created = self._edi_import_file(
+                    document, created = service._edi_import_file(
                         name, content, dfe_document=dfe_document
                     )
                 documents |= document
@@ -139,6 +188,9 @@ class Document(models.Model):
             except UserError as error:
                 _logger.info("Import of %s refused: %s", name, error)
                 errors.append((name, str(error)))
+            except EdiImportConcurrencyError:
+                # not an error of the file: the whole call must run again
+                raise
             except Exception:  # pylint: disable=broad-except
                 _logger.warning("Import of %s failed", name, exc_info=True)
                 errors.append(
@@ -151,6 +203,28 @@ class Document(models.Model):
                     )
                 )
         return documents, errors, warnings
+
+    @api.model
+    def _edi_import_demo_files(self, module, relative_paths):
+        """Import the sample files that a module ships in its demo data.
+
+        Called from the ``demo`` XML of the modules that read a type of file, so that
+        the documents of the demo are imported, reviewed and confirmed by the same
+        service as the ones of a person. A file that fails stops the installation:
+        a broken demo must show up at once.
+
+        :param module: name of the module that holds the files
+        :param relative_paths: paths of the files inside the module
+        :return: the imported documents
+        """
+        files = []
+        for path in relative_paths:
+            with file_open(f"{module}/{path}", "rb") as sample:
+                files.append((path.rsplit("/", 1)[-1], sample.read()))
+        documents, errors, _warnings = self._edi_import_files(files)
+        if errors:
+            raise UserError("\n".join(f"{name}: {message}" for name, message in errors))
+        return documents
 
     @api.model
     def _edi_import_expand(self, files):
@@ -177,9 +251,17 @@ class Document(models.Model):
                 _("The file %s is not a fiscal document that can be imported.") % name
             )
         company, role = self._edi_import_company(parsed)
+        contested = self._edi_import_lock(company, parsed.access_key)
         existing = self.with_company(company)._edi_import_find_existing(parsed, company)
         if existing:
             return existing, False
+        # Only a lock that had to be waited for can hide a document committed after
+        # the snapshot; checking with a cursor of its own otherwise would wait for the
+        # locks of a transaction that holds the tables (the installation, with demo).
+        if contested and self._edi_import_committed_elsewhere(parsed, company):
+            raise EdiImportConcurrencyError(
+                f"The note {name} was imported by a concurrent transaction."
+            )
         self._edi_import_check(parsed, company)
         last_partner = self.env["res.partner"].search([], order="id desc", limit=1)
         try:
@@ -216,7 +298,7 @@ class Document(models.Model):
         checked without it, before anything is created.
         """
         company = self.env["res.company"]
-        role = False
+        role = file_vat = False
         for candidate_role, vat in parsed.company_vats:
             company = (
                 self.env["res.company"]
@@ -224,7 +306,7 @@ class Document(models.Model):
                 .search([("partner_id.cnpj_cpf_stripped", "=", vat)], limit=1)
             )
             if company:
-                role = candidate_role
+                role, file_vat = candidate_role, vat
                 break
         if not company:
             raise UserError(
@@ -233,9 +315,14 @@ class Document(models.Model):
             )
         company = company.sudo(False)
         if not self.env.su and company not in self.env.user.company_ids:
+            # The name of a company the user does not have is not read nor told: the
+            # CNPJ of the file says which one it is
             raise UserError(
-                _("You have no access to the company %s, which the file is for.")
-                % company.display_name
+                _(
+                    "You have no access to the company with the CNPJ %s, which the "
+                    "file is for."
+                )
+                % formata(file_vat)
             )
         if company not in self.env.companies:
             raise UserError(
@@ -243,7 +330,7 @@ class Document(models.Model):
                     "The note is for the company %s, which is not selected in the "
                     "company switcher. Select it and import again."
                 )
-                % company.display_name
+                % company.sudo().display_name
             )
         return company, role
 
@@ -285,12 +372,49 @@ class Document(models.Model):
         ) % {"file": parsed.file_name, "partner": partner or _("(unknown)")}
 
     @api.model
+    def _edi_import_lock(self, company, access_key):
+        """Take, until the end of the transaction, the lock of the note of this company.
+
+        Two imports of the same note that run together would both find that it does
+        not exist and both create it, and nothing in the database forbids it (an
+        existing database may have duplicates, so there is no unique index). The second
+        waits here until the first commits, and then finds the document and answers
+        that the note was already imported.
+
+        :return: whether the lock was contested, that is, somebody else held it and
+            this transaction had to wait. Only then can the document it looks for have
+            been committed after the snapshot of this transaction.
+        """
+        params = (company.id, access_key)
+        self.env.cr.execute(
+            "SELECT pg_try_advisory_xact_lock(%s, hashtext(%s))", params
+        )
+        if self.env.cr.fetchone()[0]:
+            return False
+        self.env.cr.execute("SELECT pg_advisory_xact_lock(%s, hashtext(%s))", params)
+        return True
+
+    @api.model
     def _edi_import_check(self, parsed, company):
         """Refuse what must not enter. Extended by who knows more about the file."""
         if parsed.status == "cancelled":
             raise UserError(_("This note was cancelled by the issuer."))
         if parsed.status == "denied":
             raise UserError(_("This note was denied by the tax authority."))
+
+    @api.model
+    def _edi_import_committed_elsewhere(self, parsed, company):
+        """Whether a transaction that committed after this one began already holds the
+        note. The transaction reads a snapshot taken before it waited for the lock, so
+        the search of the existing document cannot see what that one wrote; a cursor
+        of its own, with a new snapshot, can."""
+        with self.env.registry.cursor() as cursor:
+            cursor.execute(
+                "SELECT 1 FROM l10n_br_fiscal_document "
+                "WHERE document_key = %s AND company_id = %s LIMIT 1",
+                (parsed.access_key, company.id),
+            )
+            return bool(cursor.fetchone())
 
     @api.model
     def _edi_import_find_existing(self, parsed, company):
@@ -425,12 +549,25 @@ class Document(models.Model):
                         "registry": registry[key] or "",
                     }
                 )
+        self.import_partner_checked = fields.Datetime.now()
+        self.import_partner_warning = "\n".join(lines) or False
         if lines:
-            self.import_partner_warning = "\n".join(lines)
             self._message_log(
                 body=_("Partner data that differ from the registry: %s")
                 % "; ".join(lines)
             )
+
+    def action_import_check_partners_again(self):
+        """Compare the data of the partners in the file with the registry again, now:
+        the warning is the picture of when it was last checked, and a registry that was
+        corrected since clears it."""
+        self.ensure_one()
+        attachment = self.original_xml_file_id.with_context(bin_size=False)
+        parsed = attachment and self._edi_import_read(attachment.name, attachment.raw)
+        if not parsed:
+            raise UserError(_("The file of this document is not available to check."))
+        self._edi_import_check_partners(parsed)
+        return True
 
     def _edi_import_suggest(self):
         """Suggest the review of the document. Safe to run again: what a person
@@ -443,8 +580,9 @@ class Document(models.Model):
             elif document.fiscal_operation_type == FISCAL_OUT:
                 document._edi_import_apply_own_products()
             for line in document.fiscal_line_ids.filtered(
-                lambda line: line.import_state == "matched"
-                and line._import_unit_unconfirmed()
+                lambda line: (
+                    line.import_state == "matched" and line._import_unit_unconfirmed()
+                )
             ):
                 line.import_state = "pending"
 
@@ -476,14 +614,69 @@ class Document(models.Model):
                 operation = votes and max(set(votes), key=votes.count)
             if operation:
                 self.fiscal_operation_id = operation
+        self._edi_import_spread_operation(found)
+
+    def _edi_import_spread_operation(self, found=None):
+        """Give the lines that have no operation the one of the document, and the
+        operation line the CFOP of the file points to when it does. Used when the
+        suggestion finds the operation and when a person chooses it on the header:
+        the two end the same. The values and the taxes declared in the file are not
+        touched, and a line that already has an operation keeps it."""
+        self.ensure_one()
         if not self.fiscal_operation_id:
             return
+        if found is None:
+            found = self._edi_import_operation_lines_found()
         for line, operation_line in found.items():
             line.fiscal_operation_id = (
                 operation_line.fiscal_operation_id or self.fiscal_operation_id
             )
+            if not operation_line:
+                # No line answers the CFOP of the file (a CT-e, for instance): the
+                # operation line is applied only when the operation has a single
+                # candidate. With more, the line is left to the person, who is warned.
+                candidates = self._edi_import_operation_line_candidates(
+                    line.fiscal_operation_id
+                )
+                operation_line = line.fiscal_operation_line_id or (
+                    candidates if len(candidates) == 1 else candidates.browse()
+                )
             if operation_line:
                 line.fiscal_operation_line_id = operation_line
+
+    @api.model
+    def _edi_import_operation_line_candidates(self, operation):
+        """The approved lines of the operation, of its type."""
+        return operation.line_ids.filtered(
+            lambda op_line: (
+                op_line.state == "approved"
+                and op_line.fiscal_operation_type == operation.fiscal_operation_type
+            )
+        )
+
+    def _edi_import_operation_lines_found(self):
+        """The operation line of each line that has none, by the CFOP of the file."""
+        self.ensure_one()
+        operation_lines = self.env["l10n_br_fiscal.operation.line"]
+        return {
+            line: operation_lines._find_by_issuer_cfop(
+                line.partner_cfop_id,
+                self.partner_operation_name,
+                self.fiscal_operation_type,
+            )
+            for line in self.fiscal_line_ids.filtered(
+                lambda line: (
+                    not line.fiscal_operation_line_id and not line.fiscal_operation_id
+                )
+            )
+        }
+
+    def write(self, vals):
+        result = super().write(vals)
+        if "fiscal_operation_id" in vals:
+            for document in self.filtered("imported_document"):
+                document._edi_import_spread_operation()
+        return result
 
     def _compute_import_can_create_products(self):
         can_create = self.env["product.product"].check_access_rights(
@@ -491,6 +684,21 @@ class Document(models.Model):
         )
         for document in self:
             document.import_can_create_products = can_create
+
+    @api.depends(
+        "fiscal_line_ids.product_id",
+        "fiscal_line_ids.uom_id",
+        "fiscal_line_ids.import_uom_id",
+        "fiscal_line_ids.partner_uom_code",
+    )
+    def _compute_import_missing_products(self):
+        for document in self:
+            document.import_missing_products = any(
+                not line.product_id
+                and line._get_partner_product_code()
+                and not line._import_unit_unconfirmed()
+                for line in document.fiscal_line_ids
+            )
 
     def _edi_import_own_product(self, code):
         """The product of the company with this internal code: in a document the

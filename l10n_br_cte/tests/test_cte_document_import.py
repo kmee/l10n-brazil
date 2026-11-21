@@ -89,6 +89,9 @@ class TestCteDocumentImport(EdiImportCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.presumed = cls.env.ref("l10n_br_base.empresa_lucro_presumido")
+        # the demo data sets the default products of this company
+        cls.presumed.cte_import_product_id = False
+        cls.presumed.cte_import_service_product_id = False
         # the demo CT-e of the Simples Nacional company has this key
         cls.Document.search([("document_key", "=", CTE_KEY)]).unlink()
         # and the demo CT-e of the company that issues the number of the file
@@ -118,6 +121,25 @@ class TestCteDocumentImport(EdiImportCase):
         return self.env["product.product"].create(
             dict({"name": "Freight service", "type": "service"}, **values)
         )
+
+    def test_the_demo_documents_show_the_import(self):
+        received = self.Document.search(
+            [("document_key", "=", "35240759594315000157570010000070011570007018")]
+        )
+        issued = self.Document.search(
+            [("document_key", "=", "35240781583054000129570010000070021570007029")]
+        )
+        if not received:
+            self.skipTest("the demo data is not installed")
+        freight = self.env.ref("l10n_br_cte.product_freight_purchased")
+        transport = self.env.ref("l10n_br_cte.product_transport_provided")
+        self.assertEqual(received.issuer, "partner")
+        self.assertEqual(received.fiscal_line_ids.product_id, freight)
+        self.assertEqual(len(received.cte40_cobr.cte40_dup), 2)
+        self.assertEqual(len(received._edi_get_installments()), 2)
+        self.assertEqual(issued.issuer, "company")
+        self.assertEqual(issued.state_edoc, "autorizada")
+        self.assertEqual(issued.fiscal_line_ids.product_id, transport)
 
     def test_the_nature_of_the_operation_of_the_file_is_kept(self):
         documents, _errors, _warnings = self._import(cte_xml())
@@ -607,6 +629,24 @@ class TestCteDocumentImport(EdiImportCase):
         self.assertAlmostEqual(documents.fiscal_line_ids.price_unit, 100.0)
         self.assertEqual(documents.cte40_cobr.cte40_fat.cte40_nFat, "987654")
         self.assertEqual(len(documents.cte40_cobr.cte40_dup), 2)
+
+    def test_the_operation_chosen_in_the_header_waits_for_the_operation_line(self):
+        """The CFOP of the CT-e matches no line of the operation and the operation has
+        several candidates: the line is left to the person, with a warning; once the
+        person chooses the operation line, the amounts are the ones of the file."""
+        documents, errors, _warnings = self._import(cte_xml(COLLECTION))
+        self.assertFalse(errors)
+        operation = self.env.ref("l10n_br_fiscal.fo_compras")
+        documents.fiscal_operation_id = operation
+        line = documents.fiscal_line_ids
+        self.assertFalse(line.fiscal_operation_line_id)
+        self.assertIn("choose the operation line", documents.import_warning)
+        line.fiscal_operation_line_id = self.env.ref(
+            "l10n_br_fiscal.fo_compras_compras"
+        )
+        self.assertAlmostEqual(documents.fiscal_amount_total, 100.0)
+        self.assertAlmostEqual(documents.amount_financial_total, 100.0)
+        self.assertNotIn("add up", str(documents.edi_payment_summary))
 
     def test_a_cte_with_a_collection_declares_its_installments_in_order(self):
         documents, errors, _warnings = self._import(cte_xml(COLLECTION))
