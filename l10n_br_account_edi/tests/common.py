@@ -68,6 +68,66 @@ class AccountEdiCase(AccountMoveBRCommon):
             }
         )
 
+    def _own_imported_document(self, confirm=True, with_serie=True, **values):
+        """A note the company issued in another system, imported and authorized.
+        The series of the file is the text of document_serie; the company may
+        have no series record of the type (with_serie=False)."""
+        document_type = self.env.ref("l10n_br_fiscal.document_SE")
+        series = self.env["l10n_br_fiscal.document.serie"].search(
+            [
+                ("document_type_id", "=", document_type.id),
+                ("company_id", "=", self.company.id),
+            ]
+        )
+        series.active = False
+        serie = self.env["l10n_br_fiscal.document.serie"]
+        if with_serie:
+            serie = serie.create(
+                {
+                    "code": "001",
+                    "name": "Series 1",
+                    "document_type_id": document_type.id,
+                    "company_id": self.company.id,
+                }
+            )
+        operation = self.env.ref("l10n_br_fiscal.fo_venda")
+        document = self.env["l10n_br_fiscal.document"].create(
+            {
+                "company_id": self.company.id,
+                "document_type_id": document_type.id,
+                "document_serie_id": serie.id,
+                "document_serie": "001",
+                "document_number": "777",
+                "issuer": "company",
+                "partner_id": self.partner_a.id,
+                "fiscal_operation_id": operation.id,
+                "fiscal_operation_type": "out",
+                "document_date": "2026-01-10 12:00:00",
+                "imported_document": True,
+                **values,
+                "fiscal_line_ids": [
+                    Command.create(
+                        {
+                            "name": "Imported line",
+                            "product_id": self.product_a.id,
+                            "uom_id": self.product_a.uom_id.id,
+                            "quantity": 1,
+                            "price_unit": 1000.0,
+                            "fiscal_operation_type": "out",
+                            "fiscal_operation_id": operation.id,
+                            "fiscal_operation_line_id": self.env.ref(
+                                "l10n_br_fiscal.fo_venda_servico"
+                            ).id,
+                            "import_state": "resolved",
+                        }
+                    )
+                ],
+            }
+        )
+        if confirm:
+            document._trigger_fsm("action_confirm_imported")
+        return document
+
     @contextmanager
     def _declared(self, *installments):
         """The document declares these installments: (due date, amount)."""

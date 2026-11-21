@@ -11,7 +11,7 @@
     "maintainers": ["rvalyi", "renatonlima"],
     "website": "https://github.com/OCA/l10n-brazil",
     "development_status": "Beta",
-    "version": "16.0.21.1.2",
+    "version": "16.0.21.1.3",
     "depends": [
         "l10n_br_fiscal_edi",
         "l10n_br_fiscal_certificate",
@@ -52,6 +52,7 @@
         "demo/res_users_demo.xml",
         "demo/fiscal_document_demo.xml",
         "demo/company_demo.xml",
+        "demo/document_import_demo.xml",
     ],
     "post_init_hook": "post_init_hook",
     "installable": True,

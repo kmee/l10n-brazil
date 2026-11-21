@@ -1,6 +1,9 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+from dataclasses import replace
+from datetime import date
+
 from odoo import _, api, fields, models
 from odoo.tools import frozendict
 
@@ -70,8 +73,26 @@ class AccountMove(models.Model):
     ################################
 
     def _edi_installments(self):
-        """The installments of the invoice, by due date."""
+        """The installments of the invoice, by due date.
+
+        On a draft the lines of the installments are only brought up to date
+        when the invoice is saved, so the preview reads the terms that the
+        invoice will give them (`needed_terms`), which is what the lines hold
+        once they are written."""
         self.ensure_one()
+        if self.state == "draft" and self.needed_terms:
+            terms = sorted(
+                self.needed_terms.items(),
+                key=lambda item: item[0]["date_maturity"] or date.max,
+            )
+            return [
+                EdiInstallment(
+                    number=str(number).zfill(3),
+                    date_due=key["date_maturity"],
+                    amount=abs(values["amount_currency"]),
+                )
+                for number, (key, values) in enumerate(terms, 1)
+            ]
         due_lines = self.line_ids.filtered(
             lambda line: (
                 line.account_id.account_type in PAYABLE_RECEIVABLE
@@ -131,7 +152,15 @@ class AccountMove(models.Model):
                 {
                     "currency": move.currency_id,
                     "installments": move._edi_installments(),
-                    "payments": move._edi_payments(),
+                    "payments": [
+                        replace(
+                            payment,
+                            label=move.fiscal_document_id._edi_payment_means_label(
+                                payment.means
+                            ),
+                        )
+                        for payment in move._edi_payments()
+                    ],
                     "totals": [
                         (
                             _("Document total"),
@@ -149,6 +178,9 @@ class AccountMove(models.Model):
         pays, before the document is confirmed. Until then the page of the
         installments is only a preview."""
         for move in self.filtered(lambda m: m.state == "draft"):
+            if not move.invoice_date and move.is_sale_document(include_receipts=True):
+                # the date that the posting would give: the due dates follow it
+                move.invoice_date = fields.Date.context_today(move)
             for document in move.fiscal_document_ids.filtered(
                 lambda d: (
                     d.document_type_id

@@ -768,7 +768,15 @@ class AccountMove(models.Model):
                     }
                 )
 
+        serie = fiscal_document.document_serie
         move_form.save()
+        if (
+            fiscal_document.imported_document
+            and fiscal_document.document_serie != serie
+        ):
+            # the form has no series record to give back to a document of the
+            # company imported from a file: its series is the text of the file
+            fiscal_document.document_serie = serie
         move = self.env["account.move"].browse(move_form.id)
 
         invoice_line_write_vals = []

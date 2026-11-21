@@ -175,13 +175,33 @@ class TestGeneratePaymentInfo(TransactionCase):
             for installment in invoice._edi_installments():
                 self.assertIn(format_date(self.env, installment.date_due), summary)
             self.assertIn("In installments", summary)
-            self.assertIn("15", summary)
+            self.assertIn("15 - Boleto Bancário", summary)
         self.assertEqual(len(invoice._edi_installments()), 3)
 
         invoice.action_post()
 
         self.assertEqual(len(document.nfe40_dup), 3)
         self.assertFalse(invoice.edi_payment_summary)
+
+    def test_the_preview_of_an_invoice_without_payment_mode_is_what_is_written(self):
+        invoice = self.invoice_demo_data
+        invoice.payment_mode_id = False
+        document = invoice.fiscal_document_id
+
+        (payment,) = invoice._edi_payments()
+        self.assertEqual(
+            (payment.means, payment.amount, payment.term), ("90", 0.0, "cash")
+        )
+        self.assertEqual(document._edi_display_payments(), [payment])
+
+        invoice.action_post()
+
+        written = document.nfe40_detPag
+        self.assertEqual(
+            (written.nfe40_tPag, written.nfe40_vPag, written.nfe40_indPag),
+            ("90", 0.0, "0"),
+        )
+        self.assertEqual(len(document.nfe40_dup), 3)
 
     def test_without_the_means_of_payment_the_duplicates_are_still_written(self):
         """What l10n_br_account_nfe gives is the means of payment: without it
