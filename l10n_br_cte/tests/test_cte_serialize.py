@@ -30,7 +30,9 @@ class TestCTeSerialize(TransactionCase):
             # the expected XML has no autXML: a demo accountant adds one
             # when the document is created
             accountant = cte.company_id.accountant_id
-            cte.cte40_autXML.filtered(lambda a: a.partner_id == accountant).unlink()
+            cte.cte40_autXML.filtered(
+                lambda a, accountant=accountant: a.partner_id == accountant
+            ).unlink()
             cte.company_id.accountant_id = False
             cte_data["cte"] = cte
             cls.prepare_test_cte(cte)
