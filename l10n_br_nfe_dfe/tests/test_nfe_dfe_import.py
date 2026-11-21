@@ -325,6 +325,17 @@ class TestNFeDFeImportByKey(TransactionCase):
             }
         )
 
+    def test_the_button_of_the_imported_document_is_named_for_the_fiscal_document(
+        self,
+    ):
+        user = self._fiscal_user()
+        view = self.env["l10n_br_fiscal_dfe.document"].with_user(user).get_view(
+            self.env.ref("l10n_br_nfe_dfe.view_l10n_br_fiscal_dfe_document_form_nfe").id
+        )
+
+        self.assertIn("Fiscal Document", view["arch"])
+        self.assertNotIn("Invoice", view["arch"])
+
     def test_the_summary_asks_to_acknowledge_before_the_xml_is_requested(self):
         dfe_document = self._summary()
 

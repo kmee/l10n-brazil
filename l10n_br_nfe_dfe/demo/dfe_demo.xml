@@ -13,10 +13,7 @@
     <record id="demo_dfe_document_complete" model="l10n_br_fiscal_dfe.document">
         <field name="access_key">35261173623891000106550010000042011062777198</field>
         <field name="company_id" ref="l10n_br_base.empresa_lucro_real" />
-        <field
-            name="currency_id"
-            eval="obj().env.ref('l10n_br_base.empresa_lucro_real').currency_id.id"
-        />
+        <field name="currency_id" ref="base.BRL" />
         <field name="fiscal_type">nfe</field>
         <field name="emitter">Dell Computadores do Brasil LTDA</field>
         <field name="vat">73.623.891/0001-06</field>
@@ -56,10 +53,7 @@
     <record id="demo_dfe_document_summary" model="l10n_br_fiscal_dfe.document">
         <field name="access_key">35261186144802000190550010000042021062777202</field>
         <field name="company_id" ref="l10n_br_base.empresa_lucro_real" />
-        <field
-            name="currency_id"
-            eval="obj().env.ref('l10n_br_base.empresa_lucro_real').currency_id.id"
-        />
+        <field name="currency_id" ref="base.BRL" />
         <field name="fiscal_type">nfe</field>
         <field name="emitter">Intel do Brasil</field>
         <field name="vat">86.144.802/0001-90</field>
