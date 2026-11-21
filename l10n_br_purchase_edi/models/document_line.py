@@ -4,7 +4,7 @@
 from collections import defaultdict
 
 from odoo import _, api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 from odoo.tools import float_compare
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
@@ -288,6 +288,22 @@ class FiscalDocumentLine(models.Model):
                 self.product_id,
             )
         )
+
+    def action_open_import_origin(self):
+        """Open the origin of the line, resolved or suggested: the purchase order
+        of the order line. The link modules put their own record first (a
+        receipt, a purchase request) when the line has one."""
+        self.ensure_one()
+        order = self.sudo().import_purchase_line_id.order_id
+        if not order:
+            raise UserError(_("The line has no origin to open."))
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": "purchase.order",
+            "res_id": order.id,
+            "views": [(False, "form")],
+            "target": "current",
+        }
 
     def _find_purchase_line_by_declared_item(self):
         """The only confirmed order line that the file declares by order and item

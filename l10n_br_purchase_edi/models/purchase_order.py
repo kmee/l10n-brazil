@@ -1,7 +1,7 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import models
+from odoo import api, fields, models
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_ISSUER_PARTNER,
@@ -11,6 +11,58 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
 
 class PurchaseOrder(models.Model):
     _inherit = "purchase.order"
+
+    import_document_ids = fields.Many2many(
+        comodel_name="l10n_br_fiscal.document",
+        compute="_compute_import_documents",
+        string="Fiscal Documents",
+        groups="l10n_br_fiscal.group_user",
+        help="Technical: the imported fiscal documents whose lines point to a "
+        "line of this order.",
+    )
+    import_document_count = fields.Integer(
+        compute="_compute_import_documents",
+        string="Fiscal Documents Count",
+        groups="l10n_br_fiscal.group_user",
+    )
+
+    @api.depends("order_line")
+    def _compute_import_documents(self):
+        # one reading for all the orders of the list
+        lines = (
+            self.env["l10n_br_fiscal.document.line"]
+            .sudo()
+            .search(
+                [
+                    ("import_purchase_line_id.order_id", "in", self.ids),
+                    ("document_id.imported_document", "=", True),
+                ]
+            )
+        )
+        documents = {}
+        for line in lines:
+            order = line.import_purchase_line_id.order_id
+            documents[order.id] = documents.get(order.id, line.document_id) | (
+                line.document_id
+            )
+        for order in self:
+            found = documents.get(order.id, self.env["l10n_br_fiscal.document"])
+            order.import_document_ids = found
+            order.import_document_count = len(found)
+
+    def action_view_import_documents(self):
+        """The imported fiscal document of the order, or the list of them."""
+        self.ensure_one()
+        documents = self.sudo().import_document_ids
+        action = self.env["ir.actions.act_window"]._for_xml_id(
+            "l10n_br_fiscal_edi.imported_document_action"
+        )
+        if len(documents) == 1:
+            action["views"] = [(False, "form")]
+            action["res_id"] = documents.id
+        else:
+            action["domain"] = [("id", "in", documents.ids)]
+        return action
 
     def button_approve(self, force=False):
         result = super().button_approve(force=force)
