@@ -385,6 +385,10 @@ class DocumentLine(models.Model):
                     % (line.name or line.id)
                 )
             line._apply_import_depara()
+        # The button sits in the dialog of the line: the form of the document keeps
+        # the values it read before (the taxes of the product, for one), so it is
+        # read again.
+        return {"type": "ir.actions.client", "tag": "reload"}
 
     def _apply_import_depara(
         self, product=None, uom=None, factor=None, fiscal_operation=None
