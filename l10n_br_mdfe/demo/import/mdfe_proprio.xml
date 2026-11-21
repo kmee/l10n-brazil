@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mdfeProc xmlns="http://www.portalfiscal.inf.br/mdfe" versao="3.00"><MDFe xmlns="http://www.portalfiscal.inf.br/mdfe">
-  <infMDFe Id="MDFe50170881583054000129580010000011311421039566" versao="3.00">
+  <infMDFe Id="MDFe50170881583054000129580010000091311421039562" versao="3.00">
     <ide>
       <cUF>50</cUF>
       <tpAmb>1</tpAmb>
       <tpEmit>2</tpEmit>
       <mod>58</mod>
       <serie>1</serie>
-      <nMDF>1131</nMDF>
+      <nMDF>9131</nMDF>
       <cMDF>42103956</cMDF>
-      <cDV>6</cDV>
+      <cDV>2</cDV>
       <modal>1</modal>
       <dhEmi>2017-08-21T10:41:00-03:00</dhEmi>
       <tpEmis>1</tpEmis>
@@ -74,4 +74,4 @@
       <qCarga>44264.0000</qCarga>
     </tot>
   </infMDFe>
-</MDFe><protMDFe versao="3.00"><infProt><tpAmb>2</tpAmb><verAplic>demo</verAplic><chMDFe>50170881583054000129580010000011311421039566</chMDFe><dhRecbto>2017-08-21T10:45:00-03:00</dhRecbto><nProt>150170000000001</nProt><digVal>YWJj</digVal><cStat>100</cStat><xMotivo>Autorizado o uso do MDF-e</xMotivo></infProt></protMDFe></mdfeProc>
+</MDFe><protMDFe versao="3.00"><infProt><tpAmb>2</tpAmb><verAplic>demo</verAplic><chMDFe>50170881583054000129580010000091311421039562</chMDFe><dhRecbto>2017-08-21T10:45:00-03:00</dhRecbto><nProt>150170000000001</nProt><digVal>YWJj</digVal><cStat>100</cStat><xMotivo>Autorizado o uso do MDF-e</xMotivo></infProt></protMDFe></mdfeProc>

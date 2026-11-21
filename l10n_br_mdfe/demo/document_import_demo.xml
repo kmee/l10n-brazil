@@ -5,7 +5,7 @@
 
     <!-- MDF-e issued by the company of the demo (Empresa Lucro Presumido) in
          another system, with its authorization protocol: it is imported as
-         authorized. Access key 50170881583054000129580010000011311421039566. -->
+         authorized. Access key 50170881583054000129580010000091311421039562. -->
     <function model="l10n_br_fiscal.document" name="_edi_import_demo_files">
         <value>l10n_br_mdfe</value>
         <value eval="['demo/import/mdfe_proprio.xml']" />
@@ -14,7 +14,7 @@
     <function model="l10n_br_fiscal.document" name="action_document_confirm">
         <value
             model="l10n_br_fiscal.document"
-            search="[('document_key', '=', '50170881583054000129580010000011311421039566')]"
+            search="[('document_key', '=', '50170881583054000129580010000091311421039562')]"
         />
     </function>
 

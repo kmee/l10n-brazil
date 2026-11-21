@@ -218,7 +218,7 @@ class TestMdfeDocumentImport(EdiImportCase):
 
     def test_the_demo_mdfe_is_imported_as_authorized(self):
         document = self.Document.search(
-            [("document_key", "=", "50170881583054000129580010000011311421039566")]
+            [("document_key", "=", "50170881583054000129580010000091311421039562")]
         )
         if not document:
             self.skipTest("the demo data is not installed")
