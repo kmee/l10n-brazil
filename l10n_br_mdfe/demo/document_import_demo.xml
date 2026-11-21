@@ -11,4 +11,11 @@
         <value eval="['demo/import/mdfe_proprio.xml']" />
     </function>
 
+    <function model="l10n_br_fiscal.document" name="action_document_confirm">
+        <value
+            model="l10n_br_fiscal.document"
+            search="[('document_key', '=', '50170881583054000129580010000011311421039566')]"
+        />
+    </function>
+
 </odoo>
