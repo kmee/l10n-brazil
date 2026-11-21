@@ -45,6 +45,7 @@ from ..constants.nfse_nacional import (
     DANFSE_NACIONAL_TEMPLATE,
     NFSE_NACIONAL_CANCEL_EVENT,
     NFSE_NACIONAL_CANCEL_OFICIO_EVENT,
+    NFSE_NACIONAL_SUSPENSION_TYPES,
     PROVEDOR_NFSE_NACIONAL,
 )
 from ..transport.adn_rest import AdnRestClient
@@ -510,6 +511,49 @@ class L10nBrFiscalDocument(spec_models.StackedModel):
         return SpecMixinExport._export_many2one(
             self, field_name, xsd_required, class_obj
         )
+
+    ##########################
+    # NFS-e tags: exigSusp and BM (tribMun)
+    ##########################
+
+    def _export_tag_nfse_10_exigsusp(self, xsd_fields, class_obj, export_dict):
+        line = self._nfse10_service_line()
+        suspension = NFSE_NACIONAL_SUSPENSION_TYPES.get(line.issqn_eligibility)
+        # E0585: the suspension is only declared for a taxable service
+        if not suspension or self.nfse10_tribISSQN != "1":
+            return
+        process = self.company_id.nfse_suspension_process
+        if not process:
+            raise UserError(
+                _(
+                    "The ISSQN of %(line)s is suspended: inform the suspension "
+                    "process in the company %(company)s.",
+                    line=line.name,
+                    company=self.company_id.name,
+                )
+            )
+        export_dict.update(tpSusp=suspension, nProcesso=process)
+
+    def _export_tag_nfse_10_bm(self, xsd_fields, class_obj, export_dict):
+        line = self._nfse10_service_line()
+        code = line.city_taxation_code_id
+        company = self.company_id
+        # E0533, E0534 and E0535: taxable service, provider not MEI, no special regime
+        if (
+            not code.nfse_benefit_code
+            or self.nfse10_tribISSQN != "1"
+            or company.nfse10_opSimpNac == "2"
+            or (company.nfse10_regEspTrib or "0") != "0"
+        ):
+            return
+        export_dict["nBM"] = code.nfse_benefit_code
+        if code.nfse_benefit_type == "2" and line.issqn_reduction:
+            export_dict["pRedBCBM"] = f"{line.issqn_reduction:.2f}"
+        elif code.nfse_benefit_type == "3" and line.issqn_reduction:
+            # the value reduced from the base of the single service
+            amounts = self._nfse10_service_amounts()
+            base = amounts["price_gross"] - amounts["discount_value"]
+            export_dict["vRedBCBM"] = f"{base * line.issqn_reduction / 100:.2f}"
 
     ##########################
     # NFS-e tag: IBSCBS

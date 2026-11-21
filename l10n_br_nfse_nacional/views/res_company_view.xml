@@ -18,6 +18,10 @@
                     name="nfse_nacional_concat_lines"
                     invisible="provedor_nfse != 'nacional'"
                 />
+                <field
+                    name="nfse_suspension_process"
+                    invisible="provedor_nfse != 'nacional'"
+                />
             </field>
         </field>
     </record>
