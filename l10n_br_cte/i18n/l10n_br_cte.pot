@@ -6179,3 +6179,19 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_cte.field_cte_40_tprotgtve__cte40_versao
 msgid "versao"
 msgstr ""
+
+#. module: l10n_br_cte
+#. odoo-python
+#: code:addons/l10n_br_cte/models/document.py:0
+#, python-format
+msgid ""
+"The CT-e requires ICMS on its line, and the line %(line)s has no ICMS CST. "
+"Choose an operation line and a service that tax ICMS, not ISSQN."
+msgstr ""
+
+#. module: l10n_br_cte
+#. odoo-python
+#: code:addons/l10n_br_cte/models/document.py:0
+#, python-format
+msgid "without name"
+msgstr ""
