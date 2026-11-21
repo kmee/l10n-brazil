@@ -267,13 +267,17 @@ class L10nBrFiscalDocument(spec_models.StackedModel):
         self.ensure_one()
         line = self._nfse10_service_line()
         if not self.nfse_nacional_concat_lines:
-            return line.name
+            return self._nfse10_line_description(line)
         names = [
-            doc_line.name
+            self._nfse10_line_description(doc_line)
             for doc_line in self.fiscal_line_ids
             if doc_line.product_id and doc_line.name
         ]
         return "\n".join(names)[:2000].rstrip() or line.name
+
+    def _nfse10_line_description(self, line):
+        # the fiscal comments of the line (additional_data) replace its name
+        return (line.additional_data or "").strip() or line.name
 
     def _nfse10_trib_issqn_code(self, line):
         """tribISSQN of the single service: taxable, immune, exempt..."""
@@ -304,7 +308,10 @@ class L10nBrFiscalDocument(spec_models.StackedModel):
             "cTribNac": line.national_taxation_code_id.code_unmasked or None,
             "cTribMun": line.city_taxation_code_id.code_unmasked or None,
             "cNBS": line.nbs_id.code_unmasked or None,
-            "cLocPrestacao": line.issqn_fg_city_id.ibge_code or None,
+            "cLocPrestacao": (
+                line.issqn_service_city_id or line.issqn_fg_city_id
+            ).ibge_code
+            or None,
             "tribISSQN": self._nfse10_trib_issqn_code(line),
             "PIS/COFINS CST": self._nfse10_pis_cst(line),
             "RTC cClassTrib": line.tax_classification_id.code or None,
