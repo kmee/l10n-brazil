@@ -45,7 +45,7 @@ def mensagem(codigo, texto):
     )
 
 
-def comp_nfse(numero_rps, cancelada=False):
+def comp_nfse(numero_rps, cancelada=False, numero=55):
     cancelamento = (
         '<t:NfseCancelamento versao="2.04"><t:Confirmacao>'
         "<t:DataHora>2026-11-10T11:00:00</t:DataHora></t:Confirmacao>"
@@ -55,7 +55,7 @@ def comp_nfse(numero_rps, cancelada=False):
     )
     return (
         f'<t:CompNfse xmlns:t="{NS_TIPOS}"><t:Nfse versao="2.04">'
-        '<t:InfNfse Id="nfse55"><t:Numero>55</t:Numero>'
+        f'<t:InfNfse Id="nfse{numero}"><t:Numero>{numero}</t:Numero>'
         "<t:CodigoVerificacao>ABC123XYZ</t:CodigoVerificacao>"
         "<t:DataEmissao>2026-11-10T10:00:05</t:DataEmissao>"
         "<t:DeclaracaoPrestacaoServico><t:InfDeclaracaoPrestacaoServico>"
@@ -139,6 +139,37 @@ CANCELADA = soap(
         f'<RetCancelamento><t:NfseCancelamento xmlns:t="{NS_TIPOS}" versao="2.04">'
         "<t:Confirmacao><t:DataHora>2026-11-10T11:00:00</t:DataHora>"
         "</t:Confirmacao></t:NfseCancelamento></RetCancelamento>",
+    ),
+)
+
+
+def substituida(numero_rps):
+    return soap(
+        "SubstituirNfse",
+        resposta(
+            "substituir-nfse-resposta",
+            "SubstituirNfseResposta",
+            f"<RetSubstituicao><NfseSubstituida>{comp_nfse(50, cancelada=True)}"
+            f"</NfseSubstituida><NfseSubstituidora>{comp_nfse(numero_rps, numero=56)}"
+            "</NfseSubstituidora></RetSubstituicao>",
+        ),
+    )
+
+
+SUBSTITUICAO_OCUPADA = soap(
+    "SubstituirNfse",
+    resposta(
+        "substituir-nfse-resposta",
+        "SubstituirNfseResposta",
+        mensagem("A02", "Empresa ja esta com uma consulta em andamento"),
+    ),
+)
+SUBSTITUICAO_RECUSADA = soap(
+    "SubstituirNfse",
+    resposta(
+        "substituir-nfse-resposta",
+        "SubstituirNfseResposta",
+        mensagem("E79", "NFS-e ja cancelada"),
     ),
 )
 CANCELAMENTO_RECUSADO = soap(
@@ -528,4 +559,52 @@ class TestNFSeGiss(TestFiscalDocumentNFSeCommon):
         with self.assertRaises(UserError) as error:
             self.nfse._document_cancel("Erro na emissao da nota fiscal")
         self.assertIn("E79", str(error.exception))
+        self.assertEqual(self.nfse.state_edoc, "autorizada")
+
+    # ------------------------------------------------------------ substitution
+
+    def _replacement(self):
+        self._send(RPS_NAO_ENCONTRADO, PROTOCOLO, LOTE_PROCESSADO)
+        action = self.nfse.action_nfse_replace()
+        new = self.env[action["res_model"]].browse(action["res_id"])
+        self.assertEqual(new.nfse_replaced_document_id, self.nfse)
+        new.action_document_confirm()
+        self.session.chamadas.clear()
+        return new
+
+    def test_replace(self):
+        new = self._replacement()
+        self.session.respostas = [RPS_NAO_ENCONTRADO, substituida(int(new.rps_number))]
+        new.action_document_send()
+        self.assertEqual(
+            self.session.operacoes, ["ConsultarNfsePorRps", "SubstituirNfse"]
+        )
+        pedido = self.session.chamadas[1]["dados"]
+        self.assertEqual(
+            pedido.findtext(f".//{T}InfPedidoCancelamento//{T}Numero"), "55"
+        )
+        self.assertEqual(new.state_edoc, "autorizada")
+        self.assertEqual(new.document_number, "56")
+        self.assertEqual(self.nfse.state_edoc, "cancelada")
+        self.assertIn("56", self.nfse.cancel_reason)
+        self.assertTrue(self.nfse.cancel_event_id)
+
+    def test_replace_again_while_the_city_hall_is_busy(self):
+        new = self._replacement()
+        self.session.respostas = [
+            RPS_NAO_ENCONTRADO,
+            SUBSTITUICAO_OCUPADA,
+            substituida(int(new.rps_number)),
+        ]
+        new.action_document_send()
+        self.assertEqual(self.session.operacoes.count("SubstituirNfse"), 2)
+        self.assertEqual(new.state_edoc, "autorizada")
+        self.assertEqual(self.nfse.state_edoc, "cancelada")
+
+    def test_replace_refused_keeps_the_old_nfse(self):
+        new = self._replacement()
+        self.session.respostas = [RPS_NAO_ENCONTRADO, SUBSTITUICAO_RECUSADA]
+        new.action_document_send()
+        self.assertEqual(new.state_edoc, "rejeitada")
+        self.assertIn("E79", new.edoc_error_message)
         self.assertEqual(self.nfse.state_edoc, "autorizada")

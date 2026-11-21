@@ -3,6 +3,7 @@
 
 import logging
 import time
+from dataclasses import replace
 from datetime import datetime
 from decimal import Decimal
 
@@ -123,6 +124,13 @@ class Document(models.Model):
         giss = self.filtered(filter_processador_edoc_nfse).filtered(filter_giss)
         giss.is_nfse_giss = True
         (self - giss).is_nfse_giss = False
+
+    def _compute_nfse_replace_supported(self):
+        result = super()._compute_nfse_replace_supported()
+        self.filtered(filter_processador_edoc_nfse).filtered(
+            filter_giss
+        ).nfse_replace_supported = True
+        return result
 
     # -------------------------------------------------------------------------
     # Provider
@@ -521,16 +529,20 @@ class Document(models.Model):
         else:
             self._giss_reject(retorno)
 
-    def _giss_send_lot(self, provider, xml):
-        """Send the lot, again while the city hall answers it is still busy
-        with the query by RPS made just before."""
+    def _giss_call_when_free(self, call, *args):
+        """Make the call again while the city hall answers it is still busy
+        with the previous request of the company (A02)."""
         for attempt in range(GISS_BUSY_ATTEMPTS):
             if attempt:
                 time.sleep(GISS_BUSY_WAIT)
-            retorno = provider.recepcionar_lote_rps(xml)
+            retorno = call(*args)
             if GISS_BUSY not in [m.codigo for m in retorno.mensagens + retorno.alertas]:
                 break
         return retorno
+
+    def _giss_send_lot(self, provider, xml):
+        """Send the lot, again while the city hall is busy."""
+        return self._giss_call_when_free(provider.recepcionar_lote_rps, xml)
 
     def _eletronic_document_send(self):
         result = super()._eletronic_document_send()
@@ -545,8 +557,12 @@ class Document(models.Model):
                 )
                 if anterior.nfses and not anterior.nfses[0].cancelada:
                     record._giss_authorize(anterior)
+                    record._nfse_mark_replaced()
                     continue
                 xml = XmlSerializer().render(record._serialize_nfse_giss())
+                if record.nfse_replaced_document_id:
+                    record._giss_replace(provider, xml)
+                    continue
                 envio_lote = record._giss_send_lot(provider, xml)
                 if not envio_lote.sucesso or not envio_lote.protocolo:
                     record._giss_reject(envio_lote)
@@ -610,6 +626,37 @@ class Document(models.Model):
     def _before_document_cancel(self):
         result = super()._before_document_cancel()
         for record in self.filtered(filter_processador_edoc_nfse).filtered(filter_giss):
-            if record.state_edoc == SITUACAO_EDOC_AUTORIZADA:
+            if record.state_edoc != SITUACAO_EDOC_AUTORIZADA:
+                continue
+            # in a substitution the city hall already cancelled it
+            if not self.env.context.get("nfse_replaced_xml"):
                 record._giss_cancel()
         return result
+
+    # -------------------------------------------------------------------------
+    # Substitution
+    # -------------------------------------------------------------------------
+
+    def _giss_replace(self, provider, xml):
+        """Send the RPS as the substitution of the replaced NFS-e."""
+        self.ensure_one()
+        old = self.nfse_replaced_document_id
+        if old.state_edoc != SITUACAO_EDOC_AUTORIZADA or not old.document_number:
+            raise UserError(
+                self.env._(
+                    "The NFS-e %(document)s is not authorized: it cannot be replaced.",
+                    document=old.display_name,
+                )
+            )
+        retorno = self._giss_call_when_free(
+            provider.substituir_nfse,
+            old.document_number,
+            xml,
+            old.nfse_giss_cancel_code or CANCELAMENTO_ERRO_EMISSAO,
+        )
+        if not retorno.sucesso or not retorno.nfse_substituidora:
+            self._giss_reject(retorno)
+            return
+        # the answer carries both NFS-e: authorize with the new one only
+        self._giss_authorize(replace(retorno, nfses=[retorno.nfse_substituidora]))
+        self._nfse_mark_replaced(retorno.xml_enviado, retorno.xml_resposta)
