@@ -23,22 +23,25 @@ class TestNfseExportedService(TransactionCase):
             }
         )
 
+    def _trib_issqn(self, line):
+        return self.line.document_id._nfse10_trib_issqn_code(line)
+
     def test_an_exported_service_is_not_declared_as_taxable(self):
         self.line.issqn_eligibility = "4"
-        self.assertEqual(self.line.nfse10_tribISSQN, "3")
+        self.assertEqual(self._trib_issqn(self.line), "3")
 
         self.line.issqn_eligibility = "5"
-        self.assertEqual(self.line.nfse10_tribISSQN, "2")
+        self.assertEqual(self._trib_issqn(self.line), "2")
 
         self.line.issqn_eligibility = "1"
-        self.assertEqual(self.line.nfse10_tribISSQN, "1")
+        self.assertEqual(self._trib_issqn(self.line), "1")
 
     def test_a_new_line_is_taxable_and_not_exempt(self):
         """A new line is born taxable: "Exigivel" is the common case of a
         service note, and the DPS carries tribISSQN 1."""
         line = self.env["l10n_br_fiscal.document.line"].new({})
         self.assertEqual(line.issqn_eligibility, "1")
-        self.assertEqual(line.nfse10_tribISSQN, "1")
+        self.assertEqual(self._trib_issqn(line), "1")
 
     def test_a_taker_abroad_carries_its_own_tax_number(self):
         self.abroad.vat = "ESA58818501"
