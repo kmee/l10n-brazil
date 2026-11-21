@@ -54,23 +54,16 @@ class TestNfseDocumentImport(EdiImportCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.presumed = cls.env.ref("l10n_br_base.empresa_lucro_presumido")
+        # the demo data sets the default service of this company
+        cls.presumed.nfse_import_product_id = False
         cls.provider = cls.env["res.partner"].search(
             [("cnpj_cpf_stripped", "=", PROVIDER)], limit=1
         )
 
-    def _import(self, content, model=None, operation=False, operation_type="in"):
-        """Import the file; with ``operation``, a person has chosen the operation
-        line of the service, as the review asks."""
-        documents, errors, warnings = (
-            self.Document if model is None else model
-        )._edi_import_files([("nfse.xml", content)])
-        if (operation or operation_type == "out") and documents:
-            documents.fiscal_line_ids.fiscal_operation_line_id = self.env.ref(
-                "l10n_br_fiscal.fo_compras_compras"
-                if operation_type == "in"
-                else "l10n_br_fiscal.fo_venda_venda"
-            )
-        return documents, errors, warnings
+    def _import(self, content, model=None):
+        return (self.Document if model is None else model)._edi_import_files(
+            [("nfse.xml", content)]
+        )
 
     def test_a_nfse_is_read_and_becomes_a_document_of_the_taker(self):
         documents, errors, _warnings = self._import(nfse_xml())
@@ -107,7 +100,6 @@ class TestNfseDocumentImport(EdiImportCase):
         sequences = self._sequences()
         documents, errors, _warnings = self._import(
             nfse_xml(taker=UNKNOWN_PROVIDER, provider=LUCRO_PRESUMIDO),
-            operation_type="out",
         )
         self.assertFalse(errors)
         self.assertEqual(documents.company_id, self.presumed)
@@ -134,7 +126,6 @@ class TestNfseDocumentImport(EdiImportCase):
             nfse_xml(
                 taker=UNKNOWN_PROVIDER, provider=LUCRO_PRESUMIDO, withholdings=True
             ),
-            operation_type="out",
         )
         self.assertFalse(errors)
         self.assertAlmostEqual(documents.amount_tax_withholding, 61.5)
@@ -224,9 +215,7 @@ class TestNfseDocumentImport(EdiImportCase):
         company = self.presumed
         watched = partner | company.partner_id
         before = (company.name, self._registry(watched))
-        documents, errors, _warnings = self._import(
-            content, operation=True, operation_type="out" if issued else "in"
-        )
+        documents, errors, _warnings = self._import(content)
         self.assertFalse(errors)
         self.assertEqual(documents.partner_id, partner)
         self._review_and_confirm(documents)
@@ -308,6 +297,108 @@ class TestNfseDocumentImport(EdiImportCase):
         self.assertFalse(errors)
         with Form(documents.with_user(user)) as form:
             form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+
+    def test_the_line_of_a_nfse_comes_with_the_operation_line_of_the_service(self):
+        for content, xmlid in (
+            (nfse_xml(), "l10n_br_fiscal.fo_compras_servico"),
+            (
+                nfse_xml(taker=UNKNOWN_PROVIDER, provider=LUCRO_PRESUMIDO),
+                "l10n_br_fiscal.fo_venda_servico",
+            ),
+        ):
+            documents, errors, _warnings = self._import(content)
+            self.assertFalse(errors)
+            self.assertEqual(
+                documents.fiscal_line_ids.fiscal_operation_line_id,
+                self.env.ref(xmlid),
+            )
+            self.assertNotIn("operation line", documents.import_warning or "")
+            documents.unlink()
+
+    def test_a_operation_without_a_service_line_leaves_the_line_pending(self):
+        operation_line = self.env.ref("l10n_br_fiscal.fo_compras_servico")
+        operation_line.state = "draft"
+        documents, errors, _warnings = self._import(nfse_xml())
+        self.assertFalse(errors)
+        self.assertFalse(documents.fiscal_line_ids.fiscal_operation_line_id)
+        self.assertIn("choose the operation line", documents.import_warning)
+
+    def test_choosing_the_operation_line_of_the_nfse_keeps_its_taxes(self):
+        if "nfe.40.di" in self.env:
+            self.skipTest(
+                "the form reads the NF-e models: their rules are of l10n_br_nfe"
+            )
+        user = self._fiscal_user("fiscal_user_nfse_line", self.presumed)
+        documents, errors, _warnings = self._import(
+            nfse_xml(
+                taker=UNKNOWN_PROVIDER, provider=LUCRO_PRESUMIDO, withholdings=True
+            )
+        )
+        self.assertFalse(errors)
+        documents.document_serie_id = self.env["l10n_br_fiscal.document.serie"].create(
+            {
+                "code": "7",
+                "name": "7",
+                "document_type_id": documents.document_type_id.id,
+                "company_id": self.presumed.id,
+            }
+        )
+        line = documents.fiscal_line_ids
+        before = (
+            line.fiscal_tax_ids,
+            line.issqn_value,
+            line.pis_wh_value,
+            line.fiscal_amount_total,
+            documents.fiscal_amount_total,
+        )
+        self.assertTrue(before[0])
+        operation_line = self.env.ref("l10n_br_fiscal.fo_venda_servico")
+        line.fiscal_operation_line_id = False
+        documents = documents.with_user(user).with_context(
+            allowed_company_ids=self.presumed.ids
+        )
+        with Form(documents) as form:
+            with form.fiscal_line_ids.edit(0) as line_form:
+                line_form.fiscal_operation_line_id = operation_line
+        line = documents.fiscal_line_ids
+        self.assertEqual(line.fiscal_operation_line_id, operation_line)
+        self.assertEqual(
+            (
+                line.fiscal_tax_ids,
+                line.issqn_value,
+                line.pis_wh_value,
+                line.fiscal_amount_total,
+                documents.fiscal_amount_total,
+            ),
+            before,
+        )
+
+    def test_the_demo_documents_show_the_import_and_the_confirmation(self):
+        documents = self.Document.search(
+            [
+                (
+                    "document_key",
+                    "in",
+                    [
+                        "42024042259594315000157000000000000126031234567890",
+                        "42024042281583054000129000000000000226031234567896",
+                    ],
+                )
+            ],
+            order="document_key",
+        )
+        if not documents:
+            self.skipTest("the demo data is not installed")
+        received, issued = documents
+        service = self.env.ref("l10n_br_fiscal.customized_development_sale")
+        self.assertEqual(received.issuer, "partner")
+        self.assertEqual(received.state_edoc, "em_digitacao")
+        self.assertGreater(received.amount_tax_withholding, 0.0)
+        self.assertEqual(received.fiscal_line_ids.product_id, service)
+        self.assertEqual(issued.issuer, "company")
+        self.assertEqual(issued.state_edoc, "autorizada")
+        self.assertEqual(issued.fiscal_line_ids.product_id, service)
+        self.assertTrue(issued.fiscal_line_ids.fiscal_operation_line_id)
 
     def test_the_service_of_an_nfse_issued_by_the_company_is_never_created(self):
         content = nfse_xml(taker=UNKNOWN_PROVIDER, provider=LUCRO_PRESUMIDO)
@@ -403,14 +494,12 @@ class TestNfseDocumentImport(EdiImportCase):
         self.assertEqual(documents.fiscal_line_ids.product_id, product)
 
     def test_a_nfse_without_withholdings_has_no_page(self):
-        documents, _errors, _warnings = self._import(nfse_xml(), operation=True)
+        documents, _errors, _warnings = self._import(nfse_xml())
         self.assertEqual(documents.amount_tax_withholding, 0.0)
         self.assertFalse(documents.edi_payment_summary)
 
     def test_a_nfse_with_withholdings_shows_them_and_the_net_amount(self):
-        documents, errors, _warnings = self._import(
-            nfse_xml(withholdings=True), operation=True
-        )
+        documents, errors, _warnings = self._import(nfse_xml(withholdings=True))
         self.assertFalse(errors)
         line = documents.fiscal_line_ids
         self.assertAlmostEqual(line.pis_wh_value, 6.5)
@@ -433,7 +522,6 @@ class TestNfseDocumentImport(EdiImportCase):
     def test_every_withholding_of_the_file_has_value_base_and_tax(self):
         documents, errors, _warnings = self._import(
             nfse_xml(withholdings=True).replace(b"<tpRetISSQN>1<", b"<tpRetISSQN>2<"),
-            operation=True,
         )
         self.assertFalse(errors)
         line = documents.fiscal_line_ids
@@ -461,9 +549,7 @@ class TestNfseDocumentImport(EdiImportCase):
 
     def test_confirming_a_nfse_issued_by_the_company_neither_sends_nor_learns(self):
         content = nfse_xml(taker=UNKNOWN_PROVIDER, provider=LUCRO_PRESUMIDO)
-        documents, _errors, _warnings = self._import(
-            content, operation=True, operation_type="out"
-        )
+        documents, _errors, _warnings = self._import(content)
         self.assertEqual(documents.fiscal_operation_type, "out")
         line = documents.fiscal_line_ids
         line.product_id = self.env["product.product"].create(
@@ -487,9 +573,7 @@ class TestNfseDocumentImport(EdiImportCase):
         model = self.Document.with_user(user).with_context(
             allowed_company_ids=self.presumed.ids
         )
-        documents, errors, _warnings = self._import(
-            nfse_xml(withholdings=True), model, operation=True
-        )
+        documents, errors, _warnings = self._import(nfse_xml(withholdings=True), model)
         self.assertFalse(errors)
         self.assertEqual(documents.create_uid, user)
         self.assertAlmostEqual(documents.amount_tax_withholding, 61.5)
