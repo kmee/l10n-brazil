@@ -176,6 +176,19 @@ class TestNfeManifestOnConfirm(EdiImportCase):
         xml = re.sub(
             rb"(<dest>\s*)<CNPJ>\d+</CNPJ>", rb"\1<CNPJ>11444777000161</CNPJ>", xml
         )
+        # the file as the authority returns it: a note the company issued is confirmed
+        # as authorized only with the protocol
+        body = xml.decode().split("?>", 1)[1].strip()
+        protocol = (
+            '<protNFe versao="4.00"><infProt><tpAmb>2</tpAmb><verAplic>SVRS</verAplic>'
+            f"<chNFe>{key}</chNFe><dhRecbto>2026-06-10T10:15:00-03:00</dhRecbto>"
+            "<nProt>135200000000099</nProt><digVal>abc=</digVal><cStat>100</cStat>"
+            "<xMotivo>Autorizado o uso da NF-e</xMotivo></infProt></protNFe>"
+        )
+        xml = (
+            '<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">'
+            f"{body.replace('</NFe>', '</NFe>' + protocol)}</nfeProc>"
+        ).encode()
         company = self.env.ref("l10n_br_base.empresa_lucro_presumido")
         company.nfe_manifest_on_document_confirm = "confirmacao"
         documents, errors, _warnings = self.Document._edi_import_files(
