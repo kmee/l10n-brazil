@@ -115,6 +115,7 @@ class FiscalDocument(models.Model):
                 [
                     ("partner_id", "=", self.partner_id.id),
                     ("product_code", "=", code),
+                    ("company_id", "in", [False, self.company_id.id]),
                     "|",
                     ("product_id", "=", product.id),
                     ("product_tmpl_id", "=", product.product_tmpl_id.id),
