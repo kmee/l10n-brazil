@@ -4,9 +4,16 @@
 <odoo>
     <!--
       What every SPED book of the demo company needs, in the install month:
-      one supplier invoice as the NF-e import leaves it. Each book module
-      closes its own assessments and generates its file on top of this.
+      the CRC of its accountant (register 0100) and one supplier invoice as
+      the NF-e import leaves it. Each book module closes its own assessments and
+      generates its file on top of this.
     -->
+    <!-- the CRC of the demo accountant of l10n_br_fiscal, for register 0100 -->
+    <record id="l10n_br_fiscal.demo_accountant" model="res.partner">
+        <field name="is_accountant" eval="True" />
+        <field name="crc_code">1SP123456/O-0</field>
+        <field name="crc_state_id" ref="base.state_br_sp" />
+    </record>
 
     <!--
       A resale purchase, imported and authorized: it carries the ICMS credit of
