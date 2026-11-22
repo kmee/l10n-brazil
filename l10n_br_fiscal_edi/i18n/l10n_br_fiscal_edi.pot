@@ -1539,3 +1539,12 @@ msgid ""
 "operation line of the line."
 msgstr ""
 
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_line_review.py:0
+#, python-format
+msgid ""
+"Choosing the product of a line under review is for the fiscal profile. "
+"Ask a fiscal user to resolve the line."
+msgstr ""
+

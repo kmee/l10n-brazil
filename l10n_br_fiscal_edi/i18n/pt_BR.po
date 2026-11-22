@@ -1591,3 +1591,14 @@ msgstr ""
 "%(line)s: mais de uma linha de operação serve para a operação: escolha a"
 " linha de operação da linha."
 
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_line_review.py:0
+#, python-format
+msgid ""
+"Choosing the product of a line under review is for the fiscal profile. "
+"Ask a fiscal user to resolve the line."
+msgstr ""
+"Escolher o produto de uma linha em revisão é para o perfil fiscal. Peça "
+"a um usuário fiscal para resolver a linha."
+
