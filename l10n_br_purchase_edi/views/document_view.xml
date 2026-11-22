@@ -20,7 +20,7 @@
                     <field
                         name="import_purchase_order_count"
                         widget="statinfo"
-                        string="Purchase Orders"
+                        string="Purchases"
                     />
                 </button>
             </xpath>
