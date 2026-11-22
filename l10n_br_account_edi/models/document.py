@@ -35,7 +35,16 @@ class Document(models.Model):
                 and document.fiscal_line_ids
                 and document._edi_payment_totals()[0]
                 and not document.move_ids
+                and not document._edi_no_payable_reason()
             )
+
+    def _edi_no_payable_reason(self):
+        """Why the document has no amount to pay, as a text for the person, or
+        False. The type of the document decides it: a document that is only
+        registered, such as a freight that the company does not owe, answers here
+        and gets neither the button nor the invoice."""
+        self.ensure_one()
+        return False
 
     def action_generate_invoice(self):
         """Create the vendor bill of an imported document. The payables are born
@@ -44,6 +53,9 @@ class Document(models.Model):
         # the invoice is born in the company of the document, whichever the user
         # has selected
         self = self.with_company(self.company_id)
+        reason = self._edi_no_payable_reason()
+        if reason:
+            raise UserError(reason)
         if not self.env["account.move"].check_access_rights(
             "create", raise_exception=False
         ):
