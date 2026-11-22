@@ -210,6 +210,25 @@ class TestImportedLineReview(TransactionCase):
         )
         self.assertFalse(learned.price)
 
+    def test_the_review_starts_with_a_factor_of_one(self):
+        """The column has no default, so a line is not rewritten at the installation:
+        the factor of one is given when the review starts."""
+        line = self._create_line()
+        self.assertFalse(line.import_uom_factor)
+        line.document_id._init_import_states()
+        self.assertEqual(line.import_uom_factor, 1.0)
+
+    def test_the_hook_that_creates_the_column_of_the_state_can_run_again(self):
+        from ..hooks import pre_init_hook
+
+        pre_init_hook(self.env.cr)
+        pre_init_hook(self.env.cr)
+        self.env.cr.execute(
+            "SELECT 1 FROM information_schema.columns WHERE table_name = "
+            "'l10n_br_fiscal_document' AND column_name = 'import_state'"
+        )
+        self.assertTrue(self.env.cr.fetchone())
+
     def test_the_registry_of_purchasing_keeps_its_price_and_its_product(self):
         """A registry that purchasing keeps on the template, with the price it
         negotiated, learns the code of the supplier and nothing else."""

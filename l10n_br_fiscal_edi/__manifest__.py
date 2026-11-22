@@ -10,6 +10,7 @@
     "website": "https://github.com/OCA/l10n-brazil",
     "development_status": "Beta",
     "version": "16.0.2.5.0",
+    "pre_init_hook": "pre_init_hook",
     "depends": [
         "l10n_br_fiscal",
     ],

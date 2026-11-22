@@ -37,7 +37,8 @@ class DocumentLine(models.Model):
 
     import_uom_factor = fields.Float(
         string="Import UoM Factor",
-        default=1.0,
+        # no default: the column of a field with a default is filled for every line
+        # of every document when the module is installed; an empty factor is 1.0
         copy=False,
         help="How many units of the company make one unit of the supplier (25 for "
         "a bag of 25 kg received in KG).",

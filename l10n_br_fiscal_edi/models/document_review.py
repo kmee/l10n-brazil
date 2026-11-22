@@ -54,6 +54,8 @@ class Document(models.Model):
         already has a state is a decision of a person and is left alone.
         """
         for line in self.filtered("imported_document").fiscal_line_ids:
+            if not line.import_uom_factor:
+                line.import_uom_factor = 1.0
             if line.import_state:
                 continue
             matched = line.product_id and not line._import_unit_unconfirmed()
