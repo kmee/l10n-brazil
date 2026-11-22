@@ -163,3 +163,32 @@ class TestImportHeaderOperation(EdiImportCase):
         self.assertIn("choose the operation line", document.import_warning)
         line.fiscal_operation_line_id = operation.line_ids[:1]
         self.assertNotIn("choose the operation line", document.import_warning or "")
+
+    def test_a_line_of_another_operation_that_answers_the_cfop_is_not_taken(self):
+        """Another operation has a line for the CFOP of the file, but the person
+        chose a different operation: the line stays with the chosen one and waits for
+        its operation line."""
+        other = self.env["l10n_br_fiscal.operation"].create(
+            {
+                "code": "TST-OTHER",
+                "name": "Another test operation",
+                "fiscal_operation_type": "in",
+                "fiscal_type": "purchase",
+            }
+        )
+        self.env["l10n_br_fiscal.operation.line"].create(
+            {
+                "fiscal_operation_id": other.id,
+                "name": "Answers the CFOP of the file",
+                "cfop_internal_id": self.env.ref("l10n_br_fiscal.cfop_1352").id,
+                "product_type": "00",
+            }
+        )
+        other.action_approve()
+        document = self._unmatched_document()
+        operation = self._operation(2)
+        self._choose_operation(document, operation)
+        line = document.fiscal_line_ids
+        self.assertEqual(line.fiscal_operation_id, operation)
+        self.assertFalse(line.fiscal_operation_line_id)
+        self.assertIn("choose the operation line", document.import_warning)
