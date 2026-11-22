@@ -487,7 +487,9 @@ class OperationLine(models.Model):
             return {"warning": warning}
 
     @api.model
-    def _find_by_issuer_cfop(self, cfop, nat_op=None, fiscal_operation_type="in"):
+    def _find_by_issuer_cfop(
+        self, cfop, nat_op=None, fiscal_operation_type="in", operation=None
+    ):
         """Find the approved operation line that answers the CFOP of an issuer.
 
         A document received from a supplier carries the CFOP of the issuer
@@ -498,6 +500,8 @@ class OperationLine(models.Model):
         :param cfop: ``l10n_br_fiscal.cfop`` record or the CFOP code
         :param nat_op: nature of the operation declared in the file
         :param fiscal_operation_type: ``in`` or ``out``
+        :param operation: ``l10n_br_fiscal.operation`` record that has to hold the
+            line, when the operation is already chosen
         :return: ``l10n_br_fiscal.operation.line`` record, possibly empty
         """
         if isinstance(cfop, models.BaseModel):
@@ -514,17 +518,18 @@ class OperationLine(models.Model):
             code = cfop.cfop_inverse_id.code or counterpart + code[1:]
         if not code:
             return self.browse()
-        lines = self.search(
-            [
-                ("state", "=", "approved"),
-                ("fiscal_operation_type", "=", fiscal_operation_type),
-                "|",
-                "|",
-                ("cfop_internal_id.code", "=", code),
-                ("cfop_external_id.code", "=", code),
-                ("cfop_export_id.code", "=", code),
-            ]
-        )
+        domain = [
+            ("state", "=", "approved"),
+            ("fiscal_operation_type", "=", fiscal_operation_type),
+            "|",
+            "|",
+            ("cfop_internal_id.code", "=", code),
+            ("cfop_external_id.code", "=", code),
+            ("cfop_export_id.code", "=", code),
+        ]
+        if operation:
+            domain.append(("fiscal_operation_id", "=", operation.id))
+        lines = self.search(domain)
         for line in lines:
             if line.fiscal_operation_id.name == nat_op:
                 return line
