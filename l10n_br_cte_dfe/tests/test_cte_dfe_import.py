@@ -133,6 +133,13 @@ class TestCteDfeImportedDocumentAccess(TransactionCase):
         if "move_ids" not in record.fiscal_document_id._fields:
             self.skipTest("No accounting")
         # An invoice of the import: accounting is not for a fiscal user.
+        journal = (
+            self.env["account.journal"]
+            .sudo()
+            .search(
+                [("type", "=", "purchase"), ("company_id", "=", company.id)], limit=1
+            )
+        )
         move = (
             self.env["account.move"]
             .sudo()
@@ -140,6 +147,8 @@ class TestCteDfeImportedDocumentAccess(TransactionCase):
                 {
                     "move_type": "in_invoice",
                     "company_id": company.id,
+                    # the journal of the company of the note, not the one by default
+                    "journal_id": journal.id,
                     "partner_id": record.fiscal_document_id.partner_id.id,
                     "fiscal_document_id": record.fiscal_document_id.id,
                 }
