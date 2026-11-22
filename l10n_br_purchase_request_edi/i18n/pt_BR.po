@@ -143,6 +143,11 @@ msgid "Request in Progress"
 msgstr "Solicitação em andamento"
 
 #. module: l10n_br_purchase_request_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_request_edi.document_match_tree
+msgid "Requester"
+msgstr "Solicitante"
+
+#. module: l10n_br_purchase_request_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_request_edi.field_l10n_br_purchase_edi_match__requested_by_id
 msgid "Requested by"
 msgstr "Solicitante"
