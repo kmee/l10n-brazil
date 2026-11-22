@@ -115,10 +115,11 @@ class TestImportedLineReview(TransactionCase):
         self.assertEqual(self.line.uom_id, self.uom_kg)
         self.assertEqual(self.line.quantity, 50.0)
         self.assertEqual(self.line.price_unit, 4.0)
-        # what was learned has the price in the unit of the product (4 per kg)
+        # what was learned is the code and the name of the supplier: the price is
+        # negotiated by purchasing and is not taken from the note
         info = self.line.import_supplierinfo_id
         self.assertEqual(info.partner_id, self.partner)
-        self.assertAlmostEqual(info.price, 4.0, places=2)
+        self.assertFalse(info.price)
         self.assertIn(info, self.product.product_tmpl_id.seller_ids)
 
     def test_the_total_declared_survives_the_factor(self):
@@ -207,7 +208,89 @@ class TestImportedLineReview(TransactionCase):
             ),
             1,
         )
-        self.assertAlmostEqual(learned.price, 4.4, places=2)
+        self.assertFalse(learned.price)
+
+    def test_the_review_starts_with_a_factor_of_one(self):
+        """The column has no default, so a line is not rewritten at the installation:
+        the factor of one is given when the review starts."""
+        line = self._create_line()
+        self.assertFalse(line.import_uom_factor)
+        line.document_id._init_import_states()
+        self.assertEqual(line.import_uom_factor, 1.0)
+
+    def test_the_pre_migration_creates_the_column_of_the_state_and_can_run_again(
+        self,
+    ):
+        import importlib.util
+        import os
+
+        from odoo.modules.module import get_module_path
+
+        path = os.path.join(
+            get_module_path("l10n_br_fiscal_edi"),
+            "migrations",
+            "16.0.2.5.1",
+            "pre-migration.py",
+        )
+        spec = importlib.util.spec_from_file_location("edi_pre_migration", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        module.migrate(self.env.cr, "16.0.2.5.0")
+        module.migrate(self.env.cr, "16.0.2.5.0")
+        self.env.cr.execute(
+            "SELECT 1 FROM information_schema.columns WHERE table_name = "
+            "'l10n_br_fiscal_document' AND column_name = 'import_state'"
+        )
+        self.assertTrue(self.env.cr.fetchone())
+
+    def test_the_hook_that_creates_the_column_of_the_state_can_run_again(self):
+        from ..hooks import pre_init_hook
+
+        pre_init_hook(self.env.cr)
+        pre_init_hook(self.env.cr)
+        self.env.cr.execute(
+            "SELECT 1 FROM information_schema.columns WHERE table_name = "
+            "'l10n_br_fiscal_document' AND column_name = 'import_state'"
+        )
+        self.assertTrue(self.env.cr.fetchone())
+
+    def test_the_registry_of_purchasing_keeps_its_price_and_its_product(self):
+        """A registry that purchasing keeps on the template, with the price it
+        negotiated, learns the code of the supplier and nothing else."""
+        registry = self.env["product.supplierinfo"].create(
+            {
+                "partner_id": self.partner.id,
+                "product_tmpl_id": self.product.product_tmpl_id.id,
+                "product_code": self.line._get_partner_product_code(),
+                "price": 10.0,
+                "min_qty": 5.0,
+            }
+        )
+        self.line._apply_import_depara(
+            product=self.product, uom=self.uom_kg, factor=25.0
+        )
+        self.assertEqual(self.line.import_supplierinfo_id, registry)
+        self.assertEqual(registry.price, 10.0)
+        self.assertFalse(registry.product_id)
+
+    def test_the_mapping_of_another_company_is_not_used(self):
+        other = self.env["res.company"].search([("id", "!=", self.company.id)], limit=1)
+        self.assertTrue(other)
+        registry = self.env["product.supplierinfo"].create(
+            {
+                "partner_id": self.partner.id,
+                "product_tmpl_id": self.product.product_tmpl_id.id,
+                "product_code": self.line._get_partner_product_code(),
+                "company_id": other.id,
+            }
+        )
+        self.line._apply_import_depara(
+            product=self.product, uom=self.uom_kg, factor=25.0
+        )
+        self.assertNotEqual(self.line.import_supplierinfo_id, registry)
+        self.assertEqual(
+            self.line.import_supplierinfo_id.company_id, self.line.company_id
+        )
 
     def test_a_fiscal_user_learns_the_mapping_as_the_author(self):
         """The fiscal user has no right on purchases, and the supplier info is
