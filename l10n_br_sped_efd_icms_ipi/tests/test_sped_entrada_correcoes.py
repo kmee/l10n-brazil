@@ -124,3 +124,17 @@ class TestSpedEfdIcmsIpiCorrecoes(EntradaHelpers, SpedEntradaCommon):
         self.assertEqual(self._c170(self._declaration_july())["COD_ENQ"], "")
         line.ipi_guideline_id = self.env.ref("l10n_br_fiscal.tax_guideline_001")
         self.assertEqual(self._c170(self._declaration_july())["COD_ENQ"], "001")
+
+    def test_0015_has_the_state_and_the_ie_of_the_substitute(self):
+        """0015: UF_ST is the state and IE_ST the state tax number the company
+        has there as a tax substitute."""
+        self._entry_document()
+        self.env["state.tax.numbers"].create(
+            {
+                "partner_id": self.company.partner_id.id,
+                "state_id": self.env.ref("base.state_br_rj").id,
+                "l10n_br_ie_code": "86.817.30-6",
+            }
+        )
+        records = self._sped_records(self._declaration_july(), "0015")
+        self.assertEqual(records, [{"UF_ST": "RJ", "IE_ST": "86817306"}])

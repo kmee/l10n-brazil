@@ -384,8 +384,8 @@ class Registro0015(models.Model):
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         return {
-            "UF_ST": misc.punctuation_rm(record.inscr_est),
-            "IE_ST": record.state_id.code,
+            "UF_ST": record.state_id.code,
+            "IE_ST": misc.punctuation_rm(record.l10n_br_ie_code),
         }
 
 
