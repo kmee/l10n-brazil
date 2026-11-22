@@ -7,12 +7,17 @@ import logging
 import re
 import unicodedata
 import zipfile
+from contextlib import closing
 from io import BytesIO
 
 from erpbrasil.base.fiscal.cnpj_cpf import formata
+from psycopg2 import OperationalError
+from psycopg2.errors import LockNotAvailable
 
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
+from odoo.service.model import PG_CONCURRENCY_ERRORS_TO_RETRY
+from odoo.sql_db import db_connect
 from odoo.tools.misc import file_open, format_datetime
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
@@ -24,11 +29,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
 )
 
 from ..constants.fiscal import DOCUMENT_STATE_AUTHORIZED
-from ..tools import (
-    EDI_IMPORT_NO_CREATE,
-    EDI_IMPORT_PARTNER_BY_VAT,
-    EdiImportConcurrencyError,
-)
+from ..tools import EDI_IMPORT_NO_CREATE, EdiImportConcurrencyError
 
 _logger = logging.getLogger(__name__)
 
@@ -75,6 +76,13 @@ class Document(models.Model):
         "the button to check again updates it.",
     )
 
+    import_without_protocol = fields.Boolean(
+        copy=False,
+        readonly=True,
+        help="The file of a document the company issued elsewhere carries no "
+        "authorization protocol: it cannot be confirmed as authorized.",
+    )
+
     import_partner_checked = fields.Datetime(
         copy=False,
         readonly=True,
@@ -84,6 +92,7 @@ class Document(models.Model):
 
     @api.depends(
         "imported_document",
+        "import_without_protocol",
         "fiscal_operation_id",
         "import_partner_warning",
         "fiscal_amount_total",
@@ -113,6 +122,14 @@ class Document(models.Model):
                     "No fiscal operation matches the CFOP of the document: choose the "
                     "fiscal operation of the document and the operation line of "
                     "each line."
+                )
+            )
+        if self.import_without_protocol:
+            messages.append(
+                _(
+                    "The file of this document, issued by the company, has no "
+                    "authorization protocol: it cannot be confirmed as authorized. "
+                    "Import the file with the protocol."
                 )
             )
         for line in self.fiscal_line_ids:
@@ -188,10 +205,13 @@ class Document(models.Model):
             except UserError as error:
                 _logger.info("Import of %s refused: %s", name, error)
                 errors.append((name, str(error)))
-            except EdiImportConcurrencyError:
-                # not an error of the file: the whole call must run again
-                raise
-            except Exception:  # pylint: disable=broad-except
+            except Exception as error:  # pylint: disable=broad-except
+                if (
+                    isinstance(error, OperationalError)
+                    and error.pgcode in PG_CONCURRENCY_ERRORS_TO_RETRY
+                ):
+                    # not an error of the file: the whole call must run again
+                    raise
                 _logger.warning("Import of %s failed", name, exc_info=True)
                 errors.append(
                     (
@@ -251,14 +271,11 @@ class Document(models.Model):
                 _("The file %s is not a fiscal document that can be imported.") % name
             )
         company, role = self._edi_import_company(parsed)
-        contested = self._edi_import_lock(company, parsed.access_key)
+        self._edi_import_lock(company, parsed.access_key)
         existing = self.with_company(company)._edi_import_find_existing(parsed, company)
         if existing:
             return existing, False
-        # Only a lock that had to be waited for can hide a document committed after
-        # the snapshot; checking with a cursor of its own otherwise would wait for the
-        # locks of a transaction that holds the tables (the installation, with demo).
-        if contested and self._edi_import_committed_elsewhere(parsed, company):
+        if self._edi_import_committed_elsewhere(parsed, company):
             raise EdiImportConcurrencyError(
                 f"The note {name} was imported by a concurrent transaction."
             )
@@ -267,13 +284,26 @@ class Document(models.Model):
         try:
             document = (
                 self.with_company(company)
-                .with_context(
-                    **{EDI_IMPORT_NO_CREATE: True, EDI_IMPORT_PARTNER_BY_VAT: True}
-                )
+                .with_context(**{EDI_IMPORT_NO_CREATE: True})
                 ._edi_import_create(parsed, company, role)
             )
         except AccessError as error:
             raise UserError(self._edi_import_access_denied(parsed, error)) from error
+        if (
+            parsed.document_type_code
+            and document.document_type_id.code != parsed.document_type_code
+        ):
+            raise UserError(
+                _(
+                    "The reader of %(file)s created a document of type %(created)s "
+                    "for a file of type %(declared)s."
+                )
+                % {
+                    "file": name,
+                    "created": document.document_type_id.code or "-",
+                    "declared": parsed.document_type_code,
+                }
+            )
         document.with_context(
             **{LAST_PARTNER_CONTEXT_KEY: last_partner.id}
         )._edi_import_after_create(parsed, role)
@@ -281,6 +311,13 @@ class Document(models.Model):
             **{LAST_PARTNER_CONTEXT_KEY: last_partner.id}
         )._edi_import_check_partners(parsed)
         document._edi_import_suggest()
+        # A note the company issued has to bring the protocol of its authorization:
+        # without it the document stays in typing (the readers of a type that has no
+        # protocol, the national NFS-e, declare the file authorized).
+        document.import_without_protocol = (
+            document.issuer == DOCUMENT_ISSUER_COMPANY
+            and parsed.status != "authorized"
+        )
         return document, True
 
     @api.model
@@ -378,21 +415,12 @@ class Document(models.Model):
         Two imports of the same note that run together would both find that it does
         not exist and both create it, and nothing in the database forbids it (an
         existing database may have duplicates, so there is no unique index). The second
-        waits here until the first commits, and then finds the document and answers
-        that the note was already imported.
-
-        :return: whether the lock was contested, that is, somebody else held it and
-            this transaction had to wait. Only then can the document it looks for have
-            been committed after the snapshot of this transaction.
-        """
-        params = (company.id, access_key)
+        waits here until the first commits; the check that follows sees what the first
+        wrote."""
         self.env.cr.execute(
-            "SELECT pg_try_advisory_xact_lock(%s, hashtext(%s))", params
+            "SELECT pg_advisory_xact_lock(%s, hashtext(%s))",
+            (company.id, access_key),
         )
-        if self.env.cr.fetchone()[0]:
-            return False
-        self.env.cr.execute("SELECT pg_advisory_xact_lock(%s, hashtext(%s))", params)
-        return True
 
     @api.model
     def _edi_import_check(self, parsed, company):
@@ -405,16 +433,28 @@ class Document(models.Model):
     @api.model
     def _edi_import_committed_elsewhere(self, parsed, company):
         """Whether a transaction that committed after this one began already holds the
-        note. The transaction reads a snapshot taken before it waited for the lock, so
-        the search of the existing document cannot see what that one wrote; a cursor
-        of its own, with a new snapshot, can."""
-        with self.env.registry.cursor() as cursor:
-            cursor.execute(
-                "SELECT 1 FROM l10n_br_fiscal_document "
-                "WHERE document_key = %s AND company_id = %s LIMIT 1",
-                (parsed.access_key, company.id),
-            )
-            return bool(cursor.fetchone())
+        note. The snapshot of this transaction, taken at its first query, cannot see a
+        document that another transaction committed since, even after the lock of the
+        note is taken; a connection of its own, with a new snapshot, can.
+
+        An installation or an update that holds locks on the table (the demo data is
+        imported while it does) would make that connection wait for ever: it waits for
+        two seconds at most, and goes on without the check, as nobody else is importing
+        while a module is installed."""
+        with closing(db_connect(self.env.cr.dbname).cursor()) as cursor:
+            try:
+                cursor.execute("SET LOCAL lock_timeout = '2s'")
+                cursor.execute(
+                    "SELECT 1 FROM l10n_br_fiscal_document "
+                    "WHERE document_key = %s AND company_id = %s LIMIT 1",
+                    (parsed.access_key, company.id),
+                )
+                found = bool(cursor.fetchone())
+            except LockNotAvailable:
+                found = False
+            finally:
+                cursor.rollback()
+        return found
 
     @api.model
     def _edi_import_find_existing(self, parsed, company):
@@ -895,6 +935,15 @@ class Document(models.Model):
                     }
                 )
         own = drafts.filtered(lambda doc: doc.issuer == DOCUMENT_ISSUER_COMPANY)
+        for document in own.filtered("import_without_protocol"):
+            raise UserError(
+                _(
+                    "The file of %(document)s has no authorization protocol, so it "
+                    "cannot be confirmed as authorized. Import the file with the "
+                    "protocol."
+                )
+                % {"document": document.display_name}
+            )
         for document in own:
             document._trigger_fsm("action_confirm_imported")
         return super(Document, self - own).action_document_confirm()
