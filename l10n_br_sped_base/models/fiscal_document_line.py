@@ -17,13 +17,8 @@ class FiscalDocumentLine(models.Model):
         (``res.company._books_entry_by_creditability``): any other credits the
         tax in the ledger, so the books carry the tax of the line."""
         self.ensure_one()
-        # the creditability map is not in the l10n_br_fiscal of 18.0 yet
-        books_by_creditability = getattr(
-            self.company_id, "_books_entry_by_creditability", None
-        )
         return bool(
-            books_by_creditability
-            and books_by_creditability()
+            self.company_id._books_entry_by_creditability()
             and cst.default_creditable_tax
             and self._get_tax_creditability_map()[tax_domain] == "cost"
         )
@@ -32,8 +27,7 @@ class FiscalDocumentLine(models.Model):
         """The IPI CST the books carry: the one of the entry when there is one,
         else the one of the line."""
         self.ensure_one()
-        # the entry CST of the line is not in the l10n_br_fiscal of 18.0 yet
-        return getattr(self, "entry_ipi_cst_id", False) or self.ipi_cst_id
+        return self.entry_ipi_cst_id or self.ipi_cst_id
 
     def _sped_icms_without_credit(self):
         self.ensure_one()

@@ -154,13 +154,9 @@ class FiscalDocument(models.Model):
         self.ensure_one()
         pis = cofins = 0.0
         for line in self.fiscal_line_ids:
-            # the entry CST of the line is not in the l10n_br_fiscal of 18.0 yet
-            without_credit = getattr(
-                line, "_entry_piscofins_without_credit", lambda tax_domain: False
-            )
-            if not without_credit("pis"):
+            if not line._entry_piscofins_without_credit("pis"):
                 pis += line.pis_value
-            if not without_credit("cofins"):
+            if not line._entry_piscofins_without_credit("cofins"):
                 cofins += line.cofins_value
         return pis, cofins
 
