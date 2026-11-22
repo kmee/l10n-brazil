@@ -17,7 +17,7 @@ from xsdata.formats.dataclass.transports import DefaultTransport
 
 from odoo import Command, fields
 from odoo.exceptions import AccessError, UserError
-from odoo.tests import Form
+from odoo.tests import Form, tagged
 from odoo.tests.common import TransactionCase
 
 from odoo.addons import l10n_br_nfe
@@ -694,3 +694,73 @@ class TestNFeDFeDemo(TransactionCase):
         wizard = self.env[action["res_model"]].browse(action["res_id"])
         self.assertEqual(wizard.state, "confirm")
         self.assertIn("ciencia", wizard.confirm_message)
+
+
+@tagged("post_install", "-at_install")
+class TestNFeDFeImportedDocumentAccess(TransactionCase):
+    """Accounting is loaded after this module: the move exists only post install."""
+
+    def _record(self, xmlid):
+        record = self.env.ref(f"l10n_br_nfe_dfe.{xmlid}", raise_if_not_found=False)
+        if not record:
+            self.skipTest("No demo data")
+        return record
+
+    def test_a_pure_fiscal_user_opens_the_imported_document_from_the_inbox(self):
+        record = self._record("demo_dfe_document_complete")
+        user = self.env["res.users"].create(
+            {
+                "name": "Pure fiscal",
+                "login": "nfe_dfe_pure_fiscal",
+                "company_id": record.company_id.id,
+                "company_ids": [Command.set(record.company_id.ids)],
+                "groups_id": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            self.env.ref("l10n_br_fiscal.group_user").id,
+                        ]
+                    )
+                ],
+            }
+        )
+        context = {"allowed_company_ids": record.company_id.ids}
+        record = record.with_user(user).with_context(**context)
+        record.import_document()
+        if "move_ids" not in record.fiscal_document_id._fields:
+            self.skipTest("No accounting")
+        # An invoice of the import: accounting is not for a fiscal user.
+        move = (
+            self.env["account.move"]
+            .sudo()
+            .create(
+                {
+                    "move_type": "in_invoice",
+                    "company_id": record.company_id.id,
+                    "partner_id": record.fiscal_document_id.partner_id.id,
+                    "fiscal_document_id": record.fiscal_document_id.id,
+                }
+            )
+        )
+        self.assertEqual(record.fiscal_document_id.sudo().move_ids, move)
+        self.env.flush_all()
+        self.env.invalidate_all()
+
+        action = record.action_view_imported_document()
+
+        self.assertEqual(action["res_model"], "l10n_br_fiscal.document")
+        document = (
+            self.env[action["res_model"]]
+            .with_user(user)
+            .with_context(**action["context"])
+            .browse(action["res_id"])
+        )
+        self.assertEqual(document, record.fiscal_document_id)
+        view = document.get_view(view_type="form")
+        names = [
+            name
+            for name in document._fields
+            if "name=\"%s\"" % name in view["arch"] and name in document._fields
+        ]
+        self.assertTrue(names)
+        document.read(names)
