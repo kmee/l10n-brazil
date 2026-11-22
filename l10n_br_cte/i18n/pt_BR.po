@@ -6319,6 +6319,41 @@ msgstr ""
 #, python-format
 msgid "without name"
 msgstr "sem nome"
+#: model:ir.model.fields,field_description:l10n_br_cte.field_l10n_br_fiscal_document__cte_company_role
+msgid "Role of the Company in the CT-e"
+msgstr "Papel da empresa no CT-e"
+
+#. module: l10n_br_cte
+#: model:ir.model.fields,help:l10n_br_cte.field_l10n_br_fiscal_document__cte_company_role
+msgid ""
+"What the company is in a CT-e that it received: the taker of the "
+"freight, who owes it, or one of the other parties, for whom the CT-e "
+"is only registered."
+msgstr ""
+"O que a empresa é em um CT-e que recebeu: a tomadora do frete, que o "
+"deve, ou uma das outras partes, para as quais o CT-e fica apenas "
+"registrado."
+
+#. module: l10n_br_cte
+#: model:ir.model.fields.selection,name:l10n_br_cte.selection__l10n_br_fiscal_document__cte_company_role__other
+msgid "Sender, recipient, shipper or receiver"
+msgstr "Remetente, destinatária, expedidora ou recebedora"
+
+#. module: l10n_br_cte
+#: model:ir.model.fields.selection,name:l10n_br_cte.selection__l10n_br_fiscal_document__cte_company_role__taker
+msgid "Taker"
+msgstr "Tomadora"
+
+#. module: l10n_br_cte
+#. odoo-python
+#: code:addons/l10n_br_cte/models/document_import.py:0
+#, python-format
+msgid ""
+"The company is not the taker of this CT-e: it stays registered, with "
+"no amount to pay."
+msgstr ""
+"A empresa não é a tomadora deste CT-e: ele fica registrado, sem valor "
+"a pagar."
 
 #~ msgid "Document Date"
 #~ msgstr "Data do Documento"

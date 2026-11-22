@@ -11,7 +11,7 @@ from nfelib.cte.bindings.v4_0.proc_cte_v4_00 import CteProc
 from xsdata.exceptions import ParserError
 from xsdata.formats.dataclass.parsers import XmlParser
 
-from odoo import _, api, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import MODELO_FISCAL_CTE
@@ -53,6 +53,27 @@ def _vat(party):
 
 class Document(models.Model):
     _inherit = "l10n_br_fiscal.document"
+
+    cte_company_role = fields.Selection(
+        [
+            ("taker", "Taker"),
+            ("other", "Sender, recipient, shipper or receiver"),
+        ],
+        string="Role of the Company in the CT-e",
+        readonly=True,
+        copy=False,
+        help="What the company is in a CT-e that it received: the taker of the "
+        "freight, who owes it, or one of the other parties, for whom the CT-e is "
+        "only registered.",
+    )
+
+    def _edi_no_payable_reason(self):
+        if self.cte_company_role == "other":
+            return _(
+                "The company is not the taker of this CT-e: it stays registered, "
+                "with no amount to pay."
+            )
+        return super()._edi_no_payable_reason()
 
     @api.model
     def _edi_import_read(self, name, content):
@@ -102,12 +123,16 @@ class Document(models.Model):
     @api.model
     def _cte_company_vats(self, infcte):
         """Who may be the company, in order: the taker of the service, the
-        recipient, the sender and the issuer. A CT-e in which the company is the
-        issuer and also the taker (own transport) enters as the taker."""
+        recipient, the sender, the shipper, the receiver and the issuer. A CT-e in
+        which the company is the issuer and also the taker (own transport) enters
+        as the taker. Any party that is not the taker has the role ``recipient``:
+        the CT-e is registered for it, with no amount to pay."""
         vats = [
             ("taker", _vat(self._cte_taker(infcte))),
             ("recipient", _vat(getattr(infcte, "dest", None))),
             ("recipient", _vat(getattr(infcte, "rem", None))),
+            ("recipient", _vat(getattr(infcte, "exped", None))),
+            ("recipient", _vat(getattr(infcte, "receb", None))),
             ("issuer", _vat(getattr(infcte, "emit", None))),
         ]
         return tuple((role, vat) for role, vat in vats if vat)
@@ -258,6 +283,8 @@ class Document(models.Model):
         cte = getattr(parsed.binding, "CTe", None) or parsed.binding
         if issued:
             document.partner_id = self._cte_taker_partner(cte.infCte)
+        else:
+            document.cte_company_role = "taker" if role == "taker" else "other"
         self._cte_suggest_product(document, company, issued=issued)
         document.partner_operation_name = cte.infCte.ide.natOp
         for line in document.fiscal_line_ids:
