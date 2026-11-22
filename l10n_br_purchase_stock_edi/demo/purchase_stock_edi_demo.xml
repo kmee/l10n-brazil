@@ -92,4 +92,14 @@
         <value name="context" eval="{'skip_immediate': True, 'skip_backorder': True}" />
     </function>
 
+    <!-- the receipt of the order of the purchases link demo (note 2001, already
+         invoiced) is validated too: the whole cycle, nothing awaiting -->
+    <function model="stock.picking" name="action_set_quantities_to_reservation">
+        <value model="stock.picking" search="[('origin', '=', 'PO-DEMO-EDI-001')]" />
+    </function>
+    <function model="stock.picking" name="button_validate">
+        <value model="stock.picking" search="[('origin', '=', 'PO-DEMO-EDI-001')]" />
+        <value name="context" eval="{'skip_immediate': True, 'skip_backorder': True}" />
+    </function>
+
 </odoo>

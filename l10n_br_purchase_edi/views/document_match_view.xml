@@ -36,41 +36,49 @@
                 </header>
                 <field name="company_id" invisible="1" />
                 <field name="currency_id" invisible="1" />
-                <field name="kind" widget="badge" />
-                <field name="reference" />
+                <field name="kind" widget="badge" string="Type" />
+                <field name="reference" string="Ref." />
                 <field name="product_id" />
-                <field name="description" optional="hide" />
-                <field name="declared_reference" optional="show" />
-                <field name="quantity" />
-                <field name="uom_id" groups="uom.group_uom" />
-                <field name="open_quantity" />
-                <field name="price_unit" />
+                <field name="quantity" string="Qty" />
+                <field name="uom_id" groups="uom.group_uom" string="Unit" />
+                <field name="price_unit" string="Price" />
                 <field
-                    name="note_quantity"
-                    attrs="{'invisible': [('kind', '=', 'note')]}"
-                />
-                <field
-                    name="note_price_unit"
-                    attrs="{'invisible': [('kind', '=', 'note')]}"
+                    name="suggested_purchase_line_id"
+                    groups="purchase.group_purchase_user"
+                    string="Candidate"
                 />
                 <field
                     name="quantity_difference"
-                    attrs="{'invisible': [('kind', '=', 'note')]}"
-                />
-                <field
-                    name="price_difference"
+                    string="Qty diff."
                     attrs="{'invisible': [('kind', '=', 'note')]}"
                 />
                 <field
                     name="price_difference_percent"
+                    string="Price diff. %"
                     attrs="{'invisible': [('kind', '=', 'note')]}"
                 />
-                <field name="line_state" widget="badge" />
-                <field name="hint" optional="show" />
+                <field name="line_state" widget="badge" string="State" />
+                <field name="hint" string="Hint" optional="show" />
+                <field name="declared_reference" string="xPed" optional="hide" />
+                <field name="description" optional="hide" />
+                <field name="open_quantity" string="Balance" optional="hide" />
                 <field
-                    name="suggested_purchase_line_id"
-                    groups="purchase.group_purchase_user"
-                    optional="show"
+                    name="note_quantity"
+                    string="Note qty"
+                    optional="hide"
+                    attrs="{'invisible': [('kind', '=', 'note')]}"
+                />
+                <field
+                    name="note_price_unit"
+                    string="Note price"
+                    optional="hide"
+                    attrs="{'invisible': [('kind', '=', 'note')]}"
+                />
+                <field
+                    name="price_difference"
+                    string="Price diff."
+                    optional="hide"
+                    attrs="{'invisible': [('kind', '=', 'note')]}"
                 />
                 <field name="date" optional="hide" />
             </tree>

@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-21 20:12+0000\n"
-"PO-Revision-Date: 2026-11-21 20:12+0000\n"
+"POT-Creation-Date: 2026-11-22 02:16+0000\n"
+"PO-Revision-Date: 2026-11-22 02:16+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -52,7 +52,13 @@ msgstr ""
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__open_quantity
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "Balance"
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
+msgid "Candidate"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
@@ -156,6 +162,7 @@ msgstr ""
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__hint
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "Hint"
 msgstr ""
 
@@ -231,6 +238,16 @@ msgstr ""
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__note_quantity
 msgid "Note Quantity"
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
+msgid "Note price"
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
+msgid "Note qty"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
@@ -318,6 +335,7 @@ msgstr ""
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__price_unit
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "Price"
 msgstr ""
 
@@ -329,6 +347,16 @@ msgstr ""
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__price_difference_percent
 msgid "Price Difference Percent"
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
+msgid "Price diff."
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
+msgid "Price diff. %"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
@@ -397,6 +425,16 @@ msgid ""
 msgstr ""
 
 #. module: l10n_br_purchase_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
+msgid "Qty"
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
+msgid "Qty diff."
+msgstr ""
+
+#. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__quantity
 msgid "Quantity"
 msgstr ""
@@ -431,6 +469,11 @@ msgstr ""
 #. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_search
 msgid "Quotations"
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
+msgid "Ref."
 msgstr ""
 
 #. module: l10n_br_purchase_edi
@@ -524,6 +567,11 @@ msgstr ""
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__line_state
 msgid "Situation"
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
+msgid "State"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
@@ -666,6 +714,11 @@ msgstr ""
 
 #. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
+msgid "Type"
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "Undo"
 msgstr ""
 
@@ -678,6 +731,7 @@ msgstr ""
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__uom_id
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "Unit"
 msgstr ""
 
@@ -691,4 +745,9 @@ msgstr ""
 #: model:ir.model.fields.selection,name:l10n_br_purchase_edi.selection__l10n_br_purchase_edi_match__line_state__no_order
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "Without Order"
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
+msgid "xPed"
 msgstr ""
