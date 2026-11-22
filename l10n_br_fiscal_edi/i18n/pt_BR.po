@@ -1464,3 +1464,81 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_event__display_name
 msgid "name"
 msgstr ""
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_pending_count
+msgid "Import Pending Count"
+msgstr "Linhas pendentes da importação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_state
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_line__import_state
+msgid "Import State"
+msgstr "Situação da importação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_line__import_supplierinfo_id
+msgid "Import Supplier Info"
+msgstr "Informação do fornecedor da importação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_line__import_uom_id
+msgid "Import UoM"
+msgstr "Unidade da importação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_line__import_uom_factor
+msgid "Import UoM Factor"
+msgstr "Fator da unidade da importação"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__import_state__matched
+msgid "Matched"
+msgstr "Sugerida"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__import_state__pending
+msgid "Pending"
+msgstr "Pendente"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__import_state__pending
+msgid "Pending Review"
+msgstr "Aguardando revisão"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__import_state__resolved
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__import_state__resolved
+msgid "Resolved"
+msgstr "Resolvida"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__import_state__in_progress
+msgid "Review in Progress"
+msgstr "Revisão em andamento"
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_state
+msgid "Review state of the lines of a document imported from a fiscal file."
+msgstr ""
+"Situação da revisão das linhas de um documento importado de um arquivo "
+"fiscal."
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_line_review.py:0
+#, python-format
+msgid "Set the product of the line %s before resolving it."
+msgstr "Informe o produto da linha %s antes de resolvê-la."
+
+#. module: l10n_br_fiscal
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_line_review.py:0
+#, python-format
+msgid "The review can only be applied on the line of an imported document."
+msgstr "A revisão só pode ser aplicada na linha de um documento importado."
+
+#. module: l10n_br_fiscal
+#: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_line__import_uom_id
+msgid "Unit of the company that is equivalent to the unit of the supplier."
+msgstr "Unidade da empresa equivalente à unidade do fornecedor."
