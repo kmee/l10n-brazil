@@ -38,14 +38,6 @@ class Document(models.Model):
                 and not document._edi_no_payable_reason()
             )
 
-    def _edi_no_payable_reason(self):
-        """Why the document has no amount to pay, as a text for the person, or
-        False. The type of the document decides it: a document that is only
-        registered, such as a freight that the company does not owe, answers here
-        and gets neither the button nor the invoice."""
-        self.ensure_one()
-        return False
-
     def action_generate_invoice(self):
         """Create the vendor bill of an imported document. The payables are born
         with it, not with the import."""

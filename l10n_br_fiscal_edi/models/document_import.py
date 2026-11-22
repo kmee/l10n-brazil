@@ -110,6 +110,15 @@ class Document(models.Model):
                 "\n".join(document._edi_import_warnings()) or False
             )
 
+    def _edi_no_payable_reason(self):
+        """Why the imported document has no amount to pay, as a text for the
+        person, or False. The type of the document decides it: a document that is
+        only registered, such as a freight that the company does not owe, answers
+        here. The document shows the text as a warning, and the modules that
+        generate the invoice refuse it."""
+        self.ensure_one()
+        return False
+
     def _edi_import_warnings(self):
         """Messages that tell what an imported document still lacks."""
         self.ensure_one()
@@ -124,6 +133,9 @@ class Document(models.Model):
                     "each line."
                 )
             )
+        reason = self._edi_no_payable_reason()
+        if reason:
+            messages.append(reason)
         if self.import_without_protocol:
             messages.append(
                 _(
