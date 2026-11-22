@@ -5,6 +5,7 @@ import re
 from datetime import date
 from unittest.mock import patch
 
+from odoo.exceptions import UserError
 from odoo.tests import Form
 from odoo.tools import file_open
 
@@ -52,12 +53,14 @@ def cte_xml(
     status=None,
     related=False,
     emitter=None,
+    shipper=None,
 ):
     """The demo CT-e, with the recipient moved to a company of the demo data.
 
     :param collection: the ``cobr`` group to add to the CT-e
     :param taker: CNPJ of a taker that is not the recipient (``toma4``)
     :param emitter: CNPJ of the issuer, when it is not the one of the file
+    :param shipper: CNPJ of the shipper (``exped``), when it is not the one of the file
     :param status: cStat of the protocol; the CT-e then comes as a ``cteProc``
     """
     with file_open(CTE_FILE, "rb") as handle:
@@ -74,6 +77,8 @@ def cte_xml(
             "<toma3>\n        <toma>3</toma>\n      </toma3>",
             f"<toma4><toma>4</toma><CNPJ>{taker}</CNPJ><xNome>Taker</xNome></toma4>",
         )
+    if shipper:
+        xml = re.sub(r"(<exped>\s*<CNPJ>)\d+", rf"\g<1>{shipper}", xml)
     if status:
         body = xml.split("?>", 1)[1].strip()
         xml = (
@@ -418,12 +423,48 @@ class TestCteDocumentImport(EdiImportCase):
                 ("taker", LUCRO_PRESUMIDO),
                 ("recipient", LUCRO_REAL),
                 ("recipient", "12046835000161"),
+                ("recipient", "12046835000161"),
+                ("recipient", "84148732000113"),
                 ("issuer", "59594315000157"),
             ),
         )
         documents, errors, _warnings = self._import(cte_xml(taker=LUCRO_PRESUMIDO))
         self.assertFalse(errors)
         self.assertEqual(documents.company_id, self.presumed)
+
+    def test_the_company_taker_of_the_cte_gets_the_invoice(self):
+        """The taker owes the freight: nothing stops the invoice."""
+        documents, errors, _warnings = self._import(cte_xml(taker=LUCRO_PRESUMIDO))
+        self.assertFalse(errors)
+        self.assertEqual(documents.cte_company_role, "taker")
+        self.assertFalse(documents._edi_no_payable_reason())
+        self.assertNotIn("not the taker", documents.import_warning or "")
+        if "edi_can_generate_invoice" in documents._fields:
+            self.assertNotIn("not the taker", documents.import_warning or "")
+
+    def test_a_cte_of_which_the_company_is_only_the_recipient_is_only_registered(self):
+        """The company is the recipient, not the taker: the CT-e is imported for
+        the record, with a warning, and gives no invoice."""
+        documents, errors, _warnings = self._import(cte_xml(taker="12345678000195"))
+        self.assertFalse(errors)
+        self.assertEqual(documents.company_id, self.other_company)
+        self.assertEqual(documents.cte_company_role, "other")
+        self.assertIn("not the taker", documents._edi_no_payable_reason())
+        self.assertIn("not the taker", documents.import_warning)
+        if hasattr(documents, "action_generate_invoice"):
+            with self.assertRaises(UserError):
+                documents.action_generate_invoice()
+            self.assertFalse(documents.edi_can_generate_invoice)
+
+    def test_the_shipper_and_the_receiver_are_not_the_taker_either(self):
+        """The shipper, like the sender and the recipient, can be the company, and
+        it is not the taker of the freight."""
+        content = cte_xml(taker="12345678000195", shipper=LUCRO_REAL, recipient="9" * 14)
+        parsed = self.Document._edi_import_read("a.xml", content)
+        self.assertIn(("recipient", LUCRO_REAL), parsed.company_vats)
+        documents, errors, _warnings = self._import(content)
+        self.assertFalse(errors)
+        self.assertEqual(documents.cte_company_role, "other")
 
     def test_the_company_is_the_recipient_when_the_taker_is_not_one(self):
         documents, errors, _warnings = self._import(cte_xml(taker="12345678000195"))
