@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-20 12:54+0000\n"
+"POT-Creation-Date: 2026-11-21 20:00+0000\n"
 "PO-Revision-Date: 2026-11-19 22:58+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -38,6 +38,19 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_request_edi.document_match_tree
 msgid "Create Order from Request"
 msgstr "Criar pedido da solicitação"
+
+#. module: l10n_br_purchase_request_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_request_edi.field_purchase_request__import_document_ids
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_request_edi.purchase_request_form
+msgid "Fiscal Documents"
+msgstr ""
+"Documentos fiscais"
+
+#. module: l10n_br_purchase_request_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_request_edi.field_purchase_request__import_document_count
+msgid "Fiscal Documents Count"
+msgstr ""
+"Quantidade de documentos fiscais"
 
 #. module: l10n_br_purchase_request_edi
 #. odoo-python
@@ -73,6 +86,7 @@ msgid "Purchase Order"
 msgstr "Pedido de compra"
 
 #. module: l10n_br_purchase_request_edi
+#: model:ir.model,name:l10n_br_purchase_request_edi.model_purchase_request
 #: model:ir.model.fields.selection,name:l10n_br_purchase_request_edi.selection__l10n_br_purchase_edi_match__kind__request
 msgid "Purchase Request"
 msgstr "Solicitação de compra"
@@ -84,9 +98,22 @@ msgid "Purchase Request Line"
 msgstr "Linha da solicitação de compra"
 
 #. module: l10n_br_purchase_request_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_request_edi.field_account_bank_statement_line__import_request_ids
+#: model:ir.model.fields,field_description:l10n_br_purchase_request_edi.field_account_move__import_request_ids
+#: model:ir.model.fields,field_description:l10n_br_purchase_request_edi.field_account_payment__import_request_ids
+#: model:ir.model.fields,field_description:l10n_br_purchase_request_edi.field_l10n_br_fiscal_document__import_request_ids
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_request_edi.document_match_search
 msgid "Purchase Requests"
 msgstr "Solicitações de compra"
+
+#. module: l10n_br_purchase_request_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_request_edi.field_account_bank_statement_line__import_request_count
+#: model:ir.model.fields,field_description:l10n_br_purchase_request_edi.field_account_move__import_request_count
+#: model:ir.model.fields,field_description:l10n_br_purchase_request_edi.field_account_payment__import_request_count
+#: model:ir.model.fields,field_description:l10n_br_purchase_request_edi.field_l10n_br_fiscal_document__import_request_count
+msgid "Purchase Requests Count"
+msgstr ""
+"Quantidade de solicitações de compra"
 
 #. module: l10n_br_purchase_request_edi
 #: model:ir.model.fields,help:l10n_br_purchase_request_edi.field_account_move_line__import_request_line_id
@@ -121,6 +148,12 @@ msgid "Requested by"
 msgstr "Solicitante"
 
 #. module: l10n_br_purchase_request_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_request_edi.document_form
+msgid "Requests"
+msgstr ""
+"Solicitações"
+
+#. module: l10n_br_purchase_request_edi
 #. odoo-python
 #: code:addons/l10n_br_purchase_request_edi/models/document_match.py:0
 #, python-format
@@ -128,9 +161,45 @@ msgid "Select the invoice lines and one purchase request line."
 msgstr "Selecione as linhas da nota e uma linha de solicitação de compra."
 
 #. module: l10n_br_purchase_request_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_request_edi.purchase_request_form
+msgid "Show the imported fiscal documents of this request"
+msgstr ""
+"Mostrar os documentos fiscais importados desta solicitação"
+
+#. module: l10n_br_purchase_request_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_request_edi.document_form
+msgid "Show the purchase requests of the lines"
+msgstr ""
+"Mostrar as solicitações de compra das linhas"
+
+#. module: l10n_br_purchase_request_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_request_edi.field_l10n_br_purchase_edi_match__line_state
 msgid "Situation"
 msgstr "Situação"
+
+#. module: l10n_br_purchase_request_edi
+#: model:ir.model.fields,help:l10n_br_purchase_request_edi.field_purchase_request__import_document_ids
+msgid ""
+"Technical: the imported fiscal documents whose lines point to a line of this "
+"request, or to an order line that was bought for it."
+msgstr ""
+"Técnico: os documentos fiscais importados cujas linhas apontam para um"
+"a linha desta solicitação, ou para uma linha de pedido comprada para e"
+"la."
+
+#. module: l10n_br_purchase_request_edi
+#: model:ir.model.fields,help:l10n_br_purchase_request_edi.field_account_bank_statement_line__import_request_ids
+#: model:ir.model.fields,help:l10n_br_purchase_request_edi.field_account_move__import_request_ids
+#: model:ir.model.fields,help:l10n_br_purchase_request_edi.field_account_payment__import_request_ids
+#: model:ir.model.fields,help:l10n_br_purchase_request_edi.field_l10n_br_fiscal_document__import_request_ids
+msgid ""
+"Technical: the purchase requests of the lines of the document: the one an "
+"order was created from and the ones of the order lines that the lines point "
+"to, as resolved or as suggested."
+msgstr ""
+"Técnico: as solicitações de compra das linhas do documento: aquela de "
+"onde um pedido foi criado e as das linhas de pedido para as quais as l"
+"inhas apontam, como resolvidas ou como sugeridas."
 
 #. module: l10n_br_purchase_request_edi
 #. odoo-python

@@ -63,17 +63,17 @@
       <prod>
         <cProd>DEMO-REQ-E</cProd>
         <cEAN>SEM GTIN</cEAN>
-        <xProd>Luva de protecao demo</xProd>
+        <xProd>Luva de proteção demo</xProd>
         <NCM>94033000</NCM>
         <CFOP>6102</CFOP>
         <uCom>UN</uCom>
         <qCom>8.0000</qCom>
-        <vUnCom>1120.0000000000</vUnCom>
+        <vUnCom>140.0000000000</vUnCom>
         <vProd>1120.00</vProd>
         <cEANTrib>SEM GTIN</cEANTrib>
         <uTrib>UN</uTrib>
         <qTrib>8.0000</qTrib>
-        <vUnTrib>1120.0000000000</vUnTrib>
+        <vUnTrib>140.0000000000</vUnTrib>
         <indTot>1</indTot>
       </prod>
       <imposto>

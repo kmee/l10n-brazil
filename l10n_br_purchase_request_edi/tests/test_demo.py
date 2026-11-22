@@ -43,3 +43,7 @@ class TestDemo(TransactionCase):
         self.assertEqual(
             self.document.fiscal_line_ids.import_purchase_line_id, order.order_line
         )
+        # the smart buttons of the document and of the request
+        self.assertEqual(self.document.import_request_ids, self.request)
+        self.assertEqual(self.request.import_document_ids, self.document)
+        self.assertEqual(self.document.import_purchase_order_ids, order)

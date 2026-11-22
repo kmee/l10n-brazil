@@ -39,10 +39,20 @@ class TestViews(EdiImportCase):
         )
         views = self.env["ir.ui.view"].browse(view_ids)
         self.assertTrue(views)
-        for user in (self._fiscal_user("view-fiscal"), self._buyer()):
+        requester = self._fiscal_user("view-requester")
+        requester.groups_id |= self.env.ref(
+            "purchase_request.group_purchase_request_manager"
+        )
+        for user in (self._fiscal_user("view-fiscal"), self._buyer(), requester):
             for view in views.filtered(lambda view: view.type in ("form", "tree")):
-                model = self.env[view.model].with_user(user).with_context(
-                    allowed_company_ids=user.company_ids.ids
+                if view.model == "purchase.request" and not user.has_group(
+                    "purchase_request.group_purchase_request_user"
+                ):
+                    continue  # the request form is for the request users
+                model = (
+                    self.env[view.model]
+                    .with_user(user)
+                    .with_context(allowed_company_ids=user.company_ids.ids)
                 )
                 arch = model.get_view(view.id)["arch"]
                 self._check_fields(view.model, etree.fromstring(arch))
