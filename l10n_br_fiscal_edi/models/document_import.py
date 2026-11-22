@@ -935,12 +935,14 @@ class Document(models.Model):
         drafts = self.filtered(
             lambda doc: doc.imported_document and doc.state_edoc == DOCUMENT_STATE_DRAFT
         )
+        own = drafts.filtered(lambda doc: doc.issuer == DOCUMENT_ISSUER_COMPANY)
         for document in drafts:
+            causes = []
             unresolved = document.fiscal_line_ids.filtered(
                 lambda line: line.import_state in ("pending", "matched")
             )
             if unresolved:
-                raise UserError(
+                causes.append(
                     _(
                         "The document %(document)s has lines that were not reviewed:"
                         "\n%(lines)s"
@@ -950,16 +952,18 @@ class Document(models.Model):
                         "lines": "\n".join(unresolved.mapped("name")),
                     }
                 )
-        own = drafts.filtered(lambda doc: doc.issuer == DOCUMENT_ISSUER_COMPANY)
-        for document in own.filtered("import_without_protocol"):
-            raise UserError(
-                _(
-                    "The file of %(document)s has no authorization protocol, so it "
-                    "cannot be confirmed as authorized. Import the file with the "
-                    "protocol."
+            if document in own and document.import_without_protocol:
+                causes.append(
+                    _(
+                        "The file of %(document)s has no authorization protocol, so "
+                        "it cannot be confirmed as authorized. Import the file with "
+                        "the protocol."
+                    )
+                    % {"document": document.display_name}
                 )
-                % {"document": document.display_name}
-            )
+            if causes:
+                # every cause at once: the person fixes them in one go
+                raise UserError("\n\n".join(causes))
         for document in own:
             document._trigger_fsm("action_confirm_imported")
         return super(Document, self - own).action_document_confirm()

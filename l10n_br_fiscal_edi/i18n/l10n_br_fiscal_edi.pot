@@ -1453,28 +1453,28 @@ msgid "Import UoM Factor"
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__import_state__matched
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document_line__import_state__matched
 msgid "Matched"
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__import_state__pending
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document_line__import_state__pending
 msgid "Pending"
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__import_state__pending
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document__import_state__pending
 msgid "Pending Review"
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__import_state__resolved
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__import_state__resolved
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document__import_state__resolved
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document_line__import_state__resolved
 msgid "Resolved"
 msgstr ""
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__import_state__in_progress
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document__import_state__in_progress
 msgid "Review in Progress"
 msgstr ""
 
@@ -1501,3 +1501,50 @@ msgstr ""
 #: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_line__import_uom_id
 msgid "Unit of the company that is equivalent to the unit of the supplier."
 msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid ""
+"The file of this document, issued by the company, has no authorization "
+"protocol: it cannot be confirmed as authorized. Import the file with the"
+" protocol."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid ""
+"The file of %(document)s has no authorization protocol, so it cannot be "
+"confirmed as authorized. Import the file with the protocol."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid ""
+"The reader of %(file)s created a document of type %(created)s for a file"
+" of type %(declared)s."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid ""
+"%(line)s: more than one operation line fits the operation: choose the "
+"operation line of the line."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_line_review.py:0
+#, python-format
+msgid ""
+"Choosing the product of a line under review is for the fiscal profile. "
+"Ask a fiscal user to resolve the line."
+msgstr ""
+

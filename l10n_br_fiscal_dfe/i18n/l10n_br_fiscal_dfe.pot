@@ -1018,3 +1018,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_fiscal_dfe.field_l10n_br_fiscal_dfe_dfe__xml_pretty
 msgid "XML Pretty"
 msgstr ""
+
+#. module: l10n_br_fiscal_dfe
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe/models/dfe_document.py:0
+#, python-format
+msgid "Only the fiscal users can import a document from the inbox."
+msgstr ""
+
