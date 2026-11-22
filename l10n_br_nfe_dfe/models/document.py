@@ -11,7 +11,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     MODELO_FISCAL_NFE,
 )
 
-from ..constants.nfe_dfe import ACKNOWLEDGEMENT_DAYS
+from ..constants.nfe_dfe import ACKNOWLEDGEMENT_DAYS, MANIFESTATION_GROUP
 
 EVENT_TYPE_BY_OPTION = {"ciencia": "ciente", "confirmacao": "confirmado"}
 
@@ -39,6 +39,17 @@ class Document(models.Model):
             or self.fiscal_operation_type != FISCAL_IN
             or self.document_type_id.code != MODELO_FISCAL_NFE
         ):
+            return
+        if not (self.env.su or self.env.user.has_group(MANIFESTATION_GROUP)):
+            self.message_post(
+                body=_(
+                    "The manifestation of the recipient was not registered: it is "
+                    "sent to the tax authority with the certificate of the company "
+                    "and %s has no permission of NF-e user. Ask who has it to "
+                    "register it."
+                )
+                % self.env.user.name
+            )
             return
         if event_type == "ciente" and self._nfe_dfe_acknowledgement_expired():
             self.message_post(
@@ -73,7 +84,8 @@ class Document(models.Model):
         )
 
     def _nfe_dfe_register_manifestation(self, event_type):
-        """Job: the technical event is sent as the company, whoever confirmed."""
+        """Job: the event is sent with the certificate of the company, by who
+        confirmed and has the permission of NF-e user (checked on confirm)."""
         self.ensure_one()
         dfe_document = (
             self.env["l10n_br_fiscal_dfe.document"]
@@ -86,17 +98,13 @@ class Document(models.Model):
                 limit=1,
             )
         )
-        event = (
-            self.env["l10n_br_nfe.md_event"]
-            .sudo()
-            .create(
-                {
-                    "access_key": self.document_key,
-                    "event_type": event_type,
-                    "company_id": self.company_id.id,
-                    "document_type": "nfe",
-                    "dfe_document_id": dfe_document.id,
-                }
-            )
+        event = self.env["l10n_br_nfe.md_event"].create(
+            {
+                "access_key": self.document_key,
+                "event_type": event_type,
+                "company_id": self.company_id.id,
+                "document_type": "nfe",
+                "dfe_document_id": dfe_document.id,
+            }
         )
         event.with_company(self.company_id).action_confirm()

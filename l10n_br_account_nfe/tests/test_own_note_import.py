@@ -68,7 +68,20 @@ class TestOwnNoteInvoice(TransactionCase):
         xml = xml.replace(b"<nNF>1</nNF>", b"<nNF>4</nNF>")
         xml = xml.replace(b"81493979000189", b"84148732000113")
         xml = xml.replace(b"E-COM07", b"ZZ-OWN-1").replace(b"FURN_8855", b"ZZ-OWN-2")
-        return xml.replace(b"<pag>", COLLECTION, 1)
+        xml = xml.replace(b"<pag>", COLLECTION, 1)
+        # the file as the authority returns it: a note the company issued is confirmed
+        # as authorized only with the protocol
+        body = xml.decode().split("?>", 1)[1].strip()
+        protocol = (
+            '<protNFe versao="4.00"><infProt><tpAmb>2</tpAmb><verAplic>SVRS</verAplic>'
+            f"<chNFe>{OWN_KEY}</chNFe><dhRecbto>2026-06-10T10:15:00-03:00</dhRecbto>"
+            "<nProt>135200000000004</nProt><digVal>abc=</digVal><cStat>100</cStat>"
+            "<xMotivo>Autorizado o uso da NF-e</xMotivo></infProt></protNFe>"
+        )
+        return (
+            '<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">'
+            f"{body.replace('</NFe>', '</NFe>' + protocol)}</nfeProc>"
+        ).encode()
 
     def _confirmed_document(self, xml):
         documents, errors, _warnings = self.Document._edi_import_files(
