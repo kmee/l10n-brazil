@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-22 02:16+0000\n"
+"POT-Creation-Date: 2026-11-22 06:02+0000\n"
 "PO-Revision-Date: 2026-11-19 21:45+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -67,8 +67,7 @@ msgstr "Saldo"
 #. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "Candidate"
-msgstr ""
-"Candidata"
+msgstr "Candidata"
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,help:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__partner_id
@@ -135,14 +134,8 @@ msgstr "Documento fiscal"
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_purchase_order__import_document_ids
-#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.purchase_order_form
 msgid "Fiscal Documents"
 msgstr "Documentos fiscais"
-
-#. module: l10n_br_purchase_edi
-#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_purchase_order__import_document_count
-msgid "Fiscal Documents Count"
-msgstr "Quantidade de documentos fiscais"
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__fiscal_line_id
@@ -155,6 +148,13 @@ msgstr "Linha fiscal"
 #, python-format
 msgid "Fiscal document %s"
 msgstr "Documento fiscal %s"
+
+#. module: l10n_br_purchase_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_purchase_order__import_document_count
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.purchase_order_form
+msgid "Fiscal documents"
+msgstr ""
+"Documentos fiscais"
 
 #. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_search
@@ -254,14 +254,12 @@ msgstr "Quantidade da nota"
 #. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "Note price"
-msgstr ""
-"Preço da nota"
+msgstr "Preço da nota"
 
 #. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "Note qty"
-msgstr ""
-"Qtd da nota"
+msgstr "Qtd da nota"
 
 #. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
@@ -367,14 +365,12 @@ msgstr "Diferença de preço (%)"
 #. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "Price diff."
-msgstr ""
-"Dif. de preço"
+msgstr "Dif. de preço"
 
 #. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "Price diff. %"
-msgstr ""
-"Dif. de preço %"
+msgstr "Dif. de preço %"
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,help:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__note_price_unit
@@ -423,17 +419,8 @@ msgstr "Linha do pedido de compra (origem)"
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_account_move__import_purchase_order_ids
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_account_payment__import_purchase_order_ids
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_fiscal_document__import_purchase_order_ids
-#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_form
 msgid "Purchase Orders"
 msgstr "Pedidos de compra"
-
-#. module: l10n_br_purchase_edi
-#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_account_bank_statement_line__import_purchase_order_count
-#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_account_move__import_purchase_order_count
-#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_account_payment__import_purchase_order_count
-#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_fiscal_document__import_purchase_order_count
-msgid "Purchase Orders Count"
-msgstr "Quantidade de pedidos de compra"
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,help:l10n_br_purchase_edi.field_account_move_line__import_purchase_line_id
@@ -450,16 +437,24 @@ msgstr ""
 "produto, e uma pessoa a confirma ou altera."
 
 #. module: l10n_br_purchase_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_account_bank_statement_line__import_purchase_order_count
+#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_account_move__import_purchase_order_count
+#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_account_payment__import_purchase_order_count
+#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_fiscal_document__import_purchase_order_count
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_form
+msgid "Purchases"
+msgstr ""
+"Compras"
+
+#. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "Qty"
-msgstr ""
-"Qtd"
+msgstr "Qtd"
 
 #. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "Qty diff."
-msgstr ""
-"Dif. de qtd"
+msgstr "Dif. de qtd"
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__quantity
@@ -503,8 +498,7 @@ msgstr "Cotações"
 #. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "Ref."
-msgstr ""
-"Ref."
+msgstr "Ref."
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__reference
@@ -607,8 +601,7 @@ msgstr "Situação"
 #. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "State"
-msgstr ""
-"Situação"
+msgstr "Situação"
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields.selection,name:l10n_br_purchase_edi.selection__l10n_br_fiscal_document_line__import_origin_state__suggested
@@ -766,8 +759,7 @@ msgstr ""
 #. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "Type"
-msgstr ""
-"Tipo"
+msgstr "Tipo"
 
 #. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
@@ -802,8 +794,13 @@ msgstr "Sem pedido"
 #. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "xPed"
-msgstr ""
-"xPed"
+msgstr "xPed"
+
+#~ msgid "Fiscal Documents Count"
+#~ msgstr "Quantidade de documentos fiscais"
+
+#~ msgid "Purchase Orders Count"
+#~ msgstr "Quantidade de pedidos de compra"
 
 #~ msgid ""
 #~ "Quotation price less the price of the line of the document being matched "

@@ -69,7 +69,7 @@ class FiscalDocument(models.Model):
     )
     import_picking_count = fields.Integer(
         compute="_compute_import_pickings",
-        string="Receipts Count",
+        string="Receipts",
         groups="purchase.group_purchase_user,stock.group_stock_user",
     )
 

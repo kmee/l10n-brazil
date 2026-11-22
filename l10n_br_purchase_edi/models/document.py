@@ -54,7 +54,7 @@ class FiscalDocument(models.Model):
     )
     import_purchase_order_count = fields.Integer(
         compute="_compute_import_purchase_orders",
-        string="Purchase Orders Count",
+        string="Purchases",
         groups="purchase.group_purchase_user",
     )
 
