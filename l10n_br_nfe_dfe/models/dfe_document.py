@@ -124,26 +124,6 @@ class L10nBrFiscalDfeDocument(models.Model):
             },
         }
 
-    def action_view_imported_document(self):
-        """Open the fiscal document created from this DF-e.
-
-        It is the document of the import, not the invoice of it: whoever
-        imports is a fiscal user and may have no access to accounting.
-        """
-        self.ensure_one()
-        document = self.fiscal_document_id
-        allowed = list(self.env.context.get("allowed_company_ids") or [])
-        allowed = allowed or self.env.companies.ids
-        allowed += [cid for cid in document.company_id.ids if cid not in allowed]
-        return {
-            "type": "ir.actions.act_window",
-            "res_model": document._name,
-            "res_id": document.id,
-            "views": [(False, "form")],
-            "view_mode": "form",
-            "context": {"allowed_company_ids": allowed},
-        }
-
     def _check_acknowledgement_period(self):
         self.ensure_one()
         emission = self.document_emission_date
