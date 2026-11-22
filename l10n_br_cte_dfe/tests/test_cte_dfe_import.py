@@ -8,7 +8,8 @@ from unittest import mock
 
 from xsdata.formats.dataclass.transports import DefaultTransport
 
-from odoo.tests.common import TransactionCase
+from odoo import Command
+from odoo.tests.common import TransactionCase, tagged
 
 from .common import CTE_ACCESS_KEY, response_cte_only
 
@@ -87,3 +88,76 @@ class TestCteDfeImport(TransactionCase):
         with zipfile.ZipFile(BytesIO(zip_data)) as zf:
             self.assertEqual(zf.namelist(), [f"procCTe_{CTE_ACCESS_KEY}.xml"])
             self.assertIn(b"<cteProc", zf.read(zf.namelist()[0]))
+
+
+@tagged("post_install", "-at_install")
+class TestCteDfeImportedDocumentAccess(TransactionCase):
+    """Accounting is loaded after this module: the move exists only post install."""
+
+    @mock.patch.object(DefaultTransport, "post")
+    def test_a_pure_fiscal_user_opens_the_imported_document_from_the_inbox(
+        self, mock_post
+    ):
+        company = self.env.ref("l10n_br_base.empresa_lucro_presumido")
+        company.cte_dfe_next_query = False
+        self.env["l10n_br_fiscal.document"].search(
+            [("document_key", "=", CTE_ACCESS_KEY)]
+        ).unlink()
+        mock_post.return_value = response_cte_only()
+        company.cte_dfe_search_documents()
+        record = self.env["l10n_br_fiscal_dfe.document"].search(
+            [("company_id", "=", company.id), ("fiscal_type", "=", "cte")], limit=1
+        )
+        user = self.env["res.users"].create(
+            {
+                "name": "Pure fiscal",
+                "login": "cte_dfe_pure_fiscal",
+                "company_id": company.id,
+                "company_ids": [Command.set(company.ids)],
+                "groups_id": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            self.env.ref("l10n_br_fiscal.group_user").id,
+                        ]
+                    )
+                ],
+            }
+        )
+        record = record.with_user(user).with_context(allowed_company_ids=company.ids)
+        record.with_context(bin_size=True).import_document()
+        if "move_ids" not in record.fiscal_document_id._fields:
+            self.skipTest("No accounting")
+        # An invoice of the import: accounting is not for a fiscal user.
+        move = (
+            self.env["account.move"]
+            .sudo()
+            .create(
+                {
+                    "move_type": "in_invoice",
+                    "company_id": company.id,
+                    "partner_id": record.fiscal_document_id.partner_id.id,
+                    "fiscal_document_id": record.fiscal_document_id.id,
+                }
+            )
+        )
+        self.assertEqual(record.fiscal_document_id.sudo().move_ids, move)
+        self.env.flush_all()
+        self.env.invalidate_all()
+
+        action = record.action_view_imported_document()
+
+        self.assertEqual(action["res_model"], "l10n_br_fiscal.document")
+        document = (
+            self.env[action["res_model"]]
+            .with_user(user)
+            .with_context(**action["context"])
+            .browse(action["res_id"])
+        )
+        self.assertEqual(document, record.fiscal_document_id)
+        view = document.get_view(view_type="form")
+        names = [
+            name for name in document._fields if 'name="%s"' % name in view["arch"]
+        ]
+        self.assertTrue(names)
+        document.read(names)
