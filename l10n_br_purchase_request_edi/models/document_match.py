@@ -99,6 +99,10 @@ class DocumentMatch(models.Model):
                 AND {balance} > 0
         """
 
+    @api.model
+    def _origin_fields(self):
+        return super()._origin_fields() | {"import_request_line_id"}
+
     def _check_no_request(self):
         if self.sudo().filtered(lambda row: row.kind == "request"):
             raise UserError(
@@ -128,7 +132,7 @@ class DocumentMatch(models.Model):
             "purchase_request.group_purchase_request_user"
         ):
             raise UserError(_("You have no access to the purchase requests."))
-        rows = self.sudo()
+        rows = self._check_selection_access()
         request = rows.filtered(
             lambda row: row.kind == "request"
         ).purchase_request_line_id
@@ -140,6 +144,7 @@ class DocumentMatch(models.Model):
         document = self._editable_document(notes)
         self._check_units(notes)
         self._check_request(request, notes, document)
+        self._check_product_decision(notes)
         uom = request.product_uom_id or request.product_id.uom_id
         quantity = sum(
             line.uom_id._compute_quantity(line.quantity, uom)
@@ -163,12 +168,13 @@ class DocumentMatch(models.Model):
                     uom=order_line.product_uom,
                     factor=factor,
                 )
-            line.write(
+            self._write_origin(
+                line,
                 {
                     "import_purchase_line_id": order_line.id,
                     "import_origin_state": "resolved" if confirmed else "suggested",
                     "import_request_line_id": request.id,
-                }
+                },
             )
         document.message_post(
             body=_(

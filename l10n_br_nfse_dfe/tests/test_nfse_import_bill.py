@@ -84,9 +84,22 @@ class TestNfseImportBill(TransactionCase):
         self.assertAlmostEqual(sum(due_lines.mapped("credit")), 19.60, places=2)
 
     def test_bill_of_an_imported_nfse_with_federal_withholdings_is_balanced(self):
-        """The reader of l10n_br_nfse fills the withholding taxes of PIS and COFINS as
-        well as the ones of IRPJ and CSLL, and the bill keeps the four as tax lines.
-        It must still balance once a payment term applies."""
+        """The operation of the purchase gives the line the withholding taxes of PIS,
+        COFINS, IRPJ and CSLL, with the values that the file declared: each one is a
+        tax line of the bill and the bill balances once a payment term applies."""
         move = self._import_bill(_reform_nfse_xml())
-        self.assertEqual(len(self._withheld_lines(move)), 4)
+        withheld = self._withheld_lines(move)
+        line = move.fiscal_document_id.fiscal_line_ids
+        self.assertEqual(
+            sorted(withheld.mapped("tax_line_id.tax_group_id.name")),
+            ["COFINS WH", "CSLL WH", "IRPJ WH", "PIS WH"],
+        )
+        self.assertAlmostEqual(
+            -sum(withheld.mapped("balance")),
+            line.pis_wh_value
+            + line.cofins_wh_value
+            + line.irpj_wh_value
+            + line.csll_wh_value,
+            places=2,
+        )
         self._assert_installments(move)

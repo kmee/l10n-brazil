@@ -2,7 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_STATE_CANCEL,
@@ -342,11 +342,27 @@ class DocumentMatch(models.Model):
 
     # Actions ---------------------------------------------------------------
 
+    def _check_selection_access(self):
+        """The rows of the selection, after the access of the real user.
+
+        The rows are read through ``sudo`` (the buyer and the fiscal profile do
+        not read each other's models), and a call by id reaches rows that the
+        rules of the model would hide, so the selection is first searched as the
+        user: a row of another company, or of a model that his group does not
+        read, is refused."""
+        self.check_access_rights("read")
+        ids = set(self.ids)
+        if len(self.search([("id", "in", list(ids))])) != len(ids):
+            raise AccessError(_("You have no access to some of the selected lines."))
+        return self.sudo().browse(list(ids))
+
     def _split_selection(self):
         """Invoice lines, order lines and quotation lines of the selection, as
-        records of the models they come from (read with sudo: the buyer and the
-        fiscal profile do not read each other's models)."""
-        rows = self.sudo()
+        records of the models they come from, read with sudo after the access
+        check of the real user (the buyer and the fiscal profile do not read
+        each other's models). The writes of the decisions go through
+        ``_write_origin``."""
+        rows = self._check_selection_access()
         return (
             rows.filtered(lambda row: row.kind == "note").fiscal_line_id,
             rows.filtered(lambda row: row.kind == "order").purchase_line_id,
@@ -354,11 +370,49 @@ class DocumentMatch(models.Model):
         )
 
     @api.model
+    def _origin_fields(self):
+        """The only fields of a fiscal line that a decision of the screen
+        writes. The link modules add theirs (receipt move, request line)."""
+        return {"import_purchase_line_id", "import_origin_state"}
+
+    def _write_origin(self, lines, vals):
+        """Write the origin of invoice lines for the real user, which may be a
+        buyer with no right on the fiscal lines: only the fields of the origin,
+        on lines of a document of an active company of the user."""
+        unexpected = set(vals) - self._origin_fields()
+        if unexpected:
+            raise AccessError(
+                _("The screen does not write %s.") % ", ".join(sorted(unexpected))
+            )
+        if lines.document_id.company_id - self.env.companies:
+            raise AccessError(_("You have no access to the documents of the company."))
+        lines.sudo().write(vals)
+
+    def _check_product_decision(self, lines):
+        """Taking the product of the order line for a line without product is a
+        fiscal decision (product, unit and de-para): only for the fiscal group,
+        since the ACL of the fiscal lines is open to every internal user."""
+        if lines.filtered(lambda line: not line.product_id) and not (
+            self.env.su or self.env.user.has_group("l10n_br_fiscal.group_user")
+        ):
+            raise AccessError(
+                _(
+                    "Choosing the product of a line is for the fiscal profile. "
+                    "Ask for the product to be resolved before matching."
+                )
+            )
+
+    @api.model
     def _editable_document(self, lines):
         """The one document of the lines, still open to change."""
         document = lines.document_id
         if len(document) != 1:
             raise UserError(_("Select the lines of one document at a time."))
+        if document.company_id not in self.env.companies:
+            raise AccessError(
+                _("You have no access to the documents of the company %s.")
+                % document.company_id.name
+            )
         if (
             document.state_edoc != DOCUMENT_STATE_DRAFT
             or document.sudo().move_ids.filtered(lambda move: move.state != "cancel")
@@ -432,6 +486,7 @@ class DocumentMatch(models.Model):
                         line=line.name,
                     )
                 )
+        self._check_product_decision(notes)
         for line in notes:
             if not line.product_id:
                 # the product of the order is the decision, learned as a de-para
@@ -445,11 +500,12 @@ class DocumentMatch(models.Model):
                     uom=order_line.product_uom,
                     factor=factor,
                 )
-            line.write(
+            self._write_origin(
+                line,
                 {
                     "import_purchase_line_id": order_line.id,
                     "import_origin_state": "resolved",
-                }
+                },
             )
         document.message_post(
             body=_(
@@ -468,8 +524,8 @@ class DocumentMatch(models.Model):
         if not lines:
             raise UserError(_("Select invoice lines with a decided origin."))
         document = self._editable_document(lines)
-        lines.write(
-            {"import_purchase_line_id": False, "import_origin_state": "pending"}
+        self._write_origin(
+            lines, {"import_purchase_line_id": False, "import_origin_state": "pending"}
         )
         document.message_post(
             body=_("Origin of %(count)s line(s) undone.", count=len(lines))
@@ -482,8 +538,8 @@ class DocumentMatch(models.Model):
         if not lines:
             raise UserError(_("Select the invoice lines without an order."))
         document = self._editable_document(lines)
-        lines.write(
-            {"import_purchase_line_id": False, "import_origin_state": "no_order"}
+        self._write_origin(
+            lines, {"import_purchase_line_id": False, "import_origin_state": "no_order"}
         )
         document.message_post(
             body=_(

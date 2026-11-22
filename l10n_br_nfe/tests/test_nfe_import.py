@@ -34,6 +34,23 @@ FIXTURE_DEST = re.compile(rb"(<dest>\s*)<(?:CNPJ|CPF)>\d+</(?:CNPJ|CPF)>")
 NFE_NS = "http://www.portalfiscal.inf.br/nfe"
 
 
+def _authorized(xml, key, protocol="135200000000009"):
+    """The file as the authority returns it (``nfeProc``): the note with the protocol
+    of its authorization. A note that the company issued has to bring it to be
+    confirmed."""
+    body = xml.decode().split("?>", 1)[1].strip()
+    prot = (
+        '<protNFe versao="4.00"><infProt><tpAmb>2</tpAmb><verAplic>SVRS</verAplic>'
+        f"<chNFe>{key}</chNFe><dhRecbto>2026-06-10T10:15:00-03:00</dhRecbto>"
+        f"<nProt>{protocol}</nProt><digVal>abc=</digVal><cStat>100</cStat>"
+        "<xMotivo>Autorizado o uso da NF-e</xMotivo></infProt></protNFe>"
+    )
+    return (
+        f'<nfeProc xmlns="{NFE_NS}" versao="4.00">'
+        f"{body.replace('</NFe>', '</NFe>' + prot)}</nfeProc>"
+    ).encode()
+
+
 class NFeImportTest(TransactionCase):
     def test_import_in_nfe_dry_run(self):
         res_items = (
@@ -1152,13 +1169,16 @@ class TestNfeDocumentImport(EdiImportCase):
     def test_the_note_issued_by_the_company_enters_as_an_authorized_sale(self):
         recipient = "84148732000113"
         key = "35200159594315000157550010000000992062777167"
-        xml = self._xml(
-            KEY_3,
-            recipient=recipient,
-            replace=[
-                (KEY_3.encode(), key.encode()),
-                (b"<nNF>3</nNF>", b"<nNF>99</nNF>"),
-            ],
+        xml = _authorized(
+            self._xml(
+                KEY_3,
+                recipient=recipient,
+                replace=[
+                    (KEY_3.encode(), key.encode()),
+                    (b"<nNF>3</nNF>", b"<nNF>99</nNF>"),
+                ],
+            ),
+            key,
         )
         sequences = self.env["ir.sequence"].search([])
         numbers = sequences.mapped("number_next_actual")
@@ -1266,14 +1286,18 @@ class TestNfeDocumentImport(EdiImportCase):
             b"<xEnder>Carrier street of the file</xEnder><xMun>SAO PAULO</xMun>"
             b"<UF>SP</UF></transporta>"
         )
-        xml = self._xml(
-            KEY_3,
-            recipient="11444777000161",
-            replace=[
-                (KEY_3.encode(), b"35200159594315000157550010000000992062777167"),
-                (b"<nNF>3</nNF>", b"<nNF>99</nNF>"),
-                (b"<modFrete>9</modFrete>", carrier),
-            ],
+        key = "35200159594315000157550010000000992062777167"
+        xml = _authorized(
+            self._xml(
+                KEY_3,
+                recipient="11444777000161",
+                replace=[
+                    (KEY_3.encode(), key.encode()),
+                    (b"<nNF>3</nNF>", b"<nNF>99</nNF>"),
+                    (b"<modFrete>9</modFrete>", carrier),
+                ],
+            ),
+            key,
         )
         customer = self._register("11444777000161")
         transporter = self._register("11222333000181")
@@ -1619,10 +1643,16 @@ class TestNfeOwnNoteImport(EdiImportCase):
 
         self._danfe_without_mail(document)
 
-    def test_the_danfe_of_the_own_note_without_protocol_is_also_made_on_demand(self):
+    def test_the_own_note_without_protocol_stays_in_typing_with_a_warning(self):
+        """The file of a note the company issued that has no protocol is not
+        authorized by confirming it: the document waits, and says so."""
         document = self._resolved(self._own_xml(2))
 
-        self._danfe_without_mail(document)
+        self.assertTrue(document.import_without_protocol)
+        self.assertIn("no authorization protocol", document.import_warning)
+        with self.assertRaises(UserError):
+            document.action_document_confirm()
+        self.assertEqual(document.state_edoc, "em_digitacao")
 
     def test_the_danfe_of_a_received_note_is_made_on_demand_from_the_original_xml(
         self,
