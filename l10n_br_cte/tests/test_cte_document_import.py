@@ -665,7 +665,15 @@ class TestCteDocumentImport(EdiImportCase):
         """The CFOP of the CT-e matches no line of the operation and the operation has
         several candidates: the line is left to the person, with a warning; once the
         person chooses the operation line, the amounts are the ones of the file."""
-        documents, errors, _warnings = self._import(cte_xml(COLLECTION))
+        # no line of the demo answers the CFOP of the CT-e here (the purchase
+        # operation has the freight ones, which the next test takes)
+        operation_line = type(self.env["l10n_br_fiscal.operation.line"])
+        with patch.object(
+            operation_line,
+            "_find_by_issuer_cfop",
+            lambda *args, **kwargs: self.env["l10n_br_fiscal.operation.line"],
+        ):
+            documents, errors, _warnings = self._import(cte_xml(COLLECTION))
         self.assertFalse(errors)
         operation = self._operation_with_lines(2)
         documents.fiscal_operation_id = operation
