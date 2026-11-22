@@ -120,9 +120,15 @@ class TestNfeManifestOnConfirm(EdiImportCase):
 
         trap.assert_jobs_count(0)
 
-    def test_the_event_of_a_common_fiscal_user_is_registered_by_the_job(self):
-        user = self._fiscal_user("manifest_fiscal")
-        user.email = "manifest_fiscal@example.com"
+    def _user(self, login, nfe):
+        user = self._fiscal_user(login)
+        user.email = f"{login}@example.com"
+        if nfe:
+            user.groups_id = [(4, self.env.ref("l10n_br_nfe.group_user").id)]
+        return user
+
+    def test_the_event_of_an_nfe_user_is_registered_by_the_job(self):
+        user = self._user("manifest_nfe", nfe=True)
         document = (
             self._document()
             .with_user(user)
@@ -133,6 +139,22 @@ class TestNfeManifestOnConfirm(EdiImportCase):
         self._perform(trap)
 
         self.assertEqual(self._events().state, "done")
+        self.assertEqual(self._events().create_uid, user)
+
+    def test_a_common_fiscal_user_confirms_without_the_manifestation(self):
+        user = self._user("manifest_fiscal", nfe=False)
+        document = (
+            self._document()
+            .with_user(user)
+            .with_context(allowed_company_ids=self.company.ids)
+        )
+
+        trap = self._confirm(document, "confirmacao")
+
+        trap.assert_jobs_count(0)
+        self.assertEqual(document.state_edoc, "autorizada")
+        self.assertFalse(self._events())
+        self.assertIn("permission of NF-e user", document.message_ids[0].body)
 
     def test_a_note_the_company_issued_elsewhere_is_never_manifested(self):
         """The XML is a real NF-e whose issuer is the company: it enters as an
