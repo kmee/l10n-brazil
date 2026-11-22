@@ -6297,6 +6297,24 @@ msgstr ""
 msgid "versao"
 msgstr ""
 
+#. module: l10n_br_cte
+#. odoo-python
+#: code:addons/l10n_br_cte/models/document.py:0
+#, python-format
+msgid ""
+"The CT-e requires ICMS on its line, and the line %(line)s has no ICMS CST. "
+"Choose an operation line and a service that tax ICMS, not ISSQN."
+msgstr ""
+"O CT-e exige ICMS na linha, e a linha %(line)s não tem CST de ICMS. Escolha "
+"uma linha de operação e um serviço que tributem ICMS, não ISSQN."
+
+#. module: l10n_br_cte
+#. odoo-python
+#: code:addons/l10n_br_cte/models/document.py:0
+#, python-format
+msgid "without name"
+msgstr "sem nome"
+
 #~ msgid "Document Date"
 #~ msgstr "Data do Documento"
 

@@ -120,9 +120,15 @@ class TestNfeManifestOnConfirm(EdiImportCase):
 
         trap.assert_jobs_count(0)
 
-    def test_the_event_of_a_common_fiscal_user_is_registered_by_the_job(self):
-        user = self._fiscal_user("manifest_fiscal")
-        user.email = "manifest_fiscal@example.com"
+    def _user(self, login, nfe):
+        user = self._fiscal_user(login)
+        user.email = f"{login}@example.com"
+        if nfe:
+            user.groups_id = [(4, self.env.ref("l10n_br_nfe.group_user").id)]
+        return user
+
+    def test_the_event_of_an_nfe_user_is_registered_by_the_job(self):
+        user = self._user("manifest_nfe", nfe=True)
         document = (
             self._document()
             .with_user(user)
@@ -133,6 +139,22 @@ class TestNfeManifestOnConfirm(EdiImportCase):
         self._perform(trap)
 
         self.assertEqual(self._events().state, "done")
+        self.assertEqual(self._events().create_uid, user)
+
+    def test_a_common_fiscal_user_confirms_without_the_manifestation(self):
+        user = self._user("manifest_fiscal", nfe=False)
+        document = (
+            self._document()
+            .with_user(user)
+            .with_context(allowed_company_ids=self.company.ids)
+        )
+
+        trap = self._confirm(document, "confirmacao")
+
+        trap.assert_jobs_count(0)
+        self.assertEqual(document.state_edoc, "autorizada")
+        self.assertFalse(self._events())
+        self.assertIn("permission of NF-e user", document.message_ids[0].body)
 
     def test_a_note_the_company_issued_elsewhere_is_never_manifested(self):
         """The XML is a real NF-e whose issuer is the company: it enters as an
@@ -154,6 +176,19 @@ class TestNfeManifestOnConfirm(EdiImportCase):
         xml = re.sub(
             rb"(<dest>\s*)<CNPJ>\d+</CNPJ>", rb"\1<CNPJ>11444777000161</CNPJ>", xml
         )
+        # the file as the authority returns it: a note the company issued is confirmed
+        # as authorized only with the protocol
+        body = xml.decode().split("?>", 1)[1].strip()
+        protocol = (
+            '<protNFe versao="4.00"><infProt><tpAmb>2</tpAmb><verAplic>SVRS</verAplic>'
+            f"<chNFe>{key}</chNFe><dhRecbto>2026-06-10T10:15:00-03:00</dhRecbto>"
+            "<nProt>135200000000099</nProt><digVal>abc=</digVal><cStat>100</cStat>"
+            "<xMotivo>Autorizado o uso da NF-e</xMotivo></infProt></protNFe>"
+        )
+        xml = (
+            '<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">'
+            f"{body.replace('</NFe>', '</NFe>' + protocol)}</nfeProc>"
+        ).encode()
         company = self.env.ref("l10n_br_base.empresa_lucro_presumido")
         company.nfe_manifest_on_document_confirm = "confirmacao"
         documents, errors, _warnings = self.Document._edi_import_files(

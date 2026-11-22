@@ -19,16 +19,16 @@ class TestImportStateMigration(TransactionCase):
 
     def _migrate(self):
         path = os.path.join(
-            get_module_path("l10n_br_fiscal"),
+            get_module_path("l10n_br_fiscal_edi"),
             "migrations",
-            "16.0.26.6.4",
+            "16.0.2.5.2",
             "post-migration.py",
         )
-        spec = importlib.util.spec_from_file_location("fiscal_post_migration", path)
+        spec = importlib.util.spec_from_file_location("edi_post_migration", path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         self.env["l10n_br_fiscal.document.line"].flush_model()
-        module.migrate(self.env.cr, "16.0.26.6.3")
+        module.migrate(self.env.cr, "16.0.2.5.1")
         self.env["l10n_br_fiscal.document.line"].invalidate_model()
 
     def _document(self, imported):

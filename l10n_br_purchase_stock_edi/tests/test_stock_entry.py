@@ -82,10 +82,14 @@ class TestStockEntry(StockEdiCase):
         rows = self._rows(fiscal_document_id=self.document.id)
 
         with self.assertRaisesRegex(UserError, "Only a purchase manager"):
-            rows.with_user(buyer).action_no_stock_entry()
+            rows.with_user(buyer).with_context(
+                allowed_company_ids=buyer.company_ids.ids
+            ).action_no_stock_entry()
         self.assertFalse(self.line.sudo().import_no_stock_entry)
 
-        rows.with_user(manager).action_no_stock_entry()
+        rows.with_user(manager).with_context(
+            allowed_company_ids=manager.company_ids.ids
+        ).action_no_stock_entry()
 
         self.assertTrue(self.line.sudo().import_no_stock_entry)
         self.assertTrue(self.document.action_generate_invoice())
