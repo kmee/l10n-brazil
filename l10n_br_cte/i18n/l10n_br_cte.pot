@@ -6179,3 +6179,36 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_cte.field_cte_40_tprotgtve__cte40_versao
 msgid "versao"
 msgstr ""
+
+#. module: l10n_br_cte
+#: model:ir.model.fields,field_description:l10n_br_cte.field_l10n_br_fiscal_document__cte_company_role
+msgid "Role of the Company in the CT-e"
+msgstr ""
+
+#. module: l10n_br_cte
+#: model:ir.model.fields,help:l10n_br_cte.field_l10n_br_fiscal_document__cte_company_role
+msgid ""
+"What the company is in a CT-e that it received: the taker of the "
+"freight, who owes it, or one of the other parties, for whom the CT-e "
+"is only registered."
+msgstr ""
+
+#. module: l10n_br_cte
+#: model:ir.model.fields.selection,name:l10n_br_cte.selection__l10n_br_fiscal_document__cte_company_role__other
+msgid "Sender, recipient, shipper or receiver"
+msgstr ""
+
+#. module: l10n_br_cte
+#: model:ir.model.fields.selection,name:l10n_br_cte.selection__l10n_br_fiscal_document__cte_company_role__taker
+msgid "Taker"
+msgstr ""
+
+#. module: l10n_br_cte
+#. odoo-python
+#: code:addons/l10n_br_cte/models/document_import.py:0
+#, python-format
+msgid ""
+"The company is not the taker of this CT-e: it stays registered, with "
+"no amount to pay."
+msgstr ""
+
