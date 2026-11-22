@@ -108,12 +108,16 @@ class TestCteDfeImportedDocumentAccess(TransactionCase):
         record = self.env["l10n_br_fiscal_dfe.document"].search(
             [("company_id", "=", company.id), ("fiscal_type", "=", "cte")], limit=1
         )
+        # the CT-e of the fixture is issued by "Empresa Simples Nacional" and
+        # addressed to the lucro presumido one: the reader takes the first of them
+        # that the database has, and the user has both
+        companies = company | self.env.ref("l10n_br_base.empresa_simples_nacional")
         user = self.env["res.users"].create(
             {
                 "name": "Pure fiscal",
                 "login": "cte_dfe_pure_fiscal",
                 "company_id": company.id,
-                "company_ids": [Command.set(company.ids)],
+                "company_ids": [Command.set(companies.ids)],
                 "groups_id": [
                     Command.set(
                         [
@@ -124,7 +128,7 @@ class TestCteDfeImportedDocumentAccess(TransactionCase):
                 ],
             }
         )
-        record = record.with_user(user).with_context(allowed_company_ids=company.ids)
+        record = record.with_user(user).with_context(allowed_company_ids=companies.ids)
         record.with_context(bin_size=True).import_document()
         if "move_ids" not in record.fiscal_document_id._fields:
             self.skipTest("No accounting")
@@ -156,8 +160,6 @@ class TestCteDfeImportedDocumentAccess(TransactionCase):
         )
         self.assertEqual(document, record.fiscal_document_id)
         view = document.get_view(view_type="form")
-        names = [
-            name for name in document._fields if 'name="%s"' % name in view["arch"]
-        ]
+        names = [name for name in document._fields if f'name="{name}"' in view["arch"]]
         self.assertTrue(names)
         document.read(names)
