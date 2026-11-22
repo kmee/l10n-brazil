@@ -639,7 +639,10 @@ class Document(models.Model):
         operation_lines = self.env["l10n_br_fiscal.operation.line"]
         found = {
             line: operation_lines._find_by_issuer_cfop(
-                line.partner_cfop_id, self.partner_operation_name, direction
+                line.partner_cfop_id,
+                self.partner_operation_name,
+                direction,
+                operation=self.fiscal_operation_id,
             )
             for line in self.fiscal_line_ids.filtered(
                 lambda line: not line.fiscal_operation_line_id
@@ -703,6 +706,7 @@ class Document(models.Model):
                 line.partner_cfop_id,
                 self.partner_operation_name,
                 self.fiscal_operation_type,
+                operation=self.fiscal_operation_id,
             )
             for line in self.fiscal_line_ids.filtered(
                 lambda line: (
