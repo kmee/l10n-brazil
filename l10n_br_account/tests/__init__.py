@@ -19,3 +19,4 @@ from . import test_deductible_balance
 from . import test_dfe_utilization
 from . import test_search_filters
 from . import test_purchase_tax_creditability
+from . import test_result_closing_wizard
