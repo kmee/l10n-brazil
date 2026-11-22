@@ -94,6 +94,26 @@ class TestDfeImport(EdiImportCase):
         wizard = (self.Wizard if model is None else model).create({"access_key": key})
         return wizard.action_import()
 
+    def test_the_inbox_opens_the_fiscal_document_of_the_import_of_any_type(self):
+        """The document of the import, not its invoice, and with the companies of
+        the note in the context, for a note of any type."""
+        for fiscal_type in ("nfe", "cte"):
+            with self.subTest(fiscal_type=fiscal_type):
+                key = KEY_1 if fiscal_type == "nfe" else KEY_2
+                row = self._dfe_document(key=key, fiscal_type=fiscal_type)
+                row.import_document()
+                document = self._imported(key)
+                self.assertTrue(document)
+                row.invalidate_recordset(["fiscal_document_id"])
+
+                action = row.with_context(
+                    allowed_company_ids=[]
+                ).action_view_imported_document()
+
+                self.assertEqual(action["res_model"], "l10n_br_fiscal.document")
+                self.assertEqual(action["res_id"], document.id)
+                self.assertIn(self.company.id, action["context"]["allowed_company_ids"])
+
     def test_a_repeated_key_opens_the_document_without_asking_the_distribution(self):
         document = self._create_imported_document(document_key=KEY_1)
         company_model = type(self.company)
