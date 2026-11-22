@@ -624,6 +624,57 @@ class TestNFeDFeDemo(TransactionCase):
             record = self._record(xmlid)
             self.assertEqual(record.currency_id, record.company_id.currency_id)
 
+    def test_the_currency_of_a_note_follows_the_company_not_the_user(self):
+        company = self.env["res.company"].create(
+            {"name": "Other currency", "currency_id": self.env.ref("base.USD").id}
+        )
+        record = self.env["l10n_br_fiscal_dfe.document"].create(
+            {"access_key": "9" * 44, "company_id": company.id}
+        )
+
+        self.assertEqual(record.currency_id, self.env.ref("base.USD"))
+        self.assertEqual(record.company_id.currency_id, record.currency_id)
+
+    def test_the_list_of_the_inbox_reads_the_amount_with_the_currency_of_the_company(
+        self,
+    ):
+        record = self._record("demo_dfe_document_complete")
+        user = self.env["res.users"].create(
+            {
+                "name": "Fiscal reader",
+                "login": "nfe_dfe_reader",
+                "company_id": record.company_id.id,
+                "company_ids": [Command.set(record.company_id.ids)],
+                "groups_id": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            self.env.ref("l10n_br_fiscal.group_user").id,
+                        ]
+                    )
+                ],
+            }
+        )
+        data = record.with_user(user).read(["document_amount", "currency_id"])[0]
+
+        self.assertEqual(data["currency_id"][0], record.company_id.currency_id.id)
+        self.assertEqual(data["document_amount"], record.document_amount)
+
+    def test_the_default_filter_of_the_inbox_is_translated(self):
+        lang = self.env["res.lang"].with_context(active_test=False).search(
+            [("code", "=", "pt_BR")]
+        )
+        if not lang.active:
+            self.skipTest("pt_BR is not installed")
+        model = self.env["l10n_br_fiscal_dfe.document"].with_context(lang="pt_BR")
+        view = model.get_view(
+            self.env.ref("l10n_br_fiscal_dfe.l10n_br_fiscal_dfe_document_search").id,
+            "search",
+        )
+
+        self.assertIn("A importar", view["arch"])
+        self.assertNotIn("To import", view["arch"])
+
     def test_the_complete_note_of_the_inbox_is_imported_by_the_button(self):
         record = self._record("demo_dfe_document_complete")
 
