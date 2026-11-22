@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-22 06:02+0000\n"
-"PO-Revision-Date: 2026-11-22 06:02+0000\n"
+"POT-Creation-Date: 2026-11-22 07:26+0000\n"
+"PO-Revision-Date: 2026-11-22 07:26+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -135,16 +135,16 @@ msgid "Fiscal Line"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_purchase_order__import_document_count
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.purchase_order_form
+msgid "Fiscal docs"
+msgstr ""
+
+#. module: l10n_br_purchase_edi
 #. odoo-python
 #: code:addons/l10n_br_purchase_edi/models/document_match.py:0
 #, python-format
 msgid "Fiscal document %s"
-msgstr ""
-
-#. module: l10n_br_purchase_edi
-#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_purchase_order__import_document_count
-#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.purchase_order_form
-msgid "Fiscal documents"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
@@ -175,6 +175,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_account_move_line__import_origin_candidate_ids
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_fiscal_document_line__import_origin_candidate_ids
 msgid "Import Origin Candidate"
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.purchase_order_form
+msgid "Imported fiscal documents linked to this record"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
@@ -552,11 +557,6 @@ msgstr ""
 #: code:addons/l10n_br_purchase_edi/models/document_match.py:0
 #, python-format
 msgid "Select the lines of one quotation."
-msgstr ""
-
-#. module: l10n_br_purchase_edi
-#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.purchase_order_form
-msgid "Show the imported fiscal documents of this order"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
