@@ -177,3 +177,39 @@ class TestSpedEfdIcmsIpiCorrecoes(EntradaHelpers, SpedEntradaCommon):
         self._relate(doc, cnpj_cpf="49.190.159/0001-05")
         c113 = self._sped_records(self._declaration_july(), "C113")
         self.assertEqual([rec["COD_PART"] for rec in c113], [str(self.partner_a.id)])
+
+    def test_c110_points_to_the_0450_of_the_complementary_info(self):
+        """The C110 has the code of a 0450 (REGRA_EXISTE_COD_INF_V2), the same
+        code for the same text, and the 0450 only has what a C110 uses."""
+        text = "Devolucao da NF 77"
+        first, _line = self._entry_document(customer_additional_data=text)
+        second, _line = self._entry_document(customer_additional_data=text)
+        plain, _line = self._entry_document()
+        self._entry_document(customer_additional_data="Sem referencia")
+        for doc in (first, second, plain):
+            self._relate(doc, cnpj_cpf="49.190.159/0001-05")
+        declaration = self._declaration_july()
+        codes = {
+            rec["TXT"]: rec["COD_INF"]
+            for rec in self._sped_records(declaration, "0450")
+        }
+        self.assertEqual(sorted(codes), [text, "Documento fiscal referenciado"])
+        self.assertEqual({len(code) for code in codes.values()}, {6})
+        c110 = [rec["COD_INF"] for rec in self._sped_records(declaration, "C110")]
+        self.assertEqual(
+            sorted(c110),
+            sorted([codes[text], codes[text], codes["Documento fiscal referenciado"]]),
+        )
+
+    def test_one_c110_for_the_references_of_a_document(self):
+        """COD_INF is the key of the C110 in a document: its references hang
+        from one C110, not one C110 each."""
+        doc, _line = self._entry_document()
+        self._relate(doc, cnpj_cpf="49.190.159/0001-05")
+        self._relate(doc, cnpj_cpf="49.190.159/0001-05", document_number="78")
+        declaration = self._declaration_july()
+        self.assertEqual(len(self._sped_records(declaration, "C110")), 1)
+        self.assertEqual(
+            sorted(rec["NUM_DOC"] for rec in self._sped_records(declaration, "C113")),
+            ["77", "78"],
+        )
