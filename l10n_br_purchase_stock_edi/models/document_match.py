@@ -86,10 +86,17 @@ class DocumentMatch(models.Model):
                 AND (sm.state != 'done' OR pl.qty_received - pl.qty_invoiced > 0)
         """
 
+    @api.model
+    def _origin_fields(self):
+        return super()._origin_fields() | {
+            "import_stock_move_id",
+            "import_no_stock_entry",
+        }
+
     def action_match(self):
         """With a receipt move selected the origin takes it, instead of the one
         candidate of the order line."""
-        rows = self.sudo()
+        rows = self._check_selection_access()
         receipts = rows.filtered(lambda row: row.kind == "receipt").stock_move_id
         if receipts:
             order_lines = rows.filtered(
@@ -103,15 +110,16 @@ class DocumentMatch(models.Model):
                 )
         result = super().action_match()
         if receipts:
-            rows.filtered(lambda row: row.kind == "note").fiscal_line_id.write(
-                {"import_stock_move_id": receipts.id}
+            self._write_origin(
+                rows.filtered(lambda row: row.kind == "note").fiscal_line_id,
+                {"import_stock_move_id": receipts.id},
             )
         return result
 
     def action_open_receipt(self):
         """Open the receipt of the selected lines with the quantities and the
         lots of the document proposed. Nothing is validated."""
-        rows = self.sudo()
+        rows = self._check_selection_access()
         moves = (
             rows.filtered(lambda row: row.kind == "receipt").stock_move_id
             | rows.filtered(
@@ -185,7 +193,7 @@ class DocumentMatch(models.Model):
         )
         picking.action_confirm()
         for line, move in zip(lines, picking.move_ids.sorted("id"), strict=True):
-            line.import_stock_move_id = move
+            self._write_origin(line, {"import_stock_move_id": move.id})
         document.message_post(
             body=_("Receipt %(picking)s created for %(count)s line(s).")
             % {"picking": picking.name, "count": len(lines)}
@@ -238,7 +246,7 @@ class DocumentMatch(models.Model):
         if not lines:
             raise UserError(_("Select invoice lines marked as without order."))
         document = self._editable_document(lines)
-        lines.write({"import_no_stock_entry": True})
+        self._write_origin(lines, {"import_no_stock_entry": True})
         document.message_post(
             body=_("%s line(s) marked as without stock entry.", len(lines))
         )

@@ -41,7 +41,7 @@ class AccountMove(models.Model):
     def _search_purchase_divergent(self, operator, value):
         """Not stored (the receipts move after the bill is typed): the search
         looks at the bill lines linked to an order line, the only ones that
-        can diverge, and answers with their bills."""
+        can diverge, of the bills not paid yet, and answers with their bills."""
         if operator not in ("=", "!="):
             raise NotImplementedError("Only = and != are supported.")
         lines = self.env["account.move.line"].search(
@@ -50,6 +50,9 @@ class AccountMove(models.Model):
                 ("display_type", "=", "product"),
                 ("move_id.move_type", "in", ("in_invoice", "in_refund")),
                 ("move_id.state", "!=", "cancel"),
+                # a bill already paid is settled: the search does not read the
+                # whole history of the purchases
+                ("move_id.payment_state", "in", ("not_paid", "partial")),
             ]
         )
         divergent_ids = lines.filtered("purchase_divergent").move_id.ids
