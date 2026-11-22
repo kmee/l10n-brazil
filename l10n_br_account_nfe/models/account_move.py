@@ -3,13 +3,19 @@
 
 from dataclasses import replace
 
-from odoo import models
+from odoo import api, models
 
 from odoo.addons.l10n_br_nfe.constants.nfe import SEM_PAGAMENTO
 
 
 class AccountMove(models.Model):
     _inherit = "account.move"
+
+    @api.depends("payment_mode_id")
+    def _compute_edi_payment_summary(self):
+        """The means of payment comes from the payment mode, so the preview of
+        the payment has to follow it as it is chosen or cleared."""
+        return super()._compute_edi_payment_summary()
 
     def _edi_payment_means(self):
         """The means of payment of the NF-e is the one of the payment mode, and

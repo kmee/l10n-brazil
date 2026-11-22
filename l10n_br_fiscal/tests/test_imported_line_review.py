@@ -178,6 +178,13 @@ class TestImportedLineReview(TransactionCase):
         self.assertEqual(line.quantity, 50.0)
         self.assertEqual(line.price_unit, 4.0)
 
+    def test_resolving_a_line_reloads_the_form_of_the_document(self):
+        """The button is in the dialog of the line, and the form of the document would
+        keep the values it read before the review."""
+        self.line.product_id = self.product
+        action = self.line.action_resolve_line()
+        self.assertEqual(action, {"type": "ir.actions.client", "tag": "reload"})
+
     def test_resolving_a_line_needs_the_product(self):
         with self.assertRaises(UserError):
             self.line.action_resolve_line()
