@@ -152,6 +152,12 @@ class TestCteDfeImportedDocumentAccess(TransactionCase):
         action = record.action_view_imported_document()
 
         self.assertEqual(action["res_model"], "l10n_br_fiscal.document")
+        # whoever has accounting rights is taken to the document as well, the
+        # invoice has its own button
+        self.assertEqual(
+            record.sudo().action_view_imported_document()["res_model"],
+            "l10n_br_fiscal.document",
+        )
         document = (
             self.env[action["res_model"]]
             .with_user(user)
