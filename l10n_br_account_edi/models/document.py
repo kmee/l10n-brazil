@@ -35,6 +35,7 @@ class Document(models.Model):
                 and document.fiscal_line_ids
                 and document._edi_payment_totals()[0]
                 and not document.move_ids
+                and not document._edi_no_payable_reason()
             )
 
     def action_generate_invoice(self):
@@ -44,6 +45,9 @@ class Document(models.Model):
         # the invoice is born in the company of the document, whichever the user
         # has selected
         self = self.with_company(self.company_id)
+        reason = self._edi_no_payable_reason()
+        if reason:
+            raise UserError(reason)
         if not self.env["account.move"].check_access_rights(
             "create", raise_exception=False
         ):
