@@ -163,3 +163,23 @@ class TestGenerateInvoice(AccountEdiCase):
 
         imported.assert_not_called()
         self.assertEqual(action["res_model"], "account.move")
+
+    def test_a_document_without_amount_to_pay_gets_no_invoice(self):
+        """The type of the document can say that it is only registered: the button
+        goes away and the action refuses, with the reason."""
+        reason = "Registered only, with no amount to pay."
+        with self._declared((self._day(3, 10), 400.0), (self._day(4, 10), 600.0)):
+            document = self._imported_document()
+            self.assertTrue(document.edi_can_generate_invoice)
+            document_model = type(document)
+            with mock.patch.object(
+                document_model, "_edi_no_payable_reason", lambda doc: reason
+            ):
+                document.invalidate_recordset(["edi_can_generate_invoice"])
+                self.assertFalse(document.edi_can_generate_invoice)
+                with self.assertRaises(UserError) as error:
+                    document.action_generate_invoice()
+                self.assertEqual(error.exception.args[0], reason)
+                self.assertFalse(document.move_ids)
+            document.invalidate_recordset(["edi_can_generate_invoice"])
+            self.assertTrue(document.edi_can_generate_invoice)
