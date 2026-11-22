@@ -192,3 +192,19 @@ class TestImportHeaderOperation(EdiImportCase):
         self.assertEqual(line.fiscal_operation_id, operation)
         self.assertFalse(line.fiscal_operation_line_id)
         self.assertIn("choose the operation line", document.import_warning)
+
+    def test_a_document_without_amount_to_pay_shows_why(self):
+        """The type of the document can say that it is only registered: the reason
+        is a warning of the document and goes away with it."""
+        document = self._declared_document()
+        self.assertFalse(document._edi_no_payable_reason())
+        self.assertNotIn("Registered only", document.import_warning or "")
+        with patch.object(
+            type(document),
+            "_edi_no_payable_reason",
+            lambda doc: "Registered only, with no amount to pay.",
+        ):
+            document.invalidate_recordset(["import_warning"])
+            self.assertIn("Registered only", document.import_warning)
+        document.invalidate_recordset(["import_warning"])
+        self.assertNotIn("Registered only", document.import_warning or "")
