@@ -48,6 +48,16 @@ class AccountMove(models.Model):
 
     _order = "date DESC, name DESC"
 
+    l10n_br_sped_result_closing = fields.Boolean(
+        string="Result Closing Entry",
+        copy=False,
+        help="Entry that brings the income and expense accounts to zero at the "
+        "end of the period, moving the result to the equity. The SPED books "
+        "report it apart: the ECD as a closing entry (IND_LCTO E) with the "
+        "balances before it (I350, I355), the ECF with the balance sheet after "
+        "it and the result before it.",
+    )
+
     document_electronic = fields.Boolean(
         related="document_type_id.electronic",
         string="Electronic?",
@@ -526,6 +536,16 @@ class AccountMove(models.Model):
         with super()._sync_dynamic_lines(container):
             yield
         self.update_payment_term_number()
+
+    def _prepare_product_base_line_for_taxes_computation(self, product_line):
+        """The tax the company may not credit books no tax line: its value
+        stays in the product line (see account.move.line._get_ledger_taxes)."""
+        base_line = super()._prepare_product_base_line_for_taxes_computation(
+            product_line
+        )
+        if product_line.fiscal_document_line_id:
+            base_line["tax_ids"] = product_line._get_ledger_taxes()
+        return base_line
 
     @contextmanager
     def _sync_tax_lines(self, container):
