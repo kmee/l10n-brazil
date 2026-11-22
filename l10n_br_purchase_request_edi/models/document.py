@@ -20,7 +20,7 @@ class FiscalDocument(models.Model):
     )
     import_request_count = fields.Integer(
         compute="_compute_import_requests",
-        string="Purchase Requests Count",
+        string="Requests",
         groups=REQUEST_GROUP,
     )
 
