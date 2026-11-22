@@ -780,7 +780,7 @@ class TestDocumentImport(EdiImportCase):
             with patch.object(
                 type(self.env["l10n_br_fiscal.operation.line"]),
                 "_find_by_issuer_cfop",
-                lambda *args: self.env["l10n_br_fiscal.operation.line"],
+                lambda *args, **kwargs: self.env["l10n_br_fiscal.operation.line"],
             ):
                 document._edi_import_suggest()
             self.assertFalse(document.fiscal_operation_id)
