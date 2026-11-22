@@ -21,7 +21,7 @@
                     invisible="1"
                     groups="purchase_request.group_purchase_request_user"
                 />
-                <field name="requested_by_id" optional="show" />
+                <field name="requested_by_id" string="Requester" optional="hide" />
             </field>
         </field>
     </record>
