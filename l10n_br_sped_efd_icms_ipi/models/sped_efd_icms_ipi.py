@@ -242,6 +242,27 @@ class Registro0000(models.Model):
             ]
         )
 
+    def _check_assessments_by_state(self):
+        """E210 and E310 go out only without movement: the assessment has no
+        state, so the ICMS-ST and the DIFAL of one state cannot be read from
+        it. A state of the 0015 with ST or DIFAL in the period stops the file
+        instead of a block E with zeros."""
+        self.ensure_one()
+        states = self.env["l10n_br_sped.efd_icms_ipi.0015"]._get_substitute_states(self)
+        moving = states & (
+            self.env["l10n_br_sped.efd_icms_ipi.e200"]._get_moving_states(self)
+            | self.env["l10n_br_sped.efd_icms_ipi.e300"]._get_moving_states(self)
+        )
+        if moving:
+            raise UserError(
+                _(
+                    "There is ICMS-ST or DIFAL in the period for %(states)s, and "
+                    "the tax assessment has no ICMS-ST nor DIFAL by state yet: "
+                    "the E210 and the E310 of these states cannot be generated.",
+                    states=", ".join(moving.mapped("code")),
+                )
+            )
+
     def _get_accountant_required(self):
         # what the layout marks as mandatory in the 0100 (the descriptor of the PVA)
         return [
@@ -268,6 +289,7 @@ class Registro0000(models.Model):
             if not declaration.debug:
                 # the credit balance of the earlier months has to be the real one
                 declaration._get_posted_icms_assessments()._check_previous_periods()
+                declaration._check_assessments_by_state()
             if declaration.debug or declaration.IND_ATIV != "0":
                 continue
             if not declaration.CLAS_ESTAB_IND:
@@ -378,6 +400,15 @@ class Registro0015(models.Model):
 
     def _odoo_domain(self, parent_record, declaration):
         return [("partner_id", "=", declaration.company_id.partner_id.id)]
+
+    @api.model
+    def _get_substitute_states(self, declaration):
+        """The states of the 0015: each one needs its E200 and its E300."""
+        return (
+            self.env["state.tax.numbers"]
+            .search(self._odoo_domain(None, declaration))
+            .mapped("state_id")
+        )
 
     # TODO: Deve ser gerado um registro para cada inscrição estadual dos
     # contribuintes pelos quais a empresa é substituta tributária.
@@ -4324,14 +4355,34 @@ class RegistroE200(models.Model):
     _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.efd_icms_ipi.e200"
     _inherit = "l10n_br_sped.efd_icms_ipi.20.e200"
+    _odoo_model = "res.country.state"
 
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "UF": 0,  # Sigla da unidade da federação a que se refere a apuração ...
-    #         "DT_INI": 0,  # Data inicial a que a apuração se refere
-    #         "DT_FIN": 0,  # Data final a que a apuração se refere
-    #     }
+    @api.model
+    def _get_moving_states(self, declaration):
+        """The states of the participants of the documents with ICMS-ST (the
+        VL_ICMS_ST of the C190 the Guia Pratico sums by state)."""
+        documents = self.env["l10n_br_sped.efd_icms_ipi.c100"]._get_booked_documents(
+            declaration
+        )
+        return documents.filtered("amount_icmsst_value").mapped("partner_id.state_id")
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        # one period for each state of the 0015, which the Guia Pratico makes
+        # mandatory; a state with ST in the period has no E210 to read (see
+        # _check_assessments_by_state) and stays out rather than go out empty
+        states = self.env["l10n_br_sped.efd_icms_ipi.0015"]._get_substitute_states(
+            declaration
+        )
+        return [("id", "in", (states - self._get_moving_states(declaration)).ids)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "UF": record.code,
+            "DT_INI": declaration.DT_INI,
+            "DT_FIN": declaration.DT_FIN,
+        }
 
 
 class RegistroE210(models.Model):
@@ -4341,24 +4392,43 @@ class RegistroE210(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.e210"
     _inherit = "l10n_br_sped.efd_icms_ipi.20.e210"
 
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "IND_MOV_ST": 0,  # Indicador de movimento: 0 - Sem operações com ST ...
-    #         "VL_SLD_CRED_ANT_ST": 0,  # Valor do "Saldo credor de período anterio...
-    #         "VL_DEVOL_ST": 0,  # Valor total do ICMS ST de devolução de mercadori...
-    #         "VL_RESSARC_ST": 0,  # Valor total do ICMS ST de ressarcimentos
-    #         "VL_OUT_CRED_ST": 0,  # Valor total de Ajustes "Outros créditos ST" e...
-    #         "VL_AJ_CREDITOS_ST": 0,  # Valor total dos ajustes a crédito de ICMS ...
-    #         "VL_RETENCAO_ST": 0,  # Valor Total do ICMS retido por Substituição T...
-    #         "VL_OUT_DEB_ST": 0,  # Valor Total dos ajustes "Outros débitos ST" " ...
-    #         "VL_AJ_DEBITOS_ST": 0,  # Valor total dos ajustes a débito de ICMS ST...
-    #         "VL_SLD_DEV_ANT_ST": 0,  # Valor total de Saldo devedor antes das ded...
-    #         "VL_DEDUCOES_ST": 0,  # Valor total dos ajustes "Deduções ST"
-    #         "VL_ICMS_RECOL_ST": 0,  # Imposto a recolher ST (11-12)
-    #         "VL_SLD_CRED_ST_TRANSPORTAR": 0,  # Saldo credor de ST a transportar ...
-    #         "DEB_ESP_ST": 0,  # Valores recolhidos ou a recolher, extra-apuração
-    #     }
+    # every field is obrigatorio="1" in the descriptor: a zero is written "0"
+    VL_SLD_CRED_ANT_ST = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_DEVOL_ST = fields.Monetary(out_required=True, currency_field="brl_currency_id")
+    VL_RESSARC_ST = fields.Monetary(out_required=True, currency_field="brl_currency_id")
+    VL_OUT_CRED_ST = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_AJ_CREDITOS_ST = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_RETENCAO_ST = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_OUT_DEB_ST = fields.Monetary(out_required=True, currency_field="brl_currency_id")
+    VL_AJ_DEBITOS_ST = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_SLD_DEV_ANT_ST = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_DEDUCOES_ST = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_ICMS_RECOL_ST = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_SLD_CRED_ST_TRANSPORTAR = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    DEB_ESP_ST = fields.Float(out_required=True)
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        # only the period without ST reaches here: no value to read
+        return {"IND_MOV_ST": "0"}
 
 
 class RegistroE230(models.Model):
@@ -4429,14 +4499,36 @@ class RegistroE300(models.Model):
     _description = textwrap.dedent(f"    {__doc__}")
     _name = "l10n_br_sped.efd_icms_ipi.e300"
     _inherit = "l10n_br_sped.efd_icms_ipi.20.e300"
+    _odoo_model = "res.country.state"
 
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "UF": 0,  # Sigla da unidade da Federação a que se refere à apuração ...
-    #         "DT_INI": 0,  # Data Inicial a que a apuração se refere
-    #         "DT_FIN": 0,  # Data Final a que a apuração se refere
-    #     }
+    @api.model
+    def _get_moving_states(self, declaration):
+        """The states of the participants of the documents with the values of
+        the C101 (DIFAL and FCP), which the Guia Pratico sums by state."""
+        documents = self.env["l10n_br_sped.efd_icms_ipi.c100"]._get_booked_documents(
+            declaration
+        )
+        return documents.filtered(
+            lambda doc: doc.amount_icms_destination_value
+            or doc.amount_icms_origin_value
+            or doc.amount_icmsfcp_value
+        ).mapped("partner_id.state_id")
+
+    @api.model
+    def _odoo_domain(self, parent_record, declaration):
+        # the same rule as the E200: each state of the 0015, without movement
+        states = self.env["l10n_br_sped.efd_icms_ipi.0015"]._get_substitute_states(
+            declaration
+        )
+        return [("id", "in", (states - self._get_moving_states(declaration)).ids)]
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        return {
+            "UF": record.code,
+            "DT_INI": declaration.DT_INI,
+            "DT_FIN": declaration.DT_FIN,
+        }
 
 
 class RegistroE310(models.Model):
@@ -4446,31 +4538,67 @@ class RegistroE310(models.Model):
     _name = "l10n_br_sped.efd_icms_ipi.e310"
     _inherit = "l10n_br_sped.efd_icms_ipi.20.e310"
 
-    # @api.model
-    # def _map_from_odoo(self, record, parent_record, declaration, index=0):
-    #     return {
-    #         "IND_MOV_FCP_DIFAL": 0,  # Indicador de movimento: 0 - Sem operações ...
-    #         "VL_SLD_CRED_ANT_DIFAL": 0,  # Valor do "Saldo credor de período ante...
-    #         "VL_TOT_DEBITOS_DIFAL": 0,  # Valor total dos débitos por "Saídas e p...
-    #         "VL_OUT_DEB_DIFAL": 0,  # Valor total dos ajustes "Outros débitos ICM...
-    #         "VL_TOT_CREDITOS_DIFAL": 0,  # Valor total dos créditos do ICMS refer...
-    #         "VL_OUT_CRED_DIFAL": 0,  # Valor total de Ajustes "Outros créditos IC...
-    #         "VL_SLD_DEV_ANT_DIFAL": 0,  # Valor total de “Saldo devedor ICMS Dife...
-    #         "VL_DEDUCOES_DIFAL": 0,  # Valor total dos ajustes "Deduções ICMS Dif...
-    #         "VL_RECOL_DIFAL": 0,  # Valor recolhido ou a recolher referente ao IC...
-    #         "VL_SLD_CRED_TRANSPORTAR_DIFAL": 0,  # Saldo credor a transportar par...
-    #         "DEB_ESP_DIFAL": 0,  # Valores recolhidos ou a recolher, extra-apuraç...
-    #         "VL_SLD_CRED_ANT_FCP": 0,  # Valor do "Saldo credor de período anteri...
-    #         "VL_TOT_DEB_FCP": 0,  # Valor total dos débitos FCP por "Saídas e pre...
-    #         "VL_OUT_DEB_FCP": 0,  # Valor total dos ajustes "Outros débitos FCP" ...
-    #         "VL_TOT_CRED_FCP": 0,  # Valor total dos créditos FCP por Entradas
-    #         "VL_OUT_CRED_FCP": 0,  # Valor total de Ajustes "Outros créditos FCP"...
-    #         "VL_SLD_DEV_ANT_FCP": 0,  # Valor total de Saldo devedor FCP antes da...
-    #         "VL_DEDUCOES_FCP": 0,  # Valor total das deduções "FCP"
-    #         "VL_RECOL_FCP": 0,  # Valor recolhido ou a recolher referente ao FCP ...
-    #         "VL_SLD_CRED_TRANSPORTAR_FCP": 0,  # Saldo credor a transportar para ...
-    #         "DEB_ESP_FCP": 0,  # Valores recolhidos ou a recolher, extra-apuração...
-    #     }
+    # every field is obrigatorio="1" in the descriptor: a zero is written "0"
+    VL_SLD_CRED_ANT_DIFAL = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_TOT_DEBITOS_DIFAL = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_OUT_DEB_DIFAL = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_TOT_CREDITOS_DIFAL = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_OUT_CRED_DIFAL = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_SLD_DEV_ANT_DIFAL = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_DEDUCOES_DIFAL = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_RECOL_DIFAL = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_SLD_CRED_TRANSPORTAR_DIFAL = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    DEB_ESP_DIFAL = fields.Float(out_required=True)
+    VL_SLD_CRED_ANT_FCP = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_TOT_DEB_FCP = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_OUT_DEB_FCP = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_TOT_CRED_FCP = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_OUT_CRED_FCP = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_SLD_DEV_ANT_FCP = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_DEDUCOES_FCP = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    VL_RECOL_FCP = fields.Monetary(out_required=True, currency_field="brl_currency_id")
+    VL_SLD_CRED_TRANSPORTAR_FCP = fields.Monetary(
+        out_required=True, currency_field="brl_currency_id"
+    )
+    # an amount with two decimals in the descriptor, an Integer in the spec
+    DEB_ESP_FCP = fields.Monetary(out_required=True, currency_field="brl_currency_id")
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        # only the period without DIFAL nor FCP reaches here: no value to read
+        return {"IND_MOV_FCP_DIFAL": "0"}
 
 
 class RegistroE311(models.Model):
