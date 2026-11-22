@@ -178,6 +178,20 @@ class TestOperation(TransactionCase):
             lines._find_by_issuer_cfop(self.env.ref("l10n_br_fiscal.cfop_5102")), line
         )
 
+    def test_find_by_issuer_cfop_looks_only_in_the_operation_given(self):
+        """When the operation is already chosen, the line of another operation that
+        has the same CFOP is not the answer."""
+        lines = self.env["l10n_br_fiscal.operation.line"]
+        own = self._create_inbound_operation("1102", "TEST-OWN-OPERATION")
+        other = self._create_inbound_operation("1403", "TEST-OTHER-OPERATION")
+        self.assertEqual(
+            lines._find_by_issuer_cfop("5102", operation=own.fiscal_operation_id),
+            own,
+        )
+        self.assertFalse(
+            lines._find_by_issuer_cfop("5102", operation=other.fiscal_operation_id)
+        )
+
     def test_find_by_issuer_cfop_needs_an_issuer_cfop(self):
         """A CFOP that is already ours has no issuer counterpart to look for."""
         lines = self.env["l10n_br_fiscal.operation.line"]
