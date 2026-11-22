@@ -374,3 +374,24 @@ msgstr ""
 #, python-format
 msgid "You can only import the NF-e when the DF-e is completed."
 msgstr ""
+
+#. module: l10n_br_nfe_dfe
+#. odoo-python
+#: code:addons/l10n_br_nfe_dfe/models/dfe_document.py:0
+#, python-format
+msgid ""
+"The acknowledgement of the operation is registered at the tax authority "
+"with the certificate of the company. You need the permission of NF-e "
+"user for it: ask an administrator, or upload the XML file instead."
+msgstr ""
+
+#. module: l10n_br_nfe_dfe
+#. odoo-python
+#: code:addons/l10n_br_nfe_dfe/models/document.py:0
+#, python-format
+msgid ""
+"The manifestation of the recipient was not registered: it is sent to the"
+" tax authority with the certificate of the company and %s has no "
+"permission of NF-e user. Ask who has it to register it."
+msgstr ""
+

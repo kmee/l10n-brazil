@@ -1095,6 +1095,13 @@ msgstr "Anexo XML armazenado no Odoo."
 msgid "XML Pretty"
 msgstr "XML Formatado"
 
+#. module: l10n_br_fiscal_dfe
+#. odoo-python
+#: code:addons/l10n_br_fiscal_dfe/models/dfe_document.py:0
+#, python-format
+msgid "Only the fiscal users can import a document from the inbox."
+msgstr "Só os usuários fiscais podem importar um documento da caixa de entrada."
+
 #~ msgid "1.01"
 #~ msgstr "1.01"
 
