@@ -20,7 +20,7 @@
                     <field
                         name="import_document_count"
                         widget="statinfo"
-                        string="Fiscal Documents"
+                        string="Fiscal documents"
                     />
                 </button>
             </xpath>

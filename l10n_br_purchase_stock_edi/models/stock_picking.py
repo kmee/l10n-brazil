@@ -31,7 +31,7 @@ class StockPicking(models.Model):
     )
     import_document_count = fields.Integer(
         compute="_compute_import_documents",
-        string="Fiscal Documents Count",
+        string="Fiscal documents",
         groups="l10n_br_fiscal.group_user",
     )
 
