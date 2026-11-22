@@ -52,7 +52,8 @@ class L10nBrFiscalDfeDocument(models.Model):
 
     currency_id = fields.Many2one(
         comodel_name="res.currency",
-        default=lambda self: self.env.company.currency_id,
+        related="company_id.currency_id",
+        string="Currency",
     )
 
     document_amount = fields.Monetary(string="Document Total Value")
