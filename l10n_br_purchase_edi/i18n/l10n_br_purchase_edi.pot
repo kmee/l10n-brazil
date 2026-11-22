@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-22 02:16+0000\n"
-"PO-Revision-Date: 2026-11-22 02:16+0000\n"
+"POT-Creation-Date: 2026-11-22 06:02+0000\n"
+"PO-Revision-Date: 2026-11-22 06:02+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -126,13 +126,7 @@ msgstr ""
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_purchase_order__import_document_ids
-#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.purchase_order_form
 msgid "Fiscal Documents"
-msgstr ""
-
-#. module: l10n_br_purchase_edi
-#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_purchase_order__import_document_count
-msgid "Fiscal Documents Count"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
@@ -145,6 +139,12 @@ msgstr ""
 #: code:addons/l10n_br_purchase_edi/models/document_match.py:0
 #, python-format
 msgid "Fiscal document %s"
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_purchase_order__import_document_count
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.purchase_order_form
+msgid "Fiscal documents"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
@@ -402,16 +402,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_account_move__import_purchase_order_ids
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_account_payment__import_purchase_order_ids
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_fiscal_document__import_purchase_order_ids
-#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_form
 msgid "Purchase Orders"
-msgstr ""
-
-#. module: l10n_br_purchase_edi
-#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_account_bank_statement_line__import_purchase_order_count
-#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_account_move__import_purchase_order_count
-#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_account_payment__import_purchase_order_count
-#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_fiscal_document__import_purchase_order_count
-msgid "Purchase Orders Count"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
@@ -422,6 +413,15 @@ msgid ""
 "suggested from the order reference of the file (xPed and nItemPed) or from "
 "the only open order line of the supplier for the product, and a person "
 "confirms or changes it."
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_account_bank_statement_line__import_purchase_order_count
+#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_account_move__import_purchase_order_count
+#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_account_payment__import_purchase_order_count
+#: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_fiscal_document__import_purchase_order_count
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_form
+msgid "Purchases"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
