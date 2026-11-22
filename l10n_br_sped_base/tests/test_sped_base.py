@@ -1276,7 +1276,7 @@ class TestSpedBase(SpedDocumentCommon, TransactionCase, FakeModelLoader):
         typed = i010.search(domain)
 
         def make_one(self_, kind, level, **kwargs):
-            self_.create({"declaration_id": declaration.id})
+            self_.create({"COD_VER_LC": "9.00", "declaration_id": declaration.id})
 
         with patch.object(
             type(i010), "_pull_records_from_odoo", autospec=True, side_effect=make_one
