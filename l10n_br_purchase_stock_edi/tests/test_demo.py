@@ -4,6 +4,7 @@
 from odoo.tests import TransactionCase, tagged
 
 KEY_LOTS = "35261011765432000100550010000030011300100010"
+KEY_WAITING = "35261011765432000100550010000030021300200020"
 
 
 @tagged("post_install", "-at_install")
@@ -32,3 +33,25 @@ class TestDemo(TransactionCase):
         }
         self.assertEqual(lots, {"L-DEMO-01": 6.0, "L-DEMO-02": 4.0})
         self.assertEqual(order.order_line.qty_received, 10.0)
+        # the note says what the order and the receipt say: nothing diverges
+        self.assertFalse(line.import_divergent)
+        self.assertEqual(line.import_price_difference, 0)
+        self.assertEqual(line.import_qty_difference, 0)
+        # the smart buttons of the document and of the receipt
+        self.assertEqual(document.import_picking_ids, picking)
+        self.assertEqual(picking.import_document_ids, document)
+        self.assertEqual(document.import_purchase_order_ids, order)
+
+    def test_the_note_of_the_order_not_received_awaits_the_receipt(self):
+        order = self.env.ref("l10n_br_purchase_stock_edi.demo_order_waiting")
+        document = self.env["l10n_br_fiscal.document"].search(
+            [("document_key", "=", KEY_WAITING)]
+        )
+        line = document.fiscal_line_ids
+
+        self.assertEqual(line.import_purchase_line_id, order.order_line)
+        self.assertTrue(line.import_awaiting_receipt)
+        self.assertFalse(line.import_divergent)
+        self.assertTrue(document.import_awaiting_receipt)
+        self.assertEqual(document.import_picking_ids, order.picking_ids)
+        self.assertNotEqual(order.picking_ids.state, "done")

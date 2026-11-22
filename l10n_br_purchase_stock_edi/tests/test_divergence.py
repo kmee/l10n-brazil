@@ -82,20 +82,106 @@ class TestDivergence(StockEdiCase):
         self.assertEqual(self.line.import_ordered_qty, 0)
         self.assertFalse(self.line.import_divergent)
 
-    def test_the_bill_that_is_issued_before_the_receipt_stays_divergent(self):
+    def test_a_note_not_received_yet_awaits_the_receipt_and_is_not_divergent(self):
+        order = self._order(quantity=10, price=140.0)
+        self.line.write({"quantity": 10, "uom_id": self.unit.id, "price_unit": 140.0})
+        self._resolve_product()
+        self.line.import_purchase_line_id = order.order_line
+
+        self.assertTrue(self.line.import_awaiting_receipt)
+        self.assertFalse(self.line.import_divergent)
+        self.assertEqual(self.line.import_qty_difference, 0)
+        self.assertTrue(self.document.import_awaiting_receipt)
+        self.assertFalse(self.document.import_divergent)
+        found = self.env["l10n_br_fiscal.document"].search(
+            [("import_awaiting_receipt", "=", True)]
+        )
+        self.assertIn(self.document, found)
+        # a document that points to no order line does not wait for a receipt
+        other = self._imported_document(lines=[{}])
+        self.assertNotIn(
+            other,
+            self.env["l10n_br_fiscal.document"].search(
+                [("import_awaiting_receipt", "=", True)]
+            ),
+        )
+
+    def test_a_note_received_and_matching_shows_nothing(self):
+        order = self._order(quantity=10, price=140.0)
+        self.line.write({"quantity": 10, "uom_id": self.unit.id, "price_unit": 140.0})
+        self._resolve_product()
+        self.line.import_purchase_line_id = order.order_line
+        self._receive(order, 10)
+
+        self.assertFalse(self.line.import_awaiting_receipt)
+        self.assertFalse(self.line.import_divergent)
+        self.assertFalse(self.document.import_awaiting_receipt)
+        self.assertFalse(self.document.import_divergent)
+        self.assertNotIn(
+            self.document,
+            self.env["l10n_br_fiscal.document"].search(
+                [("import_awaiting_receipt", "=", True)]
+            ),
+        )
+
+    def test_a_note_received_for_less_is_divergent(self):
+        order = self._order(quantity=10, price=140.0)
+        self.line.write({"quantity": 10, "uom_id": self.unit.id, "price_unit": 140.0})
+        self._resolve_product()
+        self.line.import_purchase_line_id = order.order_line
+        self._receive(order, 6, backorder=True)
+
+        self.assertFalse(self.line.import_awaiting_receipt)
+        self.assertTrue(self.line.import_divergent)
+        self.assertEqual(self.line.import_qty_difference, 4)
+
+    def test_a_price_out_of_the_tolerance_is_divergent_even_before_the_receipt(self):
+        order = self._order(quantity=10, price=140.0)
+        self.line.write({"quantity": 10, "uom_id": self.unit.id, "price_unit": 150.0})
+        self._resolve_product()
+        self.line.import_purchase_line_id = order.order_line
+
+        self.assertTrue(self.line.import_awaiting_receipt)
+        self.assertTrue(self.line.import_divergent)
+        self.company.purchase_price_tolerance = 10.0
+        self.assertFalse(self.line.import_divergent)
+
+    def test_a_note_for_more_than_the_order_is_divergent_before_the_receipt(self):
+        order = self._order(quantity=10, price=140.0)
+        self.line.write({"quantity": 12, "uom_id": self.unit.id, "price_unit": 140.0})
+        self._resolve_product()
+        self.line.import_purchase_line_id = order.order_line
+
+        self.assertTrue(self.line.import_divergent)
+        self.company.purchase_quantity_tolerance = 20.0
+        self.assertFalse(self.line.import_divergent)
+
+    def test_a_partial_receipt_still_compares_with_what_was_received(self):
+        order = self._order(quantity=10, price=140.0)
+        self.line.write({"quantity": 4, "uom_id": self.unit.id, "price_unit": 140.0})
+        self._resolve_product()
+        self.line.import_purchase_line_id = order.order_line
+        self._receive(order, 4, backorder=True)
+
+        self.assertFalse(self.line.import_divergent)
+        self.assertFalse(self.line.import_awaiting_receipt)
+
+    def test_the_bill_that_is_issued_before_the_receipt_awaits_it(self):
         order = self._order(quantity=10, price=100.0)
         self.line.write({"quantity": 10, "uom_id": self.unit.id, "price_unit": 100.0})
         self._resolve_product()
         self.line.import_purchase_line_id = order.order_line
-        self.assertTrue(self.line.import_divergent)
+        self.assertTrue(self.line.import_awaiting_receipt)
 
         action = self.document.action_generate_invoice()
         bill = self.env["account.move"].browse(action["res_id"])
-        self.assertTrue(bill.purchase_divergent)
+        self.assertTrue(bill.purchase_awaiting_receipt)
+        self.assertFalse(bill.purchase_divergent)
         self.assertEqual(bill.invoice_line_ids.purchase_received_qty, 0)
 
         self._receive(order, 10)
         bill.invoice_line_ids.invalidate_recordset()
+        self.assertFalse(bill.purchase_awaiting_receipt)
         self.assertFalse(bill.purchase_divergent)
 
     def test_the_tolerances_cannot_be_negative(self):

@@ -21,6 +21,58 @@ class StockPicking(models.Model):
                 and any(move._import_declared_lots() for move in picking.move_ids)
             )
 
+    import_document_ids = fields.Many2many(
+        comodel_name="l10n_br_fiscal.document",
+        compute="_compute_import_documents",
+        string="Fiscal Documents",
+        groups="l10n_br_fiscal.group_user",
+        help="Technical: the imported fiscal documents whose lines point to a "
+        "move of this receipt.",
+    )
+    import_document_count = fields.Integer(
+        compute="_compute_import_documents",
+        string="Fiscal Documents Count",
+        groups="l10n_br_fiscal.group_user",
+    )
+
+    @api.depends("move_ids")
+    def _compute_import_documents(self):
+        # one reading for all the receipts of the list
+        lines = (
+            self.env["l10n_br_fiscal.document.line"]
+            .sudo()
+            .search(
+                [
+                    ("import_stock_move_id.picking_id", "in", self.ids),
+                    ("document_id.imported_document", "=", True),
+                ]
+            )
+        )
+        documents = {}
+        for line in lines:
+            picking = line.import_stock_move_id.picking_id
+            documents[picking.id] = documents.get(picking.id, line.document_id) | (
+                line.document_id
+            )
+        for picking in self:
+            found = documents.get(picking.id, self.env["l10n_br_fiscal.document"])
+            picking.import_document_ids = found
+            picking.import_document_count = len(found)
+
+    def action_view_import_documents(self):
+        """The imported fiscal document of the receipt, or the list of them."""
+        self.ensure_one()
+        documents = self.sudo().import_document_ids
+        action = self.env["ir.actions.act_window"]._for_xml_id(
+            "l10n_br_fiscal_edi.imported_document_action"
+        )
+        if len(documents) == 1:
+            action["views"] = [(False, "form")]
+            action["res_id"] = documents.id
+        else:
+            action["domain"] = [("id", "in", documents.ids)]
+        return action
+
     def action_propose_lots_from_import(self):
         """Propose, on the receipt, the lots and expiry dates the document that is
         the origin of its moves declared. The operator reviews and validates."""

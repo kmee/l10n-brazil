@@ -44,6 +44,43 @@ class FiscalDocument(models.Model):
                 in document.fiscal_line_ids.mapped("import_origin_state")
             )
 
+    import_purchase_order_ids = fields.Many2many(
+        comodel_name="purchase.order",
+        compute="_compute_import_purchase_orders",
+        string="Purchase Orders",
+        groups="purchase.group_purchase_user",
+        help="Technical: the purchase orders that the lines of the document "
+        "point to, as resolved or as suggested.",
+    )
+    import_purchase_order_count = fields.Integer(
+        compute="_compute_import_purchase_orders",
+        string="Purchase Orders Count",
+        groups="purchase.group_purchase_user",
+    )
+
+    @api.depends("fiscal_line_ids.import_purchase_line_id")
+    def _compute_import_purchase_orders(self):
+        # a reading of the link, not of the orders: sudo, and the button is only
+        # in the view of the purchase users
+        for document in self:
+            orders = document.sudo().fiscal_line_ids.import_purchase_line_id.order_id
+            document.import_purchase_order_ids = orders
+            document.import_purchase_order_count = len(orders)
+
+    def action_view_import_purchase_orders(self):
+        """The purchase order of the document, or the list when there are several."""
+        self.ensure_one()
+        orders = self.sudo().fiscal_line_ids.import_purchase_line_id.order_id
+        action = self.env["ir.actions.act_window"]._for_xml_id(
+            "purchase.purchase_form_action"
+        )
+        if len(orders) == 1:
+            action["views"] = [(False, "form")]
+            action["res_id"] = orders.id
+        else:
+            action["domain"] = [("id", "in", orders.ids)]
+        return action
+
     def _edi_import_suggest(self):
         result = super()._edi_import_suggest()
         documents = self.filtered("imported_document")

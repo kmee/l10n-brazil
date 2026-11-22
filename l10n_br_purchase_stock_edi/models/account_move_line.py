@@ -42,6 +42,12 @@ class AccountMoveLine(models.Model):
         digits="Product Price",
         help="Unit price of the bill minus the unit price of the order.",
     )
+    purchase_awaiting_receipt = fields.Boolean(
+        string="Awaiting Receipt",
+        compute="_compute_purchase_comparison",
+        help="The bill line is for an item that goes to the stock and nothing was "
+        "received yet. It only informs: it is not a divergence.",
+    )
     purchase_divergent = fields.Boolean(
         string="Divergent",
         compute="_compute_purchase_comparison",
@@ -80,6 +86,7 @@ class AccountMoveLine(models.Model):
                 "qty_difference": 0.0,
                 "price_difference": 0.0,
                 "divergent": False,
+                "awaiting": False,
             }
             order_line = line.purchase_line_id
             if order_line and line.move_id.is_purchase_document(include_receipts=True):
@@ -107,3 +114,4 @@ class AccountMoveLine(models.Model):
             line.purchase_qty_difference = values["qty_difference"]
             line.purchase_price_difference = values["price_difference"]
             line.purchase_divergent = values["divergent"]
+            line.purchase_awaiting_receipt = values["awaiting"]

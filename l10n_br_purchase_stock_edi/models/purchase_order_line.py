@@ -65,14 +65,35 @@ class PurchaseOrderLine(models.Model):
         elsewhere = order_uom._compute_quantity(
             order_line._import_billed_elsewhere(moves), uom
         )
-        qty_difference = quantity - (received - elsewhere)
         price_difference = price_unit - price
         company = order_line.company_id
+        # nothing received yet for an item that goes to the stock: the bill waits
+        # for the receipt, which is not a divergence
+        awaiting = (
+            order_line.product_id.type
+            in (
+                "product",
+                "consu",
+            )
+            and not float_compare(received, 0.0, precision_rounding=uom.rounding) > 0
+        )
+        qty_difference = 0.0 if awaiting else quantity - (received - elsewhere)
         quantity_tolerance = abs(received) * company.purchase_quantity_tolerance / 100
+        ordered_tolerance = abs(ordered) * company.purchase_quantity_tolerance / 100
         price_tolerance = abs(price) * company.purchase_price_tolerance / 100
         digits = self.env["decimal.precision"].precision_get("Product Price")
-        divergent = (
+        # the note takes more than what is left of the order
+        over_ordered = (
             float_compare(
+                quantity + elsewhere - ordered,
+                ordered_tolerance,
+                precision_rounding=uom.rounding,
+            )
+            > 0
+        )
+        divergent = (
+            over_ordered
+            or float_compare(
                 abs(qty_difference), quantity_tolerance, precision_rounding=uom.rounding
             )
             > 0
@@ -88,4 +109,5 @@ class PurchaseOrderLine(models.Model):
             "qty_difference": qty_difference,
             "price_difference": price_difference,
             "divergent": divergent,
+            "awaiting": awaiting,
         }

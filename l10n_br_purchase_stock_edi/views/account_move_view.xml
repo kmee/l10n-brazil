@@ -10,11 +10,17 @@
         <field name="arch" type="xml">
             <xpath expr="//div[hasclass('oe_title')]" position="inside">
                 <field name="purchase_divergent" invisible="1" />
+                <field name="purchase_awaiting_receipt" invisible="1" />
                 <div
                     class="badge text-bg-warning"
                     attrs="{'invisible': [('purchase_divergent', '=', False)]}"
                     title="Some line differs from the order or the receipt by more than the tolerance"
                 >Divergent</div>
+                <div
+                    class="badge text-bg-info"
+                    attrs="{'invisible': ['|', ('purchase_divergent', '=', True), ('purchase_awaiting_receipt', '=', False)]}"
+                    title="Some line waits for the receipt of its order. Nothing is blocked."
+                >Awaiting receipt</div>
             </xpath>
             <xpath expr="//field[@name='invoice_line_ids']/tree" position="attributes">
                 <attribute name="decoration-warning">purchase_divergent</attribute>
@@ -28,6 +34,7 @@
                 <field name="purchase_qty_difference" optional="hide" />
                 <field name="purchase_price_unit" optional="hide" />
                 <field name="purchase_price_difference" optional="hide" />
+                <field name="purchase_awaiting_receipt" optional="show" />
                 <field name="purchase_divergent" optional="show" />
             </xpath>
         </field>
