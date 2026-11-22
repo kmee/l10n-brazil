@@ -76,6 +76,13 @@ class Document(models.Model):
         "the button to check again updates it.",
     )
 
+    import_without_protocol = fields.Boolean(
+        copy=False,
+        readonly=True,
+        help="The file of a document the company issued elsewhere carries no "
+        "authorization protocol: it cannot be confirmed as authorized.",
+    )
+
     import_partner_checked = fields.Datetime(
         copy=False,
         readonly=True,
@@ -85,6 +92,7 @@ class Document(models.Model):
 
     @api.depends(
         "imported_document",
+        "import_without_protocol",
         "fiscal_operation_id",
         "import_partner_warning",
         "fiscal_amount_total",
@@ -114,6 +122,14 @@ class Document(models.Model):
                     "No fiscal operation matches the CFOP of the document: choose the "
                     "fiscal operation of the document and the operation line of "
                     "each line."
+                )
+            )
+        if self.import_without_protocol:
+            messages.append(
+                _(
+                    "The file of this document, issued by the company, has no "
+                    "authorization protocol: it cannot be confirmed as authorized. "
+                    "Import the file with the protocol."
                 )
             )
         for line in self.fiscal_line_ids:
@@ -295,6 +311,13 @@ class Document(models.Model):
             **{LAST_PARTNER_CONTEXT_KEY: last_partner.id}
         )._edi_import_check_partners(parsed)
         document._edi_import_suggest()
+        # A note the company issued has to bring the protocol of its authorization:
+        # without it the document stays in typing (the readers of a type that has no
+        # protocol, the national NFS-e, declare the file authorized).
+        document.import_without_protocol = (
+            document.issuer == DOCUMENT_ISSUER_COMPANY
+            and parsed.status != "authorized"
+        )
         return document, True
 
     @api.model
@@ -912,6 +935,15 @@ class Document(models.Model):
                     }
                 )
         own = drafts.filtered(lambda doc: doc.issuer == DOCUMENT_ISSUER_COMPANY)
+        for document in own.filtered("import_without_protocol"):
+            raise UserError(
+                _(
+                    "The file of %(document)s has no authorization protocol, so it "
+                    "cannot be confirmed as authorized. Import the file with the "
+                    "protocol."
+                )
+                % {"document": document.display_name}
+            )
         for document in own:
             document._trigger_fsm("action_confirm_imported")
         return super(Document, self - own).action_document_confirm()
