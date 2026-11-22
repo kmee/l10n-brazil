@@ -149,13 +149,15 @@ class TestCteDocumentImport(EdiImportCase):
         self.assertEqual(issued.partner_operation_name, "Venda")
 
     def test_the_default_freight_product_is_a_suggestion_on_the_line(self):
-        product = self._freight(uom_id=self.env.ref("uom.product_uom_dozen").id)
+        dozen = self.env.ref("uom.product_uom_dozen")
+        # a received CT-e is a purchase: the line takes the purchase unit
+        product = self._freight(uom_id=dozen.id, uom_po_id=dozen.id)
         self.other_company.cte_import_product_id = product
         documents, errors, _warnings = self._import(cte_xml())
         self.assertFalse(errors)
         line = documents.fiscal_line_ids
         self.assertEqual(line.product_id, product)
-        self.assertEqual(line.uom_id, product.uom_id)
+        self.assertEqual(line.uom_id, dozen)
         self.assertEqual(line.import_state, "matched")
 
     def test_without_the_default_product_the_line_waits_for_the_choice(self):
@@ -288,7 +290,9 @@ class TestCteDocumentImport(EdiImportCase):
         )
 
     def test_a_registered_taker_and_the_company_are_never_written(self):
-        content = cte_xml(recipient="12345678000195", emitter=LUCRO_PRESUMIDO)
+        content = cte_xml(
+            recipient="12345678000195", emitter=LUCRO_PRESUMIDO, status="100"
+        )
         self._assert_registry_untouched(content, self.presumed, True)
 
     def test_a_homonym_with_another_cnpj_is_not_matched(self):
@@ -454,7 +458,11 @@ class TestCteDocumentImport(EdiImportCase):
 
     def test_confirming_a_cte_issued_by_the_company_neither_sends_nor_learns(self):
         self.presumed.cte_import_product_id = False
-        content = cte_xml(recipient="12345678000195", emitter=LUCRO_PRESUMIDO)
+        # the protocol of the authorization comes with the file: a note the company
+        # issued is confirmed as authorized only with it
+        content = cte_xml(
+            recipient="12345678000195", emitter=LUCRO_PRESUMIDO, status="100"
+        )
         documents, _errors, _warnings = self._import(
             content, operation=True, issued=True
         )
@@ -630,23 +638,56 @@ class TestCteDocumentImport(EdiImportCase):
         self.assertEqual(documents.cte40_cobr.cte40_fat.cte40_nFat, "987654")
         self.assertEqual(len(documents.cte40_cobr.cte40_dup), 2)
 
+    def _operation_with_lines(self, count):
+        """An operation of entry with ``count`` approved lines, none of which answers
+        the CFOP of the CT-e."""
+        operation = self.env["l10n_br_fiscal.operation"].create(
+            {
+                "code": f"CTE-{count}",
+                "name": f"Operation with {count} line(s)",
+                "fiscal_operation_type": "in",
+                "fiscal_type": "purchase",
+            }
+        )
+        for number in range(count):
+            self.env["l10n_br_fiscal.operation.line"].create(
+                {
+                    "fiscal_operation_id": operation.id,
+                    "name": f"Line {number}",
+                    "cfop_internal_id": self.env.ref("l10n_br_fiscal.cfop_1102").id,
+                    "product_type": "00",
+                }
+            )
+        operation.action_approve()
+        return operation
+
     def test_the_operation_chosen_in_the_header_waits_for_the_operation_line(self):
         """The CFOP of the CT-e matches no line of the operation and the operation has
         several candidates: the line is left to the person, with a warning; once the
         person chooses the operation line, the amounts are the ones of the file."""
         documents, errors, _warnings = self._import(cte_xml(COLLECTION))
         self.assertFalse(errors)
-        operation = self.env.ref("l10n_br_fiscal.fo_compras")
+        operation = self._operation_with_lines(2)
         documents.fiscal_operation_id = operation
         line = documents.fiscal_line_ids
         self.assertFalse(line.fiscal_operation_line_id)
         self.assertIn("choose the operation line", documents.import_warning)
-        line.fiscal_operation_line_id = self.env.ref(
-            "l10n_br_fiscal.fo_compras_compras"
-        )
+        line.fiscal_operation_line_id = operation.line_ids[:1]
         self.assertAlmostEqual(documents.fiscal_amount_total, 100.0)
         self.assertAlmostEqual(documents.amount_financial_total, 100.0)
         self.assertNotIn("add up", str(documents.edi_payment_summary))
+
+    def test_the_freight_purchase_line_answers_the_cfop_of_the_cte(self):
+        """The purchase operation has lines for the freight (CFOP 5352 and 5353 of
+        the carrier): choosing it on the header gives the line its operation line
+        by itself."""
+        documents, errors, _warnings = self._import(cte_xml(COLLECTION))
+        self.assertFalse(errors)
+        documents.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        line = documents.fiscal_line_ids
+        self.assertTrue(line.fiscal_operation_line_id)
+        self.assertNotIn("choose the operation line", documents.import_warning or "")
+        self.assertAlmostEqual(documents.amount_financial_total, 100.0)
 
     def test_a_cte_with_a_collection_declares_its_installments_in_order(self):
         documents, errors, _warnings = self._import(cte_xml(COLLECTION))
