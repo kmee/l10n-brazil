@@ -329,8 +329,14 @@ class TestNFeDFeImportByKey(TransactionCase):
         self,
     ):
         user = self._fiscal_user()
-        view = self.env["l10n_br_fiscal_dfe.document"].with_user(user).get_view(
-            self.env.ref("l10n_br_nfe_dfe.view_l10n_br_fiscal_dfe_document_form_nfe").id
+        view = (
+            self.env["l10n_br_fiscal_dfe.document"]
+            .with_user(user)
+            .get_view(
+                self.env.ref(
+                    "l10n_br_nfe_dfe.view_l10n_br_fiscal_dfe_document_form_nfe"
+                ).id
+            )
         )
 
         self.assertIn("Fiscal Document", view["arch"])
@@ -661,8 +667,10 @@ class TestNFeDFeDemo(TransactionCase):
         self.assertEqual(data["document_amount"], record.document_amount)
 
     def test_the_default_filter_of_the_inbox_is_translated(self):
-        lang = self.env["res.lang"].with_context(active_test=False).search(
-            [("code", "=", "pt_BR")]
+        lang = (
+            self.env["res.lang"]
+            .with_context(active_test=False)
+            .search([("code", "=", "pt_BR")])
         )
         if not lang.active:
             self.skipTest("pt_BR is not installed")
@@ -730,6 +738,14 @@ class TestNFeDFeImportedDocumentAccess(TransactionCase):
         if "move_ids" not in record.fiscal_document_id._fields:
             self.skipTest("No accounting")
         # An invoice of the import: accounting is not for a fiscal user.
+        journal = (
+            self.env["account.journal"]
+            .sudo()
+            .search(
+                [("type", "=", "purchase"), ("company_id", "=", record.company_id.id)],
+                limit=1,
+            )
+        )
         move = (
             self.env["account.move"]
             .sudo()
@@ -737,6 +753,8 @@ class TestNFeDFeImportedDocumentAccess(TransactionCase):
                 {
                     "move_type": "in_invoice",
                     "company_id": record.company_id.id,
+                    # the journal of the company of the note, not the one by default
+                    "journal_id": journal.id,
                     "partner_id": record.fiscal_document_id.partner_id.id,
                     "fiscal_document_id": record.fiscal_document_id.id,
                 }
@@ -760,7 +778,7 @@ class TestNFeDFeImportedDocumentAccess(TransactionCase):
         names = [
             name
             for name in document._fields
-            if "name=\"%s\"" % name in view["arch"] and name in document._fields
+            if 'name="%s"' % name in view["arch"] and name in document._fields
         ]
         self.assertTrue(names)
         document.read(names)
