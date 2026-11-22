@@ -149,13 +149,15 @@ class TestCteDocumentImport(EdiImportCase):
         self.assertEqual(issued.partner_operation_name, "Venda")
 
     def test_the_default_freight_product_is_a_suggestion_on_the_line(self):
-        product = self._freight(uom_id=self.env.ref("uom.product_uom_dozen").id)
+        dozen = self.env.ref("uom.product_uom_dozen")
+        # a received CT-e is a purchase: the line takes the purchase unit
+        product = self._freight(uom_id=dozen.id, uom_po_id=dozen.id)
         self.other_company.cte_import_product_id = product
         documents, errors, _warnings = self._import(cte_xml())
         self.assertFalse(errors)
         line = documents.fiscal_line_ids
         self.assertEqual(line.product_id, product)
-        self.assertEqual(line.uom_id, product.uom_id)
+        self.assertEqual(line.uom_id, dozen)
         self.assertEqual(line.import_state, "matched")
 
     def test_without_the_default_product_the_line_waits_for_the_choice(self):
