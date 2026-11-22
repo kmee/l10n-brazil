@@ -306,7 +306,13 @@ class TestNFeDFeImportByKey(TransactionCase):
         ):
             return wizard.action_confirm_request()
 
-    def _fiscal_user(self, email=True):
+    def _fiscal_user(self, email=True, nfe=True):
+        groups = [
+            self.env.ref("base.group_user").id,
+            self.env.ref("l10n_br_fiscal.group_user").id,
+        ]
+        if nfe:
+            groups.append(self.env.ref("l10n_br_nfe.group_user").id)
         return self.env["res.users"].create(
             {
                 "name": "Fiscal importer",
@@ -314,14 +320,7 @@ class TestNFeDFeImportByKey(TransactionCase):
                 "email": "nfe_dfe_importer@example.com" if email else False,
                 "company_id": self.company.id,
                 "company_ids": [Command.set(self.company.ids)],
-                "groups_id": [
-                    Command.set(
-                        [
-                            self.env.ref("base.group_user").id,
-                            self.env.ref("l10n_br_fiscal.group_user").id,
-                        ]
-                    )
-                ],
+                "groups_id": [Command.set(groups)],
             }
         )
 
@@ -395,7 +394,7 @@ class TestNFeDFeImportByKey(TransactionCase):
         self.assertEqual(len(dfe_document.manifestations_ids), 1)
         self.assertEqual(dfe_document.import_requested_user_id, self.env.user)
 
-    def test_common_fiscal_user_acknowledges_as_the_author(self):
+    def test_nfe_user_acknowledges_as_the_author(self):
         user = self._fiscal_user()
         dfe_document = self._summary()
         wizard = self.Wizard.with_user(user).browse(
@@ -407,7 +406,37 @@ class TestNFeDFeImportByKey(TransactionCase):
         self.assertEqual(dfe_document.manifestations_ids.create_uid, user)
         self.assertEqual(dfe_document.import_requested_user_id, user)
 
-    def test_common_fiscal_user_without_email_acknowledges(self):
+    def test_common_fiscal_user_is_refused_the_acknowledgement(self):
+        user = self._fiscal_user(nfe=False)
+        dfe_document = self._summary().with_user(user)
+
+        with self.assertRaisesRegex(UserError, "permission of NF-e user"):
+            dfe_document.import_document()
+        with self.assertRaisesRegex(UserError, "permission of NF-e user"):
+            dfe_document._dfe_import_request()
+
+        self.assertFalse(dfe_document.sudo().manifestations_ids)
+        self.assertFalse(dfe_document.sudo().import_requested_user_id)
+
+    def test_a_note_already_acknowledged_needs_no_permission_to_request(self):
+        user = self._fiscal_user(nfe=False)
+        dfe_document = self._summary()
+        self.env["l10n_br_nfe.md_event"].create(
+            {
+                "access_key": KEY,
+                "event_type": "ciente",
+                "state": "done",
+                "company_id": self.company.id,
+                "dfe_document_id": dfe_document.id,
+            }
+        )
+        dfe_document.invalidate_recordset()
+
+        dfe_document.with_user(user)._dfe_import_request()
+
+        self.assertEqual(dfe_document.import_requested_user_id, user)
+
+    def test_nfe_user_without_email_acknowledges(self):
         user = self._fiscal_user(email=False)
         dfe_document = self._summary()
         wizard = self.Wizard.with_user(user).browse(
@@ -433,6 +462,9 @@ class TestNFeDFeInboxAction(TransactionCase):
             context=dict(cls.env.context, allowed_company_ids=cls.company.ids)
         )
         cls.fiscal = cls._user("inbox_fiscal", ["l10n_br_fiscal.group_user"])
+        cls.nfe_fiscal = cls._user(
+            "inbox_nfe", ["l10n_br_fiscal.group_user", "l10n_br_nfe.group_user"]
+        )
         cls.accountant = cls._user(
             "inbox_accountant", ["account.group_account_user", "l10n_br_nfe.group_user"]
         )
@@ -551,18 +583,26 @@ class TestNFeDFeInboxAction(TransactionCase):
         self.assertEqual(as_fiscal.manifestation_status, "ciente")
         self.assertEqual(len(as_fiscal.manifestations_ids), 1)
 
-    def test_the_summary_asks_the_fiscal_user_to_confirm_the_acknowledgement(self):
+    def test_the_summary_asks_the_nfe_user_to_confirm_the_acknowledgement(self):
         record = self._record(complete=False)
 
-        action = self._as(record, self.fiscal).import_document()
+        action = self._as(record, self.nfe_fiscal).import_document()
 
         wizard = Form(
             self.env[action["res_model"]]
-            .with_user(self.fiscal)
+            .with_user(self.nfe_fiscal)
             .browse(action["res_id"])
         )
         self.assertEqual(wizard.state, "confirm")
         self.assertIn("ciencia", wizard.confirm_message)
+
+    def test_the_summary_tells_the_common_fiscal_user_the_permission_is_missing(self):
+        record = self._record(complete=False)
+
+        with self.assertRaisesRegex(UserError, "permission of NF-e user"):
+            self._as(record, self.fiscal).import_document()
+
+        self.assertFalse(record.sudo().manifestations_ids)
 
     def test_the_key_typed_is_imported_by_the_fiscal_user_and_not_by_the_accountant(
         self,
@@ -730,12 +770,21 @@ class TestNFeDFeImportedDocumentAccess(TransactionCase):
         if "move_ids" not in record.fiscal_document_id._fields:
             self.skipTest("No accounting")
         # An invoice of the import: accounting is not for a fiscal user.
+        journal = self.env["account.journal"].sudo().create(
+            {
+                "name": "Purchases of the inbox test",
+                "code": "TDFE",
+                "type": "purchase",
+                "company_id": record.company_id.id,
+            }
+        )
         move = (
             self.env["account.move"]
             .sudo()
             .create(
                 {
                     "move_type": "in_invoice",
+                    "journal_id": journal.id,
                     "company_id": record.company_id.id,
                     "partner_id": record.fiscal_document_id.partner_id.id,
                     "fiscal_document_id": record.fiscal_document_id.id,

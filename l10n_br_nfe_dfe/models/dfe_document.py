@@ -13,7 +13,11 @@ from lxml.etree import XMLSyntaxError
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
-from ..constants.nfe_dfe import ACKNOWLEDGEMENT_DAYS, SITUACAO_NFE
+from ..constants.nfe_dfe import (
+    ACKNOWLEDGEMENT_DAYS,
+    MANIFESTATION_GROUP,
+    SITUACAO_NFE,
+)
 
 try:
     from brazilfiscalreport.danfe import Danfe
@@ -154,12 +158,26 @@ class L10nBrFiscalDfeDocument(models.Model):
                 % ACKNOWLEDGEMENT_DAYS
             )
 
+    def _check_manifestation_permission(self):
+        """The acknowledgement is an event at the tax authority, sent with the
+        certificate of the company: only who may manifest registers it."""
+        if not (self.env.su or self.env.user.has_group(MANIFESTATION_GROUP)):
+            raise UserError(
+                _(
+                    "The acknowledgement of the operation is registered at the tax "
+                    "authority with the certificate of the company. You need the "
+                    "permission of NF-e user for it: ask an administrator, or "
+                    "upload the XML file instead."
+                )
+            )
+
     def _dfe_import_confirmation_message(self):
         if self.fiscal_type != "nfe":
             return super()._dfe_import_confirmation_message()
         self.ensure_one()
         if self.manifestation_status != "sem_manifestacao":
             return False
+        self._check_manifestation_permission()
         self._check_acknowledgement_period()
         return _(
             "The complete XML is only released after the acknowledgement of the "
@@ -175,19 +193,16 @@ class L10nBrFiscalDfeDocument(models.Model):
             return super()._dfe_import_request()
         self.ensure_one()
         if self.manifestation_status == "sem_manifestacao":
+            self._check_manifestation_permission()
             self._check_acknowledgement_period()
-            event = (
-                self.env["l10n_br_nfe.md_event"]
-                .sudo()
-                .create(
-                    {
-                        "access_key": self.access_key,
-                        "event_type": "ciente",
-                        "company_id": self.company_id.id,
-                        "document_type": "nfe",
-                        "dfe_document_id": self.id,
-                    }
-                )
+            event = self.env["l10n_br_nfe.md_event"].create(
+                {
+                    "access_key": self.access_key,
+                    "event_type": "ciente",
+                    "company_id": self.company_id.id,
+                    "document_type": "nfe",
+                    "dfe_document_id": self.id,
+                }
             )
             event.with_company(self.company_id).action_confirm()
             message = _(
