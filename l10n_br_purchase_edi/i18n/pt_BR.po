@@ -796,6 +796,45 @@ msgstr "Sem pedido"
 msgid "xPed"
 msgstr "xPed"
 
+#. module: l10n_br_purchase_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_edi/models/document_match.py:0
+#, python-format
+msgid "You have no access to some of the selected lines."
+msgstr "Você não tem acesso a algumas das linhas selecionadas."
+
+#. module: l10n_br_purchase_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_edi/models/document_match.py:0
+#, python-format
+msgid "The screen does not write %s."
+msgstr "A tela não grava %s."
+
+#. module: l10n_br_purchase_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_edi/models/document_match.py:0
+#, python-format
+msgid "You have no access to the documents of the company."
+msgstr "Você não tem acesso aos documentos da empresa."
+
+#. module: l10n_br_purchase_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_edi/models/document_match.py:0
+#, python-format
+msgid ""
+"Choosing the product of a line is for the fiscal profile. Ask for the "
+"product to be resolved before matching."
+msgstr ""
+"Escolher o produto de uma linha é para o perfil fiscal. Peça para o "
+"produto ser resolvido antes de conciliar."
+
+#. module: l10n_br_purchase_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_edi/models/document_match.py:0
+#, python-format
+msgid "You have no access to the documents of the company %s."
+msgstr "Você não tem acesso aos documentos da empresa %s."
+
 #~ msgid "Fiscal documents"
 #~ msgstr "Documentos fiscais"
 
