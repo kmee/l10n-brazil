@@ -138,3 +138,42 @@ class TestSpedEfdIcmsIpiCorrecoes(EntradaHelpers, SpedEntradaCommon):
         )
         records = self._sped_records(self._declaration_july(), "0015")
         self.assertEqual(records, [{"UF_ST": "RJ", "IE_ST": "86817306"}])
+
+    def _relate(self, doc, **vals):
+        return self.env["l10n_br_fiscal.document.related"].create(
+            {
+                "document_id": doc.id,
+                "document_type_id": self.env.ref("l10n_br_fiscal.document_55").id,
+                "document_serie": "1",
+                "document_number": "77",
+                "document_date": datetime(2026, 6, 10).date(),
+                **vals,
+            }
+        )
+
+    def test_c113_cod_part_is_the_partner_of_the_referenced_document(self):
+        """C113 COD_PART is the code of a 0150 (REGRA_EXISTE_COD_PART_V2), not
+        the CNPJ, and the partner of a document outside the period gets one."""
+        june, _line = self._entry_document(
+            document_date=datetime(2026, 6, 10, 12, 0), partner_id=self.partner_b.id
+        )
+        doc, _line = self._entry_document()
+        self._relate(
+            doc,
+            document_related_id=june.id,
+            document_key=june.document_key,
+            document_number=june.document_number,
+        )
+        declaration = self._declaration_july()
+        c113 = self._sped_records(declaration, "C113")
+        self.assertEqual([rec["COD_PART"] for rec in c113], [str(self.partner_b.id)])
+        self.assertIn(
+            str(self.partner_b.id),
+            [rec["COD_PART"] for rec in self._sped_records(declaration, "0150")],
+        )
+
+    def test_c113_cod_part_of_a_reference_typed_by_its_cnpj(self):
+        doc, _line = self._entry_document()
+        self._relate(doc, cnpj_cpf="49.190.159/0001-05")
+        c113 = self._sped_records(self._declaration_july(), "C113")
+        self.assertEqual([rec["COD_PART"] for rec in c113], [str(self.partner_a.id)])

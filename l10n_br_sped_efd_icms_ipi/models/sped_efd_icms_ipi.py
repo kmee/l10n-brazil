@@ -441,9 +441,10 @@ class Registro0150(models.Model):
 
     @api.model
     def _odoo_domain(self, parent_record, declaration):
-        return [
-            ("id", "in", declaration.fiscal_document_partner_ids.ids),
-        ]
+        partners = declaration.fiscal_document_partner_ids | self.env[
+            "l10n_br_sped.efd_icms_ipi.c113"
+        ]._get_related_partners(declaration)
+        return [("id", "in", partners.ids)]
 
     @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
@@ -1065,6 +1066,15 @@ class RegistroC100(models.Model):
         ]
 
     @api.model
+    def _get_booked_documents(self, declaration):
+        """The documents of the C100 that are not cancelled, denied or unused:
+        the only ones with registers below the C100."""
+        documents = self.env["l10n_br_fiscal.document"].search(
+            self._odoo_domain(None, declaration)
+        )
+        return documents.filtered(lambda document: not document._is_sped_cancelled())
+
+    @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         if record.fiscal_operation_type == FISCAL_IN:
             ind_oper = "0"
@@ -1264,15 +1274,44 @@ class RegistroC113(models.Model):
         return [("id", "=", parent_record.id)]
 
     @api.model
+    def _get_related_partners(self, declaration):
+        """The participants of the referenced documents, for the 0150."""
+        documents = self.env["l10n_br_sped.efd_icms_ipi.c100"]._get_booked_documents(
+            declaration
+        )
+        partners = self.env["res.partner"]
+        for related in documents.document_related_ids:
+            partners |= self._get_related_partner(related)
+        return partners
+
+    @api.model
+    def _get_related_partner(self, related):
+        """The participant of a referenced document: the partner of the
+        document when it is in Odoo, else the partner with its CNPJ/CPF."""
+        if related.document_related_id.partner_id:
+            return related.document_related_id.partner_id
+        cnpj_cpf = misc.punctuation_rm(related.cnpj_cpf or "")
+        if not cnpj_cpf:
+            return self.env["res.partner"]
+        partner = related.document_id.partner_id
+        if partner.cnpj_cpf_stripped == cnpj_cpf:
+            return partner
+        partners = self.env["res.partner"].search(
+            [("cnpj_cpf_stripped", "=", cnpj_cpf)]
+        )
+        return partners.commercial_partner_id[:1]
+
+    @api.model
     def _map_from_odoo(self, record, parent_record, declaration, index=0):
         # Origin doc properties
         ind_oper = "0" if record.document_id.fiscal_operation_type == "in" else "1"
         ind_emit = "0" if record.document_id.issuer == "company" else "1"
+        partner = self._get_related_partner(record)
 
         return {
             "IND_OPER": ind_oper,
             "IND_EMIT": ind_emit,
-            "COD_PART": misc.punctuation_rm(record.cnpj_cpf) if record.cnpj_cpf else "",
+            "COD_PART": partner._get_sped_cod_part() if partner else "",
             "COD_MOD": record.document_type_code or "",
             "SER": record.document_serie or "",
             "SUB": "",
