@@ -55,3 +55,20 @@ class TestDemo(TransactionCase):
         self.assertTrue(document.import_awaiting_receipt)
         self.assertEqual(document.import_picking_ids, order.picking_ids)
         self.assertNotEqual(order.picking_ids.state, "done")
+
+    def test_the_note_of_the_purchases_demo_is_received_too(self):
+        order = self.env.ref("l10n_br_purchase_edi.demo_order_confirmed")
+        document = self.env["l10n_br_fiscal.document"].search(
+            [
+                (
+                    "document_key",
+                    "=",
+                    "35261011765432000100550010000020011200100014",
+                )
+            ]
+        )
+
+        self.assertEqual(order.picking_ids.state, "done")
+        self.assertFalse(document.import_awaiting_receipt)
+        self.assertFalse(document.import_divergent)
+        self.assertEqual(order.order_line.qty_received, 5.0)
