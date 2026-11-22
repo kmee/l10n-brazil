@@ -11,11 +11,11 @@ from erpbrasil.base.fiscal.cnpj_cpf import formata
 from psycopg2 import OperationalError
 from psycopg2.errorcodes import SERIALIZATION_FAILURE
 
-from odoo import _
+from odoo import SUPERUSER_ID, _, api
 from odoo.exceptions import AccessError, UserError
 from odoo.sql_db import db_connect
 
-from ..tools import EDI_IMPORT_NO_CREATE, EDI_IMPORT_PARTNER_BY_VAT, EdiPartnerData
+from ..tools import EDI_IMPORT_NO_CREATE, EdiPartnerData
 from .common import KEY_1, KEY_2, KEY_3, EdiImportCase
 
 
@@ -36,7 +36,6 @@ class TestDocumentImport(EdiImportCase):
         by_name = {parsed_file.file_name: parsed_file for parsed_file in parsed}
         test = self
         created = []
-        self.partner_by_vat = []
 
         def read(model_, name, content):
             return by_name.get(name)
@@ -44,9 +43,6 @@ class TestDocumentImport(EdiImportCase):
         def create(model_, parsed_file, company, role):
             self.create_context = dict(model_.env.context)
             created.append(model_.env.context.get(EDI_IMPORT_NO_CREATE))
-            self.partner_by_vat.append(
-                model_.env.context.get(EDI_IMPORT_PARTNER_BY_VAT)
-            )
             return test._create_imported_document(
                 company=company,
                 model=model_,
@@ -69,7 +65,6 @@ class TestDocumentImport(EdiImportCase):
         documents, errors, warnings = self._import([(parsed.file_name, b"x")], [parsed])
         self.assertEqual((len(documents), errors, warnings), (1, [], []))
         self.assertEqual(self.create_contexts, [True])
-        self.assertEqual(self.partner_by_vat, [True])
         self.assertTrue(documents.imported_document)
         self.assertEqual(documents.document_key, KEY_1)
 
@@ -96,72 +91,154 @@ class TestDocumentImport(EdiImportCase):
         self.assertTrue(self._another_transaction_can_lock(self.company, KEY_2))
         self.assertTrue(self._another_transaction_can_lock(self.other_company, KEY_1))
 
-    def test_a_note_committed_by_a_concurrent_transaction_makes_the_call_run_again(
-        self,
-    ):
-        """The transaction that waited for the lock reads a snapshot older than the
-        commit of the first one, so it does not see the document: it must neither
-        create a second one nor report an unexpected error, but ask the framework to
-        run the call again (a serialization failure), where the document exists."""
-        parsed = self._parsed(KEY_1)
-        with patch.object(
-            type(self.Document), "_edi_import_lock", lambda *args: True
-        ), patch.object(
-            type(self.Document), "_edi_import_committed_elsewhere", lambda *args: True
-        ), self.assertRaises(OperationalError) as caught:
+    def _commit_document_elsewhere(self, key, lock=False):
+        """Create, in a connection of its own, an imported document with the key, and
+        commit it, as another transaction that imported the same note does. With
+        ``lock``, the lock of the note is taken first and the commit is left to the
+        caller. The document is deleted when the test ends."""
+        cursor = db_connect(self.env.cr.dbname).cursor()
+        env = api.Environment(cursor, SUPERUSER_ID, {})
+        company = env["res.company"].browse(self.company.id)
+        if lock:
+            cursor.execute(
+                "SELECT pg_advisory_xact_lock(%s, hashtext(%s))", (company.id, key)
+            )
+        document = (
+            env["l10n_br_fiscal.document"]
+            .with_company(company)
+            .create(
+                {
+                    "company_id": company.id,
+                    "document_type_id": env.ref("l10n_br_fiscal.document_55").id,
+                    "imported_document": True,
+                    "issuer": "partner",
+                    "partner_id": env.ref("l10n_br_base.res_partner_cliente1_sp").id,
+                    "document_key": key,
+                    "document_number": "99999",
+                    "document_serie": "9",
+                }
+            )
+        )
+
+        def clean():
+            with closing(db_connect(self.env.cr.dbname).cursor()) as other:
+                other.execute(
+                    "DELETE FROM l10n_br_fiscal_document WHERE document_key = %s",
+                    (key,),
+                )
+                other.commit()
+
+        self.addCleanup(clean)
+        if not lock:
+            cursor.commit()
+            cursor.close()
+        return cursor, document
+
+    def _import_expecting_a_retry(self, key):
+        parsed = self._parsed(key)
+        with self.assertRaises(OperationalError) as caught:
             self._import([(parsed.file_name, b"x")], [parsed])
         self.assertEqual(caught.exception.pgcode, SERIALIZATION_FAILURE)
+
+    def test_a_note_committed_after_the_snapshot_asks_the_call_to_run_again(self):
+        """Nobody holds the lock when it is asked for, but another transaction
+        committed the same note after the snapshot of this one: the search does not
+        see it, and a second document must not be born."""
+        self.Document.search_count([])  # the snapshot of this transaction
+        self._commit_document_elsewhere(KEY_1)
+        self._import_expecting_a_retry(KEY_1)
         self.assertFalse(self.Document.search([("document_key", "=", KEY_1)]))
 
-    def test_a_note_that_nobody_holds_does_not_open_a_second_cursor(self):
-        """The check by a cursor of its own waits for the locks of the transaction
-        that holds the tables (the installation with demo data): it is made only
-        when the lock of the note was contested."""
-        parsed = self._parsed(KEY_1)
+    def test_a_note_committed_while_waiting_for_the_lock_asks_the_call_to_run_again(
+        self,
+    ):
+        """The other transaction holds the lock of the note and commits the document
+        while this one waits for it."""
+        self.Document.search_count([])
+        cursor, _document = self._commit_document_elsewhere(KEY_2, lock=True)
+        release = threading.Timer(1.0, cursor.commit)
+        release.start()
+        try:
+            self._import_expecting_a_retry(KEY_2)
+        finally:
+            release.join()
+            cursor.close()
 
-        def forbidden(*args):
-            raise AssertionError("a second cursor was opened without a contest")
-
-        with patch.object(
-            type(self.Document), "_edi_import_committed_elsewhere", forbidden
-        ):
-            documents, errors, _warnings = self._import(
-                [(parsed.file_name, b"x")], [parsed]
-            )
+    def test_a_table_locked_by_the_transaction_does_not_hang_the_import(self):
+        """An installation that imports the demo data holds locks on the table, and
+        the connection that looks for a note committed elsewhere would wait for them
+        for ever: it gives up after a short time and the import goes on."""
+        self.env.cr.execute(
+            "LOCK TABLE l10n_br_fiscal_document IN ACCESS EXCLUSIVE MODE"
+        )
+        parsed = self._parsed(KEY_3)
+        documents, errors, _warnings = self._import(
+            [(parsed.file_name, b"x")], [parsed]
+        )
         self.assertEqual((len(documents), errors), (1, []))
 
-    def test_the_lock_tells_whether_it_had_to_wait(self):
-        self.assertFalse(self.Document._edi_import_lock(self.company, KEY_2))
-        connection = db_connect(self.env.cr.dbname)
-        with closing(connection.cursor()) as other:
-            other.execute(
-                "SELECT pg_advisory_xact_lock(%s, hashtext(%s))",
-                (self.company.id, KEY_3),
-            )
-            release = threading.Timer(1.0, other.rollback)
-            release.start()
-            try:
-                contested = self.Document._edi_import_lock(self.company, KEY_3)
-            finally:
-                release.join()
-        self.assertTrue(contested)
+    def test_a_serialization_failure_of_the_database_is_not_an_error_of_the_file(self):
+        class Serialization(OperationalError):
+            pgcode = SERIALIZATION_FAILURE
 
-    def test_the_committed_note_is_looked_for_in_a_transaction_of_its_own(self):
-        """What another transaction committed is seen by a cursor of its own, what
-        this one only wrote is not (it is the snapshot that matters, not the cache)."""
-        committed = self.Document.search(
-            [("document_key", "!=", False), ("company_id", "!=", False)], limit=1
-        )
-        self.assertTrue(committed, "the demo data has documents with a key")
-        found = self.Document._edi_import_committed_elsewhere(
-            self._parsed(committed.document_key), committed.company_id
-        )
-        self.assertTrue(found)
-        self.assertFalse(
-            self.Document._edi_import_committed_elsewhere(
-                self._parsed(KEY_3), self.company
+        parsed = self._parsed(KEY_1)
+
+        def fail(*args):
+            raise Serialization("could not serialize access")
+
+        with (
+            patch.object(type(self.Document), "_edi_import_create", fail),
+            patch.object(type(self.Document), "_edi_import_read", lambda *args: parsed),
+            self.assertRaises(OperationalError),
+        ):
+            self.Document._edi_import_files([(parsed.file_name, b"x")])
+
+    def test_another_error_of_the_database_is_reported_as_unexpected(self):
+        parsed = self._parsed(KEY_1)
+
+        def fail(*args):
+            raise OperationalError("another problem")
+
+        with (
+            patch.object(type(self.Document), "_edi_import_create", fail),
+            patch.object(type(self.Document), "_edi_import_read", lambda *args: parsed),
+        ):
+            _documents, errors, _warnings = self.Document._edi_import_files(
+                [(parsed.file_name, b"x")]
             )
+        self.assertEqual([name for name, _message in errors], [parsed.file_name])
+
+    def test_a_reader_that_creates_another_type_of_document_is_refused(self):
+        parsed = self._parsed(KEY_1)
+        cte = self.env["l10n_br_fiscal.document.type"].search(
+            [("code", "=", "57")], limit=1
         )
+        _documents, errors = self._import_with_document_type(parsed, cte)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("type 57", errors[0][1])
+
+    def _import_with_document_type(self, parsed, document_type):
+        by_name = {parsed.file_name: parsed}
+        test = self
+
+        def create(model_, parsed_file, company, role):
+            return test._create_imported_document(
+                company=company,
+                model=model_,
+                document_key=parsed_file.access_key,
+                document_type_id=document_type.id,
+            )
+
+        with (
+            patch.object(
+                type(self.Document), "_edi_import_read", lambda m, n, c: by_name.get(n)
+            ),
+            patch.object(type(self.Document), "_edi_import_create", create),
+        ):
+            documents, errors, _warnings = self.Document._edi_import_files(
+                [(parsed.file_name, b"x")]
+            )
+        return documents, errors
 
     def test_the_demo_files_of_a_module_are_imported_by_the_service(self):
         document = self._create_imported_document(document_key=KEY_1)
