@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-22 06:02+0000\n"
+"POT-Creation-Date: 2026-11-22 07:27+0000\n"
 "PO-Revision-Date: 2026-11-19 22:30+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -209,6 +209,13 @@ msgid "Fiscal Documents"
 msgstr "Documentos fiscais"
 
 #. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_stock_picking__import_document_count
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.view_picking_form
+msgid "Fiscal docs"
+msgstr ""
+"Doc. fiscais"
+
+#. module: l10n_br_purchase_stock_edi
 #. odoo-python
 #: code:addons/l10n_br_purchase_stock_edi/models/document_match.py:0
 #, python-format
@@ -216,11 +223,10 @@ msgid "Fiscal document %s"
 msgstr "Documento fiscal %s"
 
 #. module: l10n_br_purchase_stock_edi
-#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_stock_picking__import_document_count
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.view_picking_form
-msgid "Fiscal documents"
+msgid "Imported fiscal documents linked to this record"
 msgstr ""
-"Documentos fiscais"
+"Documentos fiscais importados ligados a este registro"
 
 #. module: l10n_br_purchase_stock_edi
 #: model:ir.model,name:l10n_br_purchase_stock_edi.model_account_move
@@ -477,11 +483,6 @@ msgid "Show Propose Lots From Import"
 msgstr "Mostrar propor lotes do documento"
 
 #. module: l10n_br_purchase_stock_edi
-#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.view_picking_form
-msgid "Show the imported fiscal documents of this receipt"
-msgstr "Mostrar os documentos fiscais importados deste recebimento"
-
-#. module: l10n_br_purchase_stock_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_form
 msgid "Show the receipts of the lines"
 msgstr "Mostrar os recebimentos das linhas"
@@ -701,6 +702,12 @@ msgstr ""
 #: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_order_price_unit
 msgid "Unit price of the order line, in the unit of this line."
 msgstr "Preço unitário da linha do pedido, na unidade desta linha."
+
+#~ msgid "Fiscal documents"
+#~ msgstr "Documentos fiscais"
+
+#~ msgid "Show the imported fiscal documents of this receipt"
+#~ msgstr "Mostrar os documentos fiscais importados deste recebimento"
 
 #~ msgid "Fiscal Documents Count"
 #~ msgstr "Quantidade de documentos fiscais"
