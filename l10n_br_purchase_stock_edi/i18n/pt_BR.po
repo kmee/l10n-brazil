@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-21 21:16+0000\n"
+"POT-Creation-Date: 2026-11-22 06:02+0000\n"
 "PO-Revision-Date: 2026-11-19 22:30+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -58,9 +58,9 @@ msgid ""
 "is\n"
 "                    blocked."
 msgstr ""
-"<span class=\"badge text-bg-info\">Aguardando recebimento</span>\n    "
-"                Alguma linha aguarda o recebimento do pedido. Nada é b"
-"loqueado."
+"<span class=\"badge text-bg-info\">Aguardando recebimento</span>\n"
+"                    Alguma linha aguarda o recebimento do pedido. Nada é "
+"bloqueado."
 
 #. module: l10n_br_purchase_stock_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_form
@@ -121,8 +121,7 @@ msgstr ""
 #. module: l10n_br_purchase_stock_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_form
 msgid "Awaiting"
-msgstr ""
-"Aguardando"
+msgstr "Aguardando"
 
 #. module: l10n_br_purchase_stock_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_bank_statement_line__import_awaiting_receipt
@@ -137,14 +136,12 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_awaiting_receipt
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_search
 msgid "Awaiting Receipt"
-msgstr ""
-"Aguardando recebimento"
+msgstr "Aguardando recebimento"
 
 #. module: l10n_br_purchase_stock_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.invoice_form_purchase_divergence
 msgid "Awaiting receipt"
-msgstr ""
-"Aguardando recebimento"
+msgstr "Aguardando recebimento"
 
 #. module: l10n_br_purchase_stock_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_res_company__purchase_price_tolerance
@@ -208,14 +205,8 @@ msgstr "Divergente do pedido"
 
 #. module: l10n_br_purchase_stock_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_stock_picking__import_document_ids
-#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.view_picking_form
 msgid "Fiscal Documents"
 msgstr "Documentos fiscais"
-
-#. module: l10n_br_purchase_stock_edi
-#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_stock_picking__import_document_count
-msgid "Fiscal Documents Count"
-msgstr "Quantidade de documentos fiscais"
 
 #. module: l10n_br_purchase_stock_edi
 #. odoo-python
@@ -223,6 +214,13 @@ msgstr "Quantidade de documentos fiscais"
 #, python-format
 msgid "Fiscal document %s"
 msgstr "Documento fiscal %s"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_stock_picking__import_document_count
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.view_picking_form
+msgid "Fiscal documents"
+msgstr ""
+"Documentos fiscais"
 
 #. module: l10n_br_purchase_stock_edi
 #: model:ir.model,name:l10n_br_purchase_stock_edi.model_account_move
@@ -415,22 +413,18 @@ msgstr ""
 "recebimento criado a partir dele."
 
 #. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_bank_statement_line__import_picking_count
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_bank_statement_line__import_picking_ids
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move__import_picking_count
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move__import_picking_ids
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_payment__import_picking_count
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_payment__import_picking_ids
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document__import_picking_count
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document__import_picking_ids
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_form
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_match_search
 msgid "Receipts"
 msgstr "Recebimentos"
-
-#. module: l10n_br_purchase_stock_edi
-#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_bank_statement_line__import_picking_count
-#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move__import_picking_count
-#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_payment__import_picking_count
-#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document__import_picking_count
-msgid "Receipts Count"
-msgstr "Quantidade de recebimentos"
 
 #. module: l10n_br_purchase_stock_edi
 #: model:ir.model.fields.selection,name:l10n_br_purchase_stock_edi.selection__l10n_br_purchase_edi_match__line_state__receipt_done
@@ -536,8 +530,8 @@ msgid ""
 "Some line of the bill waits for the receipt of its order line. It only "
 "informs: nothing is blocked and it is not a divergence."
 msgstr ""
-"Alguma linha da fatura aguarda o recebimento da sua linha de pedido. S"
-"ó informa: nada é bloqueado e não é uma divergência."
+"Alguma linha da fatura aguarda o recebimento da sua linha de pedido. Só "
+"informa: nada é bloqueado e não é uma divergência."
 
 #. module: l10n_br_purchase_stock_edi
 #: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_bank_statement_line__import_awaiting_receipt
@@ -548,14 +542,13 @@ msgid ""
 "Some line waits for the receipt of its order line. It only informs: nothing "
 "is blocked and it is not a divergence."
 msgstr ""
-"Alguma linha aguarda o recebimento da sua linha de pedido. Só informa:"
-" nada é bloqueado e não é uma divergência."
+"Alguma linha aguarda o recebimento da sua linha de pedido. Só informa: nada "
+"é bloqueado e não é uma divergência."
 
 #. module: l10n_br_purchase_stock_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.invoice_form_purchase_divergence
 msgid "Some line waits for the receipt of its order. Nothing is blocked."
-msgstr ""
-"Alguma linha aguarda o recebimento do pedido. Nada é bloqueado."
+msgstr "Alguma linha aguarda o recebimento do pedido. Nada é bloqueado."
 
 #. module: l10n_br_purchase_stock_edi
 #: model:ir.model,name:l10n_br_purchase_stock_edi.model_stock_move
@@ -607,8 +600,8 @@ msgid ""
 "The bill line is for an item that goes to the stock and nothing was received "
 "yet. It only informs: it is not a divergence."
 msgstr ""
-"A linha da fatura é de um item que vai ao estoque e nada foi recebido "
-"ainda. Só informa: não é uma divergência."
+"A linha da fatura é de um item que vai ao estoque e nada foi recebido ainda. "
+"Só informa: não é uma divergência."
 
 #. module: l10n_br_purchase_stock_edi
 #. odoo-python
@@ -641,8 +634,8 @@ msgid ""
 "The line is matched to an order line of a product that goes to the stock and "
 "nothing was received yet. It only informs: it is not a divergence."
 msgstr ""
-"A linha está casada com uma linha de pedido de um produto que vai ao e"
-"stoque e nada foi recebido ainda. Só informa: não é uma divergência."
+"A linha está casada com uma linha de pedido de um produto que vai ao estoque "
+"e nada foi recebido ainda. Só informa: não é uma divergência."
 
 #. module: l10n_br_purchase_stock_edi
 #: model:ir.model.constraint,message:l10n_br_purchase_stock_edi.constraint_res_company_purchase_price_tolerance_positive
@@ -708,3 +701,9 @@ msgstr ""
 #: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_order_price_unit
 msgid "Unit price of the order line, in the unit of this line."
 msgstr "Preço unitário da linha do pedido, na unidade desta linha."
+
+#~ msgid "Fiscal Documents Count"
+#~ msgstr "Quantidade de documentos fiscais"
+
+#~ msgid "Receipts Count"
+#~ msgstr "Quantidade de recebimentos"
