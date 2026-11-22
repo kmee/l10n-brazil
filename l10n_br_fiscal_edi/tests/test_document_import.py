@@ -1104,6 +1104,28 @@ class TestDocumentImport(EdiImportCase):
         )
         self.assertFalse(documents.import_without_protocol)
 
+    def test_a_document_without_protocol_and_with_lines_to_review_shows_both_causes(
+        self,
+    ):
+        """Both reasons come in the same refusal, not one after the other."""
+        parsed = self._parsed(
+            KEY_1, status="unknown", company_vats=self._issuer_vats()
+        )
+        documents, _errors, _warnings = self._import(
+            [(parsed.file_name, b"x")], [parsed], issuer="company"
+        )
+        self.assertTrue(documents.import_without_protocol)
+        self.assertTrue(
+            documents.fiscal_line_ids.filtered(
+                lambda line: line.import_state in ("pending", "matched")
+            )
+        )
+        with self.assertRaises(UserError) as error:
+            documents.action_document_confirm()
+        message = error.exception.args[0]
+        self.assertIn("lines that were not reviewed", message)
+        self.assertIn("no authorization protocol", message)
+
     def test_a_document_the_company_issued_is_also_refused_with_lines_to_review(self):
         document = self._create_imported_document(issuer="company")
         with self.assertRaises(UserError):

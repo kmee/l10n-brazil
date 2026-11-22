@@ -3115,6 +3115,17 @@ msgstr ""
 msgid "vTribRegIBSMun"
 msgstr ""
 
+#. module: l10n_br_nfse
+#. odoo-python
+#: code:addons/l10n_br_nfse/models/document_import.py:0
+#, python-format
+msgid ""
+"%(line)s: the operation has no operation line for services that matches "
+"this NFS-e: choose the operation line."
+msgstr ""
+"%(line)s: a operação não tem linha de operação de serviços que sirva "
+"para esta NFS-e: escolha a linha de operação."
+
 #~ msgid "City Taxation Code"
 #~ msgstr "Código de Tributação da Cidade"
 

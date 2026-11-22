@@ -1493,28 +1493,28 @@ msgid "Import UoM Factor"
 msgstr "Fator da unidade da importação"
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__import_state__matched
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document_line__import_state__matched
 msgid "Matched"
 msgstr "Sugerida"
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__import_state__pending
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document_line__import_state__pending
 msgid "Pending"
 msgstr "Pendente"
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__import_state__pending
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document__import_state__pending
 msgid "Pending Review"
 msgstr "Aguardando revisão"
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__import_state__resolved
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__import_state__resolved
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document__import_state__resolved
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document_line__import_state__resolved
 msgid "Resolved"
 msgstr "Resolvida"
 
 #. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__import_state__in_progress
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document__import_state__in_progress
 msgid "Review in Progress"
 msgstr "Revisão em andamento"
 
@@ -1543,3 +1543,62 @@ msgstr "A revisão só pode ser aplicada na linha de um documento importado."
 #: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_line__import_uom_id
 msgid "Unit of the company that is equivalent to the unit of the supplier."
 msgstr "Unidade da empresa equivalente à unidade do fornecedor."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid ""
+"The file of this document, issued by the company, has no authorization "
+"protocol: it cannot be confirmed as authorized. Import the file with the"
+" protocol."
+msgstr ""
+"O arquivo deste documento, emitido pela empresa, não tem o protocolo de "
+"autorização: ele não pode ser confirmado como autorizado. Importe o "
+"arquivo com o protocolo."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid ""
+"The file of %(document)s has no authorization protocol, so it cannot be "
+"confirmed as authorized. Import the file with the protocol."
+msgstr ""
+"O arquivo de %(document)s não tem o protocolo de autorização, então ele "
+"não pode ser confirmado como autorizado. Importe o arquivo com o "
+"protocolo."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid ""
+"The reader of %(file)s created a document of type %(created)s for a file"
+" of type %(declared)s."
+msgstr ""
+"O leitor de %(file)s criou um documento do tipo %(created)s para um "
+"arquivo do tipo %(declared)s."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid ""
+"%(line)s: more than one operation line fits the operation: choose the "
+"operation line of the line."
+msgstr ""
+"%(line)s: mais de uma linha de operação serve para a operação: escolha a"
+" linha de operação da linha."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_line_review.py:0
+#, python-format
+msgid ""
+"Choosing the product of a line under review is for the fiscal profile. "
+"Ask a fiscal user to resolve the line."
+msgstr ""
+"Escolher o produto de uma linha em revisão é para o perfil fiscal. Peça "
+"a um usuário fiscal para resolver a linha."
+
