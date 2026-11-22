@@ -213,3 +213,53 @@ class TestSpedEfdIcmsIpiCorrecoes(EntradaHelpers, SpedEntradaCommon):
             sorted(rec["NUM_DOC"] for rec in self._sped_records(declaration, "C113")),
             ["77", "78"],
         )
+
+    def _purchase_return(self):
+        return self._entry_document(
+            operation="fo_devolucao_compras",
+            operation_line="fo_devolucao_compras_comercializacao",
+            imported=False,
+        )[0]
+
+    def test_c113_indicators_of_a_referenced_document_in_odoo(self):
+        """The return of a purchase (own NF-e, an exit) references the bill of
+        the supplier: the C113 is the entry of a third party, and the number
+        and the date come from the bill (the reference keeps only the key)."""
+        bill, _line = self._entry_document(document_date=datetime(2026, 6, 10, 12, 0))
+        self._relate(
+            self._purchase_return(),
+            document_related_id=bill.id,
+            document_key=bill.document_key,
+            document_number=False,
+            document_date=False,
+        )
+        c113 = self._sped_records(self._declaration_july(), "C113")
+        self.assertEqual(
+            [
+                (rec["IND_OPER"], rec["IND_EMIT"], rec["NUM_DOC"], rec["DT_DOC"])
+                for rec in c113
+            ],
+            [("0", "1", bill.document_number, "10062026")],
+        )
+
+    def test_c113_typed_reference_of_a_third_party_is_an_entry(self):
+        """Typed without a link: the CNPJ of the key is not the company's, so
+        a third party issued it, and the Guia Pratico only takes IND_EMIT 1
+        with IND_OPER 0. The participant is the issuer of the key."""
+        self._relate(self._purchase_return(), document_key=self._access_key("77"))
+        c113 = self._sped_records(self._declaration_july(), "C113")
+        self.assertEqual(
+            [(rec["IND_OPER"], rec["IND_EMIT"], rec["COD_PART"]) for rec in c113],
+            [("0", "1", str(self.partner_a.id))],
+        )
+
+    def test_c113_typed_reference_issued_by_the_company(self):
+        """The key with the CNPJ of the company: an own document, in the
+        direction of the document that references it."""
+        self.company.partner_id.cnpj_cpf = "11.222.333/0001-81"
+        doc, _line = self._entry_document()
+        self._relate(doc, document_key=self._access_key("77", "11222333000181"))
+        c113 = self._sped_records(self._declaration_july(), "C113")
+        self.assertEqual(
+            [(rec["IND_OPER"], rec["IND_EMIT"]) for rec in c113], [("0", "0")]
+        )

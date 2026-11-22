@@ -1369,6 +1369,9 @@ class RegistroC113(models.Model):
         if related.document_related_id.partner_id:
             return related.document_related_id.partner_id
         cnpj_cpf = misc.punctuation_rm(related.cnpj_cpf or "")
+        if not cnpj_cpf and self._get_related_indicators(related)[1] == "1":
+            # the issuer in the key of a document of a third party
+            cnpj_cpf = self._get_related_issuer(related)
         if not cnpj_cpf:
             return self.env["res.partner"]
         partner = related.document_id.partner_id
@@ -1380,22 +1383,58 @@ class RegistroC113(models.Model):
         return partners.commercial_partner_id[:1]
 
     @api.model
-    def _map_from_odoo(self, record, parent_record, declaration, index=0):
-        # Origin doc properties
-        ind_oper = "0" if record.document_id.fiscal_operation_type == "in" else "1"
-        ind_emit = "0" if record.document_id.issuer == "company" else "1"
-        partner = self._get_related_partner(record)
+    def _get_related_issuer(self, related):
+        """The CNPJ/CPF typed in the reference, else the CNPJ of the issuer in
+        the access key (positions 7 to 20)."""
+        key = misc.punctuation_rm(related.document_key or "")
+        return misc.punctuation_rm(related.cnpj_cpf or "") or (
+            key[6:20] if len(key) == 44 else ""
+        )
 
+    @api.model
+    def _get_related_indicators(self, related):
+        """IND_OPER and IND_EMIT of the referenced document.
+
+        In Odoo: its own direction and issuer. Typed without a link: a third
+        party issued it when the CNPJ of the reference is not the company's,
+        and then it is an entry, as the Guia Pratico validates the field 03
+        (IND_EMIT 1 only with IND_OPER 0). An own document out of Odoo keeps
+        the direction of the document that references it: nothing says it."""
+        document = related.document_related_id
+        if document:
+            return (
+                "0" if document.fiscal_operation_type == FISCAL_IN else "1",
+                "0" if document.issuer == DOCUMENT_ISSUER_COMPANY else "1",
+            )
+        parent = related.document_id
+        ind_oper = "0" if parent.fiscal_operation_type == FISCAL_IN else "1"
+        issuer = self._get_related_issuer(related)
+        if not issuer:
+            # nothing tells the issuer: the one of the document, as before
+            return ind_oper, "0" if parent.issuer == DOCUMENT_ISSUER_COMPANY else "1"
+        if issuer != misc.punctuation_rm(parent.company_id.cnpj_cpf or ""):
+            return "0", "1"
+        return ind_oper, "0"
+
+    @api.model
+    def _map_from_odoo(self, record, parent_record, declaration, index=0):
+        ind_oper, ind_emit = self._get_related_indicators(record)
+        partner = self._get_related_partner(record)
+        # a reference picked from Odoo keeps only the key (the onchange of the
+        # electronic document): the rest comes from the document itself
+        document = record.document_related_id
         return {
             "IND_OPER": ind_oper,
             "IND_EMIT": ind_emit,
             "COD_PART": partner._get_sped_cod_part() if partner else "",
-            "COD_MOD": record.document_type_code or "",
-            "SER": record.document_serie or "",
+            "COD_MOD": record.document_type_code
+            or document.document_type_id.code
+            or "",
+            "SER": record.document_serie or document.document_serie or "",
             "SUB": "",
-            "NUM_DOC": record.document_number or "",
-            "DT_DOC": record.document_date,
-            "CHV_DOCE": record.document_key or "",
+            "NUM_DOC": record.document_number or document.document_number or "",
+            "DT_DOC": record.document_date or document.document_date,
+            "CHV_DOCE": record.document_key or document.document_key or "",
         }
 
 
