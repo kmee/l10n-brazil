@@ -60,7 +60,7 @@ def cte_xml(
     :param collection: the ``cobr`` group to add to the CT-e
     :param taker: CNPJ of a taker that is not the recipient (``toma4``)
     :param emitter: CNPJ of the issuer, when it is not the one of the file
-    :param shipper: CNPJ of the shipper (``exped``) to add to the CT-e
+    :param shipper: CNPJ of the shipper (``exped``), when it is not the one of the file
     :param status: cStat of the protocol; the CT-e then comes as a ``cteProc``
     """
     with file_open(CTE_FILE, "rb") as handle:
@@ -78,11 +78,7 @@ def cte_xml(
             f"<toma4><toma>4</toma><CNPJ>{taker}</CNPJ><xNome>Taker</xNome></toma4>",
         )
     if shipper:
-        xml = xml.replace(
-            "<dest>",
-            f"<exped><CNPJ>{shipper}</CNPJ><xNome>Shipper</xNome></exped><dest>",
-            1,
-        )
+        xml = re.sub(r"(<exped>\s*<CNPJ>)\d+", rf"\g<1>{shipper}", xml)
     if status:
         body = xml.split("?>", 1)[1].strip()
         xml = (
@@ -427,6 +423,8 @@ class TestCteDocumentImport(EdiImportCase):
                 ("taker", LUCRO_PRESUMIDO),
                 ("recipient", LUCRO_REAL),
                 ("recipient", "12046835000161"),
+                ("recipient", "12046835000161"),
+                ("recipient", "84148732000113"),
                 ("issuer", "59594315000157"),
             ),
         )
