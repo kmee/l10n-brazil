@@ -17,21 +17,23 @@ from odoo import fields
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests.common import TransactionCase
 
+from odoo.addons.l10n_br_nfse.models.document_key import (
+    L10nBrFiscalDocument as NfseDocument,
+)
+from odoo.addons.l10n_br_nfse.services.nfse_xml import (
+    NfseNacionalBinding,
+    normalize_access_key,
+    parse_nfse_datetime,
+    parse_nfse_xml,
+)
 from odoo.addons.l10n_br_nfse_dfe.models.dfe_document import (
     L10nBrFiscalDfeDocument as NfseDfeDocument,
 )
-from odoo.addons.l10n_br_nfse_dfe.models.document import (
-    L10nBrFiscalDocument as NfseDocument,
-)
-from odoo.addons.l10n_br_nfse_dfe.services.nfse_xml import (
-    NfseNacionalBinding,
+from odoo.addons.l10n_br_nfse_dfe.services.nfse_dfe_xml import (
     decode_arquivo_xml,
     is_cancel_event,
-    normalize_access_key,
-    parse_nfse_datetime,
     parse_nfse_event_xml,
     parse_nfse_file,
-    parse_nfse_xml,
     xml_root_is_nfse,
 )
 from odoo.addons.l10n_br_nfse_dfe.services.sefin_nfse import SefinNfseClient
@@ -90,7 +92,7 @@ class TestNfseXmlEdges(TransactionCase):
         self.assertTrue(decode_arquivo_xml(b"<NFSe/>").startswith(b"<"))
         self.assertTrue(decode_arquivo_xml("<NFSe/>").startswith(b"<"))
         with mock.patch(
-            "odoo.addons.l10n_br_nfse_dfe.services.nfse_xml.base64.b64decode",
+            "odoo.addons.l10n_br_nfse_dfe.services.nfse_dfe_xml.base64.b64decode",
             side_effect=ValueError("bad"),
         ):
             self.assertIsNone(decode_arquivo_xml("abc"))
@@ -603,24 +605,27 @@ class TestNfseDfeCoverage(TransactionCase):
         imported.issuer_partner_id = False
         imported._create_edoc_from_file()
         self.assertTrue(imported.document_id)
-        self.assertFalse(wizard._nfse_find_service_type("12"))
-        self.assertFalse(wizard._nfse_find_service_type("999999"))
-        self.assertFalse(wizard._nfse_find_nbs(""))
-        self.assertEqual(wizard._nfse_percent(0, 1), 0.0)
-        self.assertEqual(wizard._nfse_percent(101, 0.5), 0.0)
-        self.assertFalse(wizard._nfse_cst("pis", False))
-        self.assertFalse(wizard._nfse_cst("pis", "ZZZ"))
-        self.assertFalse(wizard._nfse_match_tax("l10n_br_fiscal.tax_group_issqn", 0.0))
+        documents = self.env["l10n_br_fiscal.document"]
+        self.assertFalse(documents._nfse_find_service_type("12"))
+        self.assertFalse(documents._nfse_find_service_type("999999"))
+        self.assertFalse(documents._nfse_find_nbs(""))
+        self.assertEqual(documents._nfse_percent(0, 1), 0.0)
+        self.assertEqual(documents._nfse_percent(101, 0.5), 0.0)
+        self.assertFalse(documents._nfse_cst("pis", False))
+        self.assertFalse(documents._nfse_cst("pis", "ZZZ"))
+        self.assertFalse(
+            documents._nfse_match_tax("l10n_br_fiscal.tax_group_issqn", 0.0)
+        )
         cst = self.env["l10n_br_fiscal.cst"].search([], limit=1)
         self.assertTrue(
-            wizard._nfse_match_tax("l10n_br_fiscal.tax_group_issqn", 5.0, 0.0, cst)
+            documents._nfse_match_tax("l10n_br_fiscal.tax_group_issqn", 5.0, 0.0, cst)
         )
-        self.assertFalse(wizard._nfse_amount_vals("issqn", 0, 0, 0, 0, False, False))
-        self.assertEqual(wizard._nfse_percent(10, 0), 0.0)
-        self.assertFalse(wizard._nfse_incidence_city(False))
-        self.assertFalse(wizard._nfse_incidence_city("0000000"))
-        with mock.patch.object(type(wizard.env), "ref", return_value=False):
-            wizard._nfse_default_operation()
+        self.assertFalse(documents._nfse_amount_vals("issqn", 0, 0, 0, 0, False, False))
+        self.assertEqual(documents._nfse_percent(10, 0), 0.0)
+        self.assertFalse(documents._nfse_incidence_city(False))
+        self.assertFalse(documents._nfse_incidence_city("0000000"))
+        with mock.patch.object(type(documents.env), "ref", return_value=False):
+            documents._nfse_default_operation()
         search_wizard = self.env["dfe.specific.search.wizard"].create(
             {
                 "company_id": self.company.id,

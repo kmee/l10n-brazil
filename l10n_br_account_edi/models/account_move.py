@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from dataclasses import replace
+from datetime import date
 
 from odoo import _, api, fields, models
 from odoo.tools import frozendict
@@ -72,8 +73,26 @@ class AccountMove(models.Model):
     ################################
 
     def _edi_installments(self):
-        """The installments of the invoice, by due date."""
+        """The installments of the invoice, by due date.
+
+        On a draft the lines of the installments are only brought up to date
+        when the invoice is saved, so the preview reads the terms that the
+        invoice will give them (`needed_terms`), which is what the lines hold
+        once they are written."""
         self.ensure_one()
+        if self.state == "draft" and self.needed_terms:
+            terms = sorted(
+                self.needed_terms.items(),
+                key=lambda item: item[0]["date_maturity"] or date.max,
+            )
+            return [
+                EdiInstallment(
+                    number=str(number).zfill(3),
+                    date_due=key["date_maturity"],
+                    amount=abs(values["amount_currency"]),
+                )
+                for number, (key, values) in enumerate(terms, 1)
+            ]
         due_lines = self.line_ids.filtered(
             lambda line: (
                 line.account_id.account_type in PAYABLE_RECEIVABLE
