@@ -6,3 +6,7 @@ SIT_NFE_AUTORIZADA = ("1", "Autorizada")
 SIT_NFE_DENEGADA = ("2", "Denegada")
 SIT_NFE_CANCELADA = ("3", "Cancelada")
 SITUACAO_NFE = [SIT_NFE_AUTORIZADA, SIT_NFE_DENEGADA, SIT_NFE_CANCELADA]
+
+# The acknowledgement (ciencia) of the operation is only accepted until 10 days
+# after the authorization (Ajuste SINIEF 07/05, clause 15-C, paragraph 4)
+ACKNOWLEDGEMENT_DAYS = 10
