@@ -2,7 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import _, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 
 from odoo.addons.l10n_br_fiscal.models.document_line import IMPORT_REVIEW_CONTEXT_KEY
 
@@ -57,6 +57,28 @@ class DocumentLine(models.Model):
             return False
         declared = self.env["uom.uom"]._match_by_fiscal_code(self.partner_uom_code)
         return not self.uom_id or declared != self.uom_id
+
+    def write(self, vals):
+        """Choosing the product of a line that is under review is for the fiscal
+        profile. The screens check it, but the access list of the line can be open
+        to other users (l10n_br_account gives it to every internal user), so the
+        check is also here: whoever writes the line directly meets the same rule."""
+        if (
+            "product_id" in vals
+            and not self.env.su
+            and not self.env.user.has_group("l10n_br_fiscal.group_user")
+            and any(
+                line._is_imported() and line.import_state in ("pending", "matched")
+                for line in self.sudo()
+            )
+        ):
+            raise AccessError(
+                _(
+                    "Choosing the product of a line under review is for the fiscal "
+                    "profile. Ask a fiscal user to resolve the line."
+                )
+            )
+        return super().write(vals)
 
     def action_resolve_line(self):
         for line in self:

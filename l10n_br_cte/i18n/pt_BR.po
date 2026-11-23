@@ -6314,6 +6314,8 @@ msgstr ""
 #, python-format
 msgid "without name"
 msgstr "sem nome"
+
+#. module: l10n_br_cte
 #: model:ir.model.fields,field_description:l10n_br_cte.field_l10n_br_fiscal_document__cte_company_role
 msgid "Role of the Company in the CT-e"
 msgstr "Papel da empresa no CT-e"

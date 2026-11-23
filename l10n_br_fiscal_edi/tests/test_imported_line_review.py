@@ -1,7 +1,7 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 from odoo.tests import TransactionCase
 
 
@@ -229,7 +229,7 @@ class TestImportedLineReview(TransactionCase):
         path = os.path.join(
             get_module_path("l10n_br_fiscal_edi"),
             "migrations",
-            "16.0.2.5.1",
+            "16.0.2.5.2",
             "pre-migration.py",
         )
         spec = importlib.util.spec_from_file_location("edi_pre_migration", path)
@@ -426,3 +426,64 @@ class TestImportedLineReview(TransactionCase):
         return [
             (model.browse(uom_id), name) for uom_id, name in model.name_search(term)
         ]
+
+    def _plain_user(self, login, fiscal=False):
+        groups = [self.env.ref("base.group_user").id]
+        if fiscal:
+            groups.append(self.env.ref("l10n_br_fiscal.group_user").id)
+        return self.env["res.users"].create(
+            {
+                "name": login,
+                "login": login,
+                "company_id": self.company.id,
+                "company_ids": [(6, 0, self.company.ids)],
+                "groups_id": [(6, 0, groups)],
+            }
+        )
+
+    def _open_the_access_of_the_line(self):
+        """As l10n_br_account does: every internal user reads and writes the line,
+        and the users of invoicing read the document."""
+        for model, write in (
+            ("l10n_br_fiscal.model_l10n_br_fiscal_document_line", True),
+            ("l10n_br_fiscal.model_l10n_br_fiscal_document", False),
+        ):
+            self.env["ir.model.access"].create(
+                {
+                    "name": "test: open to the internal user",
+                    "model_id": self.env.ref(model).id,
+                    "group_id": self.env.ref("base.group_user").id,
+                    "perm_read": True,
+                    "perm_write": write,
+                    "perm_create": write,
+                    "perm_unlink": False,
+                }
+            )
+
+    def test_a_user_without_the_fiscal_group_cannot_choose_the_product_directly(self):
+        self._open_the_access_of_the_line()
+        self.document._init_import_states()
+        user = self._plain_user("test_line_plain_user")
+        line = self.line.with_user(user)
+        with self.assertRaises(AccessError):
+            line.write({"product_id": self.product.id})
+        self.assertFalse(self.line.product_id)
+        # what is not the product is not the rule of this check
+        line.write({"name": "Renamed by the buyer"})
+
+    def test_a_fiscal_user_chooses_the_product_of_a_line_under_review(self):
+        self._open_the_access_of_the_line()
+        self.document._init_import_states()
+        user = self._plain_user("test_line_fiscal_user", fiscal=True)
+        self.line.with_user(user).write({"product_id": self.product.id})
+        self.assertEqual(self.line.product_id, self.product)
+
+    def test_the_line_already_resolved_follows_the_ordinary_rules(self):
+        """The bill is edited by users of accounting: once the review is over the
+        line is not under this rule."""
+        self._open_the_access_of_the_line()
+        self.document._init_import_states()
+        self.line.write({"product_id": self.product.id})
+        self.line.write({"import_state": "resolved"})
+        user = self._plain_user("test_line_accountant")
+        self.line.with_user(user).write({"product_id": self.product.id})

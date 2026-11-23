@@ -15,7 +15,7 @@ from odoo import SUPERUSER_ID, _, api
 from odoo.exceptions import AccessError, UserError
 from odoo.sql_db import db_connect
 
-from ..tools import EDI_IMPORT_NO_CREATE, EdiPartnerData
+from ..tools import EDI_IMPORT_DEMO, EDI_IMPORT_NO_CREATE, EdiPartnerData
 from .common import KEY_1, KEY_2, KEY_3, EdiImportCase
 
 
@@ -164,6 +164,35 @@ class TestDocumentImport(EdiImportCase):
             release.join()
             cursor.close()
 
+    def test_a_note_that_this_transaction_deleted_is_not_a_concurrent_import(self):
+        """The document was committed before the snapshot of this transaction, which
+        deleted it: the other connection still sees the row, but the row is not newer
+        than the snapshot, so there is no one to wait for, and the note is imported
+        again (the inbox tests of a CT-e delete the demo one and import its file)."""
+        self._commit_document_elsewhere(KEY_2)
+        with closing(db_connect(self.env.cr.dbname).cursor()) as cursor:
+            cursor.execute("SELECT txid_current_snapshot()::text")
+            after_the_commit = cursor.fetchone()[0]
+        parsed = self._parsed(KEY_2)
+        with patch.object(
+            type(self.Document),
+            "_edi_import_snapshot",
+            lambda doc: doc._edi_import_parse_snapshot(after_the_commit),
+        ):
+            documents, errors, _warnings = self._import(
+                [(parsed.file_name, b"x")], [parsed]
+            )
+        self.assertEqual((len(documents), errors), (1, []))
+
+    def test_the_row_of_a_transaction_that_the_snapshot_does_not_see_is_newer(self):
+        born_after = self.Document._edi_import_born_after
+        snapshot = self.Document._edi_import_parse_snapshot("100:110:103,105")
+        self.assertFalse(born_after(snapshot, 99))
+        self.assertFalse(born_after(snapshot, 104))
+        self.assertTrue(born_after(snapshot, 103))
+        self.assertTrue(born_after(snapshot, 110))
+        self.assertTrue(born_after(snapshot, 4000))
+
     def test_a_table_locked_by_the_transaction_does_not_hang_the_import(self):
         """An installation that imports the demo data holds locks on the table, and
         the connection that looks for a note committed elsewhere would wait for them
@@ -175,6 +204,25 @@ class TestDocumentImport(EdiImportCase):
         documents, errors, _warnings = self._import(
             [(parsed.file_name, b"x")], [parsed]
         )
+        self.assertEqual((len(documents), errors), (1, []))
+
+    def test_the_demo_data_does_not_look_for_a_note_committed_elsewhere(self):
+        """The demo is imported while the module is installed: no other connection
+        is opened to look for the note, and the import does not wait for the locks."""
+        self.env.cr.execute(
+            "LOCK TABLE l10n_br_fiscal_document IN ACCESS EXCLUSIVE MODE"
+        )
+        parsed = self._parsed(KEY_3)
+        with patch.object(
+            type(self.Document),
+            "_edi_import_snapshot",
+            side_effect=AssertionError("looked for the note"),
+        ):
+            documents, errors, _warnings = self._import(
+                [(parsed.file_name, b"x")],
+                [parsed],
+                model=self.Document.with_context(**{EDI_IMPORT_DEMO: True}),
+            )
         self.assertEqual((len(documents), errors), (1, []))
 
     def test_a_serialization_failure_of_the_database_is_not_an_error_of_the_file(self):
@@ -1103,6 +1151,28 @@ class TestDocumentImport(EdiImportCase):
             [(parsed.file_name, b"x")], [parsed]
         )
         self.assertFalse(documents.import_without_protocol)
+
+    def test_a_document_without_protocol_and_with_lines_to_review_shows_both_causes(
+        self,
+    ):
+        """Both reasons come in the same refusal, not one after the other."""
+        parsed = self._parsed(
+            KEY_1, status="unknown", company_vats=self._issuer_vats()
+        )
+        documents, _errors, _warnings = self._import(
+            [(parsed.file_name, b"x")], [parsed], issuer="company"
+        )
+        self.assertTrue(documents.import_without_protocol)
+        self.assertTrue(
+            documents.fiscal_line_ids.filtered(
+                lambda line: line.import_state in ("pending", "matched")
+            )
+        )
+        with self.assertRaises(UserError) as error:
+            documents.action_document_confirm()
+        message = error.exception.args[0]
+        self.assertIn("lines that were not reviewed", message)
+        self.assertIn("no authorization protocol", message)
 
     def test_a_document_the_company_issued_is_also_refused_with_lines_to_review(self):
         document = self._create_imported_document(issuer="company")

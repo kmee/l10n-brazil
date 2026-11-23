@@ -32,6 +32,8 @@ def tax_authority_date_to_utc(value):
 # Context key of the import: it never creates a product, a unit, an NCM, a CEST or a
 # CFOP that the file mentions and the database does not have.
 EDI_IMPORT_NO_CREATE = "edi_import_no_create"
+# context key of the import of the demo data, which holds locks on the table
+EDI_IMPORT_DEMO = "edi_import_demo"
 
 
 class EdiImportConcurrencyError(OperationalError):

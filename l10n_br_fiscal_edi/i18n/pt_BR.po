@@ -1465,80 +1465,178 @@ msgstr ""
 msgid "name"
 msgstr ""
 
-#. module: l10n_br_fiscal
+#. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_pending_count
 msgid "Import Pending Count"
 msgstr "Linhas pendentes da importação"
 
-#. module: l10n_br_fiscal
+#. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_state
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_line__import_state
 msgid "Import State"
 msgstr "Situação da importação"
 
-#. module: l10n_br_fiscal
+#. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_line__import_supplierinfo_id
 msgid "Import Supplier Info"
 msgstr "Informação do fornecedor da importação"
 
-#. module: l10n_br_fiscal
+#. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_line__import_uom_id
 msgid "Import UoM"
 msgstr "Unidade da importação"
 
-#. module: l10n_br_fiscal
+#. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_line__import_uom_factor
 msgid "Import UoM Factor"
 msgstr "Fator da unidade da importação"
 
-#. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__import_state__matched
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document_line__import_state__matched
 msgid "Matched"
 msgstr "Sugerida"
 
-#. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__import_state__pending
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document_line__import_state__pending
 msgid "Pending"
 msgstr "Pendente"
 
-#. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__import_state__pending
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document__import_state__pending
 msgid "Pending Review"
 msgstr "Aguardando revisão"
 
-#. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__import_state__resolved
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document_line__import_state__resolved
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document__import_state__resolved
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document_line__import_state__resolved
 msgid "Resolved"
 msgstr "Resolvida"
 
-#. module: l10n_br_fiscal
-#: model:ir.model.fields.selection,name:l10n_br_fiscal.selection__l10n_br_fiscal_document__import_state__in_progress
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields.selection,name:l10n_br_fiscal_edi.selection__l10n_br_fiscal_document__import_state__in_progress
 msgid "Review in Progress"
 msgstr "Revisão em andamento"
 
-#. module: l10n_br_fiscal
+#. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_state
 msgid "Review state of the lines of a document imported from a fiscal file."
 msgstr ""
 "Situação da revisão das linhas de um documento importado de um arquivo "
 "fiscal."
 
-#. module: l10n_br_fiscal
+#. module: l10n_br_fiscal_edi
 #. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document_line_review.py:0
 #, python-format
 msgid "Set the product of the line %s before resolving it."
 msgstr "Informe o produto da linha %s antes de resolvê-la."
 
-#. module: l10n_br_fiscal
+#. module: l10n_br_fiscal_edi
 #. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document_line_review.py:0
 #, python-format
 msgid "The review can only be applied on the line of an imported document."
 msgstr "A revisão só pode ser aplicada na linha de um documento importado."
 
-#. module: l10n_br_fiscal
+#. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_line__import_uom_id
 msgid "Unit of the company that is equivalent to the unit of the supplier."
 msgstr "Unidade da empresa equivalente à unidade do fornecedor."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid ""
+"The file of this document, issued by the company, has no authorization "
+"protocol: it cannot be confirmed as authorized. Import the file with the"
+" protocol."
+msgstr ""
+"O arquivo deste documento, emitido pela empresa, não tem o protocolo de "
+"autorização: ele não pode ser confirmado como autorizado. Importe o "
+"arquivo com o protocolo."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid ""
+"The file of %(document)s has no authorization protocol, so it cannot be "
+"confirmed as authorized. Import the file with the protocol."
+msgstr ""
+"O arquivo de %(document)s não tem o protocolo de autorização, então ele "
+"não pode ser confirmado como autorizado. Importe o arquivo com o "
+"protocolo."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid ""
+"The reader of %(file)s created a document of type %(created)s for a file"
+" of type %(declared)s."
+msgstr ""
+"O leitor de %(file)s criou um documento do tipo %(created)s para um "
+"arquivo do tipo %(declared)s."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+#, python-format
+msgid ""
+"%(line)s: more than one operation line fits the operation: choose the "
+"operation line of the line."
+msgstr ""
+"%(line)s: mais de uma linha de operação serve para a operação: escolha a"
+" linha de operação da linha."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_line_review.py:0
+#, python-format
+msgid ""
+"Choosing the product of a line under review is for the fiscal profile. "
+"Ask a fiscal user to resolve the line."
+msgstr ""
+"Escolher o produto de uma linha em revisão é para o perfil fiscal. Peça "
+"a um usuário fiscal para resolver a linha."
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_without_protocol
+msgid "Import Without Protocol"
+msgstr "Importado sem protocolo"
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_without_protocol
+msgid ""
+"The file of a document the company issued elsewhere carries no "
+"authorization protocol: it cannot be confirmed as authorized."
+msgstr ""
+"O arquivo de um documento que a empresa emitiu em outro sistema não traz"
+" o protocolo de autorização: ele não pode ser confirmado como "
+"autorizado."
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_line__import_uom_factor
+msgid ""
+"How many units of the company make one unit of the supplier (25 for a "
+"bag of 25 kg received in KG)."
+msgstr ""
+"Quantas unidades da empresa formam uma unidade do fornecedor (25 para um"
+" saco de 25 kg recebido em KG)."
+
+#. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_line__import_state
+msgid ""
+"Review state of a line imported from a fiscal document file. Pending: no"
+" product was resolved, or the unit declared by the supplier was neither "
+"matched nor chosen. Matched: a suggestion waits for the confirmation of "
+"a person. Resolved: the review was applied. Empty on a line that was not"
+" imported."
+msgstr ""
+"Situação da revisão de uma linha importada de um arquivo de documento "
+"fiscal. Pendente: nenhum produto foi resolvido, ou a unidade declarada "
+"pelo fornecedor não foi reconhecida nem escolhida. Sugerida: uma "
+"sugestão espera a confirmação de uma pessoa. Resolvida: a revisão foi "
+"aplicada. Vazio em uma linha que não foi importada."
+

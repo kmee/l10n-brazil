@@ -3075,3 +3075,13 @@ msgid ""
 "issued elsewhere and the company has no NFS-e issuing set up here. Use the "
 "PDF of the issuer."
 msgstr ""
+
+#. module: l10n_br_nfse
+#. odoo-python
+#: code:addons/l10n_br_nfse/models/document_import.py:0
+#, python-format
+msgid ""
+"%(line)s: the operation has no operation line for services that matches "
+"this NFS-e: choose the operation line."
+msgstr ""
+

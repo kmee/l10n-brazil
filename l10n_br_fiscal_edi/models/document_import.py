@@ -29,7 +29,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
 )
 
 from ..constants.fiscal import DOCUMENT_STATE_AUTHORIZED
-from ..tools import EDI_IMPORT_NO_CREATE, EdiImportConcurrencyError
+from ..tools import EDI_IMPORT_DEMO, EDI_IMPORT_NO_CREATE, EdiImportConcurrencyError
 
 _logger = logging.getLogger(__name__)
 
@@ -253,7 +253,9 @@ class Document(models.Model):
         for path in relative_paths:
             with file_open(f"{module}/{path}", "rb") as sample:
                 files.append((path.rsplit("/", 1)[-1], sample.read()))
-        documents, errors, _warnings = self._edi_import_files(files)
+        documents, errors, _warnings = self.with_context(
+            **{EDI_IMPORT_DEMO: True}
+        )._edi_import_files(files)
         if errors:
             raise UserError("\n".join(f"{name}: {message}" for name, message in errors))
         return documents
@@ -453,20 +455,51 @@ class Document(models.Model):
         imported while it does) would make that connection wait for ever: it waits for
         two seconds at most, and goes on without the check, as nobody else is importing
         while a module is installed."""
+        if self.env.context.get(EDI_IMPORT_DEMO):
+            # the demo data is imported while the module is installed, with locks on
+            # the table, and nobody else imports then
+            return False
+        snapshot = self._edi_import_snapshot()
         with closing(db_connect(self.env.cr.dbname).cursor()) as cursor:
             try:
                 cursor.execute("SET LOCAL lock_timeout = '2s'")
                 cursor.execute(
-                    "SELECT 1 FROM l10n_br_fiscal_document "
+                    "SELECT xmin::text::bigint FROM l10n_br_fiscal_document "
                     "WHERE document_key = %s AND company_id = %s LIMIT 1",
                     (parsed.access_key, company.id),
                 )
-                found = bool(cursor.fetchone())
+                row = cursor.fetchone()
             except LockNotAvailable:
-                found = False
+                row = None
             finally:
                 cursor.rollback()
-        return found
+        return bool(row) and self._edi_import_born_after(snapshot, row[0])
+
+    def _edi_import_snapshot(self):
+        """The snapshot of this transaction: the first transaction that it does not
+        see and the ones that were running and that it does not see either."""
+        self.env.cr.execute("SELECT txid_current_snapshot()::text")
+        return self._edi_import_parse_snapshot(self.env.cr.fetchone()[0])
+
+    @api.model
+    def _edi_import_parse_snapshot(self, text):
+        """``xmin:xmax:xip,...`` of ``txid_current_snapshot`` as the 32 bits of the
+        ``xmin`` of the rows: ``(xmax, {running})``."""
+        modulus = 2**32
+        _xmin, xmax, running = text.split(":")
+        return (
+            int(xmax) % modulus,
+            {int(xid) % modulus for xid in running.split(",") if xid},
+        )
+
+    @api.model
+    def _edi_import_born_after(self, snapshot, row_xid):
+        """Whether the transaction that wrote the row is not visible to the
+        snapshot. A row that the snapshot could see and does not find was deleted by
+        this very transaction: that is not a concurrent import."""
+        xmax, running = snapshot
+        modulus = 2**32
+        return (row_xid - xmax) % modulus < modulus // 2 or row_xid in running
 
     @api.model
     def _edi_import_find_existing(self, parsed, company):
@@ -935,12 +968,14 @@ class Document(models.Model):
         drafts = self.filtered(
             lambda doc: doc.imported_document and doc.state_edoc == DOCUMENT_STATE_DRAFT
         )
+        own = drafts.filtered(lambda doc: doc.issuer == DOCUMENT_ISSUER_COMPANY)
         for document in drafts:
+            causes = []
             unresolved = document.fiscal_line_ids.filtered(
                 lambda line: line.import_state in ("pending", "matched")
             )
             if unresolved:
-                raise UserError(
+                causes.append(
                     _(
                         "The document %(document)s has lines that were not reviewed:"
                         "\n%(lines)s"
@@ -950,16 +985,18 @@ class Document(models.Model):
                         "lines": "\n".join(unresolved.mapped("name")),
                     }
                 )
-        own = drafts.filtered(lambda doc: doc.issuer == DOCUMENT_ISSUER_COMPANY)
-        for document in own.filtered("import_without_protocol"):
-            raise UserError(
-                _(
-                    "The file of %(document)s has no authorization protocol, so it "
-                    "cannot be confirmed as authorized. Import the file with the "
-                    "protocol."
+            if document in own and document.import_without_protocol:
+                causes.append(
+                    _(
+                        "The file of %(document)s has no authorization protocol, so "
+                        "it cannot be confirmed as authorized. Import the file with "
+                        "the protocol."
+                    )
+                    % {"document": document.display_name}
                 )
-                % {"document": document.display_name}
-            )
+            if causes:
+                # every cause at once: the person fixes them in one go
+                raise UserError("\n\n".join(causes))
         for document in own:
             document._trigger_fsm("action_confirm_imported")
         return super(Document, self - own).action_document_confirm()
