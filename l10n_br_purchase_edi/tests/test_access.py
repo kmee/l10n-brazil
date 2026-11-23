@@ -1,7 +1,9 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo.exceptions import AccessError
+from lxml import etree
+
+from odoo.exceptions import AccessError, UserError
 from odoo.tests import tagged
 
 from .common import PurchaseEdiCase
@@ -135,3 +137,101 @@ class TestMatchAccess(PurchaseEdiCase):
             self._as(rows, user).action_match()
 
         self.assertNotEqual(self.line.import_origin_state, "resolved")
+
+    # the menu of the buyer ------------------------------------------------
+
+    def _menu_action(self):
+        return self.env.ref("l10n_br_purchase_edi.document_match_buyer_action").sudo()
+
+    def _buyer(self, login="menu-buyer", companies=None):
+        return self._user(login, ("purchase.group_purchase_user",), companies)
+
+    def _open_menu(self, user):
+        """The screen as the buyer opens it: the view and the rows."""
+        action = self._menu_action()
+        model = (
+            self.env[action.res_model]
+            .with_user(user)
+            .with_context(allowed_company_ids=user.company_ids.ids)
+        )
+        arch = model.get_view(action.view_id.id or False, "tree")["arch"]
+        domain = [
+            "|",
+            ("kind", "!=", "note"),
+            ("line_state", "in", ("pending", "suggested")),
+        ]
+        names = [
+            node.get("name")
+            for node in etree.fromstring(arch).iter("field")
+            if node.get("name") in model._fields
+        ]
+        return model.search_read(domain, names), arch
+
+    def test_a_buyer_opens_the_menu_with_no_fiscal_right(self):
+        self._order()
+        self._resolve_product()
+        self.env.flush_all()
+        self.env.invalidate_all()
+        buyer = self._buyer()
+
+        rows, arch = self._open_menu(buyer)
+
+        kinds = {row["kind"] for row in rows}
+        self.assertTrue({"note", "order"} <= kinds)
+        # the view of the buyer carries no fiscal model and no link to it
+        self.assertNotIn("fiscal_document_id", arch)
+        self.assertNotIn('name="action_open_document"', arch)
+
+    def test_the_menu_is_for_the_purchase_users(self):
+        menu = self.env.ref("l10n_br_purchase_edi.document_match_buyer_menu")
+        fiscal = self._user("menu-fiscal", ("l10n_br_fiscal.group_user",))
+
+        self.assertIn(self.env.ref("purchase.group_purchase_user"), menu.groups_id)
+        visible = self.env["ir.ui.menu"].with_user(fiscal)._visible_menu_ids()
+        self.assertNotIn(menu.id, visible)
+
+    def test_the_buyer_decides_the_origin_from_the_menu(self):
+        order = self._order()
+        rows = self._note_rows()
+        rows |= self._rows(purchase_line_id=order.order_line.id, kind="order")
+        buyer = self._buyer("menu-buyer-decides")
+
+        self._as(rows, buyer).action_match()
+
+        self.assertEqual(self.line.import_origin_state, "resolved")
+
+    def test_the_buyer_does_not_choose_the_product_from_the_menu(self):
+        order = self._order()
+        self.line.product_id = False
+        rows = self._rows(fiscal_document_id=self.document.id)
+        rows |= self._rows(purchase_line_id=order.order_line.id, kind="order")
+        buyer = self._buyer("menu-buyer-product")
+
+        with self.assertRaises(AccessError):
+            self._as(rows, buyer).action_match()
+
+        self.assertFalse(self.line.product_id)
+
+    def test_the_link_to_the_document_is_for_the_fiscal_group(self):
+        rows = self._note_rows()
+        buyer = self._buyer("menu-buyer-link")
+        fiscal = self._user("menu-fiscal-link", ("l10n_br_fiscal.group_user",))
+
+        with self.assertRaisesRegex(UserError, "fiscal profile"):
+            self._as(rows, buyer).action_open_document()
+        action = self._as(rows, fiscal).action_open_document()
+
+        self.assertEqual(action["res_id"], self.document.id)
+
+    def test_a_buyer_of_another_company_does_not_see_the_lines(self):
+        self._order()
+        self._resolve_product()
+        self.env.flush_all()
+        self.env.invalidate_all()
+        buyer = self._buyer("menu-buyer-other", companies=self.other_company)
+
+        rows, _arch = self._open_menu(buyer)
+
+        self.assertFalse(
+            [row for row in rows if row["reference"] == self.document.document_number]
+        )

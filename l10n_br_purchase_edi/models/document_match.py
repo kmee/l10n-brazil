@@ -548,6 +548,28 @@ class DocumentMatch(models.Model):
         )
         return True
 
+    def action_open_document(self):
+        """Open the fiscal document of the selected note: for the fiscal group
+        (the buyer decides the origin without reading the fiscal models)."""
+        if not self.env.user.has_group("l10n_br_fiscal.group_user"):
+            raise UserError(
+                _(
+                    "The fiscal document is for the fiscal profile. Ask someone "
+                    "from the fiscal team to open it."
+                )
+            )
+        document = self._split_selection()[0].document_id
+        if len(document) != 1:
+            raise UserError(_("Select the lines of one document."))
+        return {
+            "type": "ir.actions.act_window",
+            "name": document.display_name,
+            "res_model": "l10n_br_fiscal.document",
+            "res_id": document.id,
+            "view_mode": "form",
+            "views": [(False, "form")],
+        }
+
     def action_open_quote(self):
         """Open the quotation for the buyer to confirm it."""
         order = self._split_selection()[2].order_id
