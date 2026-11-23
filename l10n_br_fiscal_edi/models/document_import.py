@@ -453,20 +453,45 @@ class Document(models.Model):
         imported while it does) would make that connection wait for ever: it waits for
         two seconds at most, and goes on without the check, as nobody else is importing
         while a module is installed."""
+        if self.pool._init:
+            # an installation or an update imports the demo data while it holds
+            # locks on the table, and nobody else imports then
+            return False
+        snapshot = self._edi_import_snapshot()
         with closing(db_connect(self.env.cr.dbname).cursor()) as cursor:
             try:
                 cursor.execute("SET LOCAL lock_timeout = '2s'")
                 cursor.execute(
-                    "SELECT 1 FROM l10n_br_fiscal_document "
+                    "SELECT xmin::text::bigint FROM l10n_br_fiscal_document "
                     "WHERE document_key = %s AND company_id = %s LIMIT 1",
                     (parsed.access_key, company.id),
                 )
-                found = bool(cursor.fetchone())
+                row = cursor.fetchone()
             except LockNotAvailable:
-                found = False
+                row = None
             finally:
                 cursor.rollback()
-        return found
+        return bool(row) and self._edi_import_born_after(snapshot, row[0])
+
+    def _edi_import_snapshot(self):
+        """The snapshot of this transaction: the first transaction that it does not
+        see and the ones that were running and that it does not see either."""
+        self.env.cr.execute("SELECT txid_current_snapshot()::text")
+        xmin, xmax, running = self.env.cr.fetchone()[0].split(":")
+        modulus = 2**32
+        return (
+            int(xmax) % modulus,
+            {int(xid) % modulus for xid in running.split(",") if xid},
+        )
+
+    @api.model
+    def _edi_import_born_after(self, snapshot, row_xid):
+        """Whether the transaction that wrote the row is not visible to the
+        snapshot. A row that the snapshot could see and does not find was deleted by
+        this very transaction: that is not a concurrent import."""
+        xmax, running = snapshot
+        modulus = 2**32
+        return (row_xid - xmax) % modulus < modulus // 2 or row_xid in running
 
     @api.model
     def _edi_import_find_existing(self, parsed, company):

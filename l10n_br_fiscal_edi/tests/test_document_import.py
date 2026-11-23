@@ -164,6 +164,19 @@ class TestDocumentImport(EdiImportCase):
             release.join()
             cursor.close()
 
+    def test_a_note_that_this_transaction_deleted_is_not_a_concurrent_import(self):
+        """The document was committed before this transaction began and this one
+        deleted it: the other connection still sees the row, but there is no one to
+        wait for, and the note is imported again."""
+        self._commit_document_elsewhere(KEY_2)
+        self.Document.search([("document_key", "=", KEY_2)]).unlink()
+        self.assertFalse(self.Document.search([("document_key", "=", KEY_2)]))
+        parsed = self._parsed(KEY_2)
+        documents, errors, _warnings = self._import(
+            [(parsed.file_name, b"x")], [parsed]
+        )
+        self.assertEqual((len(documents), errors), (1, []))
+
     def test_a_table_locked_by_the_transaction_does_not_hang_the_import(self):
         """An installation that imports the demo data holds locks on the table, and
         the connection that looks for a note committed elsewhere would wait for them
