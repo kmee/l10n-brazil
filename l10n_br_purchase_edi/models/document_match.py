@@ -113,7 +113,8 @@ class DocumentMatch(models.Model):
     )
     price_difference_percent = fields.Float(
         compute="_compute_note_comparison",
-        help="The price difference as a percentage of the price of the document.",
+        string="Price Difference %",
+        help="Price difference as a percentage.",
     )
     hint = fields.Char(
         compute="_compute_note_comparison",

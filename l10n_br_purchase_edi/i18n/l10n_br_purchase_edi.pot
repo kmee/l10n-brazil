@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-23 02:19+0000\n"
-"PO-Revision-Date: 2026-11-23 02:19+0000\n"
+"POT-Creation-Date: 2026-11-23 05:17+0000\n"
+"PO-Revision-Date: 2026-11-23 05:17+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -48,6 +48,11 @@ msgstr ""
 msgid ""
 "A quotation cannot be matched until the buyer confirms the order. Use Open "
 "Quotation."
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_search
+msgid "All"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
@@ -108,6 +113,11 @@ msgstr ""
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__description
 msgid "Description"
+msgstr ""
+
+#. module: l10n_br_purchase_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
+msgid "Diff. %"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
@@ -333,6 +343,11 @@ msgid "Origin Pending or Suggested"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_search
+msgid "Origin Resolved"
+msgstr ""
+
+#. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_account_move_line__import_origin_state
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_fiscal_document_line__import_origin_state
 msgid "Origin State"
@@ -376,7 +391,7 @@ msgstr ""
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__price_difference_percent
-msgid "Price Difference Percent"
+msgid "Price Difference %"
 msgstr ""
 
 #. module: l10n_br_purchase_edi
@@ -385,8 +400,8 @@ msgid "Price diff."
 msgstr ""
 
 #. module: l10n_br_purchase_edi
-#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
-msgid "Price diff. %"
+#: model:ir.model.fields,help:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__price_difference_percent
+msgid "Price difference as a percentage."
 msgstr ""
 
 #. module: l10n_br_purchase_edi
@@ -722,11 +737,6 @@ msgstr ""
 #: code:addons/l10n_br_purchase_edi/models/document_match.py:0
 #, python-format
 msgid "The order line is of another company or of another supplier."
-msgstr ""
-
-#. module: l10n_br_purchase_edi
-#: model:ir.model.fields,help:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__price_difference_percent
-msgid "The price difference as a percentage of the price of the document."
 msgstr ""
 
 #. module: l10n_br_purchase_edi
