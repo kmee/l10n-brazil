@@ -69,3 +69,24 @@ class TestRequestAccess(RequestEdiCase):
         self.assertIn("import_request_line_id", rows._origin_fields())
         with self.assertRaises(AccessError):
             rows._write_origin(self.line, {"name": "x"})
+
+    def test_the_buyer_sees_the_requests_of_the_menu_with_the_request_group(self):
+        self._request()
+        self._resolve_product()
+        self.env.flush_all()
+        self.env.invalidate_all()
+        with_group = self._user(
+            "menu-requester",
+            self.company,
+            "purchase.group_purchase_user",
+            "purchase_request.group_purchase_request_user",
+        )
+        without_group = self._user(
+            "menu-buyer-no-request", self.company, "purchase.group_purchase_user"
+        )
+
+        seen = self._as(self.Match, with_group).search([("kind", "=", "request")])
+        hidden = self._as(self.Match, without_group).search([("kind", "=", "request")])
+
+        self.assertTrue(seen)
+        self.assertFalse(hidden)
