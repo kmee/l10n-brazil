@@ -69,7 +69,7 @@ class DocumentLine(models.Model):
             and not self.env.user.has_group("l10n_br_fiscal.group_user")
             and any(
                 line._is_imported() and line.import_state in ("pending", "matched")
-                for line in self
+                for line in self.sudo()
             )
         ):
             raise AccessError(
