@@ -20,6 +20,10 @@
                             name="certificate"
                             invisible="certificate_id or not parent_id"
                         />
+                        <field
+                            name="certificate_ecpf_id"
+                            context="{'default_scope': 'l10n_br', 'default_company_id': id}"
+                        />
                     </group>
                 </page>
             </xpath>
