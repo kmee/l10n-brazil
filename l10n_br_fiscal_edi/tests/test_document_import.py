@@ -165,17 +165,33 @@ class TestDocumentImport(EdiImportCase):
             cursor.close()
 
     def test_a_note_that_this_transaction_deleted_is_not_a_concurrent_import(self):
-        """The document was committed before this transaction began and this one
-        deleted it: the other connection still sees the row, but there is no one to
-        wait for, and the note is imported again."""
+        """The document was committed before the snapshot of this transaction, which
+        deleted it: the other connection still sees the row, but the row is not newer
+        than the snapshot, so there is no one to wait for, and the note is imported
+        again (the inbox tests of a CT-e delete the demo one and import its file)."""
         self._commit_document_elsewhere(KEY_2)
-        self.Document.search([("document_key", "=", KEY_2)]).unlink()
-        self.assertFalse(self.Document.search([("document_key", "=", KEY_2)]))
+        with closing(db_connect(self.env.cr.dbname).cursor()) as cursor:
+            cursor.execute("SELECT txid_current_snapshot()::text")
+            after_the_commit = cursor.fetchone()[0]
         parsed = self._parsed(KEY_2)
-        documents, errors, _warnings = self._import(
-            [(parsed.file_name, b"x")], [parsed]
-        )
+        with patch.object(
+            type(self.Document),
+            "_edi_import_snapshot",
+            lambda doc: doc._edi_import_parse_snapshot(after_the_commit),
+        ):
+            documents, errors, _warnings = self._import(
+                [(parsed.file_name, b"x")], [parsed]
+            )
         self.assertEqual((len(documents), errors), (1, []))
+
+    def test_the_row_of_a_transaction_that_the_snapshot_does_not_see_is_newer(self):
+        born_after = self.Document._edi_import_born_after
+        snapshot = self.Document._edi_import_parse_snapshot("100:110:103,105")
+        self.assertFalse(born_after(snapshot, 99))
+        self.assertFalse(born_after(snapshot, 104))
+        self.assertTrue(born_after(snapshot, 103))
+        self.assertTrue(born_after(snapshot, 110))
+        self.assertTrue(born_after(snapshot, 4000))
 
     def test_a_table_locked_by_the_transaction_does_not_hang_the_import(self):
         """An installation that imports the demo data holds locks on the table, and

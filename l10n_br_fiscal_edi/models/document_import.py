@@ -479,8 +479,14 @@ class Document(models.Model):
         """The snapshot of this transaction: the first transaction that it does not
         see and the ones that were running and that it does not see either."""
         self.env.cr.execute("SELECT txid_current_snapshot()::text")
-        xmin, xmax, running = self.env.cr.fetchone()[0].split(":")
+        return self._edi_import_parse_snapshot(self.env.cr.fetchone()[0])
+
+    @api.model
+    def _edi_import_parse_snapshot(self, text):
+        """``xmin:xmax:xip,...`` of ``txid_current_snapshot`` as the 32 bits of the
+        ``xmin`` of the rows: ``(xmax, {running})``."""
         modulus = 2**32
+        _xmin, xmax, running = text.split(":")
         return (
             int(xmax) % modulus,
             {int(xid) % modulus for xid in running.split(",") if xid},
