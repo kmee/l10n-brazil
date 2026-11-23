@@ -127,6 +127,27 @@ class TestCteDocumentImport(EdiImportCase):
             dict({"name": "Freight service", "type": "service"}, **values)
         )
 
+    def test_the_import_of_a_cte_creates_no_document_besides_its_own(self):
+        """A group of the file is not a document: the list of the imported documents
+        has no empty line, with or without documents referenced in the CT-e."""
+        for content in (cte_xml(), cte_xml(related=True, collection=COLLECTION)):
+            known = self.Document.with_context(active_test=False).search([])
+            documents, errors, _warnings = self._import(content)
+            self.assertFalse(errors)
+            created = self.Document.with_context(active_test=False).search(
+                [("id", "not in", known.ids)]
+            )
+            self.assertEqual(created, documents)
+            documents.unlink()
+
+    def test_no_imported_document_of_the_demo_is_empty(self):
+        """Neither the demo of this module nor the one of the CT-e of the framework
+        leave a document without type among the imported ones."""
+        empty = self.Document.search(
+            [("imported_document", "=", True), ("document_type_id", "=", False)]
+        )
+        self.assertFalse(empty)
+
     def test_the_demo_documents_show_the_import(self):
         received = self.Document.search(
             [("document_key", "=", "35240759594315000157570010000070011570007018")]
