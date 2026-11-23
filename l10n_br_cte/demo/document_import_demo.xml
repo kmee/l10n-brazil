@@ -7,14 +7,14 @@
          that the company provides, in the company of the demo (Empresa Lucro
          Presumido) -->
     <record id="product_freight_purchased" model="product.product">
-        <field name="name">Freight purchased</field>
+        <field name="name">Frete comprado</field>
         <field name="type">service</field>
         <field name="list_price">0.0</field>
         <field name="standard_price">0.0</field>
         <field name="default_code">FRETE_COMPRADO</field>
     </record>
     <record id="product_transport_provided" model="product.product">
-        <field name="name">Transport service provided</field>
+        <field name="name">Serviço de transporte prestado</field>
         <field name="type">service</field>
         <field name="list_price">0.0</field>
         <field name="standard_price">0.0</field>
