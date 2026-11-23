@@ -125,17 +125,6 @@ msgid "Import"
 msgstr "Importar"
 
 #. module: l10n_br_nfse_dfe
-#: model:ir.model,name:l10n_br_nfse_dfe.model_l10n_br_fiscal_document_import_wizard
-msgid "Import Document Wizard"
-msgstr "Assistente de Importação de Documentos"
-
-#. module: l10n_br_nfse_dfe
-#. odoo-python
-#: code:addons/l10n_br_nfse_dfe/models/dfe_document.py:0
-msgid "Import NFS-e XML"
-msgstr "Importar XML da NFS-e"
-
-#. module: l10n_br_nfse_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfse_dfe.nfse_dfe_res_company_form
 msgid "Last Query"
 msgstr "Última Consulta"
@@ -291,11 +280,6 @@ msgid "Search NFS-e"
 msgstr "Pesquisar NFS-e"
 
 #. module: l10n_br_nfse_dfe
-#: model:ir.model.fields,field_description:l10n_br_nfse_dfe.field_l10n_br_fiscal_document_import_wizard__product_id
-msgid "Service Product"
-msgstr "Produto de Serviço"
-
-#. module: l10n_br_nfse_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfse_dfe.nfse_dfe_res_company_form
 msgid "Specific Search"
 msgstr "Busca específica"
@@ -365,9 +349,3 @@ msgstr "Assistente para pesquisa específica de DF-e"
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfse_dfe.nfse_dfe_document_tree
 msgid "XML"
 msgstr "XML"
-
-#. module: l10n_br_nfse_dfe
-#. odoo-python
-#: code:addons/l10n_br_nfse_dfe/models/dfe_document.py:0
-msgid "You can only import the NFS-e when the DF-e is completed."
-msgstr "Você só pode importar a NFS-e quando o DF-e estiver completo."
