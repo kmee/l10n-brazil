@@ -22,10 +22,12 @@ class TestSpecModel(TransactionCase, FakeModelLoader):
     https://docs.microsoft.com/en-us/visualstudio/xml-tools/sample-xsd-file-purchase-order-schema?view=vs-2019
     """
 
-    def setUp(self):
-        super().setUp()
-        self.loader = FakeModelLoader(self.env, self.__module__)
-        self.loader.backup_registry()
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.loader = FakeModelLoader(cls.env, cls.__module__)
+        cls.loader.backup_registry()
+        cls.addClassCleanup(cls.loader.restore_registry)
 
         # import a simpilified equivalent of purchase module
         from .fake_mixin import PoXsdMixin
@@ -56,7 +58,7 @@ class TestSpecModel(TransactionCase, FakeModelLoader):
         # (mirrors l10n_br_account_nfe extending nfe.40.detpag, see issue #4668)
         from .fake_comment_extension import CommentExtension
 
-        self.loader.update_registry(
+        cls.loader.update_registry(
             (
                 PoXsdMixin,
                 Items,
@@ -77,7 +79,7 @@ class TestSpecModel(TransactionCase, FakeModelLoader):
         from .fake_mixin import PoXsdMixin
         from .spec_poxsd import Item, Items, PurchaseOrderType, Usaddress
 
-        self.loader.update_registry(
+        cls.loader.update_registry(
             (PoXsdMixin, Item, Items, Usaddress, PurchaseOrderType)
         )
 
@@ -90,8 +92,15 @@ class TestSpecModel(TransactionCase, FakeModelLoader):
             ResPartner,
         )
 
-        self.loader.update_registry((ResPartner, PurchaseOrderLine, PurchaseOrder2))
-        self.addCleanup(self.loader.restore_registry)
+        cls.loader.update_registry((ResPartner, PurchaseOrderLine, PurchaseOrder2))
+        # TransactionCase.setUpClass took the snapshot of the model attributes
+        # that check_attrs compares after every test, before the fake models
+        # existed: take it again now that they are loaded.
+        default_attrs = cls.attrs_before["base"]
+        for model in cls.registry.values():
+            cls.attrs_before.setdefault(model._name, set(default_attrs)).update(
+                vars(model)
+            )
         # the binding lib should be loaded in sys.modules:
         from . import purchase_order_lib  # NOQA
 
