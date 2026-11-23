@@ -229,7 +229,7 @@ class TestImportedLineReview(TransactionCase):
         path = os.path.join(
             get_module_path("l10n_br_fiscal_edi"),
             "migrations",
-            "16.0.2.5.1",
+            "16.0.2.5.2",
             "pre-migration.py",
         )
         spec = importlib.util.spec_from_file_location("edi_pre_migration", path)
