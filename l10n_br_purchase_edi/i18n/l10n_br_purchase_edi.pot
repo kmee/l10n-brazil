@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-23 05:17+0000\n"
-"PO-Revision-Date: 2026-11-23 05:17+0000\n"
+"POT-Creation-Date: 2026-11-23 06:46+0000\n"
+"PO-Revision-Date: 2026-11-23 06:46+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -48,11 +48,6 @@ msgstr ""
 msgid ""
 "A quotation cannot be matched until the buyer confirms the order. Use Open "
 "Quotation."
-msgstr ""
-
-#. module: l10n_br_purchase_edi
-#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_search
-msgid "All"
 msgstr ""
 
 #. module: l10n_br_purchase_edi

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-23 05:17+0000\n"
+"POT-Creation-Date: 2026-11-23 06:46+0000\n"
 "PO-Revision-Date: 2026-11-19 21:45+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -57,12 +57,6 @@ msgid ""
 msgstr ""
 "Uma cotação não pode ser casada até o comprador confirmar o pedido. Use "
 "Abrir cotação."
-
-#. module: l10n_br_purchase_edi
-#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_search
-msgid "All"
-msgstr ""
-"Todas"
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__open_quantity
@@ -129,8 +123,7 @@ msgstr "Descrição"
 #. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "Diff. %"
-msgstr ""
-"Dif. %"
+msgstr "Dif. %"
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__display_name
@@ -361,8 +354,7 @@ msgstr "Origem pendente ou sugerida"
 #. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_search
 msgid "Origin Resolved"
-msgstr ""
-"Origem resolvida"
+msgstr "Origem resolvida"
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_account_move_line__import_origin_state
@@ -409,8 +401,7 @@ msgstr "Diferença de preço"
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__price_difference_percent
 msgid "Price Difference %"
-msgstr ""
-"Diferença de preço %"
+msgstr "Diferença de preço %"
 
 #. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
@@ -420,8 +411,7 @@ msgstr "Dif. de preço"
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,help:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__price_difference_percent
 msgid "Price difference as a percentage."
-msgstr ""
-"Diferença de preço em percentual."
+msgstr "Diferença de preço em percentual."
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,help:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__note_price_unit
@@ -882,6 +872,9 @@ msgstr "Você não tem acesso aos documentos da empresa."
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "xPed"
 msgstr "xPed"
+
+#~ msgid "All"
+#~ msgstr "Todas"
 
 #~ msgid "Price Difference Percent"
 #~ msgstr "Diferença de preço (%)"

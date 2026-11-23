@@ -4,6 +4,7 @@
 from lxml import etree
 
 from odoo.exceptions import AccessError, UserError
+from odoo.osv import expression
 from odoo.tests import tagged
 from odoo.tools.safe_eval import safe_eval
 
@@ -255,29 +256,53 @@ class TestMatchAccess(PurchaseEdiCase):
         self.assertTrue(filters, name)
         return safe_eval(filters[0].get("domain"))
 
+    def test_the_origin_filters_are_in_the_same_group_and_add_up(self):
+        view = self.env.ref("l10n_br_purchase_edi.document_match_search")
+        node = etree.fromstring(view.arch)
+        names = [
+            child.get("name") or child.tag
+            for child in node.iter()
+            if child.tag in ("filter", "separator")
+            and child.getparent().tag == "search"
+        ]
+        first, second = names.index("pending_or_suggested"), names.index("resolved")
+
+        # no separator between them: the filters of one group add up (OR)
+        self.assertEqual(second, first + 1)
+        self.assertNotIn("all_origins", names)
+
     def test_the_buyer_finds_the_resolved_note_and_undoes_it(self):
         order = self._order()
         rows = self._note_rows()
         rows |= self._rows(purchase_line_id=order.order_line.id, kind="order")
         buyer = self._buyer("menu-buyer-undo")
         reference = self.document.document_number
+        both = expression.OR(
+            [
+                self._filter_domain("pending_or_suggested"),
+                self._filter_domain("resolved"),
+            ]
+        )
 
-        def seen(name):
-            domain = self._filter_domain(name)
+        def seen(domain):
             return [
                 row
                 for row in self._menu_rows(buyer, domain)
                 if row["kind"] == "note" and row["reference"] == reference
             ]
 
-        self.assertTrue(seen("pending_or_suggested"))
+        pending = self._filter_domain("pending_or_suggested")
+        resolved = self._filter_domain("resolved")
+        self.assertTrue(seen(pending))
         self._as(rows, buyer).action_match()
 
-        self.assertFalse(seen("pending_or_suggested"))
-        self.assertTrue(seen("resolved"))
-        self.assertTrue(seen("all_origins"))
+        self.assertFalse(seen(pending))
+        self.assertTrue(seen(resolved))
+        # the default filter and the resolved one together show the decided note
+        self.assertTrue(seen(both))
         undo = self._rows(fiscal_document_id=self.document.id, kind="note")
         self._as(undo, buyer).action_undo()
         self.assertEqual(self.line.import_origin_state, "pending")
-        self.assertTrue(seen("pending_or_suggested"))
-        self.assertFalse(seen("resolved"))
+        self.assertTrue(seen(both))
+        self.assertTrue(seen(pending))
+        self.assertFalse(seen(resolved))
