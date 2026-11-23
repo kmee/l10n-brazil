@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-22 07:26+0000\n"
+"POT-Creation-Date: 2026-11-23 02:19+0000\n"
 "PO-Revision-Date: 2026-11-19 21:45+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -68,6 +68,17 @@ msgstr "Saldo"
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "Candidate"
 msgstr "Candidata"
+
+#. module: l10n_br_purchase_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_edi/models/document_match.py:0
+#, python-format
+msgid ""
+"Choosing the product of a line is for the fiscal profile. Ask for the "
+"product to be resolved before matching."
+msgstr ""
+"Escolher o produto de uma linha é para o perfil fiscal. Peça para o produto "
+"ser resolvido antes de conciliar."
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,help:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__partner_id
@@ -146,8 +157,7 @@ msgstr "Linha fiscal"
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_purchase_order__import_document_count
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.purchase_order_form
 msgid "Fiscal docs"
-msgstr ""
-"Doc. fiscais"
+msgstr "Doc. fiscais"
 
 #. module: l10n_br_purchase_edi
 #. odoo-python
@@ -189,8 +199,7 @@ msgstr "Candidatas à origem da importação"
 #. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.purchase_order_form
 msgid "Imported fiscal documents linked to this record"
-msgstr ""
-"Documentos fiscais importados ligados a este registro"
+msgstr "Documentos fiscais importados ligados a este registro"
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields.selection,name:l10n_br_purchase_edi.selection__l10n_br_purchase_edi_match__kind__note
@@ -217,6 +226,13 @@ msgstr "Última modificação em"
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "Match"
 msgstr "Casar"
+
+#. module: l10n_br_purchase_edi
+#: model:ir.actions.act_window,name:l10n_br_purchase_edi.document_match_buyer_action
+#: model:ir.ui.menu,name:l10n_br_purchase_edi.document_match_buyer_menu
+msgid "Match Imported Documents"
+msgstr ""
+"Conciliar notas importadas"
 
 #. module: l10n_br_purchase_edi
 #: model:ir.actions.act_window,name:l10n_br_purchase_edi.document_match_action
@@ -266,6 +282,12 @@ msgstr "Preço da nota"
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "Note qty"
 msgstr "Qtd da nota"
+
+#. module: l10n_br_purchase_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
+msgid "Open Document"
+msgstr ""
+"Abrir documento"
 
 #. module: l10n_br_purchase_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
@@ -320,6 +342,12 @@ msgstr "Origem"
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__suggested_purchase_line_id
 msgid "Origin Chosen"
 msgstr "Origem escolhida"
+
+#. module: l10n_br_purchase_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_search
+msgid "Origin Pending or Suggested"
+msgstr ""
+"Origem pendente ou sugerida"
 
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_account_move_line__import_origin_state
@@ -585,6 +613,14 @@ msgstr "Selecione as linhas de um documento por vez."
 #. odoo-python
 #: code:addons/l10n_br_purchase_edi/models/document_match.py:0
 #, python-format
+msgid "Select the lines of one document."
+msgstr ""
+"Selecione as linhas de um documento."
+
+#. module: l10n_br_purchase_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_edi/models/document_match.py:0
+#, python-format
 msgid "Select the lines of one quotation."
 msgstr "Selecione as linhas de uma cotação."
 
@@ -612,6 +648,7 @@ msgstr "Sugerida"
 #. module: l10n_br_purchase_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_edi.field_l10n_br_purchase_edi_match__partner_id
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_search
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
 msgid "Supplier"
 msgstr "Fornecedor"
 
@@ -686,6 +723,17 @@ msgstr "O documento %s não está em digitação ou já tem fatura."
 
 #. module: l10n_br_purchase_edi
 #. odoo-python
+#: code:addons/l10n_br_purchase_edi/models/document_match.py:0
+#, python-format
+msgid ""
+"The fiscal document is for the fiscal profile. Ask someone from the fiscal "
+"team to open it."
+msgstr ""
+"O documento fiscal é do perfil fiscal. Peça a alguém da equipe fiscal "
+"para abri-lo."
+
+#. module: l10n_br_purchase_edi
+#. odoo-python
 #: code:addons/l10n_br_purchase_edi/models/document_line.py:0
 #, python-format
 msgid "The line has no origin to open."
@@ -735,6 +783,13 @@ msgstr "A diferença de preço em percentual do preço do documento."
 #, python-format
 msgid "The product of the line %(line)s is not the product of the order line."
 msgstr "O produto da linha %(line)s não é o produto da linha do pedido."
+
+#. module: l10n_br_purchase_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_edi/models/document_match.py:0
+#, python-format
+msgid "The screen does not write %s."
+msgstr "A tela não grava %s."
 
 #. module: l10n_br_purchase_edi
 #. odoo-python
@@ -792,11 +847,6 @@ msgid "Without Order"
 msgstr "Sem pedido"
 
 #. module: l10n_br_purchase_edi
-#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
-msgid "xPed"
-msgstr "xPed"
-
-#. module: l10n_br_purchase_edi
 #. odoo-python
 #: code:addons/l10n_br_purchase_edi/models/document_match.py:0
 #, python-format
@@ -807,8 +857,8 @@ msgstr "Você não tem acesso a algumas das linhas selecionadas."
 #. odoo-python
 #: code:addons/l10n_br_purchase_edi/models/document_match.py:0
 #, python-format
-msgid "The screen does not write %s."
-msgstr "A tela não grava %s."
+msgid "You have no access to the documents of the company %s."
+msgstr "Você não tem acesso aos documentos da empresa %s."
 
 #. module: l10n_br_purchase_edi
 #. odoo-python
@@ -818,22 +868,9 @@ msgid "You have no access to the documents of the company."
 msgstr "Você não tem acesso aos documentos da empresa."
 
 #. module: l10n_br_purchase_edi
-#. odoo-python
-#: code:addons/l10n_br_purchase_edi/models/document_match.py:0
-#, python-format
-msgid ""
-"Choosing the product of a line is for the fiscal profile. Ask for the "
-"product to be resolved before matching."
-msgstr ""
-"Escolher o produto de uma linha é para o perfil fiscal. Peça para o "
-"produto ser resolvido antes de conciliar."
-
-#. module: l10n_br_purchase_edi
-#. odoo-python
-#: code:addons/l10n_br_purchase_edi/models/document_match.py:0
-#, python-format
-msgid "You have no access to the documents of the company %s."
-msgstr "Você não tem acesso aos documentos da empresa %s."
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_edi.document_match_tree
+msgid "xPed"
+msgstr "xPed"
 
 #~ msgid "Fiscal documents"
 #~ msgstr "Documentos fiscais"
