@@ -29,7 +29,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
 )
 
 from ..constants.fiscal import DOCUMENT_STATE_AUTHORIZED
-from ..tools import EDI_IMPORT_NO_CREATE, EdiImportConcurrencyError
+from ..tools import EDI_IMPORT_DEMO, EDI_IMPORT_NO_CREATE, EdiImportConcurrencyError
 
 _logger = logging.getLogger(__name__)
 
@@ -253,7 +253,9 @@ class Document(models.Model):
         for path in relative_paths:
             with file_open(f"{module}/{path}", "rb") as sample:
                 files.append((path.rsplit("/", 1)[-1], sample.read()))
-        documents, errors, _warnings = self._edi_import_files(files)
+        documents, errors, _warnings = self.with_context(
+            **{EDI_IMPORT_DEMO: True}
+        )._edi_import_files(files)
         if errors:
             raise UserError("\n".join(f"{name}: {message}" for name, message in errors))
         return documents
@@ -453,9 +455,9 @@ class Document(models.Model):
         imported while it does) would make that connection wait for ever: it waits for
         two seconds at most, and goes on without the check, as nobody else is importing
         while a module is installed."""
-        if self.pool._init:
-            # an installation or an update imports the demo data while it holds
-            # locks on the table, and nobody else imports then
+        if self.env.context.get(EDI_IMPORT_DEMO):
+            # the demo data is imported while the module is installed, with locks on
+            # the table, and nobody else imports then
             return False
         snapshot = self._edi_import_snapshot()
         with closing(db_connect(self.env.cr.dbname).cursor()) as cursor:
