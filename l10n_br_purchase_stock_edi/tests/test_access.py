@@ -100,3 +100,33 @@ class TestReceiptAccess(StockEdiCase):
         self.assertNotIn(
             bill, self.env["account.move"].search([("purchase_divergent", "=", True)])
         )
+
+    def test_a_buyer_with_stock_rights_creates_the_receipt_from_the_menu(self):
+        rows = self._no_order_rows()
+        buyer = self._user(
+            "stock-buyer-menu",
+            self.company,
+            "purchase.group_purchase_user",
+            "stock.group_stock_user",
+        )
+
+        action = self._as(rows, buyer).action_create_receipt()
+
+        picking = self.env["stock.picking"].browse(action["res_id"])
+        self.assertEqual(self.line.import_stock_move_id.picking_id, picking)
+
+    def test_a_buyer_with_stock_rights_opens_the_receipt_from_the_menu(self):
+        order = self._order(quantity=10)
+        self._resolve_product()
+        self.line.import_purchase_line_id = order.order_line
+        rows = self._rows(fiscal_document_id=self.document.id)
+        buyer = self._user(
+            "stock-buyer-open",
+            self.company,
+            "purchase.group_purchase_user",
+            "stock.group_stock_user",
+        )
+
+        action = self._as(rows, buyer).action_open_receipt()
+
+        self.assertEqual(action["res_id"], order.picking_ids.id)
