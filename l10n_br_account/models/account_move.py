@@ -19,6 +19,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     MODELO_FISCAL_NFE,
     SITUACAO_EDOC_DENEGADA,
 )
+from odoo.addons.l10n_br_fiscal.models.document_line import IMPORT_REVIEW_CONTEXT_KEY
 
 from .constants import (
     MOVE_TO_OPERATION,
@@ -1184,7 +1185,15 @@ class AccountMove(models.Model):
                     }
                 )
 
+        serie = fiscal_document.document_serie
         move_form.save()
+        if (
+            fiscal_document.imported_document
+            and fiscal_document.document_serie != serie
+        ):
+            # the form has no series record to give back to a document of the
+            # company imported from a file: its series is the text of the file
+            fiscal_document.document_serie = serie
         move = self.env["account.move"].browse(move_form.id)
 
         invoice_line_write_vals = []
@@ -1226,9 +1235,10 @@ class AccountMove(models.Model):
                 )
 
         # Write safely bypassing strict validity checks mid-loop
-        move.with_context(check_move_validity=False).write(
-            {"invoice_line_ids": invoice_line_write_vals}
-        )
+        # the quantity and the price come from the document, not from a person
+        move.with_context(
+            check_move_validity=False, **{IMPORT_REVIEW_CONTEXT_KEY: True}
+        ).write({"invoice_line_ids": invoice_line_write_vals})
 
         if dummy_lines_to_unlink:
             dummy_lines_to_unlink.unlink()
