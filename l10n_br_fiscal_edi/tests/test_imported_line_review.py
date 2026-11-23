@@ -442,20 +442,23 @@ class TestImportedLineReview(TransactionCase):
         )
 
     def _open_the_access_of_the_line(self):
-        """As l10n_br_account does: every internal user reads and writes the line."""
-        self.env["ir.model.access"].create(
-            {
-                "name": "test: line open to the internal user",
-                "model_id": self.env.ref(
-                    "l10n_br_fiscal.model_l10n_br_fiscal_document_line"
-                ).id,
-                "group_id": self.env.ref("base.group_user").id,
-                "perm_read": True,
-                "perm_write": True,
-                "perm_create": True,
-                "perm_unlink": False,
-            }
-        )
+        """As l10n_br_account does: every internal user reads and writes the line,
+        and the users of invoicing read the document."""
+        for model, write in (
+            ("l10n_br_fiscal.model_l10n_br_fiscal_document_line", True),
+            ("l10n_br_fiscal.model_l10n_br_fiscal_document", False),
+        ):
+            self.env["ir.model.access"].create(
+                {
+                    "name": "test: open to the internal user",
+                    "model_id": self.env.ref(model).id,
+                    "group_id": self.env.ref("base.group_user").id,
+                    "perm_read": True,
+                    "perm_write": write,
+                    "perm_create": write,
+                    "perm_unlink": False,
+                }
+            )
 
     def test_a_user_without_the_fiscal_group_cannot_choose_the_product_directly(self):
         self._open_the_access_of_the_line()
