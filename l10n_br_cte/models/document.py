@@ -1633,7 +1633,7 @@ class CTe(spec_models.StackedModel):
     @api.model
     def _get_concrete_model(self, model_name):
         result = super()._get_concrete_model(model_name)
-        if self._module == "l10n_br_cte" and not result:
+        if self._module == "l10n_br_cte" and result is None:
             model_type = model_name.split(".")[-1]
             model_name = model_name.rpartition(".")[0] + ".tcte_" + model_type
             result = super()._get_concrete_model(model_name)
