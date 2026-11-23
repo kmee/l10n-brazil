@@ -66,7 +66,7 @@
                 />
                 <field
                     name="price_difference_percent"
-                    string="Price diff. %"
+                    string="Diff. %"
                     attrs="{'invisible': [('kind', '=', 'note')]}"
                 />
                 <field name="line_state" widget="badge" string="State" />
@@ -110,6 +110,12 @@
                     string="Origin Pending or Suggested"
                     domain="['|', ('kind', '!=', 'note'), ('line_state', 'in', ('pending', 'suggested'))]"
                 />
+                <filter
+                    name="resolved"
+                    string="Origin Resolved"
+                    domain="['|', ('kind', '!=', 'note'), ('line_state', 'in', ('resolved', 'no_order'))]"
+                />
+                <filter name="all_origins" string="All" domain="[(1, '=', 1)]" />
                 <separator />
                 <filter
                     name="notes"
