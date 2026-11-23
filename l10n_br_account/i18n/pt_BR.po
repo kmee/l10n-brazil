@@ -1847,7 +1847,6 @@ msgid "Issuer"
 msgstr "Emissor"
 
 #. module: l10n_br_account
-#: model:ir.model,name:l10n_br_account.model_account_journal
 #: model:ir.model.fields,field_description:l10n_br_account.field_account_move_reversal__journal_id
 msgid "Journal"
 msgstr "Diário"
