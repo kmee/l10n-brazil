@@ -5,6 +5,7 @@ from lxml import etree
 
 from odoo.exceptions import AccessError, UserError
 from odoo.tests import tagged
+from odoo.tools.safe_eval import safe_eval
 
 from .common import PurchaseEdiCase
 
@@ -235,3 +236,48 @@ class TestMatchAccess(PurchaseEdiCase):
         self.assertFalse(
             [row for row in rows if row["reference"] == self.document.document_number]
         )
+
+    def _menu_rows(self, user, extra=None):
+        """The rows of the screen of the menu for the buyer, with the domain of a
+        filter of the search view."""
+        model = self.Match.with_user(user).with_context(
+            allowed_company_ids=user.company_ids.ids
+        )
+        self.env.flush_all()
+        self.env.invalidate_all()
+        return model.search_read(extra or [], ["kind", "line_state", "reference"])
+
+    def _filter_domain(self, name):
+        """The domain of a filter of the search view of the menu."""
+        view = self.env.ref("l10n_br_purchase_edi.document_match_search")
+        node = etree.fromstring(view.arch)
+        filters = node.xpath("//filter[@name='%s']" % name)
+        self.assertTrue(filters, name)
+        return safe_eval(filters[0].get("domain"))
+
+    def test_the_buyer_finds_the_resolved_note_and_undoes_it(self):
+        order = self._order()
+        rows = self._note_rows()
+        rows |= self._rows(purchase_line_id=order.order_line.id, kind="order")
+        buyer = self._buyer("menu-buyer-undo")
+        reference = self.document.document_number
+
+        def seen(name):
+            domain = self._filter_domain(name)
+            return [
+                row
+                for row in self._menu_rows(buyer, domain)
+                if row["kind"] == "note" and row["reference"] == reference
+            ]
+
+        self.assertTrue(seen("pending_or_suggested"))
+        self._as(rows, buyer).action_match()
+
+        self.assertFalse(seen("pending_or_suggested"))
+        self.assertTrue(seen("resolved"))
+        self.assertTrue(seen("all_origins"))
+        undo = self._rows(fiscal_document_id=self.document.id, kind="note")
+        self._as(undo, buyer).action_undo()
+        self.assertEqual(self.line.import_origin_state, "pending")
+        self.assertTrue(seen("pending_or_suggested"))
+        self.assertFalse(seen("resolved"))
