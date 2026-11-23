@@ -533,7 +533,7 @@ msgstr "Documento fiscal %s criado."
 #. module: l10n_br_fiscal_dfe
 #: model:ir.model.fields,help:l10n_br_fiscal_dfe.field_l10n_br_fiscal_dfe_document__fiscal_document_id
 msgid "Fiscal document already imported with this access key."
-msgstr ""
+msgstr "Documento fiscal já importado com esta chave de acesso."
 
 #. module: l10n_br_fiscal_dfe
 #: model:ir.model,name:l10n_br_fiscal_dfe.model_l10n_br_fiscal_dfe_document
@@ -1101,6 +1101,20 @@ msgstr "XML Formatado"
 #, python-format
 msgid "Only the fiscal users can import a document from the inbox."
 msgstr "Só os usuários fiscais podem importar um documento da caixa de entrada."
+
+#. module: l10n_br_fiscal_dfe
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe.field_l10n_br_fiscal_dfe_document__import_requested_user_id
+msgid "Import Requested By"
+msgstr "Importação pedida por"
+
+#. module: l10n_br_fiscal_dfe
+#: model:ir.model.fields,help:l10n_br_fiscal_dfe.field_l10n_br_fiscal_dfe_document__import_requested_user_id
+msgid ""
+"User that asked to import this access key before the complete XML was "
+"here. The fiscal document is created when the XML arrives."
+msgstr ""
+"Usuário que pediu para importar esta chave de acesso antes de o XML "
+"completo chegar. O documento fiscal é criado quando o XML chega."
 
 #~ msgid "1.01"
 #~ msgstr "1.01"

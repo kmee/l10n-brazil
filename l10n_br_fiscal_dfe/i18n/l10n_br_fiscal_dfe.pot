@@ -1026,3 +1026,15 @@ msgstr ""
 msgid "Only the fiscal users can import a document from the inbox."
 msgstr ""
 
+#. module: l10n_br_fiscal_dfe
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe.field_l10n_br_fiscal_dfe_document__import_requested_user_id
+msgid "Import Requested By"
+msgstr ""
+
+#. module: l10n_br_fiscal_dfe
+#: model:ir.model.fields,help:l10n_br_fiscal_dfe.field_l10n_br_fiscal_dfe_document__import_requested_user_id
+msgid ""
+"User that asked to import this access key before the complete XML was "
+"here. The fiscal document is created when the XML arrives."
+msgstr ""
+
