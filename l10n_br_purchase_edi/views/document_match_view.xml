@@ -115,7 +115,6 @@
                     string="Origin Resolved"
                     domain="['|', ('kind', '!=', 'note'), ('line_state', 'in', ('resolved', 'no_order'))]"
                 />
-                <filter name="all_origins" string="All" domain="[(1, '=', 1)]" />
                 <separator />
                 <filter
                     name="notes"
