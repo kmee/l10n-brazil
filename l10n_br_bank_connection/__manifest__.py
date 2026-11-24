@@ -14,6 +14,7 @@
     "depends": [
         "account",
         "certificate",
+        "l10n_br_fiscal_certificate",
         "mail",
     ],
     # Module name only: a version specifier here breaks the import check.
