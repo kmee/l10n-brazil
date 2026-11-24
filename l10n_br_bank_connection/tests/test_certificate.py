@@ -9,11 +9,12 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.x509.oid import NameOID
+from lxml import etree
 
-from odoo.exceptions import UserError
-from odoo.tests import TransactionCase, tagged
+from odoo.exceptions import AccessError, UserError
+from odoo.tests import TransactionCase, new_test_user, tagged
 
-from .common import ConnectionCommon
+from .common import MODEL, ConnectionCommon
 from .fake_bank import FAKE_MTLS, reset_state
 
 
@@ -160,3 +161,136 @@ class TestConnectionCertificate(ConnectionCommon, TransactionCase):
         connection.environment = "prod"
         with self.assertRaises(UserError):
             connection.action_generate_test_certificate()
+
+
+@tagged("post_install", "-at_install")
+class TestConnectionCertificateAccess(ConnectionCommon, TransactionCase):
+    """The finance user who keeps the bank connections picks the A1 of the company
+    and pastes the PEM pair, without being a fiscal manager or a system admin."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._setup_connection()
+        cls.finance = new_test_user(
+            cls.env,
+            login="conn-finance",
+            groups="base.group_user,account.group_account_manager,"
+            "l10n_br_bank_connection.group_bank_connection_admin",
+        )
+        bundle, cls.pem = _pkcs12("EMPRESA:91300766000147", "segredo")
+        cls.a1 = cls.env["certificate.certificate"].create(
+            {
+                "name": "A1 da empresa",
+                "content": base64.b64encode(bundle),
+                "pkcs12_password": "segredo",
+                "company_id": cls.env.company.id,
+            }
+        )
+        cls.connection = cls._create_connection(
+            adapter=FAKE_MTLS, client_secret=False, certificate_id=False
+        )
+
+    def test_finance_user_picks_the_certificate_of_the_company(self):
+        connection = self.connection.with_user(self.finance)
+        # What the many2one does: search the options and show the name.
+        found = self.env["certificate.certificate"].with_user(self.finance)
+        self.assertIn(self.a1.id, [rid for rid, _name in found.name_search("")])
+        connection.write({"certificate_id": self.a1.id})
+        self.assertTrue(connection.certificate_id.display_name)
+        self.assertEqual(
+            connection.read(["certificate_id"])[0]["certificate_id"][0], self.a1.id
+        )
+        self.assertTrue(connection.certificate_fingerprint)
+
+    def test_finance_user_never_reads_the_a1_secrets(self):
+        certificate = self.a1.with_user(self.finance)
+        self.assertEqual(certificate.read(["display_name"])[0]["id"], self.a1.id)
+        for field_name in ("content", "pkcs12_password", "private_key_id"):
+            self.assertNotIn(field_name, certificate.fields_get())
+            with self.assertRaises(AccessError):
+                certificate.read([field_name])
+        # Nothing of the record leaks when no field is asked either.
+        self.assertFalse({"content", "pkcs12_password"} & set(certificate.read()[0]))
+
+    def test_finance_user_cannot_change_certificates(self):
+        certificate = self.a1.with_user(self.finance)
+        with self.assertRaises(AccessError):
+            certificate.write({"name": "other"})
+        with self.assertRaises(AccessError):
+            certificate.unlink()
+        with self.assertRaises(AccessError):
+            self.env["certificate.certificate"].with_user(self.finance).create(
+                {"name": "new", "content": base64.b64encode(b"x")}
+            )
+
+    def test_finance_user_of_another_company_does_not_see_the_a1(self):
+        other = self.env["res.company"].create({"name": "Other company"})
+        user = new_test_user(
+            self.env,
+            login="conn-finance-2",
+            groups="base.group_user,account.group_account_manager,"
+            "l10n_br_bank_connection.group_bank_connection_admin",
+            company_id=other.id,
+            company_ids=[(6, 0, other.ids)],
+        )
+        found = self.env["certificate.certificate"].with_user(user)
+        self.assertFalse(found.search([("id", "=", self.a1.id)]))
+
+    def test_finance_user_pastes_the_pem_pair(self):
+        connection = self.connection.with_user(self.finance)
+        key = b"-----BEGIN PRIVATE KEY-----\nAAAA\n-----END PRIVATE KEY-----\n"
+        connection.write(
+            {
+                "certificate": base64.b64encode(self.pem),
+                "private_key": base64.b64encode(key),
+            }
+        )
+        self.assertTrue(connection.certificate_fingerprint)
+
+    def _form_spec(self, connection):
+        """The specification the web client sends: every field of the form view."""
+        view = connection.get_view(view_type="form")
+        spec = {}
+        for node in etree.fromstring(view["arch"]).iter("field"):
+            name = node.get("name")
+            field = connection._fields.get(name)
+            if field is None or field.type in ("one2many", "many2many"):
+                continue
+            spec[name] = (
+                {"fields": {"display_name": {}}} if field.type == "many2one" else {}
+            )
+        return spec
+
+    def test_finance_user_loads_and_edits_the_form(self):
+        connection = self.connection.with_user(self.finance).with_context(bin_size=True)
+        spec = self._form_spec(connection)
+        self.assertIn("certificate_id", spec)
+        self.assertIn("certificate", spec)
+        # Opening the connection, then the PEM upload and the pick of the A1: the
+        # calls of the web client, with the context of the form.
+        connection.web_read(spec)
+        pem = base64.b64encode(self.pem).decode()
+        result = connection.onchange({"certificate": pem}, ["certificate"], spec)
+        self.assertIn("value", result)
+        result = connection.onchange(
+            {"certificate_id": self.a1.id}, ["certificate_id"], spec
+        )
+        self.assertIn("value", result)
+        connection.web_save({"certificate_id": self.a1.id}, spec)
+        self.assertEqual(connection.certificate_id, self.a1)
+        # A new connection: the adapter onchange proposes the A1 of the company.
+        result = (
+            self.env[MODEL]
+            .with_user(self.finance)
+            .onchange(
+                {"adapter": FAKE_MTLS, "company_id": self.env.company.id},
+                ["adapter"],
+                spec,
+            )
+        )
+        proposed = self.env["certificate.certificate"].browse(
+            result["value"]["certificate_id"]["id"]
+        )
+        self.assertTrue(proposed.is_valid)
+        self.assertIn(proposed.company_id.id, [False, self.env.company.id])

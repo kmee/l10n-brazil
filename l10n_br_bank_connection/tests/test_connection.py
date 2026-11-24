@@ -275,7 +275,7 @@ class TestConnection(ConnectionCommon, TransactionCase):
         )
         with self.assertRaises(AccessError):
             self.env["l10n_br_bank_connection.token"].with_user(user).search([])
-        # The administrator group edits connections, secrets stay hidden.
+        # The administrator group edits the connections and their credentials.
         connection = self.connection.with_user(user)
-        connection.write({"name": "Renamed"})
-        self.assertNotIn("client_secret", connection.fields_get())
+        connection.write({"name": "Renamed", "client_secret": "new-secret"})
+        self.assertIn("client_secret", connection.fields_get())
