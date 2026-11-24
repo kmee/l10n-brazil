@@ -828,6 +828,118 @@ class TestMoveEdition(TransactionCase):
         move.document_type_id = self.env.ref("l10n_br_fiscal.document_55")
         self.assertEqual(move.l10n_latam_document_type_id, nfe)
 
+    def _create_invoice_without_document_type(self, partner):
+        """Save a draft customer invoice with lines but no fiscal document type."""
+        move_form = Form(
+            self.env["account.move"].with_context(default_move_type="out_invoice")
+        )
+        move_form.partner_id = partner
+        move_form.ref = "NO-TYPE"
+        with move_form.invoice_line_ids.new() as line_form:
+            line_form.product_id = self.product_id
+            line_form.quantity = 2
+            line_form.price_unit = 1000
+        move = move_form.save()
+        self.assertFalse(move.fiscal_document_id)
+        self.assertFalse(move.document_type_id)
+        return move
+
+    def test_document_type_set_after_first_save(self):
+        """An invoice saved without a fiscal document type can become a fiscal
+        document later: choosing the type on the draft creates the document."""
+        self._setup_fiscal_user()
+        partner = self.env.ref("l10n_br_base.res_partner_cliente1_sp")
+        move = self._create_invoice_without_document_type(partner)
+        self.assertEqual(len(move.invoice_line_ids), 1)
+
+        move.write(
+            {
+                "document_type_id": self.env.ref("l10n_br_fiscal.document_55").id,
+                "document_serie_id": self.env.ref(
+                    "l10n_br_fiscal.empresa_lc_document_55_serie_1"
+                ).id,
+                "fiscal_operation_id": self.env.ref("l10n_br_fiscal.fo_venda").id,
+            }
+        )
+
+        self.assertTrue(move.fiscal_document_id)
+        self.assertEqual(move.fiscal_document_ids, move.fiscal_document_id)
+        self.assertEqual(
+            move.document_type_id, self.env.ref("l10n_br_fiscal.document_55")
+        )
+        self.assertEqual(move.fiscal_document_id.partner_id, partner)
+        self.assertEqual(move.fiscal_document_id.company_id, move.company_id)
+        line = move.invoice_line_ids
+        self.assertTrue(line.fiscal_document_line_id)
+        self.assertEqual(
+            line.fiscal_document_line_id.document_id, move.fiscal_document_id
+        )
+        self.assertEqual(
+            move.fiscal_document_id.fiscal_line_ids, line.fiscal_document_line_id
+        )
+        self.assertTrue(line.fiscal_operation_id)
+        self.assertTrue(line.cfop_id)
+        self.assertTrue(line.fiscal_tax_ids)
+        self.assertGreater(line.fiscal_amount_total, 0)
+        self.assertAlmostEqual(move.amount_total, move.fiscal_amount_total, places=2)
+        self.assertAlmostEqual(
+            sum(
+                move.line_ids.filtered(
+                    lambda aml: aml.display_type == "payment_term"
+                ).mapped("balance")
+            ),
+            move.amount_total,
+            places=2,
+        )
+        move.action_post()
+        self.assertEqual(move.state, "posted")
+
+    def test_document_type_set_after_first_save_in_form(self):
+        """Same flow as above, through the invoice form: save without type, then
+        reopen the invoice, choose the type and the operation and save."""
+        self._setup_fiscal_user()
+        partner = self.env.ref("l10n_br_base.res_partner_cliente1_sp")
+        move = self._create_invoice_without_document_type(partner)
+
+        with PatchedForm(move) as move_form:
+            move_form.document_type_id = self.env.ref("l10n_br_fiscal.document_55")
+            move_form.document_serie_id = self.env.ref(
+                "l10n_br_fiscal.empresa_lc_document_55_serie_1"
+            )
+            move_form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_venda")
+
+        self.assertTrue(move.fiscal_document_id)
+        self.assertEqual(
+            move.document_type_id, self.env.ref("l10n_br_fiscal.document_55")
+        )
+        self.assertTrue(move.invoice_line_ids.fiscal_document_line_id)
+        self.assertTrue(move.invoice_line_ids.cfop_id)
+        move.action_post()
+        self.assertEqual(move.state, "posted")
+
+    def test_document_type_not_settable_on_posted_move_without_document(self):
+        """A posted invoice keeps the block: it cannot turn into a fiscal one."""
+        partner = self.env.ref("l10n_br_base.res_partner_cliente1_sp")
+        move = self._create_invoice_without_document_type(partner)
+        move.action_post()
+        with self.assertRaises(UserError):
+            move.write(
+                {"document_type_id": self.env.ref("l10n_br_fiscal.document_55").id}
+            )
+
+    def test_document_type_removed_from_draft_keeps_fiscal_document(self):
+        """Clearing the type of a draft that already has a fiscal document is
+        left as it always was: the document stays, only its type is cleared."""
+        self._setup_fiscal_user()
+        move = self._create_fiscal_invoice_form(
+            self.env.ref("l10n_br_base.res_partner_cliente1_sp")
+        ).save()
+        document = move.fiscal_document_id
+        self.assertTrue(document)
+        move.write({"document_type_id": False})
+        self.assertEqual(move.fiscal_document_id, document)
+        self.assertFalse(move.document_type_id)
+
     def test_lines_added_after_first_save_book_fiscal_amounts(self):
         self._setup_fiscal_user()
         partner = self.env.ref("l10n_br_base.res_partner_cliente1_sp")
