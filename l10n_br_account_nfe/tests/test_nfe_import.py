@@ -3,6 +3,8 @@
 
 import base64
 import os
+import re
+from datetime import timedelta
 
 from odoo import Command
 from odoo.exceptions import UserError
@@ -271,3 +273,53 @@ class NFeImportTest(TransactionCase):
         document.fiscal_line_ids[0].product_id = False
         with self.assertRaises(UserError):
             document._check_document_import()
+
+    def test_import_without_installments_uses_payment_term(self):
+        """An NF-e that declares no duplicata must not lose the due dates
+        given by the payment term chosen for the vendor bill."""
+        file_path = os.path.join(
+            l10n_br_account_nfe.__path__[0],
+            "tests",
+            "nfe",
+            "35231149647316000169550010000661061151600085-nfe.xml",
+        )
+        with open(file_path, "rb") as file:
+            file_content = re.sub(rb"<cobr>.*?</cobr>", b"", file.read(), flags=re.S)
+        payment_term = self.env["account.payment.term"].create(
+            {
+                "name": "Two installments",
+                "line_ids": [
+                    Command.create(
+                        {"value": "percent", "value_amount": 50.0, "nb_days": 30}
+                    ),
+                    Command.create(
+                        {"value": "percent", "value_amount": 50.0, "nb_days": 60}
+                    ),
+                ],
+            }
+        )
+
+        wizard = self.env["l10n_br_fiscal.document.import.wizard"].create({})
+        with Form(wizard) as import_form:
+            import_form.file = base64.b64encode(file_content)
+            import_form.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        action = wizard.action_import_and_open_move()
+        move = self.env["account.move"].browse(action["res_id"])
+        self.assertFalse(move.fiscal_document_id.nfe40_dup)
+        move.invoice_payment_term_id = payment_term
+
+        due_lines = move.line_ids.filtered(
+            lambda line: line.display_type == "payment_term"
+        ).sorted("date_maturity")
+        self.assertEqual(
+            due_lines.mapped("date_maturity"),
+            [
+                move.invoice_date + timedelta(days=30),
+                move.invoice_date + timedelta(days=60),
+            ],
+        )
+        # the terms split what the lines of the bill add up to: it closes
+        self.assertAlmostEqual(sum(move.line_ids.mapped("balance")), 0.0, places=2)
+        self.assertAlmostEqual(
+            sum(due_lines.mapped("credit")), abs(move.amount_total_signed), places=2
+        )
