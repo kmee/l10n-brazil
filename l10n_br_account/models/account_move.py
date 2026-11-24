@@ -127,8 +127,89 @@ class AccountMove(models.Model):
                 vals.pop("tax_totals")
         return super().create(vals_list)
 
+    def _create_missing_fiscal_document(self, vals):
+        """Give a draft move that has no fiscal document the one it now needs.
+
+        An invoice may be saved without a fiscal document type (no fiscal
+        document is created for it, see l10n_br_fiscal.document#create). When
+        the type (or the serie) is chosen later, the delegated fields would be
+        written to an empty record and the constraint on document_type_id
+        would refuse the save. So, as the create does, the fiscal document is
+        created now, from the move.
+
+        Posted moves are left alone: they keep the constraint, a posted
+        invoice cannot become a fiscal one. The opposite way (clearing the
+        type of a draft that already has a fiscal document) is not handled
+        here on purpose: the document stays, only its type is cleared.
+        """
+        if not (vals.get("document_type_id") or vals.get("document_serie_id")):
+            return
+        if vals.get("fiscal_document_id"):
+            return
+        FiscalDocument = self.env["l10n_br_fiscal.document"].with_context(
+            create_from_account=True, allow_fiscal_access=True
+        )
+        for move in self.filtered(
+            lambda m: (
+                m.state == "draft"
+                and not m.fiscal_document_id
+                and m.move_type != "entry"
+            )
+        ):
+            document = FiscalDocument.create(
+                {
+                    "document_type_id": vals.get("document_type_id"),
+                    "document_serie_id": vals.get("document_serie_id"),
+                    "proxy_company_id": move.company_id.id,
+                    "proxy_partner_id": move.partner_id.id,
+                    "proxy_partner_shipping_id": move.partner_shipping_id.id,
+                    "proxy_user_id": move.invoice_user_id.id,
+                    "issuer": (
+                        DOCUMENT_ISSUER_COMPANY
+                        if MOVE_TO_OPERATION[move.move_type] == FISCAL_OUT
+                        else DOCUMENT_ISSUER_PARTNER
+                    ),
+                }
+            )
+            move.write({"fiscal_document_id": document.id})
+
+    def _create_missing_fiscal_lines(self, vals):
+        """Create the fiscal lines of the invoice lines that have none.
+
+        A fiscal line only exists with a fiscal operation (see
+        l10n_br_fiscal.document.line#create), so the invoice lines of a draft
+        saved without fiscal data get theirs when the operation is chosen.
+        """
+        if not vals.get("fiscal_operation_id"):
+            return
+        FiscalLine = self.env["l10n_br_fiscal.document.line"].with_context(
+            create_from_account=True, allow_fiscal_access=True
+        )
+        for move in self.filtered(
+            lambda m: m.state == "draft" and m.fiscal_document_id
+        ):
+            for line in move.invoice_line_ids.filtered(
+                lambda aml: (
+                    aml.display_type == "product" and not aml.fiscal_document_line_id
+                )
+            ):
+                fiscal_line = FiscalLine.create(
+                    {
+                        "document_id": move.fiscal_document_id.id,
+                        "fiscal_operation_id": vals["fiscal_operation_id"],
+                        "proxy_name": line.name,
+                        "proxy_product_id": line.product_id.id,
+                        "proxy_quantity": line.quantity,
+                        "proxy_price_unit": line.price_unit,
+                        "uom_id": line.product_uom_id.id,
+                    }
+                )
+                line.write({"fiscal_document_line_id": fiscal_line.id})
+
     def write(self, vals):
         self._sync_proxy_fields_vals(vals)
+        self._create_missing_fiscal_document(vals)
+        self._create_missing_fiscal_lines(vals)
         # Pop tax_totals to prevent Odoo from overriding our tax lines on save
         if "tax_totals" in vals and (
             any(self.mapped("fiscal_operation_id"))
@@ -158,6 +239,24 @@ class AccountMove(models.Model):
             lambda move: not move.fiscal_operation_id and not move.imported_document
         )
         return super(AccountMove, moves)._inverse_tax_totals()
+
+    @api.onchange("document_type_id")
+    def _onchange_document_type_id_br(self):
+        """Fill what the fiscal document computes on creation.
+
+        A move saved without a document type has no fiscal document, so the
+        fields delegated to it come empty when the type is chosen afterwards,
+        although some of them are required for a document.
+        """
+        for move in self.filtered("document_type_id"):
+            if not move.ind_final:
+                move.ind_final = move.partner_id.ind_final or "1"
+            if not move.issuer:
+                move.issuer = (
+                    DOCUMENT_ISSUER_COMPANY
+                    if MOVE_TO_OPERATION.get(move.move_type) == FISCAL_OUT
+                    else DOCUMENT_ISSUER_PARTNER
+                )
 
     @api.onchange("company_id")
     def _onchange_company_id_br(self):
