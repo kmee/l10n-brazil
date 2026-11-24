@@ -88,28 +88,28 @@ class FiscalDocument(models.Model):
     @api.onchange("company_id")
     def _inverse_company_id(self):
         for doc in self:
-            for move in doc.move_ids:
+            for move in doc.sudo().move_ids:
                 if move.company_id != doc.company_id:
                     move.company_id = doc.company_id
 
     @api.onchange("partner_id")
     def _inverse_partner_id(self):
         for doc in self:
-            for move in doc.move_ids:
+            for move in doc.sudo().move_ids:
                 if move.partner_id != doc.partner_id:
                     move.partner_id = doc.partner_id
 
     @api.onchange("partner_shipping_id")
     def _inverse_partner_shipping_id(self):
         for doc in self:
-            for move in doc.move_ids:
+            for move in doc.sudo().move_ids:
                 if move.partner_shipping_id != doc.partner_shipping_id:
                     move.partner_shipping_id = doc.partner_shipping_id
 
     @api.onchange("user_id")
     def _inverse_user_id(self):
         for doc in self:
-            for move in doc.move_ids:
+            for move in doc.sudo().move_ids:
                 if move.user_id != doc.user_id:
                     move.user_id = doc.user_id
 
@@ -151,8 +151,13 @@ class FiscalDocument(models.Model):
     @api.depends("issuer", "move_ids.invoice_date")
     def _compute_document_date(self):
         for record in self:
-            if record.move_ids and record.issuer == DOCUMENT_ISSUER_PARTNER:
-                move_id = record.move_ids[0]
+            moves = record.sudo().move_ids
+            if (
+                record.issuer == DOCUMENT_ISSUER_PARTNER
+                and not record.imported_document
+                and moves
+            ):
+                move_id = moves[0]
                 if move_id.invoice_date:
                     user_tz = timezone(self.env.user.tz or "UTC")
                     doc_date = datetime.combine(move_id.invoice_date, time.min)
@@ -162,16 +167,22 @@ class FiscalDocument(models.Model):
 
     def _inverse_document_date(self):
         for record in self:
-            if record.move_ids and record.issuer == DOCUMENT_ISSUER_PARTNER:
-                move_id = record.move_ids[0]
+            moves = record.sudo().move_ids
+            if record.issuer == DOCUMENT_ISSUER_PARTNER and moves:
+                move_id = moves[0]
                 if record.document_date:
                     move_id.invoice_date = record.document_date.date()
 
     @api.depends("issuer", "move_ids.date")
     def _compute_date_in_out(self):
         for record in self:
-            if record.move_ids and record.issuer == DOCUMENT_ISSUER_PARTNER:
-                move_id = record.move_ids[0]
+            moves = record.sudo().move_ids
+            if (
+                record.issuer == DOCUMENT_ISSUER_PARTNER
+                and not record.imported_document
+                and moves
+            ):
+                move_id = moves[0]
                 if move_id.date:
                     user_tz = timezone(self.env.user.tz or "UTC")
                     doc_date = datetime.combine(move_id.date, time.min)
@@ -181,15 +192,16 @@ class FiscalDocument(models.Model):
 
     def _inverse_date_in_out(self):
         for record in self:
-            if record.move_ids and record.issuer == DOCUMENT_ISSUER_PARTNER:
-                move_id = record.move_ids[0]
+            moves = record.sudo().move_ids
+            if record.issuer == DOCUMENT_ISSUER_PARTNER and moves:
+                move_id = moves[0]
                 if record.date_in_out:
                     move_id.date = record.date_in_out.date()
 
     @api.depends("move_ids.invoice_incoterm_id")
     def _compute_incoterm_id(self):
         for record in self:
-            for move in record.move_ids:
+            for move in record.sudo().move_ids:
                 if move.invoice_incoterm_id:
                     record.incoterm_id = move.invoice_incoterm_id
                 else:
@@ -197,13 +209,13 @@ class FiscalDocument(models.Model):
 
     def _inverse_incoterm_id(self):
         for record in self:
-            if record.move_ids:
-                record.move_ids.invoice_incoterm_id = record.incoterm_id
+            if record.sudo().move_ids:
+                record.sudo().move_ids.invoice_incoterm_id = record.incoterm_id
 
     @api.depends("move_ids")
     def _compute_move_count(self):
         for record in self:
-            record.move_count = len(record.move_ids)
+            record.move_count = len(record.sudo().move_ids)
 
     def unlink(self):
         non_draft_documents = self.filtered(
@@ -272,13 +284,13 @@ class FiscalDocument(models.Model):
         """
         res = super().message_post(**kwargs)
         for doc in self:
-            for move in doc.move_ids:
+            for move in doc.sudo().move_ids:
                 move.message_post(**kwargs)
         return res
 
     def cancel_move_ids(self):
         for record in self:
-            if record.move_ids:
+            if record.sudo().move_ids:
                 self.move_ids.button_cancel()
 
     def _document_cancel(self, justificative):
@@ -313,9 +325,14 @@ class FiscalDocument(models.Model):
 
     def action_document_confirm(self):
         result = super().action_document_confirm()
-        if not self._context.get("skip_post"):
+        # who has no right on the invoices confirms the document and leaves the
+        # posting of its invoice to who has
+        if not self._context.get("skip_post") and self.env["account.move"].has_access(
+            "read"
+        ):
             move_ids = self.move_ids.filtered(lambda move: move.state == "draft")
-            move_ids._post()
+            if move_ids:
+                move_ids._post()
         return result
 
     def action_document_back2draft(self):
@@ -324,7 +341,7 @@ class FiscalDocument(models.Model):
         # This prevents double-calling super().button_draft() while still
         # ensuring button_draft gets called when action_document_back2draft
         # is invoked directly (e.g., from tests or UI).
-        if not self.env.context.get("in_button_draft"):
+        if not self.env.context.get("in_button_draft") and self.sudo().move_ids:
             for move in self.move_ids:
                 if move.state != "draft":
                     move.button_draft()
