@@ -768,9 +768,11 @@ class BankConnection(models.Model):
 
         got_token = self._l10n_br_bank_run(probe)
         return [
-            _("Access token obtained.")
-            if got_token
-            else _("The adapter has no token step.")
+            (
+                _("Access token obtained.")
+                if got_token
+                else _("The adapter has no token step.")
+            )
         ]
 
     # === CERTIFICATE === #
@@ -854,17 +856,25 @@ class BankConnection(models.Model):
 
     @api.onchange("adapter", "company_id")
     def _onchange_certificate_default(self):
-        """The certificate of the company, when the bank asks for one."""
+        """The certificate of the company, when the bank asks for one.
+
+        Searched as superuser: the domain filters on the private key, a field the
+        user may not read. It still only offers the certificates of the company of
+        the connection, and the user only gets the id of the record."""
         for connection in self:
             if connection.uses_certificate and not connection.certificate_id:
-                connection.certificate_id = self.env["certificate.certificate"].search(
-                    [
-                        ("company_id", "in", [connection.company_id.id, False]),
-                        ("is_valid", "=", True),
-                        ("private_key_id", "!=", False),
-                    ],
-                    order="date_end desc",
-                    limit=1,
+                connection.certificate_id = (
+                    self.env["certificate.certificate"]
+                    .sudo()
+                    .search(
+                        [
+                            ("company_id", "in", [connection.company_id.id, False]),
+                            ("is_valid", "=", True),
+                            ("private_key_id", "!=", False),
+                        ],
+                        order="date_end desc",
+                        limit=1,
+                    )
                 )
 
     def _l10n_br_bank_test_certificate_subject(self):
