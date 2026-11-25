@@ -441,6 +441,16 @@ msgid "Bandeira da operadora de cartão"
 msgstr ""
 
 #. module: l10n_br_nfe
+#: model:ir.model.fields,help:l10n_br_nfe.field_l10n_br_fiscal_document_line__partner_barcode
+msgid "Barcode (GTIN) as declared by the counterparty in the imported NF-e, when it is a valid one."
+msgstr "Código de barras (GTIN) como declarado pela contraparte na NF-e importada, quando é válido."
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document_line__partner_barcode
+msgid "Barcode Declared by Partner"
+msgstr "Código de barras declarado pelo parceiro"
+
+#. module: l10n_br_nfe
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_fiscal_document__nfe40_vBCRetPrev
 msgid "Base de Cálculo da Retenção"
 msgstr ""
