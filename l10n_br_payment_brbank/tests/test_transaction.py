@@ -145,6 +145,53 @@ class TestBrbankTransaction(BrbankTransactionCase):
             self.assertTrue(tx._brbank_fetch_pdf())
         self.assertTrue(base64.b64decode(tx.boleto_pdf).startswith(b"%PDF"))
 
+    def _tx_with_valid_barcode_and_no_pdf(self):
+        tx = self._standalone_tx()
+        self.env.company.partner_id.vat = "91300766000147"
+        # Boleto of R$ 15,00 from the Banco do Brasil test set: a valid barcode.
+        tx.write(
+            {
+                "amount": 15.0,
+                "boleto_pdf": False,
+                "digitable_line": False,
+                "barcode": "00195313800000015000000003051284190526000117",
+            }
+        )
+        return tx
+
+    def test_pdf_drawn_when_the_bank_declares_it_but_refuses(self):
+        tx = self._tx_with_valid_barcode_and_no_pdf()
+        self.assertTrue(tx.brbank_supports_pdf)
+        self.bank["pdf_error"] = Validacao("boleto not found for the PDF")
+        self.assertTrue(tx._brbank_fetch_pdf())
+        self.assertTrue(base64.b64decode(tx.boleto_pdf).startswith(b"%PDF"))
+
+    def test_pdf_refusal_stays_out_of_the_last_error_of_the_connection(self):
+        tx = self._tx_with_valid_barcode_and_no_pdf()
+        connection = tx.provider_id.brbank_connection_id
+        connection.invalidate_recordset(["last_error", "state"])
+        self.assertFalse(connection.last_error)
+        self.bank["pdf_error"] = Validacao("boleto not found for the PDF")
+        tx._brbank_fetch_pdf()
+        connection.invalidate_recordset(["last_error", "state"])
+        self.assertFalse(connection.last_error)
+        self.assertEqual(connection.state, "connected")
+
+    def test_pdf_refusal_without_a_drawable_boleto_is_not_fatal(self):
+        tx = self._standalone_tx()
+        tx.write({"boleto_pdf": False, "digitable_line": False, "barcode": False})
+        self.bank["pdf_error"] = Validacao("refused")
+        self.assertFalse(tx._brbank_fetch_pdf())
+
+    def test_successful_call_clears_the_last_error_of_the_connection(self):
+        tx = self._standalone_tx()
+        connection = tx.provider_id.brbank_connection_id
+        connection.sudo().write({"last_error": "Validacao: old", "state": "error"})
+        tx.provider_id._brbank_run(lambda adapter: adapter.banco)
+        connection.invalidate_recordset(["last_error", "state"])
+        self.assertFalse(connection.last_error)
+        self.assertEqual(connection.state, "connected")
+
     def test_invalid_bank_code_explains_why_there_is_no_pdf(self):
         tx = self._standalone_tx()
         tx.write(

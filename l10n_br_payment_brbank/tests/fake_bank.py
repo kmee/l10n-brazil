@@ -30,6 +30,7 @@ def reset_bank():
             "register_error": None,
             "unsupported": set(),
             "instruction_error": None,
+            "pdf_error": None,
             "register_status": StatusCanonico.REGISTRADO,
         }
     )
@@ -136,6 +137,8 @@ class FakeAdapter(BankAdapter):
         ]
 
     async def obter_pdf(self, id_banco):
+        if BANK["pdf_error"] is not None:
+            raise BANK["pdf_error"]
         # A real one-page PDF: the invoice joins the boletos of every installment.
         from fpdf import FPDF
 
