@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 KMEE INFORMATICA LTDA - Luis Felipe Mileo
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="l10n_br_duimp_declaration_form" model="ir.ui.view">
+        <field name="name">l10n_br_duimp.declaration.form.landed.costs</field>
+        <field name="model">l10n_br_duimp.declaration</field>
+        <field name="inherit_id" ref="l10n_br_duimp.l10n_br_duimp_declaration_form" />
+        <field name="arch" type="xml">
+            <button name="action_cancel" position="before">
+                <button
+                    name="action_link_receipts"
+                    string="Link Receipts"
+                    type="object"
+                    invisible="state not in ('open', 'locked')"
+                    groups="stock.group_stock_manager"
+                />
+                <button
+                    name="action_create_landed_costs"
+                    string="Create Landed Costs"
+                    type="object"
+                    invisible="state not in ('open', 'locked')"
+                    groups="stock.group_stock_manager"
+                />
+            </button>
+            <div name="button_box" position="inside">
+                <button
+                    name="action_view_receipts"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-truck"
+                    invisible="picking_count == 0"
+                    groups="stock.group_stock_user"
+                >
+                    <field name="picking_count" widget="statinfo" string="Receipts" />
+                </button>
+                <button
+                    name="action_view_landed_costs"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-plus-square"
+                    invisible="landed_cost_count == 0"
+                    groups="stock.group_stock_manager"
+                >
+                    <field
+                        name="landed_cost_count"
+                        widget="statinfo"
+                        string="Landed Costs"
+                    />
+                </button>
+            </div>
+            <field name="customs_value" position="after">
+                <field name="received_qty" />
+                <field name="receipt_pending" column_invisible="True" />
+            </field>
+            <page name="items" position="after">
+                <page
+                    string="Customs Expenses"
+                    name="customs_expenses"
+                    groups="stock.group_stock_manager"
+                >
+                    <field name="company_id" invisible="1" />
+                    <field
+                        name="expense_document_ids"
+                        options="{'no_create': True}"
+                        context="{'list_view_ref': 'l10n_br_fiscal.document_tree'}"
+                    />
+                </page>
+            </page>
+        </field>
+    </record>
+</odoo>
