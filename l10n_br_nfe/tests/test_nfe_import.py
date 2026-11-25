@@ -1445,7 +1445,8 @@ class TestNfeOwnNoteImport(EdiImportCase):
         self.assertIn("755338250133", warning)
         self.assertIn("Rua Outra", warning)
         self.assertEqual(
-            issuer.read(["street_name", "street_number", "l10n_br_ie_code", "zip"]), before
+            issuer.read(["street_name", "street_number", "l10n_br_ie_code", "zip"]),
+            before,
         )
 
     def test_a_difference_only_of_case_accent_or_punctuation_is_not_warned(self):
@@ -1664,7 +1665,9 @@ class TestNfeOwnNoteImport(EdiImportCase):
                 )
 
                 self.assertEqual(len(buttons), 1)
-                self.assertNotIn("imported_document", (buttons[0].get("invisible") or ""))
+                self.assertNotIn(
+                    "imported_document", (buttons[0].get("invisible") or "")
+                )
 
 
 class TestNfeInvoiceOfTheCollection(EdiImportCase):
