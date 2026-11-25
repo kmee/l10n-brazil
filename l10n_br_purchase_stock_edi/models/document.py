@@ -18,7 +18,7 @@ class FiscalDocument(models.Model):
     )
 
     import_awaiting_receipt = fields.Boolean(
-        string="Awaiting Receipt",
+        string="Document Awaiting Receipt",
         compute="_compute_import_awaiting_receipt",
         search="_search_import_awaiting_receipt",
         help="Some line waits for the receipt of its order line. It only informs: "
@@ -69,7 +69,7 @@ class FiscalDocument(models.Model):
     )
     import_picking_count = fields.Integer(
         compute="_compute_import_pickings",
-        string="Receipts",
+        string="Receipt Count",
         groups="purchase.group_purchase_user,stock.group_stock_user",
     )
 
