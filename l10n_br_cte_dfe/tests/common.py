@@ -6,7 +6,7 @@ import base64
 import gzip
 from io import BytesIO
 
-from odoo.modules.module import get_module_resource
+from odoo.tools import file_path
 
 CTE_NS = "http://www.portalfiscal.inf.br/cte"
 
@@ -31,14 +31,7 @@ def _prot_cte(access_key, model_tag="protCTe"):
 
 def cte_proc_xml():
     """``cteProc`` built from the l10n_br_cte sample CT-e plus a protocol."""
-    path = get_module_resource(
-        "l10n_br_cte",
-        "tests",
-        "cte",
-        "v4_00",
-        "leiauteCTe",
-        f"CTe{CTE_ACCESS_KEY}.xml",
-    )
+    path = file_path(f"l10n_br_cte/tests/cte/v4_00/leiauteCTe/CTe{CTE_ACCESS_KEY}.xml")
     with open(path, "rb") as sample:
         cte = sample.read().decode("utf-8")
     cte = cte.split("?>", 1)[1].strip()

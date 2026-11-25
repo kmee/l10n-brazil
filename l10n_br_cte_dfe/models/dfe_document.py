@@ -54,6 +54,7 @@ class L10nBrFiscalDfeDocument(models.Model):
     def import_document(self):
         if self.fiscal_type != "cte":
             return super().import_document()
+        self._check_import_allowed()
         complete = self._cte_dfe_complete()
         if complete.schema_type not in CTE_IMPORTABLE_SCHEMAS:
             raise UserError(

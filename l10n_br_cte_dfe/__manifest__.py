@@ -6,7 +6,7 @@
     Monitor incoming CT-e documents via the DF-e distribution web service
     (CTeDistribuicaoDFe).
     """,
-    "version": "16.0.1.0.0",
+    "version": "18.0.1.0.0",
     "license": "AGPL-3",
     "author": "Engenere, Odoo Community Association (OCA)",
     "maintainers": ["antoniospneto"],

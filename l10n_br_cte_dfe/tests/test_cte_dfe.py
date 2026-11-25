@@ -1,13 +1,11 @@
 # Copyright 2026 Engenere.
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
-import contextlib
 from datetime import datetime, timedelta
 from unittest import mock
 
 from xsdata.formats.dataclass.transports import DefaultTransport
 
-import odoo.http
 from odoo import fields
 from odoo.exceptions import UserError
 from odoo.tests.common import TransactionCase
@@ -17,7 +15,6 @@ from odoo.addons.l10n_br_fiscal_dfe.constants.dfe import (
     DFE_INTERVAL_RATE_LIMITED,
     DFE_INTERVAL_SUCCESS,
 )
-from odoo.addons.l10n_br_fiscal_dfe.controllers.main import DfeDocumentBannerController
 
 from .common import (
     CTE_ACCESS_KEY,
@@ -31,20 +28,6 @@ from .common import (
     response_no_docs,
     response_rate_limited,
 )
-
-
-@contextlib.contextmanager
-def mock_request(env):
-    """Push a mock request onto Odoo's request stack."""
-    request = mock.Mock()
-    request.env = env
-    request.is_frontend = False
-    request.session.debug = ""
-    odoo.http._request_stack.push(request)
-    try:
-        yield request
-    finally:
-        odoo.http._request_stack.pop()
 
 
 class TestCteDfe(TransactionCase):
@@ -185,7 +168,11 @@ class TestCteDfe(TransactionCase):
         self.company.cte_dfe_next_query = fields.Datetime.now() + timedelta(hours=1)
         self.company.cte_dfe_last_status_code = "656"
 
-        result = self.company.with_company(self.company).action_banner_search_all_cte()
+        result = (
+            self.env["res.company"]
+            .with_company(self.company)
+            .dfe_action_search_all("cte")
+        )
 
         mock_post.assert_not_called()
         self.assertEqual(result["tag"], "display_notification")
@@ -274,12 +261,28 @@ class TestCteDfe(TransactionCase):
         self.company.cte_environment = "2"
         self.company.cte_dfe_search_documents()
 
-        env = self.env(context={"allowed_company_ids": [self.company.id]})
-        with mock_request(env):
-            html = DfeDocumentBannerController().document_banner("cte")["html"]
+        data = (
+            self.env["res.company"]
+            .with_company(self.company)
+            .dfe_get_banner_data("cte")
+        )
 
-        self.assertIn("action_banner_search_all_cte", html)
-        self.assertIn("Homologa", html)
-        self.assertIn("Synced", html)
-        # 1 procCTe not imported → pending count uses text-warning style
-        self.assertIn("text-warning", html)
+        self.assertEqual(data["fiscal_type"], "cte")
+        self.assertTrue(data["is_homologation"])
+        self.assertTrue(data["nsu_synced"])
+        self.assertEqual(data["last_status_code"], "138")
+        self.assertEqual(data["today_count"], 1)
+        # 1 procCTe not imported yet
+        self.assertEqual(data["pending_import_count"], 1)
+        self.assertFalse(data["never_queried"])
+        self.assertFalse(data["inactivity_warning"])
+
+    def test_banner_actions_are_generic(self):
+        """The banner buttons call the generic DF-e methods with the CT-e type."""
+        action = (
+            self.env["res.company"]
+            .with_company(self.company)
+            .dfe_action_specific_search("cte")
+        )
+        self.assertEqual(action["res_model"], "dfe.specific.search.wizard")
+        self.assertEqual(action["context"]["default_fiscal_type"], "cte")

@@ -4,19 +4,20 @@
     License AGPL-3 or later (http://www.gnu.org/licenses/agpl)
 -->
 <odoo>
-
-    <!-- CT-e specific tree: the generic one plus the KPI banner and the
-         CT-e buttons. Referenced explicitly by action_cte_dfe_document. -->
+    <!-- CT-e specific list: the generic one plus the KPI banner and the
+         CT-e buttons. Referenced explicitly by action_cte_dfe_document. The
+         dfe_document_list js_class renders the DF-e banner, using the
+         default_fiscal_type of the action context. -->
     <record model="ir.ui.view" id="cte_dfe_document_tree">
         <field name="name">l10n_br_fiscal_dfe.document.tree.cte</field>
         <field name="model">l10n_br_fiscal_dfe.document</field>
         <field name="priority">10</field>
         <field name="arch" type="xml">
-            <tree
+            <list
+                js_class="dfe_document_list"
                 create="false"
                 edit="false"
                 delete="false"
-                banner_route="/l10n_br_fiscal_dfe/document_banner/cte"
                 decoration-success="color_status == 'green'"
                 decoration-muted="color_status == 'muted'"
             >
@@ -37,6 +38,8 @@
                 <field name="currency_id" invisible="1" />
                 <field name="fiscal_document_id" />
                 <field name="document_state_label" string="State" />
+                <field name="utilization" optional="show" />
+                <field name="import_block_reason" optional="show" />
                 <button
                     string="XML"
                     name="action_download_xml"
@@ -54,23 +57,23 @@
                     string="Import"
                     type="object"
                     icon="fa-file-text-o"
-                    attrs="{'invisible': [('fiscal_document_id', '!=', False)]}"
+                    invisible="fiscal_document_id or import_block_reason"
                 />
                 <button
                     name="action_view_imported_document"
-                    string="Invoice"
+                    string="Fiscal Document"
                     type="object"
                     icon="fa-pencil-square-o"
-                    attrs="{'invisible': [('fiscal_document_id', '=', False)]}"
+                    invisible="not fiscal_document_id"
                 />
-            </tree>
+            </list>
         </field>
     </record>
 
     <record id="action_cte_dfe_document" model="ir.actions.act_window">
         <field name="name">CT-e de Terceiros</field>
         <field name="res_model">l10n_br_fiscal_dfe.document</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field
             name="domain"
         >[('fiscal_type', '=', 'cte'), ('is_own_document', '=', False)]</field>
@@ -80,7 +83,7 @@
         <field
             name="view_ids"
             eval="[(5, 0, 0),
-                   (0, 0, {'view_mode': 'tree',
+                   (0, 0, {'view_mode': 'list',
                            'view_id': ref('cte_dfe_document_tree')}),
                    (0, 0, {'view_mode': 'form',
                            'view_id': ref('l10n_br_fiscal_dfe.l10n_br_fiscal_dfe_document_form')})]"

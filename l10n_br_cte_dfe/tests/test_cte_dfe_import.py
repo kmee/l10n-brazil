@@ -8,9 +8,10 @@ from unittest import mock
 
 from xsdata.formats.dataclass.transports import DefaultTransport
 
+from odoo.exceptions import UserError
 from odoo.tests.common import TransactionCase
 
-from .common import CTE_ACCESS_KEY, response_cte_only
+from .common import CTE_ACCESS_KEY, response_cte_and_cancel, response_cte_only
 
 
 class TestCteDfeImport(TransactionCase):
@@ -106,3 +107,16 @@ class TestCteDfeImport(TransactionCase):
         with zipfile.ZipFile(BytesIO(zip_data)) as zf:
             self.assertEqual(zf.namelist(), [f"procCTe_{CTE_ACCESS_KEY}.xml"])
             self.assertIn(b"<cteProc", zf.read(zf.namelist()[0]))
+
+    @mock.patch.object(DefaultTransport, "post")
+    def test_import_of_cancelled_cte_is_refused(self, mock_post):
+        mock_post.return_value = response_cte_and_cancel()
+        self.company.cte_dfe_search_documents()
+        document = self.env["l10n_br_fiscal_dfe.document"].search(
+            [("company_id", "=", self.company.id), ("fiscal_type", "=", "cte")]
+        )
+        self.assertEqual(document.document_state, "3")
+        self.assertTrue(document.import_block_reason)
+
+        with self.assertRaisesRegex(UserError, "cancelled"):
+            document.import_document()

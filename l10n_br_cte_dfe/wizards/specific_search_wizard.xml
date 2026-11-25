@@ -14,9 +14,7 @@
         />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='search_type']" position="attributes">
-                <attribute
-                    name="attrs"
-                >{'invisible': [('fiscal_type', '=', 'cte')]}</attribute>
+                <attribute name="invisible">fiscal_type == 'cte'</attribute>
             </xpath>
         </field>
     </record>

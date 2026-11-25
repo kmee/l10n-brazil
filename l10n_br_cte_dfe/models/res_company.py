@@ -63,12 +63,16 @@ class ResCompany(models.Model):
         if fiscal_type != "cte":
             return super()._dfe_get_processor(fiscal_type)
         self.ensure_one()
-        cert = base64.b64decode(self.certificate.file)
+        # l10n_br_fiscal_certificate maps res.company.certificate to the
+        # core certificate.certificate record (Binary ``content`` +
+        # ``pkcs12_password``), selected with the multi-company fallback
+        # of _get_br_certificate().
+        certificate = self._get_br_certificate()
         return DfeClient(
             ambiente=self.cte_environment,
             uf=self.state_id.ibge_code,
-            pkcs12_data=cert,
-            pkcs12_password=self.certificate.password,
+            pkcs12_data=base64.b64decode(certificate.content),
+            pkcs12_password=certificate.pkcs12_password,
             wrap_response=True,
         )
 
@@ -108,18 +112,6 @@ class ResCompany(models.Model):
     @api.model
     def _cron_cte_dfe_search_documents(self):
         return self._cron_dfe_search_documents("cte")
-
-    @api.model
-    def action_banner_search_all_cte(self):
-        """Called from the CT-e banner button — delegates to current company."""
-        company = self.env.company
-        result = company.action_document_distribution("cte")
-        return result or {"type": "ir.actions.client", "tag": "reload"}
-
-    @api.model
-    def action_banner_specific_search_cte(self):
-        """Called from the CT-e banner button — delegates to current company."""
-        return self.env.company.action_search_specific("cte")
 
     # ── Schema processors (NT 2015.002) ─────────────────────────────────
 
