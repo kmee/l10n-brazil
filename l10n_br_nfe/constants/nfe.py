@@ -108,6 +108,15 @@ FISCAL_PAYMENT_MODE = [
 ]
 
 
+A_VISTA = "0"
+A_PRAZO = "1"
+
+SEM_PAGAMENTO = "90"
+
+NFE_IN = "0"
+NFE_OUT = "1"
+
+
 # Credit and debit notes (NT 2025.002)
 
 # cClassTrib of the credit and debit note types that require one, the other

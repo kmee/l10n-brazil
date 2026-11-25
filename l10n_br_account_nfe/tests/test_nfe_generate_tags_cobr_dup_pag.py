@@ -5,9 +5,12 @@
 # @author Magno Costa <magno.costa@akretion.com.br>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import Command
+from unittest import mock
+
+from odoo import Command, fields
 from odoo.exceptions import UserError
 from odoo.tests import Form, tagged
+from odoo.tools import format_date
 
 from odoo.addons.l10n_br_account.tests.common import AccountMoveBRCommon
 
@@ -78,7 +81,7 @@ class TestGeneratePaymentInfo(AccountMoveBRCommon):
             if latam_doc_type and move_form.l10n_latam_use_documents:
                 move_form.l10n_latam_document_type_id = latam_doc_type
         move_form.fiscal_operation_id = cls.env.ref("l10n_br_fiscal.fo_venda")
-        move_form.invoice_date = "2019-01-01"
+        move_form.invoice_date = fields.Date.today()
         move_form.payment_mode_id = cls.payment_mode
         move_form.invoice_payment_term_id = cls.payment_term
         with move_form.invoice_line_ids.new() as line_form:
@@ -155,7 +158,7 @@ class TestGeneratePaymentInfo(AccountMoveBRCommon):
             if latam_doc_type and move_form.l10n_latam_use_documents:
                 move_form.l10n_latam_document_type_id = latam_doc_type
         move_form.fiscal_operation_id = cls.env.ref("l10n_br_fiscal.fo_venda")
-        move_form.invoice_date = "2019-01-01"
+        move_form.invoice_date = fields.Date.today()
         move_form.payment_mode_id = payment_mode
         move_form.invoice_payment_term_id = payment_term
         with move_form.invoice_line_ids.new() as line_form:
@@ -163,9 +166,16 @@ class TestGeneratePaymentInfo(AccountMoveBRCommon):
             line_form.fiscal_operation_line_id = cls.env.ref(
                 "l10n_br_fiscal.fo_venda_revenda"
             )
-        invoice = move_form.save()
-        invoice.action_post()
-        return invoice
+        return move_form.save()
+
+    def _first_due_date(self, invoice):
+        return (
+            invoice.line_ids.filtered(
+                lambda line: line.account_id.account_type == "asset_receivable"
+            )
+            .sorted("date_maturity")[0]
+            .date_maturity
+        )
 
     def test_nfe_generate_tag_pag(self):
         """Test NFe generate TAG PAG."""
@@ -176,8 +186,10 @@ class TestGeneratePaymentInfo(AccountMoveBRCommon):
             self.assertEqual(detPag.nfe40_tPag, "18", "Error in nfe40_tPag field.")
             self.assertEqual(detPag.nfe40_vPag, 1032.5, "Error in nfe40_vPag field.")
 
-        # Dados criados no dados de demonstracao
-        self.assertTrue(len(self.invoice_demo_data.nfe40_detPag) > 0)
+        # Dados criados no dados de demonstração: as tags são gravadas no lançamento
+        self.assertFalse(self.invoice_demo_data.nfe40_detPag)
+        self.invoice_demo_data.action_post()
+        self.assertTrue(self.invoice_demo_data.nfe40_detPag)
         for detPag in self.invoice_demo_data.nfe40_detPag:
             self.assertEqual(detPag.nfe40_indPag, "1", "Error in nfe40_indPag field.")
             self.assertEqual(detPag.nfe40_tPag, "15", "Error in nfe40_tPag field.")
@@ -190,17 +202,73 @@ class TestGeneratePaymentInfo(AccountMoveBRCommon):
         self.assertEqual(self.invoice.nfe40_vDesc, 0.0)
         self.assertEqual(self.invoice.nfe40_vLiq, 1032.5)
         self.assertEqual(self.invoice.nfe40_dup[0].nfe40_nDup, "001")
-        venc = self.invoice.due_line_ids[0].date_maturity
+        venc = self._first_due_date(self.invoice)
         self.assertEqual(self.invoice.nfe40_dup[0].nfe40_dVenc, venc)
         self.assertEqual(self.invoice.nfe40_dup[0].nfe40_vDup, 1032.5)
 
+        # Dados criados no dados de demonstração
+        self.assertFalse(self.invoice_demo_data.nfe40_dup)
+        self.invoice_demo_data.action_post()
         self.assertEqual(self.invoice_demo_data.nfe40_vOrig, 147.0)
         self.assertEqual(self.invoice_demo_data.nfe40_vDesc, 0.0)
         self.assertEqual(self.invoice_demo_data.nfe40_vLiq, 147.0)
         self.assertEqual(self.invoice_demo_data.nfe40_dup[0].nfe40_nDup, "001")
-        venc = self.invoice_demo_data.due_line_ids[0].date_maturity
+        venc = self._first_due_date(self.invoice_demo_data)
         self.assertEqual(self.invoice_demo_data.nfe40_dup[0].nfe40_dVenc, venc)
         self.assertTrue(self.invoice_demo_data.nfe40_dup[0].nfe40_vDup > 0)
+
+    def test_the_tags_are_previewed_before_the_posting(self):
+        """The invoice and the document show what will go to the tags, which
+        are only written when the invoice is posted."""
+        invoice = self.invoice_demo_data
+        document = invoice.fiscal_document_id
+
+        self.assertFalse(document.nfe40_dup)
+        self.assertFalse(document.nfe40_detPag)
+        for summary in (invoice.edi_payment_summary, document.edi_payment_summary):
+            for installment in invoice._edi_installments():
+                self.assertIn(format_date(self.env, installment.date_due), summary)
+            self.assertIn("In installments", summary)
+            self.assertIn("15 - Boleto Bancário", summary)
+        self.assertEqual(len(invoice._edi_installments()), 3)
+
+        invoice.action_post()
+
+        self.assertEqual(len(document.nfe40_dup), 3)
+        self.assertFalse(invoice.edi_payment_summary)
+
+    def test_the_preview_of_an_invoice_without_payment_mode_is_what_is_written(self):
+        invoice = self.invoice_demo_data
+        invoice.payment_mode_id = False
+        document = invoice.fiscal_document_id
+
+        (payment,) = invoice._edi_payments()
+        self.assertEqual(
+            (payment.means, payment.amount, payment.term), ("90", 0.0, "cash")
+        )
+        self.assertEqual(document._edi_display_payments(), [payment])
+
+        invoice.action_post()
+
+        written = document.nfe40_detPag
+        self.assertEqual(
+            (written.nfe40_tPag, written.nfe40_vPag, written.nfe40_indPag),
+            ("90", 0.0, "0"),
+        )
+        self.assertEqual(len(document.nfe40_dup), 3)
+
+    def test_without_the_means_of_payment_the_duplicates_are_still_written(self):
+        """What l10n_br_account_nfe gives is the means of payment: without it
+        the duplicates are written and the means of payment is empty."""
+        invoice = self.invoice_demo_data
+        model = type(invoice)
+
+        with mock.patch.object(model, "_edi_payment_means", return_value=""):
+            invoice.action_post()
+
+        self.assertEqual(len(invoice.nfe40_dup), 3)
+        self.assertEqual(invoice.nfe40_detPag.mapped("nfe40_tPag"), [""])
+        self.assertEqual(invoice.nfe40_detPag.nfe40_indPag, "1")
 
     def test_payment_mode_without_fiscal_mode(self):
         partner = self.env.ref("l10n_br_base.res_partner_akretion")

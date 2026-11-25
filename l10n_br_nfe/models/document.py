@@ -2385,15 +2385,21 @@ class NFe(spec_models.StackedModel):
         self.file_report_id = self.env["ir.attachment"].create(attachment_data)
 
     def _get_imported_installments(self):
-        """Read the installments of the <cobr>/<dup> group of an imported NF-e."""
+        """Read the installments of the <cobr>/<dup> group of an imported NF-e.
+
+        The declared installments have one source, ``_edi_get_installments``
+        (the contract the purchase modules extend): this method only adapts it
+        to the (due date, amount) tuples that l10n_br_account reads when
+        l10n_br_account_edi is not installed.
+        """
         self.ensure_one()
         if self.document_type_id.code not in (MODELO_FISCAL_NFE, MODELO_FISCAL_NFCE):
             return super()._get_imported_installments()
         # Whoever books the bill may have no NF-e group.
         installments = [
-            (dup.nfe40_dVenc, dup.nfe40_vDup)
-            for dup in self.sudo().nfe40_dup
-            if dup.nfe40_dVenc and dup.nfe40_vDup
+            (installment.date_due, installment.amount)
+            for installment in self.sudo()._edi_get_installments()
+            if installment.date_due and installment.amount
         ]
         if not installments:
             return super()._get_imported_installments()

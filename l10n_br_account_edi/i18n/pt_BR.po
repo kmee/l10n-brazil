@@ -1,0 +1,144 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* l10n_br_account_edi
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: 2026-11-19 20:05+0000\n"
+"Last-Translator: Luis Felipe Miléo <mileo@kmee.com.br>\n"
+"Language-Team: none\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=n > 1;\n"
+
+#. module: l10n_br_account_edi
+#. odoo-python
+#: code:addons/l10n_br_account_edi/models/account_move.py:0
+msgid "Document total"
+msgstr "Total do documento"
+
+#. module: l10n_br_account_edi
+#: model:ir.model.fields,field_description:l10n_br_account_edi.field_account_bank_statement_line__edi_payment_summary
+#: model:ir.model.fields,field_description:l10n_br_account_edi.field_account_move__edi_payment_summary
+#: model:ir.model.fields,field_description:l10n_br_account_edi.field_account_payment__edi_payment_summary
+msgid "Edi Payment Summary"
+msgstr "Resumo de parcelas e pagamentos"
+
+#. module: l10n_br_account_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_account_edi.document_form
+msgid "Generate Invoice"
+msgstr "Gerar fatura"
+
+#. module: l10n_br_account_edi
+#. odoo-python
+#: code:addons/l10n_br_account_edi/models/document.py:0
+msgid ""
+"Generating the invoice needs the accounting rights of the Billing group. Ask"
+" a user that has them."
+msgstr ""
+"Gerar a fatura exige os direitos contábeis do grupo Faturamento. Peça a um usuário que os tenha."
+
+#. module: l10n_br_account_edi
+#: model:ir.model,name:l10n_br_account_edi.model_l10n_br_fiscal_document
+msgid "Informações de exportação"
+msgstr ""
+
+#. module: l10n_br_account_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_account_edi.invoice_form
+msgid "Installments"
+msgstr "Parcelas"
+
+#. module: l10n_br_account_edi
+#: model:ir.model.fields,help:l10n_br_account_edi.field_account_bank_statement_line__edi_payment_summary
+#: model:ir.model.fields,help:l10n_br_account_edi.field_account_move__edi_payment_summary
+#: model:ir.model.fields,help:l10n_br_account_edi.field_account_payment__edi_payment_summary
+msgid ""
+"Installments and payment that the fiscal document will declare, to check "
+"before posting the invoice. It is not stored."
+msgstr ""
+"Parcelas e pagamento que o documento fiscal vai declarar, para conferir antes de lançar a fatura. Não é armazenado."
+
+#. module: l10n_br_account_edi
+#. odoo-python
+#: code:addons/l10n_br_account_edi/models/document.py:0
+msgid "Invoice"
+msgstr "Fatura"
+
+#. module: l10n_br_account_edi
+#: model:ir.model,name:l10n_br_account_edi.model_account_journal
+msgid "Journal"
+msgstr "Diário"
+
+#. module: l10n_br_account_edi
+#: model:ir.model,name:l10n_br_account_edi.model_account_move
+msgid "Journal Entry"
+msgstr "Lançamento de diário"
+
+#. module: l10n_br_account_edi
+#. odoo-python
+#: code:addons/l10n_br_account_edi/models/account_move.py:0
+msgid "Net amount payable"
+msgstr "Líquido a pagar"
+
+#. module: l10n_br_account_edi
+#. odoo-python
+#: code:addons/l10n_br_account_edi/models/document.py:0
+msgid ""
+"Resolve the lines before generating the invoice:\n"
+"%s"
+msgstr ""
+"Resolva as linhas antes de gerar a fatura:\n"
+"%s"
+
+#. module: l10n_br_account_edi
+#. odoo-python
+#: code:addons/l10n_br_account_edi/models/account_move.py:0
+msgid "Withholdings"
+msgstr "Retenções"
+
+#. module: l10n_br_account_edi
+#: model:ir.model.fields,help:l10n_br_account_edi.field_account_bank_statement_line__edi_can_generate_invoice
+#: model:ir.model.fields,help:l10n_br_account_edi.field_account_move__edi_can_generate_invoice
+#: model:ir.model.fields,help:l10n_br_account_edi.field_account_payment__edi_can_generate_invoice
+#: model:ir.model.fields,help:l10n_br_account_edi.field_l10n_br_fiscal_document__edi_can_generate_invoice
+msgid ""
+"An imported document that was reviewed, has lines and an amount declared in "
+"the file, and has no invoice yet. It is not stored."
+msgstr ""
+"Documento importado revisado, com linhas e valor declarado no arquivo, que "
+"ainda não tem fatura. Não é armazenado."
+
+#. module: l10n_br_account_edi
+#: model:ir.model.fields,field_description:l10n_br_account_edi.field_account_bank_statement_line__edi_can_generate_invoice
+#: model:ir.model.fields,field_description:l10n_br_account_edi.field_account_move__edi_can_generate_invoice
+#: model:ir.model.fields,field_description:l10n_br_account_edi.field_account_payment__edi_can_generate_invoice
+#: model:ir.model.fields,field_description:l10n_br_account_edi.field_l10n_br_fiscal_document__edi_can_generate_invoice
+msgid "Edi Can Generate Invoice"
+msgstr "Pode gerar fatura"
+
+#. module: l10n_br_account_edi
+#. odoo-python
+#: code:addons/l10n_br_account_edi/models/document.py:0
+msgid ""
+"The document has no fiscal operation. Choose it in the header of the "
+"document before generating the invoice."
+msgstr ""
+"O documento não tem operação fiscal. Escolha a operação no cabeçalho do "
+"documento antes de gerar a fatura."
+
+#. module: l10n_br_account_edi
+#. odoo-python
+#: code:addons/l10n_br_account_edi/models/document.py:0
+msgid "The document has no partner. Choose it before generating the invoice."
+msgstr ""
+"O documento não tem parceiro. Escolha o parceiro antes de gerar a fatura."
+
+#. module: l10n_br_account_edi
+#. odoo-python
+#: code:addons/l10n_br_account_edi/models/document.py:0
+msgid "The invoice could not be created from this document: %s"
+msgstr "Não foi possível criar a fatura deste documento: %s"

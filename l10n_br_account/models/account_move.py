@@ -19,6 +19,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     MODELO_FISCAL_NFE,
     SITUACAO_EDOC_DENEGADA,
 )
+from odoo.addons.l10n_br_fiscal.models.document_line import IMPORT_REVIEW_CONTEXT_KEY
 
 from .constants import (
     MOVE_TO_OPERATION,
@@ -609,7 +610,9 @@ class AccountMove(models.Model):
             if invoice.is_invoice(True) and invoice.invoice_line_ids:
                 if invoice.imported_document:
                     invoice._compute_imported_terms()
-                elif invoice.invoice_payment_term_id:
+                # the installments declared by the imported document win; without
+                # them the payment term of the bill applies, as in any other bill
+                if not invoice.needed_terms and invoice.invoice_payment_term_id:
                     if is_draft:
                         tax_amount_currency = 0.0
                         untaxed_amount_currency = 0.0
@@ -625,9 +628,22 @@ class AccountMove(models.Model):
                         tax_amount = tax_amount_currency
                     else:
                         tax_amount_currency = tax_amount = 0.0
-                        untaxed_amount_currency = invoice.amount_financial_total * sign
-                        # the other lines of the entry in the company currency
-                        untaxed_amount = invoice.amount_total_signed
+                        if invoice.imported_document:
+                            # the lines are the ones of the file, which may not
+                            # add up to the fiscal financial total (withheld
+                            # value without a withholding tax, for instance):
+                            # the terms split what the lines do add up to, as
+                            # the single due date does
+                            untaxed_amount_currency = (
+                                invoice.amount_total_in_currency_signed
+                            )
+                            untaxed_amount = invoice.amount_total_signed
+                        else:
+                            untaxed_amount_currency = (
+                                invoice.amount_financial_total * sign
+                            )
+                            # the other lines of the entry in the company currency
+                            untaxed_amount = invoice.amount_total_signed
                     invoice_payment_terms = (
                         invoice.invoice_payment_term_id._compute_terms(
                             date_ref=invoice.invoice_date
@@ -1368,7 +1384,15 @@ class AccountMove(models.Model):
                     }
                 )
 
+        serie = fiscal_document.document_serie
         move_form.save()
+        if (
+            fiscal_document.imported_document
+            and fiscal_document.document_serie != serie
+        ):
+            # the form has no series record to give back to a document of the
+            # company imported from a file: its series is the text of the file
+            fiscal_document.document_serie = serie
         move = self.env["account.move"].browse(move_form.id)
 
         invoice_line_write_vals = []
@@ -1410,9 +1434,10 @@ class AccountMove(models.Model):
                 )
 
         # Write safely bypassing strict validity checks mid-loop
-        move.with_context(check_move_validity=False).write(
-            {"invoice_line_ids": invoice_line_write_vals}
-        )
+        # the quantity and the price come from the document, not from a person
+        move.with_context(
+            check_move_validity=False, **{IMPORT_REVIEW_CONTEXT_KEY: True}
+        ).write({"invoice_line_ids": invoice_line_write_vals})
 
         if dummy_lines_to_unlink:
             dummy_lines_to_unlink.unlink()

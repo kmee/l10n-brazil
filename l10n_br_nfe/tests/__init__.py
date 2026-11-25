@@ -26,3 +26,4 @@ from . import test_nfe_import_declaration
 from . import test_nfe_export_detail
 from . import test_nfe_partner_document
 from . import test_nfe_duplicate
+from . import test_nfe_edi_set
