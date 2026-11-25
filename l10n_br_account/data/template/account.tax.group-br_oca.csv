@@ -5,6 +5,7 @@
 "tax_group_icmssn","l10n_br_fiscal.tax_group_icmssn"
 "tax_group_icmsst","l10n_br_fiscal.tax_group_icmsst"
 "tax_group_icmsfcp","l10n_br_fiscal.tax_group_icmsfcp"
+"tax_group_icmsfcp_st","l10n_br_fiscal.tax_group_icmsfcp_st"
 "tax_group_pis","l10n_br_fiscal.tax_group_pis"
 "tax_group_pisst","l10n_br_fiscal.tax_group_pisst"
 "tax_group_pis_wh","l10n_br_fiscal.tax_group_pis_wh"
