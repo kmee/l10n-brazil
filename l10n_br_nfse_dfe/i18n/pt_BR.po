@@ -74,7 +74,7 @@ msgstr "Data"
 #. module: l10n_br_nfse_dfe
 #: model:ir.model.fields,field_description:l10n_br_nfse_dfe.field_res_company__nfse_import_fiscal_operation_id
 msgid "Default NFS-e Import Operation"
-msgstr ""
+msgstr "Operação de importação de NFS-e padrão"
 
 #. module: l10n_br_nfse_dfe
 #: model:ir.model.fields,field_description:l10n_br_nfse_dfe.field_res_company__nfse_import_product_id
@@ -135,7 +135,7 @@ msgid ""
 "Fiscal operation applied when a national NFS-e is imported. Leave it empty "
 "to use the only inbound ISSQN operation line, or to let the user choose when "
 "that line is missing or ambiguous."
-msgstr ""
+msgstr "Operação fiscal aplicada quando uma NFS-e nacional é importada. Deixe vazio para usar a única linha de operação de ISSQN de entrada, ou para que o usuário escolha quando essa linha não existe ou é ambígua."
 
 #. module: l10n_br_nfse_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfse_dfe.nfse_dfe_document_tree
