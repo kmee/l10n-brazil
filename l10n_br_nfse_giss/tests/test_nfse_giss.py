@@ -107,6 +107,14 @@ LOTE_OCUPADO = soap(
         mensagem("A02", "Empresa ja esta com uma consulta em andamento"),
     ),
 )
+RPS_OCUPADO = soap(
+    "ConsultarNfsePorRps",
+    resposta(
+        "consultar-nfse-rps-resposta",
+        "ConsultarNfseRpsResposta",
+        mensagem("A02", "Empresa ja esta com uma consulta em andamento"),
+    ),
+)
 LOTE_PROCESSADO = soap(
     "ConsultarLoteRps",
     resposta(
@@ -492,6 +500,37 @@ class TestNFSeGiss(TestFiscalDocumentNFSeCommon):
         self._send(RPS_NAO_ENCONTRADO, LOTE_OCUPADO, PROTOCOLO, LOTE_PROCESSADO)
         self.assertEqual(self.session.operacoes.count("RecepcionarLoteRps"), 2)
         self.assertEqual(self.nfse.state_edoc, "autorizada")
+
+    def test_send_busy_in_every_attempt_waits_and_is_not_rejected(self):
+        with patch("time.sleep") as sleep:
+            self._send(RPS_NAO_ENCONTRADO, LOTE_OCUPADO)
+        self.assertEqual(self.session.operacoes.count("RecepcionarLoteRps"), 4)
+        self.assertEqual([c.args[0] for c in sleep.call_args_list], [5.0, 10.0, 15.0])
+        self.assertEqual(self.nfse.state_edoc, "a_enviar")
+        self.assertFalse(self.nfse.authorization_protocol)
+        self.assertIn("A02", self.nfse.edoc_error_message)
+        self.assertNotEqual(self.nfse.status_name, "Processado com erro")
+
+    def test_send_busy_once_then_normal_flow(self):
+        self._send(RPS_NAO_ENCONTRADO, LOTE_OCUPADO, PROTOCOLO, LOTE_PROCESSADO)
+        self.assertEqual(self.nfse.state_edoc, "autorizada")
+        self.assertEqual(self.nfse.authorization_protocol, "PROT-123")
+
+    def test_send_again_after_busy_finds_the_nfse_already_issued(self):
+        self._send(RPS_NAO_ENCONTRADO, LOTE_OCUPADO)
+        self.assertEqual(self.nfse.state_edoc, "a_enviar")
+        self.session.chamadas.clear()
+        self.session.respostas = [RPS_JA_CONVERTIDO]
+        self.nfse.action_document_send()
+        self.assertEqual(self.session.operacoes, ["ConsultarNfsePorRps"])
+        self.assertEqual(self.nfse.state_edoc, "autorizada")
+        self.assertEqual(self.nfse.document_number, "55")
+
+    def test_query_by_rps_busy_does_not_send_the_lot_blindly(self):
+        with patch("time.sleep"):
+            self._send(RPS_OCUPADO)
+        self.assertEqual(self.session.operacoes, ["ConsultarNfsePorRps"] * 4)
+        self.assertEqual(self.nfse.state_edoc, "a_enviar")
 
     def test_send_lot_with_error(self):
         self._send(RPS_NAO_ENCONTRADO, PROTOCOLO, LOTE_COM_ERRO)
