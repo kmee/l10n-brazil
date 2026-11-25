@@ -11,3 +11,4 @@ from . import test_own_note_import
 from . import test_pure_fiscal_user
 from . import test_demo_invoices
 from . import test_payment_preview_in_form
+from . import test_import_payable
