@@ -122,10 +122,11 @@ msgstr "Desconhecimento"
 #. module: l10n_br_nfe_dfe
 #: model:ir.model.fields,field_description:l10n_br_nfe_dfe.field_nfe_recipient_manifestation_event_wizard__dfe_document_id
 msgid "Dfe Document"
-msgstr ""
+msgstr "Documento DF-e"
 
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_document_tree
+#: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.view_l10n_br_fiscal_dfe_document_form_nfe
 msgid "Fiscal Document"
 msgstr "Documento fiscal"
 
@@ -311,7 +312,7 @@ msgstr "Código de Status"
 #. odoo-python
 #: code:addons/l10n_br_nfe_dfe/wizards/nfe_md_event_wizard.py:0
 msgid "Success"
-msgstr ""
+msgstr "Sucesso"
 
 #. module: l10n_br_nfe_dfe
 #. odoo-python

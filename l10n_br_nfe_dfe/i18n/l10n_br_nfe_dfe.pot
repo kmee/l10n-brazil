@@ -116,6 +116,7 @@ msgstr ""
 
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_document_tree
+#: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.view_l10n_br_fiscal_dfe_document_form_nfe
 msgid "Fiscal Document"
 msgstr ""
 
