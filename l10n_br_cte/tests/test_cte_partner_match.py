@@ -10,8 +10,10 @@ class TestCTePartnerMatch(TransactionCase):
 
     Both l10n_br_nfe and l10n_br_cte override res.partner.match_or_create_m2o.
     Once the whole registry is loaded the NF-e override comes first in the MRO,
-    so it has to hand the CT-e partners over to the next override, otherwise
-    the issuer of a CT-e is created again and the CNPJ check refuses it.
+    so it has to hand the partners of another schema (``spec_schema`` in the
+    context, set by ``build_from_binding``) over to the next override,
+    otherwise the issuer of a CT-e is created again and the CNPJ check refuses
+    it.
     Run after the install (``post_install``): while this module is loading the
     NF-e override is not in the registry yet and the defect does not show.
     """
@@ -46,10 +48,12 @@ class TestCTePartnerMatch(TransactionCase):
 
     def test_cte_issuer_is_matched_by_cnpj(self):
         rec_dict = {"cte40_CNPJ": "87697453000105", "cte40_xNome": "Emitente"}
-        partner_id = self.env["res.partner"].match_or_create_m2o(rec_dict, {})
+        partners = self.env["res.partner"].with_context(spec_schema="cte")
+        partner_id = partners.match_or_create_m2o(rec_dict, {})
         self.assertEqual(partner_id, self.partner.id)
 
     def test_nfe_issuer_is_matched_by_cnpj(self):
         rec_dict = {"nfe40_CNPJ": "87697453000105", "nfe40_xNome": "Emitente"}
-        partner_id = self.env["res.partner"].match_or_create_m2o(rec_dict, {})
+        partners = self.env["res.partner"].with_context(spec_schema="nfe")
+        partner_id = partners.match_or_create_m2o(rec_dict, {})
         self.assertEqual(partner_id, self.partner.id)
