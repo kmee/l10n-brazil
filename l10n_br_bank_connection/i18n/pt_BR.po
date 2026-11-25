@@ -516,12 +516,16 @@ msgstr "Mensagens"
 #: model:ir.model.fields,help:l10n_br_bank_connection.field_l10n_br_bank_connection_connection__certificate_id
 msgid ""
 "mTLS certificate of the company, with its private key (Settings, "
-"Certificates and Keys; a .pfx file and its password). When set, it is used "
-"instead of the PEM fields."
+"Certificates and Keys; a .pfx file and its password), for the banks that take "
+"the A1 of the company (Bradesco, Banco do Brasil). When set, it is used "
+"instead of the PEM fields. Leave it empty when the bank issues its own "
+"certificate (Sicredi Pix): paste that one in the PEM fields."
 msgstr ""
 "Certificado mTLS da empresa, com a chave privada (Configurações, "
-"Certificados e chaves; um arquivo .pfx e a senha). Quando preenchido, é "
-"usado no lugar dos campos PEM."
+"Certificados e chaves; um arquivo .pfx e a senha), para os bancos que usam o "
+"A1 da empresa (Bradesco, Banco do Brasil). Quando preenchido, é usado no "
+"lugar dos campos PEM. Deixe vazio quando o banco emite o próprio certificado "
+"(Pix do Sicredi): cole esse nos campos PEM."
 
 #. module: l10n_br_bank_connection
 #: model:ir.model.fields,field_description:l10n_br_bank_connection.field_l10n_br_bank_connection_connection__name
@@ -832,6 +836,19 @@ msgstr ""
 #: code:addons/l10n_br_bank_connection/models/connection.py:0
 msgid "The field %s must hold a JSON object."
 msgstr "O campo %s deve conter um objeto JSON."
+
+#. module: l10n_br_bank_connection
+#: model_terms:ir.ui.view,arch_db:l10n_br_bank_connection.bank_connection_form
+msgid ""
+"The certificate of the company takes precedence over\n"
+"                                the PEM certificate and key below. For a bank that\n"
+"                                issues its own certificate (Sicredi Pix), empty the\n"
+"                                Certificate field so the PEM pair is the one sent."
+msgstr ""
+"O certificado da empresa tem precedência sobre o certificado e a chave PEM\n"
+"                                abaixo. Para um banco que emite o próprio certificado (Pix\n"
+"                                do Sicredi), esvazie o campo Certificado para que o par PEM\n"
+"                                seja o enviado."
 
 #. module: l10n_br_bank_connection
 #: model_terms:ir.ui.view,arch_db:l10n_br_bank_connection.bank_connection_form

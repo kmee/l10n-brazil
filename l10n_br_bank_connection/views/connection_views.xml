@@ -216,6 +216,16 @@
                             name="credentials"
                             groups="l10n_br_bank_connection.group_bank_connection_admin"
                         >
+                            <div
+                                class="alert alert-warning"
+                                role="alert"
+                                invisible="not certificate_id or (not certificate and not private_key)"
+                            >
+                                The certificate of the company takes precedence over
+                                the PEM certificate and key below. For a bank that
+                                issues its own certificate (Sicredi Pix), empty the
+                                Certificate field so the PEM pair is the one sent.
+                            </div>
                             <group>
                                 <group>
                                     <field
@@ -255,11 +265,11 @@
                                     />
                                     <field
                                         name="certificate"
-                                        invisible="not uses_certificate or certificate_id"
+                                        invisible="not uses_certificate"
                                     />
                                     <field
                                         name="private_key"
-                                        invisible="not uses_certificate or certificate_id"
+                                        invisible="not uses_certificate"
                                     />
                                     <field
                                         name="certificate_registered_fingerprint"
