@@ -273,13 +273,17 @@ class PaymentProvider(models.Model):
             callbacks=self._brbank_callbacks(), outcome=callback_outcome
         )
 
-    def _brbank_run(self, operation):
-        """Call the bank through the connection of the provider."""
+    def _brbank_run(self, operation, record=True):
+        """Call the bank through the connection of the provider.
+
+        `record=False` keeps the outcome out of the connection (state and last
+        error): for a call whose refusal is expected and has a fallback.
+        """
         self.ensure_one()
         if self.state == "disabled":
             raise UserError(_("The payment provider %s is disabled.", self.name))
         return self._brbank_connection()._l10n_br_bank_run(
-            operation, callbacks=self._brbank_callbacks()
+            operation, callbacks=self._brbank_callbacks(), record=record
         )
 
     # === BUSINESS METHODS: NOSSO NUMERO === #
