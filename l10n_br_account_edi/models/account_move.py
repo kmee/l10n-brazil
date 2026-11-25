@@ -39,7 +39,13 @@ class AccountMove(models.Model):
         # the installments are read from the document with the rights of the
         # system: saving an imported bill recomputes the terms for accounting
         # users who may not be in the groups of the NF-e models
-        installments = document.sudo()._edi_get_installments()
+        # one source for the declared installments: the document answers
+        # _get_imported_installments from _edi_get_installments (see
+        # l10n_br_account_edi/models/document.py)
+        installments = [
+            EdiInstallment(number="", date_due=due_date, amount=amount)
+            for due_date, amount in document.sudo()._get_imported_installments()
+        ]
         declared = sum(installment.amount for installment in installments)
         if not declared or len(self.invoice_line_ids) < len(document.fiscal_line_ids):
             return False

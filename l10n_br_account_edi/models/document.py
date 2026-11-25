@@ -13,6 +13,23 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
 class Document(models.Model):
     _inherit = "l10n_br_fiscal.document"
 
+    def _get_imported_installments(self):
+        """(due date, amount) of the installments declared by the file.
+
+        The declaration has one source, ``_edi_get_installments`` (the contract
+        the purchase modules extend, for any document type): this adapts it to
+        the tuples that the bill reads.
+        """
+        self.ensure_one()
+        installments = [
+            (installment.date_due, installment.amount)
+            for installment in self.sudo()._edi_get_installments()
+            if installment.date_due and installment.amount
+        ]
+        if not installments:
+            return super()._get_imported_installments()
+        return sorted(installments)
+
     edi_can_generate_invoice = fields.Boolean(
         compute="_compute_edi_can_generate_invoice",
         help="An imported document that was reviewed, has lines and an amount "
