@@ -229,14 +229,14 @@ class TestImportedLineReview(TransactionCase):
         path = os.path.join(
             get_module_path("l10n_br_fiscal_edi"),
             "migrations",
-            "16.0.2.5.2",
+            "18.0.3.10.0",
             "pre-migration.py",
         )
         spec = importlib.util.spec_from_file_location("edi_pre_migration", path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        module.migrate(self.env.cr, "16.0.2.5.0")
-        module.migrate(self.env.cr, "16.0.2.5.0")
+        module.migrate(self.env.cr, "18.0.3.9.2")
+        module.migrate(self.env.cr, "18.0.3.9.2")
         self.env.cr.execute(
             "SELECT 1 FROM information_schema.columns WHERE table_name = "
             "'l10n_br_fiscal_document' AND column_name = 'import_state'"
@@ -246,8 +246,8 @@ class TestImportedLineReview(TransactionCase):
     def test_the_hook_that_creates_the_column_of_the_state_can_run_again(self):
         from ..hooks import pre_init_hook
 
-        pre_init_hook(self.env.cr)
-        pre_init_hook(self.env.cr)
+        pre_init_hook(self.env)
+        pre_init_hook(self.env)
         self.env.cr.execute(
             "SELECT 1 FROM information_schema.columns WHERE table_name = "
             "'l10n_br_fiscal_document' AND column_name = 'import_state'"

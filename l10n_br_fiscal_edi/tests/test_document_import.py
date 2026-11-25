@@ -1193,6 +1193,7 @@ class TestDocumentImport(EdiImportCase):
         """A window action that calls the import carries ``default_*`` keys for its
         own records (a type of document, a partner): they must not fill the fields
         of the documents and lines the import creates."""
+        self.env["res.lang"]._activate_lang("pt_BR")
         model = self.Document.with_context(
             default_fiscal_type="nfe",
             default_partner_id=self.supplier.id,
