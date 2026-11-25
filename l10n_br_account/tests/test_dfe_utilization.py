@@ -162,3 +162,50 @@ class TestDfeUtilization(AccountMoveBRCommon):
         move.button_cancel()
         self.assertEqual(move.state, "cancel")
         self.assertEqual(move.state_edoc, DOCUMENT_STATE_CANCEL)
+
+    def test_a_fiscal_user_reads_the_inbox_of_a_document_with_a_bill(self):
+        """The inbox list and form compute the state of a document that has a
+        bill, for a user who has no access to bills."""
+        move = self._vendor_bill(
+            "91004",
+            imported=True,
+            key_body="3520015959431500015755001000000094206277716",
+        )
+        inbox = self._inbox(move)
+        if inbox is None:
+            self.skipTest("l10n_br_fiscal_dfe is not installed")
+        fiscal_user = self.env["res.users"].create(
+            {
+                "name": "Fiscal without accounting",
+                "login": "fiscal_only_dfe_inbox",
+                "company_id": move.company_id.id,
+                "company_ids": [(6, 0, move.company_id.ids)],
+                "groups_id": [
+                    (
+                        6,
+                        0,
+                        [
+                            self.env.ref("base.group_user").id,
+                            self.env.ref("l10n_br_fiscal.group_user").id,
+                        ],
+                    )
+                ],
+            }
+        )
+        self.env.flush_all()
+        self.env.invalidate_all()
+        inbox_user = inbox.with_user(fiscal_user)
+        self.assertFalse(inbox_user.env["account.move"].has_access("read"))
+        names = [
+            "access_key",
+            "fiscal_document_id",
+            "document_state_label",
+            "utilization",
+            "import_block_reason",
+        ]
+        values = inbox_user.read(names)[0]
+        self.assertEqual(values["utilization"], "posted")
+        self.assertTrue(values["import_block_reason"])
+        inbox_user.invalidate_recordset()
+        web = inbox_user.web_read({name: {} for name in names})[0]
+        self.assertEqual(web["utilization"], "posted")
