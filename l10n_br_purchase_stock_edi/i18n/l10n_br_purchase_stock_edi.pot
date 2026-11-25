@@ -20,8 +20,9 @@ msgstr ""
 #: code:addons/l10n_br_purchase_stock_edi/models/document.py:0
 msgid ""
 "%(count)s line(s) of stockable products have no order and no receipt. Use "
-"Match with Orders to create the receipt, or ask a purchase or stock manager "
-"to mark the line as without stock entry."
+"Match with Orders to mark the line as without order and then create the "
+"receipt, or ask a purchase or stock manager to mark it as without stock entry "
+"there."
 msgstr ""
 
 #. module: l10n_br_purchase_stock_edi
