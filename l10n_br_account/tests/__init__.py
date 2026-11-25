@@ -28,3 +28,4 @@ from . import test_ibs_cbs_deductible
 from . import test_icms_st_deductible
 from . import test_icmsfcp_deductible
 from . import test_icms_no_credit
+from . import test_proxy_columns_init
