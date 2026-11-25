@@ -370,3 +370,88 @@ class NFeImportTest(TransactionCase):
         self.assertAlmostEqual(line.amount_tax_not_included, 3.29, places=2)
         self.assertAlmostEqual(line.fiscal_amount_tax, 3.29, places=2)
         self.assertAlmostEqual(line.amount_tax_included, 7.64, places=2)
+
+    def _import_first_line_with_icms(self, icms_xml):
+        xml = re.sub(
+            r"<ICMS00>.*?</ICMS00>", icms_xml, self._sample_xml(), count=1, flags=re.S
+        )
+        # The sample item also carries an ICMSUFDest (DIFAL), which has its own FCP
+        # and would overwrite the FCP of the ICMS group: a purchase from a
+        # taxpayer has none.
+        xml = re.sub(r"<ICMSUFDest>.*?</ICMSUFDest>", "", xml, count=1, flags=re.S)
+        binding = TnfeProc.from_xml(xml)
+        nfe = self.env["l10n_br_fiscal.document"].import_binding_nfe(
+            binding, edoc_type="in", dry_run=False
+        )
+        return nfe.fiscal_line_ids[0]
+
+    def test_import_in_nfe_icms_st_and_fcp_st(self):
+        # ICMS10: ICMS 18%, FCP 2%, ICMS ST (MVA 40%) and FCP ST 2%
+        line = self._import_first_line_with_icms(
+            "<ICMS10>"
+            "<orig>0</orig><CST>10</CST><modBC>3</modBC>"
+            "<vBC>100.00</vBC><pICMS>18.00</pICMS><vICMS>18.00</vICMS>"
+            "<vBCFCP>100.00</vBCFCP><pFCP>2.00</pFCP><vFCP>2.00</vFCP>"
+            "<modBCST>4</modBCST><pMVAST>40.00</pMVAST>"
+            "<vBCST>140.00</vBCST><pICMSST>18.00</pICMSST><vICMSST>7.20</vICMSST>"
+            "<vBCFCPST>140.00</vBCFCPST><pFCPST>2.00</pFCPST>"
+            "<vFCPST>2.80</vFCPST>"
+            "</ICMS10>"
+        )
+
+        self.assertEqual(line.icmsst_base, 140.0)
+        self.assertEqual(line.icmsst_percent, 18.0)
+        self.assertEqual(line.icmsst_value, 7.2)
+        self.assertEqual(
+            line.icmsst_tax_id, self.env.ref("l10n_br_fiscal.tax_icmsst_40")
+        )
+        self.assertEqual(line.icmsfcp_base, 100.0)
+        self.assertEqual(line.icmsfcp_percent, 2.0)
+        self.assertEqual(line.icmsfcp_value, 2.0)
+        self.assertEqual(
+            line.icmsfcp_tax_id, self.env.ref("l10n_br_fiscal.tax_icmsfcp_2")
+        )
+        self.assertEqual(line.icmsfcpst_base, 140.0)
+        self.assertEqual(line.icmsfcpst_percent, 2.0)
+        self.assertEqual(line.icmsfcpst_value, 2.8)
+        self.assertEqual(
+            line.icmsfcpst_tax_id, self.env.ref("l10n_br_fiscal.tax_icmsfcp_st_2")
+        )
+
+    def test_import_in_nfe_icms00_fcp(self):
+        # ICMS00 has pFCP/vFCP but no vBCFCP: the FCP base is the ICMS base
+        line = self._import_first_line_with_icms(
+            "<ICMS00>"
+            "<orig>0</orig><CST>00</CST><modBC>3</modBC>"
+            "<vBC>100.00</vBC><pICMS>18.00</pICMS><vICMS>18.00</vICMS>"
+            "<pFCP>2.00</pFCP><vFCP>2.00</vFCP>"
+            "</ICMS00>"
+        )
+
+        self.assertEqual(line.icmsfcp_base, 100.0)
+        self.assertEqual(line.icmsfcp_percent, 2.0)
+        self.assertEqual(line.icmsfcp_value, 2.0)
+        self.assertEqual(
+            line.icmsfcp_tax_id, self.env.ref("l10n_br_fiscal.tax_icmsfcp_2")
+        )
+        self.assertFalse(line.icmsst_tax_id)
+        self.assertFalse(line.icmsfcpst_tax_id)
+
+    def test_import_in_nfe_icms_st_rate_without_tax_keeps_the_amounts(self):
+        line = self._import_first_line_with_icms(
+            "<ICMS10>"
+            "<orig>0</orig><CST>10</CST><modBC>3</modBC>"
+            "<vBC>100.00</vBC><pICMS>18.00</pICMS><vICMS>18.00</vICMS>"
+            "<modBCST>4</modBCST><pMVAST>40.00</pMVAST>"
+            "<vBCST>140.00</vBCST><pICMSST>17.50</pICMSST><vICMSST>6.50</vICMSST>"
+            "<vBCFCPST>140.00</vBCFCPST><pFCPST>3.50</pFCPST>"
+            "<vFCPST>4.90</vFCPST>"
+            "</ICMS10>"
+        )
+
+        self.assertEqual(line.icmsst_value, 6.5)
+        self.assertEqual(line.icmsfcpst_value, 4.9)
+        self.assertFalse(line.icmsst_tax_id)
+        self.assertEqual(
+            line.icmsfcpst_tax_id, self.env.ref("l10n_br_fiscal.tax_icmsfcp_st_nt")
+        )
