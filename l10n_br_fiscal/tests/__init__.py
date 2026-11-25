@@ -30,4 +30,5 @@ from . import (
     test_tax_pis_cofins,
     test_document_line_report,
     test_trigger_tree,
+    test_taxable_unit,
 )
