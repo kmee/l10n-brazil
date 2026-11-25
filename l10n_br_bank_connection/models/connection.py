@@ -62,6 +62,13 @@ def pix_profile_label(name):
     return getattr(PERFIS.get(name), "nome_exibicao", "") or name
 
 
+# Banks that take the A1 certificate of the company as the mTLS certificate (the
+# Pix of the Banco do Brasil and of the Bradesco go through the same adapters of
+# the collection and the payments). The other banks issue their own certificate
+# (the Sicredi Pix, for instance): the A1 of the company is refused at the token.
+COMPANY_A1_ADAPTERS = {"bb", "bradesco"}
+COMPANY_A1_PIX_PROFILES = {"bb", "bradesco"}
+
 # Field of the connection -> key used by the adapter configurations.
 GENERIC_FIELDS = {
     "client_id": "client_id",
@@ -209,8 +216,10 @@ class BankConnection(models.Model):
         groups=SECRET_GROUP,
         domain="[('company_id', 'in', [company_id, False])]",
         help="mTLS certificate of the company, with its private key (Settings, "
-        "Certificates and Keys; a .pfx file and its password). When set, it is "
-        "used instead of the PEM fields.",
+        "Certificates and Keys; a .pfx file and its password), for the banks that "
+        "take the A1 of the company (Bradesco, Banco do Brasil). When set, it is "
+        "used instead of the PEM fields. Leave it empty when the bank issues its "
+        "own certificate (Sicredi Pix): paste that one in the PEM fields.",
     )
     certificate_fingerprint = fields.Char(
         compute="_compute_certificate_renewal", groups=SECRET_GROUP
@@ -854,15 +863,30 @@ class BankConnection(models.Model):
             self._l10n_br_bank_register_certificate(force="environment" in vals)
         return res
 
-    @api.onchange("adapter", "company_id")
+    def _l10n_br_bank_uses_company_certificate(self):
+        """Whether the bank takes the A1 certificate of the company."""
+        self.ensure_one()
+        if self.adapter == "pix_bacen":
+            return self.pix_profile in COMPANY_A1_PIX_PROFILES
+        return self.adapter in COMPANY_A1_ADAPTERS
+
+    @api.onchange("adapter", "pix_profile", "company_id")
     def _onchange_certificate_default(self):
-        """The certificate of the company, when the bank asks for one.
+        """The certificate of the company, when the bank takes it.
+
+        Only for the banks that use the A1 of the company: the others (the Sicredi
+        Pix) issue their own certificate, to paste in the PEM fields, and the A1
+        would take precedence over it and make the bank refuse the token.
 
         Searched as superuser: the domain filters on the private key, a field the
         user may not read. It still only offers the certificates of the company of
         the connection, and the user only gets the id of the record."""
         for connection in self:
-            if connection.uses_certificate and not connection.certificate_id:
+            if (
+                connection.uses_certificate
+                and not connection.certificate_id
+                and connection._l10n_br_bank_uses_company_certificate()
+            ):
                 connection.certificate_id = (
                     self.env["certificate.certificate"]
                     .sudo()
