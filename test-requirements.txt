@@ -17,4 +17,5 @@ nfelib
 # cryptography >= 42. Drop it together with the signxml pin.
 requests-pkcs12==1.22
 # l10n_br_nfe tests compare serialized XML with xmldiff
+# l10n_br_mdfe tests compare serialized XML with xmldiff
 xmldiff
