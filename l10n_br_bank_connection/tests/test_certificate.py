@@ -279,12 +279,13 @@ class TestConnectionCertificateAccess(ConnectionCommon, TransactionCase):
         self.assertIn("value", result)
         connection.web_save({"certificate_id": self.a1.id}, spec)
         self.assertEqual(connection.certificate_id, self.a1)
-        # A new connection: the adapter onchange proposes the A1 of the company.
+        # A new connection of a bank that takes the A1 (Bradesco): the adapter
+        # onchange proposes the A1 of the company.
         result = (
             self.env[MODEL]
             .with_user(self.finance)
             .onchange(
-                {"adapter": FAKE_MTLS, "company_id": self.env.company.id},
+                {"adapter": "bradesco", "company_id": self.env.company.id},
                 ["adapter"],
                 spec,
             )
@@ -294,3 +295,95 @@ class TestConnectionCertificateAccess(ConnectionCommon, TransactionCase):
         )
         self.assertTrue(proposed.is_valid)
         self.assertIn(proposed.company_id.id, [False, self.env.company.id])
+
+
+@tagged("post_install", "-at_install")
+class TestConnectionCertificateDefault(ConnectionCommon, TransactionCase):
+    """Only the banks that take the A1 of the company get it proposed: the Pix of
+    the Sicredi uses a certificate issued by the bank, and the A1 (which takes
+    precedence over the PEM fields) made the bank refuse the token."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._setup_connection()
+        bundle, _pem = _pkcs12("EMPRESA:91300766000147", "segredo")
+        cls.a1 = cls.env["certificate.certificate"].create(
+            {
+                "name": "A1 da empresa",
+                "content": base64.b64encode(bundle),
+                "pkcs12_password": "segredo",
+                "company_id": cls.env.company.id,
+            }
+        )
+
+    def _assert_company_certificate(self, proposed):
+        """A valid certificate of the company (the database may hold others)."""
+        self.assertTrue(proposed)
+        self.assertTrue(proposed.is_valid)
+        self.assertIn(proposed.company_id.id, [False, self.env.company.id])
+
+    def _proposed(self, **values):
+        connection = self.Connection.new(
+            dict(values, company_id=self.env.company.id, certificate_id=False)
+        )
+        self.assertTrue(connection.uses_certificate)
+        connection._onchange_certificate_default()
+        return connection.certificate_id
+
+    def test_pix_sicredi_gets_no_company_certificate(self):
+        proposed = self._proposed(adapter="pix_bacen", pix_profile="sicredi")
+        self.assertFalse(proposed)
+
+    def test_pix_of_banks_with_their_own_certificate(self):
+        for profile in ("inter", "itau", "santander", "sicoob", "efi"):
+            with self.subTest(profile=profile):
+                proposed = self._proposed(adapter="pix_bacen", pix_profile=profile)
+                self.assertFalse(proposed)
+
+    def test_pix_bb_and_bradesco_get_the_company_certificate(self):
+        for profile in ("bb", "bradesco"):
+            with self.subTest(profile=profile):
+                proposed = self._proposed(adapter="pix_bacen", pix_profile=profile)
+                self._assert_company_certificate(proposed)
+
+    def test_bradesco_and_bb_adapters_get_the_company_certificate(self):
+        for adapter in ("bradesco", "bb"):
+            with self.subTest(adapter=adapter):
+                connection = self.Connection.new(
+                    {
+                        "adapter": adapter,
+                        "company_id": self.env.company.id,
+                        "certificate_id": False,
+                    }
+                )
+                if not connection.uses_certificate:
+                    self.skipTest(f"{adapter} takes no certificate in this brbank")
+                connection._onchange_certificate_default()
+                self._assert_company_certificate(connection.certificate_id)
+
+    def test_changing_the_profile_to_sicredi_does_not_keep_the_proposal(self):
+        connection = self.Connection.new(
+            {
+                "adapter": "pix_bacen",
+                "pix_profile": "bb",
+                "company_id": self.env.company.id,
+                "certificate_id": False,
+            }
+        )
+        connection._onchange_certificate_default()
+        self._assert_company_certificate(connection.certificate_id)
+        # What the user does next: picks Sicredi and clears the proposed A1.
+        connection.pix_profile = "sicredi"
+        connection.certificate_id = False
+        connection._onchange_certificate_default()
+        self.assertFalse(connection.certificate_id)
+
+    def test_pem_fields_stay_visible_with_a_certificate_record(self):
+        view = self.Connection.get_view(
+            self.env.ref("l10n_br_bank_connection.bank_connection_form").id
+        )
+        arch = etree.fromstring(view["arch"])
+        for name in ("certificate", "private_key"):
+            field = arch.xpath(f"//field[@name='{name}']")[0]
+            self.assertNotIn("certificate_id", field.get("invisible") or "", name)
