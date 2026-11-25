@@ -561,7 +561,7 @@ class Document(models.Model):
         self.write(
             {
                 "status_code": GISS_BUSY,
-                "status_name": self.env._("Prefeitura ocupada"),
+                "status_name": self.env._("City hall busy"),
                 "edoc_error_message": self.env._(
                     "The city hall was busy with another request of the company "
                     "(A02) and did not answer. Send the document again in a few "
