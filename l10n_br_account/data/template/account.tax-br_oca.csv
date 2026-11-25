@@ -11,6 +11,8 @@
 "tax_template_in_icms_subist","l10n_br_fiscal.tax_group_icmsst"
 "tax_template_out_icmsfcp","l10n_br_fiscal.tax_group_icmsfcp"
 "tax_template_in_icmsfcp","l10n_br_fiscal.tax_group_icmsfcp"
+"tax_template_out_icmsfcp_st","l10n_br_fiscal.tax_group_icmsfcp_st"
+"tax_template_in_icmsfcp_st","l10n_br_fiscal.tax_group_icmsfcp_st"
 "tax_template_out_pis","l10n_br_fiscal.tax_group_pis"
 "tax_template_out_pisst","l10n_br_fiscal.tax_group_pisst"
 "tax_template_out_pis_wh","l10n_br_fiscal.tax_group_pis_wh"
