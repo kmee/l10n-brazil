@@ -3,3 +3,9 @@ from . import document_event
 from . import document
 from . import document_related
 from . import operation_dashboard
+from . import document_import
+from . import document_payment
+from . import uom_uom
+from . import document_review
+from . import document_line_review
+from . import document_line_import
