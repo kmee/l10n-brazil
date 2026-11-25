@@ -151,6 +151,7 @@ class AccountMove(models.Model):
             if (
                 move.state != "draft"
                 or not move.document_type_id
+                or not move.fiscal_document_id
                 or move.issuer != DOCUMENT_ISSUER_COMPANY
                 or move.imported_document
             ):
