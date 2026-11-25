@@ -102,11 +102,13 @@ class InvalidateNumber(models.Model):
                     raise ValidationError(_("Number range overlap is not allowed."))
         return True
 
-    @api.depends("document_type_id", "document_serie_id", "number_start", "number_end")
+    @api.depends(
+        "document_type_id.code", "document_serie_id", "number_start", "number_end"
+    )
     def _compute_name(self):
         for record in self:
             record.name = (
-                f"{record.document_type_id.type}/"
+                f"{record.document_type_id.code}/"
                 f"({record.document_serie_id.name}): "
                 f"{record.number_start} - {record.number_end}"
             )
