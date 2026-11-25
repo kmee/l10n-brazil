@@ -1119,12 +1119,13 @@ class AccountMove(models.Model):
 
         if not move_id or not move.fiscal_document_id:
             move_form.partner_id = fiscal_document.partner_id
-            move_form.invoice_date = fiscal_document.document_date
+            local_date = fiscal_document._get_local_date(fiscal_document.document_date)
+            move_form.invoice_date = local_date
             move_form.document_type_id = fiscal_document.document_type_id
             move_form.fiscal_document_id = fiscal_document
             move_form.fiscal_operation_id = fiscal_document.fiscal_operation_id
             for field_name, value in (
-                ("date", fiscal_document.document_date),
+                ("date", local_date),
                 ("document_serie", fiscal_document.document_serie),
             ):
                 if not move_form._get_modifier(field_name, "invisible"):
