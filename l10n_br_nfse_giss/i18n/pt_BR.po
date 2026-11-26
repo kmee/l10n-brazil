@@ -32,3 +32,15 @@ msgstr ""
 "A prefeitura estava ocupada com outra requisição da empresa (A02) e não "
 "respondeu. Envie o documento de novo em instantes: o novo envio consulta o "
 "RPS antes, então a NFS-e não é duplicada."
+
+#. module: l10n_br_nfse_giss
+#. odoo-python
+#: code:addons/l10n_br_nfse_giss/models/document.py:0
+msgid ""
+"The city hall was busy (A02) when the lot was queried. Check the document "
+"status in a few moments: the lot was accepted and is queried again by its "
+"protocol."
+msgstr ""
+"A prefeitura estava ocupada (A02) na consulta do lote. Consulte a situação "
+"do documento em instantes: o lote foi aceito e é consultado de novo pelo "
+"protocolo."

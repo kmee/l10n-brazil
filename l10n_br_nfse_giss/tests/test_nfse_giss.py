@@ -115,6 +115,14 @@ RPS_OCUPADO = soap(
         mensagem("A02", "Empresa ja esta com uma consulta em andamento"),
     ),
 )
+LOTE_CONSULTA_OCUPADA = soap(
+    "ConsultarLoteRps",
+    resposta(
+        "consultar-lote-rps-resposta",
+        "ConsultarLoteRpsResposta",
+        mensagem("A02", "Empresa ja esta com uma consulta em andamento"),
+    ),
+)
 LOTE_PROCESSADO = soap(
     "ConsultarLoteRps",
     resposta(
@@ -531,6 +539,26 @@ class TestNFSeGiss(TestFiscalDocumentNFSeCommon):
             self._send(RPS_OCUPADO)
         self.assertEqual(self.session.operacoes, ["ConsultarNfsePorRps"] * 4)
         self.assertEqual(self.nfse.state_edoc, "a_enviar")
+
+    def test_lot_accepted_but_query_busy_keeps_the_protocol(self):
+        with patch("time.sleep"):
+            self._send(RPS_NAO_ENCONTRADO, PROTOCOLO, LOTE_CONSULTA_OCUPADA)
+        self.assertEqual(self.nfse.state_edoc, "enviada")
+        self.assertEqual(self.nfse.authorization_protocol, "PROT-123")
+        self.assertEqual(self.nfse.status_name, "City hall busy")
+        self.assertIn("A02", self.nfse.edoc_error_message)
+        # the status query does not reject nor clear the protocol while busy
+        self.session.respostas = [LOTE_CONSULTA_OCUPADA]
+        self.nfse._document_status()
+        self.assertEqual(self.nfse.state_edoc, "enviada")
+        self.assertEqual(self.nfse.authorization_protocol, "PROT-123")
+        # and authorizes once the city hall answers
+        self.session.chamadas.clear()
+        self.session.respostas = [LOTE_PROCESSADO]
+        self.nfse._document_status()
+        self.assertEqual(self.session.operacoes, ["ConsultarLoteRps"])
+        self.assertEqual(self.nfse.state_edoc, "autorizada")
+        self.assertEqual(self.nfse.document_number, "55")
 
     def test_send_lot_with_error(self):
         self._send(RPS_NAO_ENCONTRADO, PROTOCOLO, LOTE_COM_ERRO)
