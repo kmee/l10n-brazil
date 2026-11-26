@@ -250,3 +250,43 @@ class TestImportFiscalDocument(AccountMoveBRCommon):
             str(blocked.exception),
             "This document was cancelled at the source.",
         )
+
+    def _import_issued_at(self, issued_utc, user_tz):
+        self.env.user.tz = user_tz
+        self.fiscal_document_to_import.document_date = issued_utc
+        move_form = self.env["account.move"].import_fiscal_document(
+            self.fiscal_document_to_import, move_type="in_invoice"
+        )
+        return self.env["account.move"].sudo().browse(move_form.id)
+
+    def _assert_day(self, move, day):
+        self.assertEqual(move.invoice_date, fields.Date.from_string(day))
+        self.assertEqual(move.date, fields.Date.from_string(day))
+
+    def test_invoice_of_a_document_issued_at_night_has_the_day_of_the_file(self):
+        # 2026-11-18T22:30-03:00 is stored as 2026-11-19 01:30 UTC
+        move = self._import_issued_at("2026-11-19 01:30:00", "America/Sao_Paulo")
+        self._assert_day(move, "2026-11-18")
+
+    def test_invoice_of_a_document_issued_after_midnight_has_the_day_of_the_file(self):
+        # 2026-11-18T01:00-03:00 is stored as 2026-11-18 04:00 UTC
+        move = self._import_issued_at("2026-11-18 04:00:00", "America/Sao_Paulo")
+        self._assert_day(move, "2026-11-18")
+
+    def test_user_without_timezone_does_not_change_the_day_of_the_invoice(self):
+        move = self._import_issued_at("2026-11-19 01:30:00", False)
+        self._assert_day(move, "2026-11-18")
+
+    def test_payment_term_counts_from_the_day_of_the_file(self):
+        term = self.env["account.payment.term"].create(
+            {
+                "name": "30 days",
+                "line_ids": [
+                    (0, 0, {"value": "percent", "value_amount": 100, "nb_days": 30})
+                ],
+            }
+        )
+        self.partner_a.property_supplier_payment_term_id = term
+        move = self._import_issued_at("2026-11-19 01:30:00", "America/Sao_Paulo")
+        self._assert_day(move, "2026-11-18")
+        self.assertEqual(move.invoice_date_due, fields.Date.from_string("2026-12-18"))
