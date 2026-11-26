@@ -1,4 +1,5 @@
 from . import test_receipt
+from . import test_receipt_same_product
 from . import test_match
 from . import test_stock_entry
 from . import test_lots

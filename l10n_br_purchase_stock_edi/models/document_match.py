@@ -1,7 +1,7 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import Command, _, api, fields, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 from odoo.addons.l10n_br_purchase_edi.models.document_match import SOURCE_COUNT
@@ -180,19 +180,24 @@ class DocumentMatch(models.Model):
                     "location_id": from_location.id,
                     "location_dest_id": picking_type.default_location_dest_id.id,
                     "origin": _("Fiscal document %s") % document.display_name,
-                    "move_ids": [
-                        Command.create(
-                            self._prepare_receipt_move_vals(
-                                line, picking_type, from_location
-                            )
-                        )
-                        for line in lines
-                    ],
                 }
             )
         )
-        picking.action_confirm()
-        for line, move in zip(lines, picking.move_ids.sorted("id"), strict=True):
+        # one move per document line, kept apart on the confirmation: the stock
+        # merges the moves of the same product, which would leave lines
+        # without a move of their own and the quantity of each line out of the
+        # receipt
+        moves = {
+            line: self.env["stock.move"].create(
+                dict(
+                    self._prepare_receipt_move_vals(line, picking_type, from_location),
+                    picking_id=picking.id,
+                )
+            )
+            for line in lines
+        }
+        picking.with_context(import_keep_moves_apart=True).action_confirm()
+        for line, move in moves.items():
             self._write_origin(line, {"import_stock_move_id": move.id})
         document.message_post(
             body=_("Receipt %(picking)s created for %(count)s line(s).")
