@@ -34,13 +34,60 @@ class TestStockEntry(StockEdiCase):
         with self.assertRaisesRegex(UserError, "no order and no receipt"):
             self.document.action_generate_invoice()
 
-    def test_a_consumable_goes_on_without_order_and_receipt(self):
+    def test_a_consumable_without_order_needs_the_receipt_by_default(self):
+        self.product.is_storable = False
+        self.assertEqual(self.company.import_stock_entry_policy, "goods")
+        note = self._no_order()
+
+        with self.assertRaisesRegex(UserError, "no order and no receipt"):
+            self.document.action_generate_invoice()
+
+        note.action_create_receipt()
+        picking = self.line.import_stock_move_id.picking_id
+        self.assertEqual(picking.state, "assigned")
+        self.assertTrue(self.document.action_generate_invoice())
+
+    def test_the_mark_of_the_manager_releases_a_consumable(self):
         self.product.is_storable = False
         self._no_order()
+        manager = self._user("manager-consu", "purchase.group_purchase_manager")
+        self._rows(fiscal_document_id=self.document.id).with_user(manager).with_context(
+            allowed_company_ids=manager.company_ids.ids
+        ).action_no_stock_entry()
 
-        action = self.document.action_generate_invoice()
+        self.assertTrue(self.document.action_generate_invoice())
 
-        self.assertTrue(action["res_id"])
+    def test_the_policy_storable_lets_a_consumable_go_on(self):
+        self.company.import_stock_entry_policy = "storable"
+        self.product.is_storable = False
+        self._no_order()
+        self.assertTrue(self.document.action_generate_invoice())
+
+        self.product.is_storable = True
+        other = self._imported_document(lines=[{"price_unit": 10.0}])
+        self._resolve_product(other.fiscal_line_ids)
+        with self.assertRaisesRegex(UserError, "no order and no receipt"):
+            other.action_generate_invoice()
+
+    def test_the_policy_none_asks_nothing(self):
+        self.company.import_stock_entry_policy = "none"
+        self._no_order()
+
+        self.assertFalse(self.line._import_needs_stock_entry())
+        self.assertTrue(self.document.action_generate_invoice())
+
+    def test_a_service_is_never_asked(self):
+        service = self.env["product.product"].create(
+            {"name": "Service", "type": "service"}
+        )
+        for policy in ("goods", "storable", "none"):
+            self.company.import_stock_entry_policy = policy
+            document = self._imported_document(lines=[{"price_unit": 10.0}])
+            line = document.fiscal_line_ids
+            line._apply_import_depara(
+                product=service, uom=self.unit, fiscal_operation=self.operation
+            )
+            self.assertFalse(line._import_needs_stock_entry(), policy)
 
     def test_the_receipt_created_from_the_document_unlocks_it(self):
         note = self._no_order()
@@ -111,20 +158,17 @@ class TestStockEntry(StockEdiCase):
         self.assertEqual(self.line.import_origin_state, "no_order")
         self.assertTrue(self.document.action_generate_invoice())
 
-    def test_a_fresh_consumable_and_a_service_go_on(self):
+    def test_a_fresh_consumable_goes_on_with_the_policy_storable(self):
+        self.company.import_stock_entry_policy = "storable"
         self.product.is_storable = False
         self._fresh_note()
         self.assertTrue(self.document.action_generate_invoice())
 
-        service = self.env["product.product"].create(
-            {"name": "Service", "type": "service"}
-        )
-        other = self._imported_document(lines=[{"price_unit": 10.0}])
-        other.fiscal_line_ids._apply_import_depara(
-            product=service, uom=self.unit, fiscal_operation=self.operation
-        )
-        self.assertFalse(other.fiscal_line_ids.import_origin_state)
-        self.assertTrue(other.action_generate_invoice())
+    def test_a_fresh_consumable_is_refused_by_default(self):
+        self.product.is_storable = False
+        self._fresh_note()
+        with self.assertRaisesRegex(UserError, "no order and no receipt"):
+            self.document.action_generate_invoice()
 
     def test_a_line_with_an_order_is_not_affected(self):
         order = self._order(quantity=10)
@@ -199,6 +243,12 @@ class TestStockEntry(StockEdiCase):
 
         self.assertIn(self.line, rows.fiscal_line_id)
         self.product.is_storable = False
+        self.env.flush_all()
+        self.assertIn(
+            self.line,
+            self.Match.search(domain + [("kind", "=", "note")]).fiscal_line_id,
+        )
+        self.product.type = "service"
         self.env.flush_all()
         self.assertNotIn(
             self.line,

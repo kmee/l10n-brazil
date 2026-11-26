@@ -23,6 +23,24 @@ class ResCompany(models.Model):
         "divergent. It only warns: nothing is blocked.",
     )
 
+    import_stock_entry_policy = fields.Selection(
+        selection=[
+            ("goods", "All goods"),
+            ("storable", "Only products with inventory control"),
+            ("none", "Do not ask"),
+        ],
+        string="Receipt on Invoice without Order",
+        default="goods",
+        required=True,
+        help="Which products make the invoice of an imported purchase with no "
+        "order ask for a receipt (or for the mark of a purchase or stock "
+        "manager that nothing was received). All goods: every product that is "
+        "not a service or a combo, with or without inventory control, because "
+        "not counting the stock does not mean that the goods need not be "
+        "received correctly. Only products with inventory control: the goods "
+        "that are not counted go on. Do not ask: nothing is asked.",
+    )
+
     _sql_constraints = [
         (
             "purchase_price_tolerance_positive",
