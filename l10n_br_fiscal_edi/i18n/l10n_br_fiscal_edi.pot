@@ -202,6 +202,7 @@ msgstr ""
 #. module: l10n_br_fiscal_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.document_cancel_wizard_form
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.document_correction_wizard_form
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.document_import_wizard_form
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.invalidate_number_wizard
 msgid "Cancel"
 msgstr ""
@@ -1481,6 +1482,11 @@ msgstr ""
 #. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__xml_error_message
 msgid "XML validation errors"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.document_form
+msgid "XML validation errors:"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi

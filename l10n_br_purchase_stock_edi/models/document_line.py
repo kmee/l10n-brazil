@@ -65,7 +65,7 @@ class FiscalDocumentLine(models.Model):
         help="Unit price of the line minus the unit price of the order line.",
     )
     import_awaiting_receipt = fields.Boolean(
-        string="Awaiting Receipt",
+        string="Line Awaiting Receipt",
         compute="_compute_import_comparison",
         search="_search_import_awaiting_receipt",
         help="The line is matched to an order line of a product that goes to the "

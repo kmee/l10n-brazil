@@ -119,16 +119,10 @@ msgid "Awaiting"
 msgstr "Aguardando"
 
 #. module: l10n_br_purchase_stock_edi
-#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_bank_statement_line__import_awaiting_receipt
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_bank_statement_line__purchase_awaiting_receipt
-#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move__import_awaiting_receipt
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move__purchase_awaiting_receipt
-#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__import_awaiting_receipt
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__purchase_awaiting_receipt
-#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_payment__import_awaiting_receipt
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_payment__purchase_awaiting_receipt
-#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document__import_awaiting_receipt
-#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_awaiting_receipt
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_search
 msgid "Awaiting Receipt"
 msgstr "Aguardando recebimento"
@@ -199,6 +193,14 @@ msgid "Divergent from the Order"
 msgstr "Divergente do pedido"
 
 #. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_bank_statement_line__import_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move__import_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_payment__import_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document__import_awaiting_receipt
+msgid "Document Awaiting Receipt"
+msgstr "Documento aguardando recebimento"
+
+#. module: l10n_br_purchase_stock_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_stock_picking__import_document_ids
 msgid "Fiscal Documents"
 msgstr "Documentos fiscais"
@@ -236,6 +238,12 @@ msgstr "Item do lançamento"
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_purchase_edi_match__kind
 msgid "Kind"
 msgstr "Tipo"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__import_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_awaiting_receipt
+msgid "Line Awaiting Receipt"
+msgstr "Linha aguardando recebimento"
 
 #. module: l10n_br_purchase_stock_edi
 #. odoo-python
@@ -383,6 +391,14 @@ msgid "Receipt %(picking)s created for %(count)s line(s)."
 msgstr "Recebimento %(picking)s criado para %(count)s linha(s)."
 
 #. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_bank_statement_line__import_picking_count
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move__import_picking_count
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_payment__import_picking_count
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document__import_picking_count
+msgid "Receipt Count"
+msgstr "Quantidade de recebimentos"
+
+#. module: l10n_br_purchase_stock_edi
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_purchase_edi_match__stock_move_id
 msgid "Receipt Move"
 msgstr "Movimento de recebimento"
@@ -410,13 +426,9 @@ msgstr ""
 "recebimento criado a partir dele."
 
 #. module: l10n_br_purchase_stock_edi
-#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_bank_statement_line__import_picking_count
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_bank_statement_line__import_picking_ids
-#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move__import_picking_count
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move__import_picking_ids
-#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_payment__import_picking_count
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_payment__import_picking_ids
-#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document__import_picking_count
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document__import_picking_ids
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_form
 #: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_match_search
