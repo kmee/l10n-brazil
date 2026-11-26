@@ -6,7 +6,15 @@ from odoo.exceptions import AccessError, UserError
 
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_STATE_CANCEL,
-    DOCUMENT_STATE_DRAFT,
+    SITUACAO_EDOC_DENEGADA,
+    SITUACAO_EDOC_INUTILIZADA,
+)
+
+# The documents out of the screen: the ones that no longer exist for the books.
+# Any other state (draft, confirmed, authorized) is still open to the
+# reconciliation of the origin while no bill was generated from it.
+MATCH_CLOSED_STATES = (
+    DOCUMENT_STATE_CANCEL,
     SITUACAO_EDOC_DENEGADA,
     SITUACAO_EDOC_INUTILIZADA,
 )
@@ -221,7 +229,8 @@ class DocumentMatch(models.Model):
                 AND fd.issuer = 'partner'
                 AND COALESCE(fd.fiscal_operation_type, 'in') = 'in'
                 AND COALESCE(fd.edoc_purpose, '1') = '1'
-                AND fd.state_edoc = '{DOCUMENT_STATE_DRAFT}'
+                AND fd.state_edoc NOT IN ('{DOCUMENT_STATE_CANCEL}',
+                    '{SITUACAO_EDOC_DENEGADA}', '{SITUACAO_EDOC_INUTILIZADA}')
                 AND NOT EXISTS (
                     SELECT 1 FROM account_move am
                     WHERE am.fiscal_document_id = fd.id AND am.state != 'cancel'
@@ -405,7 +414,9 @@ class DocumentMatch(models.Model):
 
     @api.model
     def _editable_document(self, lines):
-        """The one document of the lines, still open to change."""
+        """The one document of the lines, still open to the reconciliation: not
+        cancelled, denied or invalidated, and with no bill yet (it may be
+        confirmed: the origin is not a fiscal datum of the document)."""
         document = lines.document_id
         if len(document) != 1:
             raise UserError(_("Select the lines of one document at a time."))
@@ -415,11 +426,11 @@ class DocumentMatch(models.Model):
                 % document.company_id.name
             )
         if (
-            document.state_edoc != DOCUMENT_STATE_DRAFT
+            document.state_edoc in MATCH_CLOSED_STATES
             or document.sudo().move_ids.filtered(lambda move: move.state != "cancel")
         ):
             raise UserError(
-                _("The document %s is not in draft or already has a bill.")
+                _("The document %s is closed or already has a bill.")
                 % document.display_name
             )
         return document
