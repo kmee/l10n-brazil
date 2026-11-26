@@ -15,7 +15,7 @@ class TestDemo(TransactionCase):
 
     def setUp(self):
         super().setUp()
-        if not self.env.ref("l10n_br_purchase_edi.demo_supplier", False):
+        if not self.env.ref("l10n_br_purchase_edi_demo.demo_supplier", False):
             self.skipTest("No demo data")
 
     def _line(self, key):
@@ -27,7 +27,7 @@ class TestDemo(TransactionCase):
 
     def test_the_declared_note_is_invoiced_and_the_order_shows_it(self):
         line = self._line(KEY_INVOICED)
-        order = self.env.ref("l10n_br_purchase_edi.demo_order_confirmed")
+        order = self.env.ref("l10n_br_purchase_edi_demo.demo_order_confirmed")
 
         # the supplier has no mapping of the product: it came from the order
         self.assertEqual(line.product_id, order.order_line.product_id)
@@ -48,7 +48,7 @@ class TestDemo(TransactionCase):
 
     def test_the_note_of_the_quotation_waits_for_the_review(self):
         line = self._line(KEY_QUOTATION)
-        quotation = self.env.ref("l10n_br_purchase_edi.demo_order_quotation")
+        quotation = self.env.ref("l10n_br_purchase_edi_demo.demo_order_quotation")
 
         self.assertEqual(line.import_origin_state, "pending")
         self.assertFalse(line.document_id.move_ids)

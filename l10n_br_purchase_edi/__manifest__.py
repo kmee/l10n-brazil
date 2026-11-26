@@ -19,6 +19,5 @@
         "views/document_view.xml",
         "views/purchase_order_view.xml",
     ],
-    "demo": ["demo/purchase_edi_demo.xml"],
     "auto_install": True,
 }

@@ -22,6 +22,5 @@
         "views/account_move_view.xml",
         "views/stock_picking_view.xml",
     ],
-    "demo": ["demo/purchase_stock_edi_demo.xml"],
     "auto_install": True,
 }

@@ -19,7 +19,7 @@
     </record>
 
     <record id="demo_supplierinfo_lot" model="product.supplierinfo">
-        <field name="partner_id" ref="l10n_br_purchase_edi.demo_supplier" />
+        <field name="partner_id" ref="demo_supplier" />
         <field name="product_tmpl_id" ref="demo_product_lot" />
         <field
             name="product_id"
@@ -31,7 +31,7 @@
 
     <record id="demo_order_lot" model="purchase.order">
         <field name="name">PO-DEMO-STK-001</field>
-        <field name="partner_id" ref="l10n_br_purchase_edi.demo_supplier" />
+        <field name="partner_id" ref="demo_supplier" />
         <field name="company_id" ref="l10n_br_base.empresa_lucro_presumido" />
     </record>
     <record id="demo_order_lot_line" model="purchase.order.line">
@@ -54,7 +54,7 @@
          is not a divergence -->
     <record id="demo_order_waiting" model="purchase.order">
         <field name="name">PO-DEMO-STK-002</field>
-        <field name="partner_id" ref="l10n_br_purchase_edi.demo_supplier" />
+        <field name="partner_id" ref="demo_supplier" />
         <field name="company_id" ref="l10n_br_base.empresa_lucro_presumido" />
     </record>
     <record id="demo_order_waiting_line" model="purchase.order.line">
@@ -74,7 +74,7 @@
     </function>
 
     <function model="l10n_br_fiscal.document" name="_edi_import_demo_files">
-        <value>l10n_br_purchase_stock_edi</value>
+        <value>l10n_br_purchase_edi_demo</value>
         <value
             eval="[
                 'demo/import/nfe_35261011765432000100550010000030011300100010.xml',
