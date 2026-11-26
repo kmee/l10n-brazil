@@ -7,6 +7,16 @@ from odoo.exceptions import UserError
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_ISSUER_COMPANY,
     DOCUMENT_STATE_DRAFT,
+    SITUACAO_EDOC_CANCELADA,
+    SITUACAO_EDOC_DENEGADA,
+    SITUACAO_EDOC_INUTILIZADA,
+)
+
+# The situations in which the document no longer counts: nothing is owed for it.
+DEAD_DOCUMENT_STATES = (
+    SITUACAO_EDOC_CANCELADA,
+    SITUACAO_EDOC_DENEGADA,
+    SITUACAO_EDOC_INUTILIZADA,
 )
 
 
@@ -33,12 +43,14 @@ class Document(models.Model):
     edi_can_generate_invoice = fields.Boolean(
         compute="_compute_edi_can_generate_invoice",
         help="An imported document that was reviewed, has lines and an amount "
-        "declared in the file, and has no invoice yet. It is not stored.",
+        "declared in the file, has no invoice yet and was not cancelled, denied or "
+        "voided. It is not stored.",
     )
 
     @api.depends(
         "imported_document",
         "import_state",
+        "state_edoc",
         "move_ids",
         "fiscal_line_ids",
         "fiscal_operation_id",
@@ -49,6 +61,7 @@ class Document(models.Model):
             document.edi_can_generate_invoice = bool(
                 document.imported_document
                 and document.import_state == "resolved"
+                and document.state_edoc not in DEAD_DOCUMENT_STATES
                 and document.fiscal_line_ids
                 and document._edi_payment_totals()[0]
                 and not document.move_ids
@@ -82,6 +95,14 @@ class Document(models.Model):
         # the invoice is born in the company of the document, whichever the user
         # has selected
         self = self.with_company(self.company_id)
+        if self.state_edoc in DEAD_DOCUMENT_STATES:
+            raise UserError(
+                _(
+                    "The document is %(state)s: no invoice is generated for a "
+                    "cancelled, denied or voided document.",
+                    state=dict(self._fields["state_edoc"].selection)[self.state_edoc],
+                )
+            )
         reason = self._edi_no_payable_reason()
         if reason:
             raise UserError(reason)
