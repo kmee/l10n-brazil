@@ -33,6 +33,10 @@ EVENT_REGISTERED_CODES = ["135", "136"]
 #        which supersedes it.
 EVENT_SETTLED_CODES = ("573", "655")
 
+# MD-e rule: the reason of "Operacao nao Realizada" (xJust) has 15 to 255 chars.
+JUSTIFICATION_MIN_SIZE = 15
+JUSTIFICATION_MAX_SIZE = 255
+
 
 class NfeRecipientManifestationEvent(models.Model):
     _name = "l10n_br_nfe.md_event"
@@ -82,6 +86,25 @@ class NfeRecipientManifestationEvent(models.Model):
         default=MD.NFE,
         required=True,
     )
+
+    justification = fields.Text(
+        help="Reason informed to SEFAZ in the 'Operação não Realizada' event "
+        "(15 to 255 characters).",
+    )
+
+    @api.constrains("justification")
+    def _check_justification(self):
+        for record in self.filtered("justification"):
+            size = len(record.justification.strip())
+            if not JUSTIFICATION_MIN_SIZE <= size <= JUSTIFICATION_MAX_SIZE:
+                raise ValidationError(
+                    _(
+                        "The justification must have between %(min)s and %(max)s"
+                        " characters.",
+                        min=JUSTIFICATION_MIN_SIZE,
+                        max=JUSTIFICATION_MAX_SIZE,
+                    )
+                )
 
     def name_get(self):
         return [(rec.id, f"{rec.access_key}") for rec in self]
@@ -145,7 +168,22 @@ class NfeRecipientManifestationEvent(models.Model):
         processor = self._get_processor()
         cnpj_partner = re.sub("[^0-9]", "", self.company_id.cnpj_cpf)
 
-        if hasattr(processor, method):
+        if (
+            method == "operacao_nao_realizada"
+            and self.justification
+            and hasattr(processor, "nfe_recepcao_evento")
+        ):
+            # operacao_nao_realizada() of the library sends a fixed xJust
+            # (fifteen zeros); nfe_recepcao_evento() accepts the real reason.
+            result = processor.nfe_recepcao_evento(
+                self.access_key,
+                cnpj_partner,
+                "210240",
+                "Operacao nao Realizada",
+                xJust=self.justification.strip(),
+            )
+            self.validate_event_response(result, valid_codes)
+        elif hasattr(processor, method):
             result = getattr(processor, method)(self.access_key, cnpj_partner)
             self.validate_event_response(result, valid_codes)
 

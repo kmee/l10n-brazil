@@ -2612,6 +2612,12 @@ msgid "Item da lista de serviços da LC 116/03 em que se classifica o serviço."
 msgstr ""
 
 #. module: l10n_br_nfe
+#: model:ir.model.fields,field_description:l10n_br_nfe.field__l10n_br_nfe_md_event__justification
+#: model:ir.model.fields,field_description:l10n_br_nfe.field__nfe_recipient_manifestation_event_wizard__justification
+msgid "Justification"
+msgstr ""
+
+#. module: l10n_br_nfe
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_nfe_autxml____last_update
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_nfe_danfe_profile____last_update
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_nfe_md_event____last_update
@@ -3915,6 +3921,16 @@ msgid "Razão Social ou Nome do emitente"
 msgstr ""
 
 #. module: l10n_br_nfe
+#: model:ir.model.fields,help:l10n_br_nfe.field__l10n_br_nfe_md_event__justification
+msgid "Reason informed to SEFAZ in the 'Operação não Realizada' event (15 to 255 characters)."
+msgstr ""
+
+#. module: l10n_br_nfe
+#: model:ir.model.fields,help:l10n_br_nfe.field__nfe_recipient_manifestation_event_wizard__justification
+msgid "Reason of the 'Operação não Realizada' event, sent to SEFAZ (15 to 255 characters)."
+msgstr ""
+
+#. module: l10n_br_nfe
 #: model:ir.model.fields,field_description:l10n_br_nfe.field_l10n_br_nfe_danfe_profile__receipt_position
 msgid "Receipt Position"
 msgstr ""
@@ -4197,6 +4213,14 @@ msgstr ""
 #. module: l10n_br_nfe
 #: model:ir.model.fields,help:l10n_br_nfe.field_l10n_br_fiscal_document_supplement__nfe40_qrCode
 msgid "Texto com o QR-Code impresso no DANFE NFC-e"
+msgstr ""
+
+#. module: l10n_br_nfe
+#. odoo-python
+#: code:addons/l10n_br_nfe/models/nfe_md_event.py:0
+#: code:addons/l10n_br_nfe/wizards/nfe_md_event_wizard.py:0
+#, python-format
+msgid "The justification must have between %(min)s and %(max)s characters."
 msgstr ""
 
 #. module: l10n_br_nfe

@@ -13,6 +13,10 @@
                         widget="radio"
                         options="{'horizontal': false}"
                     />
+                    <field
+                        name="justification"
+                        attrs="{'invisible': [('event_type', '!=', 'nao_realizado')], 'required': [('event_type', '=', 'nao_realizado')]}"
+                    />
                 </group>
                 <footer>
                     <button

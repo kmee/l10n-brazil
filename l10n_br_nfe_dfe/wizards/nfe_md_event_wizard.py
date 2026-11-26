@@ -19,6 +19,7 @@ class NfeRecipientManifestationEventWizard(models.TransientModel):
                 "company_id": self.env.company.id,
                 "document_type": "nfe",
                 "state": "draft",
+                "justification": self._get_justification(),
                 "dfe_document_id": self.dfe_document_id.id,
             }
         )
