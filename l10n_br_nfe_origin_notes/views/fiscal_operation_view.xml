@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="operation_form" model="ir.ui.view">
+        <field name="name">l10n_br_nfe_origin_notes.operation.form</field>
+        <field name="model">l10n_br_fiscal.operation</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.operation_form" />
+        <field name="arch" type="xml">
+            <field name="edoc_purpose" position="after">
+                <field name="add_origin_nfe_to_xml" readonly="state != 'draft'" />
+                <field
+                    name="origin_nfes_text"
+                    invisible="not add_origin_nfe_to_xml"
+                    readonly="state != 'draft'"
+                />
+            </field>
+        </field>
+    </record>
+</odoo>
