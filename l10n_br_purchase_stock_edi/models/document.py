@@ -102,10 +102,10 @@ class FiscalDocument(models.Model):
         if without_entry:
             raise UserError(
                 _(
-                    "%(count)s line(s) of stockable products have no order and "
-                    "no receipt. Use Match with Orders to create the receipt, or "
-                    "ask a purchase or stock manager to mark the line as without "
-                    "stock entry.",
+                    "%(count)s line(s) of goods have no order and "
+                    "no receipt. Use Match with Orders to mark the line as without "
+                    "order and then create the receipt, or ask a purchase or stock "
+                    "manager to mark it as without stock entry there.",
                     count=len(without_entry),
                 )
             )

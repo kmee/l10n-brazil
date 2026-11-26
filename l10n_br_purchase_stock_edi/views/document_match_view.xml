@@ -45,6 +45,13 @@
                     domain="[('kind', '=', 'receipt')]"
                 />
             </filter>
+            <!-- a stockable product with no order and no decision is stopped at
+                 the invoice: the default filter of the buyer shows it too -->
+            <filter name="pending_or_suggested" position="attributes">
+                <attribute
+                    name="domain"
+                >['|', ('kind', '!=', 'note'), '|', ('line_state', 'in', ('pending', 'suggested')), '&amp;', ('line_state', '=', 'none'), ('product_id.type', '=', 'consu')]</attribute>
+            </filter>
         </field>
     </record>
 </odoo>

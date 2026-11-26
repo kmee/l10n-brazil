@@ -141,7 +141,7 @@ class DocumentMatch(models.Model):
         }
 
     def action_create_receipt(self):
-        """Create the receipt of a stockable product bought with no order: an
+        """Create the receipt of a good bought with no order: an
         incoming picking, confirmed and not validated."""
         lines = self._split_selection()[0]
         if not lines:
@@ -151,13 +151,13 @@ class DocumentMatch(models.Model):
         if not all(
             line.import_origin_state == "no_order"
             and not line.import_stock_move_id
-            and line.product_id.is_storable
+            and line._import_product_needs_receipt()
             for line in lines
         ):
             raise UserError(
                 _(
-                    "A receipt is created for lines of stockable products marked "
-                    "as without order and with no receipt yet."
+                    "A receipt is created for lines of goods marked as without "
+                    "order and with no receipt yet."
                 )
             )
         company = document.company_id

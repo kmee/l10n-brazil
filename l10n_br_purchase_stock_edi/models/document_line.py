@@ -169,18 +169,55 @@ class FiscalDocumentLine(models.Model):
         moves = order_line._import_receipt_moves() if order_line else order_line
         return moves.id if len(moves) == 1 else False
 
+    def _import_without_order(self):
+        """The line of a purchase that no order backs: marked as without order,
+        or an imported line of a purchase document that nobody decided yet and
+        that has no order line to choose from (empty state, or pending with no
+        candidate, as after undoing a decision). A line with an order line,
+        resolved, suggested or pending with candidates, is not it; neither is
+        the document issued by the company, the returns and the other purposes,
+        which are not a purchase entry."""
+        self.ensure_one()
+        line = self.sudo()
+        document = line.document_id
+        if not (
+            line._is_imported()
+            and line._import_origin_key()
+            and document.edoc_purpose in (False, "1")
+            and not line.import_purchase_line_id
+        ):
+            return False
+        state = line.import_origin_state
+        return state == "no_order" or (
+            state in (False, "pending") and not line.import_origin_candidate_ids
+        )
+
+    def _import_product_needs_receipt(self):
+        """Whether the product of the line asks for a receipt when bought with
+        no order, by the policy of the company of the document: the goods that
+        are not services or combos, or only the ones with inventory control."""
+        self.ensure_one()
+        line = self.sudo()
+        policy = line.document_id.company_id.import_stock_entry_policy
+        product = line.product_id
+        if policy == "none" or not product:
+            return False
+        if policy == "storable":
+            return bool(product.is_storable)
+        return product.type == "consu"
+
     def _import_needs_stock_entry(self):
         """The single rule of the stock entry of a purchase without order: a
-        stockable product bought with no order only lets the document go on
+        good bought with no order only lets the document go on
         with a receipt created from it, or with the mark of a purchase or stock
         manager that it does not enter the stock."""
         self.ensure_one()
         line = self.sudo()
         return bool(
-            line.import_origin_state == "no_order"
-            and line.product_id.is_storable
+            line._import_product_needs_receipt()
             and not line.import_stock_move_id
             and not line.import_no_stock_entry
+            and line._import_without_order()
         )
 
     @api.model
