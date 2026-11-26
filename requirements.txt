@@ -9,7 +9,7 @@ email-validator
 erpbrasil-assinatura>=1.9.0
 erpbrasil-base>=2.4.2
 erpbrasil-base>=2.5.0
-erpbrasil-edoc>=3.3.0
+erpbrasil-edoc>=3.3.2
 erpbrasil.assinatura
 erpbrasil.assinatura>=1.7.0
 erpbrasil.edoc
