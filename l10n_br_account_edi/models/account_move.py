@@ -49,13 +49,25 @@ class AccountMove(models.Model):
         declared = sum(installment.amount for installment in installments)
         if not declared or len(self.invoice_line_ids) < len(document.fiscal_line_ids):
             return False
-        sign = 1 if self.is_inbound(include_receipts=True) else -1
+        # the terms close on what the entry balances (the signed totals, the
+        # same basis of the single due date), not on a total read elsewhere
+        total_currency = self.amount_total_in_currency_signed
+        total_balance = self.amount_total_signed
+        currency = self.currency_id
+        company_currency = self.company_currency_id
         amounts = [
-            self.currency_id.round(self.amount_total * installment.amount / declared)
+            currency.round(total_currency * installment.amount / declared)
             for installment in installments
         ]
-        amounts[-1] = self.currency_id.round(self.amount_total - sum(amounts[:-1]))
-        for installment, amount in zip(installments, amounts, strict=True):
+        amounts[-1] = currency.round(total_currency - sum(amounts[:-1]))
+        balances = [
+            company_currency.round(total_balance * installment.amount / declared)
+            for installment in installments
+        ]
+        balances[-1] = company_currency.round(total_balance - sum(balances[:-1]))
+        for installment, amount, balance in zip(
+            installments, amounts, balances, strict=True
+        ):
             key = frozendict(
                 {
                     "move_id": self.id,
@@ -63,17 +75,11 @@ class AccountMove(models.Model):
                     "discount_date": False,
                 }
             )
-            balance = self.currency_id._convert(
-                amount,
-                self.company_currency_id,
-                self.company_id,
-                self.invoice_date or fields.Date.context_today(self),
-            )
             term = self.needed_terms.setdefault(
                 key, {"balance": 0.0, "amount_currency": 0.0}
             )
-            term["balance"] += sign * balance
-            term["amount_currency"] += sign * amount
+            term["balance"] += balance
+            term["amount_currency"] += amount
         return True
 
     ################################
