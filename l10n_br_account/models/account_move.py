@@ -800,6 +800,10 @@ class AccountMove(models.Model):
 
     def action_send_email(self):
         self.ensure_one_doc()
+        if not hasattr(self.fiscal_document_id, "action_send_email"):
+            raise UserError(
+                self.env._("Install l10n_br_fiscal_notification to send e-mails.")
+            )
         return self.fiscal_document_id.action_send_email()
 
     def action_check_status(self):
