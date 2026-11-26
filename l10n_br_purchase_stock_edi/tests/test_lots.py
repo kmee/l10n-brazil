@@ -4,6 +4,8 @@
 from datetime import date, datetime
 from unittest import mock
 
+from pytz import UTC, timezone
+
 from odoo.addons.l10n_br_fiscal_edi.tools import EdiLot
 
 from .common import StockEdiCase
@@ -44,10 +46,38 @@ class TestLots(StockEdiCase):
         self.assertFalse(any(lines.mapped("picked")))
         if "expiration_date" in lines._fields:
             line_a = lines.filtered(lambda line: line.lot_name == "L-A")
-            self.assertEqual(line_a.expiration_date, datetime(2027, 1, 10))
+            # the day of the document, seen in the timezone of the user
+            self.assertEqual(
+                UTC.localize(line_a.expiration_date)
+                .astimezone(timezone(self.env.user.tz or "America/Sao_Paulo"))
+                .date(),
+                date(2027, 1, 10),
+            )
         # the receipt creates the lots on validation: nothing created now
         self.assertFalse(self.env["stock.lot"].search([("name", "in", ["L-A", "L-B"])]))
         self.assertEqual((picking.state, self.move.state), ("assigned", "assigned"))
+
+    def test_the_expiry_day_is_the_same_day_in_the_timezone_of_the_user(self):
+        self._lots()
+        day = date(2028, 9, 1)
+        for tz, user_tz in (
+            ("America/Sao_Paulo", "America/Sao_Paulo"),
+            ("America/Manaus", "America/Manaus"),
+            ("America/Sao_Paulo", False),
+        ):
+            self.env.user.tz = user_tz
+            self.move.company_id.partner_id.tz = False
+            expiration = self.move._edi_expiration_datetime(day)
+            local = UTC.localize(expiration).astimezone(timezone(tz))
+            self.assertEqual(local.date(), day, tz)
+        # no timezone anywhere: America/Sao_Paulo, not the UTC day
+        self.assertEqual(expiration, datetime(2028, 9, 1, 15, 0))
+        # the timezone of the partner of the company comes before the default
+        self.env.user.tz = False
+        self.move.company_id.partner_id.tz = "America/Manaus"
+        self.assertEqual(
+            self.move._edi_expiration_datetime(day), datetime(2028, 9, 1, 16, 0)
+        )
 
     def test_an_existing_lot_is_used_by_its_id(self):
         self._lots()
