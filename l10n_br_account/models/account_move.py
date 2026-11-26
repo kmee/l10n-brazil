@@ -429,7 +429,9 @@ class AccountMove(models.Model):
             if invoice.is_invoice(True) and invoice.invoice_line_ids:
                 if invoice.imported_document:
                     invoice._compute_imported_terms()
-                elif invoice.invoice_payment_term_id:
+                # the installments declared by the imported document win; without
+                # them the payment term of the bill applies, as in any other bill
+                if not invoice.needed_terms and invoice.invoice_payment_term_id:
                     if is_draft:
                         tax_amount_currency = 0.0
                         untaxed_amount_currency = 0.0
@@ -442,8 +444,21 @@ class AccountMove(models.Model):
                         tax_amount = tax_amount_currency
                     else:
                         tax_amount_currency = tax_amount = 0.0
-                        untaxed_amount_currency = invoice.amount_financial_total * sign
-                        untaxed_amount = invoice.amount_financial_total * sign
+                        if invoice.imported_document:
+                            # the lines are the ones of the file, which may not
+                            # add up to the fiscal financial total (withheld
+                            # value without a withholding tax, for instance):
+                            # the terms split what the lines do add up to, as
+                            # the single due date does
+                            untaxed_amount_currency = (
+                                invoice.amount_total_in_currency_signed
+                            )
+                            untaxed_amount = invoice.amount_total_signed
+                        else:
+                            untaxed_amount_currency = (
+                                invoice.amount_financial_total * sign
+                            )
+                            untaxed_amount = invoice.amount_financial_total * sign
                     invoice_payment_terms = (
                         invoice.invoice_payment_term_id._compute_terms(
                             date_ref=invoice.invoice_date

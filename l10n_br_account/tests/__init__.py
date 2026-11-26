@@ -18,3 +18,6 @@ from . import test_fiscal_tax_deductible
 from . import test_deductible_balance
 from . import test_dfe_utilization
 from . import test_search_filters
+from . import test_imported_move_terms
+from . import test_document_line_name
+from . import test_fiscal_user_and_imported_dates
