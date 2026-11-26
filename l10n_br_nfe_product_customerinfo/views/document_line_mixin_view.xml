@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="document_line_form" model="ir.ui.view">
+        <field
+            name="name"
+        >l10n_br_nfe_product_customerinfo.document.line.mixin.form</field>
+        <field name="model">l10n_br_fiscal.document.line</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.document_fiscal_line_mixin_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_order']" position="before">
+                <field name="partner_product_code" />
+                <field name="partner_product_name" />
+            </xpath>
+        </field>
+    </record>
+</odoo>
