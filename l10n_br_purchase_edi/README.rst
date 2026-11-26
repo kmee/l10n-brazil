@@ -64,6 +64,12 @@ column.
 - When there are several candidates, the origin stays pending and the
   line form lets you choose the order line.
 
+**Match with Orders** works on the imported document while it has no
+bill and was not cancelled, denied or invalidated: also after it was
+confirmed, so a refused **Generate Invoice** always has a way out. The
+origin is not a fiscal datum of the document, so a confirmed document
+keeps its operation line.
+
 **Generate Invoice** refuses the document while a line has a suggested
 origin or a pending one with candidates. The bill links each line to its
 order line, fills the source document with the order number, and the

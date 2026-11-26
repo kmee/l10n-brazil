@@ -10,6 +10,7 @@ from odoo.tools import float_compare
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     DOCUMENT_ISSUER_COMPANY,
     DOCUMENT_STATE_CANCEL,
+    DOCUMENT_STATE_DRAFT,
     SITUACAO_EDOC_DENEGADA,
     SITUACAO_EDOC_INUTILIZADA,
 )
@@ -130,7 +131,8 @@ class FiscalDocumentLine(models.Model):
         The operation line of an imported line is the default one of the
         operation and does not know what the order was bought for. The line
         takes the one of the order line, unless a person chose another one, or
-        a bill already exists.
+        a bill already exists. A document already confirmed keeps its fiscal
+        data: the origin of a confirmed document does not touch the operation.
         """
         for line in self:
             wanted = line.import_purchase_line_id.sudo().fiscal_operation_line_id
@@ -140,6 +142,7 @@ class FiscalDocumentLine(models.Model):
                 or wanted == line.fiscal_operation_line_id
                 or wanted.fiscal_operation_id != operation
                 or line.document_id.sudo().move_ids
+                or line.document_id.sudo().state_edoc != DOCUMENT_STATE_DRAFT
             ):
                 continue
             default = operation.line_definition(
