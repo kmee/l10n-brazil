@@ -10,3 +10,4 @@ from . import document_review
 from . import document_line_review
 from . import document_line_import
 from . import document_line_lot
+from . import res_company

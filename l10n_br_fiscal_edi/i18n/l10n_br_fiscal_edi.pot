@@ -25,6 +25,14 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
 msgid ""
+"%(count)s line(s) got a product whose purchase unit is not the unit of the "
+"line: confirm the unit and the factor in the review."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+msgid ""
 "%(count)s line(s) kept for the review: the unit declared by the supplier has"
 " no match. Choose the unit of each one."
 msgstr ""
@@ -648,6 +656,16 @@ msgid "Import"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_res_company__import_product_categ_id
+msgid "Default Category of Products Created by the Import"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.res_company_form_import
+msgid "Import of Fiscal Documents"
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_can_create_products
 msgid "Import Can Create Products"
 msgstr ""
@@ -1022,7 +1040,7 @@ msgstr ""
 #. module: l10n_br_fiscal_edi
 #. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
-msgid "Products are created only for a document the company issued."
+msgid "Products are created only for an imported document."
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
@@ -1344,10 +1362,17 @@ msgid "The review can only be applied on the line of an imported document."
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,help:l10n_br_fiscal_edi.field_res_company__import_product_categ_id
+msgid ""
+"Category given to the products that the action 'Create Missing Products' of "
+"an imported document creates. Empty: the default category of the products."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_can_create_products
 msgid ""
-"The user may create products, which the action of the imported documents the"
-" company issued needs."
+"The user may create products, which the action of the imported documents "
+"needs."
 msgstr ""
 
 #. module: l10n_br_fiscal_edi

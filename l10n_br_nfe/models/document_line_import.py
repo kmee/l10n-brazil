@@ -89,11 +89,8 @@ class DocumentLine(models.Model):
     def _get_partner_product_name(self):
         return self.nfe40_xProd or super()._get_partner_product_name()
 
-    def _edi_import_product_vals(self):
-        vals = super()._edi_import_product_vals()
-        if self.partner_barcode:
-            vals["barcode"] = self.partner_barcode
-        return vals
+    def _edi_import_barcode(self):
+        return self.partner_barcode or super()._edi_import_barcode()
 
     def _get_supplierinfo_unit(self, supplierinfo):
         return supplierinfo.partner_uom_id, supplierinfo.partner_uom_factor

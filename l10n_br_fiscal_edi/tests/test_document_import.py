@@ -8,6 +8,7 @@ from contextlib import closing
 from unittest.mock import patch
 
 from erpbrasil.base.fiscal.cnpj_cpf import formata
+from lxml import etree
 from psycopg2 import OperationalError
 from psycopg2.errorcodes import SERIALIZATION_FAILURE
 from psycopg2.errors import SerializationFailure
@@ -774,10 +775,204 @@ class TestDocumentImport(EdiImportCase):
             document.action_import_create_products()
             self.assertEqual(product_model.search_count([]), before + 1)
 
-    def test_products_are_not_created_for_a_document_received(self):
+    def test_products_are_not_created_for_a_document_that_was_not_imported(self):
         document = self._own_document([{"name": "REC-1 item"}], direction="in")
+        document.imported_document = False
         with self.assertRaises(UserError):
             document.action_import_create_products()
+
+    def _received(self, lines=None, **values):
+        lines = lines or [
+            {"name": "SUP-1 Detergent"},
+            {"name": "SUP-1 Detergent again"},
+            {"name": "SUP-2 Soap"},
+            {"name": "SUP-3 Bleach"},
+        ]
+        return self._own_document(lines, direction="in", **values)
+
+    def _barcodes(self, mapping):
+        return patch.object(
+            type(self.env["l10n_br_fiscal.document.line"]),
+            "_edi_import_barcode",
+            lambda line: mapping.get(line.name.split()[0], False),
+        )
+
+    def test_a_received_document_creates_one_product_per_supplier_code(self):
+        ncm = self.env["l10n_br_fiscal.ncm"].create(
+            {"name": "NCM of the file", "code": "9999.99.99"}
+        )
+        document = self._received(
+            [
+                {"name": "SUP-1 Detergent", "ncm_id": ncm.id},
+                {"name": "SUP-1 Detergent again"},
+                {"name": "SUP-2 Soap"},
+                {"name": "SUP-3 Bleach"},
+            ]
+        )
+        product_model = self.env["product.product"]
+        with self._declared_codes():
+            before = product_model.search_count([])
+            document._edi_import_suggest()
+            # the import itself never creates a product
+            self.assertEqual(product_model.search_count([]), before)
+            self.assertTrue(document.import_missing_products)
+            self.assertTrue(document.import_can_create_products)
+            self.assertTrue(document.action_import_create_products())
+        self.assertEqual(product_model.search_count([]), before + 3)
+        lines = document.fiscal_line_ids
+        self.assertEqual(lines[0].product_id, lines[1].product_id)
+        self.assertEqual(len(lines.product_id), 3)
+        self.assertEqual(lines.mapped("import_state"), ["resolved"] * 4)
+        product = lines[0].product_id
+        self.assertEqual(product.name, "SUP-1 Detergent")
+        self.assertEqual(product.ncm_id, ncm)
+        self.assertEqual(product.uom_id, self.uom_unit)
+        self.assertTrue(product.purchase_ok)
+        self.assertFalse(product.sale_ok)
+        # the code of the supplier is the de-para, never the internal code
+        self.assertFalse(product.default_code)
+        info = product.seller_ids
+        self.assertEqual(info.partner_id, self.supplier)
+        self.assertEqual(info.product_code, "SUP-1")
+        self.assertFalse(info.price)
+        self.assertIn("Products created by", document.message_ids[0].body)
+        self.assertFalse(document.import_missing_products)
+
+    def test_the_next_document_of_the_supplier_creates_nothing(self):
+        first = self._received()
+        with self._declared_codes():
+            first._edi_import_suggest()
+            first.action_import_create_products()
+            product_model = self.env["product.product"]
+            before = product_model.search_count([])
+            second = self._received()
+            second._edi_import_suggest()
+            self.assertFalse(second.import_missing_products)
+            self.assertTrue(second.action_import_create_products())
+        self.assertEqual(product_model.search_count([]), before)
+        self.assertEqual(
+            second.fiscal_line_ids.product_id, first.fiscal_line_ids.product_id
+        )
+        self.assertEqual(
+            second.fiscal_line_ids.mapped("import_state"), ["resolved"] * 4
+        )
+
+    def test_a_product_mapped_for_the_supplier_is_not_duplicated(self):
+        known = self.env["product.product"].create({"name": "Known soap"})
+        self.env["product.supplierinfo"].create(
+            {
+                "partner_id": self.supplier.id,
+                "product_tmpl_id": known.product_tmpl_id.id,
+                "product_code": "SUP-2",
+            }
+        )
+        document = self._received()
+        product_model = self.env["product.product"]
+        with self._declared_codes():
+            before = product_model.search_count([])
+            # even when the suggestion was not run, the action honours the de-para
+            document.action_import_create_products()
+        self.assertEqual(product_model.search_count([]), before + 2)
+        self.assertEqual(document.fiscal_line_ids[2].product_id, known)
+
+    def test_a_product_with_the_barcode_of_the_file_is_not_duplicated(self):
+        gtin = self.env["product.product"].create(
+            {"name": "Registered bleach", "barcode": "7891000300121"}
+        )
+        document = self._received()
+        product_model = self.env["product.product"]
+        with self._declared_codes(), self._barcodes({"SUP-3": "7891000300121"}):
+            before = product_model.search_count([])
+            document.action_import_create_products()
+        self.assertEqual(product_model.search_count([]), before + 2)
+        line = document.fiscal_line_ids[3]
+        self.assertEqual(line.product_id, gtin)
+        self.assertEqual(line.import_state, "resolved")
+        self.assertEqual(line.import_supplierinfo_id.product_code, "SUP-3")
+
+    def test_a_barcode_of_the_file_goes_to_the_new_product(self):
+        document = self._received([{"name": "SUP-1 Detergent"}])
+        with self._declared_codes(), self._barcodes({"SUP-1": "7891000300121"}):
+            document.action_import_create_products()
+        self.assertEqual(document.fiscal_line_ids.product_id.barcode, "7891000300121")
+
+    def test_a_product_with_another_purchase_unit_is_only_suggested(self):
+        kg = self.env.ref("uom.product_uom_kgm")
+        gtin = self.env["product.product"].create(
+            {
+                "name": "Registered in kg",
+                "barcode": "7891000300121",
+                "uom_id": kg.id,
+                "uom_po_id": kg.id,
+            }
+        )
+        document = self._received([{"name": "SUP-1 Detergent"}])
+        with self._declared_codes(), self._barcodes({"SUP-1": "7891000300121"}):
+            action = document.action_import_create_products()
+        line = document.fiscal_line_ids
+        self.assertEqual(line.product_id, gtin)
+        self.assertEqual(line.import_state, "matched")
+        self.assertEqual(action["tag"], "display_notification")
+
+    def test_a_received_line_with_an_unknown_unit_is_left_and_reported(self):
+        document = self._received(
+            [
+                {"name": "SUP-1 Detergent"},
+                {"name": "SUP-2 Soap", "partner_uom_code": "ZZZ"},
+            ]
+        )
+        product_model = self.env["product.product"]
+        with self._declared_codes():
+            before = product_model.search_count([])
+            action = document.action_import_create_products()
+        self.assertEqual(product_model.search_count([]), before + 1)
+        lines = document.fiscal_line_ids
+        self.assertTrue(lines[0].product_id)
+        self.assertFalse(lines[1].product_id)
+        self.assertEqual(lines[1].import_state, "pending")
+        self.assertEqual(action["tag"], "display_notification")
+        self.assertIn("1 line(s)", action["params"]["message"])
+        self.assertIn("unit", action["params"]["message"])
+
+    def test_the_category_of_the_company_is_given_to_the_created_products(self):
+        categ = self.env["product.category"].create({"name": "Cleaning supplies"})
+        self.company.import_product_categ_id = categ
+        document = self._received()
+        with self._declared_codes():
+            document.action_import_create_products()
+        self.assertEqual(document.fiscal_line_ids.product_id.mapped("categ_id"), categ)
+
+    def test_without_a_category_the_default_one_of_odoo_is_used(self):
+        self.company.import_product_categ_id = False
+        document = self._received([{"name": "SUP-1 Detergent"}])
+        with self._declared_codes():
+            document.action_import_create_products()
+        self.assertTrue(document.fiscal_line_ids.product_id.categ_id)
+
+    def test_a_user_who_cannot_create_products_cannot_create_for_a_received_one(
+        self,
+    ):
+        user = self._fiscal_user("fiscal_user_no_product_in")
+        document = self._received([{"name": "SUP-1 Detergent"}])
+        model = document.with_user(user).with_context(
+            allowed_company_ids=self.company.ids
+        )
+        self.assertFalse(model.import_can_create_products)
+        with self._declared_codes(), self.assertRaises(UserError) as caught:
+            model.action_import_create_products()
+        self.assertIn("not allowed to create products", str(caught.exception))
+        self.assertFalse(document.fiscal_line_ids.product_id)
+
+    def test_the_button_is_offered_in_a_document_received(self):
+        document = self._received([{"name": "SUP-1 Detergent"}])
+        with self._declared_codes():
+            self.assertTrue(document.import_missing_products)
+        view = self.Document.get_view(view_type="form")["arch"]
+        node = etree.fromstring(view).xpath(
+            "//button[@name='action_import_create_products']"
+        )
+        self.assertTrue(node)
+        self.assertNotIn("'out'", node[0].get("invisible", ""))
 
     def test_a_user_who_cannot_create_products_cannot_run_the_action(self):
         user = self._fiscal_user("fiscal_user_no_product")

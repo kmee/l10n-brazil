@@ -3,7 +3,7 @@
 
 from odoo import models
 
-from odoo.addons.l10n_br_fiscal.constants.fiscal import FISCAL_OUT
+from odoo.addons.l10n_br_fiscal.constants.fiscal import FISCAL_IN, FISCAL_OUT
 
 
 class DocumentLine(models.Model):
@@ -17,16 +17,36 @@ class DocumentLine(models.Model):
         )
         return super(DocumentLine, received)._find_or_create_supplierinfo()
 
-    def _edi_import_product_vals(self):
-        """Values of the product to create from the line of a document the company
-        issued. The base takes what the line declares with certainty: the code, the
-        description, the unit, the NCM, the CEST and the origin; a reader adds what
-        its file declares (barcode, for instance). No category, no account."""
+    def _edi_import_barcode(self):
+        """Extension point: the valid barcode (GTIN) the file declares for the
+        product of the line, when the reader knows one."""
         self.ensure_one()
-        vals = {
-            "name": self.name,
-            "default_code": self._get_partner_product_code(),
-        }
+        return False
+
+    def _edi_import_product_vals(self):
+        """Values of the product to create from the line of an imported document.
+        The base takes what the line declares with certainty: the description, the
+        unit, the NCM, the CEST and the origin, and the barcode when the reader
+        declares one. The category is the one of the company, when it has one; no
+        account and no price.
+
+        In a document the company issued the code of the file is the internal code
+        of the product. In a document received it is the code of the supplier: it
+        goes to the supplier info (the de-para) and never becomes the internal code,
+        and the product is born purchasable and not sellable."""
+        self.ensure_one()
+        document = self.document_id
+        if document.fiscal_operation_type == FISCAL_IN:
+            vals = {
+                "name": self._get_partner_product_name() or self.name,
+                "purchase_ok": True,
+                "sale_ok": False,
+            }
+        else:
+            vals = {
+                "name": self.name,
+                "default_code": self._get_partner_product_code(),
+            }
         if self.uom_id:
             vals.update(uom_id=self.uom_id.id, uom_po_id=self.uom_id.id)
         if self.ncm_id:
@@ -35,4 +55,10 @@ class DocumentLine(models.Model):
             vals["cest_id"] = self.cest_id.id
         if self.icms_origin:
             vals["icms_origin"] = self.icms_origin
+        barcode = self._edi_import_barcode()
+        if barcode:
+            vals["barcode"] = barcode
+        categ = document.company_id.import_product_categ_id
+        if categ:
+            vals["categ_id"] = categ.id
         return vals

@@ -57,7 +57,7 @@ class Document(models.Model):
     import_can_create_products = fields.Boolean(
         compute="_compute_import_can_create_products",
         help="The user may create products, which the action of the imported "
-        "documents the company issued needs.",
+        "documents needs.",
     )
 
     import_missing_products = fields.Boolean(
@@ -827,24 +827,55 @@ class Document(models.Model):
             else:
                 line._apply_import_depara(product=product, uom=line.uom_id)
 
+    def _edi_import_received_product(self, lines):
+        """The product that already stands for the code of a document received:
+        the one with the valid barcode (GTIN) the file declares. The product the
+        buyer already mapped for the supplier is found by the de-para before."""
+        self.ensure_one()
+        barcodes = {line._edi_import_barcode() for line in lines} - {False}
+        if not barcodes:
+            return self.env["product.product"]
+        return self.env["product.product"].search(
+            [
+                ("barcode", "in", list(barcodes)),
+                ("company_id", "in", [False, self.company_id.id]),
+            ],
+            limit=1,
+        )
+
+    def _edi_import_resolve_created(self, line, product, received):
+        """Give the line the product the action found or created. A product of a
+        received document whose purchase unit is not the one of the line is only
+        suggested: the conversion is for the review."""
+        line.product_id = product
+        if received and product.uom_po_id != line.uom_id:
+            line.import_state = "matched"
+            return False
+        line._apply_import_depara(product=product, uom=line.uom_id)
+        return True
+
     def action_import_create_products(self):
-        """Create the products that a document the company issued lacks: one for each
+        """Create the products that an imported document lacks: one for each
         distinct code declared, and resolve the lines. It is an explicit action of
-        who may create products; the import itself never creates one, and a product
-        that already has the code is used, not duplicated. A line whose unit was not
-        confirmed is left for the review."""
+        who may create products; the import itself never creates one. A product
+        that already stands for the code is used, not duplicated: in a document the
+        company issued, the one with the code; in a document received, the one the
+        buyer mapped for the supplier (the de-para) or the one with the barcode of
+        the file. A line whose unit was not confirmed is left for the review."""
         product_model = self.env["product.product"]
         if not product_model.has_access("create"):
             raise UserError(_("You are not allowed to create products."))
         blocked = self.env["l10n_br_fiscal.document.line"]
+        suggested = blocked
         for document in self:
-            if not (
-                document.imported_document
-                and document.fiscal_operation_type == FISCAL_OUT
-            ):
+            if not document.imported_document:
                 raise UserError(
-                    _("Products are created only for a document the company issued.")
+                    _("Products are created only for an imported document.")
                 )
+            received = document.fiscal_operation_type == FISCAL_IN
+            if received:
+                # what the buyer already mapped for this supplier comes first
+                document._edi_import_apply_supplier_depara()
             lines = document.fiscal_line_ids.filtered(
                 lambda line: not line.product_id and line._get_partner_product_code()
             )
@@ -855,15 +886,20 @@ class Document(models.Model):
                 by_code[code] = by_code.get(code, blocked.browse()) | line
             created = product_model
             for code, group in by_code.items():
-                product = document._edi_import_own_product(code)
+                if received:
+                    product = document._edi_import_received_product(group)
+                else:
+                    product = document._edi_import_own_product(code)
                 if not product:
                     product = product_model.with_company(document.company_id).create(
                         group[0]._edi_import_product_vals()
                     )
                     created |= product
                 for line in group:
-                    line.product_id = product
-                    line._apply_import_depara(product=product, uom=line.uom_id)
+                    if not document._edi_import_resolve_created(
+                        line, product, received
+                    ):
+                        suggested |= line
             if created:
                 document._message_log(
                     body=_("Products created by %(user)s: %(products)s")
@@ -872,18 +908,31 @@ class Document(models.Model):
                         "products": ", ".join(created.mapped("display_name")),
                     }
                 )
-        if not blocked:
+        if not (blocked or suggested):
             return True
+        messages = []
+        if blocked:
+            messages.append(
+                _(
+                    "%(count)s line(s) have a unit that was not confirmed, and no "
+                    "product was created for them. Choose the unit of each one."
+                )
+                % {"count": len(blocked)}
+            )
+        if suggested:
+            messages.append(
+                _(
+                    "%(count)s line(s) got a product whose purchase unit is not the "
+                    "unit of the line: confirm the unit and the factor in the review."
+                )
+                % {"count": len(suggested)}
+            )
         return {
             "type": "ir.actions.client",
             "tag": "display_notification",
             "params": {
                 "title": _("Some lines were left for the review"),
-                "message": _(
-                    "%(count)s line(s) have a unit that was not confirmed, and no "
-                    "product was created for them. Choose the unit of each one."
-                )
-                % {"count": len(blocked)},
+                "message": " ".join(messages),
                 "type": "warning",
                 "sticky": True,
                 "next": {"type": "ir.actions.client", "tag": "reload"},
