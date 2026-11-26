@@ -14,6 +14,9 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
 # Ids encode the source: id = SOURCE_COUNT * source id + source type. A module
 # that adds a source (receipt, purchase request) takes the next type.
 SOURCE_COUNT = 4
+# Timezone of the day shown when the company partner has none, as in
+# ``l10n_br_account`` (``_get_fiscal_tz``).
+FISCAL_TZ_DEFAULT = "America/Sao_Paulo"
 SOURCE_NOTE = 0
 SOURCE_ORDER_LINE = 1
 
@@ -156,6 +159,20 @@ class DocumentMatch(models.Model):
         help="Order line the invoice line points to, suggested or resolved.",
     )
 
+    @api.model
+    def _match_local_date(self, column, partner_alias):
+        """SQL for the day of a Datetime column (stored in UTC) in the fiscal
+        timezone: the one of the partner of the company, then America/Sao_Paulo.
+
+        A view has no user, so the timezone of the user that the fiscal document
+        uses for its days is not available: the day follows the company, which
+        is the issuer's day for the imported notes. ``::date`` alone gives the
+        UTC day and moves a note issued after 21h to the next day."""
+        return (
+            f"({column} AT TIME ZONE 'UTC' AT TIME ZONE "
+            f"COALESCE(NULLIF({partner_alias}.tz, ''), '{FISCAL_TZ_DEFAULT}'))::date"
+        )
+
     @property
     def _table_query(self):
         return " UNION ALL ".join(self._match_queries())
@@ -206,7 +223,7 @@ class DocumentMatch(models.Model):
                 fl.price_unit AS price_unit,
                 rc.currency_id AS currency_id,
                 COALESCE(fd.document_number, fd.document_key) AS reference,
-                fd.document_date::date AS date,
+                {self._match_local_date('fd.document_date', 'cp')} AS date,
                 COALESCE(fl.import_origin_state, 'none') AS line_state,
                 fd.id AS fiscal_document_id,
                 fl.id AS fiscal_line_id,
@@ -217,6 +234,7 @@ class DocumentMatch(models.Model):
             JOIN l10n_br_fiscal_document fd ON fd.id = fl.document_id
             JOIN res_partner rp ON rp.id = fd.partner_id
             JOIN res_company rc ON rc.id = fd.company_id
+            JOIN res_partner cp ON cp.id = rc.partner_id
             WHERE fd.imported_document
                 AND fd.issuer = 'partner'
                 AND COALESCE(fd.fiscal_operation_type, 'in') = 'in'
@@ -272,7 +290,7 @@ class DocumentMatch(models.Model):
                 pl.price_unit AS price_unit,
                 po.currency_id AS currency_id,
                 po.name AS reference,
-                po.date_order::date AS date,
+                {self._match_local_date('po.date_order', 'cp')} AS date,
                 CASE WHEN po.state IN ('purchase', 'done')
                     THEN 'confirmed' ELSE po.state END AS line_state,
                 NULL::integer AS fiscal_document_id,
@@ -283,6 +301,8 @@ class DocumentMatch(models.Model):
             FROM purchase_order_line pl
             JOIN purchase_order po ON po.id = pl.order_id
             JOIN res_partner rp ON rp.id = po.partner_id
+            JOIN res_company rc ON rc.id = po.company_id
+            JOIN res_partner cp ON cp.id = rc.partner_id
             LEFT JOIN ({self._match_claims_query()}) claims
                 ON claims.purchase_line_id = pl.id
             WHERE pl.display_type IS NULL

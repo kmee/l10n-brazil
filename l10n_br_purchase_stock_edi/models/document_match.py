@@ -63,7 +63,7 @@ class DocumentMatch(models.Model):
                 pl.price_unit AS price_unit,
                 po.currency_id AS currency_id,
                 COALESCE(sp.name, sm.name) AS reference,
-                sm.date::date AS date,
+                {self._match_local_date('sm.date', 'cp')} AS date,
                 CASE WHEN sm.state = 'done' THEN 'receipt_done'
                     ELSE 'receipt_pending' END AS line_state,
                 NULL::integer AS fiscal_document_id,
@@ -77,6 +77,8 @@ class DocumentMatch(models.Model):
             JOIN purchase_order_line pl ON pl.id = sm.purchase_line_id
             JOIN purchase_order po ON po.id = pl.order_id
             JOIN res_partner rp ON rp.id = po.partner_id
+            JOIN res_company rc ON rc.id = sm.company_id
+            JOIN res_partner cp ON cp.id = rc.partner_id
             JOIN stock_picking_type spt ON spt.id = sm.picking_type_id
             LEFT JOIN stock_picking sp ON sp.id = sm.picking_id
             WHERE spt.code = 'incoming'

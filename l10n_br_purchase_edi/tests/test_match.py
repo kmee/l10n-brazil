@@ -1,6 +1,7 @@
 # Copyright 2026 KMEE
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+from datetime import date
 from unittest import mock
 
 from odoo.exceptions import UserError
@@ -12,6 +13,7 @@ class TestMatch(PurchaseEdiCase):
     def _open(self):
         domain = self.document.action_open_origin_match()["domain"]
         self.env.flush_all()
+        self.env.invalidate_all()
         return self.Match.search(domain)
 
     def test_the_tela_lists_the_note_and_the_order_with_encoded_ids(self):
@@ -26,6 +28,28 @@ class TestMatch(PurchaseEdiCase):
         self.assertEqual(pending.id, 4 * order.order_line.id + 1)
         self.assertEqual(pending.open_quantity, 10)
         self.assertEqual(note.reference, self.document.document_number)
+
+    def test_the_date_of_the_note_is_the_local_day_not_the_utc_one(self):
+        # issued at 22:30 in Brasilia (-03:00), which is 01:30 UTC of the next day
+        self.document.document_date = "2026-01-11 01:30:00"
+        self.company.partner_id.tz = False
+        note = self._open().filtered(lambda row: row.kind == "note")
+        self.assertEqual(note.date, date(2026, 1, 10))
+
+        # the day follows the timezone of the company partner
+        self.company.partner_id.tz = "Asia/Tokyo"
+        note = self._open().filtered(lambda row: row.kind == "note")
+        self.assertEqual(note.date, date(2026, 1, 11))
+
+    def test_the_date_of_the_order_is_the_local_day_not_the_utc_one(self):
+        order = self._order()
+        order.date_order = "2026-01-11 01:30:00"
+        self.company.partner_id.tz = False
+        self._resolve_product()
+
+        row = self._open().filtered(lambda row: row.kind == "order")
+
+        self.assertEqual(row.date, date(2026, 1, 10))
 
     def test_the_tela_is_filtered_by_company_and_supplier(self):
         other = self._order(partner=self.company.partner_id)
