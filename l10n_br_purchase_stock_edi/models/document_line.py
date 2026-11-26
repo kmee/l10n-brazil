@@ -199,13 +199,11 @@ class FiscalDocumentLine(models.Model):
         are not services or combos, or only the ones with inventory control."""
         self.ensure_one()
         line = self.sudo()
-        policy = line.document_id.company_id.import_stock_entry_policy
         product = line.product_id
-        if policy == "none" or not product:
+        if not product:
             return False
-        if policy == "storable":
-            return bool(product.is_storable)
-        return product.type == "consu"
+        domain = line.document_id.company_id._import_receipt_product_domain()
+        return bool(product.filtered_domain(domain))
 
     def _import_needs_stock_entry(self):
         """The single rule of the stock entry of a purchase without order: a

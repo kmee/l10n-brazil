@@ -255,6 +255,43 @@ class TestStockEntry(StockEdiCase):
             self.Match.search(domain + [("kind", "=", "note")]).fiscal_line_id,
         )
 
+    def _pending_domain(self):
+        view = self.env.ref("l10n_br_purchase_stock_edi.document_match_search")
+        node = etree.fromstring(self.Match.get_view(view.id, "search")["arch"])
+        return safe_eval(
+            node.xpath("//filter[@name='pending_or_suggested']")[0].get("domain")
+        ) + [("kind", "=", "note")]
+
+    def test_the_pending_filter_follows_the_policy_of_the_company(self):
+        self._fresh_note()
+        domain = self._pending_domain()
+        expected = {
+            # policy: (storable product, consumable without inventory control)
+            "goods": (True, True),
+            "storable": (True, False),
+            "none": (False, False),
+        }
+        for policy, (storable, consumable) in expected.items():
+            self.company.import_stock_entry_policy = policy
+            for is_storable, found in ((True, storable), (False, consumable)):
+                self.product.is_storable = is_storable
+                self.env.flush_all()
+                rows = self.Match.search(domain)
+                self.assertEqual(
+                    self.line in rows.fiscal_line_id,
+                    found,
+                    f"{policy}, storable={is_storable}",
+                )
+                # the same rule that the invoice applies
+                self.assertEqual(self.line._import_product_needs_receipt(), found)
+                self.assertEqual(
+                    self.line
+                    in self.Match.search(
+                        [("import_needs_receipt", "!=", True), ("kind", "=", "note")]
+                    ).fiscal_line_id,
+                    not found,
+                )
+
     def test_the_receipt_does_not_convert_a_unit_nobody_confirmed(self):
         note = self._no_order()
         self.line.write(

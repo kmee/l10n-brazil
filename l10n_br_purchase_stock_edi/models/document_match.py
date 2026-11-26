@@ -3,6 +3,7 @@
 
 from odoo import Command, _, api, fields, models
 from odoo.exceptions import UserError
+from odoo.osv import expression
 
 from odoo.addons.l10n_br_purchase_edi.models.document_match import SOURCE_COUNT
 
@@ -25,6 +26,43 @@ class DocumentMatch(models.Model):
     picking_id = fields.Many2one(
         comodel_name="stock.picking", string="Receipt", readonly=True
     )
+
+    import_needs_receipt = fields.Boolean(
+        string="Asks for Receipt",
+        compute="_compute_import_needs_receipt",
+        search="_search_import_needs_receipt",
+        help="The product of the line asks for a receipt when bought with no "
+        "order, by the policy of the company (Receipt on Invoice without Order).",
+    )
+
+    def _compute_import_needs_receipt(self):
+        for row in self:
+            row.import_needs_receipt = bool(
+                row.fiscal_line_id
+                and row.fiscal_line_id._import_product_needs_receipt()
+            )
+
+    @api.model
+    def _search_import_needs_receipt(self, operator, value):
+        """The policy is of each company, so the search is the product domain of
+        the policy of each one, the same rule of ``_import_product_needs_receipt``."""
+        if operator not in ("=", "!="):
+            raise NotImplementedError("Only = and != are supported.")
+        domains = [
+            expression.AND(
+                [
+                    [("company_id", "=", company.id)],
+                    [("product_id", "any", company._import_receipt_product_domain())],
+                ]
+            )
+            for company in self.env["res.company"].sudo().search([])
+        ]
+        domain = expression.normalize_domain(
+            expression.OR(domains) if domains else expression.FALSE_DOMAIN
+        )
+        if (operator == "=") == bool(value):
+            return domain
+        return ["!"] + domain
 
     @api.model
     def _match_extra_columns(self):
