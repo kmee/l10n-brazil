@@ -74,7 +74,7 @@
     </function>
 
     <function model="l10n_br_fiscal.document" name="_edi_import_demo_files">
-        <value>l10n_br_purchase_edi_demo</value>
+        <value>l10n_br_purchase_stock_edi</value>
         <value
             eval="[
                 'demo/import/nfe_35261011765432000100550010000030011300100010.xml',
