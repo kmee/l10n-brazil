@@ -11,6 +11,13 @@ from odoo import _, models
 class StockMove(models.Model):
     _inherit = "stock.move"
 
+    def _action_confirm(self, merge=True, merge_into=False):
+        """The receipt created from a document keeps one move per document
+        line: the link of the line to its move depends on it."""
+        if self.env.context.get("import_keep_moves_apart"):
+            merge = False
+        return super()._action_confirm(merge=merge, merge_into=merge_into)
+
     def _import_document_lines(self):
         """Lines of imported documents that point to this receipt move."""
         self.ensure_one()

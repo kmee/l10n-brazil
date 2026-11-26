@@ -508,6 +508,20 @@ class Document(models.Model):
         self.ensure_one()
         if retorno.nfses and not retorno.mensagens:
             self._giss_authorize(retorno)
+        elif self._giss_is_busy(retorno):
+            # the lot was accepted: keep the protocol and ask again later
+            self.write(
+                {
+                    "status_code": GISS_BUSY,
+                    "status_name": self.env._("City hall busy"),
+                    "edoc_error_message": self.env._(
+                        "The city hall was busy (A02) when the lot was queried. "
+                        "Check the document status in a few moments: the lot was "
+                        "accepted and is queried again by its protocol."
+                    ),
+                }
+            )
+            self._change_state(SITUACAO_EDOC_ENVIADA)
         elif retorno.em_processamento and not retorno.mensagens:
             self.write(
                 {
@@ -604,7 +618,7 @@ class Document(models.Model):
                     continue
                 record.authorization_protocol = envio_lote.protocolo
             record._giss_process_lot(
-                provider.aguardar_lote(record.authorization_protocol)
+                record._giss_call(provider.aguardar_lote, record.authorization_protocol)
             )
         return result
 
