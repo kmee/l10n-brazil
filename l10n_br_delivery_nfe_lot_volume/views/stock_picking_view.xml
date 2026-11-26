@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_picking_form_lot_volume" model="ir.ui.view">
+        <field
+            name="name"
+        >stock.picking.form (in l10n_br_delivery_nfe_lot_volume)</field>
+        <field name="model">stock.picking</field>
+        <field
+            name="inherit_id"
+            ref="l10n_br_delivery_nfe.view_picking_withcarrier_out_form_inherit"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='vol_ids']/list" position="inside">
+                <field name="move_line_ids" widget="many2many_tags" />
+                <button
+                    name="action_open_add_lines_wizard"
+                    type="object"
+                    icon="fa-plus"
+                    string="Add Lots to Volume"
+                />
+            </xpath>
+            <xpath
+                expr="//field[@name='move_ids_without_package']/list/field[@name='product_uom_qty']"
+                position="after"
+            >
+                <field
+                    name="volume_ids"
+                    widget="many2many_tags"
+                    column_invisible="parent.picking_type_code != 'outgoing'"
+                />
+                <button
+                    name="action_open_create_volume_wizard"
+                    type="object"
+                    icon="fa-archive"
+                    string="Create Volume"
+                    column_invisible="parent.picking_type_code != 'outgoing'"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>
