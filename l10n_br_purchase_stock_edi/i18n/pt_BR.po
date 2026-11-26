@@ -21,12 +21,14 @@ msgstr ""
 #: code:addons/l10n_br_purchase_stock_edi/models/document.py:0
 msgid ""
 "%(count)s line(s) of stockable products have no order and no receipt. Use "
-"Match with Orders to create the receipt, or ask a purchase or stock manager "
-"to mark the line as without stock entry."
+"Match with Orders to mark the line as without order and then create the "
+"receipt, or ask a purchase or stock manager to mark it as without stock entry "
+"there."
 msgstr ""
 "%(count)s linha(s) de produtos estocáveis sem pedido e sem recebimento. Use "
-"Conciliar com pedidos para criar o recebimento, ou peça a um gerente de "
-"compras ou de estoque para marcar a linha como sem entrada em estoque."
+"Conciliar com pedidos para marcar a linha como sem pedido e então criar o "
+"recebimento, ou peça a um gerente de compras ou de estoque para marcá-la ali "
+"como sem entrada em estoque."
 
 #. module: l10n_br_purchase_stock_edi
 #. odoo-python
