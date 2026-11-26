@@ -380,3 +380,24 @@ class NFeImportWizardTest(TransactionCase):
         self.assertEqual(taxes["pIPI"], 5)
         self.assertEqual(taxes["vIPI"], 100)
         self.assertEqual(self.wizard.amount_total, 14.00)
+
+    def test_ncm_choice(self):
+        self._prepare_wizard(self.xml_1)
+        line = self.wizard.imported_products_ids[0]
+        xml_ncm = self.wizard._parse_file().infNFe.det[0].prod.NCM
+        self.assertEqual(line.ncm_xml, xml_ncm)
+        other_ncm = self.env["l10n_br_fiscal.ncm"].search(
+            [("code_unmasked", "!=", xml_ncm)], limit=1
+        )
+        product = self.env["product.product"].create(
+            {"name": "Product with another NCM", "ncm_id": other_ncm.id}
+        )
+        line.product_id = product
+        self.assertTrue(line.ncm_diverges)
+        # by default the line keeps what the supplier declared
+        self.assertEqual(line.ncm_choice, "xml")
+        self.assertEqual(self.wizard._parse_file().infNFe.det[0].prod.NCM, xml_ncm)
+        line.ncm_choice = "product"
+        self.assertEqual(
+            self.wizard._parse_file().infNFe.det[0].prod.NCM, other_ncm.code_unmasked
+        )
