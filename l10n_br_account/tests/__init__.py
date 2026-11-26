@@ -21,3 +21,4 @@ from . import test_search_filters
 from . import test_imported_move_terms
 from . import test_document_line_name
 from . import test_fiscal_user_and_imported_dates
+from . import test_imported_line_taxes

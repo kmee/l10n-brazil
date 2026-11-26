@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 KMEE
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="invoice_form" model="ir.ui.view">
+        <field name="name">l10n_br_account_edi.invoice.form</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="l10n_br_account.invoice_form" />
+        <field name="arch" type="xml">
+            <field name="document_serie_id" position="attributes">
+                <attribute
+                    name="invisible"
+                >not document_type_id or issuer == 'partner' or imported_document</attribute>
+                <attribute
+                    name="required"
+                >issuer == 'company' and document_type_id and not imported_document</attribute>
+            </field>
+            <field name="document_serie" position="attributes">
+                <attribute
+                    name="invisible"
+                >not document_type_id or (issuer == 'company' and not imported_document)</attribute>
+            </field>
+            <field name="document_serie_id" position="before">
+                <field name="imported_document" invisible="1" />
+            </field>
+            <xpath expr="//page[@id='other_tab']" position="after">
+                <page
+                    name="edi_payment"
+                    string="Installments"
+                    invisible="not edi_payment_summary"
+                >
+                    <field name="edi_payment_summary" nolabel="1" readonly="1" />
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
