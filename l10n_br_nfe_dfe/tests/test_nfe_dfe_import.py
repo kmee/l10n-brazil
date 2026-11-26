@@ -440,6 +440,21 @@ class TestNFeDFeImportByKey(TransactionCase):
         self.assertFalse(dfe_document.sudo().manifestations_ids)
         self.assertFalse(dfe_document.sudo().import_requested_user_id)
 
+    def test_common_fiscal_user_is_told_the_permission_is_missing_to_manifest(self):
+        user = self._fiscal_user(nfe=False)
+        dfe_document = self._summary().with_user(user)
+
+        with self.assertRaisesRegex(UserError, "permission of NF-e user"):
+            dfe_document.create_nfe_md_action()
+
+    def test_nfe_user_gets_the_manifestation_wizard(self):
+        user = self._fiscal_user()
+        action = self._summary().with_user(user).create_nfe_md_action()
+
+        self.assertEqual(
+            action["res_model"], "nfe_recipient_manifestation_event.wizard"
+        )
+
     def test_a_note_already_acknowledged_needs_no_permission_to_request(self):
         user = self._fiscal_user(nfe=False)
         dfe_document = self._summary()

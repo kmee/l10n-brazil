@@ -217,6 +217,7 @@ msgstr "Aguardando revisão"
 #. module: l10n_br_fiscal_edi
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.document_cancel_wizard_form
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.document_correction_wizard_form
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.document_import_wizard_form
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.invalidate_number_wizard
 msgid "Cancel"
 msgstr "Cancelar"
@@ -991,7 +992,7 @@ msgstr "Um arquivo, vários, ou um zip com eles."
 #. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__original_xml_file_id
 msgid "Original XML File"
-msgstr ""
+msgstr "Arquivo XML original"
 
 #. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document_cancel_wizard__partner_id
@@ -1291,6 +1292,9 @@ msgid ""
 "\n"
 "%(errors)s"
 msgstr ""
+"O XML do documento não está de acordo com o seu esquema, por isso não pode ser transmitido. Volte o documento para rascunho, corrija os dados e confirme de novo.\n"
+"\n"
+"%(errors)s"
 
 #. module: l10n_br_fiscal_edi
 #. odoo-python
@@ -1546,12 +1550,17 @@ msgstr "Resposta XML"
 msgid ""
 "XML of a document issued by a third party, kept as received when the "
 "document is imported. It is not an authorization event."
-msgstr ""
+msgstr "XML de um documento emitido por terceiros, mantido como recebido quando o documento é importado. Não é um evento de autorização."
 
 #. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__xml_error_message
 msgid "XML validation errors"
 msgstr "Erros de validação do XML"
+
+#. module: l10n_br_fiscal_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.document_form
+msgid "XML validation errors:"
+msgstr "Erros de validação do XML:"
 
 #. module: l10n_br_fiscal_edi
 #. odoo-python

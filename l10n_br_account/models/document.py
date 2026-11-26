@@ -383,7 +383,10 @@ class FiscalDocument(models.Model):
         bill no longer holds the document.
         """
         self.ensure_one()
-        moves = self.move_ids.filtered(
+        # Only decides a state shown on the inbox, which a fiscal user reads
+        # without access to bills: the sudo read stays here and only the
+        # message text leaves. Opening the bill still asks for its access.
+        moves = self.sudo().move_ids.filtered(
             lambda move: move.move_type in ("in_invoice", "in_refund")
             and move.state != "cancel"
         )
@@ -437,7 +440,9 @@ class FiscalDocument(models.Model):
         returns an authorized inbox row to available.
         """
         self.ensure_one()
-        posted = self.move_ids.filtered(
+        # Read-only decision of a computed field shown to users without
+        # access to bills; nothing with sudo is returned.
+        posted = self.sudo().move_ids.filtered(
             lambda move: (
                 move.company_id == self.company_id
                 and move.move_type in ("in_invoice", "in_refund")

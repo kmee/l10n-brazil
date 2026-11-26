@@ -41,6 +41,7 @@ msgstr "Já existe um DF-e com esta chave de acesso para esta empresa."
 #: model:ir.model.fields,field_description:l10n_br_fiscal_dfe.field_dfe_specific_search_wizard__access_key
 #: model:ir.model.fields,field_description:l10n_br_fiscal_dfe.field_l10n_br_fiscal_dfe_dfe__access_key
 #: model:ir.model.fields,field_description:l10n_br_fiscal_dfe.field_l10n_br_fiscal_dfe_document__access_key
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe.field_l10n_br_fiscal_edi_document_import_wizard__access_key
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_dfe.dfe_form
 msgid "Access Key"
 msgstr "Chave de Acesso"
@@ -84,7 +85,7 @@ msgstr "Busca automática desativada"
 #. module: l10n_br_fiscal_dfe
 #: model:ir.model.fields.selection,name:l10n_br_fiscal_dfe.selection__l10n_br_fiscal_dfe_document__utilization__available
 msgid "Available"
-msgstr ""
+msgstr "Disponível"
 
 #. module: l10n_br_fiscal_dfe
 #: model:ir.model.fields,help:l10n_br_fiscal_dfe.field_l10n_br_fiscal_dfe_document__utilization
@@ -92,12 +93,12 @@ msgid ""
 "Available while the document is still authorized at the source and no vendor "
 "bill is posted. Posted while a vendor bill is posted. Empty when the source "
 "cancelled or denied the document."
-msgstr ""
+msgstr "Disponível enquanto o documento continua autorizado na origem e nenhuma fatura de fornecedor está lançada. Lançada enquanto uma fatura de fornecedor está lançada. Vazio quando a origem cancelou ou denegou o documento."
 
 #. module: l10n_br_fiscal_dfe
 #: model:ir.model.fields,field_description:l10n_br_fiscal_dfe.field_l10n_br_fiscal_dfe_document__import_block_reason
 msgid "Block Reason"
-msgstr ""
+msgstr "Motivo do bloqueio"
 
 #. module: l10n_br_fiscal_dfe
 #: model:ir.model.fields,field_description:l10n_br_fiscal_dfe.field_l10n_br_fiscal_dfe_document__vat
@@ -652,7 +653,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_br_fiscal_dfe/models/dfe_document.py:0
 msgid "Only an authorized document can be imported."
-msgstr ""
+msgstr "Somente um documento autorizado pode ser importado."
 
 #. module: l10n_br_fiscal_dfe
 #. odoo-python
@@ -715,7 +716,7 @@ msgstr "Por favor, informe uma chave de acesso."
 #. module: l10n_br_fiscal_dfe
 #: model:ir.model.fields.selection,name:l10n_br_fiscal_dfe.selection__l10n_br_fiscal_dfe_document__utilization__posted
 msgid "Posted"
-msgstr ""
+msgstr "Lançada"
 
 #. module: l10n_br_fiscal_dfe
 #: model:ir.model.fields,help:l10n_br_fiscal_dfe.field_res_users__dfe_notification
@@ -820,6 +821,7 @@ msgstr "Pesquisa específica acionada com sucesso"
 
 #. module: l10n_br_fiscal_dfe
 #: model:ir.model.fields,field_description:l10n_br_fiscal_dfe.field_l10n_br_fiscal_dfe_document__document_state_label
+#: model:ir.model.fields,field_description:l10n_br_fiscal_dfe.field_l10n_br_fiscal_edi_document_import_wizard__state
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_dfe.l10n_br_fiscal_dfe_document_tree
 msgid "State"
 msgstr "Estado"
@@ -920,13 +922,13 @@ msgstr "Documentos de Terceiros"
 #. odoo-python
 #: code:addons/l10n_br_fiscal_dfe/models/dfe_document.py:0
 msgid "This document was cancelled at the source."
-msgstr ""
+msgstr "Este documento foi cancelado na origem."
 
 #. module: l10n_br_fiscal_dfe
 #. odoo-python
 #: code:addons/l10n_br_fiscal_dfe/models/dfe_document.py:0
 msgid "This document was denied at the source."
-msgstr ""
+msgstr "Este documento foi denegado na origem."
 
 #. module: l10n_br_fiscal_dfe
 #. odoo-python
@@ -973,7 +975,7 @@ msgstr ""
 #. module: l10n_br_fiscal_dfe
 #: model:ir.model.fields,field_description:l10n_br_fiscal_dfe.field_l10n_br_fiscal_dfe_document__utilization
 msgid "Utilization"
-msgstr ""
+msgstr "Utilização"
 
 #. module: l10n_br_fiscal_dfe
 #. odoo-javascript
@@ -1003,7 +1005,7 @@ msgstr "Aviso"
 #: model:ir.model.fields,help:l10n_br_fiscal_dfe.field_l10n_br_fiscal_dfe_document__import_block_reason
 msgid ""
 "Why this document cannot be imported. Empty when the import can proceed."
-msgstr ""
+msgstr "Motivo pelo qual este documento não pode ser importado. Vazio quando a importação pode prosseguir."
 
 #. module: l10n_br_fiscal_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_dfe.dfe_distribution_log_search

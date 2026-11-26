@@ -115,6 +115,9 @@ class L10nBrFiscalDfeDocument(models.Model):
 
     def create_nfe_md_action(self):
         self.ensure_one()
+        # same refusal as the import of a summary: the user gets the reason
+        # instead of the raw access error of the wizard model
+        self._check_manifestation_permission()
         return {
             "name": _("NF-e Recipient Manifestation"),
             "type": "ir.actions.act_window",
