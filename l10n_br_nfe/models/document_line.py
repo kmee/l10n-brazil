@@ -1557,11 +1557,23 @@ class NFeLine(spec_models.StackedModel):
             map_binding_attr("modBCST", "icmsst_base_type")
             map_binding_attr("pMVAST", "icmsst_mva_percent")
             map_binding_attr("pRedBCST", "icmsst_reduction")
-            map_binding_attr("vBCST", "icsmst_base")
-            map_binding_attr("pICMSST", "icmsst_percent")
+            map_binding_attr("vBCST", "icmsst_base")
+            icmsst_percent = map_binding_attr("pICMSST", "icmsst_percent")
             map_binding_attr("vICMSST", "icmsst_value")
             map_binding_attr("vBCSTRet", "icmsst_wh_base")
             map_binding_attr("vICMSSTRet", "icmsst_wh_value")
+
+            # ICMS FCP of the operation (CST 00, 10, 20, 51, 70 and 90)
+            map_binding_attr("vBCFCP", "icmsfcp_base")
+            icmsfcp_percent = map_binding_attr("pFCP", "icmsfcp_percent")
+            map_binding_attr("vFCP", "icmsfcp_value")
+            if (
+                kind == "icms"
+                and odoo_attrs.get("icmsfcp_value")
+                and not odoo_attrs.get("icmsfcp_base")
+            ):
+                # CST 00 has no vBCFCP: the FCP is charged on the ICMS base
+                odoo_attrs["icmsfcp_base"] = odoo_attrs.get("icms_base", 0.0)
 
             # ICMS FCP Fields
             map_binding_attr("pFCPUFDest", "icmsfcp_percent")
@@ -1570,13 +1582,39 @@ class NFeLine(spec_models.StackedModel):
 
             # ICMS FCP ST Fields
             map_binding_attr("vBCFCPST", "icmsfcpst_base")
-            map_binding_attr("pFCPST", "icmsfcpst_percent")
+            icmsfcpst_percent = map_binding_attr("pFCPST", "icmsfcpst_percent")
             map_binding_attr("vFCPST", "icmsfcpst_value")
 
-            # ICMS FCP ST Fields
-            map_binding_attr("vBCFCPST", "icmsfcpst_base")
-            map_binding_attr("pFCPST", "icmsfcpst_percent")
-            map_binding_attr("vFCPST", "icmsfcpst_value")
+            if kind == "icms":
+                # The tax of the ST and FCP lines is what gives them an
+                # accounting tax: without it the amounts are not payable.
+                self._import_icms_related_taxes(
+                    odoo_attrs,
+                    cst_id,
+                    (
+                        (
+                            "icmsst",
+                            "l10n_br_fiscal.tax_group_icmsst",
+                            icmsst_percent,
+                            odoo_attrs.get("icmsst_mva_percent"),
+                            None,
+                        ),
+                        (
+                            "icmsfcp",
+                            "l10n_br_fiscal.tax_group_icmsfcp",
+                            icmsfcp_percent,
+                            None,
+                            "l10n_br_fiscal.tax_icmsfcp_nt",
+                        ),
+                        (
+                            "icmsfcpst",
+                            "l10n_br_fiscal.tax_group_icmsfcp_st",
+                            icmsfcpst_percent,
+                            None,
+                            "l10n_br_fiscal.tax_icmsfcp_st_nt",
+                        ),
+                    ),
+                )
 
             # ICMS DIFAL Fields
             map_binding_attr("vBCUFDest", "icms_destination_base")
@@ -1610,6 +1648,46 @@ class NFeLine(spec_models.StackedModel):
         # elif kind == "cofins":  # (will also apply to cofinsst)
         #     pass
         #     # TODO  qBCProd, vAliqProd
+
+    def _import_icms_related_taxes(self, odoo_attrs, cst_id, taxes):
+        """Set the tax of the ICMS ST, FCP and FCP ST declared by the file.
+
+        Same lookup as the ICMS itself (tax group and rate, with the CST when
+        the group has one), falling back to the "not taxed" tax of the group
+        when no tax has that rate. The ICMS ST group has no such tax, so a rate
+        the company does not have leaves the tax empty and the amount is
+        still kept in the line.
+        """
+        tax_model = self.env["l10n_br_fiscal.tax"]
+        cst_field = "cst_{}_id".format(self.env.context.get("edoc_type", "in"))
+        for kind, group_ref, percent, mva_percent, nt_ref in taxes:
+            if not odoo_attrs.get(f"{kind}_value"):
+                continue
+            tax_group = self.env.ref(group_ref)
+            domain = [("tax_group_id", "=", tax_group.id)]
+            if percent:
+                domain.append(("percent_amount", "=", percent))
+            candidates = []
+            if cst_id:
+                candidates.append(domain + [(cst_field, "=", cst_id)])
+            candidates.append(domain)
+            if mva_percent:
+                candidates = [
+                    candidate + [("icmsst_mva_percent", "=", mva_percent)]
+                    for candidate in candidates
+                ] + candidates
+            fiscal_tax = tax_model
+            if percent:
+                for candidate in candidates:
+                    fiscal_tax = tax_model.search(candidate, limit=1)
+                    if fiscal_tax:
+                        break
+            if not fiscal_tax and nt_ref:
+                fiscal_tax = self.env.ref(nt_ref, raise_if_not_found=False)
+            if not fiscal_tax:
+                continue
+            odoo_attrs[f"{kind}_tax_id"] = fiscal_tax.id
+            odoo_attrs.setdefault("fiscal_tax_ids", []).append(fiscal_tax.id)
 
     def _create_reduced_fiscal_tax(
         self, tax_group_id, percent, cst_id, percent_reduction
