@@ -673,6 +673,14 @@ class Document(models.Model):
             ):
                 line.import_state = "pending"
 
+    def _edi_import_suggest_origin(self):
+        """Extension point: suggest the origin of the lines of a document received
+        from a supplier (the purchase order that gave the goods, for instance).
+        Every path that creates an imported document calls it, the assistant of the
+        file and the former import window alike, so that the origin never depends on
+        the way the document came. Nothing here: the modules that know an origin
+        extend it. Safe to run again: what a person decided is never undone."""
+
     def _edi_import_suggest_operation(self):
         """The operation of the document and of each line that has none, from the
         CFOP declared in the file: the inverse of the issuer for a document received,

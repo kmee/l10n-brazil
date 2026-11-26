@@ -92,7 +92,12 @@ class FiscalDocument(models.Model):
         documents._edi_import_apply_order_reference()
         # the operation was suggested by the base: an origin resolved now takes
         # the destination of its order along
-        documents.fiscal_line_ids._suggest_import_origin()
+        documents._edi_import_suggest_origin()
+        return result
+
+    def _edi_import_suggest_origin(self):
+        result = super()._edi_import_suggest_origin()
+        self.filtered("imported_document").fiscal_line_ids._suggest_import_origin()
         return result
 
     def _edi_import_apply_order_reference(self):

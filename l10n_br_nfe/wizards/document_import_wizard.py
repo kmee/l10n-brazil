@@ -324,6 +324,11 @@ class DocumentImportWizard(models.TransientModel):
             ):
                 line.import_state = "resolved"
 
+            # the origin of the goods (the purchase order, when a module knows one)
+            # is decided for every imported document, not only for the ones of the
+            # new assistant: the lines have their product and unit now
+            edoc._edi_import_suggest_origin()
+
             if not self.partner_id:
                 self.partner_id = edoc.partner_id
 
