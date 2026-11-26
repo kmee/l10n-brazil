@@ -146,19 +146,45 @@ class Document(models.Model):
         return self.currency_id.round(self._edi_payment_totals()[2] - declared)
 
     def _edi_installment_warning(self):
-        """Message when the installments do not add up to the net amount payable."""
+        """What the page tells about the installments and the invoice that will be
+        generated, or False when there is nothing to tell.
+
+        The invoice takes its total from the lines and the withholdings of the
+        lines, and spreads that total over the declared installments by their
+        weight, so a difference between the two is shared among them. The
+        withholdings that the file declared only in its total are not in the lines:
+        the invoice does not discount them, the installments of the file stay as
+        they are and the net amount payable is only informative."""
         self.ensure_one()
-        if not self._edi_installment_difference():
-            return False
-        declared = sum(i.amount for i in self._edi_display_installments())
-        return _(
-            "The declared installments add up to %(declared)s; the net amount "
-            "payable is %(net)s. The invoice spreads the difference by the weight "
-            "of each installment."
-        ) % {
-            "declared": f"{declared:.2f}",
-            "net": f"{self._edi_payment_totals()[2]:.2f}",
-        }
+        gross, withholding, net = self._edi_payment_totals()
+        declared_withholding = self._edi_withholding_declared()
+        # what the invoice will total, and so what it spreads over the installments
+        invoiced = gross if declared_withholding else net
+        installments = self._edi_display_installments()
+        declared = sum(installment.amount for installment in installments)
+        messages = []
+        if installments and self.currency_id.round(invoiced - declared):
+            messages.append(
+                _(
+                    "The declared installments add up to %(declared)s; the net "
+                    "amount payable is %(net)s. The invoice spreads the difference "
+                    "by the weight of each installment."
+                )
+                % {"declared": f"{declared:.2f}", "net": f"{invoiced:.2f}"}
+            )
+        if declared_withholding and withholding:
+            messages.append(
+                _(
+                    "The note declares withholdings of %(withholding)s in its "
+                    "total. The invoice generated from it does not discount them: "
+                    "its total and its installments stay as in the file, gross of "
+                    "the withholdings, so the net amount payable of %(net)s is only "
+                    "informative and the withholdings must be recorded in the "
+                    "invoice."
+                )
+                % {"withholding": f"{withholding:.2f}", "net": f"{net:.2f}"}
+            )
+        return " ".join(messages) or False
 
     def _edi_payment_summary_values(self):
         """Values of the template ``document_payment_summary``, which the invoice

@@ -1256,6 +1256,17 @@ msgstr ""
 
 #. module: l10n_br_fiscal_edi
 #. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_payment.py:0
+msgid ""
+"The note declares withholdings of %(withholding)s in its total. The invoice "
+"generated from it does not discount them: its total and its installments "
+"stay as in the file, gross of the withholdings, so the net amount payable of"
+" %(net)s is only informative and the withholdings must be recorded in the "
+"invoice."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
 msgid ""
 "The document %(document)s has lines that were not reviewed:\n"
