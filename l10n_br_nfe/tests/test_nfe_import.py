@@ -1714,35 +1714,30 @@ class TestNfeOwnNoteImport(EdiImportCase):
 
     def test_creating_the_missing_products_of_a_document_received(self):
         product_model = self.env["product.product"]
-        document = self._import(self._received_xml())
-        lines = document.fiscal_line_ids
-        codes = {line._get_partner_product_code() for line in lines}
-        last = product_model.search([], order="id desc", limit=1).id
+        # a code and a description that no product of the database answers to
+        xml = self._received_xml().replace(b"E-COM11", b"ZZ-SUP-9")
+        xml = xml.replace(b"Cabinet with Doors", b"ZZ Cleaning Item")
+        document = self._import(xml)
+        line = document.fiscal_line_ids
+        self.assertFalse(line.product_id)
+        count = product_model.search_count([])
 
         document.action_import_create_products()
         document.action_import_create_products()
 
-        # one product per code: the new ones, or the one that already had the
-        # barcode of the file (the data of the database may hold one)
-        self.assertEqual(len(lines.product_id), len(codes))
-        created = lines.product_id.filtered(lambda product: product.id > last)
-        self.assertTrue(created)
-        self.assertEqual(product_model.search_count([("id", ">", last)]), len(created))
-        self.assertEqual(lines.mapped("import_state"), ["resolved"] * len(lines))
-        for line in lines.filtered(lambda line: line.product_id in created):
-            product = line.product_id
-            self.assertEqual(product.name, line.nfe40_xProd)
-            self.assertFalse(product.default_code)
-            self.assertTrue(product.purchase_ok)
-            self.assertFalse(product.sale_ok)
-            self.assertEqual(product.list_price, 0.0)
-        for line in lines:
-            self.assertEqual(
-                line.product_id.seller_ids.filtered(
-                    lambda info, line=line: info.partner_id == document.partner_id
-                ).product_code,
-                line._get_partner_product_code(),
-            )
+        self.assertEqual(product_model.search_count([]), count + 1)
+        product = line.product_id
+        self.assertEqual(line.import_state, "resolved")
+        self.assertEqual(product.name, "ZZ Cleaning Item")
+        self.assertFalse(product.default_code)
+        self.assertTrue(product.purchase_ok)
+        self.assertFalse(product.sale_ok)
+        self.assertEqual(product.list_price, 0.0)
+        self.assertEqual(product.ncm_id, line.ncm_id)
+        info = product.seller_ids.filtered(
+            lambda info: info.partner_id == document.partner_id
+        )
+        self.assertEqual(info.product_code, "ZZ-SUP-9")
 
     def _resolved(self, xml):
         document = self._import(xml)
