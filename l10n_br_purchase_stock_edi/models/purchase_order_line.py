@@ -16,8 +16,9 @@ class PurchaseOrderLine(models.Model):
         self.ensure_one()
         line = self.sudo()
         moves = line.move_ids.filtered(
-            lambda move: move.picking_type_id.code == "incoming"
-            and move.state != "cancel"
+            lambda move: (
+                move.picking_type_id.code == "incoming" and move.state != "cancel"
+            )
         )
         done = moves.filtered(lambda move: move.state == "done")
         not_invoiced = float_compare(

@@ -20,12 +20,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_br_purchase_stock_edi/models/document.py:0
 msgid ""
-"%(count)s line(s) of stockable products have no order and no receipt. Use "
+"%(count)s line(s) of goods have no order and no receipt. Use "
 "Match with Orders to mark the line as without order and then create the "
 "receipt, or ask a purchase or stock manager to mark it as without stock entry "
 "there."
 msgstr ""
-"%(count)s linha(s) de produtos estocáveis sem pedido e sem recebimento. Use "
+"%(count)s linha(s) de bens sem pedido e sem recebimento. Use "
 "Conciliar com pedidos para marcar a linha como sem pedido e então criar o "
 "recebimento, ou peça a um gerente de compras ou de estoque para marcá-la ali "
 "como sem entrada em estoque."
@@ -109,10 +109,10 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_br_purchase_stock_edi/models/document_match.py:0
 msgid ""
-"A receipt is created for lines of stockable products marked as without order "
+"A receipt is created for lines of goods marked as without order "
 "and with no receipt yet."
 msgstr ""
-"O recebimento é criado para linhas de produtos estocáveis marcadas como sem "
+"O recebimento é criado para linhas de bens marcadas como sem "
 "pedido e ainda sem recebimento."
 
 #. module: l10n_br_purchase_stock_edi
@@ -709,3 +709,42 @@ msgstr "Preço unitário da linha do pedido, na unidade desta linha."
 
 #~ msgid "Receipts Count"
 #~ msgstr "Quantidade de recebimentos"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_res_company__import_stock_entry_policy
+msgid "Receipt on Invoice without Order"
+msgstr "Recebimento em nota sem pedido"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_res_company__import_stock_entry_policy
+msgid ""
+"Which products make the invoice of an imported purchase with no order ask "
+"for a receipt (or for the mark of a purchase or stock manager that nothing "
+"was received). All goods: every product that is not a service or a combo, "
+"with or without inventory control, because not counting the stock does not "
+"mean that the goods need not be received correctly. Only products with "
+"inventory control: the goods that are not counted go on. Do not ask: "
+"nothing is asked."
+msgstr ""
+"Quais produtos fazem a fatura de uma compra importada sem pedido exigir um "
+"recebimento (ou a marca de um gerente de compras ou de estoque de que nada "
+"foi recebido). Todos os bens: todo produto que não é serviço nem combo, com "
+"ou sem controle de inventário, porque não contar o estoque não significa "
+"que os bens não precisem ser recebidos corretamente. Só produtos com "
+"controle de inventário: os bens que não são contados seguem direto. Não "
+"exigir: nada é exigido."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields.selection,name:l10n_br_purchase_stock_edi.selection__res_company__import_stock_entry_policy__goods
+msgid "All goods"
+msgstr "Todos os bens"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields.selection,name:l10n_br_purchase_stock_edi.selection__res_company__import_stock_entry_policy__none
+msgid "Do not ask"
+msgstr "Não exigir"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields.selection,name:l10n_br_purchase_stock_edi.selection__res_company__import_stock_entry_policy__storable
+msgid "Only products with inventory control"
+msgstr "Só produtos com controle de inventário"
