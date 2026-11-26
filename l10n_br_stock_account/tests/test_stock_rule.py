@@ -6,6 +6,8 @@ from odoo import Command
 from odoo.tests.common import Form, TransactionCase
 from odoo.tools import mute_logger
 
+from odoo.addons.l10n_br_fiscal.tests.tools import assert_fiscal_fields_follow_company
+
 
 class StockRuleTest(TransactionCase):
     """Test Stock Rule"""
@@ -140,3 +142,8 @@ class StockRuleTest(TransactionCase):
         stock_rule_form.procure_method = "make_to_order"
         stock_rule_form.picking_type_id = warehouse.int_type_id
         stock_rule_form.save()
+
+    def test_get_view_cache_follows_company_country(self):
+        assert_fiscal_fields_follow_company(
+            self, "stock.picking", self.env.ref("l10n_br_base.empresa_lucro_presumido")
+        )

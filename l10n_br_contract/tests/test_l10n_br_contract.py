@@ -15,6 +15,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     TAX_DOMAIN_ICMS,
     TAX_DOMAIN_ISSQN,
 )
+from odoo.addons.l10n_br_fiscal.tests.tools import assert_fiscal_fields_follow_company
 
 
 @tagged("post_install", "-at_install")
@@ -528,3 +529,10 @@ class TestL10nBrContract(TransactionCase):
                     "The products of the Fiscal Document does not"
                     " correspond with the expected",
                 )
+
+    def test_get_view_cache_follows_company_country(self):
+        assert_fiscal_fields_follow_company(
+            self,
+            "contract.contract",
+            self.env.ref("l10n_br_base.empresa_lucro_presumido"),
+        )

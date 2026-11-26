@@ -131,6 +131,12 @@ class RepairOrder(models.Model):
         return super(RepairOrder, self - br_orders)._amount_tax()
 
     @api.model
+    def _get_view_cache_key(self, view_id=None, view_type="form", **options):
+        """Fiscal fields are injected only for Brazilian companies."""
+        key = super()._get_view_cache_key(view_id, view_type, **options)
+        return key + (self.env.company.country_id.code == "BR",)
+
+    @api.model
     def _get_view(self, view_id=None, view_type="form", **options):
         arch, view = super()._get_view(view_id, view_type, **options)
         if view_type == "form" and self.env.company.country_id.code == "BR":

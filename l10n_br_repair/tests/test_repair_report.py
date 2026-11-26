@@ -5,6 +5,8 @@ from lxml import html
 
 from odoo.tests import TransactionCase
 
+from odoo.addons.l10n_br_fiscal.tests.tools import assert_fiscal_fields_follow_company
+
 
 class TestRepairReport(TransactionCase):
     def test_report_fiscal_layout(self):
@@ -25,3 +27,8 @@ class TestRepairReport(TransactionCase):
         if repair.partner_invoice_id.vat == repair.partner_id.vat:
             # the address block does not repeat the tax ID of the fiscal data
             self.assertEqual(text.count(repair.partner_id.vat), 1)
+
+    def test_get_view_cache_follows_company_country(self):
+        assert_fiscal_fields_follow_company(
+            self, "repair.order", self.env.ref("l10n_br_base.empresa_lucro_presumido")
+        )
