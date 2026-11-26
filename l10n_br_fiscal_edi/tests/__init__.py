@@ -10,3 +10,4 @@ from . import test_import_screens
 from . import test_import_header_operation
 from . import test_imported_line_review
 from . import test_document_line_lot
+from . import test_import_state_migration
