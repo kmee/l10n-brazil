@@ -1,0 +1,697 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* l10n_br_purchase_stock_edi
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-22 07:27+0000\n"
+"PO-Revision-Date: 2026-11-19 22:30+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: l10n_br_purchase_stock_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_edi/models/document.py:0
+msgid ""
+"%(count)s line(s) of stockable products have no order and no receipt. Use "
+"Match with Orders to create the receipt, or ask a purchase or stock manager "
+"to mark the line as without stock entry."
+msgstr ""
+"%(count)s linha(s) de produtos estocáveis sem pedido e sem recebimento. Use "
+"Conciliar com pedidos para criar o recebimento, ou peça a um gerente de "
+"compras ou de estoque para marcar a linha como sem entrada em estoque."
+
+#. module: l10n_br_purchase_stock_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_edi/models/stock_move.py:0
+msgid "%s is not tracked by lot."
+msgstr "%s não tem rastreio por lote."
+
+#. module: l10n_br_purchase_stock_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_edi/models/document_match.py:0
+msgid "%s line(s) marked as without stock entry."
+msgstr "%s linha(s) marcada(s) como sem entrada em estoque."
+
+#. module: l10n_br_purchase_stock_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_edi/models/stock_picking.py:0
+msgid "%s move(s) received the lots of the document."
+msgstr "%s movimento(s) receberam os lotes do documento."
+
+#. module: l10n_br_purchase_stock_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_form
+msgid ""
+"<span class=\"badge text-bg-info\">Awaiting receipt</span>\n"
+"                    Some line waits for the receipt of its order. Nothing "
+"is\n"
+"                    blocked."
+msgstr ""
+"<span class=\"badge text-bg-info\">Aguardando recebimento</span>\n"
+"                    Alguma linha aguarda o recebimento do pedido. Nada é "
+"bloqueado."
+
+#. module: l10n_br_purchase_stock_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_form
+msgid ""
+"<span class=\"badge text-bg-warning\">Divergent</span>\n"
+"                    Some line differs from the order or the receipt by more "
+"than\n"
+"                    the tolerance of the company."
+msgstr ""
+"<span class=\"badge text-bg-warning\">Divergente</span>\n"
+"                    Alguma linha difere do pedido ou do recebimento por mais "
+"que\n"
+"                    a tolerância da empresa."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_res_company__purchase_quantity_tolerance
+msgid ""
+"A line whose quantity differs from the received quantity by more than this "
+"percentage (of the received quantity) is marked as divergent. It only warns: "
+"nothing is blocked."
+msgstr ""
+"Uma linha cuja quantidade difere da recebida por mais que este percentual "
+"(da quantidade recebida) é marcada como divergente. Só avisa: nada é "
+"bloqueado."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_res_company__purchase_price_tolerance
+msgid ""
+"A line whose unit price differs from the one of the purchase order line by "
+"more than this percentage (of the order price) is marked as divergent. It "
+"only warns: nothing is blocked."
+msgstr ""
+"Uma linha cujo preço unitário difere do da linha do pedido de compra por "
+"mais que este percentual (do preço do pedido) é marcada como divergente. Só "
+"avisa: nada é bloqueado."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move_line__import_no_stock_entry
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_no_stock_entry
+msgid ""
+"A purchase manager or a stock manager decided that the goods of this line, "
+"bought without an order, do not enter the stock."
+msgstr ""
+"Um gerente de compras ou de estoque decidiu que a mercadoria desta linha, "
+"comprada sem pedido, não entra no estoque."
+
+#. module: l10n_br_purchase_stock_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_edi/models/document_match.py:0
+msgid ""
+"A receipt is created for lines of stockable products marked as without order "
+"and with no receipt yet."
+msgstr ""
+"O recebimento é criado para linhas de produtos estocáveis marcadas como sem "
+"pedido e ainda sem recebimento."
+
+#. module: l10n_br_purchase_stock_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_form
+msgid "Awaiting"
+msgstr "Aguardando"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_bank_statement_line__import_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_bank_statement_line__purchase_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move__import_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move__purchase_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__import_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__purchase_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_payment__import_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_payment__purchase_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document__import_awaiting_receipt
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_awaiting_receipt
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_search
+msgid "Awaiting Receipt"
+msgstr "Aguardando recebimento"
+
+#. module: l10n_br_purchase_stock_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.invoice_form_purchase_divergence
+msgid "Awaiting receipt"
+msgstr "Aguardando recebimento"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_res_company__purchase_price_tolerance
+msgid "Bill Price Tolerance (%)"
+msgstr "Tolerância de preço da fatura (%)"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_res_company__purchase_quantity_tolerance
+msgid "Bill Quantity Tolerance (%)"
+msgstr "Tolerância de quantidade da fatura (%)"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move_line__purchase_qty_difference
+msgid ""
+"Billed quantity minus the received quantity that the other bills did not "
+"take yet (the lines of this same bill for the order line count together)."
+msgstr ""
+"Quantidade faturada menos a quantidade recebida que as outras faturas ainda "
+"não cobriram (as linhas desta mesma fatura para a linha do pedido contam "
+"juntas)."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model,name:l10n_br_purchase_stock_edi.model_res_company
+msgid "Companies"
+msgstr "Empresas"
+
+#. module: l10n_br_purchase_stock_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_match_list
+msgid "Create Receipt"
+msgstr "Criar recebimento"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_bank_statement_line__purchase_divergent
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move__purchase_divergent
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__purchase_divergent
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_payment__purchase_divergent
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_form
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.invoice_form_purchase_divergence
+msgid "Divergent"
+msgstr "Divergente"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_bank_statement_line__import_divergent
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move__import_divergent
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_payment__import_divergent
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document__import_divergent
+msgid "Divergent Document"
+msgstr "Documento divergente"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__import_divergent
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_divergent
+msgid "Divergent Line"
+msgstr "Linha divergente"
+
+#. module: l10n_br_purchase_stock_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_search
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.invoice_search_purchase_divergence
+msgid "Divergent from the Order"
+msgstr "Divergente do pedido"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_stock_picking__import_document_ids
+msgid "Fiscal Documents"
+msgstr "Documentos fiscais"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_stock_picking__import_document_count
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.view_picking_form
+msgid "Fiscal docs"
+msgstr ""
+"Doc. fiscais"
+
+#. module: l10n_br_purchase_stock_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_edi/models/document_match.py:0
+msgid "Fiscal document %s"
+msgstr "Documento fiscal %s"
+
+#. module: l10n_br_purchase_stock_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.view_picking_form
+msgid "Imported fiscal documents linked to this record"
+msgstr ""
+"Documentos fiscais importados ligados a este registro"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model,name:l10n_br_purchase_stock_edi.model_account_move
+msgid "Journal Entry"
+msgstr "Lançamento contábil"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model,name:l10n_br_purchase_stock_edi.model_account_move_line
+msgid "Journal Item"
+msgstr "Item do lançamento"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_purchase_edi_match__kind
+msgid "Kind"
+msgstr "Tipo"
+
+#. module: l10n_br_purchase_stock_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_edi/models/stock_picking.py:0
+msgid "Lots of the document"
+msgstr "Lotes do documento"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__import_no_stock_entry
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_no_stock_entry
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_match_list
+msgid "No Stock Entry"
+msgstr "Sem entrada em estoque"
+
+#. module: l10n_br_purchase_stock_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_edi/models/document_match.py:0
+msgid ""
+"Only a purchase manager or a stock manager can mark a line as without stock "
+"entry."
+msgstr ""
+"Só um gerente de compras ou de estoque pode marcar uma linha como sem "
+"entrada em estoque."
+
+#. module: l10n_br_purchase_stock_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_match_list
+msgid "Open Receipt"
+msgstr "Abrir recebimento"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__import_order_price_unit
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_order_price_unit
+msgid "Order Price"
+msgstr "Preço do pedido"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__import_ordered_qty
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_ordered_qty
+msgid "Order Qty"
+msgstr "Qtd. do pedido"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__import_received_qty
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_received_qty
+msgid "Order Received Qty"
+msgstr "Qtd. recebida do pedido"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__purchase_price_unit
+msgid "Order Unit Price"
+msgstr "Preço unitário do pedido"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__purchase_ordered_qty
+msgid "Ordered Quantity"
+msgstr "Quantidade pedida"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model,name:l10n_br_purchase_stock_edi.model_l10n_br_purchase_edi_match
+msgid "Origin of an imported fiscal document"
+msgstr "Origem de um documento fiscal importado"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__purchase_price_difference
+msgid "Price Difference"
+msgstr "Diferença de preço"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__import_price_difference
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_price_difference
+msgid "Price vs Order"
+msgstr "Preço x pedido"
+
+#. module: l10n_br_purchase_stock_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.view_picking_form
+msgid "Propose Lots from the Document"
+msgstr "Propor lotes do documento"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model,name:l10n_br_purchase_stock_edi.model_purchase_order_line
+msgid "Purchase Order Line"
+msgstr "Linha do pedido de compra"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__import_qty_difference
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_qty_difference
+msgid "Qty vs Receipt"
+msgstr "Qtd. x recebimento"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__purchase_qty_difference
+msgid "Quantity Difference"
+msgstr "Diferença de quantidade"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move_line__import_qty_difference
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_qty_difference
+msgid ""
+"Quantity of the document for the order line minus the received quantity that "
+"the bills did not take yet."
+msgstr ""
+"Quantidade do documento para a linha do pedido menos a quantidade recebida "
+"que as faturas ainda não cobriram."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move_line__import_ordered_qty
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_ordered_qty
+msgid "Quantity of the order line, in the unit of this line."
+msgstr "Quantidade da linha do pedido, na unidade desta linha."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move_line__purchase_ordered_qty
+msgid ""
+"Quantity of the purchase order line this bill line is linked to, in the unit "
+"of the bill line."
+msgstr ""
+"Quantidade da linha do pedido de compra a que esta linha da fatura está "
+"ligada, na unidade da linha da fatura."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move_line__purchase_received_qty
+msgid ""
+"Quantity received for the order line (done receipts, less the returns), in "
+"the unit of the bill line."
+msgstr ""
+"Quantidade recebida da linha do pedido (recebimentos concluídos, menos as "
+"devoluções), na unidade da linha da fatura."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move_line__import_received_qty
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_received_qty
+msgid "Quantity received for the order line, in the unit of this line."
+msgstr "Quantidade recebida da linha do pedido, na unidade desta linha."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_purchase_edi_match__picking_id
+#: model:ir.model.fields.selection,name:l10n_br_purchase_stock_edi.selection__l10n_br_purchase_edi_match__kind__receipt
+msgid "Receipt"
+msgstr "Recebimento"
+
+#. module: l10n_br_purchase_stock_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_edi/models/document_match.py:0
+msgid "Receipt %(picking)s created for %(count)s line(s)."
+msgstr "Recebimento %(picking)s criado para %(count)s linha(s)."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_purchase_edi_match__stock_move_id
+msgid "Receipt Move"
+msgstr "Movimento de recebimento"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__import_stock_move_id
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_stock_move_id
+msgid "Receipt Move (origin)"
+msgstr "Movimento de recebimento (origem)"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move_line__import_stock_move_id
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_stock_move_id
+msgid ""
+"Receipt move this imported document line corresponds to. It is filled when "
+"the origin is decided and the order line has a single candidate (the "
+"received and not yet invoiced one first, else the only one still to come), "
+"or chosen on the reconciliation. A document without order may have the "
+"receipt created from it."
+msgstr ""
+"Movimento de recebimento a que esta linha do documento importado "
+"corresponde. É preenchido quando a origem é decidida e a linha do pedido tem "
+"um só candidato (o recebido e ainda não faturado primeiro, senão o único a "
+"receber), ou escolhido na conciliação. Um documento sem pedido pode ter o "
+"recebimento criado a partir dele."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_bank_statement_line__import_picking_count
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_bank_statement_line__import_picking_ids
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move__import_picking_count
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move__import_picking_ids
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_payment__import_picking_count
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_payment__import_picking_ids
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document__import_picking_count
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document__import_picking_ids
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_form
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_match_search
+msgid "Receipts"
+msgstr "Recebimentos"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields.selection,name:l10n_br_purchase_stock_edi.selection__l10n_br_purchase_edi_match__line_state__receipt_done
+msgid "Received"
+msgstr "Recebido"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_account_move_line__purchase_received_qty
+msgid "Received Quantity"
+msgstr "Quantidade recebida"
+
+#. module: l10n_br_purchase_stock_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_edi/models/document_match.py:0
+msgid "Select invoice lines marked as without order."
+msgstr "Selecione linhas da nota marcadas como sem pedido."
+
+#. module: l10n_br_purchase_stock_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_edi/models/document_match.py:0
+msgid "Select lines that have a receipt."
+msgstr "Selecione linhas que têm recebimento."
+
+#. module: l10n_br_purchase_stock_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_edi/models/document_match.py:0
+msgid "Select one receipt move."
+msgstr "Selecione um movimento de recebimento."
+
+#. module: l10n_br_purchase_stock_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_edi/models/document_match.py:0
+msgid "Select the invoice lines to create the receipt."
+msgstr "Selecione as linhas da nota para criar o recebimento."
+
+#. module: l10n_br_purchase_stock_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_edi/models/document_match.py:0
+msgid "Select the lines of one receipt."
+msgstr "Selecione as linhas de um recebimento."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_stock_picking__show_propose_lots_from_import
+msgid "Show Propose Lots From Import"
+msgstr "Mostrar propor lotes do documento"
+
+#. module: l10n_br_purchase_stock_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.document_form
+msgid "Show the receipts of the lines"
+msgstr "Mostrar os recebimentos das linhas"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,field_description:l10n_br_purchase_stock_edi.field_l10n_br_purchase_edi_match__line_state
+msgid "Situation"
+msgstr "Situação"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_bank_statement_line__import_divergent
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move__import_divergent
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_payment__import_divergent
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document__import_divergent
+msgid ""
+"Some line differs from its purchase order line or receipt by more than the "
+"tolerances of the company. It only warns: nothing is blocked."
+msgstr ""
+"Alguma linha difere da sua linha do pedido de compra ou do recebimento por "
+"mais que as tolerâncias da empresa. Só avisa: nada é bloqueado."
+
+#. module: l10n_br_purchase_stock_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.invoice_form_purchase_divergence
+msgid ""
+"Some line differs from the order or the receipt by more than the tolerance"
+msgstr ""
+"Alguma linha difere do pedido ou do recebimento por mais que a tolerância"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_bank_statement_line__purchase_divergent
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move__purchase_divergent
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_payment__purchase_divergent
+msgid ""
+"Some line of the bill differs from its purchase order line or receipt by "
+"more than the tolerances of the company. It only warns: nothing is blocked."
+msgstr ""
+"Alguma linha da fatura difere da sua linha do pedido de compra ou do "
+"recebimento por mais que as tolerâncias da empresa. Só avisa: nada é "
+"bloqueado."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_bank_statement_line__purchase_awaiting_receipt
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move__purchase_awaiting_receipt
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_payment__purchase_awaiting_receipt
+msgid ""
+"Some line of the bill waits for the receipt of its order line. It only "
+"informs: nothing is blocked and it is not a divergence."
+msgstr ""
+"Alguma linha da fatura aguarda o recebimento da sua linha de pedido. Só "
+"informa: nada é bloqueado e não é uma divergência."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_bank_statement_line__import_awaiting_receipt
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move__import_awaiting_receipt
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_payment__import_awaiting_receipt
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document__import_awaiting_receipt
+msgid ""
+"Some line waits for the receipt of its order line. It only informs: nothing "
+"is blocked and it is not a divergence."
+msgstr ""
+"Alguma linha aguarda o recebimento da sua linha de pedido. Só informa: nada "
+"é bloqueado e não é uma divergência."
+
+#. module: l10n_br_purchase_stock_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_purchase_stock_edi.invoice_form_purchase_divergence
+msgid "Some line waits for the receipt of its order. Nothing is blocked."
+msgstr "Alguma linha aguarda o recebimento do pedido. Nada é bloqueado."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model,name:l10n_br_purchase_stock_edi.model_stock_move
+msgid "Stock Move"
+msgstr "Movimento de estoque"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_stock_picking__show_propose_lots_from_import
+msgid ""
+"Technical: a receipt waiting for lots whose moves are the origin of imported "
+"document lines that declare lots."
+msgstr ""
+"Técnico: um recebimento esperando lotes cujos movimentos são a origem de "
+"linhas de documento importado que declaram lotes."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_stock_picking__import_document_ids
+msgid ""
+"Technical: the imported fiscal documents whose lines point to a move of this "
+"receipt."
+msgstr ""
+"Técnico: os documentos fiscais importados cujas linhas apontam para um "
+"movimento deste recebimento."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_bank_statement_line__import_picking_ids
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move__import_picking_ids
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_payment__import_picking_ids
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document__import_picking_ids
+msgid ""
+"Technical: the receipts that the lines of the document point to, as resolved "
+"or as suggested, or that were created from the document."
+msgstr ""
+"Técnico: os recebimentos para os quais as linhas do documento apontam, como "
+"resolvidos ou como sugeridos, ou que foram criados a partir do documento."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move_line__purchase_divergent
+msgid ""
+"The bill line differs from the order and the receipt by more than the "
+"tolerances of the company. It only warns: nothing is blocked."
+msgstr ""
+"A linha da fatura difere do pedido e do recebimento por mais que as "
+"tolerâncias da empresa. Só avisa: nada é bloqueado."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move_line__purchase_awaiting_receipt
+msgid ""
+"The bill line is for an item that goes to the stock and nothing was received "
+"yet. It only informs: it is not a divergence."
+msgstr ""
+"A linha da fatura é de um item que vai ao estoque e nada foi recebido ainda. "
+"Só informa: não é uma divergência."
+
+#. module: l10n_br_purchase_stock_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_edi/models/document_match.py:0
+msgid "The company has no warehouse."
+msgstr "A empresa não tem armazém."
+
+#. module: l10n_br_purchase_stock_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_edi/models/stock_move.py:0
+msgid "The document has no lot declared for %s."
+msgstr "O documento não tem lote declarado para %s."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move_line__import_divergent
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_divergent
+msgid ""
+"The line differs from the order and the receipt by more than the tolerances "
+"of the company. It only warns: nothing is blocked."
+msgstr ""
+"A linha difere do pedido e do recebimento por mais que as tolerâncias da "
+"empresa. Só avisa: nada é bloqueado."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move_line__import_awaiting_receipt
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_awaiting_receipt
+msgid ""
+"The line is matched to an order line of a product that goes to the stock and "
+"nothing was received yet. It only informs: it is not a divergence."
+msgstr ""
+"A linha está casada com uma linha de pedido de um produto que vai ao estoque "
+"e nada foi recebido ainda. Só informa: não é uma divergência."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.constraint,message:l10n_br_purchase_stock_edi.constraint_res_company_purchase_price_tolerance_positive
+msgid "The price tolerance cannot be negative."
+msgstr "A tolerância de preço não pode ser negativa."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.constraint,message:l10n_br_purchase_stock_edi.constraint_res_company_purchase_quantity_tolerance_positive
+msgid "The quantity tolerance cannot be negative."
+msgstr "A tolerância de quantidade não pode ser negativa."
+
+#. module: l10n_br_purchase_stock_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_edi/models/document_match.py:0
+msgid "The receipt move does not belong to the selected order line."
+msgstr "O movimento de recebimento não pertence à linha de pedido selecionada."
+
+#. module: l10n_br_purchase_stock_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_edi/models/stock_move.py:0
+msgid "The receipt move is already closed."
+msgstr "O movimento de recebimento já está fechado."
+
+#. module: l10n_br_purchase_stock_edi
+#. odoo-python
+#: code:addons/l10n_br_purchase_stock_edi/models/stock_move.py:0
+msgid "The receipt of %s already has lots or quantities."
+msgstr "O recebimento de %s já tem lotes ou quantidades."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields.selection,name:l10n_br_purchase_stock_edi.selection__l10n_br_purchase_edi_match__line_state__receipt_pending
+msgid "To Receive"
+msgstr "A receber"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model,name:l10n_br_purchase_stock_edi.model_stock_picking
+msgid "Transfer"
+msgstr "Transferência"
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move_line__purchase_price_difference
+msgid "Unit price of the bill minus the unit price of the order."
+msgstr "Preço unitário da fatura menos o preço unitário do pedido."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move_line__import_price_difference
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_price_difference
+msgid "Unit price of the line minus the unit price of the order line."
+msgstr "Preço unitário da linha menos o preço unitário da linha do pedido."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move_line__purchase_price_unit
+msgid ""
+"Unit price of the order line, in the unit and the currency of the bill line."
+msgstr ""
+"Preço unitário da linha do pedido, na unidade e na moeda da linha da fatura."
+
+#. module: l10n_br_purchase_stock_edi
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_account_move_line__import_order_price_unit
+#: model:ir.model.fields,help:l10n_br_purchase_stock_edi.field_l10n_br_fiscal_document_line__import_order_price_unit
+msgid "Unit price of the order line, in the unit of this line."
+msgstr "Preço unitário da linha do pedido, na unidade desta linha."
+
+#~ msgid "Fiscal documents"
+#~ msgstr "Documentos fiscais"
+
+#~ msgid "Show the imported fiscal documents of this receipt"
+#~ msgstr "Mostrar os documentos fiscais importados deste recebimento"
+
+#~ msgid "Fiscal Documents Count"
+#~ msgstr "Quantidade de documentos fiscais"
+
+#~ msgid "Receipts Count"
+#~ msgstr "Quantidade de recebimentos"
