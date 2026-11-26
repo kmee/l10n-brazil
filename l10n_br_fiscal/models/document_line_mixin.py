@@ -1145,11 +1145,8 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         ):
             # vProd of an import entry is the customs value, and the Import
             # Tax goes in vII, which the SEFAZ adds to vNF on its own.
-            fields_to_amount.append("pis_value")
-            fields_to_amount.append("cofins_value")
             fields_to_amount.append("icms_value")
             fields_to_amount.append("ii_value")
-            fields_to_amount.append("ii_customhouse_charges")
         return fields_to_amount
 
     @api.model

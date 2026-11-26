@@ -226,14 +226,14 @@ class TestIbsCbsDeductible(AccountMoveBRCommon):
 
     def test_migration_links_the_is_group_to_the_fiscal_group(self):
         """Only the IS group is linked; the other groups are left alone."""
-        # The folder of a migration is named after the version (`18.0.3.15.0`)
+        # The folder of a migration is named after the version (`18.0.4.1.0`)
         # and the file has a dash (`post-migration.py`): neither is a valid
         # module name, so a plain `import` cannot reach it. It is loaded by
         # path; it is the same file Odoo runs on `-u`.
         path = get_module_path("l10n_br_account")
         spec = importlib.util.spec_from_file_location(
             "l10n_br_account_post_migration_18_0_3_14_0",
-            f"{path}/migrations/18.0.3.15.0/post-migration.py",
+            f"{path}/migrations/18.0.4.1.0/post-migration.py",
         )
         migration = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(migration)

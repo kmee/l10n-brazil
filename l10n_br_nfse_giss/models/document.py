@@ -21,6 +21,7 @@ from odoo.exceptions import UserError
 from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     EVENT_ENV_HML,
     EVENT_ENV_PROD,
+    SITUACAO_EDOC_A_ENVIAR,
     SITUACAO_EDOC_AUTORIZADA,
     SITUACAO_EDOC_ENVIADA,
     SITUACAO_EDOC_REJEITADA,
@@ -64,10 +65,11 @@ PIS_COFINS_CSLL_WITHHOLDING = {
 # nfse_incidence_location of the operation indicators whose IBS/CBS is due in
 # the city of the customer
 INCIDENCE_AT_CUSTOMER = ("Endereço do Tomador/Adquirente", "Endereço do Destinatário")
-# A02: the city hall is still busy with the previous request of the company
+# A02: the city hall is still busy with the previous request of the company.
+# Each request is repeated after every wait below (seconds), so it is made at
+# most len(GISS_BUSY_WAITS) + 1 times and the waits add up to 30 seconds.
 GISS_BUSY = "A02"
-GISS_BUSY_ATTEMPTS = 3
-GISS_BUSY_WAIT = 3.0
+GISS_BUSY_WAITS = (5.0, 10.0, 15.0)
 
 
 def filter_giss(record):
@@ -521,16 +523,56 @@ class Document(models.Model):
         else:
             self._giss_reject(retorno)
 
+    @staticmethod
+    def _giss_is_busy(retorno):
+        """The city hall refused the request only because it is busy (A02)."""
+        codes = [
+            m.codigo
+            for m in (retorno.mensagens or [])
+            + (getattr(retorno, "alertas", None) or [])
+        ]
+        return (
+            GISS_BUSY in codes
+            and not retorno.nfses
+            and not getattr(retorno, "protocolo", None)
+        )
+
+    def _giss_call(self, method, *args):
+        """Call a provider method, again after each wait of GISS_BUSY_WAITS
+        while the city hall answers that it is busy. Returns the last answer."""
+        retorno = method(*args)
+        for wait in GISS_BUSY_WAITS:
+            if not self._giss_is_busy(retorno):
+                break
+            time.sleep(wait)
+            retorno = method(*args)
+        return retorno
+
     def _giss_send_lot(self, provider, xml):
         """Send the lot, again while the city hall answers it is still busy
         with the query by RPS made just before."""
-        for attempt in range(GISS_BUSY_ATTEMPTS):
-            if attempt:
-                time.sleep(GISS_BUSY_WAIT)
-            retorno = provider.recepcionar_lote_rps(xml)
-            if GISS_BUSY not in [m.codigo for m in retorno.mensagens + retorno.alertas]:
-                break
-        return retorno
+        return self._giss_call(provider.recepcionar_lote_rps, xml)
+
+    def _giss_postpone(self):
+        """The city hall stayed busy: nothing was sent or refused, so the
+        document goes back to be sent again, not to rejected. The new
+        attempt asks for the RPS first, which cannot duplicate the NFS-e."""
+        self.ensure_one()
+        self.write(
+            {
+                "status_code": GISS_BUSY,
+                "status_name": self.env._("City hall busy"),
+                "edoc_error_message": self.env._(
+                    "The city hall was busy with another request of the company "
+                    "(A02) and did not answer. Send the document again in a few "
+                    "moments: the new attempt queries the RPS first, so the NFS-e "
+                    "is not duplicated."
+                ),
+                "authorization_protocol": False,
+                # the state machine has no way back from "enviada" to this state
+                "state_edoc": SITUACAO_EDOC_A_ENVIAR,
+            }
+        )
 
     def _eletronic_document_send(self):
         result = super()._eletronic_document_send()
@@ -540,14 +582,23 @@ class Document(models.Model):
                 # The RPS number is the idempotency key: after a dropped
                 # connection the lot may have been received, and sending it
                 # again is refused (E10, E71, E233). Ask for the RPS first.
-                anterior = provider.consultar_nfse_rps(
-                    record.rps_number, record.document_serie_id.code or ""
+                anterior = record._giss_call(
+                    provider.consultar_nfse_rps,
+                    record.rps_number,
+                    record.document_serie_id.code or "",
                 )
                 if anterior.nfses and not anterior.nfses[0].cancelada:
                     record._giss_authorize(anterior)
                     continue
+                if record._giss_is_busy(anterior):
+                    # without the answer we cannot tell whether the RPS exists
+                    record._giss_postpone()
+                    continue
                 xml = XmlSerializer().render(record._serialize_nfse_giss())
                 envio_lote = record._giss_send_lot(provider, xml)
+                if record._giss_is_busy(envio_lote):
+                    record._giss_postpone()
+                    continue
                 if not envio_lote.sucesso or not envio_lote.protocolo:
                     record._giss_reject(envio_lote)
                     continue

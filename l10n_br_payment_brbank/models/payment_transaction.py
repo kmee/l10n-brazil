@@ -348,6 +348,10 @@ class PaymentTransaction(models.Model):
     def _brbank_fetch_pdf(self, raise_reason=False):
         """The boleto PDF: the bank's when it provides one, else drawn by brbank.
 
+        When the bank declares the PDF but refuses it, the PDF is drawn by brbank
+        too, and the refusal stays out of the last error of the connection (the
+        boleto is fine, the connection too).
+
         Not fatal by default: without it the invoice still prints the digitable line
         and the Pix. A user asking for the PDF gets the reason (`raise_reason`).
         """
@@ -357,13 +361,15 @@ class PaymentTransaction(models.Model):
         reference = self.provider_reference
         try:
             pdf = self.provider_id.sudo()._brbank_run(
-                lambda adapter: adapter.obter_pdf(reference)
+                lambda adapter: adapter.obter_pdf(reference), record=False
             )
         except ErroBrbank as error:
             _logger.info(
-                "brbank: no PDF for %s (%s)", self.reference, type(error).__name__
+                "brbank: the bank gave no PDF for %s (%s), drawing it",
+                self.reference,
+                type(error).__name__,
             )
-            return False
+            return self._brbank_render_pdf(raise_reason=raise_reason)
         self.boleto_pdf = base64.b64encode(pdf)
         return True
 
