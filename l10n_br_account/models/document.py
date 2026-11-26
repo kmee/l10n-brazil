@@ -176,6 +176,28 @@ class FiscalDocument(models.Model):
         default=None,
     )
 
+    def _get_local_date(self, value):
+        """Day of a Datetime (stored in UTC) as the Brazilian fiscal day.
+
+        The fiscal day is the one of the issuer, which is not stored. The
+        timezone is, in this order: the one of the user, the one of the company
+        and America/Sao_Paulo. A user without timezone (cron, automatic import
+        by the DF-e inbox) must not make the day fall back to UTC, which moves
+        a document issued between 21h and midnight to the next day.
+        """
+        if not value:
+            return False
+        return UTC.localize(value).astimezone(self._get_fiscal_tz()).date()
+
+    def _get_fiscal_tz(self):
+        self.ensure_one()
+        return timezone(
+            self.env.user.tz
+            or self.company_id.partner_id.tz
+            or self.env.company.partner_id.tz
+            or "America/Sao_Paulo"
+        )
+
     @api.depends("issuer", "move_ids.invoice_date")
     def _compute_document_date(self):
         for record in self:
@@ -187,7 +209,7 @@ class FiscalDocument(models.Model):
             ):
                 move_id = moves[0]
                 if move_id.invoice_date:
-                    user_tz = timezone(self.env.user.tz or "UTC")
+                    user_tz = record._get_fiscal_tz()
                     doc_date = datetime.combine(move_id.invoice_date, time.min)
                     record.document_date = (
                         user_tz.localize(doc_date).astimezone(UTC).replace(tzinfo=None)
@@ -199,7 +221,7 @@ class FiscalDocument(models.Model):
             if record.issuer == DOCUMENT_ISSUER_PARTNER and moves:
                 move_id = moves[0]
                 if record.document_date:
-                    move_id.invoice_date = record.document_date.date()
+                    move_id.invoice_date = record._get_local_date(record.document_date)
 
     @api.depends("issuer", "move_ids.date")
     def _compute_date_in_out(self):
@@ -212,7 +234,7 @@ class FiscalDocument(models.Model):
             ):
                 move_id = moves[0]
                 if move_id.date:
-                    user_tz = timezone(self.env.user.tz or "UTC")
+                    user_tz = record._get_fiscal_tz()
                     doc_date = datetime.combine(move_id.date, time.min)
                     record.date_in_out = (
                         user_tz.localize(doc_date).astimezone(UTC).replace(tzinfo=None)
@@ -224,7 +246,7 @@ class FiscalDocument(models.Model):
             if record.issuer == DOCUMENT_ISSUER_PARTNER and moves:
                 move_id = moves[0]
                 if record.date_in_out:
-                    move_id.date = record.date_in_out.date()
+                    move_id.date = record._get_local_date(record.date_in_out)
 
     @api.depends("move_ids.invoice_incoterm_id")
     def _compute_incoterm_id(self):

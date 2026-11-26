@@ -28,3 +28,4 @@ from . import test_nfe_partner_document
 from . import test_nfe_duplicate
 from . import test_nfe_edi_set
 from . import test_nfe_lots
+from . import test_nfe_import_datetime
