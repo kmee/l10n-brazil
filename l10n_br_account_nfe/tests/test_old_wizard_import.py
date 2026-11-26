@@ -57,6 +57,10 @@ class TestOldWizardImport(TransactionCase):
         return wizard
 
     def test_the_imported_document_goes_to_the_invoice(self):
+        if "import_stock_entry_policy" in self.company._fields:
+            # the receipt of the goods bought with no order is another rule,
+            # tested in l10n_br_purchase_stock_edi: here only the review is
+            self.company.import_stock_entry_policy = "none"
         wizard = self._wizard()
 
         wizard.action_import_and_open_document()
