@@ -65,6 +65,7 @@ class AccountMove(models.Model):
             for installment in installments
         ]
         balances[-1] = company_currency.round(total_balance - sum(balances[:-1]))
+        terms = {}
         for installment, amount, balance in zip(
             installments, amounts, balances, strict=True
         ):
@@ -75,11 +76,11 @@ class AccountMove(models.Model):
                     "discount_date": False,
                 }
             )
-            term = self.needed_terms.setdefault(
-                key, {"balance": 0.0, "amount_currency": 0.0}
-            )
+            term = terms.setdefault(key, {"balance": 0.0, "amount_currency": 0.0})
             term["balance"] += balance
             term["amount_currency"] += amount
+        # replaces whatever the field held: the terms are computed from scratch
+        self.needed_terms = terms
         return True
 
     ################################
