@@ -1010,7 +1010,12 @@ class TestDocumentImport(EdiImportCase):
         document = self._received([{"name": "SUP-1 Detergent"}])
         with self._declared_codes():
             self.assertTrue(document.import_missing_products)
-        view = self.Document.get_view(view_type="form")["arch"]
+        user = self._fiscal_user("view_fiscal_user_in")
+        view = (
+            self.Document.with_user(user)
+            .with_context(allowed_company_ids=user.company_ids.ids)
+            .get_view(view_type="form")["arch"]
+        )
         node = etree.fromstring(view).xpath(
             "//button[@name='action_import_create_products']"
         )
