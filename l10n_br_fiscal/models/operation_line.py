@@ -141,6 +141,11 @@ class OperationLine(models.Model):
 
     company_tax_framework = fields.Selection(selection=TAX_FRAMEWORK)
 
+    strong_operation = fields.Boolean(
+        help="When checked, the tax definitions of this operation line prevail "
+        "over the ones from the CFOP and from the partner fiscal profile.",
+    )
+
     add_to_amount = fields.Boolean(string="Add to Document Amount?", default=True)
 
     icms_origin = fields.Selection(selection=ICMS_ORIGIN, string="Origin")
@@ -427,7 +432,7 @@ class OperationLine(models.Model):
                     mapping_result["taxes"][tax.tax_domain] = tax
 
         # 4 From Operation Line
-        for tax_definition in self.tax_definition_ids.map_tax_definition(
+        operation_line_tax_definitions = self.tax_definition_ids.map_tax_definition(
             company,
             partner,
             product,
@@ -439,7 +444,8 @@ class OperationLine(models.Model):
             national_taxation_code=national_taxation_code,
             service_type=service_type,
             cfop=mapping_result["cfop"],
-        ):
+        )
+        for tax_definition in operation_line_tax_definitions:
             self._build_mapping_result(mapping_result, tax_definition)
 
         # 5 From CFOP
@@ -477,6 +483,12 @@ class OperationLine(models.Model):
             cfop=mapping_result["cfop"],
         ):
             self._build_mapping_result(mapping_result, tax_definition)
+
+        # 7 Strong Operation: the Operation Line definitions prevail over the
+        # CFOP and the Partner Profile ones
+        if self.strong_operation:
+            for tax_definition in operation_line_tax_definitions:
+                self._build_mapping_result(mapping_result, tax_definition)
 
         if product.tax_icms_or_issqn == TAX_DOMAIN_ICMS:
             mapping_result["taxes"].pop(TAX_DOMAIN_ISSQN, None)
