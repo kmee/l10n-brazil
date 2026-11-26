@@ -316,6 +316,14 @@ class DocumentImportWizard(models.TransientModel):
                             line.product_id.uom_id = wl.uom_internal
                             line.product_id.uom_po_id = wl.uom_internal
 
+            # This window is itself the review: the person chose the product and
+            # the unit of each line in its grid. A line born with no state would
+            # never be resolved, since the window of the review does not open it.
+            for line in edoc.fiscal_line_ids.filtered(
+                lambda line: line.product_id and line.uom_id and not line.import_state
+            ):
+                line.import_state = "resolved"
+
             if not self.partner_id:
                 self.partner_id = edoc.partner_id
 

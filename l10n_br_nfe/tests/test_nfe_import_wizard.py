@@ -311,6 +311,20 @@ class NFeImportWizardTest(TransactionCase):
                 "product created during import must get the XML unit",
             )
 
+    def test_the_lines_born_of_the_window_are_resolved(self):
+        """The window is the review (the grid chooses product and unit), so its
+        lines are not left with no state for a review that never comes."""
+        self._prepare_wizard(self.xml_1)
+        self.wizard.allow_product_creation = True
+        self.wizard.fiscal_operation_id = self.env.ref("l10n_br_fiscal.fo_compras")
+        _binding, edoc = self.wizard._import_edoc()
+
+        self.assertTrue(edoc.fiscal_line_ids)
+        for line in edoc.fiscal_line_ids:
+            self.assertTrue(line.product_id)
+            self.assertEqual(line.import_state, "resolved")
+        self.assertEqual(edoc.import_state, "resolved")
+
     def test__parse_xml(self):
         self._prepare_wizard(self.xml_1)
 
