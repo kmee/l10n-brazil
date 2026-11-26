@@ -1713,27 +1713,32 @@ class TestNfeOwnNoteImport(EdiImportCase):
             as_user.action_import_create_products()
 
     def test_creating_the_missing_products_of_a_document_received(self):
+        product_model = self.env["product.product"]
         document = self._import(self._received_xml())
         lines = document.fiscal_line_ids
         codes = {line._get_partner_product_code() for line in lines}
-        count = self.env["product.product"].search_count([])
+        last = product_model.search([], order="id desc", limit=1).id
 
         document.action_import_create_products()
         document.action_import_create_products()
 
-        self.assertEqual(
-            self.env["product.product"].search_count([]), count + len(codes)
-        )
-        for line in lines:
+        # one product per code: the new ones, or the one that already had the
+        # barcode of the file (the data of the database may hold one)
+        self.assertEqual(len(lines.product_id), len(codes))
+        created = lines.product_id.filtered(lambda product: product.id > last)
+        self.assertTrue(created)
+        self.assertEqual(product_model.search_count([("id", ">", last)]), len(created))
+        self.assertEqual(lines.mapped("import_state"), ["resolved"] * len(lines))
+        for line in lines.filtered(lambda line: line.product_id in created):
             product = line.product_id
-            self.assertTrue(product)
-            self.assertEqual(line.import_state, "resolved")
             self.assertEqual(product.name, line.nfe40_xProd)
             self.assertFalse(product.default_code)
             self.assertTrue(product.purchase_ok)
             self.assertFalse(product.sale_ok)
+            self.assertEqual(product.list_price, 0.0)
+        for line in lines:
             self.assertEqual(
-                product.seller_ids.filtered(
+                line.product_id.seller_ids.filtered(
                     lambda info, line=line: info.partner_id == document.partner_id
                 ).product_code,
                 line._get_partner_product_code(),
