@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 KMEE
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="l10n_br_sale_stock_res_config_settings_form" model="ir.ui.view">
+        <field name="name">l10n_br_sale_stock.res.config.settings.form</field>
+        <field name="model">res.config.settings</field>
+        <field
+            name="inherit_id"
+            ref="l10n_br_sale.l10n_br_sale_res_config_settings_form"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//setting[@id='copy_note_setting']" position="after">
+                <setting
+                    id="sale_picking_by_fiscal_operation_setting"
+                    help="Create one delivery for each fiscal operation of the sale order lines"
+                >
+                    <field name="sale_picking_by_fiscal_operation" />
+                </setting>
+            </xpath>
+        </field>
+    </record>
+</odoo>

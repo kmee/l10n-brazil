@@ -8,6 +8,25 @@ from odoo import models
 class StockMove(models.Model):
     _inherit = "stock.move"
 
+    def _is_picking_by_fiscal_operation(self):
+        self.ensure_one()
+        return bool(
+            self.sale_line_id
+            and self.sale_line_id.order_id.company_id.sale_picking_by_fiscal_operation
+        )
+
+    def _key_assign_picking(self):
+        keys = super()._key_assign_picking()
+        if self._is_picking_by_fiscal_operation():
+            keys += (self.fiscal_operation_id,)
+        return keys
+
+    def _search_picking_for_assignation_domain(self):
+        domain = super()._search_picking_for_assignation_domain()
+        if self._is_picking_by_fiscal_operation():
+            domain.append(("fiscal_operation_id", "=", self.fiscal_operation_id.id))
+        return domain
+
     def _get_new_picking_values(self):
         # IMPORTANTE: a sequencia de update dos dicionarios quando o
         # partner_shipping_id é diferente, o metodo do fiscal está
@@ -23,6 +42,10 @@ class StockMove(models.Model):
         values.update(super()._get_new_picking_values())
         # self is a recordset, possibly with different fiscal operations
         # so we use the fiscal_operation from the SO for the picking:
+        if fiscal_operation and self[:1]._is_picking_by_fiscal_operation():
+            # The pickings are split by fiscal operation, so all the moves
+            # have the same one
+            fiscal_operation = self[0].fiscal_operation_id or fiscal_operation
         if fiscal_operation:
             values.update({"fiscal_operation_id": fiscal_operation.id})
 
