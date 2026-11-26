@@ -139,6 +139,47 @@ class TestSaleStock(TestBrPickingInvoicingCommon):
         finally:
             self.env = saved_env
 
+    def test_invoice_picking_not_done_delivery_policy(self):
+        """Invoice a picking before validating it, with products invoiced
+        on delivery: the fiscal values of the invoice lines must be computed
+        on the quantity of the stock moves, not on the sale line quantity
+        to invoice (still zero)."""
+        product = self.storable_product
+        product.invoice_policy = "delivery"
+        self.fo_venda.journal_id = self.op_simples_remessa.journal_id
+        sale_order = self._create_sale_order(
+            lines=[
+                Command.create(
+                    {
+                        "product_id": product.id,
+                        "product_uom_qty": 3,
+                        "name": product.name,
+                        "price_unit": 100.0,
+                        "fiscal_operation_id": self.fo_venda.id,
+                    }
+                ),
+            ],
+        )
+        sale_order.action_confirm()
+        sale_line = sale_order.order_line
+        self.assertEqual(sale_line.qty_to_invoice, 0.0)
+
+        picking = sale_order.picking_ids
+        picking.set_to_be_invoiced()
+        self.assertNotEqual(picking.state, "done")
+        wizard = (
+            self.env["stock.invoice.onshipping"]
+            .with_context(active_ids=picking.ids, active_model=picking._name)
+            .create({"group": "partner_product"})
+        )
+        invoice = wizard._action_generate_invoices()
+
+        inv_line = invoice.invoice_line_ids.filtered("product_id")
+        self.assertEqual(inv_line.quantity, 3)
+        self.assertEqual(inv_line.fiscal_quantity, 3)
+        for fname in ("amount_fiscal", "icms_base", "icms_value"):
+            self.assertAlmostEqual(inv_line[fname], sale_line[fname], 2, fname)
+
     def test_synchronize_sale_partner_shipping_in_stock_picking(self):
         """
         Test that when partner_shipping_id is changed after the order is
