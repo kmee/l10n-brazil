@@ -867,74 +867,119 @@ class Document(models.Model):
             raise UserError(_("You are not allowed to create products."))
         blocked = self.env["l10n_br_fiscal.document.line"]
         suggested = blocked
+        created = reused = product_model
         for document in self:
             if not document.imported_document:
                 raise UserError(
                     _("Products are created only for an imported document.")
                 )
             received = document.fiscal_operation_type == FISCAL_IN
+            doc_created = doc_reused = product_model
+            doc_blocked = doc_suggested = blocked
             if received:
                 # what the buyer already mapped for this supplier comes first
+                before = document.fiscal_line_ids.filtered("product_id")
                 document._edi_import_apply_supplier_depara()
+                doc_reused |= (document.fiscal_line_ids - before).product_id
             lines = document.fiscal_line_ids.filtered(
                 lambda line: not line.product_id and line._get_partner_product_code()
             )
-            blocked |= lines.filtered(lambda line: line._import_unit_unconfirmed())
+            doc_blocked = lines.filtered(lambda line: line._import_unit_unconfirmed())
             by_code = {}
-            for line in lines - blocked:
+            for line in lines - doc_blocked:
                 code = line._get_partner_product_code()
                 by_code[code] = by_code.get(code, blocked.browse()) | line
-            created = product_model
             for code, group in by_code.items():
                 if received:
                     product = document._edi_import_received_product(group)
                 else:
                     product = document._edi_import_own_product(code)
-                if not product:
+                if product:
+                    doc_reused |= product
+                else:
                     product = product_model.with_company(document.company_id).create(
                         group[0]._edi_import_product_vals()
                     )
-                    created |= product
+                    doc_created |= product
                 for line in group:
                     if not document._edi_import_resolve_created(
                         line, product, received
                     ):
-                        suggested |= line
-            if created:
-                document._message_log(
-                    body=_("Products created by %(user)s: %(products)s")
-                    % {
-                        "user": self.env.user.display_name,
-                        "products": ", ".join(created.mapped("display_name")),
-                    }
-                )
-        if not (blocked or suggested):
-            return True
-        messages = []
+                        doc_suggested |= line
+            document._edi_import_log_products(
+                doc_created, doc_reused, doc_blocked, doc_suggested
+            )
+            created |= doc_created
+            reused |= doc_reused
+            blocked |= doc_blocked
+            suggested |= doc_suggested
+        return self._edi_import_products_notification(
+            created, reused, blocked, suggested
+        )
+
+    def _edi_import_products_summary(self, created, reused, blocked, suggested):
+        """What the action did, in one text for the user and for the history."""
+        parts = [
+            _("%(count)s product(s) created.") % {"count": len(created)},
+            _("%(count)s existing product(s) used.") % {"count": len(reused)},
+        ]
         if blocked:
-            messages.append(
+            parts.append(
                 _(
-                    "%(count)s line(s) have a unit that was not confirmed, and no "
-                    "product was created for them. Choose the unit of each one."
+                    "%(count)s line(s) left for the review: the unit declared "
+                    "was not recognized, so no product was created for them. "
+                    "Choose the unit of each one."
                 )
                 % {"count": len(blocked)}
             )
         if suggested:
-            messages.append(
+            parts.append(
                 _(
-                    "%(count)s line(s) got a product whose purchase unit is not the "
-                    "unit of the line: confirm the unit and the factor in the review."
+                    "%(count)s line(s) got a product whose purchase unit is not "
+                    "the unit of the line: confirm the unit and the factor in "
+                    "the review."
                 )
                 % {"count": len(suggested)}
+            )
+        return " ".join(parts)
+
+    def _edi_import_log_products(self, created, reused, blocked, suggested):
+        """Record in the history of the document what the action did."""
+        self.ensure_one()
+        if not (created or reused or blocked or suggested):
+            return
+        body = self._edi_import_products_summary(created, reused, blocked, suggested)
+        if created:
+            body = (
+                _("Products created by %(user)s: %(products)s")
+                % {
+                    "user": self.env.user.display_name,
+                    "products": ", ".join(created.mapped("display_name")),
+                }
+                + ". "
+                + body
+            )
+        self._message_log(body=body)
+
+    def _edi_import_products_notification(self, created, reused, blocked, suggested):
+        """Client notification of the action: the form is reloaded after it."""
+        left = bool(blocked or suggested)
+        if not (created or reused or left):
+            message = _("There is no line without a product to create one for.")
+        else:
+            message = self._edi_import_products_summary(
+                created, reused, blocked, suggested
             )
         return {
             "type": "ir.actions.client",
             "tag": "display_notification",
             "params": {
-                "title": _("Some lines were left for the review"),
-                "message": " ".join(messages),
-                "type": "warning",
-                "sticky": True,
+                "title": _("Some lines were left for the review")
+                if left
+                else _("Products of the document"),
+                "message": message,
+                "type": "warning" if left else "success",
+                "sticky": left,
                 "next": {"type": "ir.actions.client", "tag": "reload"},
             },
         }

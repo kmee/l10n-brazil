@@ -16,9 +16,21 @@ msgstr ""
 #. module: l10n_br_fiscal_edi
 #. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+msgid "%(count)s product(s) created."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+msgid "%(count)s existing product(s) used."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
 msgid ""
-"%(count)s line(s) have a unit that was not confirmed, and no product was "
-"created for them. Choose the unit of each one."
+"%(count)s line(s) left for the review: the unit declared was not recognized,"
+" so no product was created for them. Choose the unit of each one."
 msgstr ""
 
 #. module: l10n_br_fiscal_edi
@@ -27,6 +39,18 @@ msgstr ""
 msgid ""
 "%(count)s line(s) got a product whose purchase unit is not the unit of the "
 "line: confirm the unit and the factor in the review."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+msgid "There is no line without a product to create one for."
+msgstr ""
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+msgid "Products of the document"
 msgstr ""
 
 #. module: l10n_br_fiscal_edi

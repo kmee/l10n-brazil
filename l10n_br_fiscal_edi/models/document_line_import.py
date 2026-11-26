@@ -41,6 +41,8 @@ class DocumentLine(models.Model):
                 "name": self._get_partner_product_name() or self.name,
                 "purchase_ok": True,
                 "sale_ok": False,
+                # no price of sale is invented: the Odoo default is 1.00
+                "list_price": 0.0,
             }
         else:
             vals = {

@@ -934,6 +934,49 @@ class TestDocumentImport(EdiImportCase):
         self.assertIn("1 line(s)", action["params"]["message"])
         self.assertIn("unit", action["params"]["message"])
 
+    def test_a_product_created_by_a_received_document_has_no_sale_price(self):
+        document = self._received([{"name": "SUP-1 Detergent"}])
+        with self._declared_codes():
+            document.action_import_create_products()
+        self.assertEqual(document.fiscal_line_ids.product_id.list_price, 0.0)
+
+    def test_the_action_tells_the_user_and_the_history_what_it_did(self):
+        known = self.env["product.product"].create(
+            {"name": "Known soap", "barcode": "7891000300121"}
+        )
+        document = self._received(
+            [
+                {"name": "SUP-1 Detergent"},
+                {"name": "SUP-2 Soap"},
+                {"name": "SUP-3 Odd unit", "partner_uom_code": "ZZZ"},
+            ]
+        )
+        with self._declared_codes(), self._barcodes({"SUP-2": "7891000300121"}):
+            action = document.action_import_create_products()
+        self.assertEqual(document.fiscal_line_ids[1].product_id, known)
+        self.assertEqual(action["tag"], "display_notification")
+        params = action["params"]
+        self.assertEqual(params["next"]["tag"], "reload")
+        self.assertEqual(params["type"], "warning")
+        message = params["message"]
+        self.assertIn("1 product(s) created", message)
+        self.assertIn("1 existing product(s) used", message)
+        self.assertIn("1 line(s) left for the review", message)
+        self.assertIn("unit", message)
+        body = document.message_ids[0].body
+        self.assertIn("1 product(s) created", body)
+        self.assertIn("1 line(s) left for the review", body)
+
+    def test_the_notification_of_a_clean_run_is_a_success(self):
+        document = self._received([{"name": "SUP-1 Detergent"}])
+        with self._declared_codes():
+            action = document.action_import_create_products()
+            self.assertEqual(action["params"]["type"], "success")
+            self.assertIn("1 product(s) created", action["params"]["message"])
+            # nothing left to create
+            again = document.action_import_create_products()
+        self.assertIn("no line without a product", again["params"]["message"])
+
     def test_the_category_of_the_company_is_given_to_the_created_products(self):
         categ = self.env["product.category"].create({"name": "Cleaning supplies"})
         self.company.import_product_categ_id = categ
