@@ -75,3 +75,55 @@ class L10nBrPurchaseRequisition(TestPurchaseRequisitionCommon):
             po_memory.order_line[0].fiscal_operation_id,
             self.env.ref("l10n_br_fiscal.fo_compras"),
         )
+
+    def test_02_lines_created_by_code_follow_the_partner(self):
+        """Lines created by code, not by the form, get the fiscal data of the
+        partner and keep following it when the partner changes."""
+        requisition = self.env["purchase.requisition"].create(
+            {
+                "vendor_id": self.res_partner_1.id,
+                "line_ids": [
+                    (0, 0, {"product_id": self.product_09.id, "product_qty": 10})
+                ],
+            }
+        )
+        operation = self.env.ref("l10n_br_fiscal.fo_compras")
+        partner_sp = self.env.ref("l10n_br_base.res_partner_cliente1_sp")
+        partner_am = self.env.ref("l10n_br_base.res_partner_cliente3_am")
+        order = self.env["purchase.order"].create(
+            {
+                "partner_id": partner_sp.id,
+                "requisition_id": requisition.id,
+                "fiscal_operation_id": operation.id,
+                "order_line": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product_09.id,
+                            "product_qty": 10,
+                            "price_unit": 100,
+                            "fiscal_operation_id": operation.id,
+                        },
+                    )
+                ],
+            }
+        )
+        line = order.order_line
+        self.assertTrue(line.fiscal_operation_line_id)
+        cfop_sp = line.cfop_id
+        order.partner_id = partner_am
+        self.assertTrue(line.fiscal_operation_line_id)
+        self.assertNotEqual(line.cfop_id, cfop_sp)
+
+        new_line = self.env["purchase.order.line"].create(
+            {
+                "order_id": order.id,
+                "product_id": self.product_09.id,
+                "product_qty": 5,
+                "price_unit": 100,
+                "fiscal_operation_id": operation.id,
+            }
+        )
+        self.assertTrue(new_line.fiscal_operation_line_id)
+        self.assertEqual(new_line.cfop_id, line.cfop_id)
