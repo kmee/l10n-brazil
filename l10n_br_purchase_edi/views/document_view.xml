@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 KMEE
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="document_line_form" model="ir.ui.view">
+        <field name="name">l10n_br_purchase_edi.document.line.form</field>
+        <field name="model">l10n_br_fiscal.document.line</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.document_line_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='fiscal_line_extra_info']" position="inside">
+                <group
+                    name="import_origin"
+                    string="Purchase Origin"
+                    groups="purchase.group_purchase_user"
+                >
+                    <field name="import_origin_candidate_ids" invisible="1" />
+                    <field
+                        name="import_purchase_line_id"
+                        options="{'no_create': True}"
+                    />
+                    <field
+                        name="import_split_purchase_line_ids"
+                        widget="many2many_tags"
+                        options="{'no_create': True}"
+                        invisible="not import_purchase_line_id"
+                    />
+                    <field name="import_origin_state" />
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="invoice_form" model="ir.ui.view">
+        <field name="name">l10n_br_purchase_edi.invoice.form</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//form/header" position="inside">
+                <field name="has_suggested_import_origin" invisible="1" />
+                <field name="edi_can_match_orders" invisible="1" />
+                <button
+                    name="action_confirm_import_origins"
+                    type="object"
+                    string="Confirm Origins"
+                    groups="l10n_br_fiscal.group_user"
+                    invisible="not has_suggested_import_origin or state != 'draft'"
+                />
+                <button
+                    name="action_open_origin_match"
+                    type="object"
+                    string="Match with Orders"
+                    groups="l10n_br_fiscal.group_user"
+                    invisible="not edi_can_match_orders or state != 'draft'"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>
