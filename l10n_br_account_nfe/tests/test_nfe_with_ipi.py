@@ -97,3 +97,7 @@ class TestNFeWithIPI(AccountMoveBRCommon):
         self.assertEqual(
             fiscal_doc_line.nfe40_impostoDevol.nfe40_IPI.nfe40_vIPIDevol, 1.00
         )
+        self.assertEqual(fiscal_doc.nfe40_vIPIDevol, 1.00)
+        self.assertEqual(
+            fiscal_doc_line.fiscal_amount_untaxed, fiscal_doc_line.price_gross + 1.00
+        )
