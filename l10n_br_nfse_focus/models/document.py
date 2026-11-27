@@ -28,6 +28,7 @@ from odoo.addons.l10n_br_nfse.models.document import filter_processador_edoc_nfs
 from .constants import (
     CODE_NFE_AUTORIZADA,
     CODE_NFE_CANCELADA,
+    FOCUS_NFSE_REPLACED_NUMBER,
     NFSE_URL,
     STATUS_AUTORIZADO,
     STATUS_CANCELADO,
@@ -55,6 +56,29 @@ class Document(models.Model):
         if self.filtered(filter_focusnfe):
             return None
         return super()._processador_erpbrasil_nfse()
+
+    def _compute_nfse_replace_supported(self):
+        result = super()._compute_nfse_replace_supported()
+        for record in self.filtered(filter_processador_edoc_nfse).filtered(
+            filter_focusnfe_municipal
+        ):
+            record.nfse_replace_supported = record.company_id.focusnfe_nfse_replace
+        return result
+
+    def _prepare_focus_nfse_replaced(self):
+        """Number of the NFS-e this one replaces, sent to FocusNFe."""
+        self.ensure_one()
+        old = self.nfse_replaced_document_id
+        if not old:
+            return {}
+        if not old.document_number:
+            raise UserError(
+                _(
+                    "The NFS-e %(document)s has no number: it cannot be replaced.",
+                    document=old.display_name,
+                )
+            )
+        return {FOCUS_NFSE_REPLACED_NUMBER: old.document_number}
 
     def make_focus_nfse_pdf(self, content):
         """Generate a PDF for a NFSe document using Focus NFSe service.
@@ -116,7 +140,9 @@ class Document(models.Model):
             filter_focusnfe_municipal
         ):
             edoc = []
-            edoc.append({"rps": record._prepare_lote_rps()})
+            rps = record._prepare_lote_rps()
+            rps.update(record._prepare_focus_nfse_replaced())
+            edoc.append({"rps": rps})
             edoc.append({"service": record._prepare_dados_servico()})
             edoc.append({"recipient": record._prepare_dados_tomador()})
             edocs.append(edoc)
@@ -297,6 +323,7 @@ class Document(models.Model):
                     )
                     if pdf_content:
                         record.make_focus_nfse_pdf(pdf_content)
+        return xml
 
     def _process_authorized_status_nacional(self, record, json_data):
         """Process authorized status for NFSe Nacional."""
@@ -310,13 +337,16 @@ class Document(models.Model):
 
     def _process_authorized_status_municipal(self, record, json_data):
         """Process authorized status for NFSe Municipal."""
-        self._process_authorized_status_base(
+        xml = self._process_authorized_status_base(
             record,
             json_data,
             verify_code_key="codigo_verificacao",
             use_url_first=True,
             xml_required=True,
         )
+        if record.state_edoc == SITUACAO_EDOC_AUTORIZADA:
+            # the city hall cancelled the replaced NFS-e with this authorization
+            record._nfse_mark_replaced("", xml)
 
     def _process_error_status(self, record, json_data):
         """Process error authorization status."""
@@ -733,6 +763,9 @@ class Document(models.Model):
             The result of the cancellation process.
         """
         result = super()._before_document_cancel()
+        if self.env.context.get("nfse_replaced_xml"):
+            # replaced: the city hall cancelled it when authorizing the new one
+            return result
         if not self.filtered(filter_processador_edoc_nfse).filtered(filter_focusnfe):
             return result
         return self.cancel_document_focus()
