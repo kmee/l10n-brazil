@@ -105,6 +105,20 @@ class TestBrbankInstallments(BrbankTransactionCase):
         with self.assertRaisesRegex(UserError, "valor minimo do boleto"):
             invoice.action_post()
 
+    def test_missing_federal_state_named_as_such(self):
+        """The pt_BR list said "Situação" (the status of a record) for the
+        federal state (Sicredi, 26/11/2026)."""
+        tx = self._brbank_txs(self._create_invoice())[0]
+        self.partner.state_id = False
+        with self.assertRaisesRegex(UserError, "Federal State"):
+            tx._brbank_prepare_payer()
+        self.env["res.lang"]._activate_lang("pt_BR")
+        with self.assertRaises(UserError) as error:
+            tx.with_context(lang="pt_BR")._brbank_prepare_payer()
+        message = str(error.exception)
+        self.assertIn("Estado", message)
+        self.assertNotIn("Situação", message)
+
     def test_duplicate_reads_the_title_back(self):
         invoice = self._create_invoice(post=False)
         installment = invoice.due_line_ids[:1]
