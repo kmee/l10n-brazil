@@ -24,6 +24,10 @@ class StockPicking(models.Model):
                 # invoice_state é alterado, o usuário pode alterar o campo
                 # mas dessa forma forçamos a decisão de não usar a mesma
                 # do Pedido.
+                if self.company_id.sale_picking_by_fiscal_operation:
+                    move_operation = self.move_ids.fiscal_operation_id
+                    if len(move_operation) == 1:
+                        return move_operation
                 if fiscal_operation != self.sale_id.fiscal_operation_id:
                     fiscal_operation = self.sale_id.fiscal_operation_id
 
