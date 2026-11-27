@@ -135,6 +135,24 @@ class TestImportWithholding(TransactionCase):
         self.assertEqual(document.amount_pis_wh_value, 77.84)
         self.assertEqual(document.amount_inss_wh_value, 550.0)
 
+    def test_the_summary_does_not_depend_on_the_stored_total(self):
+        """The total of the withholdings is a computed field: a document whose stored
+        total was lost still shows the amounts that the file declared."""
+        document = self._import_with_assistant(with_withholding=True)
+        document.flush_recordset()
+        self.env.cr.execute(
+            "UPDATE l10n_br_fiscal_document SET amount_tax_withholding = 0 "
+            "WHERE id = %s",
+            (document.id,),
+        )
+        document.invalidate_recordset(["amount_tax_withholding"])
+
+        gross, withholding, net = document._edi_payment_totals()
+
+        self.assertAlmostEqual(withholding, WITHHELD, places=2)
+        self.assertAlmostEqual(net, gross - WITHHELD, places=2)
+        self.assertIn(f"{WITHHELD:.2f}", document._edi_installment_warning() or "")
+
     def test_a_note_without_the_group_has_no_withholding(self):
         document = self._import_with_assistant(with_withholding=False)
 
@@ -143,3 +161,32 @@ class TestImportWithholding(TransactionCase):
         gross, withholding, net = document._edi_payment_totals()
         self.assertEqual(withholding, 0.0)
         self.assertEqual(gross, net)
+
+    def test_the_warning_says_the_invoice_does_not_discount_the_withholdings(self):
+        document = self._import_with_assistant(with_withholding=True)
+        document.fiscal_operation_id = self.operation
+        installments = [i.amount for i in document._edi_get_installments()]
+
+        warning = document._edi_installment_warning()
+
+        self.assertIn("does not discount them", warning)
+        self.assertIn(f"{WITHHELD:.2f}", warning)
+        # the installments of the file add up to what the invoice totals: no spread
+        self.assertNotIn("spreads the difference", warning)
+        self.assertAlmostEqual(
+            sum(installments), document.fiscal_amount_total, places=2
+        )
+        self.assertIn("does not discount them", document.import_warning)
+        # and the invoice does what the warning says
+        document.action_import_create_products()
+        move = self.env["account.move"].browse(
+            document.action_generate_invoice()["res_id"]
+        )
+        due = move.line_ids.filtered(
+            lambda line: line.account_id.account_type == "liability_payable"
+        )
+        self.assertAlmostEqual(sum(due.mapped("credit")), sum(installments), places=2)
+        self.assertEqual(
+            sorted(round(credit, 2) for credit in due.mapped("credit")),
+            sorted(round(amount, 2) for amount in installments),
+        )

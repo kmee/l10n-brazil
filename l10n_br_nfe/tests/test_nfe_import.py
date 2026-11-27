@@ -1712,6 +1712,33 @@ class TestNfeOwnNoteImport(EdiImportCase):
         with self.assertRaises(UserError):
             as_user.action_import_create_products()
 
+    def test_creating_the_missing_products_of_a_document_received(self):
+        product_model = self.env["product.product"]
+        # a code and a description that no product of the database answers to
+        xml = self._received_xml().replace(b"E-COM11", b"ZZ-SUP-9")
+        xml = xml.replace(b"Cabinet with Doors", b"ZZ Cleaning Item")
+        document = self._import(xml)
+        line = document.fiscal_line_ids
+        self.assertFalse(line.product_id)
+        count = product_model.search_count([])
+
+        document.action_import_create_products()
+        document.action_import_create_products()
+
+        self.assertEqual(product_model.search_count([]), count + 1)
+        product = line.product_id
+        self.assertEqual(line.import_state, "resolved")
+        self.assertEqual(product.name, "ZZ Cleaning Item")
+        self.assertFalse(product.default_code)
+        self.assertTrue(product.purchase_ok)
+        self.assertFalse(product.sale_ok)
+        self.assertEqual(product.list_price, 0.0)
+        self.assertEqual(product.ncm_id, line.ncm_id)
+        info = product.seller_ids.filtered(
+            lambda info: info.partner_id == document.partner_id
+        )
+        self.assertEqual(info.product_code, "ZZ-SUP-9")
+
     def _resolved(self, xml):
         document = self._import(xml)
         document.action_import_create_products()

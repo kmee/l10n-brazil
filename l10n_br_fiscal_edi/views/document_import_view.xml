@@ -23,7 +23,7 @@
                     type="object"
                     string="Create Missing Products"
                     groups="l10n_br_fiscal.group_user"
-                    invisible="not imported_document or fiscal_operation_type != 'out' or not import_can_create_products or not import_missing_products"
+                    invisible="not imported_document or not import_can_create_products or not import_missing_products"
                 />
             </xpath>
             <xpath expr="//form/header" position="inside">

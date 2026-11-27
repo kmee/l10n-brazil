@@ -19,12 +19,47 @@ msgstr ""
 #. module: l10n_br_fiscal_edi
 #. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+msgid "%(count)s product(s) created."
+msgstr "%(count)s produto(s) criado(s)."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+msgid "%(count)s existing product(s) used."
+msgstr "%(count)s produto(s) existente(s) utilizado(s)."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
 msgid ""
-"%(count)s line(s) have a unit that was not confirmed, and no product was "
-"created for them. Choose the unit of each one."
+"%(count)s line(s) left for the review: the unit declared was not recognized,"
+" so no product was created for them. Choose the unit of each one."
 msgstr ""
-"%(count)s linha(s) têm uma unidade que não foi confirmada, e nenhum produto "
-"foi criado para elas. Escolha a unidade de cada uma."
+"%(count)s linha(s) ficaram para a revisão: a unidade declarada não foi "
+"reconhecida, então nenhum produto foi criado para elas. Escolha a unidade de"
+" cada uma."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+msgid ""
+"%(count)s line(s) got a product whose purchase unit is not the unit of the "
+"line: confirm the unit and the factor in the review."
+msgstr ""
+"%(count)s linha(s) receberam um produto cuja unidade de compra não é a "
+"unidade da linha: confirme a unidade e o fator na revisão."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+msgid "There is no line without a product to create one for."
+msgstr "Não há linha sem produto para a qual criar um."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
+msgid "Products of the document"
+msgstr "Produtos do documento"
 
 #. module: l10n_br_fiscal_edi
 #. odoo-python
@@ -667,6 +702,16 @@ msgid "Import"
 msgstr "Importar"
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_res_company__import_product_categ_id
+msgid "Default Category of Products Created by the Import"
+msgstr "Categoria padrão dos produtos criados pela importação"
+
+#. module: l10n_br_fiscal_edi
+#: model_terms:ir.ui.view,arch_db:l10n_br_fiscal_edi.res_company_form_import
+msgid "Import of Fiscal Documents"
+msgstr "Importação de documentos fiscais"
+
+#. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,field_description:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_can_create_products
 msgid "Import Can Create Products"
 msgstr "Importação pode criar produtos"
@@ -1049,8 +1094,8 @@ msgstr "Produção"
 #. module: l10n_br_fiscal_edi
 #. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
-msgid "Products are created only for a document the company issued."
-msgstr "Produtos são criados apenas para um documento emitido pela empresa."
+msgid "Products are created only for an imported document."
+msgstr "Produtos são criados apenas para um documento importado."
 
 #. module: l10n_br_fiscal_edi
 #. odoo-python
@@ -1276,6 +1321,21 @@ msgstr ""
 
 #. module: l10n_br_fiscal_edi
 #. odoo-python
+#: code:addons/l10n_br_fiscal_edi/models/document_payment.py:0
+msgid ""
+"The note declares withholdings of %(withholding)s in its total. The invoice "
+"generated from it does not discount them: its total and its installments "
+"stay as in the file, gross of the withholdings, so the net amount payable of"
+" %(net)s is only informative and the withholdings must be recorded in the "
+"invoice."
+msgstr ""
+"A nota declara retenções de %(withholding)s no total. A fatura gerada a "
+"partir dela não as desconta: o total e as parcelas ficam como no arquivo, "
+"brutos das retenções, então o líquido a pagar de %(net)s é apenas "
+"informativo e as retenções precisam ser lançadas na fatura."
+
+#. module: l10n_br_fiscal_edi
+#. odoo-python
 #: code:addons/l10n_br_fiscal_edi/models/document_import.py:0
 msgid ""
 "The document %(document)s has lines that were not reviewed:\n"
@@ -1407,13 +1467,22 @@ msgid "The review can only be applied on the line of an imported document."
 msgstr "A revisão só pode ser aplicada na linha de um documento importado."
 
 #. module: l10n_br_fiscal_edi
+#: model:ir.model.fields,help:l10n_br_fiscal_edi.field_res_company__import_product_categ_id
+msgid ""
+"Category given to the products that the action 'Create Missing Products' of "
+"an imported document creates. Empty: the default category of the products."
+msgstr ""
+"Categoria dos produtos que a ação 'Criar produtos faltantes' de um "
+"documento importado cria. Vazia: a categoria padrão dos produtos."
+
+#. module: l10n_br_fiscal_edi
 #: model:ir.model.fields,help:l10n_br_fiscal_edi.field_l10n_br_fiscal_document__import_can_create_products
 msgid ""
-"The user may create products, which the action of the imported documents the"
-" company issued needs."
+"The user may create products, which the action of the imported documents "
+"needs."
 msgstr ""
 "O usuário pode criar produtos, de que a ação dos documentos importados "
-"emitidos pela empresa precisa."
+"precisa."
 
 #. module: l10n_br_fiscal_edi
 #. odoo-python
