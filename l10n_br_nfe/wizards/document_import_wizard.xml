@@ -44,6 +44,8 @@
                 <field name="uom_conversion_factor" />
                 <field name="ncm_xml" readonly="1" />
                 <field name="ncm_internal" readonly="1" />
+                <field name="ncm_diverges" column_invisible="1" />
+                <field name="ncm_choice" readonly="not ncm_diverges" />
                 <field name="cfop_xml" readonly="1" />
                 <field name="new_cfop_id" />
                 <field name="icms_percent" readonly="1" />

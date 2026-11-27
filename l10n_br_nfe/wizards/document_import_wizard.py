@@ -137,6 +137,7 @@ class DocumentImportWizard(models.TransientModel):
             "import_xml_id": self.id,
             "product_supplier_id": supplier_id.id,
             "uom_conversion_factor": supplier_id.partner_uom_factor or 1,
+            "ncm_choice": "xml",
         }
 
     def _search_product_supplier_by_product_code(self, code):
@@ -353,6 +354,11 @@ class DocumentImportWizard(models.TransientModel):
                     xml_product.prod.uTrib = product_line.uom_internal.code
                     if product_line.new_cfop_id:
                         xml_product.prod.CFOP = product_line.new_cfop_id.code
+                    if (
+                        product_line.ncm_choice == "product"
+                        and product_line.ncm_diverges
+                    ):
+                        xml_product.prod.NCM = internal_product.ncm_id.code_unmasked
         return parsed_xml
 
 
@@ -408,6 +414,22 @@ class NfeImportProducts(models.TransientModel):
         string="Internal NCM Code",
     )
 
+    ncm_diverges = fields.Boolean(
+        compute="_compute_ncm_diverges",
+        help="The NCM of the file is not the one of the product chosen for the line.",
+    )
+
+    ncm_choice = fields.Selection(
+        selection=[
+            ("xml", "NCM of the file"),
+            ("product", "NCM of the product"),
+        ],
+        string="NCM to Use",
+        default="xml",
+        help="NCM the imported line takes when the NCM of the file differs from the "
+        "one of the product. By default the line keeps what the supplier declared.",
+    )
+
     cfop_xml = fields.Char(string="XML CFOP")
 
     new_cfop_id = fields.Many2one(
@@ -426,6 +448,15 @@ class NfeImportProducts(models.TransientModel):
     imported_partner_id = fields.Many2one(related="import_xml_id.partner_id")
 
     uom_conversion_factor = fields.Float(string="UOM Conversion Factor", default=1)
+
+    @api.depends("ncm_xml", "product_id.ncm_id")
+    def _compute_ncm_diverges(self):
+        for line in self:
+            line.ncm_diverges = bool(
+                line.product_id.ncm_id
+                and line.ncm_xml
+                and line.product_id.ncm_id.code_unmasked != line.ncm_xml
+            )
 
     def _find_or_create_product_supplierinfo(self):
         for product in self:
