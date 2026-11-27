@@ -226,3 +226,33 @@ class TestPurchaseOrderEdition(TransactionCase):
             msg="Widget total should match the stored total after edition.",
         )
         self._assert_widget_icms_matches_line(purchase_order)
+
+    def test_tax_totals_of_line_created_by_procurement(self):
+        """The line created on the server, as the procurement does, carries
+        the account taxes of its fiscal taxes, as the line of the form"""
+        order = self.env["purchase.order"].create(
+            {"partner_id": self.partner.id, "company_id": self.company.id}
+        )
+        supplier = self.env["product.supplierinfo"].create(
+            {
+                "partner_id": self.partner.id,
+                "product_id": self.product.id,
+                "price": 100.0,
+            }
+        )
+        vals = self.env["purchase.order.line"]._prepare_purchase_order_line(
+            self.product, 10.0, self.product.uom_po_id, self.company, supplier, order
+        )
+        line = self.env["purchase.order.line"].create(vals)
+        self.assertEqual(
+            line.taxes_id,
+            line.fiscal_tax_ids.account_taxes(
+                user_type="purchase",
+                fiscal_operation=line.fiscal_operation_id,
+                company=self.company,
+            ),
+        )
+        if line.taxes_id:
+            self.assertAlmostEqual(
+                _get_widget_tax_amount(order.tax_totals, "IPI"), line.ipi_value, 2
+            )
