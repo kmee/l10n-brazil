@@ -1,0 +1,7 @@
+from . import res_company
+from . import purchase_order_line
+from . import stock_move
+from . import document_line
+from . import document
+from . import account_move_line
+from . import account_move

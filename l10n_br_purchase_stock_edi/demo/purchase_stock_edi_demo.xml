@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    Demo of the receipt link, in the company "Empresa Lucro Presumido".
+
+    NF-e 35261073623891000106550010000030011300100018 declares the order
+    PO-DEMO-STK-001 and its item 1: the order buys 6 units of a stockable
+    product, the note brings 5. The line enters resolved, points to the
+    receipt move of the order and the bill is a draft awaiting the receipt.
+    "Fill Receipt from the Document" puts the 5 units of the note on it.
+-->
+<odoo noupdate="1">
+    <record id="demo_product_stock" model="product.template">
+        <field name="name">Placa-mãe ATX B660</field>
+        <field name="type">consu</field>
+        <field name="is_storable" eval="True" />
+        <field name="purchase_ok" eval="True" />
+        <field name="purchase_method">receive</field>
+        <field name="ncm_id" ref="l10n_br_fiscal.ncm_00000000" />
+    </record>
+
+    <record id="demo_order_stock" model="purchase.order">
+        <field name="name">PO-DEMO-STK-001</field>
+        <field name="partner_id" ref="l10n_br_base.res_partner_dell" />
+        <field name="company_id" ref="l10n_br_base.empresa_lucro_presumido" />
+    </record>
+    <record id="demo_order_stock_line" model="purchase.order.line">
+        <field name="order_id" ref="demo_order_stock" />
+        <field
+            name="product_id"
+            search="[('product_tmpl_id', '=', ref('demo_product_stock'))]"
+        />
+        <field name="name">Placa-mãe ATX B660</field>
+        <field name="product_qty">6</field>
+        <field name="product_uom" ref="uom.product_uom_unit" />
+        <field name="price_unit">140.0</field>
+        <field name="date_planned" eval="DateTime.now()" />
+    </record>
+    <function model="purchase.order" name="button_confirm">
+        <value eval="[ref('demo_order_stock')]" />
+    </function>
+
+    <function model="l10n_br_fiscal.document.import.wizard" name="_import_demo_files">
+        <value>l10n_br_purchase_stock_edi</value>
+        <value
+            eval="['demo/import/nfe_35261073623891000106550010000030011300100018.xml']"
+        />
+    </function>
+</odoo>

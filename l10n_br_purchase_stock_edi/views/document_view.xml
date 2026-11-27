@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 KMEE
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="document_line_form" model="ir.ui.view">
+        <field name="name">l10n_br_purchase_stock_edi.document.line.form</field>
+        <field name="model">l10n_br_fiscal.document.line</field>
+        <field name="inherit_id" ref="l10n_br_purchase_edi.document_line_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='import_origin_state']" position="after">
+                <field
+                    name="import_stock_move_id"
+                    options="{'no_create': True}"
+                    groups="purchase.group_purchase_user"
+                    invisible="fiscal_operation_type == 'out'"
+                />
+                <field
+                    name="import_ordered_qty"
+                    groups="purchase.group_purchase_user"
+                    invisible="not import_purchase_line_id"
+                />
+                <field
+                    name="import_received_qty"
+                    groups="purchase.group_purchase_user"
+                    invisible="not import_purchase_line_id"
+                />
+                <field
+                    name="import_qty_difference"
+                    groups="purchase.group_purchase_user"
+                    invisible="not import_purchase_line_id"
+                />
+                <field
+                    name="import_order_price_unit"
+                    groups="purchase.group_purchase_user"
+                    invisible="not import_purchase_line_id"
+                />
+                <field
+                    name="import_price_difference"
+                    groups="purchase.group_purchase_user"
+                    invisible="not import_purchase_line_id"
+                />
+                <field
+                    name="import_awaiting_receipt"
+                    groups="purchase.group_purchase_user"
+                    invisible="not import_purchase_line_id"
+                />
+                <field name="import_divergent" invisible="1" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="document_search" model="ir.ui.view">
+        <field name="name">l10n_br_purchase_stock_edi.document.search</field>
+        <field name="model">l10n_br_fiscal.document</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.document_search" />
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <separator />
+                <filter
+                    name="import_divergent"
+                    string="Divergent from the Order"
+                    domain="[('import_divergent', '=', True)]"
+                />
+                <filter
+                    name="import_awaiting_receipt"
+                    string="Awaiting Receipt"
+                    domain="[('import_awaiting_receipt', '=', True)]"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>
