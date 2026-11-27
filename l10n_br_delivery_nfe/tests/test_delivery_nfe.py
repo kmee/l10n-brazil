@@ -1,6 +1,8 @@
 # Copyright (C) 2024 Diego Paradeda - KMEE
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
+from odoo import Command
+
 from odoo.addons.l10n_br_stock_account.tests.common import TestBrPickingInvoicingCommon
 
 
@@ -80,6 +82,7 @@ class TestDeliveryNFe(TestBrPickingInvoicingCommon):
             "Unexpected value for the field nfe40_qVol in Stock Invoice Onshipping.",
         )
 
+        wizard.vol_ids.nfe40_lacres = [Command.create({"nfe40_nLacre": "L-0001"})]
         wizard.fiscal_operation_journal = False
         wizard.action_generate()
 
@@ -111,6 +114,12 @@ class TestDeliveryNFe(TestBrPickingInvoicingCommon):
             volume_ids.mapped("nfe40_qVol"),
             ["4"],
             "Unexpected value for the field nfe40_qVol in Fiscal Details.",
+        )
+
+        self.assertEqual(
+            volume_ids.nfe40_lacres.mapped("nfe40_nLacre"),
+            ["L-0001"],
+            "Seals of the volume must go to the fiscal document.",
         )
 
         # Number of Volumes
@@ -279,6 +288,7 @@ class TestDeliveryNFe(TestBrPickingInvoicingCommon):
             "Unexpected value for the field nfe40_qVol in Stock Invoice Onshipping.",
         )
 
+        wizard.vol_ids.nfe40_lacres = [Command.create({"nfe40_nLacre": "L-0002"})]
         wizard.action_generate()
 
         self.assertEqual(
@@ -286,6 +296,12 @@ class TestDeliveryNFe(TestBrPickingInvoicingCommon):
             ["1"],
             "Unexpected value for the field nfe40_marca in Fiscal Details.",
         )
+        self.assertEqual(
+            picking.vol_ids.nfe40_lacres.mapped("nfe40_nLacre"), ["L-0002"]
+        )
+        # Pre-generated volumes bring their seals to the invoicing wizard
+        vols_data = picking._get_pre_generated_volumes()
+        self.assertEqual(len(vols_data[0]["nfe40_lacres"]), 1)
 
         self.assertEqual(
             picking.number_of_volumes,
