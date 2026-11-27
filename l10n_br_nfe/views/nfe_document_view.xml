@@ -195,4 +195,28 @@
             </form>
         </field>
     </record>
+
+    <record id="nfe_document_danfe_xml_form_inherit" model="ir.ui.view">
+        <field name="name">l10n_br_nfe.document.danfe.xml.form.inherit</field>
+        <field name="model">l10n_br_fiscal.document</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.document_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_regenerate_danfe"
+                    type="object"
+                    string="Regenerate DANFE"
+                    groups="l10n_br_fiscal.group_user"
+                    invisible="document_type != '55' or issuer != 'company' or state_edoc not in ('autorizada', 'cancelada')"
+                />
+                <button
+                    name="action_open_associate_xml_wizard"
+                    type="object"
+                    string="Associate Authorized XML"
+                    groups="l10n_br_fiscal.group_user"
+                    invisible="document_type != '55' or issuer != 'company' or state_edoc not in ('a_enviar', 'enviada', 'rejeitada')"
+                />
+            </xpath>
+        </field>
+    </record>
 </odoo>
