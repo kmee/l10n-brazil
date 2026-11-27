@@ -35,6 +35,9 @@ class PurchaseEdiCase(EdiImportCase):
         )
         values.setdefault("document_serie", "1")
         values.setdefault("document_number", str(self.Document.search_count([]) + 1000))
+        # a file always declares the issue date, and the bill takes its dates from
+        # it: a document without one cannot fill the accounting date of the form
+        values.setdefault("document_date", "2026-01-10 12:00:00")
         return self._create_imported_document(**values)
 
     def _order(self, quantity=10.0, price=140.0, confirm=True, partner=None):
