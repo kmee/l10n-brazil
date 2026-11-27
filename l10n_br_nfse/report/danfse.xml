@@ -157,7 +157,12 @@ row {
                 <div class="col-2 rotulo br">
                     No. da NFS-e substituída
                 </div>
-                <div class="col-2 linha centro br" />
+                <div class="col-2 linha centro br">
+                    <span
+                        t-if="doc.nfse_replaced_document_id"
+                        t-field="doc.nfse_replaced_document_id.document_number"
+                    />
+                </div>
                 <div class="col-2 rotulo br">
                     Local da Prestação
                 </div>
