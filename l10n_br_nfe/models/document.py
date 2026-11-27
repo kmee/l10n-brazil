@@ -1201,6 +1201,7 @@ class NFe(spec_models.StackedModel):
     ):
         res = super()._prepare_import_dict(values, model, parent_dict, defaults_model)
         res["imported_document"] = True
+        res.update(self._import_withholding_total(values, res))
         if "nfe40_mod" in values:
             res["document_type_id"] = (
                 self.env["l10n_br_fiscal.document.type"]
@@ -1208,6 +1209,34 @@ class NFe(spec_models.StackedModel):
                 .id
             )
         return res
+
+    @api.model
+    def _import_withholding_total(self, values, res):
+        """The withholdings of the total of the file (``retTrib``) for the fields
+        of the document that keep them. The group has no tax on the lines, so it is
+        not shared among them: the document says that its withholdings are the
+        declared ones and keeps them apart from the sum of the lines. The social
+        security withholding has no field of the document that the spec reaches by
+        itself, and the PIS, COFINS, CSLL and IRRF ones came through their
+        ``related`` fields."""
+        withholding = {
+            "amount_pis_wh_value": res.get("amount_pis_wh_value"),
+            "amount_cofins_wh_value": res.get("amount_cofins_wh_value"),
+            "amount_csll_wh_value": res.get("amount_csll_wh_value"),
+            "amount_irpj_wh_base": res.get("amount_irpj_wh_base"),
+            "amount_irpj_wh_value": res.get("amount_irpj_wh_value"),
+            "amount_inss_wh_base": values.get("nfe40_vBCRetPrev"),
+            "amount_inss_wh_value": values.get("nfe40_vRetPrev"),
+        }
+        withholding = {key: float(value or 0.0) for key, value in withholding.items()}
+        declared = sum(
+            value for key, value in withholding.items() if key.endswith("_value")
+        )
+        if not declared:
+            return {}
+        withholding["amount_tax_withholding"] = declared
+        withholding["import_withholding_declared"] = True
+        return withholding
 
     @api.model
     def _build_attr(self, node, fields, vals, path, attr):

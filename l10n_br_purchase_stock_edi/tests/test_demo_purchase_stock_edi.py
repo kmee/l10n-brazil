@@ -13,11 +13,11 @@ class TestDemo(TransactionCase):
 
     def setUp(self):
         super().setUp()
-        if not self.env.ref("l10n_br_purchase_edi_demo.demo_order_lot", False):
+        if not self.env.ref("l10n_br_purchase_stock_edi.demo_order_lot", False):
             self.skipTest("No demo data")
 
     def test_the_receipt_has_the_lots_of_the_note_and_is_done(self):
-        order = self.env.ref("l10n_br_purchase_edi_demo.demo_order_lot")
+        order = self.env.ref("l10n_br_purchase_stock_edi.demo_order_lot")
         document = self.env["l10n_br_fiscal.document"].search(
             [("document_key", "=", KEY_LOTS)]
         )
@@ -43,7 +43,7 @@ class TestDemo(TransactionCase):
         self.assertEqual(document.import_purchase_order_ids, order)
 
     def test_the_note_of_the_order_not_received_awaits_the_receipt(self):
-        order = self.env.ref("l10n_br_purchase_edi_demo.demo_order_waiting")
+        order = self.env.ref("l10n_br_purchase_stock_edi.demo_order_waiting")
         document = self.env["l10n_br_fiscal.document"].search(
             [("document_key", "=", KEY_WAITING)]
         )
@@ -57,7 +57,7 @@ class TestDemo(TransactionCase):
         self.assertNotEqual(order.picking_ids.state, "done")
 
     def test_the_note_of_the_purchases_demo_is_received_too(self):
-        order = self.env.ref("l10n_br_purchase_edi_demo.demo_order_confirmed")
+        order = self.env.ref("l10n_br_purchase_stock_edi.demo_order_confirmed")
         document = self.env["l10n_br_fiscal.document"].search(
             [
                 (

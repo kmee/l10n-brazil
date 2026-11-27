@@ -7,6 +7,31 @@ from dataclasses import replace
 
 from odoo import _, api, fields, models
 
+# The withholdings of the total of a document, which the document keeps apart from
+# the lines when the file declares them only in the total (NF-e ``retTrib``).
+DECLARED_WITHHOLDING_FIELDS = (
+    "amount_pis_wh_base",
+    "amount_pis_wh_value",
+    "amount_cofins_wh_base",
+    "amount_cofins_wh_value",
+    "amount_csll_wh_base",
+    "amount_csll_wh_value",
+    "amount_irpj_wh_base",
+    "amount_irpj_wh_value",
+    "amount_inss_wh_base",
+    "amount_inss_wh_value",
+    "amount_issqn_wh_base",
+    "amount_issqn_wh_value",
+)
+DECLARED_WITHHOLDING_VALUES = (
+    "amount_pis_wh_value",
+    "amount_cofins_wh_value",
+    "amount_csll_wh_value",
+    "amount_irpj_wh_value",
+    "amount_inss_wh_value",
+    "amount_issqn_wh_value",
+)
+
 
 class Document(models.Model):
     """What a fiscal document declares to be paid, and the page that shows it.
@@ -24,6 +49,40 @@ class Document(models.Model):
         help="Installments and payments declared by the document and the totals "
         "that go with them. It is not stored.",
     )
+
+    import_withholding_declared = fields.Boolean(
+        copy=False,
+        help="The file declared its withholdings only in the total, with no tax "
+        "on the lines. The document then keeps the declared amounts (they are not "
+        "the sum of the lines) and the net amount payable discounts them.",
+    )
+
+    def _edi_withholding_declared(self):
+        """True when the withholdings of the document are the ones the file declared
+        in its total: the lines carry none, so nothing is shared among them."""
+        self.ensure_one()
+        return bool(
+            self.imported_document
+            and self.import_withholding_declared
+            and not sum(self.fiscal_line_ids.mapped("amount_tax_withholding"))
+        )
+
+    @api.depends(lambda self: self._get_fiscal_amount_field_dependencies())
+    def _compute_fiscal_amount(self):
+        """The sum of the lines would erase the withholdings that the file declared
+        in its total: keep them."""
+        kept = {
+            document: {
+                field: document[field]
+                for field in DECLARED_WITHHOLDING_FIELDS + ("amount_tax_withholding",)
+            }
+            for document in self.filtered("import_withholding_declared")
+            if document._edi_withholding_declared()
+        }
+        result = super()._compute_fiscal_amount()
+        for document, values in kept.items():
+            document.update(values)
+        return result
 
     def _edi_get_installments(self):
         """Installments declared by the document, as a list of ``EdiInstallment``."""
@@ -59,6 +118,16 @@ class Document(models.Model):
         fiscal operation: a CT-e imported without one would show zero, so the lines,
         which carry the amounts declared in the file, answer instead."""
         self.ensure_one()
+        if self._edi_withholding_declared():
+            # the lines are gross: the withholdings of the total come off the amount
+            # payable, and the installments of the file are not changed by them
+            gross = (
+                self.fiscal_amount_total
+                if self.fiscal_operation_id
+                else sum(self.fiscal_line_ids.mapped("fiscal_amount_total"))
+            )
+            withholding = self.amount_tax_withholding
+            return gross, withholding, gross - withholding
         if self.fiscal_operation_id:
             net, withholding = self.fiscal_amount_total, self.amount_tax_withholding
         else:
@@ -121,6 +190,7 @@ class Document(models.Model):
         "fiscal_operation_id",
         "fiscal_amount_total",
         "amount_tax_withholding",
+        "import_withholding_declared",
         "fiscal_line_ids.fiscal_amount_total",
         "fiscal_line_ids.amount_tax_withholding",
     )

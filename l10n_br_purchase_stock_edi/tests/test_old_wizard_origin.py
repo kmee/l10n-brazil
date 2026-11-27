@@ -2,22 +2,17 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 import base64
-import os
 import re
+from unittest import SkipTest
 
 from odoo import Command, fields
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, tagged
+from odoo.tools import file_open
 
-from odoo.addons import l10n_br_nfe
-
-FIXTURE = os.path.join(
-    l10n_br_nfe.__path__[0],
-    "tests",
-    "nfe",
-    "v4_00",
-    "leiauteNFe",
-    "NFe35200181583054000129550010000000052062777166.xml",
+FIXTURE = (
+    "l10n_br_nfe/tests/nfe/v4_00/leiauteNFe/"
+    "NFe35200181583054000129550010000000052062777166.xml"
 )
 FIXTURE_DEST = re.compile(rb"(<dest>\s*)<(?:CNPJ|CPF)>\d+</(?:CNPJ|CPF)>")
 
@@ -32,6 +27,10 @@ class TestOldWizardOrigin(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        # the former assistant is a window of the NF-e module, which the links
+        # of the purchases do not depend on
+        if "l10n_br_nfe.import_xml.products" not in cls.env:
+            raise SkipTest("The NF-e module is not installed")
         cls.company = cls.env.ref("l10n_br_base.empresa_simples_nacional")
         cls.env = cls.env(
             context=dict(
@@ -73,7 +72,7 @@ class TestOldWizardOrigin(TransactionCase):
         return order
 
     def _import(self):
-        with open(FIXTURE, "rb") as xml_file:
+        with file_open(FIXTURE, "rb") as xml_file:
             content = xml_file.read()
         recipient = self.company.partner_id.cnpj_cpf_stripped
         content = FIXTURE_DEST.sub(rb"\1<CNPJ>%s</CNPJ>" % recipient.encode(), content)

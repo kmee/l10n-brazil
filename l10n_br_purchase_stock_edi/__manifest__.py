@@ -22,5 +22,6 @@
         "views/account_move_view.xml",
         "views/stock_picking_view.xml",
     ],
+    "post_init_hook": "post_init_hook",
     "auto_install": True,
 }

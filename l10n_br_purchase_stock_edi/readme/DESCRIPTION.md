@@ -13,3 +13,10 @@ purchase link (`l10n_br_purchase_edi`) and stock
 - The document line and the bill line are compared with the order and the
   receipt: ordered, received and invoiced quantities, order price, and the
   differences, with tolerances by company. It only warns, nothing is blocked.
+
+Demo data: a supplier, orders and sample NF-e files that walk the cycle of
+life of the import (the note invoiced, the quotation to match, the note
+without order, the lots and the receipt). The notes are imported by the same
+service that a person uses, so the demo is loaded only when the demo data was
+asked for and the NF-e module (`l10n_br_nfe`) is installed at the moment of
+the installation of this module. Without NF-e the module installs with no demo.

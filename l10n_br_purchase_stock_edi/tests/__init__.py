@@ -9,3 +9,6 @@ from . import test_pure_fiscal
 from . import test_buttons
 from . import test_access
 from . import test_confirmed_document
+from . import test_demo_purchase_edi
+from . import test_demo_purchase_stock_edi
+from . import test_old_wizard_origin
