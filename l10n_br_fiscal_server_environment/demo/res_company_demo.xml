@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <record id="company_metalurgica_santa_rita" model="res.company">
+        <field name="name">Metalúrgica Santa Rita Ltda</field>
+        <field name="currency_id" ref="base.BRL" />
+        <field name="country_id" ref="base.br" />
+    </record>
+</odoo>
