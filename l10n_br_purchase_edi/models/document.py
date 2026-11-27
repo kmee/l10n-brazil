@@ -5,10 +5,9 @@ from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 from odoo.tools.safe_eval import safe_eval
 
-from odoo.addons.l10n_br_fiscal.constants.fiscal import (
-    DOCUMENT_ISSUER_PARTNER,
-    DOCUMENT_STATE_DRAFT,
-)
+from odoo.addons.l10n_br_fiscal.constants.fiscal import DOCUMENT_ISSUER_PARTNER
+
+from .document_match import MATCH_CLOSED_STATES
 
 
 class FiscalDocument(models.Model):
@@ -22,17 +21,21 @@ class FiscalDocument(models.Model):
 
     edi_can_match_orders = fields.Boolean(
         compute="_compute_edi_can_match_orders",
-        help="Technical: a purchase document imported from a partner and still in "
-        "draft, the only kind that has an origin to choose.",
+        help="Technical: a purchase document imported from a partner, not "
+        "cancelled, denied or invalidated, and with no bill yet: the only kind "
+        "that has an origin to choose.",
     )
 
-    @api.depends("imported_document", "state_edoc", "issuer")
+    @api.depends("imported_document", "state_edoc", "issuer", "move_ids.state")
     def _compute_edi_can_match_orders(self):
         for document in self:
             document.edi_can_match_orders = bool(
                 document.imported_document
-                and document.state_edoc == DOCUMENT_STATE_DRAFT
+                and document.state_edoc not in MATCH_CLOSED_STATES
                 and document.issuer == DOCUMENT_ISSUER_PARTNER
+                and not document.sudo().move_ids.filtered(
+                    lambda move: move.state != "cancel"
+                )
             )
 
     @api.depends("imported_document", "fiscal_line_ids.import_origin_state")
@@ -89,7 +92,12 @@ class FiscalDocument(models.Model):
         documents._edi_import_apply_order_reference()
         # the operation was suggested by the base: an origin resolved now takes
         # the destination of its order along
-        documents.fiscal_line_ids._suggest_import_origin()
+        documents._edi_import_suggest_origin()
+        return result
+
+    def _edi_import_suggest_origin(self):
+        result = super()._edi_import_suggest_origin()
+        self.filtered("imported_document").fiscal_line_ids._suggest_import_origin()
         return result
 
     def _edi_import_apply_order_reference(self):

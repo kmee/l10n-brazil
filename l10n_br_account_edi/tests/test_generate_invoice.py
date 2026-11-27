@@ -200,3 +200,27 @@ class TestGenerateInvoice(AccountEdiCase):
 
         with self.assertRaisesRegex(UserError, "already posted"):
             document.action_generate_invoice()
+
+
+@tagged("post_install", "-at_install")
+class TestDeadDocumentInvoice(AccountEdiCase):
+    def _check_dead(self, state):
+        with self._declared((self._day(3, 10), 1000.0)):
+            document = self._imported_document()
+            self.assertTrue(document.edi_can_generate_invoice)
+
+            document.state_edoc = state
+
+            self.assertFalse(document.edi_can_generate_invoice)
+            with self.assertRaisesRegex(UserError, "no invoice is generated"):
+                document.action_generate_invoice()
+            self.assertFalse(document.move_ids)
+
+    def test_cancelled_document_cannot_be_invoiced(self):
+        self._check_dead("cancelada")
+
+    def test_denied_document_cannot_be_invoiced(self):
+        self._check_dead("denegada")
+
+    def test_voided_document_cannot_be_invoiced(self):
+        self._check_dead("inutilizada")
