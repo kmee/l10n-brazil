@@ -72,17 +72,24 @@ class Document(models.Model):
         """The sum of the lines would erase the withholdings that the file declared
         in its total: keep them."""
         kept = {
-            document: {
-                field: document[field]
-                for field in DECLARED_WITHHOLDING_FIELDS + ("amount_tax_withholding",)
-            }
+            document: {field: document[field] for field in DECLARED_WITHHOLDING_FIELDS}
             for document in self.filtered("import_withholding_declared")
             if document._edi_withholding_declared()
         }
         result = super()._compute_fiscal_amount()
         for document, values in kept.items():
+            # The total is rebuilt from the declared amounts, never read back: it is
+            # the field being computed and may answer zero while it is.
+            values["amount_tax_withholding"] = sum(
+                values[field] for field in DECLARED_WITHHOLDING_VALUES
+            )
             document.update(values)
         return result
+
+    def _edi_declared_withholding(self):
+        """Sum of the withholdings that the file declared in its total."""
+        self.ensure_one()
+        return sum(self[field] for field in DECLARED_WITHHOLDING_VALUES)
 
     def _edi_get_installments(self):
         """Installments declared by the document, as a list of ``EdiInstallment``."""
@@ -126,7 +133,7 @@ class Document(models.Model):
                 if self.fiscal_operation_id
                 else sum(self.fiscal_line_ids.mapped("fiscal_amount_total"))
             )
-            withholding = self.amount_tax_withholding
+            withholding = self._edi_declared_withholding()
             return gross, withholding, gross - withholding
         if self.fiscal_operation_id:
             net, withholding = self.fiscal_amount_total, self.amount_tax_withholding

@@ -980,7 +980,8 @@ class Document(models.Model):
                 "message": message,
                 "type": "warning" if left else "success",
                 "sticky": left,
-                "next": {"type": "ir.actions.client", "tag": "reload"},
+                # A full reload would wipe the notification before it is read.
+                "next": {"type": "ir.actions.client", "tag": "soft_reload"},
             },
         }
 
@@ -1041,7 +1042,8 @@ class Document(models.Model):
                 % {"count": len(skipped)},
                 "type": "warning",
                 "sticky": True,
-                "next": {"type": "ir.actions.client", "tag": "reload"},
+                # A full reload would wipe the notification before it is read.
+                "next": {"type": "ir.actions.client", "tag": "soft_reload"},
             },
         }
 

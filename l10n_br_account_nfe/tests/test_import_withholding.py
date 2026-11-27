@@ -135,6 +135,24 @@ class TestImportWithholding(TransactionCase):
         self.assertEqual(document.amount_pis_wh_value, 77.84)
         self.assertEqual(document.amount_inss_wh_value, 550.0)
 
+    def test_the_summary_does_not_depend_on_the_stored_total(self):
+        """The total of the withholdings is a computed field: a document whose stored
+        total was lost still shows the amounts that the file declared."""
+        document = self._import_with_assistant(with_withholding=True)
+        document.flush_recordset()
+        self.env.cr.execute(
+            "UPDATE l10n_br_fiscal_document SET amount_tax_withholding = 0 "
+            "WHERE id = %s",
+            (document.id,),
+        )
+        document.invalidate_recordset(["amount_tax_withholding"])
+
+        gross, withholding, net = document._edi_payment_totals()
+
+        self.assertAlmostEqual(withholding, WITHHELD, places=2)
+        self.assertAlmostEqual(net, gross - WITHHELD, places=2)
+        self.assertIn(f"{WITHHELD:.2f}", document._edi_installment_warning() or "")
+
     def test_a_note_without_the_group_has_no_withholding(self):
         document = self._import_with_assistant(with_withholding=False)
 

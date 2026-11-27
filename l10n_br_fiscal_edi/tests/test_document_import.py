@@ -956,7 +956,7 @@ class TestDocumentImport(EdiImportCase):
         self.assertEqual(document.fiscal_line_ids[1].product_id, known)
         self.assertEqual(action["tag"], "display_notification")
         params = action["params"]
-        self.assertEqual(params["next"]["tag"], "reload")
+        self.assertEqual(params["next"]["tag"], "soft_reload")
         self.assertEqual(params["type"], "warning")
         message = params["message"]
         self.assertIn("1 product(s) created", message)
