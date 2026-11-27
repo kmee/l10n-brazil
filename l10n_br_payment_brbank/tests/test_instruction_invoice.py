@@ -217,7 +217,7 @@ class TestInstructionOnInvoice(BrbankTransactionCase):
     def test_rebate_when_the_bank_answers_the_title_as_paid(self):
         """The sandboxes answer every instruction with the title settled, for an
         amount of their own. The payment must not close the installment before the
-        rebate credit note is reconciled with it (Quick, 18/11/2026)."""
+        rebate credit note is reconciled with it (18/11/2026)."""
         invoice = self._create_invoice()
         tx = self._brbank_txs(invoice)[0]
         line = tx.move_line_id
