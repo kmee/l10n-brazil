@@ -101,14 +101,20 @@ class Document(models.Model):
 
     def _cte_demo_issue_with_collection(self, days):
         """Demo data: issue the CT-e with the collection of the installments due in
-        the given number of days from today, as the invoice of a payment term in as
-        many parts would write at the posting, and export it so that its XML is
-        validated.
+        the given number of days from the day of the issue, as the invoice of a
+        payment term in as many parts would write at the posting, and export it so
+        that its XML is validated.
 
-        :param days: days from today of each installment
+        The day of the issue is the local day of the issue date that is written
+        here, so the demo has one notion of "today" and what reads it later never
+        depends on the time the loading ran.
+
+        :param days: days from the day of the issue of each installment
         """
-        today = fields.Date.context_today(self)
+        now = fields.Datetime.now()
         for document in self:
+            document.document_date = document.document_date or now
+            today = document._get_cte_reference_date()
             total = document.amount_financial_total
             amounts = [round(total / len(days), 2)] * len(days)
             amounts[-1] = round(total - sum(amounts[:-1]), 2)

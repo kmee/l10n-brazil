@@ -4,10 +4,10 @@
 <odoo noupdate="1">
 
     <!-- CT-e of a transport service of the company, complete and issued, with the
-         collection (cobr) of two installments, 30 and 60 days from today. The
-         installments are the ones that the invoice of a payment term in two parts
-         writes at the posting; the dates are made from the day of the install, so
-         they never fall behind. -->
+         collection (cobr) of two installments, 30 and 60 days from the day of its
+         issue. The installments are the ones that the invoice of a payment term in
+         two parts writes at the posting; the dates are made from the issue date
+         written at the install, so they never fall behind. -->
     <record id="demo_cte_lc_modal_rodoviario_cobranca" model="l10n_br_fiscal.document">
         <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_venda" />
         <field name="document_type_id" ref="l10n_br_fiscal.document_57" />
