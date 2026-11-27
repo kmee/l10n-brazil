@@ -46,6 +46,10 @@
                     invisible="provedor_nfse != 'focusnfe'"
                 />
                 <field
+                    name="focusnfe_nfse_replace"
+                    invisible="provedor_nfse != 'focusnfe' or focusnfe_nfse_type != 'nfse'"
+                />
+                <field
                     name="focusnfe_nfse_nacional_send_im_prestador"
                     invisible="provedor_nfse != 'focusnfe' or focusnfe_nfse_type != 'nfse_nacional'"
                 />

@@ -1,7 +1,3 @@
-.. image:: https://odoo-community.org/readme-banner-image
-   :target: https://odoo-community.org/get-involved?utm_source=readme
-   :alt: Odoo Community Association
-
 ================
 NFS-e (FocusNFE)
 ================
@@ -17,7 +13,7 @@ NFS-e (FocusNFE)
 .. |badge1| image:: https://img.shields.io/badge/maturity-Beta-yellow.png
     :target: https://odoo-community.org/page/development-status
     :alt: Beta
-.. |badge2| image:: https://img.shields.io/badge/license-AGPL--3-blue.png
+.. |badge2| image:: https://img.shields.io/badge/licence-AGPL--3-blue.png
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-OCA%2Fl10n--brazil-lightgray.png?logo=github
@@ -98,6 +94,10 @@ para a empresa desejada:
         de status
       - **Forçar DANFSE Odoo:** Se marcado, o sistema sempre usará o
         DANFSE do Odoo ao invés do DANFSE da FocusNFE
+      - **Substituir NFS-e (FocusNFe):** Visível quando Tipo FocusNFe
+        NFSe = NFSe. Marque se a prefeitura da empresa aceita a
+        substituição de uma NFS-e autorizada pelo FocusNFe: o botão
+        **Substituir NFS-e** passa a aparecer na NFS-e autorizada.
       - **Enviar Inscrição Municipal do Prestador (NFSe Nacional):**
         Visível quando Tipo FocusNFe NFSe = NFSe Nacional. Por padrão a
         Inscrição Municipal cadastrada na empresa é enviada na DPS.
@@ -134,6 +134,13 @@ Para usar este módulo:
 7. Após a autorização, o DANFSE (Documento Auxiliar da Nota Fiscal de
    Serviço Eletrônica) será gerado automaticamente, a menos que a opção
    "Forçar DANFSE Odoo" esteja marcada na configuração da empresa.
+
+8. Para substituir uma NFS-e autorizada (NFSe Municipal, com
+   **Substituir NFS-e (FocusNFe)** marcado na empresa), clique em
+   **Substituir NFS-e**, corrija a cópia e envie. Ela vai ao FocusNFe
+   com o número da NFS-e substituída (``numero_nfse_substituido``);
+   autorizada, a NFS-e antiga é cancelada no Odoo sem novo pedido de
+   cancelamento, porque a prefeitura já a cancelou na substituição.
 
 Bug Tracker
 ===========

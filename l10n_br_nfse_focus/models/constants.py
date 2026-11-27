@@ -22,6 +22,9 @@ API_ENDPOINT_NACIONAL = {
     "cancelamento": "/v2/nfsen/",
 }
 
+# Field of the NFS-e (municipal) request with the number of the replaced NFS-e
+FOCUS_NFSE_REPLACED_NUMBER = "numero_nfse_substituido"
+
 TIMEOUT = 60  # 60 seconds
 
 # Constants for document status

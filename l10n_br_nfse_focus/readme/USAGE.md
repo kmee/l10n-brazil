@@ -15,3 +15,5 @@ Para usar este módulo:
 6.  Acompanhe o status de processamento do documento. O sistema verificará automaticamente o status através de um cron job, ou você pode verificar manualmente através do botão "Verificar Status".
 
 7.  Após a autorização, o DANFSE (Documento Auxiliar da Nota Fiscal de Serviço Eletrônica) será gerado automaticamente, a menos que a opção "Forçar DANFSE Odoo" esteja marcada na configuração da empresa.
+
+8.  Para substituir uma NFS-e autorizada (NFSe Municipal, com **Substituir NFS-e (FocusNFe)** marcado na empresa), clique em **Substituir NFS-e**, corrija a cópia e envie. Ela vai ao FocusNFe com o número da NFS-e substituída (`numero_nfse_substituido`); autorizada, a NFS-e antiga é cancelada no Odoo sem novo pedido de cancelamento, porque a prefeitura já a cancelou na substituição.

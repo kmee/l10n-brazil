@@ -18,6 +18,7 @@ from odoo.addons.l10n_br_fiscal.constants.fiscal import (
     MODELO_FISCAL_NFSE,
     PROCESSADOR_OCA,
     SITUACAO_EDOC_A_ENVIAR,
+    SITUACAO_EDOC_AUTORIZADA,
     SITUACAO_EDOC_CANCELADA,
     SITUACAO_EDOC_ENVIADA,
     SITUACAO_EDOC_REJEITADA,
@@ -2053,3 +2054,78 @@ class TestL10nBrNfseFocus(common.TransactionCase):
 
                 mock_handle.assert_called_once()
                 self.assertEqual(result.status_code, 200)
+
+    def _replacement(self):
+        """Authorized NFS-e (old) and the draft that replaces it (new)."""
+        old = self.nfse_demo
+        old.company_id.processador_edoc = PROCESSADOR_OCA
+        old.document_type_id.code = MODELO_FISCAL_NFSE
+        old.company_id.focusnfe_nfse_type = "nfse"
+        old.company_id.focusnfe_nfse_replace = True
+        old.state_edoc = SITUACAO_EDOC_AUTORIZADA
+        action = old.action_nfse_replace()
+        new = self.env[action["res_model"]].browse(action["res_id"])
+        new.rps_number = "0003"
+        self.assertEqual(new.nfse_replaced_document_id, old)
+        return old, new
+
+    def test_replace_supported(self):
+        old, new = self._replacement()
+        self.assertTrue(old.nfse_replace_supported)
+        old.company_id.focusnfe_nfse_replace = False
+        old.invalidate_recordset(["nfse_replace_supported"])
+        self.assertFalse(old.nfse_replace_supported)
+
+    def test_replace_sends_the_replaced_number(self):
+        old, new = self._replacement()
+        nfse = "odoo.addons.l10n_br_nfse.models.document.Document."
+        with (
+            patch(nfse + "_prepare_lote_rps", return_value={}),
+            patch(nfse + "_prepare_dados_servico", return_value={}),
+            patch(nfse + "_prepare_dados_tomador", return_value={}),
+        ):
+            rps = new._serialize([])[-1][0]["rps"]
+        self.assertEqual(rps["numero_nfse_substituido"], "0001")
+        vals = self.nfse_focus._prepare_payload(
+            {"rps": dict(PAYLOAD[0]["rps"], **rps)},
+            PAYLOAD[1],
+            PAYLOAD[2],
+            old.company_id,
+        )
+        self.assertEqual(vals["numero_nfse_substituido"], "0001")
+        self.assertNotIn(
+            "numero_nfse_substituido",
+            self.nfse_focus._prepare_payload(*PAYLOAD, old.company_id),
+        )
+
+    @patch("odoo.addons.l10n_br_nfse_focus.models.document.requests.get")
+    def test_replace_authorized_cancels_the_old_one(self, mock_get):
+        old, new = self._replacement()
+        new.state_edoc = SITUACAO_EDOC_ENVIADA
+        new.authorization_event_id = self.env["l10n_br_fiscal.event"].create(
+            {
+                "type": "0",
+                "company_id": new.company_id.id,
+                "document_type_id": new.document_type_id.id,
+                "document_serie_id": new.document_serie_id.id,
+                "document_number": "0003",
+                "environment": "hml",
+            }
+        )
+        mock_get.return_value.content = b"%PDF-test%%EOF"
+        json_data = {
+            "status": "autorizado",
+            "data_emissao": "2024-01-01T05:10:12-03:00",
+            "numero": "0004",
+            "codigo_verificacao": "XYZ",
+            "caminho_xml_nota_fiscal": "/arquivos/rps0003-nfse.xml",
+            "url": "https://example.com/pdf.pdf",
+        }
+        with patch.object(Document, "cancel_document_focus") as mock_cancel:
+            new._process_authorized_status_municipal(new, json_data)
+        self.assertEqual(new.state_edoc, SITUACAO_EDOC_AUTORIZADA)
+        self.assertEqual(old.state_edoc, SITUACAO_EDOC_CANCELADA)
+        self.assertIn("0004", old.cancel_reason)
+        self.assertTrue(old.cancel_event_id)
+        # the city hall cancelled it in the substitution: no DELETE to FocusNFe
+        mock_cancel.assert_not_called()

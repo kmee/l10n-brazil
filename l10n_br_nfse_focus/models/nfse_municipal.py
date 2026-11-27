@@ -8,7 +8,7 @@ import json
 from odoo import api
 
 from .base import FocusnfeNfseBase
-from .constants import API_ENDPOINT, NFSE_URL
+from .constants import API_ENDPOINT, FOCUS_NFSE_REPLACED_NUMBER, NFSE_URL
 
 
 class FocusnfeNfse(FocusnfeNfseBase):
@@ -123,6 +123,10 @@ class FocusnfeNfse(FocusnfeNfseBase):
 
         if art:
             vals["art"] = art
+
+        replaced_number = rps_info.get(FOCUS_NFSE_REPLACED_NUMBER)
+        if replaced_number:
+            vals[FOCUS_NFSE_REPLACED_NUMBER] = replaced_number
 
         return vals
 

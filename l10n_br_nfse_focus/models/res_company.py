@@ -84,6 +84,15 @@ class ResCompany(models.Model):
         "of using only the description of the first line.",
     )
 
+    focusnfe_nfse_replace = fields.Boolean(
+        string="Replace NFS-e (FocusNFe)",
+        default=False,
+        help="Check if the city hall of the company accepts the substitution of "
+        "an authorized NFS-e through FocusNFe: the new NFS-e is sent with the "
+        "number of the replaced one, and the city hall cancels the old one when "
+        "it authorizes the new one.",
+    )
+
     def get_focusnfe_token(self):
         """
         Retrieve the appropriate FocusNFe API token based on the current NFSe
