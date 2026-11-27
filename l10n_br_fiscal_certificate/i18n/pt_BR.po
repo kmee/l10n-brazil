@@ -147,7 +147,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_br_fiscal_certificate/models/certificate.py:0
 msgid "Valid: %s"
-msgstr ""
+msgstr "Válido: %s"
 
 #~ msgid "A1"
 #~ msgstr "A1"

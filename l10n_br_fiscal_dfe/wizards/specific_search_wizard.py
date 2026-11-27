@@ -111,6 +111,7 @@ class DfeSpecificSearchWizard(models.TransientModel):
                 "title": _("Success"),
                 "message": _("Specific search triggered successfully"),
                 "type": "success",
-                "next": {"type": "ir.actions.client", "tag": "reload"},
+                # A full reload would wipe the notification before it is read.
+                "next": {"type": "ir.actions.client", "tag": "soft_reload"},
             },
         }

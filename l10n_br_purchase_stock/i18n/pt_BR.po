@@ -99,7 +99,7 @@ msgstr "Última Modificação em"
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock.field_res_company__purchase_invoicing_policy
 #: model:ir.model.fields,field_description:l10n_br_purchase_stock.field_res_config_settings__purchase_invoicing_policy
 msgid "Purchase Invoicing Policy"
-msgstr ""
+msgstr "Política de faturamento das compras"
 
 #. module: l10n_br_purchase_stock
 #: code:addons/l10n_br_purchase_stock/models/res_company.py:0

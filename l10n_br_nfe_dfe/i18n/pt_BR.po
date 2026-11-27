@@ -286,7 +286,7 @@ msgstr "Manifestação do Destinatário"
 #. odoo-python
 #: code:addons/l10n_br_nfe_dfe/wizards/nfe_md_event_wizard.py:0
 msgid "Recipient Manifestation created successfully"
-msgstr ""
+msgstr "Manifestação do destinatário criada com sucesso"
 
 #. module: l10n_br_nfe_dfe
 #: model:ir.model.fields.selection,name:l10n_br_nfe_dfe.selection__l10n_br_fiscal_dfe_document__manifestation_status__sem_manifestacao
@@ -389,7 +389,7 @@ msgstr "Tipo"
 #. module: l10n_br_nfe_dfe
 #: model:ir.model,name:l10n_br_nfe_dfe.model_nfe_recipient_manifestation_event_wizard
 msgid "Wizard to manifest"
-msgstr ""
+msgstr "Assistente de manifestação"
 
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_document_tree
