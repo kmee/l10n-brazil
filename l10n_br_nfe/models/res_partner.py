@@ -177,13 +177,9 @@ class ResPartner(spec_models.SpecModel):
             # operacionalmente são importantes, por isso caso existam o
             # Complemento e o Bairro é melhor agrega-los.
             # campo street retorna "street_name, street_number"
-            endereco = rec.street
-            if rec.street2:
-                endereco += " - " + rec.street2
-            if rec.district:
-                endereco += " - " + rec.district
-
-            rec.nfe40_xEnder = endereco
+            rec.nfe40_xEnder = " - ".join(
+                p for p in (rec.street, rec.street2, rec.district) if p
+            )
 
     def _compute_nfe40_enderDest(self):
         for rec in self:
