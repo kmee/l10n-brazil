@@ -53,3 +53,16 @@ class ResCompany(models.Model):
             "The quantity tolerance cannot be negative.",
         ),
     ]
+
+    def _import_receipt_product_domain(self):
+        """Domain of the products that ask for a receipt when bought with no
+        order, by the policy of the company: the goods that are not services or
+        combos, or only the ones with inventory control. It is the one rule of
+        the policy, used to test a product and to search the screen."""
+        self.ensure_one()
+        policy = self.import_stock_entry_policy
+        if policy == "goods":
+            return [("type", "=", "consu")]
+        if policy == "storable":
+            return [("is_storable", "=", True)]
+        return [("id", "=", False)]

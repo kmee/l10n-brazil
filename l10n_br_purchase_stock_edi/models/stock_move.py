@@ -3,6 +3,8 @@
 
 from datetime import datetime, time
 
+from pytz import UTC, timezone
+
 from odoo import _, models
 
 
@@ -18,6 +20,23 @@ class StockMove(models.Model):
             .search([("import_stock_move_id", "=", self.id)])
         )
 
+    def _edi_expiration_datetime(self, day):
+        """Datetime (naive, UTC) of an expiry that the document gives as a day.
+
+        ``product_expiry`` keeps ``expiration_date`` as a Datetime and shows it
+        in the timezone of the user, so midnight UTC reads as the evening of the
+        day before in Brazil. Noon of the fiscal day is used instead: any
+        timezone within 12 hours of it shows the same day. The timezone is, as
+        in ``l10n_br_account``, the one of the user, of the partner of the
+        company and America/Sao_Paulo.
+        """
+        self.ensure_one()
+        tz = timezone(
+            self.env.user.tz or self.company_id.partner_id.tz or "America/Sao_Paulo"
+        )
+        noon = tz.localize(datetime.combine(day, time(12, 0)))
+        return noon.astimezone(UTC).replace(tzinfo=None)
+
     def _edi_lot_values(self, lot):
         """What to write on the move line for a lot the document declared.
 
@@ -30,7 +49,7 @@ class StockMove(models.Model):
         self.ensure_one()
         Lot = self.env["stock.lot"]
         expiry = "expiration_date" in Lot._fields and lot.date_expiry
-        expiration = datetime.combine(lot.date_expiry, time.min) if expiry else False
+        expiration = self._edi_expiration_datetime(lot.date_expiry) if expiry else False
         existing = Lot.search(
             [
                 ("name", "=", lot.name),

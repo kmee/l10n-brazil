@@ -50,7 +50,7 @@
             <filter name="pending_or_suggested" position="attributes">
                 <attribute
                     name="domain"
-                >['|', ('kind', '!=', 'note'), '|', ('line_state', 'in', ('pending', 'suggested')), '&amp;', ('line_state', '=', 'none'), ('product_id.type', '=', 'consu')]</attribute>
+                >['|', ('kind', '!=', 'note'), '|', ('line_state', 'in', ('pending', 'suggested')), '&amp;', ('line_state', '=', 'none'), ('import_needs_receipt', '=', True)]</attribute>
             </filter>
         </field>
     </record>

@@ -119,7 +119,7 @@
     </record>
 
     <function model="l10n_br_fiscal.document" name="_edi_import_demo_files">
-        <value>l10n_br_purchase_edi</value>
+        <value>l10n_br_purchase_edi_demo</value>
         <value
             eval="[
                 'demo/import/nfe_35261011765432000100550010000020011200100014.xml',
