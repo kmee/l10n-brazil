@@ -13,6 +13,7 @@
         "data/l10n_br_hr.cbo.csv",
         "data/hr_deficiency_data.xml",
         "data/hr_ethnicity_data.xml",
+        "data/hr_education_level_data.xml",
         "security/ir.model.access.csv",
         "views/res_partner_view.xml",
         "views/res_company_view.xml",

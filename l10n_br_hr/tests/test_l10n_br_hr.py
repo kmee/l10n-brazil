@@ -139,3 +139,13 @@ class TestL10nBr(TransactionCase):
             "1 - Branca",
             "The ethnicity get is not valid, expectded" " '1 - Branca'",
         )
+
+    def test_hr_education_level(self):
+        levels = self.env["hr.education.level"].search([])
+        self.assertEqual(len(levels), 12)
+        self.assertEqual(
+            self.env.ref("l10n_br_hr.education_level_07").display_name,
+            "07 - Ensino médio completo",
+        )
+        employee = self.env.ref("l10n_br_hr.demo_employee_joao")
+        self.assertEqual(employee.education_level_id.code, "09")

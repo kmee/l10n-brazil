@@ -18,6 +18,7 @@
         <field name="father_name">Carlos Eduardo da Silva</field>
         <field name="mother_name">Maria José da Silva</field>
         <field name="ethnicity" ref="ethnicity_1" />
+        <field name="education_level_id" ref="education_level_09" />
         <field name="blood_type">o+</field>
         <field name="registration">EMP001</field>
         <field name="employee_relationship_type">funcionario</field>
@@ -41,6 +42,7 @@
         <field name="father_name">Fernando Antônio Santos</field>
         <field name="mother_name">Ana Paula Santos</field>
         <field name="ethnicity" ref="ethnicity_2" />
+        <field name="education_level_id" ref="education_level_07" />
         <field name="blood_type">a+</field>
         <field name="registration">EMP002</field>
         <field name="employee_relationship_type">funcionario</field>
@@ -64,6 +66,7 @@
         <field name="father_name">Henrique José Oliveira</field>
         <field name="mother_name">Fernanda Oliveira</field>
         <field name="ethnicity" ref="ethnicity_3" />
+        <field name="education_level_id" ref="education_level_05" />
         <field name="blood_type">b+</field>
         <field name="registration">EMP003</field>
         <field name="employee_relationship_type">funcionario</field>
@@ -87,6 +90,7 @@
         <field name="father_name">José Ricardo Souza</field>
         <field name="mother_name">Beatriz Helena Souza</field>
         <field name="ethnicity" ref="ethnicity_1" />
+        <field name="education_level_id" ref="education_level_10" />
         <field name="blood_type">ab+</field>
         <field name="registration">EMP004</field>
         <field name="employee_relationship_type">funcionario</field>
@@ -110,6 +114,7 @@
         <field name="father_name">Gabriel Antônio Costa</field>
         <field name="mother_name">Patrícia Costa</field>
         <field name="ethnicity" ref="ethnicity_4" />
+        <field name="education_level_id" ref="education_level_08" />
         <field name="blood_type">o-</field>
         <field name="registration">EMP005</field>
         <field name="employee_relationship_type">funcionario</field>
@@ -133,6 +138,7 @@
         <field name="father_name">Roberto Pereira</field>
         <field name="mother_name">Regina Cláudia Pereira</field>
         <field name="ethnicity" ref="ethnicity_1" />
+        <field name="education_level_id" ref="education_level_07" />
         <field name="blood_type">a-</field>
         <field name="registration">EMP006</field>
         <field name="employee_relationship_type">funcionario</field>

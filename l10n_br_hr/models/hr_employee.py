@@ -110,6 +110,12 @@ class HrEmployee(models.Model):
 
     ethnicity = fields.Many2one(comodel_name="hr.ethnicity", groups="hr.group_hr_user")
 
+    education_level_id = fields.Many2one(
+        comodel_name="hr.education.level",
+        string="Education Level",
+        groups="hr.group_hr_user",
+    )
+
     blood_type = fields.Selection(
         selection=[
             ("a+", "A+"),
