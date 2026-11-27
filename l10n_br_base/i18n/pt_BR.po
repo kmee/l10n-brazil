@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: Odoo Server 12.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2019-05-23 01:40+0000\n"
-"PO-Revision-Date: 2026-10-20 20:14+0000\n"
+"PO-Revision-Date: 2026-11-26 18:54+0000\n"
 "Last-Translator: Luis Felipe Miléo <mileo@kmee.com.br>\n"
 "Language-Team: \n"
 "Language: pt_BR\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.15.2\n"
+"X-Generator: Weblate 2026.11.2\n"
 
 #. module: l10n_br_base
 #. odoo-python
@@ -37,12 +37,12 @@ msgid ""
 "branch number and the account verification digit."
 msgstr ""
 "Uma conta corrente ou conta poupança precisa conter o número da agência e o "
-"dígito verificador de conta."
+"dígito verificador da conta."
 
 #. module: l10n_br_base
 #: model:ir.model.constraint,message:l10n_br_base.constraint_res_partner_pix_partner_pix_key_unique
 msgid "A Pix Key with this values already exists in this partner."
-msgstr "Uma Chave PIX com esses valores já existe em outro parceiro."
+msgstr "Já existe uma chave PIX com esses valores neste parceiro."
 
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_city__anp_code
@@ -163,19 +163,19 @@ msgstr "Acauã"
 #: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__acc_number_dig
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__acc_number_dig
 msgid "Account Digit"
-msgstr "Dígito da Conta"
+msgstr "Dígito da conta"
 
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__acc_number
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__acc_number
 msgid "Account Number"
-msgstr "Número da Conta"
+msgstr "Número da conta"
 
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__transactional_acc_type
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__transactional_acc_type
 msgid "Account Type"
-msgstr "Tipo de Conta"
+msgstr "Tipo de conta"
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_4300034
@@ -210,7 +210,7 @@ msgstr "Adamantina"
 #. module: l10n_br_base
 #: model:ir.model,name:l10n_br_base.model_format_address_mixin
 msgid "Address Format"
-msgstr "Formato de Endereço"
+msgstr "Formato de endereço"
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_5200159
@@ -504,8 +504,8 @@ msgid ""
 "Allows you to create more than one partner with the same CNPJ and different "
 "State Tax Number"
 msgstr ""
-"Permite que você crie mais de um parceiro com o mesmo CNPJ e diferentes "
-"Inscrições Estaduais"
+"Permite criar mais de um parceiro com o mesmo CNPJ e inscrições estaduais "
+"diferentes"
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_2900900
@@ -2078,18 +2078,18 @@ msgstr "Açucena"
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_country__bc_code
 msgid "BC Code"
-msgstr "Código do BC"
+msgstr "Código do Banco Central"
 
 #. module: l10n_br_base
 #: model_terms:ir.ui.view,arch_db:l10n_br_base.view_l10n_br_base_partner_bank_form
 msgid "BIC/Swift Code"
-msgstr "BIC/Swift Code"
+msgstr "Código BIC/Swift"
 
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__bra_bank_bic
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__bra_bank_bic
 msgid "BIC/Swift Final Code."
-msgstr "BIC/Swift Final Code."
+msgstr "Final do código BIC/Swift."
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_1703008
@@ -2280,7 +2280,7 @@ msgstr "Banco"
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_pix__partner_bank_id
 msgid "Bank Account"
-msgstr "Conta Bancária"
+msgstr "Conta bancária"
 
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__bank_account_type
@@ -2291,19 +2291,19 @@ msgstr "Tipo de conta bancária"
 #. module: l10n_br_base
 #: model:ir.model,name:l10n_br_base.model_res_partner_bank
 msgid "Bank Accounts"
-msgstr "Contas Bancárias"
+msgstr "Contas bancárias"
 
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__bra_number
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__bra_number
 msgid "Bank Branch"
-msgstr "Número da Agência"
+msgstr "Agência"
 
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__bra_number_dig
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__bra_number_dig
 msgid "Bank Branch Digit"
-msgstr "Dígito da Agência Bancária"
+msgstr "Dígito da agência"
 
 #. module: l10n_br_base
 #. odoo-python
@@ -3571,13 +3571,12 @@ msgstr "Brazabrantes"
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_bank__code_bc
 msgid "Brazilian Bank Code"
-msgstr "Código Bancário Brasileiro"
+msgstr "Código do banco"
 
 #. module: l10n_br_base
 #: model:ir.model.fields,help:l10n_br_base.field_res_bank__code_bc
 msgid "Brazilian Bank Code ex.: 001 is the code of Banco do Brasil"
-msgstr ""
-"Exemplo de Código Bancário Brasileiro: 001 é o código do Banco do Brasil"
+msgstr "Código do banco, ex.: 001 é o código do Banco do Brasil"
 
 #. module: l10n_br_base
 #: model_terms:ir.ui.view,arch_db:l10n_br_base.view_l10n_br_base_partner_bank_form
@@ -3587,17 +3586,17 @@ msgstr "Chaves PIX"
 #. module: l10n_br_base
 #: model_terms:ir.ui.view,arch_db:l10n_br_base.l10n_br_base_res_config_settings_form
 msgid "Brazilian Localization"
-msgstr "Localização Brasileira"
+msgstr "Localização brasileira"
 
 #. module: l10n_br_base
 #: model:ir.model,name:l10n_br_base.model_res_partner_pix
 msgid "Brazilian instant payment ecosystem (Pix)"
-msgstr "Sistema Brasileiro de Pagamento Instantâneo (PIX)"
+msgstr "Sistema brasileiro de pagamentos instantâneos (PIX)"
 
 #. module: l10n_br_base
 #: model:ir.model,name:l10n_br_base.model_l10n_br_base_party_mixin
 msgid "Brazilian partner and company data mixin"
-msgstr "Brazilian partner and company data mixin"
+msgstr "Mixin de dados de parceiros e empresas brasileiros"
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_3108909
@@ -3929,17 +3928,17 @@ msgstr "CNPJ/CPF sem formatação"
 #: model:ir.model.fields,help:l10n_br_base.field_res_partner__cnpj_cpf_stripped
 #: model:ir.model.fields,help:l10n_br_base.field_res_users__cnpj_cpf_stripped
 msgid "CNPJ/CPF without special characters"
-msgstr "CNPJ/CPF sem formatação"
+msgstr "CNPJ/CPF sem caracteres especiais"
 
 #. module: l10n_br_base
 #: model_terms:ir.ui.view,arch_db:l10n_br_base.l10n_br_base_partner_form
 msgid "CNPJ/Vat Number"
-msgstr "CNPJ/Id Estrangeiro"
+msgstr "CNPJ/ID estrangeiro"
 
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_bank__compe_member
 msgid "COMPE Member"
-msgstr "COMPE Member"
+msgstr "Participante da COMPE"
 
 #. module: l10n_br_base
 #: model_terms:ir.ui.view,arch_db:l10n_br_base.l10n_br_base_partner_form
@@ -6022,7 +6021,7 @@ msgstr "Chaves"
 #. module: l10n_br_base
 #: model:ir.model.fields.selection,name:l10n_br_base.selection__res_partner_bank__transactional_acc_type__checking
 msgid "Checking Account (Conta Corrente)"
-msgstr "Conta Corrente"
+msgstr "Conta corrente"
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_3116209
@@ -6145,7 +6144,7 @@ msgstr "ID da cidade"
 #: model:ir.model.fields,field_description:l10n_br_base.field_l10n_br_base_party_mixin__city_id
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_company__city_id
 msgid "City of Address"
-msgstr "Endereço da Cidade"
+msgstr "Cidade do endereço"
 
 #. module: l10n_br_base
 #: model_terms:ir.ui.view,arch_db:l10n_br_base.l10n_br_base_res_partner_address
@@ -6383,7 +6382,7 @@ msgstr "Empresa"
 #: model:ir.model.fields,field_description:l10n_br_base.field_account_setup_bank_manual_config__company_country_id
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_bank__company_country_id
 msgid "Company Country"
-msgstr "País da Empresa"
+msgstr "País da empresa"
 
 #. module: l10n_br_base
 #: model_terms:ir.ui.view,arch_db:l10n_br_base.l10n_br_base_res_partner_address
@@ -6540,7 +6539,7 @@ msgstr "Condor"
 #. module: l10n_br_base
 #: model:ir.model,name:l10n_br_base.model_res_config_settings
 msgid "Config Settings"
-msgstr "Ajustes de Configurações"
+msgstr "Configurações"
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_3117876
@@ -7722,13 +7721,13 @@ msgstr "Desabilitar validação de CPF e CNPJ"
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_config_settings__disable_ie_validation
 #: model_terms:ir.ui.view,arch_db:l10n_br_base.l10n_br_base_res_config_settings_form
 msgid "Disable IE validation"
-msgstr "Desabilitar validação de IE (Inscrição Estadual)"
+msgstr "Desabilitar validação de IE (inscrição estadual)"
 
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_pix__display_name
 #: model:ir.model.fields,field_description:l10n_br_base.field_state_tax_numbers__display_name
 msgid "Display Name"
-msgstr "Nome Exibido"
+msgstr "Nome exibido"
 
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_l10n_br_base_party_mixin__district
@@ -8839,7 +8838,7 @@ msgstr "Fiscal"
 #. module: l10n_br_base
 #: model_terms:ir.ui.view,arch_db:l10n_br_base.l10n_br_base_partner_form
 msgid "Fiscal Infos"
-msgstr "Informações Fiscais"
+msgstr "Informações fiscais"
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_2702801
@@ -10256,7 +10255,7 @@ msgstr "IE"
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__l10n_br_im_code
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_users__l10n_br_im_code
 msgid "IM"
-msgstr ""
+msgstr "IM"
 
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_bank__ispb_number
@@ -13198,7 +13197,7 @@ msgstr "Chave"
 #: model:ir.model.fields,help:l10n_br_base.field_res_partner__pix_key_ids
 #: model:ir.model.fields,help:l10n_br_base.field_res_users__pix_key_ids
 msgid "Keys for Brazilian instant payment (pix)"
-msgstr "Chaves para Pagamentos Instantâneos Brasileiro (PIX)"
+msgstr "Chaves de pagamento instantâneo (PIX)"
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_4209201
@@ -13583,19 +13582,19 @@ msgstr "Lassance"
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_pix__write_uid
 #: model:ir.model.fields,field_description:l10n_br_base.field_state_tax_numbers__write_uid
 msgid "Last Updated by"
-msgstr "Última Atualização por"
+msgstr "Última atualização por"
 
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner_pix__write_date
 #: model:ir.model.fields,field_description:l10n_br_base.field_state_tax_numbers__write_date
 msgid "Last Updated on"
-msgstr "Última Atualização em"
+msgstr "Última atualização em"
 
 #. module: l10n_br_base
 #: model:ir.model.fields,help:l10n_br_base.field_account_setup_bank_manual_config__bra_bank_bic
 #: model:ir.model.fields,help:l10n_br_base.field_res_partner_bank__bra_bank_bic
 msgid "Last part of BIC/Swift Code."
-msgstr "Last part of BIC/Swift Code."
+msgstr "Parte final do código BIC/Swift."
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_2508406
@@ -15873,7 +15872,7 @@ msgstr "Muliterno"
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_config_settings__allow_cnpj_multi_ie
 #: model_terms:ir.ui.view,arch_db:l10n_br_base.l10n_br_base_res_config_settings_form
 msgid "Multiple partners with the same CNPJ"
-msgstr "Múltiplos parceiros com mesmo CNPJ"
+msgstr "Vários parceiros com o mesmo CNPJ"
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_2309102
@@ -15913,12 +15912,12 @@ msgstr "Inscrição municipal"
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_l10n_br_base_party_mixin__l10n_br_im_code
 msgid "Municipal Tax Number"
-msgstr "Número da Inscrição Municipal"
+msgstr "Inscrição municipal"
 
 #. module: l10n_br_base
 #: model_terms:ir.ui.view,arch_db:l10n_br_base.l10n_br_base_res_company_form
 msgid "Municipal Tax Number..."
-msgstr "Número da Inscrição Municipal..."
+msgstr "Inscrição municipal..."
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_2922201
@@ -16058,7 +16057,7 @@ msgstr "Natalândia"
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_country__nationality_code
 msgid "Nationality Code"
-msgstr "Nationality Code"
+msgstr "Código de nacionalidade"
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_1714203
@@ -17166,7 +17165,7 @@ msgstr "Otacílio Costa"
 #. module: l10n_br_base
 #: model_terms:ir.ui.view,arch_db:l10n_br_base.l10n_br_base_partner_form
 msgid "Other Infos"
-msgstr "Outras Informações"
+msgstr "Outras informações"
 
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_l10n_br_base_party_mixin__state_tax_number_ids
@@ -18570,7 +18569,7 @@ msgstr "Peçanha"
 #. module: l10n_br_base
 #: model:ir.model.fields.selection,name:l10n_br_base.selection__res_partner_pix__key_type__phone
 msgid "Phone Number"
-msgstr "Número de Telefone"
+msgstr "Número de telefone"
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_3537701
@@ -19764,7 +19763,7 @@ msgstr "Pratânia"
 #. module: l10n_br_base
 #: model:ir.model.fields.selection,name:l10n_br_base.selection__res_partner_bank__transactional_acc_type__payment
 msgid "Prepaid Payment Account (Conta Pagamento)"
-msgstr "Conta Pagamento Pré-pago (Conta Pagamento)"
+msgstr "Conta de pagamento pré-paga"
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_3541109
@@ -20234,7 +20233,7 @@ msgstr "Rancho Queimado"
 #. module: l10n_br_base
 #: model:ir.model.fields.selection,name:l10n_br_base.selection__res_partner_pix__key_type__evp
 msgid "Random Key"
-msgstr "Chave Aleatória"
+msgstr "Chave aleatória"
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_2109452
@@ -21153,7 +21152,7 @@ msgstr "Ruy Barbosa"
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_city__siafi_code
 msgid "SIAFI Code"
-msgstr "SIAFI Code"
+msgstr "Código SIAFI"
 
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__l10n_br_isuf_code
@@ -22598,7 +22597,7 @@ msgstr "Saudades"
 #. module: l10n_br_base
 #: model:ir.model.fields.selection,name:l10n_br_base.selection__res_partner_bank__transactional_acc_type__saving
 msgid "Saving Account (Conta Poupança)"
-msgstr "Conta Poupança (Conta Poupança)"
+msgstr "Conta poupança"
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_2929800
@@ -22668,7 +22667,7 @@ msgstr "Selecione para desabilitar a validação de CPF e CNPJ"
 #. module: l10n_br_base
 #: model_terms:ir.ui.view,arch_db:l10n_br_base.l10n_br_base_res_config_settings_form
 msgid "Select to disable IE validation"
-msgstr "Selecione para desabilitar a validação de IE (Inscrição Estadual)"
+msgstr "Selecione para desabilitar a validação de IE (inscrição estadual)"
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_5007802
@@ -23104,7 +23103,7 @@ msgstr "Mostrar formato de CNPJ/CPF"
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_partner__show_l10n_br
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_users__show_l10n_br
 msgid "Show L10N Br"
-msgstr "Exibir L10N Br"
+msgstr "Exibir localização brasileira"
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_4217600
@@ -23344,18 +23343,18 @@ msgstr "Inscrição estadual. Deve conter de 9 a 14 dígitos."
 #: model:ir.model.fields,field_description:l10n_br_base.field_l10n_br_base_party_mixin__l10n_br_ie_code
 #: model:ir.model.fields,field_description:l10n_br_base.field_state_tax_numbers__l10n_br_ie_code
 msgid "State Tax Number"
-msgstr "Número da Inscrição Estadual"
+msgstr "Inscrição estadual"
 
 #. module: l10n_br_base
 #. odoo-python
 #: code:addons/l10n_br_base/models/res_partner.py:0
 msgid "State Tax Number already used %(name)s"
-msgstr "Inscrição Estadual já utilizada %(name)s"
+msgstr "Inscrição estadual já utilizada %(name)s"
 
 #. module: l10n_br_base
 #: model_terms:ir.ui.view,arch_db:l10n_br_base.l10n_br_base_res_company_form
 msgid "State Tax Number..."
-msgstr "Número da Inscrição Estadual..."
+msgstr "Inscrição estadual..."
 
 #. module: l10n_br_base
 #: model:ir.model,name:l10n_br_base.model_state_tax_numbers
@@ -23371,7 +23370,7 @@ msgstr "Estado..."
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_company__street_name
 msgid "Street Name"
-msgstr "Nome da Rua"
+msgstr "Logradouro"
 
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_company__street_number
@@ -23391,7 +23390,7 @@ msgstr "Número da Rua..."
 #. module: l10n_br_base
 #: model_terms:ir.ui.view,arch_db:l10n_br_base.l10n_br_base_res_partner_address
 msgid "Street..."
-msgstr "Rua…"
+msgstr "Rua..."
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_1720853
@@ -23418,7 +23417,7 @@ msgstr "Sud Mennucci"
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_company__l10n_br_isuf_code
 #: model_terms:ir.ui.view,arch_db:l10n_br_base.l10n_br_base_res_company_form
 msgid "Suframa"
-msgstr "Suframa"
+msgstr "SUFRAMA"
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_4217758
@@ -25518,7 +25517,7 @@ msgstr "Tavares"
 #. module: l10n_br_base
 #: model:ir.model.fields,field_description:l10n_br_base.field_res_company__vat
 msgid "Tax ID"
-msgstr "ID do Imposto"
+msgstr "CNPJ/CPF"
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_1304203
@@ -25701,7 +25700,7 @@ msgstr "Teófilo Otoni"
 #. module: l10n_br_base
 #: model:ir.model.constraint,message:l10n_br_base.constraint_state_tax_numbers_l10n_br_base_state_tax_numbers_id_uniq
 msgid "The Partner already has a State Tax Number for that State!"
-msgstr "O Parceiro já possui um número de Inscrição Estadual para esse Estado!"
+msgstr "O parceiro já tem uma inscrição estadual para esse estado!"
 
 #. module: l10n_br_base
 #. odoo-python
@@ -25737,8 +25736,7 @@ msgstr "Theobroma"
 #. odoo-python
 #: code:addons/l10n_br_base/models/res_partner.py:0
 msgid "There can only be one state tax number per state for each partner!"
-msgstr ""
-"Só pode haver um número de imposto estadual por estado para cada parceiro!"
+msgstr "Só pode haver uma inscrição estadual por estado para cada parceiro!"
 
 #. module: l10n_br_base
 #. odoo-python
@@ -25765,8 +25763,8 @@ msgid ""
 "There is already a partner %(name)s (ID %(partner_id)s) with this Estadual "
 "Inscription %(incr_est)s!"
 msgstr ""
-"Já existe um parceiro %(name)s (ID %(partner_id)s) com esta Inscrição "
-"Estadual %(incr_est)s!"
+"Já existe um parceiro %(name)s (ID %(partner_id)s) com esta inscrição "
+"estadual %(incr_est)s!"
 
 #. module: l10n_br_base
 #: model:res.city,name:l10n_br_base.city_2313401

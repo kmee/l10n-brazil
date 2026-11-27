@@ -126,6 +126,17 @@ class PurchaseOrderLine(models.Model):
                 company=self.company_id,
             )
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        # A linha criada no servidor (reposição do purchase_stock, compra do
+        # serviço do sale_purchase) chega com os impostos do fornecedor no
+        # produto e o onchange dos impostos fiscais não roda: sem os impostos
+        # contábeis, o quadro de totais soma o IPI no valor sem impostos.
+        lines = super().create(vals_list)
+        for line in lines.filtered("fiscal_operation_line_id"):
+            line._onchange_fiscal_tax_ids()
+        return lines
+
     def _prepare_account_move_line(self, move=False):
         values = super()._prepare_account_move_line(move)
         if values.get("purchase_line_id"):
