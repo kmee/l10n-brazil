@@ -98,6 +98,7 @@
                             </group>
                             <group>
                                 <field name="comment_ids" widget="many2many_tags" />
+                                <field name="strong_operation" />
                             </group>
                         </page>
                     </notebook>
