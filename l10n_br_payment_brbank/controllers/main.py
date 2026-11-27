@@ -60,9 +60,12 @@ class BrbankPortal(CustomerPortal):
         except (AccessError, MissingError):
             return request.redirect("/my")
         transaction = invoice_sudo._boleto_report_transactions().filtered(
-            lambda t: t.id == transaction_id and t.boleto_pdf
+            lambda t: t.id == transaction_id
         )
-        if not transaction:
+        if transaction and not transaction.boleto_pdf and transaction._brbank_is_live():
+            # Cleared by an instruction the bank accepted: fetch the new one.
+            transaction._brbank_fetch_pdf()
+        if not transaction.boleto_pdf:
             raise request.not_found()
         filename = f"boleto-{transaction.id}.pdf"
         disposition = (

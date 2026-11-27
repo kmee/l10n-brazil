@@ -144,3 +144,16 @@ class TestBrbankWebhook(BrbankCommon, HttpCase):
         self.assertTrue(response.content.startswith(b"%PDF"))
         response = self.url_open(f"{url}?access_token=wrong", allow_redirects=False)
         self.assertNotEqual(response.status_code, 200)
+
+    def test_portal_boleto_fetched_again_after_an_instruction(self):
+        """An accepted instruction clears the PDF: the portal still offers it and
+        fetches the new one."""
+        self.tx.boleto_pdf = False
+        token = self.invoice._portal_ensure_token()
+        response = self.url_open(f"/my/invoices/{self.invoice.id}?access_token={token}")
+        self.assertIn(f"/brbank/{self.tx.id}?access_token=", response.text)
+        url = f"/my/invoices/{self.invoice.id}/brbank/{self.tx.id}"
+        response = self.url_open(f"{url}?access_token={token}")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.content.startswith(b"%PDF"))
+        self.assertTrue(self.tx.boleto_pdf)
