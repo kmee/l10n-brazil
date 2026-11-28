@@ -170,7 +170,8 @@ class PaymentTransaction(models.Model):
                 (_("Street"), street),
                 (_("ZIP code"), len(zip_code) == 8),
                 (_("City"), city),
-                (_("State"), partner.state_id.code),
+                # Not "State": its translation is the status of a record.
+                (_("Federal State"), partner.state_id.code),
             )
             if not value
         ]

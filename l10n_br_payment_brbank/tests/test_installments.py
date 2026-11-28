@@ -105,6 +105,14 @@ class TestBrbankInstallments(BrbankTransactionCase):
         with self.assertRaisesRegex(UserError, "valor minimo do boleto"):
             invoice.action_post()
 
+    def test_missing_federal_state_named_as_such(self):
+        """The missing federal state has a label of its own: "State" is also the
+        label of the status fields of the module, and shares their translation."""
+        tx = self._brbank_txs(self._create_invoice())[0]
+        self.partner.state_id = False
+        with self.assertRaisesRegex(UserError, "Federal State"):
+            tx._brbank_prepare_payer()
+
     def test_duplicate_reads_the_title_back(self):
         invoice = self._create_invoice(post=False)
         installment = invoice.due_line_ids[:1]
