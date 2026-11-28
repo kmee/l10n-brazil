@@ -10,7 +10,10 @@ def post_init_hook(env):
         "l10n_br_base.empresa_simples_nacional", raise_if_not_found=False
     )
     if demo_simple:
-        demo_simple.chart_template = "generic_coa"  # "br_oca_simple"
+        # No chart_template here: only the "br_oca" ones below are loaded, and
+        # a template set without its accounts breaks the post_init_hook of the
+        # modules installed later (mrp_account looks for
+        # account.<company id>_cost_of_production).
         br_demo_companies.append(demo_simple)
     demo_lp = env.ref("l10n_br_base.empresa_lucro_presumido", raise_if_not_found=False)
     if demo_lp:
