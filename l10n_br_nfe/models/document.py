@@ -649,7 +649,10 @@ class NFe(spec_models.StackedModel):
 
     nfe40_vIPI = fields.Monetary(related="amount_ipi_value")
 
-    # <vIPIDevol>0.00</vIPIDevol> TODO
+    nfe40_vIPIDevol = fields.Monetary(
+        string="Valor total do IPI devolvido",
+        compute="_compute_nfe40_vIPIDevol",
+    )
 
     nfe40_vPIS = fields.Monetary(
         string="Valor do PIS (NFe)", related="amount_pis_value"
@@ -751,6 +754,15 @@ class NFe(spec_models.StackedModel):
         string="Total do Crédito Presumido Condição Suspensiva CBS",
         compute="_compute_nfe40_IBSCBSTot_fields",
     )
+
+    @api.depends("fiscal_line_ids.nfe40_impostoDevol.nfe40_IPI.nfe40_vIPIDevol")
+    def _compute_nfe40_vIPIDevol(self):
+        for doc in self:
+            doc.nfe40_vIPIDevol = sum(
+                doc.fiscal_line_ids.nfe40_impostoDevol.nfe40_IPI.mapped(
+                    "nfe40_vIPIDevol"
+                )
+            )
 
     @api.depends(
         "fiscal_line_ids.ibs_base",

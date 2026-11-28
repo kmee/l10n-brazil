@@ -241,6 +241,7 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         "icms_value",
         "ii_value",
         "ii_customhouse_charges",
+        "ipi_devol_value",
     )
     def _compute_fiscal_amounts(self):
         for record in self:
@@ -999,7 +1000,13 @@ class FiscalDocumentLineMixin(models.AbstractModel):
 
     @api.model
     def _add_fields_to_amount(self):
-        fields_to_amount = ["insurance_value", "other_value", "freight_value"]
+        # vIPIDevol is part of vNF (NF-e validation rule W16-10)
+        fields_to_amount = [
+            "insurance_value",
+            "other_value",
+            "freight_value",
+            "ipi_devol_value",
+        ]
         if (
             self.cfop_id.destination == CFOP_DESTINATION_EXPORT
             and self.fiscal_operation_id.fiscal_operation_type == FISCAL_IN
