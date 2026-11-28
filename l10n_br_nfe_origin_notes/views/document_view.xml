@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="document_form" model="ir.ui.view">
+        <field name="name">l10n_br_nfe_origin_notes.document.form</field>
+        <field name="model">l10n_br_fiscal.document</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.document_form" />
+        <field name="arch" type="xml">
+            <field name="manual_customer_additional_data" position="before">
+                <field name="add_origin_nfe_to_xml" />
+                <field
+                    name="origin_nfes_numbers"
+                    invisible="not add_origin_nfe_to_xml"
+                />
+            </field>
+        </field>
+    </record>
+</odoo>

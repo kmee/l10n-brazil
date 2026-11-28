@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <!-- Devolução de compra com duas notas de entrada de origem -->
+    <record id="demo_nfe_return_origin_notes" model="l10n_br_fiscal.document">
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_devolucao_compras" />
+        <field name="document_type_id" ref="l10n_br_fiscal.document_55" />
+        <field
+            name="document_serie_id"
+            ref="l10n_br_fiscal.empresa_lc_document_55_serie_1"
+        />
+        <field name="company_id" ref="l10n_br_base.empresa_lucro_presumido" />
+        <field name="document_serie">1</field>
+        <field name="partner_id" ref="l10n_br_base.res_partner_cliente1_sp" />
+        <field name="fiscal_operation_type">out</field>
+    </record>
+
+    <record
+        id="demo_nfe_return_origin_notes_related_1"
+        model="l10n_br_fiscal.document.related"
+    >
+        <field name="document_id" ref="demo_nfe_return_origin_notes" />
+        <field name="document_type_id" ref="l10n_br_fiscal.document_55" />
+        <field name="document_serie">1</field>
+        <field name="document_number">000123</field>
+    </record>
+
+    <record
+        id="demo_nfe_return_origin_notes_related_2"
+        model="l10n_br_fiscal.document.related"
+    >
+        <field name="document_id" ref="demo_nfe_return_origin_notes" />
+        <field name="document_type_id" ref="l10n_br_fiscal.document_55" />
+        <field name="document_serie">1</field>
+        <field name="document_number">004587</field>
+    </record>
+</odoo>
