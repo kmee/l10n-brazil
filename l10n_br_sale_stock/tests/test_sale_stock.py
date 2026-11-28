@@ -165,3 +165,48 @@ class TestSaleStock(TestBrPickingInvoicingCommon):
         # Change shipping partner after confirmation
         so.partner_shipping_id = self.partner_addr_ak2.id
         self.assertEqual(so.partner_shipping_id, picking.partner_id)
+
+    def _create_two_operations_order(self):
+        return self._create_sale_order(
+            lines=[
+                Command.create(
+                    {
+                        "product_id": self.storable_product.id,
+                        "product_uom_qty": 1,
+                        "name": self.storable_product.name,
+                        "price_unit": 100.0,
+                        "fiscal_operation_id": fiscal_operation.id,
+                    }
+                )
+                for fiscal_operation in (self.fo_venda, self.op_bonificacao)
+            ]
+        )
+
+    def test_one_picking_by_fiscal_operation_disabled(self):
+        order = self._create_two_operations_order()
+        order.action_confirm()
+        self.assertEqual(len(order.picking_ids), 1)
+        self.assertEqual(order.picking_ids.fiscal_operation_id, self.fo_venda)
+
+    def test_one_picking_by_fiscal_operation(self):
+        order = self._create_two_operations_order()
+        order.company_id.sale_picking_by_fiscal_operation = True
+        order.action_confirm()
+        self.assertEqual(len(order.picking_ids), 2)
+        for picking in order.picking_ids:
+            self.assertEqual(
+                picking.fiscal_operation_id, picking.move_ids.fiscal_operation_id
+            )
+        self.assertEqual(
+            order.picking_ids.fiscal_operation_id, self.fo_venda | self.op_bonificacao
+        )
+
+    def test_default_fiscal_operation_of_the_picking_moves(self):
+        order = self._create_two_operations_order()
+        order.company_id.sale_picking_by_fiscal_operation = True
+        order.action_confirm()
+        for picking in order.picking_ids:
+            self.assertEqual(
+                picking._get_default_fiscal_operation(),
+                picking.move_ids.fiscal_operation_id,
+            )
