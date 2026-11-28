@@ -106,6 +106,19 @@ class StockMove(models.Model):
                 move.fiscal_operation_id = move.picking_id.fiscal_operation_id
         return result
 
+    @api.depends("quantity", "product_uom_qty", "state")
+    def _compute_fiscal_quantity(self):
+        """Without reserved quantity the move still has no `quantity`, so use
+        the demanded one until it is reserved or done."""
+        result = super()._compute_fiscal_quantity()
+        for move in self.filtered(
+            lambda m: not m.quantity and m.state not in ("done", "cancel")
+        ):
+            move.fiscal_quantity = move.product_uom_qty * (
+                move.product_id.uot_factor or 1.0
+            )
+        return result
+
     @api.depends("fiscal_tax_ids", "fiscal_operation_line_id")
     def _compute_tax_ids(self):
         for record in self:
