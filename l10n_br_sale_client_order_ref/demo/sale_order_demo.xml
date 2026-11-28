@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 KMEE
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="l10n_br_sale_stock.main_company-sale_order_1" model="sale.order">
+        <field name="client_order_ref">PC-2026/0457</field>
+    </record>
+
+    <record
+        id="l10n_br_sale_stock.main_company-sale_order_line_1_2"
+        model="sale.order.line"
+    >
+        <field name="client_order_ref">PC-2026/0457-02</field>
+    </record>
+</odoo>

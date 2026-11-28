@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 KMEE
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="view_move_form" model="ir.ui.view">
+        <field name="name">account.move.form (in l10n_br_sale_client_order_ref)</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//page[@name='other_info']//group[@name='sale_info_group']/field[@name='ref']"
+                position="after"
+            >
+                <field name="sale_id" />
+            </xpath>
+        </field>
+    </record>
+</odoo>
