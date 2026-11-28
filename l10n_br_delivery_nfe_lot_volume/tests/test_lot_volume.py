@@ -60,3 +60,39 @@ class TestLotVolume(TransactionCase):
             self.picking.button_validate()
         self.line_2.volume_id = self.volume
         self.assertFalse(self.picking._get_lines_without_volume())
+
+    def test_validate_with_all_lots_in_volume(self):
+        self.picking.picking_type_id.require_lot_volume = True
+        self.line_2.volume_id = self.volume
+        self.picking.with_context(
+            skip_immediate=True, skip_backorder=True
+        ).button_validate()
+        self.assertFalse(self.picking._get_lines_without_volume())
+
+    def test_open_wizards_and_remove_from_volume(self):
+        action = self.move.action_open_create_volume_wizard()
+        self.assertEqual(action["context"]["default_move_id"], self.move.id)
+        self.assertEqual(action["context"]["default_picking_id"], self.picking.id)
+        action = self.volume.action_open_add_lines_wizard()
+        self.assertEqual(action["context"]["default_volume_id"], self.volume.id)
+        self.line_1.action_remove_from_volume()
+        self.assertFalse(self.line_1.volume_id)
+        self.assertNotIn(self.volume, self.move.volume_ids)
+
+    def test_display_name_with_and_without_lot(self):
+        self.assertIn(f"[{self.line_1.lot_id.name}]", self.line_1.display_name)
+        self.line_1.lot_id = False
+        self.assertEqual(self.line_1.display_name, self.line_1.product_id.display_name)
+
+    def test_volume_name_and_picking_totals(self):
+        self.volume.write(
+            {"nfe40_esp": "Caixa", "nfe40_marca": "KMEE", "nfe40_nVol": "7"}
+        )
+        self.assertEqual(self.volume.name, "Caixa/KMEE/7")
+        self.volume.write({"nfe40_esp": False, "nfe40_marca": False})
+        self.assertEqual(self.volume.name, "//7")
+        new = self.env["stock.picking.vol"].create(
+            {"picking_id": self.picking.id, "nfe40_qVol": "2"}
+        )
+        self.assertTrue(self.picking.has_vol)
+        self.assertEqual(new.picking_id, self.picking)
