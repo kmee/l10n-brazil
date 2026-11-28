@@ -39,6 +39,18 @@
                     icon="fa-pencil-square-o"
                     invisible="not document_type_id"
                 />
+                <field name="state_edoc" column_invisible="True" />
+                <button
+                    name="action_send_email"
+                    title="Send Email"
+                    type="object"
+                    icon="fa-envelope-o"
+                    invisible="state_edoc != 'autorizada'"
+                />
+            </field>
+            <field name="invoice_origin" position="after">
+                <field name="operation_name" optional="hide" />
+                <field name="document_date" optional="hide" />
             </field>
             <xpath expr="//list/header" position="inside">
                 <button
