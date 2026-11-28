@@ -200,3 +200,13 @@ class TestSaleStock(TestBrPickingInvoicingCommon):
         self.assertEqual(
             order.picking_ids.fiscal_operation_id, self.fo_venda | self.op_bonificacao
         )
+
+    def test_default_fiscal_operation_of_the_picking_moves(self):
+        order = self._create_two_operations_order()
+        order.company_id.sale_picking_by_fiscal_operation = True
+        order.action_confirm()
+        for picking in order.picking_ids:
+            self.assertEqual(
+                picking._get_default_fiscal_operation(),
+                picking.move_ids.fiscal_operation_id,
+            )
