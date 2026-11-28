@@ -6,5 +6,6 @@ from . import res_partner
 from . import res_company
 from . import hr_civil_certificate_type
 from . import hr_deficiency
+from . import hr_education_level
 from . import hr_ethnicity
 from . import hr_identity_type

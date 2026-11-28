@@ -8,3 +8,5 @@ access_hr_civil_certificate_type_manager,access_hr_civil_certificate_type_manage
 access_hr_civil_certificate_type,access_hr_civil_certificate_type,model_hr_civil_certificate_type,hr.group_hr_user,1,0,0,0
 access_hr_ethnicity_manager,access_hr_ethnicity_manager,model_hr_ethnicity,hr.group_hr_manager,1,1,1,1
 access_hr_ethnicity,access_hr_ethnicity,model_hr_ethnicity,hr.group_hr_user,1,0,0,0
+access_hr_education_level_manager,access_hr_education_level_manager,model_hr_education_level,hr.group_hr_manager,1,1,1,1
+access_hr_education_level,access_hr_education_level,model_hr_education_level,hr.group_hr_user,1,0,0,0
