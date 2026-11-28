@@ -1,17 +1,14 @@
 {
     "name": "NFS-e Nacional",
     "summary": "Brazilian Electronic Invoice for Services (National Standard)",
-    "version": "18.0.2.0.0",
+    "version": "18.0.3.0.0",
     "category": "Localisation",
     "license": "AGPL-3",
     "author": "Akretion, KMEE, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/l10n-brazil",
-    "development_status": "Alpha",
+    "development_status": "Beta",
     "external_dependencies": {
         "python": [
-            # l10n_br_nfse_spec 18.0.1.5.0 is generated from the NFS-e NT 009
-            # bindings first released in nfelib 3.3.0 (finNFSe moved to infDPS,
-            # TcrtcinfoTribIbscbs renamed).
             "nfelib>=3.3.0",
             "brazilfiscalreport",
             "erpbrasil.assinatura",
@@ -26,8 +23,8 @@
     ],
     "data": [
         "wizards/document_cancel_wizard.xml",
-        "views/document_view.xml",
         "views/res_company_view.xml",
+        "views/document_view.xml",
         "report/danfse_nacional.xml",
     ],
     "demo": [

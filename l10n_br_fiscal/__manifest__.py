@@ -10,7 +10,7 @@
     "maintainers": ["renatonlima", "rvalyi"],
     "website": "https://github.com/OCA/l10n-brazil",
     "development_status": "Production/Stable",
-    "version": "18.0.12.0.2",
+    "version": "18.0.12.1.3",
     "depends": [
         "product",
         "uom_alias",
@@ -127,6 +127,7 @@
     "demo": [
         "demo/city_taxation_code_demo.xml",
         "demo/company_demo.xml",
+        "demo/accountant_demo.xml",
         "demo/product_demo.xml",
         "demo/partner_demo.xml",
         "demo/fiscal_document_nfse_demo.xml",
