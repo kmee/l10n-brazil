@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_stock_picking_vol_add_form" model="ir.ui.view">
+        <field name="name">stock.picking.vol.add.form</field>
+        <field name="model">stock.picking.vol.add</field>
+        <field name="arch" type="xml">
+            <form>
+                <field name="picking_id" invisible="1" />
+                <group>
+                    <field name="volume_id" options="{'no_create': True}" />
+                </group>
+                <separator string="Lots Outside Volumes" />
+                <field name="line_ids" nolabel="1">
+                    <list editable="top" create="false" delete="false">
+                        <field name="move_line_id" column_invisible="1" />
+                        <field name="product_id" />
+                        <field name="lot_id" />
+                        <field name="quantity" />
+                        <field name="product_uom_id" />
+                        <field name="selected" readonly="0" />
+                    </list>
+                </field>
+                <footer>
+                    <button
+                        name="action_add_to_volume"
+                        type="object"
+                        string="Add to Volume"
+                        class="btn-primary"
+                    />
+                    <button string="Cancel" class="btn-secondary" special="cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_stock_picking_vol_add" model="ir.actions.act_window">
+        <field name="name">Add to Volume</field>
+        <field name="res_model">stock.picking.vol.add</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

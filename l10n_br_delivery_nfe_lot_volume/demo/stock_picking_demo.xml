@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <record id="product_prateleira_aco" model="product.product">
+        <field name="name">Prateleira de Aço 4 Níveis</field>
+        <field name="type">consu</field>
+        <field name="is_storable" eval="True" />
+        <field name="tracking">lot</field>
+        <field name="weight">12.5</field>
+        <field name="list_price">389.90</field>
+        <field name="standard_price">210.00</field>
+    </record>
+
+    <record id="lot_prateleira_aco_1" model="stock.lot">
+        <field name="name">PRAT-2026-0001</field>
+        <field name="product_id" ref="product_prateleira_aco" />
+    </record>
+
+    <record id="lot_prateleira_aco_2" model="stock.lot">
+        <field name="name">PRAT-2026-0002</field>
+        <field name="product_id" ref="product_prateleira_aco" />
+    </record>
+
+    <record id="picking_remessa_prateleiras" model="stock.picking">
+        <field name="partner_id" ref="l10n_br_base.res_partner_cliente1_sp" />
+        <field name="picking_type_id" ref="stock.picking_type_out" />
+        <field name="location_id" ref="stock.stock_location_stock" />
+        <field name="location_dest_id" ref="stock.stock_location_customers" />
+        <field name="origin">Entrega de prateleiras - volumes por lote</field>
+    </record>
+
+    <record id="move_remessa_prateleiras" model="stock.move">
+        <field name="name">Prateleira de Aço 4 Níveis</field>
+        <field name="product_id" ref="product_prateleira_aco" />
+        <field name="product_uom_qty">8</field>
+        <field name="product_uom" ref="uom.product_uom_unit" />
+        <field name="picking_id" ref="picking_remessa_prateleiras" />
+        <field name="location_id" ref="stock.stock_location_stock" />
+        <field name="location_dest_id" ref="stock.stock_location_customers" />
+    </record>
+
+    <record id="move_line_remessa_prateleiras_1" model="stock.move.line">
+        <field name="move_id" ref="move_remessa_prateleiras" />
+        <field name="picking_id" ref="picking_remessa_prateleiras" />
+        <field name="product_id" ref="product_prateleira_aco" />
+        <field name="lot_id" ref="lot_prateleira_aco_1" />
+        <field name="quantity">5</field>
+        <field name="location_id" ref="stock.stock_location_stock" />
+        <field name="location_dest_id" ref="stock.stock_location_customers" />
+    </record>
+
+    <record id="move_line_remessa_prateleiras_2" model="stock.move.line">
+        <field name="move_id" ref="move_remessa_prateleiras" />
+        <field name="picking_id" ref="picking_remessa_prateleiras" />
+        <field name="product_id" ref="product_prateleira_aco" />
+        <field name="lot_id" ref="lot_prateleira_aco_2" />
+        <field name="quantity">3</field>
+        <field name="location_id" ref="stock.stock_location_stock" />
+        <field name="location_dest_id" ref="stock.stock_location_customers" />
+    </record>
+
+    <record id="volume_remessa_prateleiras_1" model="stock.picking.vol">
+        <field name="picking_id" ref="picking_remessa_prateleiras" />
+        <field name="nfe40_qVol">5</field>
+        <field name="nfe40_esp">Caixa</field>
+        <field name="nfe40_marca">Aço Forte</field>
+        <field name="nfe40_nVol">1</field>
+        <field name="nfe40_pesoL">62.5</field>
+        <field name="nfe40_pesoB">68</field>
+        <field
+            name="move_line_ids"
+            eval="[(6, 0, [ref('move_line_remessa_prateleiras_1')])]"
+        />
+    </record>
+</odoo>

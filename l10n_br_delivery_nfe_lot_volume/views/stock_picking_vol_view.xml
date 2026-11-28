@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_stock_picking_vol_form_lot_volume" model="ir.ui.view">
+        <field
+            name="name"
+        >stock.picking.vol.form (in l10n_br_delivery_nfe_lot_volume)</field>
+        <field name="model">stock.picking.vol</field>
+        <field
+            name="inherit_id"
+            ref="l10n_br_delivery_nfe.view_stock_picking_vol_form"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//form/group" position="after">
+                <separator string="Lots in the Volume" />
+                <field name="move_line_ids" nolabel="1">
+                    <list editable="bottom" create="false" delete="false">
+                        <field name="product_id" />
+                        <field name="lot_id" />
+                        <field name="quantity" />
+                        <field name="product_uom_id" />
+                        <button
+                            name="action_remove_from_volume"
+                            type="object"
+                            icon="fa-trash-o"
+                            string="Remove from Volume"
+                        />
+                    </list>
+                </field>
+            </xpath>
+        </field>
+    </record>
+</odoo>
