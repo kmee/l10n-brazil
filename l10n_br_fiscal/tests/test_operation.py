@@ -361,3 +361,30 @@ class TestOperationLinePisCofins(TransactionCase):
             }
         )
         self.assertEqual(self._map_piscofins()[0], pis)
+
+    def test_strong_operation_line_definition_wins_over_cfop(self):
+        """The Operation Line definition only prevails over the CFOP one when
+        the line is marked as a strong operation."""
+        self.ncm.piscofins_ids = False
+        pis_line = self.piscofins_varejo.tax_pis_id
+        pis_cfop = self.piscofins_demais.tax_pis_id
+        tax_def_vals = {
+            "tax_group_id": pis_line.tax_group_id.id,
+            "cst_id": self.env.ref("l10n_br_fiscal.cst_pis_02").id,
+            "is_taxed": True,
+            "is_debit_credit": True,
+            "custom_tax": True,
+        }
+        self.env["l10n_br_fiscal.tax.definition"].create(
+            dict(
+                tax_def_vals, fiscal_operation_line_id=self.line.id, tax_id=pis_line.id
+            )
+        )
+        cfop = self.line._get_cfop(self.company, self.partner)
+        self.env["l10n_br_fiscal.tax.definition"].create(
+            dict(tax_def_vals, cfop_id=cfop.id, tax_id=pis_cfop.id)
+        )
+        self.assertFalse(self.line.strong_operation)
+        self.assertEqual(self._map_piscofins()[0], pis_cfop)
+        self.line.strong_operation = True
+        self.assertEqual(self._map_piscofins()[0], pis_line)
