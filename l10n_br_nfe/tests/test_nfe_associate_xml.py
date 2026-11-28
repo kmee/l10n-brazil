@@ -49,3 +49,29 @@ class TestNfeAssociateXml(TransactionCase):
         self.nfe.action_regenerate_danfe()
         self.assertTrue(self.nfe.file_report_id)
         self.assertNotEqual(self.nfe.file_report_id, previous)
+
+    def test_open_associate_xml_wizard(self):
+        action = self.nfe.action_open_associate_xml_wizard()
+        self.assertEqual(action["context"], {"default_document_id": self.nfe.id})
+
+    def test_associate_invalid_xml(self):
+        with self.assertRaises(UserError):
+            self.nfe._nfe_associate_authorized_xml(b"not an xml")
+
+    def test_associate_xml_without_authorization_protocol(self):
+        self.nfe.write({"document_key": SAMPLE_KEY, "document_date": "2018-08-10"})
+        xml = self.xml.replace(b"<cStat>100</cStat>", b"<cStat>110</cStat>")
+        with self.assertRaises(UserError):
+            self.nfe._nfe_associate_authorized_xml(xml)
+
+    def test_associate_xml_without_authorization_event(self):
+        self.nfe.write({"document_key": SAMPLE_KEY, "document_date": "2018-08-10"})
+        self.nfe.authorization_event_id = False
+        with self.assertRaises(UserError):
+            self.nfe._nfe_associate_authorized_xml(self.xml)
+
+    def test_associate_xml_twice(self):
+        self.nfe.write({"document_key": SAMPLE_KEY, "document_date": "2018-08-10"})
+        self._wizard().action_associate_xml()
+        with self.assertRaises(UserError):
+            self._wizard().action_associate_xml()
