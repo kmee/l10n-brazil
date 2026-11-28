@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 12.0\n"
 "Report-Msgid-Bugs-To: \n"
-"PO-Revision-Date: 2026-11-25 23:46+0000\n"
+"PO-Revision-Date: 2026-11-26 18:55+0000\n"
 "Last-Translator: Luis Felipe Miléo <mileo@kmee.com.br>\n"
 "Language-Team: none\n"
 "Language: pt_BR\n"
@@ -503,26 +503,26 @@ msgstr ""
 #. module: l10n_br_nfse
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfse.nfse_res_company_form
 msgid "City Settings"
-msgstr "Configurações da Cidade"
+msgstr "Configurações do município"
 
 #. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_res_company__city_taxation_code_id
 msgid "City Taxation Code"
-msgstr "Código de Tributação da Cidade"
+msgstr "Código de tributação do município"
 
 #. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_account_bank_statement_line__civil_construction_art
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_account_move__civil_construction_art
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_l10n_br_fiscal_document__civil_construction_art
 msgid "Civil Construction ART"
-msgstr "ART Construção Civil"
+msgstr "ART da obra"
 
 #. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_account_bank_statement_line__civil_construction_code
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_account_move__civil_construction_code
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_l10n_br_fiscal_document__civil_construction_code
 msgid "Civil Construction Code"
-msgstr "Código de Construção Civil"
+msgstr "Código da obra"
 
 #. module: l10n_br_nfse
 #: model:ir.model,name:l10n_br_nfse.model_res_company
@@ -576,7 +576,7 @@ msgstr "Cooperativa"
 #. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_res_company__cultural_sponsor
 msgid "Cultural Sponsor"
-msgstr "Incentivador Cultural"
+msgstr "Incentivador cultural"
 
 #. module: l10n_br_nfse
 #: model:ir.model.fields.selection,name:l10n_br_nfse.selection__l10n_br_fiscal_document__rps_type__3
@@ -808,7 +808,8 @@ msgstr "Data da competência"
 #. module: l10n_br_nfse
 #: model:ir.model.fields,help:l10n_br_nfse.field_nfse_10_tcdocajustebc__nfse10_dtCompDoc
 msgid "Data da competência do documento dedutível. Ano, mês e dia (AAAA-MM-DD)"
-msgstr "Data da competência do documento dedutível. Ano, mês e dia (AAAA-MM-DD)"
+msgstr ""
+"Data da competência do documento dedutível. Ano, mês e dia (AAAA-MM-DD)"
 
 #. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcdocajustebc__nfse10_dtEmiDoc
@@ -1031,7 +1032,7 @@ msgstr "EMITIDO EM AMBIENTE DE HOMOLOGAÇÃO - SEM VALOR FISCAL"
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_account_move__edoc_error_message
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_l10n_br_fiscal_document__edoc_error_message
 msgid "Edoc Error Message"
-msgstr "Mensagem Erro do Edoc"
+msgstr "Mensagem de erro do documento eletrônico"
 
 #. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcenderext__nfse10_xEstProvReg
@@ -1078,7 +1079,7 @@ msgstr "Mixin base de assistente fiscal"
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_product_product__fiscal_deductions_value
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_product_template__fiscal_deductions_value
 msgid "Fiscal Deductions"
-msgstr "Deduções Fiscais"
+msgstr "Deduções fiscais"
 
 #. module: l10n_br_nfse
 #: model:ir.model,name:l10n_br_nfse.model_l10n_br_fiscal_document
@@ -1088,12 +1089,12 @@ msgstr "Documento Fiscal"
 #. module: l10n_br_nfse
 #: model:ir.model,name:l10n_br_nfse.model_l10n_br_fiscal_document_line
 msgid "Fiscal Document Line"
-msgstr "Linha do Documento Fiscal"
+msgstr "Linha do documento fiscal"
 
 #. module: l10n_br_nfse
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfse.nfse_res_company_form
 msgid "General Settings"
-msgstr "Configurações Gerais"
+msgstr "Configurações gerais"
 
 #. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcrtcvaloresibscbs__nfse10_uf
@@ -1715,17 +1716,17 @@ msgstr ""
 #. module: l10n_br_nfse
 #: model:ir.model.fields.selection,name:l10n_br_nfse.selection__l10n_br_fiscal_document__taxation_special_regime__1
 msgid "Microempresa Municipal"
-msgstr "Microempresa Municipal"
+msgstr "Microempresa municipal"
 
 #. module: l10n_br_nfse
 #: model:ir.model.fields.selection,name:l10n_br_nfse.selection__l10n_br_fiscal_document__taxation_special_regime__5
 msgid "Microempresario Individual(MEI)"
-msgstr "Microempresario Individual(MEI)"
+msgstr "Microempresário individual (MEI)"
 
 #. module: l10n_br_nfse
 #: model:ir.model.fields.selection,name:l10n_br_nfse.selection__l10n_br_fiscal_document__taxation_special_regime__6
 msgid "Microempresario e Empresa de Pequeno Porte(ME EPP)"
-msgstr "Microempresario e Empresa de Pequeno Porte(ME EPP)"
+msgstr "Microempresário e empresa de pequeno porte (ME EPP)"
 
 #. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tccomexterior__nfse10_mdPrestacao
@@ -1754,6 +1755,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcbeneficiomunicipal__brl_currency_id
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tccomexterior__brl_currency_id
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcdocajustebc__brl_currency_id
+#: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcdps__brl_currency_id
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcemitente__brl_currency_id
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcenderecoemitente__brl_currency_id
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcenderext__brl_currency_id
@@ -1835,7 +1837,7 @@ msgstr "NFS-e CANCELADA"
 #. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_res_company__nfse_city_logo
 msgid "NFSe City Logo"
-msgstr "Logo da Cidade NFSe"
+msgstr "Logotipo da prefeitura na NFS-e"
 
 #. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_account_bank_statement_line__nfse_environment
@@ -1858,7 +1860,7 @@ msgstr "Verificar SSL da NFS-e"
 #. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_res_company__nfse_website
 msgid "NFSe Website"
-msgstr "Website NFSe"
+msgstr "Site da NFS-e"
 
 #. module: l10n_br_nfse
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfse.danfse_report_template
@@ -1930,7 +1932,7 @@ msgstr "Nome da localidade de incidência do IBS/CBS"
 #. module: l10n_br_nfse
 #: model:ir.actions.report,name:l10n_br_nfse.report_br_nfse_danfe
 msgid "Nota de Serviço"
-msgstr "Nota de Serviço"
+msgstr "Nota de serviço"
 
 #. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tccomexterior__nfse10_nDI
@@ -2204,7 +2206,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_account_move__operation_nature
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_l10n_br_fiscal_document__operation_nature
 msgid "Operation Nature"
-msgstr "Natureza da Operação"
+msgstr "Natureza da operação"
 
 #. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcexigsuspensa__nfse10_tpSusp
@@ -2226,7 +2228,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_account_move_line__other_retentions_value
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_l10n_br_fiscal_document_line__other_retentions_value
 msgid "Other Retentions"
-msgstr "Outras Retenções"
+msgstr "Outras retenções"
 
 #. module: l10n_br_nfse
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfse.danfse_report_template
@@ -2366,7 +2368,7 @@ msgstr "RECIBO PROVISÓRIO DE SERVIÇOS - RPS"
 #. module: l10n_br_nfse
 #: model:ir.model.fields.selection,name:l10n_br_nfse.selection__l10n_br_fiscal_document__rps_type__2
 msgid "RPS Nota Fiscal Conjugada (Mista)"
-msgstr "RPS Nota Fiscal Conjugada (Mista)"
+msgstr "RPS nota fiscal conjugada (mista)"
 
 #. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_account_bank_statement_line__rps_number
@@ -2378,7 +2380,7 @@ msgstr "Número do RPS"
 #. module: l10n_br_nfse
 #: model:ir.model.fields.selection,name:l10n_br_nfse.selection__l10n_br_fiscal_document__rps_type__1
 msgid "Recibo provisório de Serviços"
-msgstr "Recibo provisório de Serviços"
+msgstr "Recibo provisório de serviços"
 
 #. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_l10n_br_fiscal_base_wizard_mixin__rps_number
@@ -2395,7 +2397,7 @@ msgstr "Número do RPS"
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_account_move__rps_type
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_l10n_br_fiscal_document__rps_type
 msgid "Rps Type"
-msgstr "Tipo de Rps"
+msgstr "Tipo de RPS"
 
 #. module: l10n_br_nfse
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfse.danfse_report_template
@@ -2415,7 +2417,7 @@ msgstr "Sigla da unidade da federação do município do endereço do emitente."
 #. module: l10n_br_nfse
 #: model:ir.model.fields.selection,name:l10n_br_nfse.selection__l10n_br_fiscal_document__taxation_special_regime__3
 msgid "Sociedade de Profissionais"
-msgstr "Sociedade de Profissionais"
+msgstr "Sociedade de profissionais"
 
 #. module: l10n_br_nfse
 #: model:ir.model,name:l10n_br_nfse.model_nfse_10_tcatvevento
@@ -2431,6 +2433,11 @@ msgstr "TCBeneficioMunicipal"
 #: model:ir.model,name:l10n_br_nfse.model_nfse_10_tccomexterior
 msgid "TCComExterior"
 msgstr "TCComExterior"
+
+#. module: l10n_br_nfse
+#: model:ir.model,name:l10n_br_nfse.model_nfse_10_tcdps
+msgid "TCDPS"
+msgstr "TCDPS"
 
 #. module: l10n_br_nfse
 #: model:ir.model,name:l10n_br_nfse.model_nfse_10_tcdocajustebc
@@ -2677,7 +2684,7 @@ msgstr "TCValoresNFSe"
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_account_move__taxation_special_regime
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_l10n_br_fiscal_document__taxation_special_regime
 msgid "Taxation Special Regime"
-msgstr "Regime Especial Tributação"
+msgstr "Regime especial de tributação"
 
 #. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcvaloresnfse__nfse10_tpBM
@@ -2927,8 +2934,8 @@ msgid ""
 msgstr ""
 "Valor da base de cálculo do ISSQN (R$) = Valor do serviço - Desconto "
 "incondicionado - Ajustes (deduções/reduções) - Benefício municipal\n"
-"\t\t\t\t\t\tvBC = vServ - descIncond - (vAjusteBCISSQN + "
-"vCalcAjusteBCISSQN) - (vRedBCBM ou VCalcBM)"
+"\t\t\t\t\t\tvBC = vServ - descIncond - (vAjusteBCISSQN + vCalcAjusteBCISSQN) "
+"- (vRedBCBM ou VCalcBM)"
 
 #. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcrtcvaloresibscbs__nfse10_vBC
@@ -3236,8 +3243,8 @@ msgid ""
 msgstr ""
 "Valor monetário utilizado para não inclusão na base de cálculo do IBS e da "
 "CBS da NFS-e que está sendo emitida (R$). (Informar o valor total da parcela "
-"não integrante da base de cálculo - IPTU, condomínio, redutor social, etc. -"
-", não devendo ser inserido o valor proporcional do coproprietário)"
+"não integrante da base de cálculo - IPTU, condomínio, redutor social, etc. "
+"-, não devendo ser inserido o valor proporcional do coproprietário)"
 
 #. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcbeneficiomunicipal__nfse10_pRedBCBM
@@ -3348,7 +3355,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_account_move__verify_code
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_l10n_br_fiscal_document__verify_code
 msgid "Verify Code"
-msgstr "Código de Verificação"
+msgstr "Código de verificação"
 
 #. module: l10n_br_nfse
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcinfnfse__nfse10_verAplic
@@ -3417,6 +3424,11 @@ msgstr "com a utilização do Código de Verificação."
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcrtcinfoimovel__nfse10_gUnidImob
 msgid "gUnidImob"
 msgstr "gUnidImob"
+
+#. module: l10n_br_nfse
+#: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcdps__nfse10_infDPS
+msgid "infDPS"
+msgstr "infDPS"
 
 #. module: l10n_br_nfse
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfse.danfse_report_template
@@ -3491,6 +3503,11 @@ msgstr "vTotTribMun"
 #: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcrtctotaltribregular__nfse10_vTribRegIBSMun
 msgid "vTribRegIBSMun"
 msgstr "vTribRegIBSMun"
+
+#. module: l10n_br_nfse
+#: model:ir.model.fields,field_description:l10n_br_nfse.field_nfse_10_tcdps__nfse10_versao
+msgid "versao"
+msgstr "versao"
 
 #. module: l10n_br_nfse
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfse.danfse_report_template
