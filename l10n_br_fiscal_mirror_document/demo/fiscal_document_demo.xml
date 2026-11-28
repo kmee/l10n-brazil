@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 KMEE
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+<odoo noupdate="1">
+    <!-- Imported NF-e from a foreign supplier: use "Create Mirror Document" -->
+    <record id="demo_imported_document" model="l10n_br_fiscal.document">
+        <field name="imported_document" eval="True" />
+        <field name="issuer">partner</field>
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_compras" />
+        <field name="document_type_id" ref="l10n_br_fiscal.document_55" />
+        <field name="company_id" ref="l10n_br_base.empresa_lucro_presumido" />
+        <field name="document_serie">1</field>
+        <field name="document_number">4021</field>
+        <field name="partner_id" ref="l10n_br_base.res_partner_exterior" />
+        <field name="fiscal_operation_type">in</field>
+    </record>
+
+    <record id="demo_imported_document_line_1" model="l10n_br_fiscal.document.line">
+        <field name="document_id" ref="demo_imported_document" />
+        <field name="name">Teclado mecânico importado</field>
+        <field name="product_id" ref="product.product_product_6" />
+        <field name="uom_id" ref="uom.product_uom_unit" />
+        <field name="quantity">10</field>
+        <field name="price_unit">180</field>
+        <field name="fiscal_operation_type">in</field>
+        <field name="fiscal_operation_id" ref="l10n_br_fiscal.fo_compras" />
+        <field
+            name="fiscal_operation_line_id"
+            ref="l10n_br_fiscal.fo_compras_compras"
+        />
+        <field name="icms_base">1800</field>
+        <field name="icms_percent">18</field>
+        <field name="icms_value">324</field>
+    </record>
+
+    <!-- Company document without invoice, with the payment mode in the document -->
+    <record id="l10n_br_nfe.demo_nfe_same_state" model="l10n_br_fiscal.document">
+        <field
+            name="payment_mode_id"
+            ref="account_payment_mode.payment_mode_inbound_ct1"
+        />
+    </record>
+</odoo>

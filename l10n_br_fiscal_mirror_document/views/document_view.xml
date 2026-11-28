@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 KMEE
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="document_form" model="ir.ui.view">
+        <field
+            name="name"
+        >l10n_br_fiscal.document.form (in l10n_br_fiscal_mirror_document)</field>
+        <field name="model">l10n_br_fiscal.document</field>
+        <field name="inherit_id" ref="l10n_br_fiscal.document_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_create_mirror_document"
+                    type="object"
+                    string="Create Mirror Document"
+                    groups="l10n_br_fiscal.group_user"
+                    invisible="not imported_document"
+                />
+            </xpath>
+            <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
+                <button
+                    class="oe_stat_button"
+                    name="action_open_mirror_documents"
+                    type="object"
+                    icon="fa-files-o"
+                    invisible="mirror_document_count == 0"
+                >
+                    <field
+                        name="mirror_document_count"
+                        widget="statinfo"
+                        string="Mirror Documents"
+                    />
+                </button>
+                <button
+                    class="oe_stat_button"
+                    name="action_open_original_document"
+                    type="object"
+                    icon="fa-file-o"
+                    string="Original Document"
+                    invisible="not original_document_id"
+                />
+            </xpath>
+            <xpath expr="//field[@name='edoc_purpose']" position="before">
+                <field name="mirror_document" invisible="1" />
+                <field name="original_document_id" invisible="not mirror_document" />
+                <field name="payment_mode_id" invisible="move_count > 0" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="mirror_document_action" model="ir.actions.act_window">
+        <field name="name">Mirror Documents</field>
+        <field name="res_model">l10n_br_fiscal.document</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="search_view_id" ref="l10n_br_fiscal.document_search" />
+        <field name="view_id" ref="l10n_br_fiscal.document_tree" />
+        <field name="domain">[('mirror_document', '=', True)]</field>
+    </record>
+
+    <menuitem
+        id="mirror_document_menu"
+        action="mirror_document_action"
+        name="Mirror Documents"
+        parent="l10n_br_fiscal.document_sub_menu"
+        sequence="23"
+        groups="l10n_br_fiscal.group_user,l10n_br_fiscal.group_manager"
+    />
+</odoo>
