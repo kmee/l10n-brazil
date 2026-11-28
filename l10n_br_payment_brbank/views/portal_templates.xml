@@ -8,7 +8,7 @@
     >
         <xpath expr="//div[hasclass('o_boleto_actions')]" position="inside">
             <a
-                t-if="boleto_tx.boleto_pdf"
+                t-if="boleto_tx.boleto_pdf or boleto_tx._brbank_is_live()"
                 class="btn btn-light w-100"
                 t-att-href="'/my/invoices/%s/brbank/%s?access_token=%s&amp;download=true' % (invoice.id, boleto_tx.id, invoice._portal_ensure_token())"
             >

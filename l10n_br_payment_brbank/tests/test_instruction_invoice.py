@@ -101,6 +101,36 @@ class TestInstructionOnInvoice(BrbankTransactionCase):
                 self.assertEqual(tx.move_line_id.date_maturity, line_date)
                 self.assertEqual(invoice.invoice_date_due, invoice_date)
 
+    def test_accepted_instruction_clears_the_pdf(self):
+        """The PDF kept the old due date and amount after the bank accepted the
+        instruction (Sicredi, 26/11/2026)."""
+        invoice = self._create_invoice()
+        txs = self._brbank_txs(invoice)
+        for tx, values in (
+            (txs[0], {"command": "prorrogacao", "new_due_date": self.new_date}),
+            (txs[1], {"command": "abatimento", "amount": 50.0}),
+        ):
+            with self.subTest(command=values["command"]):
+                self.assertTrue(tx.boleto_pdf)
+                instruction, _action = self._send(tx, **values)
+                self.assertEqual(instruction.state, "done")
+                self.assertFalse(tx.boleto_pdf)
+                # The next download asks for the PDF again.
+                tx.with_user(self.billing_user).action_brbank_download_pdf()
+                self.assertTrue(tx.boleto_pdf)
+
+    def test_rejected_instruction_keeps_the_pdf(self):
+        invoice = self._create_invoice()
+        tx = self._brbank_txs(invoice)[0]
+        pdf = tx.boleto_pdf
+        self.assertTrue(pdf)
+        self.bank["unsupported"] = {TipoInstrucao.PRORROGACAO}
+        instruction, _action = self._send(
+            tx, command="prorrogacao", new_due_date=self.new_date
+        )
+        self.assertEqual(instruction.state, "rejected")
+        self.assertEqual(tx.boleto_pdf, pdf)
+
     def test_answer_lost_still_reaches_the_invoice(self):
         invoice = self._create_invoice()
         tx = self._brbank_txs(invoice)[0]
@@ -187,7 +217,7 @@ class TestInstructionOnInvoice(BrbankTransactionCase):
     def test_rebate_when_the_bank_answers_the_title_as_paid(self):
         """The sandboxes answer every instruction with the title settled, for an
         amount of their own. The payment must not close the installment before the
-        rebate credit note is reconciled with it (Quick, 18/11/2026)."""
+        rebate credit note is reconciled with it (18/11/2026)."""
         invoice = self._create_invoice()
         tx = self._brbank_txs(invoice)[0]
         line = tx.move_line_id

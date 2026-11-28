@@ -502,6 +502,12 @@ msgid "Extend the due date"
 msgstr "Prorrogar o vencimento"
 
 #. module: l10n_br_payment_brbank
+#. odoo-python
+#: code:addons/l10n_br_payment_brbank/models/payment_transaction.py:0
+msgid "Federal State"
+msgstr "Estado"
+
+#. module: l10n_br_payment_brbank
 #: model:ir.model.fields,field_description:l10n_br_payment_brbank.field_payment_transaction__brbank_waive_fees
 msgid "Fees Waived"
 msgstr "Sem multa e juros"
@@ -965,8 +971,6 @@ msgid "Sicredi (Boleto)"
 msgstr "Sicredi (Boleto)"
 
 #. module: l10n_br_payment_brbank
-#. odoo-python
-#: code:addons/l10n_br_payment_brbank/models/payment_transaction.py:0
 #: model:ir.model.fields,field_description:l10n_br_payment_brbank.field_l10n_br_boleto_instruction__state
 #: model:ir.model.fields,field_description:l10n_br_payment_brbank.field_l10n_br_brbank_event__state
 msgid "State"

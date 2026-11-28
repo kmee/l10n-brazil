@@ -23,6 +23,8 @@ COMMANDS = {
     "protesto": TipoInstrucao.PROTESTO,
     "baixa": TipoInstrucao.BAIXA,
 }
+# Instructions that change what the boleto slip shows.
+SLIP_COMMANDS = ("prorrogacao", "abatimento")
 
 
 class BoletoInstruction(models.Model):
@@ -213,6 +215,10 @@ class BoletoInstruction(models.Model):
                     transaction.due_date = self.new_due_date
                 elif self.command == "abatimento":
                     transaction.amount -= self.amount
+                if self.command in SLIP_COMMANDS:
+                    # The PDF kept shows the old due date or amount: the next
+                    # download asks the bank (or brbank) for the new one.
+                    transaction.boleto_pdf = False
         except Exception as error:
             return self._report_local_failure(error)
         # The effect on the invoice goes before the status the bank answered: a title
