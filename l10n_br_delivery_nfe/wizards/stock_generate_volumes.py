@@ -63,6 +63,11 @@ class StockGenerateVolumes(models.TransientModel):
             vol_data = vol_id.copy_data({"picking_id": picking_id.id})[0]
             vol_data.pop("invoice_wizard_id", None)
             vol_data.pop("generate_vols_wizard_id", None)
+            vol_data["nfe40_lacres"] = [
+                Command.create({"nfe40_nLacre": lacre.nfe40_nLacre})
+                for lacre in vol_id.nfe40_lacres
+                if lacre.nfe40_nLacre
+            ]
             volume_data.append(vol_data)
 
         new_picks = picking_id.vol_ids.create(volume_data)

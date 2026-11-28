@@ -41,6 +41,12 @@
                         <field name="nfe40_pesoB" string="Peso Bruto (kg)" />
                     </group>
                 </group>
+                <separator string="Lacres" />
+                <field name="nfe40_lacres" nolabel="1">
+                    <list editable="bottom">
+                        <field name="nfe40_nLacre" string="Número do lacre" />
+                    </list>
+                </field>
             </form>
         </field>
     </record>

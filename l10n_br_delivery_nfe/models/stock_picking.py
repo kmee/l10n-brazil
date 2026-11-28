@@ -1,6 +1,6 @@
 # Copyright (C) 2024 Diego Paradeda - KMEE
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
-from odoo import fields, models
+from odoo import Command, fields, models
 
 
 class StockPicking(models.Model):
@@ -115,9 +115,12 @@ class StockPicking(models.Model):
         for picking_id in self:
             for vol_id in picking_id.vol_ids:
                 vol_data = vol_id.copy_data()[0]
-                vols_data.append(
-                    {k: v for k, v in vol_data.items() if k in wizard_fields}
-                )
+                vol_data = {k: v for k, v in vol_data.items() if k in wizard_fields}
+                vol_data["nfe40_lacres"] = [
+                    Command.create({"nfe40_nLacre": lacre.nfe40_nLacre})
+                    for lacre in vol_id.nfe40_lacres
+                ]
+                vols_data.append(vol_data)
         return vols_data
 
     def prepare_vols_data_from_picking(self):

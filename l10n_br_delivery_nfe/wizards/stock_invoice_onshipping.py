@@ -44,6 +44,11 @@ class StockInvoiceOnshipping(models.TransientModel):
             "nfe40_nVol": data.nfe40_nVol,
             "nfe40_pesoL": data.nfe40_pesoL,
             "nfe40_pesoB": data.nfe40_pesoB,
+            "nfe40_lacres": [
+                Command.create({"nfe40_nLacre": lacre.nfe40_nLacre})
+                for lacre in data.nfe40_lacres
+                if lacre.nfe40_nLacre
+            ],
         }
 
     def _get_picking(self):

@@ -13,3 +13,9 @@ class StockPickingVol(models.Model):
         comodel_name="stock.picking",
         string="Stock Picking",
     )
+
+    nfe40_lacres = fields.One2many(
+        comodel_name="stock.picking.lacres",
+        inverse_name="nfe40_lacres_vol_id",
+        string="lacres",
+    )
