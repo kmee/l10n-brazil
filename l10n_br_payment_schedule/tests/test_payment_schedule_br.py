@@ -43,6 +43,12 @@ class TestPaymentScheduleBr(AccountTestInvoicingCommon):
         cls.env = cls.env(context=dict(cls.env.context, **DISABLED_MAIL_CONTEXT))
         cls.today = fields.Date.context_today(cls.env.user)
         cls.partner_a.vat = CNPJ_PARTNER
+        # The bills of these tests carry no fiscal document: their journal asks for
+        # no LATAM document type either (l10n_br_account maps one only from the
+        # fiscal document type).
+        journal = cls.company_data["default_journal_purchase"]
+        if "l10n_latam_use_documents" in journal._fields:
+            journal.l10n_latam_use_documents = False
         mode_model = cls.env["account.payment.mode"]
         cls.modes = {
             kind: mode_model.create(
