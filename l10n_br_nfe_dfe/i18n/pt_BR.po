@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 18.0\n"
 "Report-Msgid-Bugs-To: \n"
-"PO-Revision-Date: 2026-10-20 19:45+0000\n"
+"PO-Revision-Date: 2026-11-25 23:46+0000\n"
 "Last-Translator: Luis Felipe Miléo <mileo@kmee.com.br>\n"
 "Language-Team: none\n"
 "Language: pt_BR\n"
@@ -14,39 +14,12 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.15.2\n"
-
-#. module: l10n_br_nfe_dfe
-#. odoo-python
-#: code:addons/l10n_br_nfe_dfe/models/dfe_document.py:0
-msgid ""
-"%s asked to import this NF-e. The acknowledgement was already registered: "
-"the fiscal document is created when the complete XML arrives."
-msgstr ""
-"%s pediu para importar esta NF-e. A ciência já estava registrada: o "
-"documento fiscal é criado quando o XML completo chegar."
+"X-Generator: Weblate 2026.11.2\n"
 
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.view_l10n_br_fiscal_dfe_document_form_nfe
-msgid "<span class=\"o_stat_text\">Fiscal Document</span>"
-msgstr "<span class=\"o_stat_text\">Documento fiscal</span>"
-
-#. module: l10n_br_nfe_dfe
-#: model:ir.model.fields.selection,name:l10n_br_nfe_dfe.selection__res_company__nfe_manifest_on_document_confirm__ciencia
-msgid "Acknowledgement of the operation (210210)"
-msgstr "Ciência da operação (210210)"
-
-#. module: l10n_br_nfe_dfe
-#. odoo-python
-#: code:addons/l10n_br_nfe_dfe/models/dfe_document.py:0
-msgid ""
-"Acknowledgement of the operation registered by %s. The final manifestation "
-"of the recipient is now mandatory, and the fiscal document is created when "
-"the complete XML arrives."
-msgstr ""
-"Ciência da operação registrada por %s. A manifestação final do destinatário "
-"agora é obrigatória, e o documento fiscal é criado quando o XML completo "
-"chegar."
+msgid "<span class=\"o_stat_text\">Invoice</span>"
+msgstr "<span class=\"o_stat_text\">Fatura</span>"
 
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_document_tree
@@ -56,12 +29,12 @@ msgstr "Valor"
 #. module: l10n_br_nfe_dfe
 #: model:ir.model.fields,field_description:l10n_br_nfe_dfe.field_res_company__nfe_auto_fetch
 msgid "Auto-fetch NF-e DF-e"
-msgstr "Busca Automática de DF-e (NF-e)"
+msgstr "Busca automática de DF-e (NF-e)"
 
 #. module: l10n_br_nfe_dfe
 #: model:ir.model.fields,field_description:l10n_br_nfe_dfe.field_res_company__auto_manifest_nfe
 msgid "Automatic Recipient Manifestation (NF-e)"
-msgstr "Manifestação Automática do Destinatário (NF-e)"
+msgstr "Manifestação automática do destinatário (NF-e)"
 
 #. module: l10n_br_nfe_dfe
 #: model:ir.model.fields,help:l10n_br_nfe_dfe.field_res_company__auto_manifest_nfe
@@ -69,7 +42,7 @@ msgid ""
 "Automatically acknowledge receipt of notifications or events without manual "
 "intervention"
 msgstr ""
-"Confirma automaticamente o recebimento de notificações ou eventos sem "
+"Dá ciência automaticamente das notificações ou eventos recebidos, sem "
 "intervenção manual"
 
 #. module: l10n_br_nfe_dfe
@@ -94,14 +67,9 @@ msgid "Confirmada operação"
 msgstr "Confirmada operação"
 
 #. module: l10n_br_nfe_dfe
-#: model:ir.model.fields.selection,name:l10n_br_nfe_dfe.selection__res_company__nfe_manifest_on_document_confirm__confirmacao
-msgid "Confirmation of the operation (210200)"
-msgstr "Confirmação da operação (210200)"
-
-#. module: l10n_br_nfe_dfe
 #: model:ir.actions.server,name:l10n_br_nfe_dfe.ir_cron_search_dfe_documents_ir_actions_server
 msgid "DF-e - Search NF-e Documents"
-msgstr "DF-e - Pesquisa de Documentos NF-e"
+msgstr "DF-e - Consulta de documentos NF-e"
 
 #. module: l10n_br_nfe_dfe
 #: model:ir.model.fields,field_description:l10n_br_nfe_dfe.field_l10n_br_nfe_md_event__dfe_document_id
@@ -125,15 +93,9 @@ msgid "Dfe Document"
 msgstr "Documento DF-e"
 
 #. module: l10n_br_nfe_dfe
-#: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_document_tree
-#: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.view_l10n_br_fiscal_dfe_document_form_nfe
-msgid "Fiscal Document"
-msgstr "Documento fiscal"
-
-#. module: l10n_br_nfe_dfe
 #: model:ir.model,name:l10n_br_nfe_dfe.model_l10n_br_fiscal_dfe_document
 msgid "Fiscal document from distribution service"
-msgstr "Documento fiscal do serviço de distribuição"
+msgstr "Documento fiscal da distribuição DF-e"
 
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_document_tree
@@ -147,6 +109,11 @@ msgid "Import NF-e XML"
 msgstr "Importar XML da NF-e"
 
 #. module: l10n_br_nfe_dfe
+#: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_document_tree
+msgid "Invoice"
+msgstr "Fatura"
+
+#. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_res_company_form
 msgid "Last Query"
 msgstr "Última Consulta"
@@ -158,11 +125,6 @@ msgid "Manifest"
 msgstr "Manifestar"
 
 #. module: l10n_br_nfe_dfe
-#: model:ir.model.fields,field_description:l10n_br_nfe_dfe.field_res_company__nfe_manifest_on_document_confirm
-msgid "Manifest When Confirming an Imported NF-e"
-msgstr "Manifestar ao confirmar uma NF-e importada"
-
-#. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_document_tree
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.view_l10n_br_fiscal_dfe_document_form_nfe
 msgid "Manifestation"
@@ -171,13 +133,7 @@ msgstr "Manifestação"
 #. module: l10n_br_nfe_dfe
 #: model:ir.model.fields,field_description:l10n_br_nfe_dfe.field_l10n_br_fiscal_dfe_document__manifestation_status
 msgid "Manifestation Status"
-msgstr "Status da Manifestação"
-
-#. module: l10n_br_nfe_dfe
-#. odoo-python
-#: code:addons/l10n_br_nfe_dfe/models/document.py:0
-msgid "Manifestation of %s on confirmation"
-msgstr "Manifestação de %s na confirmação"
+msgstr "Situação da manifestação"
 
 #. module: l10n_br_nfe_dfe
 #: model:ir.model.fields,field_description:l10n_br_nfe_dfe.field_l10n_br_fiscal_dfe_document__manifestations_ids
@@ -192,17 +148,17 @@ msgstr "NF-e DF-e"
 #. module: l10n_br_nfe_dfe
 #: model:ir.model.fields,field_description:l10n_br_nfe_dfe.field_res_company__nfe_dfe_last_query
 msgid "NF-e DF-e Last Query"
-msgstr "Última Consulta DF-e (NF-e)"
+msgstr "Última consulta DF-e (NF-e)"
 
 #. module: l10n_br_nfe_dfe
 #: model:ir.model.fields,field_description:l10n_br_nfe_dfe.field_res_company__nfe_dfe_last_status
 msgid "NF-e DF-e Last Status"
-msgstr "Último Status DF-e (NF-e)"
+msgstr "Última situação DF-e (NF-e)"
 
 #. module: l10n_br_nfe_dfe
 #: model:ir.model.fields,field_description:l10n_br_nfe_dfe.field_res_company__nfe_dfe_last_status_code
 msgid "NF-e DF-e Last Status Code"
-msgstr "Último Código de Status DF-e (NF-e)"
+msgstr "Último código da situação DF-e (NF-e)"
 
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_res_company_form
@@ -227,12 +183,12 @@ msgstr "Último NSU (NF-e)"
 #. module: l10n_br_nfe_dfe
 #: model:ir.model.fields,field_description:l10n_br_nfe_dfe.field_res_company__nfe_max_nsu
 msgid "NF-e Max NSU"
-msgstr "NSU Máximo (NF-e)"
+msgstr "NSU máximo (NF-e)"
 
 #. module: l10n_br_nfe_dfe
 #: model:ir.model.fields,field_description:l10n_br_nfe_dfe.field_res_company__nfe_dfe_next_query
 msgid "NF-e Next Scheduled Query"
-msgstr "Próxima Consulta Agendada (NF-e)"
+msgstr "Próxima consulta agendada (NF-e)"
 
 #. module: l10n_br_nfe_dfe
 #. odoo-python
@@ -258,11 +214,6 @@ msgid "No complete DF-e found."
 msgstr "Nenhum DF-e completo encontrado."
 
 #. module: l10n_br_nfe_dfe
-#: model:ir.model.fields.selection,name:l10n_br_nfe_dfe.selection__res_company__nfe_manifest_on_document_confirm__none
-msgid "None"
-msgstr "Nenhuma"
-
-#. module: l10n_br_nfe_dfe
 #: model:ir.model.fields.selection,name:l10n_br_nfe_dfe.selection__l10n_br_fiscal_dfe_document__manifestation_status__nao_realizado
 msgid "Não realizado"
 msgstr "Não realizado"
@@ -270,12 +221,12 @@ msgstr "Não realizado"
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_document_tree
 msgid "PDF"
-msgstr ""
+msgstr "PDF"
 
 #. module: l10n_br_nfe_dfe
 #: model:ir.model.fields,help:l10n_br_nfe_dfe.field_res_company__nfe_auto_fetch
 msgid "Periodically queries DF-e distribution for new NF-e documents"
-msgstr "Consulta periodicamente a distribuição DF-e por novos documentos NF-e"
+msgstr "Consulta periodicamente a distribuição DF-e em busca de novas NF-e"
 
 #. module: l10n_br_nfe_dfe
 #: model:ir.model,name:l10n_br_nfe_dfe.model_l10n_br_nfe_md_event
@@ -286,7 +237,7 @@ msgstr "Manifestação do Destinatário"
 #. odoo-python
 #: code:addons/l10n_br_nfe_dfe/wizards/nfe_md_event_wizard.py:0
 msgid "Recipient Manifestation created successfully"
-msgstr ""
+msgstr "Manifestação do destinatário registrada com sucesso"
 
 #. module: l10n_br_nfe_dfe
 #: model:ir.model.fields.selection,name:l10n_br_nfe_dfe.selection__l10n_br_fiscal_dfe_document__manifestation_status__sem_manifestacao
@@ -296,90 +247,23 @@ msgstr "Sem manifestação"
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_document_tree
 msgid "State"
-msgstr "Estado"
+msgstr "Situação"
 
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_res_company_form
 msgid "Status"
-msgstr "Status"
+msgstr "Situação"
 
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_res_company_form
 msgid "Status Code"
-msgstr "Código de Status"
+msgstr "Código da situação"
 
 #. module: l10n_br_nfe_dfe
 #. odoo-python
 #: code:addons/l10n_br_nfe_dfe/wizards/nfe_md_event_wizard.py:0
 msgid "Success"
 msgstr "Sucesso"
-
-#. module: l10n_br_nfe_dfe
-#. odoo-python
-#: code:addons/l10n_br_nfe_dfe/models/dfe_document.py:0
-msgid ""
-"The acknowledgement is only possible until %s days after the authorization. "
-"Upload the XML file instead."
-msgstr ""
-"A ciência só é possível até %s dias depois da autorização. Envie o arquivo "
-"XML."
-
-#. module: l10n_br_nfe_dfe
-#. odoo-python
-#: code:addons/l10n_br_nfe_dfe/models/dfe_document.py:0
-msgid ""
-"The acknowledgement of the operation is registered at the tax authority with"
-" the certificate of the company. You need the permission of NF-e user for "
-"it: ask an administrator, or upload the XML file instead."
-msgstr ""
-"A ciência da operação é registrada na Receita com o certificado da empresa. "
-"Você precisa da permissão de usuário de NF-e para isso: peça a um "
-"administrador, ou envie o arquivo XML."
-
-#. module: l10n_br_nfe_dfe
-#. odoo-python
-#: code:addons/l10n_br_nfe_dfe/models/document.py:0
-msgid ""
-"The acknowledgement of the operation was not registered: it is only accepted"
-" until %s days after the authorization."
-msgstr ""
-"A ciência da operação não foi registrada: ela só é aceita até %s dias depois"
-" da autorização."
-
-#. module: l10n_br_nfe_dfe
-#. odoo-python
-#: code:addons/l10n_br_nfe_dfe/models/dfe_document.py:0
-msgid ""
-"The complete XML is only released after the acknowledgement of the operation"
-" (ciencia), an event registered at the tax authority that obliges the "
-"company to register the final manifestation afterwards. Register it?"
-msgstr ""
-"O XML completo só é liberado depois da ciência da operação, um evento "
-"registrado na autoridade fiscal que obriga a empresa a registrar depois a "
-"manifestação final. Registrar?"
-
-#. module: l10n_br_nfe_dfe
-#. odoo-python
-#: code:addons/l10n_br_nfe_dfe/models/document.py:0
-msgid ""
-"The manifestation of the recipient was not registered: it is sent to the tax"
-" authority with the certificate of the company and %s has no permission of "
-"NF-e user. Ask who has it to register it."
-msgstr ""
-"A manifestação do destinatário não foi registrada: ela é enviada à Receita "
-"com o certificado da empresa e %s não tem a permissão de usuário de NF-e. "
-"Peça a quem tem para registrá-la."
-
-#. module: l10n_br_nfe_dfe
-#: model:ir.model.fields,help:l10n_br_nfe_dfe.field_res_company__nfe_manifest_on_document_confirm
-msgid ""
-"The manifestation registered at the tax authority when an NF-e received from a supplier is confirmed.\n"
-"- Acknowledgement: it is not a conclusive manifestation, and it obliges the company to register a conclusive one afterwards (confirmation, unawareness or operation not performed). It is only accepted until 10 days after the authorization: later than that it is skipped, with a notice on the document.\n"
-"- Confirmation: it is the conclusive manifestation that matches confirming the document."
-msgstr ""
-"A manifestação registrada na autoridade fiscal quando uma NF-e recebida de fornecedor é confirmada.\n"
-"- Ciência: não é uma manifestação conclusiva e obriga a empresa a registrar depois uma conclusiva (confirmação, desconhecimento ou operação não realizada). Só é aceita até 10 dias depois da autorização: depois disso é pulada, com um aviso no documento.\n"
-"- Confirmação: é a manifestação conclusiva que corresponde a confirmar o documento."
 
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_document_tree
@@ -389,7 +273,7 @@ msgstr "Tipo"
 #. module: l10n_br_nfe_dfe
 #: model:ir.model,name:l10n_br_nfe_dfe.model_nfe_recipient_manifestation_event_wizard
 msgid "Wizard to manifest"
-msgstr ""
+msgstr "Assistente de manifestação"
 
 #. module: l10n_br_nfe_dfe
 #: model_terms:ir.ui.view,arch_db:l10n_br_nfe_dfe.nfe_dfe_document_tree
@@ -400,7 +284,7 @@ msgstr "XML"
 #. odoo-python
 #: code:addons/l10n_br_nfe_dfe/models/dfe_document.py:0
 msgid "You can only import the NF-e when the DF-e is completed."
-msgstr "Você só pode importar a NF-e quando o DF-e estiver completo."
+msgstr "Só é possível importar a NF-e quando o DF-e estiver completo."
 
 #~ msgid "DANFE"
 #~ msgstr "DANFE"

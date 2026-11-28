@@ -230,7 +230,9 @@ class OperationLine(models.Model):
             cfop = self.cfop_export_id
         return cfop
 
-    def _get_tax_classification(self, company):
+    def _get_tax_classification(self, company, cfop=None):
+        if cfop and cfop.tax_classification_id:
+            return cfop.tax_classification_id
         if self.tax_classification_id:
             return self.tax_classification_id
         elif company.tax_classification_id:
@@ -375,7 +377,9 @@ class OperationLine(models.Model):
         mapping_result["cfop"] = self._get_cfop(company, partner)
 
         # Define Tax Classification
-        mapping_result["tax_classification"] = self._get_tax_classification(company)
+        mapping_result["tax_classification"] = self._get_tax_classification(
+            company, mapping_result["cfop"]
+        )
 
         # 1 Get Tax Defs from Company
         for tax_definition in company.tax_definition_ids.map_tax_definition(
@@ -390,6 +394,7 @@ class OperationLine(models.Model):
             national_taxation_code=national_taxation_code,
             service_type=service_type,
             reference_date=reference_date,
+            cfop=mapping_result["cfop"],
         ):
             self._build_mapping_result(mapping_result, tax_definition)
 
@@ -457,6 +462,7 @@ class OperationLine(models.Model):
             national_taxation_code=national_taxation_code,
             service_type=service_type,
             reference_date=reference_date,
+            cfop=mapping_result["cfop"],
         ):
             self._build_mapping_result(mapping_result, tax_definition)
 
@@ -475,6 +481,7 @@ class OperationLine(models.Model):
             national_taxation_code=national_taxation_code,
             service_type=service_type,
             reference_date=reference_date,
+            cfop=mapping_result["cfop"],
         ):
             self._build_mapping_result(mapping_result, tax_definition)
 
@@ -493,6 +500,7 @@ class OperationLine(models.Model):
             national_taxation_code=national_taxation_code,
             service_type=service_type,
             reference_date=reference_date,
+            cfop=mapping_result["cfop"],
         ):
             self._build_mapping_result(mapping_result, tax_definition)
 

@@ -49,6 +49,14 @@ class ResCompany(spec_models.SpecModel):
         "the ISSQN, declared on the lines whose ISSQN eligibility is suspended.",
     )
 
+    nfse_nacional_concat_lines = fields.Boolean(
+        string="Declare all lines in the DPS",
+        default=False,
+        help="Sum the values of every fiscal line and concatenate their "
+        "descriptions in the DPS. Off: the DPS declares only the first line "
+        "(legacy behaviour).",
+    )
+
     # Overriding the inherited fields to make them computed
     nfse10_opSimpNac = fields.Selection(compute="_compute_nfse10_reg_trib")
     nfse10_regApTribSN = fields.Selection(compute="_compute_nfse10_reg_trib")
@@ -70,7 +78,15 @@ class ResCompany(spec_models.SpecModel):
                 rec.nfse10_regApTribSN = False
                 rec.nfse10_regEspTrib = "0"
 
-    def _export_fields_res_company(self, xsd_fields, class_obj, export_dict):
+    def _export_fields_nfse_10_tcinfoprestador(
+        self, xsd_fields, class_obj, export_dict
+    ):
+        """Keep the prestador fields the DPS must not declare out of the DPS.
+
+        The hook is named after the spec class of the group, which is what
+        spec_driven_model dispatches on once the group is exported through
+        the stacked infDPS of the fiscal document.
+        """
         for field_name in PRESTADOR_SELF_EMITTED_EXCLUDED:
             if field_name in xsd_fields:
                 xsd_fields.remove(field_name)
