@@ -1919,6 +1919,40 @@ class NFe(spec_models.StackedModel):
 
         self.file_report_id = self.env["ir.attachment"].create(attachment_data)
 
+    def action_regenerate_danfe(self):
+        self.ensure_one()
+        self.make_pdf()
+        return self._target_new_tab(self.file_report_id)
+
+    def action_open_associate_xml_wizard(self):
+        self.ensure_one()
+        action = self.env["ir.actions.actions"]._for_xml_id(
+            "l10n_br_nfe.nfe_associate_xml_wizard_action"
+        )
+        action["context"] = {"default_document_id": self.id}
+        return action
+
+    def _nfe_associate_authorized_xml(self, xml):
+        """Link an authorized nfeProc XML, with its protocol, to this document."""
+        self.ensure_one()
+        try:
+            nfe_proc = XmlParser().from_bytes(xml, NfeProc)
+            inf_prot = nfe_proc.protNFe.infProt
+            xml_key = nfe_proc.NFe.infNFe.Id[3:]
+        except Exception as error:
+            raise UserError(
+                _("The file is not a valid authorized NF-e XML.")
+            ) from error
+        if xml_key != self.document_key or inf_prot.chNFe != self.document_key:
+            raise UserError(_("The key of the XML is not the key of the document."))
+        if inf_prot.cStat not in AUTORIZADO:
+            raise UserError(_("The protocol of the XML is not an authorization."))
+        if not self.authorization_event_id:
+            raise UserError(_("The document has no authorization event."))
+        self._nfe_save_protocol(inf_prot, xml.decode("utf-8"))
+        self.write({"status_code": inf_prot.cStat, "status_name": inf_prot.xMotivo})
+        self._change_state(SITUACAO_EDOC_AUTORIZADA, force_change=True)
+
     def import_binding_nfe(self, binding, edoc_type="in", dry_run=False):
         if hasattr(binding, "NFe"):
             binding = binding.NFe
