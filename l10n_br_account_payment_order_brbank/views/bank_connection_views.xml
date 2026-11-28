@@ -10,7 +10,7 @@
                 <page
                     string="Payment Settings"
                     name="brbank_payment"
-                    groups="base.group_system"
+                    groups="l10n_br_bank_connection.group_bank_connection_admin"
                     invisible="not brbank_payment_settings_help"
                 >
                     <group>
